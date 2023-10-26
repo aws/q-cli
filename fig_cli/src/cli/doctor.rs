@@ -24,6 +24,7 @@ use crossterm::{
     execute,
 };
 use eyre::{
+    bail,
     ContextCompat,
     Result,
     WrapErr,
@@ -57,7 +58,7 @@ use fig_util::directories::{
 use fig_util::system_info::SupportLevel;
 use fig_util::{
     directories,
-    is_fig_desktop_running,
+    is_codewhisperer_desktop_running,
     Shell,
     Terminal,
 };
@@ -392,11 +393,11 @@ impl DoctorCheck for AppRunningCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        if !is_fig_desktop_running() {
+        if !is_codewhisperer_desktop_running() {
             Err(DoctorError::Error {
                 reason: "CodeWhisperer app is not running".into(),
                 info: vec![],
-                fix: command_fix(vec!["cw", "launch"], Duration::from_secs(3)),
+                fix: command_fix(vec!["cw", "launch"], Duration::from_secs(5)),
                 error: None,
             })
         } else {
@@ -1182,7 +1183,25 @@ impl DoctorCheck<DiagnosticsResponse> for AccessibilityCheck {
             Err(DoctorError::Error {
                 reason: "Accessibility is disabled".into(),
                 info: vec![],
-                fix: command_fix(vec!["cw", "debug", "prompt-accessibility"], Duration::from_secs(1)),
+                // fix: command_fix(vec!["cw", "debug", "prompt-accessibility"], Duration::from_secs(1)),
+                fix: Some(DoctorFix::Sync(Box::new(move || {
+                    println!("1. Try enableing accessibility in System Settings");
+                    if !Command::new("cw")
+                        .args(["debug", "prompt-accessibility"])
+                        .status()?
+                        .success()
+                    {
+                        bail!("Failed to open accessibility in System Settings: cw debug prompt-accessibility");
+                    }
+
+                    
+
+
+                    println!("2. Restarting CodeWhisperer");
+                    println!("3. Reset accessibility");
+
+                    Ok(())
+                }))),
                 error: None,
             })
         } else {

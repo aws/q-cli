@@ -140,7 +140,7 @@ pub enum InputMethodDebugAction {
 
 #[derive(Debug, PartialEq, Subcommand)]
 pub enum DebugSubcommand {
-    /// Debug fig app
+    /// Debug CodeWhisperer app
     App,
     /// Switch to another branch of a Fig.js app
     Build {
@@ -154,13 +154,13 @@ pub enum DebugSubcommand {
         #[arg(value_enum)]
         mode: Option<AutocompleteWindowDebug>,
     },
-    /// Show fig debug logs
+    /// Show CodeWhisperer debug logs
     Logs {
         #[arg(long)]
         level: Option<String>,
         files: Vec<String>,
     },
-    /// Fig input method editor
+    /// CodeWhisperer input method editor
     #[cfg(target_os = "macos")]
     InputMethod {
         #[command(subcommand)]
@@ -168,9 +168,9 @@ pub enum DebugSubcommand {
     },
     /// Prompt accessibility
     PromptAccessibility,
-    /// Sample fig process
+    /// Sample CodeWhisperer process
     Sample,
-    /// Debug fig codesign verification
+    /// Debug CodeWhisperer codesign verification
     VerifyCodesign,
     /// Accessibility
     Accessibility {
@@ -215,7 +215,7 @@ pub enum DebugSubcommand {
     /// Lists installed IntelliJ variants
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     ListIntelliJVariants,
-    /// Disables sourcing of user shell config and instead uses a minimal Fig default
+    /// Disables sourcing of user shell config and instead uses a minimal CodeWhisperer default
     Shell,
 }
 

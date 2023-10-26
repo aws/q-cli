@@ -94,5 +94,10 @@ export const createStore = () => {
     store.setState({ inputMethodIsInstalled: isInstalled });
   });
 
+  Install.installStatus.subscribe("accessibility", (isInstalled) => {
+    store.setState({ accessibilityIsInstalled: isInstalled });
+    return { unsubscribe: false };
+  });
+
   return store;
 };

@@ -34,7 +34,7 @@ impl IssueArgs {
         return Ok(());
 
         // Check if fig is running
-        if !self.force && !fig_util::is_fig_desktop_running() {
+        if !self.force && !fig_util::is_codewhisperer_desktop_running() {
             println!(
                 "\n→ CodeWhisperer is not running.\n  Please launch CodeWhisperer with {} or run {} to create the issue anyways",
                 "cw launch".magenta(),

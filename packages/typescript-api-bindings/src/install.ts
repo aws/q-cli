@@ -4,11 +4,13 @@ import {
   InstallResponse,
   // eslint-disable-next-line camelcase
   InstallResponse_InstallationStatus,
+  NotificationType,
   // eslint-disable-next-line camelcase
   Result_Result,
 } from "@fig/fig-api-proto/dist/fig.pb";
 
 import { sendInstallRequest } from "./requests";
+import { NotificationResponse, _subscribe } from "./notifications";
 
 export type Component =
   | "dotfiles"
@@ -95,3 +97,30 @@ export async function isInstalled(component: Component) {
       throw Error(`Unexpected result: ${response.response?.$case}`);
   }
 }
+
+export const installStatus = {
+  subscribe: (
+    component: "accessibility",
+    handler: (isInstalled: boolean) => NotificationResponse | undefined
+  ) => {
+    if (component === "accessibility") {
+      return _subscribe(
+        { type: NotificationType.NOTIFY_ON_ACCESSIBILITY_CHANGE },
+        (notification) => {
+          switch (notification?.type?.$case) {
+            case "accessibilityChangeNotification":
+              return handler(
+                notification.type.accessibilityChangeNotification.enabled
+              );
+            default:
+              break;
+          }
+
+          return { unsubscribe: false };
+        }
+      );
+    } else {
+      throw Error("Not implemented");
+    }
+  },
+};

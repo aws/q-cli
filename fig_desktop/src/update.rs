@@ -31,7 +31,7 @@ pub async fn check_for_update(show_webview: bool, relaunch_dashboard: bool) -> b
 
             let event_loop: EventLoop<UpdateStatus> = EventLoopBuilder::with_user_event().build();
             let window = WindowBuilder::new()
-                .with_title("Fig")
+                .with_title("CodeWhisperer")
                 .with_inner_size(LogicalSize::new(350, 350))
                 .with_resizable(false)
                 .with_titlebar_hidden(true)

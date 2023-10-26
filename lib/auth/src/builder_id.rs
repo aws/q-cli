@@ -68,8 +68,7 @@ const START_URL: &str = "https://view.awsapps.com/start";
 const DEVICE_GRANT_TYPE: &str = "urn:ietf:params:oauth:grant-type:device_code";
 const REFRESH_GRANT_TYPE: &str = "refresh_token";
 
-static APP_NAME: Lazy<AppName> =
-    Lazy::new(|| AppName::new(format!("codewhisperer-desktop-v{}", env!("CARGO_PKG_VERSION"))).unwrap());
+static APP_NAME: Lazy<AppName> = Lazy::new(|| AppName::new("codewhisperer-terminal").unwrap());
 
 /// Indicates if an expiration time has passed, there is a small 1 min window that is removed
 /// so the token will not expire in transit
@@ -94,6 +93,7 @@ static CLIENT: Lazy<Client> = Lazy::new(|| {
 pub struct DeviceRegistration {
     pub client_id: String,
     pub client_secret: Secret,
+    #[serde(with = "time::serde::rfc3339::option")]
     pub client_secret_expires_at: Option<time::OffsetDateTime>,
 }
 
@@ -203,6 +203,7 @@ pub async fn start_device_authorization(secret_store: &SecretStore) -> Result<St
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct BuilderIdToken {
     pub access_token: Secret,
+    #[serde(with = "time::serde::rfc3339")]
     pub expires_at: time::OffsetDateTime,
     pub refresh_token: Option<Secret>,
 }

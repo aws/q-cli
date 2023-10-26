@@ -21,32 +21,27 @@ export function WelcomeModal({ next }: { next: () => void }) {
       <div className="flex flex-col items-center gap-8">
         <Lockup />
         <div className="flex flex-col gap-2 items-center text-center">
-        <h2 className="text-2xl text-white font-semibold select-none leading-none font-ember tracking-tight">
-          Welcome!
-        </h2>
-        <p className="text-sm">Let's get your computer configured...</p>
+          <h2 className="text-2xl text-white font-semibold select-none leading-none font-ember tracking-tight">
+            Welcome!
+          </h2>
+          <p className="text-sm">Let's get your computer configured...</p>
         </div>
       </div>
       <div className="flex flex-col items-center gap-2 text-white text-sm font-bold">
-        <Button
-            variant="glass"
-            onClick={() => next()}
-            className="flex gap-4"
-          >
-            Get started
-          </Button>
+        <Button variant="glass" onClick={() => next()} className="flex gap-4">
+          Get started
+        </Button>
       </div>
     </div>
-  )
+  );
 }
 
-export function LoginModal({next}: { next: () => void }) {
-
+export function LoginModal({ next }: { next: () => void }) {
   const [loginState, setLoginState] = useState<
     "not started" | "loading" | "logged in"
   >("not started");
   const [loginCode, setLoginCode] = useState<string | null>(null);
-  
+
   async function handleLogin() {
     setLoginState("loading");
 
@@ -59,12 +54,15 @@ export function LoginModal({next}: { next: () => void }) {
     setLoginState("logged in");
 
     await Internal.sendWindowFocusRequest({});
-    next()
+    next();
   }
 
   useEffect(() => {
-    Auth.status().then((r) => setLoginState(r.builderId ? "logged in" : "not started"))
-  }, [])
+    Auth.status().then((r) => {
+      console.log("auth status", r);
+      setLoginState(r.builderId ? "logged in" : "not started");
+    });
+  }, []);
 
   useEffect(() => {
     if (loginState !== "logged in") return;
@@ -98,9 +96,17 @@ export function LoginModal({next}: { next: () => void }) {
   );
 }
 
-type installKey = "dotfiles" | "accessibility" | "inputMethod"
+type installKey = "dotfiles" | "accessibility" | "inputMethod";
 
-function InstallModal({ check, skip, next }: { check: InstallCheck, skip: () => void, next: () => void}) {
+function InstallModal({
+  check,
+  skip,
+  next,
+}: {
+  check: InstallCheck;
+  skip: () => void;
+  next: () => void;
+}) {
   const [explainerOpen, setExplainerOpen] = useState(false);
   const [isInstalled] = useStatusCheck(check.installKey as installKey)
   const [timeElapsed, setTimeElapsed] = useState(false)
@@ -114,10 +120,10 @@ function InstallModal({ check, skip, next }: { check: InstallCheck, skip: () => 
   }, [timeElapsed])
 
   useEffect(() => {
-    if (!isInstalled) return
+    if (!isInstalled) return;
 
-    next()
-  }, [isInstalled, next])
+    next();
+  }, [isInstalled, next]);
 
   function handleInstall(key: InstallCheck["installKey"]) {
     if (!key) return;
@@ -144,7 +150,9 @@ function InstallModal({ check, skip, next }: { check: InstallCheck, skip: () => 
       </div>
       <div className="flex flex-col gap-2 text-base font-light text-zinc-500 select-none items-start leading-tight">
         {check.description.map((d, i) => (
-          <p key={i} className="text-sm">{d}</p>
+          <p key={i} className="text-sm">
+            {d}
+          </p>
         ))}
         {check.image && (
           <img
@@ -161,14 +169,14 @@ function InstallModal({ check, skip, next }: { check: InstallCheck, skip: () => 
           <Collapsible open={explainerOpen} onOpenChange={setExplainerOpen}>
             <CollapsibleTrigger asChild className="text-zinc-400">
               <div className="flex items-center">
-              <ChevronDown
-                className={`h-3 w-3 ${
-                  explainerOpen ? "rotate-0" : "-rotate-90"
-                } cursor-pointer text-zinc-400`}
-              />
-              <span className="text-xs text-zinc-400 select-none cursor-pointer">
-                {check.explainer.title}
-              </span>
+                <ChevronDown
+                  className={`h-3 w-3 ${
+                    explainerOpen ? "rotate-0" : "-rotate-90"
+                  } cursor-pointer text-zinc-400`}
+                />
+                <span className="text-xs text-zinc-400 select-none cursor-pointer">
+                  {check.explainer.title}
+                </span>
               </div>
             </CollapsibleTrigger>
             <CollapsibleContent>
@@ -208,9 +216,9 @@ export default function OnboardingModal() {
   const [accessibilityCheck, refreshAccessibility] = useStatusCheck('accessibility')
   
   // these let us skip steps
-  const [dotfiles, setDotfiles] = useState(dotfilesCheck)
-  const [accessibility, setAccessibility] = useState(accessibilityCheck)
-  const checksComplete = dotfiles && accessibility
+  const [dotfiles, setDotfiles] = useState(dotfilesCheck);
+  const [accessibility, setAccessibility] = useState(accessibilityCheck);
+  const checksComplete = dotfiles && accessibility;
 
   // console.log({ id: check.id, checksComplete, dotfiles, accessibility })
 
@@ -224,46 +232,46 @@ export default function OnboardingModal() {
     Internal.sendOnboardingRequest({
       action: Fig.OnboardingAction.FINISH_ONBOARDING,
     });
-    setModal(null)
-  }, [checksComplete, setModal])
+    setModal(null);
+  }, [checksComplete, setModal]);
 
   function nextStep() {
     if (step >= onboarding.length - 1) {
       Internal.sendOnboardingRequest({
         action: Fig.OnboardingAction.FINISH_ONBOARDING,
       });
-      setModal(null)
-      return
+      setModal(null);
+      return;
     }
-    
-    setStep(step + 1)
+
+    setStep(step + 1);
   }
 
   function skipInstall() {
-    if (!check.id) return
+    if (!check.id) return;
 
-    if (check.id === 'dotfiles') {
-      setDotfiles(true)
-      setStep(step + 1)
+    if (check.id === "dotfiles") {
+      setDotfiles(true);
+      setStep(step + 1);
     }
 
-    if (check.id === 'accessibility') {
-      setAccessibility(true)
-      setStep(step + 1)
+    if (check.id === "accessibility") {
+      setAccessibility(true);
+      setStep(step + 1);
     }
   }
 
-  if (check.id === 'dotfiles' || check.id === 'accessibility') {
-    return <InstallModal check={check} skip={skipInstall} next={nextStep} />
+  if (check.id === "dotfiles" || check.id === "accessibility") {
+    return <InstallModal check={check} skip={skipInstall} next={nextStep} />;
   }
 
-  if (check.id === 'welcome') {
-    return <WelcomeModal next={nextStep} />
+  if (check.id === "welcome") {
+    return <WelcomeModal next={nextStep} />;
   }
 
   if (check.id === "login") {
     return <LoginModal next={nextStep} />;
   }
 
-  return  null
+  return null;
 }

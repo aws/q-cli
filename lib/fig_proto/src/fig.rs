@@ -27,6 +27,7 @@ mod internal {
                 NotificationType::NotifyOnApplicationUpdateAvailable => "application_update_available",
                 NotificationType::NotifyOnLocalStateChanged => "local_state_change",
                 NotificationType::NotifyOnEvent => "event",
+                NotificationType::NotifyOnAccessibilityChange => "accessibility_change"
             })
         }
     }

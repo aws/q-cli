@@ -1,5 +1,5 @@
 pub mod figapp;
-pub mod figspec;
+pub mod spec;
 pub mod icons;
 pub mod resource;
 mod util;

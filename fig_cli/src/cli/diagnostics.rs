@@ -44,13 +44,13 @@ pub struct DiagnosticArgs {
 impl DiagnosticArgs {
     pub async fn execute(&self) -> Result<()> {
         #[cfg(target_os = "macos")]
-        if !self.force && !fig_util::is_fig_desktop_running() {
+        if !self.force && !fig_util::is_codewhisperer_desktop_running() {
             use owo_colors::OwoColorize;
 
             println!(
-                "\n→ Fig is not running.\n  Please launch Fig with {} or run {} to get limited diagnostics.",
-                "fig launch".magenta(),
-                "fig diagnostic --force".magenta()
+                "\n→ CodeWhisperer is not running.\n  Please launch CodeWhisperer with {} or run {} to get limited diagnostics.",
+                "cw launch".magenta(),
+                "cw diagnostic --force".magenta()
             );
             return Ok(());
         }
@@ -78,11 +78,8 @@ impl DiagnosticArgs {
             println!();
         }
 
-        match self.format {
-            OutputFormat::Plain => println!("{}", diagnostics.user_readable().join("\n")),
-            OutputFormat::Json => println!("{}", serde_json::to_string(&diagnostics)?),
-            OutputFormat::JsonPretty => println!("{}", serde_json::to_string_pretty(&diagnostics)?),
-        }
+        self.format
+            .print(|| diagnostics.user_readable().join("\n"), || &diagnostics);
 
         Ok(())
     }

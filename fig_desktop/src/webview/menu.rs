@@ -27,7 +27,7 @@ pub fn menu_bar() -> Menu {
 
     let menu_bar = Menu::new();
 
-    let app_submenu = Submenu::new("Fig", true);
+    let app_submenu = Submenu::new("CodeWhisperer", true);
     app_submenu
         .append_items(&[
             &MenuItemBuilder::new()
@@ -96,7 +96,7 @@ pub fn menu_bar() -> MenuBar {
     app_submenu.add_native_item(MenuItem::CloseWindow);
     app_submenu.add_native_item(MenuItem::Quit);
 
-    menu_bar.add_submenu("Fig", true, app_submenu);
+    menu_bar.add_submenu("CodeWhisperer", true, app_submenu);
 
     let mut edit_submenu = MenuBar::new();
 

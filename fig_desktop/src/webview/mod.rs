@@ -72,9 +72,9 @@ use crate::platform::{
 };
 use crate::protocol::{
     figapp,
-    figspec,
     icons,
     resource,
+    spec,
 };
 use crate::request::api_request;
 use crate::tray::{
@@ -96,13 +96,11 @@ pub const FIG_PROTO_MESSAGE_RECEIVED: &str = "FigProtoMessageRecieved";
 
 pub const DASHBOARD_ID: WindowId = WindowId(Cow::Borrowed("dashboard"));
 pub const AUTOCOMPLETE_ID: WindowId = WindowId(Cow::Borrowed("autocomplete"));
-pub const COMPANION_ID: WindowId = WindowId(Cow::Borrowed("companion"));
 
 pub const DASHBOARD_SIZE: LogicalSize<f64> = LogicalSize::new(960.0, 720.0);
 pub const DASHBOARD_MINIMUM_SIZE: LogicalSize<f64> = LogicalSize::new(700.0, 480.0);
 
 pub const AUTOCOMPLETE_WINDOW_TITLE: &str = "Fig Autocomplete";
-// pub const COMPANION_WINDOW_TITLE: &str = "Fig Companion";
 
 pub const LOGIN_PATH: &str = "/";
 
@@ -201,7 +199,12 @@ impl WebviewManager {
     #[allow(unused_mut)]
     pub async fn run(mut self) -> wry::Result<()> {
         self.platform_state
-            .handle(PlatformBoundEvent::Initialize, &self.event_loop, &self.fig_id_map)
+            .handle(
+                PlatformBoundEvent::Initialize,
+                &self.event_loop,
+                &self.fig_id_map,
+                &self.notifications_state,
+            )
             .expect("Failed to initialize platform state");
 
         // TODO(mia): implement
@@ -476,10 +479,12 @@ impl WebviewManager {
                             }
                         },
                         Event::PlatformBoundEvent(native_event) => {
-                            if let Err(err) = self
-                                .platform_state
-                                .handle(native_event, window_target, &self.fig_id_map)
-                            {
+                            if let Err(err) = self.platform_state.handle(
+                                native_event,
+                                window_target,
+                                &self.fig_id_map,
+                                &self.notifications_state,
+                            ) {
                                 debug!(%err, "Failed to handle native event");
                             }
                         },
@@ -499,7 +504,7 @@ impl WebviewManager {
                 WryEvent::Opened { urls } => {
                     let mut events = Vec::new();
                     for url in urls {
-                        if url.scheme() == "fig" {
+                        if url.scheme() == "codewhisperer" {
                             match url.host_str() {
                                 Some("dashboard") => {
                                     events.push(WindowEvent::NavigateRelative {
@@ -710,7 +715,7 @@ pub fn build_autocomplete(
                 .unwrap();
         })
         .with_asynchronous_custom_protocol("fig".into(), utils::wrap_custom_protocol(icons::handle))
-        .with_asynchronous_custom_protocol("figspec".into(), utils::wrap_custom_protocol(figspec::handle))
+        .with_asynchronous_custom_protocol("spec".into(), utils::wrap_custom_protocol(spec::handle))
         .with_asynchronous_custom_protocol("figapp".into(), utils::wrap_custom_protocol(figapp::handle))
         .with_asynchronous_custom_protocol(
             "resource".into(),
@@ -744,90 +749,6 @@ pub trait WebviewBuilder {
         options: Self::Options,
     ) -> wry::Result<WebView>;
 }
-
-// pub struct CompanionOptions;
-
-// pub fn build_companion(
-//     web_context: &mut WebContext,
-//     event_loop: &EventLoop,
-//     _companion_options: CompanionOptions,
-// ) -> wry::Result<WebView> { let mut window_builder = WindowBuilder::new()
-//   .with_title(COMPANION_WINDOW_TITLE) .with_transparent(true) .with_decorations(false)
-//   .with_always_on_top(true) .with_visible(false) .with_focused(false)
-//   .with_window_icon(Some(utils::ICON.clone())) .with_inner_size(LogicalSize::new(1.0, 1.0))
-//   .with_theme(*THEME);
-
-//     cfg_if!(
-//         if #[cfg(target_os = "linux")] {
-//             use wry::application::platform::unix::WindowBuilderExtUnix;
-//             window_builder = window_builder.with_resizable(true).with_skip_taskbar(true);
-//         } else if #[cfg(target_os = "macos")] {
-//             use wry::application::platform::macos::WindowBuilderExtMacOS;
-//             window_builder = window_builder.with_resizable(false).with_has_shadow(false);
-//         } else if #[cfg(target_os = "windows")] {
-//             use wry::application::platform::windows::WindowBuilderExtWindows;
-//             window_builder = window_builder.with_resizable(false).with_skip_taskbar(true);
-//         }
-//     );
-
-//     let window = window_builder.build(event_loop)?;
-
-//     #[cfg(target_os = "linux")]
-//     {
-//         use gtk::gdk::WindowTypeHint;
-//         use gtk::traits::{
-//             GtkWindowExt,
-//             WidgetExt,
-//         };
-//         use wry::application::platform::unix::WindowExtUnix;
-
-//         let gtk_window = window.gtk_window();
-//         gtk_window.set_role("autocomplete");
-//         gtk_window.set_type_hint(WindowTypeHint::Utility);
-//         gtk_window.set_accept_focus(false);
-//         gtk_window.set_decorated(false);
-//         if let Some(window) = gtk_window.window() {
-//             window.set_override_redirect(true);
-//         }
-//     }
-
-//     let proxy = event_loop.create_proxy();
-
-//     let webview = WebViewBuilder::new(window)?
-//         .with_url(companion::url().as_str())?
-//         .with_web_context(web_context)
-//         .with_ipc_handler(move |_window, payload| {
-//             proxy
-//                 .send_event(Event::WindowEvent {
-//                     window_id: COMPANION_ID.clone(),
-//                     window_event: WindowEvent::Api {
-//                         payload: payload.into(),
-//                     },
-//                 })
-//                 .unwrap();
-//         })
-//         .with_asynchronous_custom_protocol("fig".into(),
-// utils::wrap_custom_protocol(icons::handle))         .with_asynchronous_custom_protocol("figspec".
-// into(), utils::wrap_custom_protocol(figspec::handle))
-//         .with_asynchronous_custom_protocol("figapp".into(),
-// utils::wrap_custom_protocol(figapp::handle))         // .with_custom_protocol("resource".into(),
-// utils::wrap_custom_protocol(resource::handle))         .with_devtools(true)
-//         .with_transparent(true)
-//         .with_initialization_script(&javascript_init())
-//         .with_navigation_handler(navigation_handler(COMPANION_ID, &[
-//             // Main domain
-//             r"autocomplete\.fig\.io$",
-//             // Dev domains
-//             r"localhost$",
-//             r"^127\.0\.0\.1$",
-//         ]))
-//         .with_clipboard(true)
-//         .with_hotkeys_zoom(true)
-//         .with_accept_first_mouse(true)
-//         .build()?;
-
-//     Ok(webview)
-// }
 
 async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
     macro_rules! watcher {

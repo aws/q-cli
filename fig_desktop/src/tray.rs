@@ -31,10 +31,7 @@ use crate::event::{
     WindowEvent,
 };
 use crate::figterm::FigtermState;
-use crate::webview::{
-    COMPANION_ID,
-    LOGIN_PATH,
-};
+use crate::webview::LOGIN_PATH;
 use crate::{
     DebugState,
     EventLoopProxy,
@@ -129,14 +126,6 @@ pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
                 })
                 .unwrap();
         },
-        "companion-devtools" => {
-            proxy
-                .send_event(Event::WindowEvent {
-                    window_id: COMPANION_ID,
-                    window_event: WindowEvent::Devtools,
-                })
-                .unwrap();
-        },
         "update" => {
             tray_update(proxy);
         },
@@ -167,13 +156,13 @@ pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
                 })
                 .unwrap();
         },
-        "settings" => {
+        "preferences" => {
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: DASHBOARD_ID.clone(),
                     window_event: WindowEvent::Batch(vec![
                         WindowEvent::NavigateRelative {
-                            path: "/settings".into(),
+                            path: "/preferences".into(),
                         },
                         WindowEvent::Show,
                     ]),
@@ -196,11 +185,6 @@ pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
                 fig_install::uninstall(InstallComponents::all()).await.ok();
                 std::process::exit(0);
             });
-        },
-        "community" => {
-            if let Err(err) = fig_util::open_url("https://fig.io/community") {
-                error!(%err, "Failed to open community url")
-            }
         },
         "user-manual" => {
             if let Err(err) = fig_util::open_url("https://fig.io/user-manual") {
@@ -432,7 +416,7 @@ fn menu() -> Vec<MenuElement> {
     let update = MenuElement::entry(None, None, "Check for updates...", "update");
     let quit = MenuElement::entry(None, None, "Quit CodeWhisperer", "quit");
     // let dashboard = MenuElement::entry(None, None, "Dashboard", "dashboard");
-    let settings = MenuElement::entry(None, None, "Settings", "settings");
+    let settings = MenuElement::entry(None, None, "Preferences", "preferences");
     // let developer = MenuElement::sub_menu("Developer", vec![
     //     MenuElement::entry(None, None, "Dashboard Devtools", "dashboard-devtools"),
     //     MenuElement::entry(None, None, "Autocomplete Devtools", "autocomplete-devtools"),

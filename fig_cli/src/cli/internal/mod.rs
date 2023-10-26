@@ -243,8 +243,6 @@ pub enum InternalSubcommand {
         #[arg(long, group = "target")]
         app: bool,
         #[arg(long, group = "target")]
-        daemon: bool,
-        #[arg(long, group = "target")]
         figterm: Option<String>,
         #[arg(long)]
         json: String,
@@ -431,7 +429,6 @@ impl InternalSubcommand {
             },
             InternalSubcommand::Ipc {
                 app,
-                daemon,
                 figterm,
                 json,
                 recv,
@@ -440,8 +437,6 @@ impl InternalSubcommand {
 
                 let socket = if app {
                     directories::fig_socket_path().expect("Failed to get socket path")
-                } else if daemon {
-                    directories::daemon_socket_path().expect("Failed to get daemon socket path")
                 } else if let Some(ref figterm) = figterm {
                     directories::figterm_socket_path(figterm).expect("Failed to get socket path")
                 } else {
@@ -506,7 +501,7 @@ impl InternalSubcommand {
                     .filter(|line| !line.is_empty())
                 {
                     if let Ok(exit_status) = tokio::process::Command::new("runuser")
-                        .args(["-u", user, "--", "fig", "_", "open-uninstall-page"])
+                        .args(["-u", user, "--", "cw", "_", "open-uninstall-page"])
                         .status()
                         .await
                     {
@@ -515,7 +510,7 @@ impl InternalSubcommand {
                         }
                     }
                     if let Ok(exit_status) = tokio::process::Command::new("runuser")
-                        .args(["-u", user, "--", "fig", "integrations", "uninstall", "--silent", "all"])
+                        .args(["-u", user, "--", "cw", "integrations", "uninstall", "--silent", "all"])
                         .status()
                         .await
                     {

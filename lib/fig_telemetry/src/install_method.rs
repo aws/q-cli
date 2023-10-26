@@ -7,6 +7,7 @@ use serde::{
 };
 
 static INSTALL_METHOD: Lazy<InstallMethod> = Lazy::new(|| {
+    // TODO: update to new package nameP
     if let Ok(output) = Command::new("brew").args(["list", "fig", "-1"]).output() {
         if output.status.success() {
             return InstallMethod::Brew;

@@ -48,7 +48,7 @@ pub async fn update_spec_store(force: bool) -> Result<(), Error> {
         return Err(Error::DesktopAppNotInstalled);
     }
 
-    let temp_dir = std::env::temp_dir().join("fig").join("autocomplete_specs");
+    let temp_dir = std::env::temp_dir().join("codewhisperer").join("autocomplete_specs");
     tokio::fs::create_dir_all(&temp_dir).await?;
     let latest_release = AUTOCOMPLETE_REPO.latest_release().await?;
 

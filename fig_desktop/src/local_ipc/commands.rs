@@ -124,7 +124,7 @@ pub async fn open_ui_element(command: OpenUiElementCommand, proxy: &EventLoopPro
                     window_id: DASHBOARD_ID.clone(),
                     window_event: WindowEvent::Batch(vec![
                         WindowEvent::NavigateRelative {
-                            path: "/settings".into(),
+                            path: "/preferences".into(),
                         },
                         WindowEvent::Show,
                     ]),

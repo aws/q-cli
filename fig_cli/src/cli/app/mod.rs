@@ -23,7 +23,7 @@ use fig_util::desktop::{
     LaunchArgs,
 };
 use fig_util::{
-    is_fig_desktop_running,
+    is_codewhisperer_desktop_running,
     manifest,
 };
 use tracing::{
@@ -101,7 +101,7 @@ pub async fn restart_fig() -> Result<()> {
         bail!("Please restart Fig from your host machine");
     }
 
-    if !is_fig_desktop_running() {
+    if !is_codewhisperer_desktop_running() {
         launch_fig_desktop(LaunchArgs {
             wait_for_socket: true,
             open_dashboard: false,
@@ -111,7 +111,7 @@ pub async fn restart_fig() -> Result<()> {
 
         Ok(())
     } else {
-        println!("Restarting Fig");
+        println!("Restarting CodeWhisperer");
         crate::util::quit_fig(false).await?;
         tokio::time::sleep(Duration::from_millis(1000)).await;
         launch_fig_desktop(LaunchArgs {
@@ -209,7 +209,7 @@ impl AppSubcommand {
                         },
                         Err(err) => error!(%err, "Failed checking for updates"),
                     }
-                } else if is_fig_desktop_running() {
+                } else if is_codewhisperer_desktop_running() {
                     let new_version = state::get_string("NEW_VERSION_AVAILABLE").ok().flatten();
                     if let Some(version) = new_version {
                         info!("New version {} is available", version);
@@ -218,7 +218,7 @@ impl AppSubcommand {
                         if autoupdates {
                             trace!("starting autoupdate");
 
-                            println!("Updating {} to latest version...", "Fig".magenta());
+                            println!("Updating {} to latest version...", "CodeWhisperer".magenta());
                             let already_seen_hint = state::get_bool_or("DISPLAYED_AUTOUPDATE_SETTINGS_HINT", false);
 
                             if !already_seen_hint {
@@ -307,7 +307,7 @@ impl AppSubcommand {
             AppSubcommand::Restart => restart_fig().await?,
             AppSubcommand::Quit => crate::util::quit_fig(true).await?,
             AppSubcommand::Launch => {
-                if is_fig_desktop_running() {
+                if is_codewhisperer_desktop_running() {
                     println!("Fig is already running!");
                     return Ok(());
                 }
@@ -320,7 +320,7 @@ impl AppSubcommand {
                 })?;
             },
             AppSubcommand::Running => {
-                println!("{}", if is_fig_desktop_running() { "1" } else { "0" });
+                println!("{}", if is_codewhisperer_desktop_running() { "1" } else { "0" });
             },
             #[allow(deprecated)]
             AppSubcommand::SetPath => {},

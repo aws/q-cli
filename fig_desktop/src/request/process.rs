@@ -206,7 +206,10 @@ pub async fn run(request: RunProcessRequest, state: &FigtermState) -> RequestRes
         set_fig_vars(&mut cmd);
 
         for var in request.env {
-            cmd.env(var.key.clone(), var.value());
+            match var.value {
+                Some(val) => cmd.env(var.key, val),
+                None => cmd.env_remove(var.key),
+            };
         }
 
         let output = cmd

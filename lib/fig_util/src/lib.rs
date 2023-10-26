@@ -28,7 +28,7 @@ pub use shell::Shell;
 pub use terminal::Terminal;
 use thiserror::Error;
 
-pub use crate::desktop::is_fig_desktop_running;
+pub use crate::desktop::is_codewhisperer_desktop_running;
 
 #[derive(Debug, Error)]
 pub enum Error {

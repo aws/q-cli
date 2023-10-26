@@ -46,6 +46,7 @@ use fig_util::{
     open_url_async,
     system_info,
 };
+use serde::Serialize;
 use tracing::debug;
 use tracing::level_filters::LevelFilter;
 
@@ -62,6 +63,22 @@ pub enum OutputFormat {
     Json,
     /// Outputs the results as pretty print JSON
     JsonPretty,
+}
+
+impl OutputFormat {
+    pub fn print<T, TFn, J, JFn>(&self, text_fn: TFn, json_fn: JFn)
+    where
+        T: std::fmt::Display,
+        TFn: FnOnce() -> T,
+        J: Serialize,
+        JFn: FnOnce() -> J,
+    {
+        match self {
+            OutputFormat::Plain => println!("{}", text_fn()),
+            OutputFormat::Json => println!("{}", serde_json::to_string(&json_fn()).unwrap()),
+            OutputFormat::JsonPretty => println!("{}", serde_json::to_string_pretty(&json_fn()).unwrap()),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]

@@ -204,7 +204,7 @@ fn process_window(
         }),
     });
 
-    if wm_class == "Fig" {
+    if wm_class == "Codewhisperer" {
         // get wm_role
         let reply = get_property(
             conn,

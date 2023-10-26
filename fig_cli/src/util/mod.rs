@@ -26,7 +26,7 @@ use eyre::{
 };
 use fig_ipc::local::quit_command;
 use fig_util::consts::CODEWHISPERER_BUNDLE_ID;
-use fig_util::is_fig_desktop_running;
+use fig_util::is_codewhisperer_desktop_running;
 use globset::{
     Glob,
     GlobSet,
@@ -110,7 +110,7 @@ pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
 }
 
 pub async fn quit_fig(verbose: bool) -> Result<()> {
-    if !is_fig_desktop_running() {
+    if !is_codewhisperer_desktop_running() {
         if verbose {
             println!("CodeWhisperer is not running");
         }

@@ -40,8 +40,8 @@ pub async fn uninstall(components: InstallComponents) -> Result<(), Error> {
     };
 
     if components.contains(InstallComponents::BINARY) {
-        let local_path = directories::home_dir()?.join(".local").join("bin").join("fig");
-        let binary_paths = [Path::new("/usr/local/bin/fig"), local_path.as_path()];
+        let local_path = directories::home_dir()?.join(".local").join("bin").join("cw");
+        let binary_paths = [Path::new("/usr/local/bin/cw"), local_path.as_path()];
 
         for path in binary_paths {
             if path.exists() {

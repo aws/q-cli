@@ -31,7 +31,7 @@ impl Default for LaunchArgs {
     }
 }
 
-pub fn is_fig_desktop_running() -> bool {
+pub fn is_codewhisperer_desktop_running() -> bool {
     cfg_if::cfg_if! {
         if #[cfg(target_os = "macos")] {
             use appkit_nsworkspace_bindings::NSRunningApplication;
@@ -136,7 +136,7 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
         ));
     }
 
-    match is_fig_desktop_running() {
+    match is_codewhisperer_desktop_running() {
         true => return Ok(()),
         false => {
             if args.verbose {
@@ -196,7 +196,7 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
         return Ok(());
     }
 
-    if !is_fig_desktop_running() {
+    if !is_codewhisperer_desktop_running() {
         return Err(Error::LaunchError("fig was unable launch successfully".to_owned()));
     }
 

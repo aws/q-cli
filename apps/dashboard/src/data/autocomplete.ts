@@ -80,8 +80,8 @@ const autocompleteSettings = [
         title: "Disable CLIs",
         description:
           "A comma separated list of CLI tools that CodeWhisperer should not autocomplete on.",
-        example: "e.g. `git`, `npm`, `cd`, `docker`...",
-        type: "text",
+        example: "e.g. `git,npm,cd,docker`",
+        type: "textlist",
         default: [],
         popular: false,
       },

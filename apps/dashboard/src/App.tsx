@@ -20,6 +20,7 @@ import { StoreContext } from "./context/zustand";
 import { createStore } from "./lib/store";
 import ListenerContext from "./context/input";
 import { useLocation } from "react-router-dom";
+import { useAccessibilityCheck, useDotfilesCheck } from "./hooks/store";
 
 function App() {
   const navigate = useNavigate();
@@ -60,22 +61,22 @@ function App() {
     }
 
     function close() {
-      setLoggedIn(true)
-      setModal(null)
+      setLoggedIn(true);
+      setModal(null);
     }
 
     if (onboardingComplete && loggedIn === false) {
-      setModal(<LoginModal next={close} />)
+      setModal(<LoginModal next={close} />);
     }
   }, [onboardingComplete, loggedIn]);
 
   useEffect(() => {
-    if (loggedIn) return
+    if (loggedIn) return;
 
     Auth.status().then((r) => setLoggedIn(r.builderId));
   }, [loggedIn]);
 
-useEffect(() => {
+  useEffect(() => {
     let unsubscribe: () => void;
     let isStale = false;
     Event.subscribe("dashboard.navigate", (request) => {
@@ -195,6 +196,10 @@ const NAV_DATA = [
 ] as const;
 
 function Layout() {
+  const [accessibilityCheck] = useAccessibilityCheck();
+  const [dotfilesCheck] = useDotfilesCheck();
+  const error = accessibilityCheck === false || dotfilesCheck === false;
+
   return (
     <div className="flex flex-row h-screen w-full overflow-hidden">
       <nav className="w-[240px] flex-none h-full flex flex-col items-center gap-1 p-4">
@@ -206,6 +211,7 @@ function Layout() {
               name={item.name}
               icon={getIconFromName(item.name)}
               count={undefined}
+              error={item.link == "/help" ? error : undefined}
             />
           ) : (
             <div

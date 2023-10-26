@@ -29,12 +29,18 @@ export function Setting({
   disabled?: boolean;
 }) {
   const [setting, setSetting] = useSetting(data.id);
-  const [inputValue, setInputValue] = useState<PrefDefault>(setting ?? data.default);
+  const [inputValue, setInputValue] = useState<PrefDefault>(
+    setting ?? data.default
+  );
 
   // see if this specific setting is set in config file, then synchronize the initial state
   useEffect(() => {
-    if (setting !== undefined) setInputValue(setting);
-  }, [setting]);
+    if (setting == undefined) {
+      setInputValue(data.default);
+    } else {
+      setInputValue(setting);
+    }
+  }, [setting, data.default]);
 
   const localValue =
     data.type === "boolean"
@@ -44,7 +50,7 @@ export function Setting({
   const multiSelectValue = inputValue as string[];
 
   function toggleSwitch() {
-    setSetting(!inputValue)
+    setSetting(!inputValue);
   }
 
   function setSelection(value: string) {
@@ -101,11 +107,12 @@ export function Setting({
                   <SelectGroup>
                     {data.options?.map((o, i) => {
                       // console.log({ pref: data.id, localValue, inputValue: o, equal: localValue === o })
-                      return(
-                      <SelectItem value={o} key={i}>
-                        {o}
-                      </SelectItem>
-                    )})}
+                      return (
+                        <SelectItem value={o} key={i}>
+                          {o}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -147,6 +154,32 @@ export function Setting({
                     ? data.default
                     : data.default?.toString()
                 }
+                value={typeof localValue === "number" ? localValue : ""}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSetting(value === "" ? 0 : Number(value));
+                }}
+              />
+            )}
+            {data.type === "textlist" && (
+              <Input
+                disabled={disabled}
+                type="text"
+                placeholder={
+                  typeof data.default === "string"
+                    ? data.default
+                    : data.default?.toString()
+                }
+                value={Array.isArray(setting) ? setting.join(",") : ""}
+                onChange={(e) => {
+                  // replace all whitespace
+                  const value = e.target.value;
+                  setSetting(
+                    value === ""
+                      ? undefined
+                      : value.split(",").map((v) => v.trim())
+                  );
+                }}
               />
             )}
             {/* generic text input */}
@@ -159,6 +192,11 @@ export function Setting({
                     ? data.default
                     : data.default?.toString()
                 }
+                value={typeof setting === "string" ? setting : ""}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSetting(value === "" ? undefined : value);
+                }}
               />
             )}
             {/* multi-keystroke value input */}

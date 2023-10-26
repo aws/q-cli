@@ -139,35 +139,14 @@ impl UserSubcommand {
     pub async fn execute(self) -> Result<()> {
         match self {
             Self::Root(cmd) => cmd.execute().await,
-            Self::Whoami { format } => match auth::is_logged_in().await {
-                true => {
-                    // if only_email {
-                    //     match format {
-                    //         OutputFormat::Plain => println!("Email: {email}"),
-                    //         OutputFormat::Json => println!("{}", json!({ "email": email })),
-                    //         OutputFormat::JsonPretty => println!("{:#}", json!({ "email": email })),
-                    //     }
-                    // } else {
-                    //     match format {
-                    //         OutputFormat::Plain => match account.username {
-                    //             Some(username) => println!("Email: {}\nUsername: {}", account.email, username),
-                    //             None => println!("Email: {}\nUsername is null", account.email),
-                    //         },
-                    //         OutputFormat::Json => println!("{}", serde_json::to_string(&account)?),
-                    //         OutputFormat::JsonPretty => println!("{}", serde_json::to_string_pretty(&account)?),
-                    //     }
-                    // }
-                    // Ok(())
+            Self::Whoami { format } => {
+                if auth::is_logged_in().await {
+                    format.print(|| "Logged in with builder id", || json!({ "account": "builderId" }));
                     Ok(())
-                },
-                false => {
-                    match format {
-                        OutputFormat::Plain => println!("Not logged in"),
-                        OutputFormat::Json => println!("{}", json!({ "account": null })),
-                        OutputFormat::JsonPretty => println!("{:#}", json!({ "account": null })),
-                    }
+                } else {
+                    format.print(|| "Not logged in", || json!({ "account": null }));
                     exit(1);
-                },
+                }
             },
         }
     }

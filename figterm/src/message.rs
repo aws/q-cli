@@ -465,7 +465,10 @@ pub async fn process_remote_message(
 
                     cmd.args(request.arguments);
                     for var in request.env {
-                        cmd.env(var.key.clone(), var.value());
+                        match var.value {
+                            Some(value) => cmd.env(var.key, value),
+                            None => cmd.env_remove(var.key),
+                        };
                     }
 
                     tokio::spawn(async move {

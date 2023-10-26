@@ -242,9 +242,9 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>, skip_dotfiles
                     "FIG_INPUT_METHOD_PROMPT",
                     GuardAssignment::AfterSourcing,
                     format!(
-                        "printf '\\n🚀 Fig now supports {terminal} Terminal!\\nEnable integrations with {terminal} by \
+                        "printf '\\n🚀 CodeWhisperer supports {terminal} Terminal!\\nEnable integrations with {terminal} by \
                          running:\\n  {}\\n\\n'\n",
-                        "fig integrations install input-method".magenta()
+                        "cw integrations install input-method".magenta()
                     ),
                 ));
             }

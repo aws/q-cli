@@ -196,7 +196,7 @@ pub(crate) async fn update(
 
     tx.send(UpdateStatus::Message("Relaunching...".into())).await.ok();
 
-    debug!("restarting fig");
+    debug!("restarting CodeWhisperer");
     let mut cmd = std::process::Command::new(&cli_path);
     cmd.process_group(0).args(["_", "finish-update"]);
 
@@ -439,7 +439,7 @@ pub fn swap(src: impl AsRef<CStr>, dst: impl AsRef<CStr>) -> Result<(), Error> {
 
         if matches!(err.kind(), std::io::ErrorKind::PermissionDenied) {
             return Err(Error::UpdateFailed(
-                "Failed to swap app bundle dur to permission denied. Try restarting Fig.".into(),
+                "Failed to swap app bundle dur to permission denied. Try restarting CodeWhisperer.".into(),
             ));
         } else {
             return Err(Error::UpdateFailed(format!("Failed to swap app bundle: {err}")));

@@ -38,7 +38,7 @@ async fn load_spec(spec_path: String) -> anyhow::Result<Option<Cow<'static, [u8]
     }
 }
 
-// handle `figspec://localhost/spec.js`
+// handle `spec://localhost/spec.js`
 pub async fn handle(request: Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
     let Some((_, ext)) = request.uri().path().rsplit_once('.') else {
         return Ok(res_404());

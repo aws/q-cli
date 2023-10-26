@@ -404,7 +404,7 @@ mod tests {
         history
             .insert_command_history(
                 &CommandInfo {
-                    command: Some("fig".into()),
+                    command: Some("cw".into()),
                     shell: Some("bash".into()),
                     pid: Some(123),
                     session_id: Some("session-id".into()),
@@ -455,7 +455,7 @@ mod tests {
         let rows = history.all_rows().unwrap();
         assert_eq!(rows.len(), 3);
 
-        assert_eq!(rows[0].command, Some("fig".into()));
+        assert_eq!(rows[0].command, Some("cw".into()));
         assert_eq!(rows[0].shell, Some("bash".into()));
         assert_eq!(rows[0].pid, Some(123));
         assert_eq!(rows[0].session_id, Some("session-id".into()));
@@ -526,7 +526,7 @@ mod tests {
             &row[0],
             serde_json::json!({
                 "id": 1,
-                "command": "fig",
+                "command": "cw",
                 "shell": "bash",
                 "pid": 123,
                 "session_id": "session-id",

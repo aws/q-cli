@@ -3,8 +3,6 @@ package local;
 
 import "fig_common.proto";
 
-option objc_class_prefix = "FIG";
-
 message LocalMessage {
   oneof type {
     Command command = 2; // expect a response from the host app

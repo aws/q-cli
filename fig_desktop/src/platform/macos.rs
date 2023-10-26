@@ -24,6 +24,11 @@ use cocoa::base::{
 use core_graphics::display::CGRect;
 use core_graphics::window::CGWindowID;
 use fig_integrations::input_method::InputMethod;
+use fig_proto::fig::{
+    AccessibilityChangeNotification,
+    Notification,
+    NotificationType,
+};
 use fig_proto::local::caret_position_hook::Origin;
 use fig_util::Terminal;
 use macos_utils::accessibility::accessibility_is_enabled;
@@ -95,10 +100,10 @@ use crate::protocol::icons::{
     ProcessedAsset,
 };
 use crate::utils::Rect;
+use crate::webview::notification::WebviewNotificationsState;
 use crate::webview::window::WindowId;
 use crate::webview::{
     FigIdMap,
-    COMPANION_ID,
     GLOBAL_PROXY,
 };
 use crate::{
@@ -290,6 +295,7 @@ impl PlatformStateImpl {
         event: PlatformBoundEvent,
         window_target: &EventLoopWindowTarget,
         window_map: &FigIdMap,
+        notifications_state: &Arc<WebviewNotificationsState>,
     ) -> anyhow::Result<()> {
         debug!("Handling platform event: {:?}", event);
         match event {
@@ -599,6 +605,25 @@ impl PlatformStateImpl {
                 //     });
                 // }
 
+                let proxy = self.proxy.clone();
+                let notifications_state = notifications_state.clone();
+                tokio::spawn(async move {
+                    if let Err(err) = notifications_state
+                        .broadcast_notification_all(
+                            &NotificationType::NotifyOnAccessibilityChange,
+                            Notification {
+                                r#type: Some(fig_proto::fig::notification::Type::AccessibilityChangeNotification(
+                                    AccessibilityChangeNotification { enabled },
+                                )),
+                            },
+                            &proxy,
+                        )
+                        .await
+                    {
+                        error!(%err, "Failed to broadcast notification");
+                    }
+                });
+
                 self.proxy.send_event(Event::ReloadAccessibility).ok();
 
                 Ok(())
@@ -700,38 +725,6 @@ impl PlatformStateImpl {
                     },
                 })
                 .ok();
-
-            match active_window.get_bounds() {
-                Some(bounds) => {
-                    UNMANAGED
-                        .event_sender
-                        .read()
-                        .clone()
-                        .unwrap()
-                        .send_event(Event::WindowEvent {
-                            window_id: COMPANION_ID,
-                            window_event: WindowEvent::UpdateWindowGeometry {
-                                position: Some(WindowPosition::RelativeToCaret {
-                                    caret_position: LogicalPosition::new(
-                                        bounds.origin.x + bounds.size.width - 300.0,
-                                        bounds.origin.y,
-                                    )
-                                    .into(),
-                                    caret_size: caret.size,
-                                    origin: Origin::TopLeft,
-                                }),
-                                size: Some(LogicalSize::new(300.0 - 15.0, bounds.size.height - 30.0)),
-                                anchor: None,
-                                tx: None,
-                                dry_run: false,
-                            },
-                        })
-                        .ok();
-                },
-                None => {
-                    error!("Failed to get window bound");
-                },
-            }
         }
 
         Ok(())

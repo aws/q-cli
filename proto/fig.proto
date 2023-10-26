@@ -4,8 +4,6 @@ package fig;
 import "fig_common.proto";
 import "google/protobuf/empty.proto";
 
-option objc_class_prefix = "FIG";
-
 message ClientOriginatedMessage {
   optional int64 id = 1;
 
@@ -665,6 +663,7 @@ enum NotificationType {
   NOTIFICATION_TYPE_NOTIFY_ON_APPLICATION_UPDATE_AVAILABLE = 9;
   NOTIFICATION_TYPE_NOTIFY_ON_LOCAL_STATE_CHANGED = 10;
   NOTIFICATION_TYPE_NOTIFY_ON_EVENT = 11;
+  NOTIFICATION_TYPE_NOTIFY_ON_ACCESSIBILITY_CHANGE = 12;
 }
 
 message Notification {
@@ -683,6 +682,7 @@ message Notification {
     ApplicationUpdateAvailableNotification application_update_available_notification = 9;
     LocalStateChangedNotification local_state_changed_notification = 10;
     EventNotification event_notification = 11;
+    AccessibilityChangeNotification accessibility_change_notification = 12;
   }
 }
 
@@ -748,4 +748,8 @@ message LocalStateChangedNotification {
 message EventNotification {
   optional string event_name = 1;
   optional string payload = 2;
+}
+
+message AccessibilityChangeNotification {
+  bool enabled = 1;
 }
