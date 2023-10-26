@@ -176,11 +176,6 @@ fi
 
 echo "Working on $app and $dmg ..."
 
-sign_file "$app/Contents/MacOS/codewhisperer_desktop"
-sign_file "$app/Contents/MacOS/cw"
-sign_file "$app/Contents/MacOS/cwterm"
-sign_file "$app/Contents/MacOS/"
-
 # Sign the application
 sign_file "$app"
 
