@@ -9,13 +9,13 @@ app:
   signing_requirements:
     certificate_type: :developerIDAppDistribution
     app_id_prefix: 94KV3E626L # AMZN Mobile LLC
-    embedded_requirements:
-      Contents/MacOS/cw:
-        :identifier: com.amazon.cw
-        signing_args:
-      Contents/MacOS/cwterm:
-        :identifier: com.amazon.cwterm
-        signing_args:
-      Contents/Helpers/CodeWhispererInputMethod.app:
-        :identifier: com.amazon.codewhispererinputmethod
-        signing_args:
+  embedded_requirements:
+    Contents/MacOS/cw:
+      :identifier: com.amazon.cw
+      signing_args:
+    Contents/MacOS/cwterm:
+      :identifier: com.amazon.cwterm
+      signing_args:
+    Contents/Helpers/CodeWhispererInputMethod.app:
+      :identifier: com.amazon.codewhispererinputmethod
+      signing_args:
