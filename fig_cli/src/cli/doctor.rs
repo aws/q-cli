@@ -1183,22 +1183,22 @@ impl DoctorCheck<DiagnosticsResponse> for AccessibilityCheck {
             Err(DoctorError::Error {
                 reason: "Accessibility is disabled".into(),
                 info: vec![],
-                // fix: command_fix(vec!["cw", "debug", "prompt-accessibility"], Duration::from_secs(1)),
-                fix: Some(DoctorFix::Sync(Box::new(move || {
-                    println!("1. Try enableing accessibility in System Settings");
-                    if !Command::new("cw")
-                        .args(["debug", "prompt-accessibility"])
-                        .status()?
-                        .success()
-                    {
-                        bail!("Failed to open accessibility in System Settings: cw debug prompt-accessibility");
-                    }
+                fix: command_fix(vec!["cw", "debug", "prompt-accessibility"], Duration::from_secs(1)),
+                // fix: Some(DoctorFix::Sync(Box::new(move || {
+                //     println!("1. Try enableing accessibility in System Settings");
+                //     if !Command::new("cw")
+                //         .args(["debug", "prompt-accessibility"])
+                //         .status()?
+                //         .success()
+                //     {
+                //         bail!("Failed to open accessibility in System Settings: cw debug prompt-accessibility");
+                //     }
 
-                    println!("2. Restarting CodeWhisperer");
-                    println!("3. Reset accessibility");
+                //     println!("2. Restarting CodeWhisperer");
+                //     println!("3. Reset accessibility");
 
-                    Ok(())
-                }))),
+                //     Ok(())
+                // }))),
                 error: None,
             })
         } else {
