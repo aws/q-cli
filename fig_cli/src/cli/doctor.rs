@@ -1066,7 +1066,7 @@ impl DoctorCheck<DiagnosticsResponse> for BundlePathCheck {
         let path = diagnostics.path_to_bundle.clone();
         if path.contains("/Applications/CodeWhisperer.app") {
             Ok(())
-        } else if path.contains("/Build/Products/Debug/fig.app") {
+        } else if path.contains("/Build/Products/Debug/CodeWhisperer.app") {
             Err(DoctorError::Warning(
                 format!("Running debug build in {}", path.bold()).into(),
             ))
@@ -1193,9 +1193,6 @@ impl DoctorCheck<DiagnosticsResponse> for AccessibilityCheck {
                     {
                         bail!("Failed to open accessibility in System Settings: cw debug prompt-accessibility");
                     }
-
-                    
-
 
                     println!("2. Restarting CodeWhisperer");
                     println!("3. Reset accessibility");

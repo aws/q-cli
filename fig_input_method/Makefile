@@ -1,5 +1,5 @@
 output_dir = build
-app_name = FigInputMethod
+app_name = CodeWhispererInputMethod
 bin_name = fig_input_method 
 
 .PHONY: bundle

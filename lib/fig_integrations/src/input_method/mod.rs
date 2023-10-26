@@ -265,7 +265,7 @@ impl std::default::Default for InputMethod {
         let fig_app_path =
             fig_util::fig_bundle().unwrap_or_else(|| "/Applications/CodeWhisperer.app".to_owned().into());
 
-        let bundle_path = fig_app_path.join("Contents").join("Helpers").join("FigInputMethod.app");
+        let bundle_path = fig_app_path.join("Contents").join("Helpers").join("CodeWhispererInputMethod.app");
         Self { bundle_path }
     }
 }
@@ -739,7 +739,7 @@ mod tests {
     }
 
     const TEST_INPUT_METHOD_BUNDLE_ID: &str = "io.fig.caret.4";
-    const TEST_INPUT_METHOD_BUNDLE_URL: &str = "/Users/mschrage/p/macos/fig_input_method/build/FigInputMethod4.app";
+    const TEST_INPUT_METHOD_BUNDLE_URL: &str = "/Users/mschrage/p/macos/fig_input_method/build/CodeWhispererInputMethod4.app";
 
     #[ignore]
     #[test]

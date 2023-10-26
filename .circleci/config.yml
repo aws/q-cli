@@ -421,7 +421,7 @@ jobs:
             "${bundle_dir}/CodeWhisperer.app/Contents/Info.plist"
 
             mkdir -p "${bundle_dir}/CodeWhisperer.app/Contents/Helpers/"
-            cp -r build/FigInputMethod.app "${bundle_dir}/CodeWhisperer.app/Contents/Helpers/"
+            cp -r build/CodeWhispererInputMethod.app "${bundle_dir}/CodeWhisperer.app/Contents/Helpers/"
 
             echo "export BUNDLE_PATH=${bundle_dir}/CodeWhisperer.app" >> $BASH_ENV
           environment:
@@ -433,7 +433,7 @@ jobs:
           command: |
             codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.cli "$BUNDLE_PATH/Contents/MacOS/fig-darwin-universal"
             codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.figterm "$BUNDLE_PATH/Contents/MacOS/figterm" 
-            codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.figterm "$BUNDLE_PATH/Contents/Helpers/FigInputMethod.app" 
+            codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.figterm "$BUNDLE_PATH/Contents/Helpers/CodeWhispererInputMethod.app" 
             codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" "$BUNDLE_PATH"
             codesign --verify --verbose --strict "$BUNDLE_PATH"
       - run:

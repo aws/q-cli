@@ -7,16 +7,16 @@ publish.workspace = true
 version.workspace = true
 
 [package.metadata.bundle]
-bundle_name = "FigInputMethod"
-bundle_identifier = "io.fig.cursor"
-input_source_identifier = "io.fig.cursor"
+bundle_name = "CodeWhispererInputMethod"
+bundle_identifier = "com.amazon.codewhispererinputmethod"
+input_source_identifier = "com.amazon.codewhispererinputmethod"
 invisible_in_system_ui = true
 input_method_type = "palette"
 
 [build-dependencies]
 plist = "1.4.0"
 serde = { version = "1.0", features = ["derive"] }
-toml = "0.7.1"
+toml = "0.8.5"
 apple-bundle = "*"
 
 [target.'cfg(target_os = "macos")'.dependencies]

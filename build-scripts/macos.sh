@@ -104,7 +104,7 @@ plutil -insert CFBundleURLTypes -xml \
 "${BUNDLE_DIR}/CodeWhisperer.app/Contents/Info.plist"
 
 mkdir -p "${BUNDLE_DIR}/CodeWhisperer.app/Contents/Helpers/"
-cp -r "${BUILD_DIR}/FigInputMethod.app" "${BUNDLE_DIR}/CodeWhisperer.app/Contents/Helpers/"
+cp -r "${BUILD_DIR}/CodeWhispererInputMethod.app" "${BUNDLE_DIR}/CodeWhisperer.app/Contents/Helpers/"
 
 rm -rf "${BUILD_DIR}/themes"
 git clone https://github.com/withfig/themes.git "${BUILD_DIR}/themes"
@@ -120,7 +120,7 @@ cp -r "$BUNDLE_PATH" "$BUILD_DIR"
 if [ -n "${LOCAL_BUILD-}" ]; then
   codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.cli "$BUNDLE_PATH/Contents/MacOS/cw"
   codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.figterm "$BUNDLE_PATH/Contents/MacOS/cwterm" 
-  codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.figterm "$BUNDLE_PATH/Contents/Helpers/FigInputMethod.app" 
+  codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.figterm "$BUNDLE_PATH/Contents/Helpers/CodeWhispererInputMethod.app" 
   codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" "$BUNDLE_PATH"
   codesign --verify --verbose --strict --entitlements entitlements.plist "$BUNDLE_PATH"
 
