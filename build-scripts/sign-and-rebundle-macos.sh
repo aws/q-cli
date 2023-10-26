@@ -32,7 +32,7 @@ function build_signing_package() {
     if [ "$type" = "dmg" ]
     then
         # Our dmg file names vary by platform, so this is templated in the manifest
-        sed  "s/__NAME__/$name/g" < $working_dir/dmg/manifest.yaml.template > $working_dir/dmg/manifest.yaml
+        sed "s/__NAME__/$name/g" < $working_dir/dmg/manifest.yaml.template > $working_dir/dmg/manifest.yaml
     fi
 
     cp -R "$full_file_path" "$working_dir/$type/artifact"
