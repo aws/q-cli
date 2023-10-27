@@ -293,7 +293,7 @@ mod tests {
                 kind: Kind::Dmg,
                 architecture: PackageArchitecture::Universal,
                 variant: Variant::Full,
-                download: format!("/{version}/CodeWhisperer.dmg"),
+                download: format!("{version}/CodeWhisperer.dmg"),
                 sha256: sha256.into(),
                 size,
             }],
@@ -308,13 +308,13 @@ mod tests {
             versions: vec![
                 version(
                     "0.1.0",
-                    "b6a454ae7ef1d08cc736f540e31e96a712aab4848b0e4bca76a1ee30965f43df",
-                    100816475,
+                    "c588348eb6cc6f4a3b2ececa262ab630e89422d0087fdaf03001499bbb917af0",
+                    93018817,
                 ),
                 version(
                     "0.2.0",
-                    "10cdbe1ffba52b27d10142f016e9b3773773419ce3ddd9d000f713966e6b70c6",
-                    92995853,
+                    "1b51608c6d5b8cbc43d05396b1ec74557958df05298f6b6d1efadb203bf9b50a0",
+                    93022923,
                 ),
                 // version(
                 //     "0.3.0",

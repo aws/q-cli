@@ -1,6 +1,10 @@
 import { Code } from "@/components/text/code";
 import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useStatusCheck } from "@/hooks/store/useStatusCheck";
 import { InstallCheck } from "@/types/preferences";
 import { Install } from "@withfig/api-bindings";
@@ -39,7 +43,7 @@ export default function InstallModal({
   function handleInstall(key: InstallCheck["installKey"]) {
     if (!key) return;
 
-    if (checking || check.id === "dotfiles") {
+    if (checking) {
       next();
       return;
     }
