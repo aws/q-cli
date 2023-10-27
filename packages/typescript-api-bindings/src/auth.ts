@@ -12,8 +12,17 @@ export function status() {
   return sendAuthStatusRequest({});
 }
 
-export function builderIdStartDeviceAuthorization() {
-  return sendAuthBuilderIdStartDeviceAuthorizationRequest({});
+export function builderIdStartDeviceAuthorization({
+  region,
+  startUrl,
+}: {
+  region?: string;
+  startUrl?: string;
+} = {}): Promise<AuthBuilderIdStartDeviceAuthorizationResponse> {
+  return sendAuthBuilderIdStartDeviceAuthorizationRequest({
+    region,
+    startUrl,
+  });
 }
 
 export async function builderIdPollCreateToken({

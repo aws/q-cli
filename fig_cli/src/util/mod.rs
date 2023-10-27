@@ -320,6 +320,17 @@ pub fn confirm(prompt: &str) -> Result<()> {
     Ok(())
 }
 
+pub fn input(prompt: &str) -> Result<String> {
+    if !*IS_TTY {
+        warn!("called input without a tty");
+        return Ok(String::new());
+    }
+
+    Ok(dialoguer::Input::with_theme(&dialoguer_theme())
+        .with_prompt(prompt)
+        .interact_text()?)
+}
+
 pub fn get_running_app_info(bundle_id: impl AsRef<str>, field: impl AsRef<str>) -> Result<String> {
     let info = Command::new("lsappinfo")
         .args(["info", "-only", field.as_ref(), "-app", bundle_id.as_ref()])

@@ -1,8 +1,7 @@
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
-import { Process, State } from "@withfig/api-bindings";
+import { Process } from "@withfig/api-bindings";
 import autocompleteDemo from "@assets/images/autocomplete_demo.gif";
 import aiDemo from "@assets/images/ai_demo.gif";
 
@@ -165,9 +164,9 @@ export default function Page() {
           <div className="grid grid-cols-2 border-b-neutral-950 border-b-2 gap-0.5">
             <div
               className={cn(
-                "text-neutral-400 text-center p-1.5 hover:bg-neutral-700 hover:border-transparent transition-colors font-mono border-t border-neutral-950",
+                "text-neutral-400 text-center p-1.5 hover:bg-neutral-800 hover:border-transparent transition-colors font-mono border-t border-neutral-950",
                 activeTab == 0 &&
-                  "bg-neutral-700 border-transparent text-neutral-100"
+                  "bg-neutral-700 hover:bg-neutral-700 border-transparent text-neutral-100"
               )}
               onClick={() => setActiveTab(0)}
             >
@@ -175,9 +174,9 @@ export default function Page() {
             </div>
             <div
               className={cn(
-                "text-neutral-400 text-center p-1.5 hover:bg-neutral-700 hover:border-transparent transition-colors font-mono border-t border-neutral-950",
+                "text-neutral-400 text-center p-1.5 hover:bg-neutral-800 hover:border-transparent transition-colors font-mono border-t border-neutral-950",
                 activeTab == 1 &&
-                  "bg-neutral-700 border-transparent text-neutral-100"
+                  "bg-neutral-700 hover:bg-neutral-700 border-transparent text-neutral-100"
               )}
               onClick={() => setActiveTab(1)}
             >

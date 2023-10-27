@@ -612,7 +612,12 @@ message HistoryQueryResponse {
 
 /// Auth
 
-message AuthBuilderIdStartDeviceAuthorizationRequest {}
+message AuthBuilderIdStartDeviceAuthorizationRequest {
+  // Start URL for IAM Identity Center
+  optional string start_url = 1;
+  // Region for IAM Identity Center
+  optional string region = 2;
+}
 
 message AuthBuilderIdStartDeviceAuthorizationResponse {
   string code = 1;

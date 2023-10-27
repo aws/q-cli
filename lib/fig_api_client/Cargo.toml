@@ -35,7 +35,7 @@ amzn-codewhisperer-bearer = { path = "../amzn-codewhisperer-bearer" }
 amzn-codewhisperer-sigv4 = { path = "../amzn-codewhisperer-sigv4" }
 once_cell = "1.18"
 strum = { version = "0.25.0", features = ["derive"] }
-auth = { version = "2.18.0-dev", path = "../auth" }
+auth = { path = "../auth" }
 
 [dev-dependencies]
 tracing-subscriber = "0.3.17"

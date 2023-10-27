@@ -32,16 +32,21 @@ pub async fn status(_request: AuthStatusRequest) -> RequestResult {
 }
 
 pub async fn builder_id_start_device_authorization(
-    _request: AuthBuilderIdStartDeviceAuthorizationRequest,
+    AuthBuilderIdStartDeviceAuthorizationRequest { start_url, region }: AuthBuilderIdStartDeviceAuthorizationRequest,
     ctx: &impl KVStore,
 ) -> RequestResult {
+    if start_url.is_some() != region.is_some() {
+        return Err("start_url and region must both be specified or both be omitted".into());
+    }
+
     let secret_store = SecretStore::load()
         .await
         .map_err(|err| format!("Failed to load secret store: {err}"))?;
 
-    let builder_init: StartDeviceAuthorizationResponse = auth::builder_id::start_device_authorization(&secret_store)
-        .await
-        .map_err(|err| format!("Failed to init auth: {err}"))?;
+    let builder_init: StartDeviceAuthorizationResponse =
+        auth::builder_id::start_device_authorization(&secret_store, start_url, region)
+            .await
+            .map_err(|err| format!("Failed to init auth: {err}"))?;
 
     let uuid = uuid::Uuid::new_v4().to_string();
 
@@ -71,7 +76,14 @@ pub async fn builder_id_poll_create_token(
     let builder_init: StartDeviceAuthorizationResponse =
         ctx.get(&[BUILDER_ID_DATA_KEY, &auth_request_id]).unwrap().unwrap();
 
-    let response = match auth::builder_id::poll_create_token(builder_init.device_code, &secret_store).await {
+    let response = match auth::builder_id::poll_create_token(
+        &secret_store,
+        builder_init.device_code,
+        Some(builder_init.region),
+        Some(builder_init.start_url),
+    )
+    .await
+    {
         PollCreateToken::Pending => AuthBuilderIdPollCreateTokenResponse {
             status: PollStatus::Pending.into(),
             error: None,

@@ -77,17 +77,17 @@ fn is_expired(expiration_time: &OffsetDateTime) -> bool {
     &(now + time::Duration::minutes(1)) > expiration_time
 }
 
-static CLIENT: Lazy<Client> = Lazy::new(|| {
+fn client(region: Option<Region>) -> Client {
     let retry_config = RetryConfig::standard().with_max_attempts(3);
     let sdk_config = aws_types::SdkConfig::builder()
         .endpoint_url(OIDC_BUILDER_ID_ENDPOINT)
-        .region(OIDC_BUILDER_ID_REGION)
+        .region(region.unwrap_or(OIDC_BUILDER_ID_REGION))
         .retry_config(retry_config)
         .sleep_impl(SharedAsyncSleep::new(TokioSleep::new()))
         .app_name(APP_NAME.clone())
         .build();
     Client::new(&sdk_config)
-});
+}
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DeviceRegistration {
@@ -98,7 +98,7 @@ pub struct DeviceRegistration {
 }
 
 impl DeviceRegistration {
-    const SECRET_KEY: &str = "codewhisper:builder-id:device-registration";
+    const SECRET_KEY: &str = "codewhisperer:odic:device-registration";
 
     async fn load_from_secret_store(secret_store: &SecretStore) -> Result<Option<Self>> {
         let device_registration = secret_store.get(Self::SECRET_KEY).await?;
@@ -123,7 +123,7 @@ impl DeviceRegistration {
     }
 
     /// Register the client with OIDC and cache the response for the expiration period
-    pub async fn register(secret_store: &SecretStore) -> Result<Self> {
+    pub async fn register(client: &Client, secret_store: &SecretStore) -> Result<Self> {
         match Self::load_from_secret_store(secret_store).await {
             Ok(Some(device_registration)) => return Ok(device_registration),
             Ok(None) => {},
@@ -132,7 +132,7 @@ impl DeviceRegistration {
             },
         };
 
-        let mut register = CLIENT
+        let mut register = client
             .register_client()
             .client_name(CLIENT_NAME)
             .client_type(CLIENT_TYPE);
@@ -172,21 +172,29 @@ pub struct StartDeviceAuthorizationResponse {
     pub expires_in: i32,
     /// Minimum time (seconds) the client SHOULD wait between polling intervals.
     pub interval: i32,
+    pub region: String,
+    pub start_url: String,
 }
 
 /// Init a builder id request
-pub async fn start_device_authorization(secret_store: &SecretStore) -> Result<StartDeviceAuthorizationResponse> {
+pub async fn start_device_authorization(
+    secret_store: &SecretStore,
+    start_url: Option<String>,
+    region: Option<String>,
+) -> Result<StartDeviceAuthorizationResponse> {
+    let client = client(region.clone().map(Region::new));
+
     let DeviceRegistration {
         client_id,
         client_secret,
         ..
-    } = DeviceRegistration::register(secret_store).await?;
+    } = DeviceRegistration::register(&client, secret_store).await?;
 
-    let output = CLIENT
+    let output = client
         .start_device_authorization()
         .client_id(&client_id)
         .client_secret(&client_secret.0)
-        .start_url(START_URL)
+        .start_url(start_url.as_deref().unwrap_or(START_URL))
         .send()
         .await?;
 
@@ -197,6 +205,8 @@ pub async fn start_device_authorization(secret_store: &SecretStore) -> Result<St
         verification_uri_complete: output.verification_uri_complete.unwrap_or_default(),
         expires_in: output.expires_in,
         interval: output.interval,
+        region: region.unwrap_or_else(|| OIDC_BUILDER_ID_REGION.as_ref().to_owned()),
+        start_url: start_url.unwrap_or_else(|| START_URL.to_owned()),
     })
 }
 
@@ -206,21 +216,24 @@ pub struct BuilderIdToken {
     #[serde(with = "time::serde::rfc3339")]
     pub expires_at: time::OffsetDateTime,
     pub refresh_token: Option<Secret>,
+    pub region: Option<String>,
+    pub start_url: Option<String>,
 }
 
 impl BuilderIdToken {
-    const SECRET_KEY: &str = "codewhisper:builder-id:token";
+    const SECRET_KEY: &str = "codewhisperer:odic:token";
 
     /// Load the token from the keychain, refresh the token if it is expired and return it
     pub async fn load(secret_store: &SecretStore) -> Result<Option<Self>> {
         match secret_store.get(Self::SECRET_KEY).await {
-            Ok(Some(access_token)) => {
-                let token: Option<Self> = serde_json::from_str(&access_token.0)?;
+            Ok(Some(secret)) => {
+                let token: Option<Self> = serde_json::from_str(&secret.0)?;
                 match token {
                     Some(token) => {
+                        let client = client(token.region.clone().map(Region::new));
                         // if token is expired try to refresh
                         if token.is_expired() {
-                            token.refresh_token(secret_store).await
+                            token.refresh_token(&client, secret_store).await
                         } else {
                             Ok(Some(token))
                         }
@@ -237,14 +250,14 @@ impl BuilderIdToken {
     }
 
     /// Refresh the access token
-    pub async fn refresh_token(&self, secret_store: &SecretStore) -> Result<Option<Self>> {
+    pub async fn refresh_token(&self, client: &Client, secret_store: &SecretStore) -> Result<Option<Self>> {
         // TODO: add telem on error https://github.com/aws/aws-toolkit-vscode/blob/df9fc7315b37844a09b7f60b49c604fa267a88ab/src/auth/sso/ssoAccessTokenProvider.ts#L135-L143
 
         let DeviceRegistration {
             client_id,
             client_secret,
             ..
-        } = DeviceRegistration::register(secret_store).await?;
+        } = DeviceRegistration::register(client, secret_store).await?;
 
         let Some(refresh_token) = &self.refresh_token else {
             // if the token is expired and has no refresh token, delete it
@@ -255,7 +268,7 @@ impl BuilderIdToken {
             return Ok(None);
         };
 
-        match CLIENT
+        match client
             .create_token()
             .client_id(client_id)
             .client_secret(client_secret.0)
@@ -265,7 +278,7 @@ impl BuilderIdToken {
             .await
         {
             Ok(output) => {
-                let token: BuilderIdToken = output.into();
+                let token: BuilderIdToken = Self::from_output(output, self.region.clone(), self.start_url.clone());
 
                 if let Err(err) = token.save(secret_store).await {
                     error!(?err, "Failed to store builder id access token");
@@ -311,14 +324,14 @@ impl BuilderIdToken {
         secret_store.delete(Self::SECRET_KEY).await?;
         Ok(())
     }
-}
 
-impl From<CreateTokenOutput> for BuilderIdToken {
-    fn from(output: CreateTokenOutput) -> Self {
+    fn from_output(output: CreateTokenOutput, region: Option<String>, start_url: Option<String>) -> Self {
         Self {
             access_token: output.access_token.unwrap_or_default().into(),
             expires_at: time::OffsetDateTime::now_utc() + time::Duration::seconds(output.expires_in as i64),
             refresh_token: output.refresh_token.map(|t| t.into()),
+            region,
+            start_url,
         }
     }
 }
@@ -330,19 +343,26 @@ pub enum PollCreateToken {
 }
 
 /// Poll for the create token response
-pub async fn poll_create_token(device_code: String, secret_store: &SecretStore) -> PollCreateToken {
+pub async fn poll_create_token(
+    secret_store: &SecretStore,
+    device_code: String,
+    region: Option<String>,
+    start_url: Option<String>,
+) -> PollCreateToken {
+    let client = client(region.clone().map(Region::new));
+
     let DeviceRegistration {
         client_id,
         client_secret,
         ..
-    } = match DeviceRegistration::register(secret_store).await {
+    } = match DeviceRegistration::register(&client, secret_store).await {
         Ok(res) => res,
         Err(err) => {
             return PollCreateToken::Error(err);
         },
     };
 
-    match CLIENT
+    match client
         .create_token()
         .grant_type(DEVICE_GRANT_TYPE)
         .device_code(device_code)
@@ -352,7 +372,7 @@ pub async fn poll_create_token(device_code: String, secret_store: &SecretStore) 
         .await
     {
         Ok(output) => {
-            let token: BuilderIdToken = output.into();
+            let token: BuilderIdToken = BuilderIdToken::from_output(output, region, start_url);
 
             if let Err(err) = token.save(secret_store).await {
                 error!(?err, "Failed to store builder id token");
@@ -423,7 +443,31 @@ mod tests {
 
     #[test]
     fn test_client() {
-        println!("{:?}", *CLIENT);
+        println!("{:?}", client(None));
+        println!("{:?}", client(Some(Region::new("us-west-2"))));
+    }
+
+    #[ignore = "login flow"]
+    #[tokio::test]
+    async fn test_login() {
+        let secret_store = SecretStore::load().await.unwrap();
+        let res = start_device_authorization(&secret_store, None, None).await.unwrap();
+        println!("{:?}", res);
+        loop {
+            match poll_create_token(&secret_store, res.device_code.clone(), None, None).await {
+                PollCreateToken::Pending => {
+                    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                },
+                PollCreateToken::Complete(token) => {
+                    println!("{:?}", token);
+                    break;
+                },
+                PollCreateToken::Error(err) => {
+                    println!("{:?}", err);
+                    break;
+                },
+            }
+        }
     }
 
     #[ignore = "not in ci"]
@@ -438,9 +482,10 @@ mod tests {
     #[ignore = "not in ci"]
     #[tokio::test]
     async fn test_refresh() {
+        let client = client(None);
         let secret_store = SecretStore::load().await.unwrap();
         let token = BuilderIdToken::load(&secret_store).await.unwrap().unwrap();
-        let token = token.refresh_token(&secret_store).await;
+        let token = token.refresh_token(&client, &secret_store).await;
         println!("{:?}", token);
         // println!("{:?}", token.unwrap().unwrap().access_token.0);
     }

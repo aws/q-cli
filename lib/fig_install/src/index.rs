@@ -29,6 +29,8 @@ use tracing::{
 
 use crate::Error;
 
+const CLOUDFRONT: &str = "https://d8tyq03ena56l.cloudfront.net";
+
 #[allow(unused)]
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Index {
@@ -104,13 +106,14 @@ impl PackageArchitecture {
     }
 }
 
-fn index_endpoint(channel: &Channel) -> &'static str {
-    match channel {
-        Channel::Nightly => "https://repo.fig.io/generic/nightly/index.json",
-        Channel::Qa => "https://repo.fig.io/generic/qa/index.json",
-        Channel::Beta => "https://repo.fig.io/generic/beta/index.json",
-        Channel::Stable => "https://repo.fig.io/generic/stable/index.json",
-    }
+fn index_endpoint(_channel: &Channel) -> &'static str {
+    return "https://d8tyq03ena56l.cloudfront.net/index.json";
+    // match channel {
+    //     Channel::Nightly => "https://repo.fig.io/generic/nightly/index.json",
+    //     Channel::Qa => "https://repo.fig.io/generic/qa/index.json",
+    //     Channel::Beta => "https://repo.fig.io/generic/beta/index.json",
+    //     Channel::Stable => "https://repo.fig.io/generic/stable/index.json",
+    // }
 }
 
 #[deprecated = "versions are unified, use env!(\"CARGO_PKG_VERSION\")"]
@@ -278,4 +281,54 @@ pub async fn query_index(
         sha256: package.sha256,
         size: package.size,
     }))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[ignore]
+    fn index_make() {
+        let index = Index {
+            supported: vec![Support {
+                kind: Kind::Dmg,
+                architecture: PackageArchitecture::Universal,
+                variant: Variant::Full,
+            }],
+            versions: vec![RemoteVersion {
+                version: Version::parse("0.1.0").unwrap(),
+                rollout: None,
+                packages: vec![Package {
+                    kind: Kind::Dmg,
+                    architecture: PackageArchitecture::Universal,
+                    variant: Variant::Full,
+                    download: format!("{CLOUDFRONT}/0.1.0/CodeWhisperer.dmg"),
+                    sha256: "0b59e10e0f0d490de6e420429696d73806e1397217e1ee365a40f9e3d5a35fb1".into(),
+                    size: 100758295,
+                }],
+            }],
+        };
+
+        let json = serde_json::to_string(&index).unwrap();
+        println!("{json}");
+        std::fs::write("index.json", json).unwrap();
+    }
+
+    #[tokio::test]
+    async fn pull_test() {
+        let index = pull(&Channel::Stable).await.unwrap();
+        println!("{:#?}", index);
+        assert!(index.supported.len() > 0);
+        assert!(index.versions.len() > 0);
+    }
+
+    #[tokio::test]
+    async fn check_test() {
+        dbg!(
+            check_for_updates(Channel::Stable, Kind::Dmg, Variant::Full, false,)
+                .await
+                .unwrap()
+        );
+    }
 }

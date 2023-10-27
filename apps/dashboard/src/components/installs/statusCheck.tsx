@@ -25,8 +25,8 @@ export default function StatusCheck({
   }
 
   useEffect(() => {
-    refreshStatus()
-  }, [refreshStatus])
+    refreshStatus();
+  }, [refreshStatus]);
 
   return (
     <Collapsible
@@ -44,11 +44,12 @@ export default function StatusCheck({
       <div className="flex flex-col border-b-[1px] border-zinc-200 py-4 flex-auto gap-1">
         <div className="flex gap-2 items-center">
           <h2 className="font-medium text-lg select-none">{check.title}</h2>
-          {status ? (
-            <Check className="h-5 w-5 text-green-600" />
-          ) : (
-            <X className="h-5 w-5 text-red-600" />
-          )}
+          {status !== undefined &&
+            (status ? (
+              <Check className="h-5 w-5 text-green-600" />
+            ) : (
+              <X className="h-5 w-5 text-red-600" />
+            ))}
         </div>
         <CollapsibleContent className="flex flex-col gap-2 text-base font-light text-zinc-500 select-none items-start leading-tight">
           {check.description.map((d, i) => (

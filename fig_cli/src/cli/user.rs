@@ -20,10 +20,13 @@ use serde_json::json;
 use tracing::error;
 
 use super::OutputFormat;
-use crate::util::choose;
 use crate::util::spinner::{
     Spinner,
     SpinnerComponent,
+};
+use crate::util::{
+    choose,
+    input,
 };
 
 #[derive(Subcommand, Debug, PartialEq, Eq)]
@@ -37,11 +40,15 @@ pub enum RootUserSubcommand {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum AuthMethod {
     Email,
+    IdentityCenter,
 }
 
 impl Display for AuthMethod {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Sign in with Email")
+        match self {
+            AuthMethod::Email => write!(f, "Sing up or Sign in with Email (Builder ID)"),
+            AuthMethod::IdentityCenter => write!(f, "Sign in with IAM Identity Center"),
+        }
     }
 }
 
@@ -53,12 +60,22 @@ impl RootUserSubcommand {
                     eyre::bail!("Already logged in, please logout with `cw logout` first");
                 }
 
-                let options = [AuthMethod::Email];
+                let options = [AuthMethod::Email, AuthMethod::IdentityCenter];
+                let login_method = options[choose("Select action", &options)?];
+                match login_method {
+                    AuthMethod::Email | AuthMethod::IdentityCenter => {
+                        let (start_url, region) = match login_method {
+                            AuthMethod::Email => (None, None),
+                            AuthMethod::IdentityCenter => {
+                                let start_url = input("Enter Start URL")?;
+                                let region = input("Enter Region")?;
+                                (Some(start_url), Some(region))
+                            },
+                        };
 
-                match options[choose("Select action", &options)?] {
-                    AuthMethod::Email => {
                         let secret_store = SecretStore::load().await?;
-                        let device_auth = start_device_authorization(&secret_store).await?;
+                        let device_auth =
+                            start_device_authorization(&secret_store, start_url.clone(), region.clone()).await?;
 
                         println!();
                         println!("Confirm the following code in the browser");
@@ -81,7 +98,14 @@ impl RootUserSubcommand {
 
                         loop {
                             tokio::time::sleep(Duration::from_secs(device_auth.interval.try_into().unwrap_or(1))).await;
-                            match poll_create_token(device_auth.device_code.clone(), &secret_store).await {
+                            match poll_create_token(
+                                &secret_store,
+                                device_auth.device_code.clone(),
+                                region.clone(),
+                                start_url.clone(),
+                            )
+                            .await
+                            {
                                 PollCreateToken::Pending => {},
                                 PollCreateToken::Complete(_) => {
                                     spinner.stop_with_message("Logged in successfully".into());
