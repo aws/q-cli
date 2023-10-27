@@ -10,7 +10,7 @@ app:
     certificate_type: :developerIDAppDistribution
     app_id_prefix: 94KV3E626L # AMZN Mobile LLC
     signing_args:
-      entitlements_path: SIGNING_METADATA/Entitlements.plist
+      entitlements_path: SIGNING_METADATA/entitlements.plist
   embedded_requirements:
     Contents/MacOS/cw:
       :identifier: com.amazon.cw
