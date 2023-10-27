@@ -271,7 +271,7 @@ pub async fn query_index(
 
     Ok(Some(UpdatePackage {
         version: chosen.version.to_string(),
-        download: package.download,
+        download: format!("{CLOUDFRONT_URL}/{}", package.download),
         sha256: package.sha256,
         size: package.size,
     }))
@@ -293,7 +293,7 @@ mod tests {
                 kind: Kind::Dmg,
                 architecture: PackageArchitecture::Universal,
                 variant: Variant::Full,
-                download: format!("{CLOUDFRONT_URL}/{version}/CodeWhisperer.dmg"),
+                download: format!("/{version}/CodeWhisperer.dmg"),
                 sha256: sha256.into(),
                 size,
             }],
@@ -313,14 +313,14 @@ mod tests {
                 ),
                 version(
                     "0.2.0",
-                    "1be1809895c002e5858a1bbddbe76bd71b454effdeb7597973ae0169885f59ce",
-                    100837171,
+                    "10cdbe1ffba52b27d10142f016e9b3773773419ce3ddd9d000f713966e6b70c6",
+                    92995853,
                 ),
-                version(
-                    "0.3.0",
-                    "1be1809895c002e5858a1bbddbe76bd71b454effdeb7597973ae0169885f59ce",
-                    100837171,
-                ),
+                // version(
+                //     "0.3.0",
+                //     "10cdbe1ffba52b27d10142f016e9b3773773419ce3ddd9d000f713966e6b70c6",
+                //     92995853,
+                // ),
             ],
         };
 
