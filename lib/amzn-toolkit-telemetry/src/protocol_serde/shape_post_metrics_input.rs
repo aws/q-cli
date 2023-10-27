@@ -4,16 +4,16 @@ pub fn ser_post_metrics_input(
     input: &crate::operation::post_metrics::PostMetricsInput,
 ) -> Result<(), ::aws_smithy_http::operation::error::SerializationError> {
     if let Some(var_1) = &input.aws_product {
-        object.key("awsProduct").string(var_1.as_str());
+        object.key("AWSProduct").string(var_1.as_str());
     }
     if let Some(var_2) = &input.aws_product_version {
-        object.key("awsProductVersion").string(var_2.as_str());
+        object.key("AWSProductVersion").string(var_2.as_str());
     }
     if let Some(var_3) = &input.client_id {
-        object.key("clientId").string(var_3.as_str());
+        object.key("ClientID").string(var_3.as_str());
     }
     if let Some(var_4) = &input.metric_data {
-        let mut array_5 = object.key("metricData").start_array();
+        let mut array_5 = object.key("MetricData").start_array();
         for item_6 in var_4 {
             {
                 #[allow(unused_mut)]
@@ -25,19 +25,19 @@ pub fn ser_post_metrics_input(
         array_5.finish();
     }
     if let Some(var_8) = &input.os {
-        object.key("os").string(var_8.as_str());
+        object.key("OS").string(var_8.as_str());
     }
     if let Some(var_9) = &input.os_architecture {
-        object.key("osArchitecture").string(var_9.as_str());
+        object.key("OSArchitecture").string(var_9.as_str());
     }
     if let Some(var_10) = &input.os_version {
-        object.key("osVersion").string(var_10.as_str());
+        object.key("OSVersion").string(var_10.as_str());
     }
     if let Some(var_11) = &input.parent_product {
-        object.key("parentProduct").string(var_11.as_str());
+        object.key("ParentProduct").string(var_11.as_str());
     }
     if let Some(var_12) = &input.parent_product_version {
-        object.key("parentProductVersion").string(var_12.as_str());
+        object.key("ParentProductVersion").string(var_12.as_str());
     }
     Ok(())
 }

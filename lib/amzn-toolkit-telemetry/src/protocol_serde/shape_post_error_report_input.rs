@@ -4,19 +4,19 @@ pub fn ser_post_error_report_input(
     input: &crate::operation::post_error_report::PostErrorReportInput,
 ) -> Result<(), ::aws_smithy_http::operation::error::SerializationError> {
     if let Some(var_1) = &input.aws_product {
-        object.key("awsProduct").string(var_1.as_str());
+        object.key("AWSProduct").string(var_1.as_str());
     }
     if let Some(var_2) = &input.aws_product_version {
-        object.key("awsProductVersion").string(var_2.as_str());
+        object.key("AWSProductVersion").string(var_2.as_str());
     }
     if let Some(var_3) = &input.error_details {
         #[allow(unused_mut)]
-        let mut object_4 = object.key("errorDetails").start_object();
+        let mut object_4 = object.key("ErrorDetails").start_object();
         crate::protocol_serde::shape_error_details::ser_error_details(&mut object_4, var_3)?;
         object_4.finish();
     }
     if let Some(var_5) = &input.metadata {
-        let mut array_6 = object.key("metadata").start_array();
+        let mut array_6 = object.key("Metadata").start_array();
         for item_7 in var_5 {
             {
                 #[allow(unused_mut)]
@@ -29,7 +29,7 @@ pub fn ser_post_error_report_input(
     }
     if let Some(var_9) = &input.userdata {
         #[allow(unused_mut)]
-        let mut object_10 = object.key("userdata").start_object();
+        let mut object_10 = object.key("Userdata").start_object();
         crate::protocol_serde::shape_userdata::ser_userdata(&mut object_10, var_9)?;
         object_10.finish();
     }

@@ -137,7 +137,7 @@ impl PostErrorReportFluentBuilder {
     pub fn get_aws_product_version(&self) -> &::std::option::Option<::std::string::String> {
         self.inner.get_aws_product_version()
     }
-    /// Appends an item to `metadata`.
+    /// Appends an item to `Metadata`.
     ///
     /// To override the contents of this collection use [`set_metadata`](Self::set_metadata).
     ///

@@ -6,7 +6,7 @@ pub struct ErrorDetails {
     #[allow(missing_docs)] // documentation missing in model
     pub command: ::std::option::Option<::std::string::String>,
     #[allow(missing_docs)] // documentation missing in model
-    pub epoch_timestamp: ::std::option::Option<i64>,
+    pub epoch_timestamp: i64,
     #[allow(missing_docs)] // documentation missing in model
     pub r#type: ::std::option::Option<::std::string::String>,
     #[allow(missing_docs)] // documentation missing in model
@@ -20,7 +20,7 @@ impl ErrorDetails {
         self.command.as_deref()
     }
     #[allow(missing_docs)] // documentation missing in model
-    pub fn epoch_timestamp(&self) -> ::std::option::Option<i64> {
+    pub fn epoch_timestamp(&self) -> i64 {
         self.epoch_timestamp
     }
     #[allow(missing_docs)] // documentation missing in model
@@ -128,7 +128,7 @@ impl ErrorDetailsBuilder {
     pub fn build(self) -> crate::types::ErrorDetails {
         crate::types::ErrorDetails {
             command: self.command,
-            epoch_timestamp: self.epoch_timestamp,
+            epoch_timestamp: self.epoch_timestamp.unwrap_or_default(),
             r#type: self.r#type,
             message: self.message,
             stack_trace: self.stack_trace,

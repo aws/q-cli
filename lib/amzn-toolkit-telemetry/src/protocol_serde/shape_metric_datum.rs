@@ -4,37 +4,37 @@ pub fn ser_metric_datum(
     input: &crate::types::MetricDatum,
 ) -> Result<(), ::aws_smithy_http::operation::error::SerializationError> {
     if let Some(var_1) = &input.metric_name {
-        object.key("metricName").string(var_1.as_str());
+        object.key("MetricName").string(var_1.as_str());
     }
-    if let Some(var_2) = &input.epoch_timestamp {
-        object.key("epochTimestamp").number(
+    {
+        object.key("EpochTimestamp").number(
             #[allow(clippy::useless_conversion)]
-            ::aws_smithy_types::Number::NegInt((*var_2).into()),
+            ::aws_smithy_types::Number::NegInt((input.epoch_timestamp).into()),
         );
     }
-    if let Some(var_3) = &input.unit {
-        object.key("unit").string(var_3.as_str());
+    if let Some(var_2) = &input.unit {
+        object.key("Unit").string(var_2.as_str());
     }
-    if let Some(var_4) = &input.value {
-        object.key("value").number(
+    {
+        object.key("Value").number(
             #[allow(clippy::useless_conversion)]
-            ::aws_smithy_types::Number::Float((*var_4).into()),
+            ::aws_smithy_types::Number::Float((input.value).into()),
         );
     }
-    if let Some(var_5) = &input.metadata {
-        let mut array_6 = object.key("metadata").start_array();
-        for item_7 in var_5 {
+    if let Some(var_3) = &input.metadata {
+        let mut array_4 = object.key("Metadata").start_array();
+        for item_5 in var_3 {
             {
                 #[allow(unused_mut)]
-                let mut object_8 = array_6.value().start_object();
-                crate::protocol_serde::shape_metadata_entry::ser_metadata_entry(&mut object_8, item_7)?;
-                object_8.finish();
+                let mut object_6 = array_4.value().start_object();
+                crate::protocol_serde::shape_metadata_entry::ser_metadata_entry(&mut object_6, item_5)?;
+                object_6.finish();
             }
         }
-        array_6.finish();
+        array_4.finish();
     }
-    if let Some(var_9) = &input.passive {
-        object.key("passive").boolean(*var_9);
+    if input.passive {
+        object.key("Passive").boolean(input.passive);
     }
     Ok(())
 }

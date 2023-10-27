@@ -6,15 +6,15 @@ pub struct MetricDatum {
     #[allow(missing_docs)] // documentation missing in model
     pub metric_name: ::std::option::Option<::std::string::String>,
     #[allow(missing_docs)] // documentation missing in model
-    pub epoch_timestamp: ::std::option::Option<i64>,
+    pub epoch_timestamp: i64,
     #[allow(missing_docs)] // documentation missing in model
     pub unit: ::std::option::Option<crate::types::Unit>,
     #[allow(missing_docs)] // documentation missing in model
-    pub value: ::std::option::Option<f64>,
+    pub value: f64,
     #[allow(missing_docs)] // documentation missing in model
     pub metadata: ::std::option::Option<::std::vec::Vec<crate::types::MetadataEntry>>,
     #[allow(missing_docs)] // documentation missing in model
-    pub passive: ::std::option::Option<bool>,
+    pub passive: bool,
 }
 impl MetricDatum {
     #[allow(missing_docs)] // documentation missing in model
@@ -22,7 +22,7 @@ impl MetricDatum {
         self.metric_name.as_deref()
     }
     #[allow(missing_docs)] // documentation missing in model
-    pub fn epoch_timestamp(&self) -> ::std::option::Option<i64> {
+    pub fn epoch_timestamp(&self) -> i64 {
         self.epoch_timestamp
     }
     #[allow(missing_docs)] // documentation missing in model
@@ -30,7 +30,7 @@ impl MetricDatum {
         self.unit.as_ref()
     }
     #[allow(missing_docs)] // documentation missing in model
-    pub fn value(&self) -> ::std::option::Option<f64> {
+    pub fn value(&self) -> f64 {
         self.value
     }
     #[allow(missing_docs)] // documentation missing in model
@@ -38,7 +38,7 @@ impl MetricDatum {
         self.metadata.as_deref()
     }
     #[allow(missing_docs)] // documentation missing in model
-    pub fn passive(&self) -> ::std::option::Option<bool> {
+    pub fn passive(&self) -> bool {
         self.passive
     }
 }
@@ -154,11 +154,11 @@ impl MetricDatumBuilder {
     pub fn build(self) -> crate::types::MetricDatum {
         crate::types::MetricDatum {
             metric_name: self.metric_name,
-            epoch_timestamp: self.epoch_timestamp,
+            epoch_timestamp: self.epoch_timestamp.unwrap_or_default(),
             unit: self.unit,
-            value: self.value,
+            value: self.value.unwrap_or_default(),
             metadata: self.metadata,
-            passive: self.passive,
+            passive: self.passive.unwrap_or_default(),
         }
     }
 }

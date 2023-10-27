@@ -4,10 +4,10 @@ pub fn ser_userdata(
     input: &crate::types::Userdata,
 ) -> Result<(), ::aws_smithy_http::operation::error::SerializationError> {
     if let Some(var_1) = &input.email {
-        object.key("email").string(var_1.as_str());
+        object.key("Email").string(var_1.as_str());
     }
     if let Some(var_2) = &input.comment {
-        object.key("comment").string(var_2.as_str());
+        object.key("Comment").string(var_2.as_str());
     }
     Ok(())
 }

@@ -155,7 +155,7 @@ impl TelemetryClient {
 
         let mut set = JOIN_SET.lock().await;
         set.spawn(async move {
-            let product = AwsProduct::Terminal;
+            let product = AwsProduct::CodewhispererTerminal;
             let product_version = env!("CARGO_PKG_VERSION");
             let os = std::env::consts::OS;
             let os_architecture = std::env::consts::ARCH;
@@ -299,3 +299,22 @@ mod test {
         assert!(!logs_contain("ERROR"))
     }
 }
+
+// #[derive(Debug)]
+// struct RequestLogger;
+//
+// impl Interceptor for RequestLogger {
+//     fn name(&self) -> &'static str {
+//         todo!()
+//     }
+//
+//     fn read_before_transmit(
+//         &self,
+//         context:
+// &amzn_toolkit_telemetry::config::interceptors::BeforeTransmitInterceptorContextRef<'_>,
+//         _: &amzn_toolkit_telemetry::config::RuntimeComponents,
+//         _: &mut amzn_toolkit_telemetry::config::ConfigBag,
+//     ) -> Result<(), amzn_toolkit_telemetry::error::BoxError> { info!("{:#?}, {:#?}",
+//       context.request().headers(), context.request().body()); Ok(())
+//     }
+// }

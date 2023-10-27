@@ -137,17 +137,17 @@ impl PostMetricsFluentBuilder {
     pub fn get_aws_product_version(&self) -> &::std::option::Option<::std::string::String> {
         self.inner.get_aws_product_version()
     }
-    #[allow(missing_docs)] // documentation missing in model
+    /// A valid UUID is expected, and this should be unique per-client and reused across API calls.
     pub fn client_id(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.inner = self.inner.client_id(input.into());
         self
     }
-    #[allow(missing_docs)] // documentation missing in model
+    /// A valid UUID is expected, and this should be unique per-client and reused across API calls.
     pub fn set_client_id(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.inner = self.inner.set_client_id(input);
         self
     }
-    #[allow(missing_docs)] // documentation missing in model
+    /// A valid UUID is expected, and this should be unique per-client and reused across API calls.
     pub fn get_client_id(&self) -> &::std::option::Option<::std::string::String> {
         self.inner.get_client_id()
     }
@@ -221,7 +221,7 @@ impl PostMetricsFluentBuilder {
     pub fn get_parent_product_version(&self) -> &::std::option::Option<::std::string::String> {
         self.inner.get_parent_product_version()
     }
-    /// Appends an item to `metricData`.
+    /// Appends an item to `MetricData`.
     ///
     /// To override the contents of this collection use [`set_metric_data`](Self::set_metric_data).
     ///

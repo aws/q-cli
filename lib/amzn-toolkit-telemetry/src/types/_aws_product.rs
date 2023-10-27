@@ -12,11 +12,13 @@
 /// ```text
 /// # let awsproduct = unimplemented!();
 /// match awsproduct {
-///     AwsProduct::Jetbrains => { /* ... */ },
-///     AwsProduct::Eclipse => { /* ... */ },
-///     AwsProduct::Vscode => { /* ... */ },
-///     AwsProduct::Vs => { /* ... */ },
-///     AwsProduct::Terminal => { /* ... */ },
+///     AwsProduct::Cloud9 => { /* ... */ },
+///     AwsProduct::ToolkitJetbrains => { /* ... */ },
+///     AwsProduct::ToolkitEclipse => { /* ... */ },
+///     AwsProduct::ToolkitVscode => { /* ... */ },
+///     AwsProduct::ToolkitVisualStudio => { /* ... */ },
+///     AwsProduct::CodewhispererTerminal => { /* ... */ },
+///     AwsProduct::CodewhispererJupyterlab => { /* ... */ },
 ///     AwsProduct::Canary => { /* ... */ },
 ///     other @ _ if other.as_str() == "NewFeature" => { /* handles a case for `NewFeature` */ },
 ///     _ => { /* ... */ },
@@ -46,15 +48,19 @@
 )]
 pub enum AwsProduct {
     #[allow(missing_docs)] // documentation missing in model
-    Jetbrains,
+    Cloud9,
     #[allow(missing_docs)] // documentation missing in model
-    Eclipse,
+    ToolkitJetbrains,
     #[allow(missing_docs)] // documentation missing in model
-    Vscode,
+    ToolkitEclipse,
     #[allow(missing_docs)] // documentation missing in model
-    Vs,
+    ToolkitVscode,
     #[allow(missing_docs)] // documentation missing in model
-    Terminal,
+    ToolkitVisualStudio,
+    #[allow(missing_docs)] // documentation missing in model
+    CodewhispererTerminal,
+    #[allow(missing_docs)] // documentation missing in model
+    CodewhispererJupyterlab,
     #[allow(missing_docs)] // documentation missing in model
     Canary,
     /// `Unknown` contains new variants that have been added since this code was generated.
@@ -63,11 +69,13 @@ pub enum AwsProduct {
 impl ::std::convert::From<&str> for AwsProduct {
     fn from(s: &str) -> Self {
         match s {
-            "AWS Toolkit For JetBrains" => AwsProduct::Jetbrains,
-            "AWS Toolkit for Eclipse" => AwsProduct::Eclipse,
-            "AWS Toolkit for VS Code" => AwsProduct::Vscode,
-            "AWS Toolkit for VisualStudio" => AwsProduct::Vs,
-            "Codewhisperer for Terminal" => AwsProduct::Terminal,
+            "AWS Cloud9" => AwsProduct::Cloud9,
+            "AWS Toolkit For JetBrains" => AwsProduct::ToolkitJetbrains,
+            "AWS Toolkit for Eclipse" => AwsProduct::ToolkitEclipse,
+            "AWS Toolkit for VS Code" => AwsProduct::ToolkitVscode,
+            "AWS Toolkit for VisualStudio" => AwsProduct::ToolkitVisualStudio,
+            "CodeWhisperer for Terminal" => AwsProduct::CodewhispererTerminal,
+            "CodeWhisperer ror JupyterLab" => AwsProduct::CodewhispererJupyterlab,
             "canary" => AwsProduct::Canary,
             other => AwsProduct::Unknown(crate::primitives::UnknownVariantValue(other.to_owned())),
         }
@@ -84,11 +92,13 @@ impl AwsProduct {
     /// Returns the `&str` value of the enum member.
     pub fn as_str(&self) -> &str {
         match self {
-            AwsProduct::Jetbrains => "AWS Toolkit For JetBrains",
-            AwsProduct::Eclipse => "AWS Toolkit for Eclipse",
-            AwsProduct::Vscode => "AWS Toolkit for VS Code",
-            AwsProduct::Vs => "AWS Toolkit for VisualStudio",
-            AwsProduct::Terminal => "Codewhisperer for Terminal",
+            AwsProduct::Cloud9 => "AWS Cloud9",
+            AwsProduct::ToolkitJetbrains => "AWS Toolkit For JetBrains",
+            AwsProduct::ToolkitEclipse => "AWS Toolkit for Eclipse",
+            AwsProduct::ToolkitVscode => "AWS Toolkit for VS Code",
+            AwsProduct::ToolkitVisualStudio => "AWS Toolkit for VisualStudio",
+            AwsProduct::CodewhispererTerminal => "CodeWhisperer for Terminal",
+            AwsProduct::CodewhispererJupyterlab => "CodeWhisperer ror JupyterLab",
             AwsProduct::Canary => "canary",
             AwsProduct::Unknown(value) => value.as_str(),
         }
@@ -96,11 +106,13 @@ impl AwsProduct {
     /// Returns all the `&str` representations of the enum members.
     pub const fn values() -> &'static [&'static str] {
         &[
+            "AWS Cloud9",
             "AWS Toolkit For JetBrains",
             "AWS Toolkit for Eclipse",
             "AWS Toolkit for VS Code",
             "AWS Toolkit for VisualStudio",
-            "Codewhisperer for Terminal",
+            "CodeWhisperer for Terminal",
+            "CodeWhisperer ror JupyterLab",
             "canary",
         ]
     }

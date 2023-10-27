@@ -4,10 +4,10 @@ pub fn ser_metadata_entry(
     input: &crate::types::MetadataEntry,
 ) -> Result<(), ::aws_smithy_http::operation::error::SerializationError> {
     if let Some(var_1) = &input.key {
-        object.key("key").string(var_1.as_str());
+        object.key("Key").string(var_1.as_str());
     }
     if let Some(var_2) = &input.value {
-        object.key("value").string(var_2.as_str());
+        object.key("Value").string(var_2.as_str());
     }
     Ok(())
 }

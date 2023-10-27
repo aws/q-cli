@@ -7,7 +7,7 @@ pub struct PostMetricsInput {
     pub aws_product: ::std::option::Option<crate::types::AwsProduct>,
     #[allow(missing_docs)] // documentation missing in model
     pub aws_product_version: ::std::option::Option<::std::string::String>,
-    #[allow(missing_docs)] // documentation missing in model
+    /// A valid UUID is expected, and this should be unique per-client and reused across API calls.
     pub client_id: ::std::option::Option<::std::string::String>,
     #[allow(missing_docs)] // documentation missing in model
     pub os: ::std::option::Option<::std::string::String>,
@@ -31,7 +31,7 @@ impl PostMetricsInput {
     pub fn aws_product_version(&self) -> ::std::option::Option<&str> {
         self.aws_product_version.as_deref()
     }
-    #[allow(missing_docs)] // documentation missing in model
+    /// A valid UUID is expected, and this should be unique per-client and reused across API calls.
     pub fn client_id(&self) -> ::std::option::Option<&str> {
         self.client_id.as_deref()
     }
@@ -110,17 +110,17 @@ impl PostMetricsInputBuilder {
     pub fn get_aws_product_version(&self) -> &::std::option::Option<::std::string::String> {
         &self.aws_product_version
     }
-    #[allow(missing_docs)] // documentation missing in model
+    /// A valid UUID is expected, and this should be unique per-client and reused across API calls.
     pub fn client_id(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.client_id = ::std::option::Option::Some(input.into());
         self
     }
-    #[allow(missing_docs)] // documentation missing in model
+    /// A valid UUID is expected, and this should be unique per-client and reused across API calls.
     pub fn set_client_id(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.client_id = input;
         self
     }
-    #[allow(missing_docs)] // documentation missing in model
+    /// A valid UUID is expected, and this should be unique per-client and reused across API calls.
     pub fn get_client_id(&self) -> &::std::option::Option<::std::string::String> {
         &self.client_id
     }
