@@ -29,7 +29,7 @@ use tracing::{
 
 use crate::Error;
 
-const CLOUDFRONT: &str = "https://d8tyq03ena56l.cloudfront.net";
+pub const CLOUDFRONT_URL: &str = "https://d8tyq03ena56l.cloudfront.net";
 
 #[allow(unused)]
 #[derive(Deserialize, Serialize, Debug)]
@@ -303,9 +303,9 @@ mod tests {
                     kind: Kind::Dmg,
                     architecture: PackageArchitecture::Universal,
                     variant: Variant::Full,
-                    download: format!("{CLOUDFRONT}/0.1.0/CodeWhisperer.dmg"),
-                    sha256: "0b59e10e0f0d490de6e420429696d73806e1397217e1ee365a40f9e3d5a35fb1".into(),
-                    size: 100758295,
+                    download: format!("{CLOUDFRONT_URL}/0.1.0/CodeWhisperer.dmg"),
+                    sha256: "b6a454ae7ef1d08cc736f540e31e96a712aab4848b0e4bca76a1ee30965f43df".into(),
+                    size: 100816475,
                 }],
             }],
         };

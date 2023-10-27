@@ -87,7 +87,7 @@ dependencies = [
 
 [[package]]
 name = "alacritty_terminal"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "bitflags 2.4.0",
  "camino",
@@ -504,7 +504,7 @@ checksum = "1181e1e0d1fce796a03db1ae795d67167da795f9cf4a39c37589e85ef57f26d3"
 
 [[package]]
 name = "auth"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "aws-credential-types",
  "aws-sdk-ssooidc",
@@ -1954,7 +1954,7 @@ checksum = "c2e66c9d817f1720209181c316d28635c050fa304f9c79e47a520882661b7308"
 
 [[package]]
 name = "dbus"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "once_cell",
  "thiserror",
@@ -2418,7 +2418,7 @@ dependencies = [
 
 [[package]]
 name = "fig-api-mock"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "async-trait",
  "clap",
@@ -2429,7 +2429,7 @@ dependencies = [
 
 [[package]]
 name = "fig_api_client"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "amzn-codewhisperer-bearer",
  "amzn-codewhisperer-sigv4",
@@ -2461,7 +2461,7 @@ dependencies = [
 
 [[package]]
 name = "fig_autocomplete"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "fig_api_client",
  "fig_request",
@@ -2476,7 +2476,7 @@ dependencies = [
 
 [[package]]
 name = "fig_cli"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "arboard",
  "assert_cmd",
@@ -2555,7 +2555,7 @@ dependencies = [
 
 [[package]]
 name = "fig_color"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "bitflags 2.4.0",
  "fig_test",
@@ -2565,7 +2565,7 @@ dependencies = [
 
 [[package]]
 name = "fig_desktop"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "accessibility-sys",
  "anyhow",
@@ -2640,7 +2640,7 @@ dependencies = [
 
 [[package]]
 name = "fig_desktop_api"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "async-trait",
  "auth",
@@ -2671,7 +2671,7 @@ dependencies = [
 
 [[package]]
 name = "fig_diagnostic"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "cfg-if",
  "clap",
@@ -2687,7 +2687,7 @@ dependencies = [
 
 [[package]]
 name = "fig_input_method"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "apple-bundle",
  "cocoa 0.25.0",
@@ -2708,7 +2708,7 @@ dependencies = [
 
 [[package]]
 name = "fig_install"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "bitflags 2.4.0",
  "camino",
@@ -2736,7 +2736,7 @@ dependencies = [
 
 [[package]]
 name = "fig_integrations"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "accessibility-sys",
  "async-trait",
@@ -2762,7 +2762,7 @@ dependencies = [
 
 [[package]]
 name = "fig_ipc"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "async-trait",
  "bytes",
@@ -2779,7 +2779,7 @@ dependencies = [
 
 [[package]]
 name = "fig_log"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "console-subscriber",
  "fig_util",
@@ -2793,7 +2793,7 @@ dependencies = [
 
 [[package]]
 name = "fig_proto"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "arbitrary",
  "bytes",
@@ -2814,7 +2814,7 @@ dependencies = [
 
 [[package]]
 name = "fig_request"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "base64 0.21.4",
  "bytes",
@@ -2841,7 +2841,7 @@ dependencies = [
 
 [[package]]
 name = "fig_settings"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "fd-lock",
  "fig_test",
@@ -2863,7 +2863,7 @@ dependencies = [
 
 [[package]]
 name = "fig_sync"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "cfg-if",
  "crossterm",
@@ -2890,7 +2890,7 @@ dependencies = [
 
 [[package]]
 name = "fig_telemetry"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "amzn-toolkit-telemetry",
  "anyhow",
@@ -2918,7 +2918,7 @@ dependencies = [
 
 [[package]]
 name = "fig_test"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "fig_test_macro",
  "tokio",
@@ -2926,7 +2926,7 @@ dependencies = [
 
 [[package]]
 name = "fig_test_macro"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "quote",
  "syn 2.0.38",
@@ -2934,7 +2934,7 @@ dependencies = [
 
 [[package]]
 name = "fig_util"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "appkit-nsworkspace-bindings",
  "bstr",
@@ -2969,7 +2969,7 @@ dependencies = [
 
 [[package]]
 name = "figterm"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "alacritty_terminal",
  "anyhow",
@@ -4530,7 +4530,7 @@ dependencies = [
 
 [[package]]
 name = "macos_utils"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "accessibility",
  "accessibility-sys",
