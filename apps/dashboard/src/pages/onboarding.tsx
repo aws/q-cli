@@ -133,8 +133,7 @@ export default function Page() {
           <li>
             {/* <div className="w-12 flex-none flex flex-col"></div> */}
             <span className="text-sm">
-              <span className="font-semibold">Customize settings?</span> Click the
-              tabs on the left.
+              <span className="font-semibold">Want to customize settings?</span> Use the tabs in the sidebar.
             </span>
           </li>
         </ol>
