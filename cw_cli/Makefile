@@ -46,7 +46,7 @@ CARGO_BUILD := debug
 endif
 
 BINARY_NAME ?= fig
-CRATE_NAME  ?= fig_cli
+CRATE_NAME  ?= cw_cli
 
 ### Build for each platform
 

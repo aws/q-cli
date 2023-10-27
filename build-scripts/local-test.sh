@@ -2,11 +2,11 @@
 
 set -ex
 
-cargo build -rp fig_cli
+cargo build -rp cw_cli
 cargo build -rp figterm
 cargo build -rp fig_desktop
 
-export FIG_CLI=target/release/fig_cli
+export FIG_CLI=target/release/cw_cli
 export FIGTERM=target/release/figterm
 export FIG_DESKTOP=target/release/fig_desktop
 export VERSION=0.0.0

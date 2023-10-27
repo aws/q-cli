@@ -102,7 +102,7 @@ async fn uninstall() -> Result<()> {
             },
         }
     } else if which::which("sudo").is_ok() {
-        // note: this does not trigger a race condition because any user that can replace fig_cli could just
+        // note: this does not trigger a race condition because any user that can replace cw_cli could just
         // replace it with a malicious executable before we are even run
         Command::new("sudo")
             .arg(std::env::current_exe()?)

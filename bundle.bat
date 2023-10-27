@@ -4,10 +4,10 @@
 cargo build --release || goto e
 
 ::
-:: create fig_cli installer
+:: create cw_cli installer
 ::
-candle -nologo -o target/wix/ fig_cli/fig_cli.wxs || goto e
-light -nologo -o target/wix/fig_cli.msi target/wix/fig_cli.wixobj -ext WixUtilExtension || goto e
+candle -nologo -o target/wix/ cw_cli/cw_cli.wxs || goto e
+light -nologo -o target/wix/cw_cli.msi target/wix/cw_cli.wixobj -ext WixUtilExtension || goto e
 
 ::
 :: create fig_desktop installer

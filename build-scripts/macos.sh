@@ -48,9 +48,9 @@ cp -r apps/autocomplete/dist "$BUILD_DIR/autocomplete"
 
 . build-scripts/rust-init.sh
 
-# build fig_cli
-cargo build --target=x86_64-apple-darwin --target=aarch64-apple-darwin --locked --release --package fig_cli
-lipo -create -output "$BUILD_DIR/cw-$TARGET" target/{x86_64,aarch64}-apple-darwin/release/fig_cli
+# build cw_cli
+cargo build --target=x86_64-apple-darwin --target=aarch64-apple-darwin --locked --release --package cw_cli
+lipo -create -output "$BUILD_DIR/cw-$TARGET" target/{x86_64,aarch64}-apple-darwin/release/cw_cli
 
 # build figterm
 cargo build --target=x86_64-apple-darwin --target=aarch64-apple-darwin --locked --release --package figterm

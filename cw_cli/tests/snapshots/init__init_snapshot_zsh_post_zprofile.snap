@@ -1,5 +1,5 @@
 ---
-source: fig_cli/tests/init.rs
+source: cw_cli/tests/init.rs
 expression: init
 ---
 if [[ -n "$ZSH_NAME" ]]; then

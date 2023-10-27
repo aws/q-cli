@@ -1,5 +1,5 @@
 ---
-source: fig_cli/tests/init.rs
+source: cw_cli/tests/init.rs
 expression: init
 ---
 builtin contains $HOME/.local/bin $PATH

@@ -341,7 +341,7 @@ pub fn manifest_path() -> Result<PathBuf> {
 /// The path to the managed fig cli binary
 ///
 /// Note this is not implemented on Linux or MacOS
-pub fn managed_fig_cli_path() -> Result<PathBuf> {
+pub fn managed_cw_cli_path() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_MANAGED_FIG_CLI_PATH");
 
     cfg_if::cfg_if! {
@@ -411,7 +411,7 @@ utf8_dir!(remote_socket_path);
 utf8_dir!(figterm_socket_path, session_id: impl Display);
 utf8_dir!(manifest_path);
 utf8_dir!(managed_binaries_dir);
-utf8_dir!(managed_fig_cli_path);
+utf8_dir!(managed_cw_cli_path);
 utf8_dir!(backups_dir);
 utf8_dir!(logs_dir);
 utf8_dir!(ssh_saved_identities);
@@ -458,7 +458,7 @@ mod test {
         test_environment_path!(scripts_cache_dir, "FIG_DIRECTORIES_SCRIPTS_CACHE_DIR");
         test_environment_path!(fig_socket_path, "FIG_DIRECTORIES_FIG_SOCKET_PATH");
         test_environment_path!(manifest_path, "FIG_DIRECTORIES_MANIFEST_PATH");
-        test_environment_path!(managed_fig_cli_path, "FIG_DIRECTORIES_MANAGED_FIG_CLI_PATH");
+        test_environment_path!(managed_cw_cli_path, "FIG_DIRECTORIES_MANAGED_FIG_CLI_PATH");
         test_environment_path!(settings_path, "FIG_DIRECTORIES_SETTINGS_PATH");
         test_environment_path!(state_path, "FIG_DIRECTORIES_STATE_PATH");
         test_environment_path!(ssh_saved_identities, "FIG_DIRECTORIES_SSH_SAVED_IDENTITIES");

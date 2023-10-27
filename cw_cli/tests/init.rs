@@ -15,7 +15,7 @@ macro_rules! init_test {
         paste! {
             #[cfg(not(windows))]
             fn [<init_output_ $shell _ $stage _ $file>]() -> Result<String, Box<dyn std::error::Error>> {
-                let mut cmd = Command::cargo_bin("fig_cli")?;
+                let mut cmd = Command::cargo_bin("cw_cli")?;
                 cmd.arg("init").arg($shell).arg($stage).arg("--rcfile").arg($file).arg("--skip-dotfiles");
                 let out = cmd.assert().success().get_output().stdout.clone();
                 Ok(String::from_utf8(out)?)
@@ -60,7 +60,7 @@ macro_rules! init_test {
                     println!("Linter {} version: {}", $exe, String::from_utf8(out.stdout)?);
 
                     panic!(
-                        "linter returned {}. please run `cargo run -p fig_cli -- init {} {} --rcfile {} --skip-dotfiles | {} {}`",
+                        "linter returned {}. please run `cargo run -p cw_cli -- init {} {} --rcfile {} --skip-dotfiles | {} {}`",
                         output.status, $shell, $stage, $file, $exe, [$($arg),*].join(" ")
                     );
                 }

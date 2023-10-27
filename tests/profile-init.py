@@ -25,7 +25,7 @@ def test(shell: str, stage: str, cycles: int):
     id = random.randbytes(10).hex()
     print(f'testing {shell} {stage} with id {id}', file=sys.stderr)
     generate = subprocess.run(
-        f'cargo run -p fig_cli -- init {shell} {stage} --skip-dotfiles', shell=True, stdout=subprocess.PIPE)
+        f'cargo run -p cw_cli -- init {shell} {stage} --skip-dotfiles', shell=True, stdout=subprocess.PIPE)
     open(f'/tmp/{id}', 'wb').write(generate.stdout)
     subprocess.run(f'chmod +x /tmp/{id}', shell=True)
     print('running shells', file=sys.stderr)

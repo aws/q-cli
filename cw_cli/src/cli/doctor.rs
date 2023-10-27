@@ -1153,8 +1153,8 @@ impl DoctorCheck<DiagnosticsResponse> for FigCLIPathCheck {
             Ok(())
         } else if path.ends_with("target/debug/cw")
             || path.ends_with("target/release/cw")
-            || path.ends_with("target/debug/fig_cli")
-            || path.ends_with("target/release/fig_cli")
+            || path.ends_with("target/debug/cw_cli")
+            || path.ends_with("target/release/cw_cli")
         {
             Err(DoctorError::Warning(
                 "Running debug build in a non-standard location".into(),

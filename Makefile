@@ -53,9 +53,9 @@ bin: fig_desktop fig figterm
 fig_desktop:
 	$(MAKE) -C $(MAKE_DIR)/$@
 
-fig: fig_cli
+fig: cw_cli
 
-fig_cli:
+cw_cli:
 	$(MAKE) -C $(MAKE_DIR)/$@
 
 figterm:
@@ -76,5 +76,5 @@ bundle:
 preview: archive
 	tar -tvf $(BUILD_DIR)/fig-$(ARCH)-linux.tar.gz
 
-.PHONY: all archive arch deb rpm bin fig_desktop figterm fig fig_cli icons preview bundle
+.PHONY: all archive arch deb rpm bin fig_desktop figterm fig cw_cli icons preview bundle
 

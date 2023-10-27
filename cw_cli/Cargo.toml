@@ -1,5 +1,5 @@
 [package]
-name = "fig_cli"
+name = "cw"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true

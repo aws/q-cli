@@ -484,7 +484,7 @@ impl Integration for InputMethod {
         // Can we load input source?
 
         // todo: pull this into a function in fig_directories
-        let fig_cli_path = match fig_util::fig_bundle() {
+        let cw_cli_path = match fig_util::fig_bundle() {
             Some(bundle) => bundle
                 .join("Contents")
                 .join("MacOS")
@@ -492,7 +492,7 @@ impl Integration for InputMethod {
             None => return Err(InputMethodError::HelperExecutableNotFound.into()),
         };
 
-        let out = tokio::process::Command::new(fig_cli_path)
+        let out = tokio::process::Command::new(cw_cli_path)
             .args(["_", "attempt-to-finish-input-method-installation"])
             .arg(&self.bundle_path)
             .output()
@@ -545,11 +545,11 @@ impl Integration for InputMethod {
 
             // The 'enabled' property of an input source is never updated for the process that
             // invokes `TISEnableInputSource` Unclear why this is, but we handle it by
-            // calling out to the fig_cli to finish the second half of the installation.
+            // calling out to the cw_cli to finish the second half of the installation.
         }
 
         // todo: pull this into a function in fig_directories
-        let fig_cli_path = match fig_util::fig_bundle() {
+        let cw_cli_path = match fig_util::fig_bundle() {
             Some(bundle) => bundle
                 .join("Contents")
                 .join("MacOS")
@@ -558,7 +558,7 @@ impl Integration for InputMethod {
         };
 
         loop {
-            let out = tokio::process::Command::new(&fig_cli_path)
+            let out = tokio::process::Command::new(&cw_cli_path)
                 .args(["_", "attempt-to-finish-input-method-installation"])
                 .arg(&self.bundle_path)
                 .output()
