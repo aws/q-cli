@@ -120,7 +120,7 @@ export default function Page() {
           <li>
             {/* <div className="w-12 flex-none flex flex-col"></div> */}
             <span className="text-sm flex items-baseline gap-1">
-              <span className="font-bold">Not working?</span>
+              <span className="font-semibold">Not working?</span>
               <span>Check out</span>
               <Link
                 to={"/help"}
@@ -133,7 +133,7 @@ export default function Page() {
           <li>
             {/* <div className="w-12 flex-none flex flex-col"></div> */}
             <span className="text-sm">
-              <span className="font-bold">Customize settings?</span> Click the
+              <span className="font-semibold">Customize settings?</span> Click the
               tabs on the left.
             </span>
           </li>
