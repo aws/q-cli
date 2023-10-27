@@ -120,26 +120,34 @@ where
 }
 
 static CACHED: Lazy<Option<Manifest>> = Lazy::new(|| {
-    cfg_if! {
-        if #[cfg(unix)] {
-            let text = match std::fs::read_to_string(crate::directories::manifest_path().unwrap()) {
-                Ok(s) => s,
-                Err(err) => {
-                    tracing::warn!("Failed reading build manifest: {err}");
-                    return None;
-                },
-            };
-            match serde_json::from_str(&text) {
-                Ok(s) => Some(s),
-                Err(err) => {
-                    tracing::warn!("Failed deserializing build manifest: {err:?}");
-                    None
-                },
-            }
-        } else {
-            None
-        }
-    }
+    // cfg_if! {
+    //     if #[cfg(unix)] {
+    //         let text = match std::fs::read_to_string(crate::directories::manifest_path().unwrap()) {
+    //             Ok(s) => s,
+    //             Err(err) => {
+    //                 tracing::warn!("Failed reading build manifest: {err}");
+    //                 return None;
+    //             },
+    //         };
+    //         match serde_json::from_str(&text) {
+    //             Ok(s) => Some(s),
+    //             Err(err) => {
+    //                 tracing::warn!("Failed deserializing build manifest: {err:?}");
+    //                 None
+    //             },
+    //         }
+    //     } else {
+    //         None
+    //     }
+    // }
+    Some(Manifest {
+        managed_by: ManagedBy::Other("aws".into()),
+        variant: Variant::Full,
+        kind: Kind::Dmg,
+        default_channel: Channel::Stable,
+        packaged_at: "unknown".into(),
+        packaged_by: "unknown".into(),
+    })
 });
 
 /// Returns the manifest, reading and parsing it if necessary

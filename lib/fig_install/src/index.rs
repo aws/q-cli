@@ -15,7 +15,6 @@ use fig_util::manifest::{
     Variant,
 };
 use fig_util::system_info::get_system_id;
-use semver::Version;
 use serde::{
     Deserialize,
     Serialize,
@@ -107,18 +106,13 @@ impl PackageArchitecture {
 }
 
 fn index_endpoint(_channel: &Channel) -> &'static str {
-    return "https://d8tyq03ena56l.cloudfront.net/index.json";
+    "https://d8tyq03ena56l.cloudfront.net/index.json"
     // match channel {
     //     Channel::Nightly => "https://repo.fig.io/generic/nightly/index.json",
     //     Channel::Qa => "https://repo.fig.io/generic/qa/index.json",
     //     Channel::Beta => "https://repo.fig.io/generic/beta/index.json",
     //     Channel::Stable => "https://repo.fig.io/generic/stable/index.json",
     // }
-}
-
-#[deprecated = "versions are unified, use env!(\"CARGO_PKG_VERSION\")"]
-pub fn local_manifest_version() -> Result<Version, Error> {
-    Ok(Version::parse(env!("CARGO_PKG_VERSION"))?)
 }
 
 pub async fn pull(channel: &Channel) -> Result<Index, Error> {
@@ -285,29 +279,49 @@ pub async fn query_index(
 
 #[cfg(test)]
 mod tests {
+    use semver::Version;
+
     use super::*;
 
     #[test]
     #[ignore]
     fn index_make() {
+        let version = |version: &str, sha256: &str, size: u64| RemoteVersion {
+            version: Version::parse(version).unwrap(),
+            rollout: None,
+            packages: vec![Package {
+                kind: Kind::Dmg,
+                architecture: PackageArchitecture::Universal,
+                variant: Variant::Full,
+                download: format!("{CLOUDFRONT_URL}/{version}/CodeWhisperer.dmg"),
+                sha256: sha256.into(),
+                size,
+            }],
+        };
+
         let index = Index {
             supported: vec![Support {
                 kind: Kind::Dmg,
                 architecture: PackageArchitecture::Universal,
                 variant: Variant::Full,
             }],
-            versions: vec![RemoteVersion {
-                version: Version::parse("0.1.0").unwrap(),
-                rollout: None,
-                packages: vec![Package {
-                    kind: Kind::Dmg,
-                    architecture: PackageArchitecture::Universal,
-                    variant: Variant::Full,
-                    download: format!("{CLOUDFRONT_URL}/0.1.0/CodeWhisperer.dmg"),
-                    sha256: "b6a454ae7ef1d08cc736f540e31e96a712aab4848b0e4bca76a1ee30965f43df".into(),
-                    size: 100816475,
-                }],
-            }],
+            versions: vec![
+                version(
+                    "0.1.0",
+                    "b6a454ae7ef1d08cc736f540e31e96a712aab4848b0e4bca76a1ee30965f43df",
+                    100816475,
+                ),
+                version(
+                    "0.2.0",
+                    "1be1809895c002e5858a1bbddbe76bd71b454effdeb7597973ae0169885f59ce",
+                    100837171,
+                ),
+                version(
+                    "0.3.0",
+                    "1be1809895c002e5858a1bbddbe76bd71b454effdeb7597973ae0169885f59ce",
+                    100837171,
+                ),
+            ],
         };
 
         let json = serde_json::to_string(&index).unwrap();

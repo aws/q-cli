@@ -46,7 +46,7 @@ cp -r apps/dashboard/dist "$BUILD_DIR/dashboard"
 rm -rf "$BUILD_DIR/autocomplete"
 cp -r apps/autocomplete/dist "$BUILD_DIR/autocomplete"
 
-# . build-scripts/rust-init.sh
+. build-scripts/rust-init.sh
 
 # build fig_cli
 cargo build --target=x86_64-apple-darwin --target=aarch64-apple-darwin --locked --release --package fig_cli

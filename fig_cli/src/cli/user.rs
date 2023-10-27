@@ -6,7 +6,9 @@ use std::time::Duration;
 use auth::builder_id::{
     poll_create_token,
     start_device_authorization,
+    BuilderIdToken,
     PollCreateToken,
+    TokenType,
 };
 use auth::secret_store::SecretStore;
 use clap::Subcommand;
@@ -35,6 +37,12 @@ pub enum RootUserSubcommand {
     Login,
     /// Logout of CodeWhisperer
     Logout,
+    /// Prints details about the current user
+    Whoami {
+        /// Output format to use
+        #[arg(long, short, value_enum, default_value_t)]
+        format: OutputFormat,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -143,6 +151,41 @@ impl RootUserSubcommand {
                 println!("Run {} to log back in to CodeWhisperer", "cw login".magenta());
                 Ok(())
             },
+            Self::Whoami { format } => {
+                let secret_store = SecretStore::load().await?;
+                let builder_id = BuilderIdToken::load(&secret_store).await;
+
+                match builder_id {
+                    Ok(Some(token)) => {
+                        format.print(
+                            || match token.token_type() {
+                                TokenType::BuilderId => "Logged in with Builder ID".into(),
+                                TokenType::IamIdentityCenter => {
+                                    format!(
+                                        "Logged in with IAM Identity Center ({})",
+                                        token.start_url.as_ref().unwrap()
+                                    )
+                                },
+                            },
+                            || {
+                                json!({
+                                    "accountType": match token.token_type() {
+                                        TokenType::BuilderId => "BuilderId",
+                                        TokenType::IamIdentityCenter => "IamIdentityCenter",
+                                    },
+                                    "startUrl": token.start_url,
+                                    "region": token.region,
+                                })
+                            },
+                        );
+                        Ok(())
+                    },
+                    _ => {
+                        format.print(|| "Not logged in", || json!({ "account": null }));
+                        exit(1);
+                    },
+                }
+            },
         }
     }
 }
@@ -151,27 +194,12 @@ impl RootUserSubcommand {
 pub enum UserSubcommand {
     #[command(flatten)]
     Root(RootUserSubcommand),
-    /// Prints details about the current user
-    Whoami {
-        /// Output format to use
-        #[arg(long, short, value_enum, default_value_t)]
-        format: OutputFormat,
-    },
 }
 
 impl UserSubcommand {
     pub async fn execute(self) -> Result<()> {
         match self {
             Self::Root(cmd) => cmd.execute().await,
-            Self::Whoami { format } => {
-                if auth::is_logged_in().await {
-                    format.print(|| "Logged in with builder id", || json!({ "account": "builderId" }));
-                    Ok(())
-                } else {
-                    format.print(|| "Not logged in", || json!({ "account": null }));
-                    exit(1);
-                }
-            },
         }
     }
 }

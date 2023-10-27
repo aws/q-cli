@@ -210,6 +210,11 @@ pub async fn start_device_authorization(
     })
 }
 
+pub enum TokenType {
+    BuilderId,
+    IamIdentityCenter,
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct BuilderIdToken {
     pub access_token: Secret,
@@ -332,6 +337,14 @@ impl BuilderIdToken {
             refresh_token: output.refresh_token.map(|t| t.into()),
             region,
             start_url,
+        }
+    }
+
+    pub fn token_type(&self) -> TokenType {
+        match &self.start_url {
+            Some(url) if url == START_URL => TokenType::BuilderId,
+            None => TokenType::BuilderId,
+            Some(_) => TokenType::IamIdentityCenter,
         }
     }
 }
