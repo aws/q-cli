@@ -8,6 +8,7 @@ import ExternalLink from "../util/external-link";
 import { interpolateSettingBoolean } from "@/lib/utils";
 import { useSetting } from "@/hooks/store/useSetting";
 import { Switch } from "../ui/switch";
+// import { Code } from "../text/code";
 
 type PrefSection = {
   title: string;
@@ -44,6 +45,50 @@ function FeatureIntro({ intro }: { intro: Intro }) {
   function toggleSwitch() {
     setSetting(!inputValue);
   }
+
+  // function parseToCode(string: string) {
+  //   if (string.indexOf('`') === -1) return <span>{string}</span>
+    
+  //   const strArray = string.split('`')
+
+  //   console.log({ strArray, startsWith: string.charAt(0) === '`' })
+
+  //   function getComponents() {
+  //     if (string.charAt(0) === '`') {
+  //       strArray.map((s, i) => {
+  //         const isEven = i % 2 === 0
+  //         console.log({ start: s })
+  //         if (!isEven) {
+  //           return <Code key={i}>{s}</Code>
+  //         } else {
+  //           return <span key={i}>{s}</span>
+  //         }
+  //       })
+  //     } else {
+  //       strArray.map((s, i) => {
+  //         const isEven = i % 2 === 0
+  //         if (isEven) {
+  //           console.log({nonStartEven: s})
+  //           return <span key={i}>{s}</span>
+  //         } else {
+  //           console.log({nonStartOdd: s})
+  //           return(
+  //             <Code key={i}>
+  //               {s}
+  //             </Code>
+  //           )
+  //         }
+  //       })
+  //     }
+  //     return null
+  //   }
+  
+  //   return (
+  //     <span>
+  //       {getComponents()}
+  //     </span>
+  //   )
+  // }
 
   return (
     <section className="flex flex-col p-6 gap-4 w-full gradient-cw-secondary-light rounded-lg items-start text-white">
