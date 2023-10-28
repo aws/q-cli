@@ -1,17 +1,19 @@
+use std::borrow::Cow;
+
 /// Returns whether or not the user has disabled telemetry through settings or environment
 pub fn telemetry_is_disabled() -> bool {
     std::env::var_os("FIG_DISABLE_TELEMETRY").is_some()
-        || fig_settings::settings::get_value("telemetry.disabled")
+        || !fig_settings::settings::get_value("telemetry.enabled")
             .ok()
             .flatten()
             .and_then(|v| v.as_bool())
-            .unwrap_or(false)
+            .unwrap_or(true)
 }
 
 /// Generates or gets the client id and caches the result
 ///
 /// Based on: <https://github.com/aws/aws-toolkit-vscode/blob/7c70b1909050043627e6a1471392e22358a15985/src/shared/telemetry/util.ts#L41C1-L62>
-pub(crate) fn get_client_id() -> String {
+pub(crate) fn get_client_id() -> Cow<'static, str> {
     if cfg!(test) {
         return "ffffffff-ffff-ffff-ffff-ffffffffffff".into();
     }
@@ -21,11 +23,11 @@ pub(crate) fn get_client_id() -> String {
     }
 
     match fig_settings::state::get_string("telemetryClientId").ok().flatten() {
-        Some(client_id) => client_id,
+        Some(client_id) => client_id.into(),
         None => {
             let client_id = uuid::Uuid::new_v4().to_string();
             fig_settings::state::set_value("telemetryClientId", client_id.clone()).ok();
-            client_id
+            client_id.into()
         },
     }
 }

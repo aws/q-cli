@@ -645,7 +645,13 @@ message AuthBuilderIdPollCreateTokenResponse {
 message AuthStatusRequest {}
 
 message AuthStatusResponse {
-  bool builder_id = 1;
+  enum AuthKind {
+    BUILDER_ID = 0;
+    IAM_IDENTITY_CENTER = 1;
+  }
+
+  bool authed = 1;
+  optional AuthKind auth_kind = 2;
 }
 
 /// Notifications

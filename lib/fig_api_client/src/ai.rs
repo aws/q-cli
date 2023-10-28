@@ -1,3 +1,8 @@
+use amzn_codewhisperer_bearer::config::interceptors::BeforeTransmitInterceptorContextMut;
+use amzn_codewhisperer_bearer::config::{
+    Interceptor,
+    RuntimeComponents,
+};
 use amzn_codewhisperer_bearer::operation::generate_completions::{
     GenerateCompletionsError,
     GenerateCompletionsOutput,
@@ -8,7 +13,12 @@ use aws_config::AppName;
 use aws_credential_types::Credentials;
 use aws_smithy_http::body::SdkBody;
 use aws_smithy_http::result::SdkError;
+use aws_smithy_types::config_bag::ConfigBag;
 use http::response::Response;
+use http::{
+    HeaderName,
+    HeaderValue,
+};
 use tokio::sync::OnceCell;
 
 const DEFAULT_REGION: &str = "us-east-1";
@@ -16,11 +26,42 @@ const DEFAULT_REGION: &str = "us-east-1";
 const CODEWHISPERER_ENDPOINT: &str = "https://codewhisperer.us-east-1.amazonaws.com";
 const APP_NAME: &str = "codewhisperer-terminal";
 
-// fn aws_profile() -> Option<String> {
-//     fig_settings::state::get_string("aws.profile").ok().flatten()
-// }
+// Opt out constants
+const SHARE_CODEWHISPERER_CONTENT_SETTINGS_KEY: &str = "codeWhisperer.shareCodeWhispererContentWithAWS";
+static X_AMZN_CODEWHISPERER_OPT_OUT_HEADER: HeaderName = HeaderName::from_static("x-amzn-codewhisperer-optout");
 
 static AWS_CLIENT: OnceCell<Client> = OnceCell::const_new();
+
+fn is_codewhisperer_content_optout() -> bool {
+    !fig_settings::settings::get_bool_or(SHARE_CODEWHISPERER_CONTENT_SETTINGS_KEY, true)
+}
+
+#[derive(Debug, Clone)]
+struct OptOutInterceptor;
+
+impl Interceptor for OptOutInterceptor {
+    fn name(&self) -> &'static str {
+        "OptOutInterceptor"
+    }
+
+    fn modify_before_signing(
+        &self,
+        context: &mut BeforeTransmitInterceptorContextMut<'_>,
+        _runtime_components: &RuntimeComponents,
+        _cfg: &mut ConfigBag,
+    ) -> Result<(), amzn_codewhisperer_bearer::error::BoxError> {
+        context.request_mut().headers_mut().insert(
+            &X_AMZN_CODEWHISPERER_OPT_OUT_HEADER,
+            if is_codewhisperer_content_optout() {
+                HeaderValue::from_static("true")
+            } else {
+                HeaderValue::from_static("false")
+            },
+        );
+
+        Ok(())
+    }
+}
 
 async fn cw_client() -> &'static Client {
     AWS_CLIENT

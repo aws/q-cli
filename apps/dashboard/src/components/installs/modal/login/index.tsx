@@ -44,7 +44,7 @@ export default function LoginModal({ next }: { next: () => void }) {
   useEffect(() => {
     Auth.status().then((r) => {
       console.log("auth status", r);
-      setLoginState(r.builderId ? "logged in" : "not started");
+      setLoginState(r.authed ? "logged in" : "not started");
     });
   }, []);
 

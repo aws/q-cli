@@ -1184,7 +1184,7 @@ impl DoctorCheck<DiagnosticsResponse> for AccessibilityCheck {
                 info: vec![],
                 fix: command_fix(vec!["cw", "debug", "prompt-accessibility"], Duration::from_secs(1)),
                 // fix: Some(DoctorFix::Sync(Box::new(move || {
-                //     println!("1. Try enableing accessibility in System Settings");
+                //     println!("1. Try enabling accessibility in System Settings");
                 //     if !Command::new("cw")
                 //         .args(["debug", "prompt-accessibility"])
                 //         .status()?

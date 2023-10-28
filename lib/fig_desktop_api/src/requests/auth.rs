@@ -2,9 +2,11 @@ use auth::builder_id::{
     BuilderIdToken,
     PollCreateToken,
     StartDeviceAuthorizationResponse,
+    TokenType,
 };
 use auth::secret_store::SecretStore;
 use fig_proto::fig::auth_builder_id_poll_create_token_response::PollStatus;
+use fig_proto::fig::auth_status_response::AuthKind;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
     AuthBuilderIdPollCreateTokenRequest,
@@ -25,8 +27,17 @@ pub async fn status(_request: AuthStatusRequest) -> RequestResult {
         .await
         .map_err(|err| format!("Failed to load secret store: {err}"))?;
 
+    let token = BuilderIdToken::load(&secret_store).await;
+
     Ok(ServerOriginatedSubMessage::AuthStatusResponse(AuthStatusResponse {
-        builder_id: matches!(BuilderIdToken::load(&secret_store).await, Ok(Some(_))),
+        authed: matches!(token, Ok(Some(_))),
+        auth_kind: match token {
+            Ok(Some(auth)) => match auth.token_type() {
+                TokenType::BuilderId => Some(AuthKind::BuilderId.into()),
+                TokenType::IamIdentityCenter => Some(AuthKind::IamIdentityCenter.into()),
+            },
+            _ => None,
+        },
     })
     .into())
 }

@@ -2,6 +2,7 @@ pub mod cognito;
 mod install_method;
 mod util;
 
+use std::borrow::Cow;
 use std::time::SystemTime;
 
 use amzn_toolkit_telemetry::config::{
@@ -126,7 +127,7 @@ pub async fn finish_telemetry_unwrap() {
 
 #[derive(Debug, Clone)]
 pub struct TelemetryClient {
-    client_id: String,
+    client_id: Cow<'static, str>,
     aws_client: Client,
 }
 

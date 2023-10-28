@@ -74,7 +74,7 @@ function App() {
   useEffect(() => {
     if (loggedIn) return;
 
-    Auth.status().then((r) => setLoggedIn(r.builderId));
+    Auth.status().then((r) => setLoggedIn(r.authed));
   }, [loggedIn]);
 
   useEffect(() => {
