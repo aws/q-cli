@@ -4,13 +4,11 @@ import { Kbd } from "@/components/ui/keystrokeInput"
 export function parseBracketsToKbd(string: string, className?: string) {
   if (string.indexOf('[') === -1) return <span>{string}</span>
 
-  // const regex = new RegExp(/[(.*?)]/)
-  
+  // This *works* but is so hacky that it feels awful and some strings have both backticks *and* square brackets...
+  // TODO: switch to regex-based solution
   const strArray = string.split('[').join('*').split(']').join('*').split('*')
   const startsWith = string.charAt(0) === '['
   const isEven = (index: number) => index % 2 === 0
-
-  console.log(strArray)
 
   return (
     <span>
