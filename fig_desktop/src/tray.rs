@@ -156,13 +156,13 @@ pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
                 })
                 .unwrap();
         },
-        "preferences" => {
+        "setttings" => {
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: DASHBOARD_ID.clone(),
                     window_event: WindowEvent::Batch(vec![
                         WindowEvent::NavigateRelative {
-                            path: "/preferences".into(),
+                            path: "/autocomplete".into(),
                         },
                         WindowEvent::Show,
                     ]),
@@ -416,7 +416,7 @@ fn menu() -> Vec<MenuElement> {
     let update = MenuElement::entry(None, None, "Check for updates...", "update");
     let quit = MenuElement::entry(None, None, "Quit CodeWhisperer", "quit");
     // let dashboard = MenuElement::entry(None, None, "Dashboard", "dashboard");
-    let settings = MenuElement::entry(None, None, "Preferences", "preferences");
+    let settings = MenuElement::entry(None, None, "Settings", "setttings");
     // let developer = MenuElement::sub_menu("Developer", vec![
     //     MenuElement::entry(None, None, "Dashboard Devtools", "dashboard-devtools"),
     //     MenuElement::entry(None, None, "Autocomplete Devtools", "autocomplete-devtools"),
