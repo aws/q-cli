@@ -11,6 +11,15 @@ import {
 import ListenerContext from "@/context/input";
 import { useKeybindings } from "@/hooks/store/useKeybindings";
 import { useSetting } from "@/hooks/store";
+import { cn } from "@/lib/utils";
+
+export function Kbd ({children, className}: {children: React.ReactNode, className?: string}) {
+  return (
+    <kbd className={cn('p-1 py-[2px] not-italic text-black border border-black rounded-sm shadow-[0_4px_0_black] relative -top-[2px]', className)}>
+      {children}
+    </kbd>
+  )
+}
 
 export function Keystroke ({ keybinding }: { keybinding: string }) {
   const setSetting = useSetting(`autocomplete.keybindings.${keybinding}`)[1]
@@ -22,12 +31,9 @@ export function Keystroke ({ keybinding }: { keybinding: string }) {
     >
       {keybinding
         ? keybinding.split("+").map((l, i) => (
-            <kbd
-              key={i}
-              className="p-1 py-[2px] not-italic text-black group-hover:text-white border border-black group-hover:border-white rounded-sm shadow-[0_4px_0_black] group-hover:shadow-[0_4px_0_white] relative -top-[2px]"
-            >
+            <Kbd key={i} className="group-hover:text-white group-hover:border-white group-hover:shadow-[0_4px_0_white]">
               {getKeySymbol(l)}
-            </kbd>
+            </Kbd>
           ))
         : "press keys"}
       <X className="h-3 group-hover:w-3 w-0 ml-1 opacity-0 group-hover:opacity-100 -translate-x-full group-hover:translate-x-0 hover:bg-black/5 transition-transform" />
@@ -67,12 +73,12 @@ export function Input ({ command, value, invalid, cancel }: { command: string, v
         >
           {value
             ? value.map((k, i) => (
-                <kbd
+                <Kbd
                   key={i}
                   className="p-1 py-[2px] not-italic text-white border border-white rounded-sm shadow-[0_4px_0_white] relative -top-[2px]"
                 >
                   {k}
-                </kbd>
+                </Kbd>
               ))
             : "press keys"}
         </div>

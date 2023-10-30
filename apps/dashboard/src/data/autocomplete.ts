@@ -7,7 +7,8 @@ const autocompleteSettings = [
         title:
           "Automatically insert space for subcommands/options that take arguments",
         description:
-          "Autocomplete will insert a space after you select a suggestion that contains a mandatory argument (e.g. selecting `git clone`)",
+          "Autocomplete will insert a space after you select a suggestion that contains a mandatory argument.",
+        example: '(e.g. selecting `git clone`)',
         type: "boolean",
         default: true,
         popular: true,

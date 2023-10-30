@@ -20,6 +20,7 @@ import {
 import Keystroke from "../ui/keystrokeInput";
 import { interpolateSettingBoolean } from "@/lib/utils";
 import { useSetting } from "@/hooks/store";
+import { parseBackticksToCode, parseBracketsToKbd } from "@/lib/strings";
 
 export function Setting({
   data,
@@ -86,10 +87,10 @@ export function Setting({
       <div className="flex flex-col gap-1">
         <h3 className="font-medium leading-none">{data.title}</h3>
         {data.description && (
-          <p className="font-light leading-tight text-sm">{data.description}</p>
+          <p className="font-light text-sm">{parseBracketsToKbd(data.description, 'py-[1px] text-xs -top-[1px]')}</p>
         )}
         {data.example && (
-          <p className="font-light leading-tight text-sm">{data.example}</p>
+          <p className="font-light leading-tight text-sm">{parseBackticksToCode(data.example, 'py-[1px]')}</p>
         )}
         {data.type !== "boolean" && (
           <div className="pt-1">

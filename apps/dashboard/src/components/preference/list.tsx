@@ -9,6 +9,7 @@ import { interpolateSettingBoolean } from "@/lib/utils";
 import { useSetting } from "@/hooks/store/useSetting";
 import { Switch } from "../ui/switch";
 import { Code } from "../text/code";
+import { parseBackticksToCode } from "@/lib/strings";
 
 type PrefSection = {
   title: string;
@@ -46,37 +47,6 @@ function FeatureIntro({ intro }: { intro: Intro }) {
     setSetting(!inputValue);
   }
 
-  function parseToCode(string: string) {
-    if (string.indexOf('`') === -1) return <span>{string}</span>
-    
-    const strArray = string.split('`')
-    const startsWith = string.charAt(0) === '`'
-    const isEven = (index: number) => index % 2 === 0
-  
-    return (
-      <span>
-        {startsWith 
-          ? strArray.map((s, i)  => {
-            if (isEven(i)) {
-              return <Code key={i} className="border-white bg-white/20 text-white py-[1px]">{s}</Code>
-            }
-            else {
-              return <span key={i}>{s}</span>
-            }
-          })
-        : strArray.map((s, i)  => {
-          if (!isEven(i)) {
-            return <Code key={i} className="border-white bg-white/20 text-white py-[1px]">{s}</Code>
-          }
-          else {
-            return <span key={i}>{s}</span>
-          }
-        })
-        }
-      </span>
-    )
-  }
-
   return (
     <section className="flex flex-col p-6 gap-4 w-full gradient-cw-secondary-light rounded-lg items-start text-white">
       <div className="flex gap-4 justify-between w-full">
@@ -87,7 +57,7 @@ function FeatureIntro({ intro }: { intro: Intro }) {
               {intro.title}
             </h1>
             <p className="text-base">
-              {parseToCode(intro.description)}
+              {parseBackticksToCode(intro.description, "border-white bg-white/20 text-white py-[1px]")}
               <ExternalLink
                 href={intro.link}
                 className="pl-1 text-white font-medium underline underline-offset-4 "
