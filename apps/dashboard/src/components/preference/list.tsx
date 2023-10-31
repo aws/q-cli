@@ -8,7 +8,7 @@ import ExternalLink from "../util/external-link";
 import { interpolateSettingBoolean } from "@/lib/utils";
 import { useSetting } from "@/hooks/store/useSetting";
 import { Switch } from "../ui/switch";
-import { Code } from "../text/code";
+// import { Code } from "../text/code";
 import { parseBackticksToCode } from "@/lib/strings";
 
 type PrefSection = {
