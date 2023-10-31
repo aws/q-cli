@@ -32,16 +32,16 @@ if "FIG_SET_PARENT_CHECK" not-in $env {
 
 
 let result = (^cw _ should-figterm-launch | complete)
-let-env SHOULD_FIGTERM_LAUNCH = $result.exit_code
+let-env SHOULD_CWTERM_LAUNCH = $result.exit_code
 
 let should_launch = (
     ("PROCESS_LAUNCHED_BY_FIG" not-in $env or ($env.PROCESS_LAUNCHED_BY_FIG | str length) == 0)
-    and ($env.SHOULD_FIGTERM_LAUNCH == 0 or
-       ($env.SHOULD_FIGTERM_LAUNCH == 2 and "CW_TERM" not-in $env))
+    and ($env.SHOULD_CWTERM_LAUNCH == 0 or
+       ($env.SHOULD_CWTERM_LAUNCH == 2 and "CW_TERM" not-in $env))
 )
 
 if $should_launch {
-  let fig_shell = (cw _ get-shell | complete).stdout
+  let CW_SHELL = (cw _ get-shell | complete).stdout
   
   let fig_term_name = "nu (figterm)"
   let figterm_path = if ([$env.HOME ".fig" "bin" $fig_term_name] | path join | path exists) {
@@ -53,7 +53,7 @@ if $should_launch {
   }
 
   with-env {
-    FIG_SHELL: $fig_shell
+    CW_SHELL: $CW_SHELL
   } {
     exec $figterm_path
   }

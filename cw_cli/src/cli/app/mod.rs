@@ -289,8 +289,7 @@ impl AppSubcommand {
                         // )));
 
                         if !args.no_open && !crate::util::is_brew_reinstall().await {
-                            let url = fig_install::get_uninstall_url(false);
-                            fig_util::open_url_async(url).await.ok();
+                            fig_util::open_url_async(fig_install::UNINSTALL_URL).await.ok();
                         }
 
                         // telem_join.await.ok();

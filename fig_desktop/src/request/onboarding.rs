@@ -52,8 +52,7 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
                 InstallComponents,
             };
 
-            let url = fig_install::get_uninstall_url(false);
-            fig_util::open_url(url).ok();
+            fig_util::open_url(fig_install::UNINSTALL_URL).ok();
 
             let result = match uninstall(InstallComponents::all()).await {
                 Ok(_) => RequestResult::success(),

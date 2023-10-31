@@ -16,7 +16,8 @@ macro_rules! init_test {
             #[cfg(not(windows))]
             fn [<init_output_ $shell _ $stage _ $file>]() -> Result<String, Box<dyn std::error::Error>> {
                 let mut cmd = Command::cargo_bin("cw_cli")?;
-                cmd.arg("init").arg($shell).arg($stage).arg("--rcfile").arg($file).arg("--skip-dotfiles");
+                cmd.arg("init").arg($shell).arg($stage).arg("--rcfile").arg($file);
+                cmd.env("CW_INIT_SNAPSHOT_TEST", "1");
                 let out = cmd.assert().success().get_output().stdout.clone();
                 Ok(String::from_utf8(out)?)
             }
@@ -43,6 +44,7 @@ macro_rules! init_test {
 
                 let mut cmd = Command::new($exe);
                 cmd$(.arg($arg))*.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped());
+                cmd.env("CW_INIT_SNAPSHOT_TEST", "1");
 
                 let child = cmd.spawn()?;
                 write!(child.stdin.as_ref().unwrap(), "{}", init)?;
@@ -60,7 +62,7 @@ macro_rules! init_test {
                     println!("Linter {} version: {}", $exe, String::from_utf8(out.stdout)?);
 
                     panic!(
-                        "linter returned {}. please run `cargo run -p cw_cli -- init {} {} --rcfile {} --skip-dotfiles | {} {}`",
+                        "linter returned {}. please run `cargo run -p cw_cli -- init {} {} --rcfile {} | {} {}`",
                         output.status, $shell, $stage, $file, $exe, [$($arg),*].join(" ")
                     );
                 }

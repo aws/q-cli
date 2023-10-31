@@ -29,7 +29,7 @@ set --export FIG_PID $fish_pid
 set --export FIG_SET_PARENT $TERM_SESSION_ID
 set --export LC_FIG_SET_PARENT $TERM_SESSION_ID
 
-set --query FIG_SHELL_PATH; or set FIG_SHELL_PATH (cw _ get-shell)
+set --query CW_SHELL; or set CW_SHELL (cw _ get-shell)
 
 function fig_osc
     builtin printf "\033]697;$argv[1]\007" $argv[2..-1]
@@ -79,7 +79,7 @@ function fig_precmd --on-event fish_prompt
     fig_osc "OSCUnlock=%s" "$CWTERM_SESSION_ID"
     fig_osc "Dir=%s" "$PWD"
     fig_osc "Shell=fish"
-    fig_osc "ShellPath=%s" "$FIG_SHELL_PATH"
+    fig_osc "ShellPath=%s" "$CW_SHELL"
     if test -n "$WSL_DISTRO_NAME"
         fig_osc "WSLDistro=%s" "$WSL_DISTRO_NAME"
     end

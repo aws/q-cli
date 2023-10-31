@@ -12,7 +12,10 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
     }
 
     if !no_confirm {
-        println!("\nIs CodeWhisperer not working? Try running {}\n", "cw doctor".bold().magenta());
+        println!(
+            "\nIs CodeWhisperer not working? Try running {}\n",
+            "cw doctor".bold().magenta()
+        );
         // println!(
         //     r#"* Autocomplete doesn't "feel" right? Watch {}"#,
         //     "https://fig.io/l/configuring-autocomplete".bold()
@@ -59,8 +62,7 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
 async fn uninstall() -> Result<()> {
     use fig_install::InstallComponents;
 
-    let url = fig_install::get_uninstall_url(false);
-    fig_util::open_url(url).ok();
+    fig_util::open_url(fig_install::UNINSTALL_URL).ok();
     fig_install::uninstall(InstallComponents::all()).await?;
 
     Ok(())
@@ -77,14 +79,8 @@ async fn uninstall() -> Result<()> {
     };
 
     if nix::unistd::getuid().is_root() {
-        let package_name = env::var("FIG_PACKAGE_NAME").unwrap_or_else(|_| {
-            if !manifest::is_headless() {
-                "cw"
-            } else {
-                "cw-headless"
-            }
-            .to_owned()
-        });
+        let package_name = env::var("FIG_PACKAGE_NAME")
+            .unwrap_or_else(|_| if !manifest::is_headless() { "cw" } else { "cw-headless" }.to_owned());
 
         let package_manager = &manifest::manifest()
             .as_ref()

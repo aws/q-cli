@@ -767,29 +767,20 @@ impl DebugSubcommand {
                     Some(shell) => {
                         let mut command = match shell {
                             Shell::Bash => {
-                                writeln!(profile, "eval \"$(cw init bash post --skip-dotfiles)\"")?;
+                                writeln!(profile, "eval \"$(cw init bash post)\"")?;
                                 command
                                     .args(["bash", "--noprofile", "--norc", "--rcfile"])
                                     .arg(profile.path());
                                 command
                             },
                             Shell::Zsh => {
-                                std::fs::write(
-                                    tmp_dir.path().join(".zshrc"),
-                                    "eval \"$(cw init zsh post --skip-dotfiles)\"",
-                                )
-                                .unwrap();
+                                std::fs::write(tmp_dir.path().join(".zshrc"), "eval \"$(cw init zsh post)\"").unwrap();
 
                                 command.args(["zsh"]).env("ZDOTDIR", tmp_dir.path());
                                 command
                             },
                             Shell::Fish => {
-                                command.args([
-                                    "fish",
-                                    "--no-config",
-                                    "-C",
-                                    "cw init fish post --skip-dotfiles | source",
-                                ]);
+                                command.args(["fish", "--no-config", "-C", "cw init fish post | source"]);
                                 command
                             },
                             _ => eyre::bail!("Unsupported shell for debug"),

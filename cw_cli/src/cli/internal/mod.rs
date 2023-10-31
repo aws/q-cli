@@ -1,5 +1,5 @@
 pub mod local_state;
-pub mod should_figterm_launch;
+pub mod should_cwterm_launch;
 use std::fmt::Display;
 use std::io::{
     stderr,
@@ -422,7 +422,7 @@ impl InternalSubcommand {
                 }
                 exit(1);
             },
-            InternalSubcommand::ShouldFigtermLaunch => should_figterm_launch::should_figterm_launch(),
+            InternalSubcommand::ShouldFigtermLaunch => should_cwterm_launch::should_cwterm_launch(),
             InternalSubcommand::Event { payload, apps, name } => {
                 let hook = new_event_hook(name, payload, apps);
                 send_hook_to_socket(hook).await?;
@@ -639,16 +639,17 @@ impl InternalSubcommand {
                 })
             },
             InternalSubcommand::OpenUninstallPage { verbose } => {
-                let url = fig_install::get_uninstall_url(false);
-                if let Err(err) = fig_util::open_url(&url) {
+                let url = fig_install::UNINSTALL_URL;
+                if let Err(err) = fig_util::open_url(url) {
                     if verbose {
                         eprintln!("Failed to open uninstall directly, trying daemon proxy: {err}");
                     }
 
-                    if let Err(err) = fig_ipc::local::send_command_to_socket(
-                        fig_proto::local::command::Command::OpenBrowser(fig_proto::local::OpenBrowserCommand { url }),
-                    )
-                    .await
+                    if let Err(err) =
+                        fig_ipc::local::send_command_to_socket(fig_proto::local::command::Command::OpenBrowser(
+                            fig_proto::local::OpenBrowserCommand { url: url.into() },
+                        ))
+                        .await
                     {
                         if verbose {
                             eprintln!("Failed to open uninstall via desktop, no more options: {err}");
@@ -766,8 +767,7 @@ impl InternalSubcommand {
                     // If we're reinstalling, we don't want to uninstall
                     return Ok(());
                 } else {
-                    let url = fig_install::get_uninstall_url(true);
-                    fig_util::open_url_async(url).await.ok();
+                    fig_util::open_url_async(fig_install::UNINSTALL_URL).await.ok();
                 }
 
                 let components = if zap {

@@ -35,8 +35,8 @@ export FIG_PID="$$"
 export FIG_SET_PARENT=$CWTERM_SESSION_ID
 export LC_FIG_SET_PARENT=$CWTERM_SESSION_ID
 
-if [[ -z "${FIG_SHELL_PATH}" ]]; then
-  FIG_SHELL_PATH=$(cw _ get-shell)
+if [[ -z "${CW_SHELL}" ]]; then
+  CW_SHELL=$(cw _ get-shell)
 fi
 
 # shellcheck disable=SC2059
@@ -79,7 +79,7 @@ fig_precmd() {
   fig_osc "OSCUnlock=%s" "${CWTERM_SESSION_ID}"
   fig_osc "Dir=%s" "$PWD"
   fig_osc "Shell=zsh"
-  fig_osc "ShellPath=%s" "${FIG_SHELL_PATH:-$SHELL}"
+  fig_osc "ShellPath=%s" "${CW_SHELL:-$SHELL}"
   if [[ -n "${WSL_DISTRO_NAME}" ]]; then
     fig_osc "WSLDistro=%s" "${WSL_DISTRO_NAME}"
   fi

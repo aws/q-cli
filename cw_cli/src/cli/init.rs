@@ -4,6 +4,7 @@ use std::io::{
     stdout,
     Write,
 };
+use std::path::Path;
 
 use clap::Args;
 use eyre::Result;
@@ -12,11 +13,16 @@ use fig_integrations::shell::{
     When,
 };
 use fig_util::{
+    get_parent_process_exe,
     Shell,
     Terminal,
 };
+use once_cell::sync::Lazy;
 
+use super::internal::should_cwterm_launch::should_cwterm_launch_exit_status;
 use crate::util::app_path_from_bundle_id;
+
+static IS_SNAPSHOT_TEST: Lazy<bool> = Lazy::new(|| std::env::var_os("CW_INIT_SNAPSHOT_TEST").is_some());
 
 #[derive(Debug, Args, PartialEq, Eq)]
 pub struct InitArgs {
@@ -28,20 +34,12 @@ pub struct InitArgs {
     when: When,
     #[arg(long)]
     rcfile: Option<String>,
-    /// Whether to skip loading dotfiles
-    #[arg(long)]
-    skip_dotfiles: bool,
 }
 
 impl InitArgs {
     pub async fn execute(&self) -> Result<()> {
-        let InitArgs {
-            shell,
-            when,
-            rcfile,
-            skip_dotfiles,
-        } = self;
-        match shell_init(shell, when, rcfile, *skip_dotfiles) {
+        let InitArgs { shell, when, rcfile } = self;
+        match shell_init(shell, when, rcfile) {
             Ok(source) => writeln!(stdout(), "{source}"),
             Err(err) => writeln!(stdout(), "# Could not load source: {err}"),
         }
@@ -56,13 +54,13 @@ enum GuardAssignment {
     AfterSourcing,
 }
 
-fn assign_shell_variable(shell: &Shell, name: impl Display, exported: bool) -> String {
+fn assign_shell_variable(shell: &Shell, name: impl Display, value: impl Display, exported: bool) -> String {
     match (shell, exported) {
-        (Shell::Bash | Shell::Zsh, false) => format!("{name}=1"),
-        (Shell::Bash | Shell::Zsh, true) => format!("export {name}=1"),
-        (Shell::Fish, false) => format!("set -g {name} 1"),
-        (Shell::Fish, true) => format!("set -gx {name} 1"),
-        (Shell::Nu, _) => format!("let-env {name} = 1;"),
+        (Shell::Bash | Shell::Zsh, false) => format!("{name}=\"{value}\""),
+        (Shell::Bash | Shell::Zsh, true) => format!("export {name}=\"{value}\""),
+        (Shell::Fish, false) => format!("set -g {name} \"{value}\""),
+        (Shell::Fish, true) => format!("set -gx {name} \"{value}\""),
+        (Shell::Nu, _) => format!("let-env {name} = \"{value}\";"),
     }
 }
 
@@ -74,14 +72,13 @@ fn guard_source(
     source: impl Into<Cow<'static, str>>,
 ) -> String {
     let mut output: Vec<Cow<'static, str>> = Vec::with_capacity(4);
-
     output.push(match shell {
         Shell::Bash | Shell::Zsh => format!("if [ -z \"${{{guard_var}}}\" ]; then").into(),
         Shell::Fish => format!("if test -z \"${guard_var}\"").into(),
         Shell::Nu => format!("if env | any name == '{guard_var}' {{").into(),
     });
 
-    let shell_var = assign_shell_variable(shell, guard_var, export);
+    let shell_var = assign_shell_variable(shell, guard_var, "1", export);
     match assignment {
         GuardAssignment::BeforeSourcing => {
             // If script may trigger rc file to be rerun, guard assignment must happen first to avoid recursion
@@ -110,7 +107,7 @@ fn guard_source(
     output.join("\n")
 }
 
-fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>, skip_dotfiles: bool) -> Result<String> {
+fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<String> {
     // Do not print any shell integrations for `.profile` as it can cause issues on launch
     if std::env::consts::OS == "linux" && matches!(rcfile.as_deref(), Some("profile")) {
         return Ok("".into());
@@ -120,7 +117,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>, skip_dotfiles
         return Ok(guard_source(
             shell,
             false,
-            "FIG_SHELL_INTEGRATION_DISABLED",
+            "CW_SHELL_INTEGRATION_DISABLED",
             GuardAssignment::AfterSourcing,
             "echo '[Debug]: fig shell integration is disabled.'",
         ));
@@ -128,12 +125,33 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>, skip_dotfiles
 
     let mut to_source = Vec::new();
 
+    if let Some(parent_process) = get_parent_process_exe() {
+        to_source.push(assign_shell_variable(
+            shell,
+            "CW_SHELL",
+            if *IS_SNAPSHOT_TEST {
+                Path::new("/bin/zsh").display()
+            } else {
+                parent_process.display()
+            },
+            false,
+        ));
+    };
+
+    if when == &When::Pre {
+        let status = if *IS_SNAPSHOT_TEST {
+            0
+        } else {
+            should_cwterm_launch_exit_status(true)
+        };
+        to_source.push(assign_shell_variable(shell, "SHOULD_CWTERM_LAUNCH", status, false));
+    }
+
     if let When::Post = when {
         if !matches!(
             (shell, rcfile.as_deref()),
             (Shell::Zsh, Some("zprofile")) | (Shell::Bash, Some("profile") | Some("bash_profile"))
         ) && fig_settings::state::get_bool_or("dotfiles.enabled", true)
-            && !skip_dotfiles
             && shell == &Shell::Zsh
             && when == &When::Post
             && fig_settings::settings::get_bool_or("ghost-text.enabled", false)

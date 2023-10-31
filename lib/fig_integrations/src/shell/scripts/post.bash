@@ -33,8 +33,8 @@ FIG_LAST_PS1="$PS1"
 FIG_LAST_PS2="$PS2"
 FIG_LAST_PS3="$PS3"
 
-if [[ -z "${FIG_SHELL_PATH}" ]]; then
-  FIG_SHELL_PATH=$(cw _ get-shell)
+if [[ -z "${CW_SHELL}" ]]; then
+  CW_SHELL=$(cw _ get-shell)
 fi
 
 # Construct Operating System Command.
@@ -75,7 +75,7 @@ function __fig_pre_prompt () {
   fig_osc "OSCUnlock=%s" "${CWTERM_SESSION_ID}"
   fig_osc "Dir=%s" "${PWD}"
   fig_osc "Shell=bash"
-  fig_osc "ShellPath=%s" "${FIG_SHELL_PATH:-$SHELL}"
+  fig_osc "ShellPath=%s" "${CW_SHELL:-$SHELL}"
   if [[ -n "${WSL_DISTRO_NAME}" ]]; then
     fig_osc "WSLDistro=%s" "${WSL_DISTRO_NAME}"
   fi

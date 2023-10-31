@@ -2,6 +2,8 @@
 source: cw_cli/tests/init.rs
 expression: init
 ---
+CW_SHELL="/bin/zsh"
+SHOULD_CWTERM_LAUNCH="0"
 #!/usr/bin/env bash
 
 mkdir -p "${HOME}/.local/bin" > /dev/null 2>&1
@@ -32,8 +34,10 @@ if [[ -z "${FIG_SET_PARENT_CHECK}" ]]; then
 fi
 
 # 0 = Yes, 1 = No, 2 = Fallback to CW_TERM
-cw _ should-figterm-launch 1>/dev/null 2>&1
-SHOULD_FIGTERM_LAUNCH=$?
+if [ -z "${SHOULD_CWTERM_LAUNCH}" ]; then
+  cw _ should-figterm-launch 1>/dev/null 2>&1
+  SHOULD_CWTERM_LAUNCH=$?
+fi
 
 # Only launch figterm if current session is not already inside PTY and command exists.
 # PWSH var is set when launched by `pwsh -Login`, in which case we don't want to init.
@@ -41,10 +45,12 @@ SHOULD_FIGTERM_LAUNCH=$?
 if   [[ -t 1 ]] \
   && [[ -z "${PROCESS_LAUNCHED_BY_FIG}" ]] \
   && command -v cwterm 1>/dev/null 2>&1 \
-  && [[ ("${SHOULD_FIGTERM_LAUNCH}" -eq 0) || (("${SHOULD_FIGTERM_LAUNCH}" -eq 2) && (-z "${CW_TERM}" || (-z "${CW_TERM_TMUX}" && -n "${TMUX}"))) ]]
+  && [[ ("${SHOULD_CWTERM_LAUNCH}" -eq 0) || (("${SHOULD_CWTERM_LAUNCH}" -eq 2) && (-z "${CW_TERM}" || (-z "${CW_TERM_TMUX}" && -n "${TMUX}"))) ]]
 then
   # Pty module sets CW_TERM or CW_TERM_TMUX to avoid running twice.
-  FIG_SHELL=$(cw _ get-shell)
+  if [ -z "${CW_SHELL}" ]; then
+    CW_SHELL=$(cw _ get-shell)
+  fi
   FIG_IS_LOGIN_SHELL="${FIG_IS_LOGIN_SHELL:='0'}"
 
   # shellcheck disable=SC2030
@@ -55,7 +61,7 @@ then
 
   # Do not launch figterm in non-interactive shells (like VSCode Tasks)
   if [[ $- == *i* ]]; then
-    CW_TERM_NAME="$(basename "${FIG_SHELL}") (cwterm)"
+    CW_TERM_NAME="$(basename "${CW_SHELL}") (cwterm)"
     if [[ -x "${HOME}/.local/bin/${CW_TERM_NAME}" ]]; then
       CW_TERM_PATH="${HOME}/.local/bin/${CW_TERM_NAME}"
     else
@@ -75,7 +81,7 @@ then
         INITIAL_TEXT="${INITIAL_TEXT}${REPLY}\n"
       done
     fi
-    FIG_EXECUTION_STRING="${FIG_EXECUTION_STRING}" FIG_START_TEXT="$(printf "%b" "${INITIAL_TEXT}")" FIG_SHELL="${FIG_SHELL}" FIG_IS_LOGIN_SHELL="${FIG_IS_LOGIN_SHELL}" exec -a "${CW_TERM_NAME}" "${CW_TERM_PATH}"
+    FIG_EXECUTION_STRING="${FIG_EXECUTION_STRING}" FIG_START_TEXT="$(printf "%b" "${INITIAL_TEXT}")" CW_SHELL="${CW_SHELL}" FIG_IS_LOGIN_SHELL="${FIG_IS_LOGIN_SHELL}" exec -a "${CW_TERM_NAME}" "${CW_TERM_PATH}"
   fi
 # else
 #   FIG_DID_NOT_EXEC_FIGTERM=1

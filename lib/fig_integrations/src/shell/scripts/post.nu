@@ -12,7 +12,7 @@ let-env PATH = pathadd $"($env.HOME)/.local/bin"
 let-env FIG_SET_PARENT = $env.CWTERM_SESSION_ID
 let-env LC_FIG_SET_PARENT = $env.CWTERM_SESSION_ID
 
-let-env FIG_SHELL_PATH = (^cw _ get-shell)
+let-env CW_SHELL = (^cw _ get-shell)
 
 let-env PATH = $env.PATH
 
@@ -120,8 +120,8 @@ def-env fig_pre_prompt_hook [] {
     print_fig_osc $"OSCUnlock=($env.CWTERM_SESSION_ID)"
     print_fig_osc $"Dir=($env.PWD)"
     print_fig_osc "Shell=nu"
-    if "FIG_SHELL_PATH" in $env {
-      print_fig_osc $"ShellPath=($env.FIG_SHELL_PATH)"
+    if "CW_SHELL" in $env {
+      print_fig_osc $"ShellPath=($env.CW_SHELL)"
     } 
     if "WSL_DISTRO_NAME" in $env {
       print_fig_osc $"WSLDistro=($env.WSL_DISTRO_NAME)"

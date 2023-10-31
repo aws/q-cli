@@ -40,6 +40,8 @@ pub use common::{
     InstallComponents,
 };
 
+pub const UNINSTALL_URL: &str = "https://pulse.aws/survey/NOMBDSG4";
+
 #[derive(Debug, Error)]
 pub enum Error {
     #[error(transparent)]
@@ -232,12 +234,4 @@ pub async fn update(
         info!("No updates available");
         Ok(false)
     }
-}
-
-pub fn get_uninstall_url(brew: bool) -> String {
-    // Open the uninstallation page
-    let os = std::env::consts::OS;
-    let email = "";
-    let version = env!("CARGO_PKG_VERSION");
-    format!("https://fig.io/uninstall?email={email}&version={version}&os={os}&brew={brew}")
 }

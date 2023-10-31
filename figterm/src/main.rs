@@ -430,12 +430,12 @@ where
 }
 
 fn get_parent_shell() -> Result<String> {
-    match env::var("FIG_SHELL").ok().filter(|s| !s.is_empty()) {
+    match env::var("CW_SHELL").ok().filter(|s| !s.is_empty()) {
         Some(v) => Ok(v),
         None => match env::var("SHELL").ok().filter(|s| !s.is_empty()) {
             Some(shell) => Ok(shell),
             None => {
-                anyhow::bail!("No FIG_SHELL or SHELL found");
+                anyhow::bail!("No CW_SHELL or SHELL found");
             },
         },
     }
@@ -464,7 +464,7 @@ fn build_shell_command(command: Option<&[String]>) -> Result<CommandBuilder> {
                 builder.args(["-c", &execution_string]);
             }
 
-            if let Some(extra_args) = env::var("FIG_SHELL_EXTRA_ARGS").ok().filter(|s| !s.is_empty()) {
+            if let Some(extra_args) = env::var("CW_SHELL_EXTRA_ARGS").ok().filter(|s| !s.is_empty()) {
                 builder.args(extra_args.split_whitespace().filter(|arg| arg != &"--login"));
             }
 
@@ -478,10 +478,10 @@ fn build_shell_command(command: Option<&[String]>) -> Result<CommandBuilder> {
     }
 
     // Clean up environment and launch shell.
-    builder.env_remove("FIG_SHELL");
+    builder.env_remove("CW_SHELL");
     builder.env_remove("FIG_IS_LOGIN_SHELL");
     builder.env_remove("FIG_START_TEXT");
-    builder.env_remove("FIG_SHELL_EXTRA_ARGS");
+    builder.env_remove("CW_SHELL_EXTRA_ARGS");
     builder.env_remove("FIG_EXECUTION_STRING");
 
     if let Ok(dir) = std::env::current_dir() {

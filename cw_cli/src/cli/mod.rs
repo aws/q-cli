@@ -261,8 +261,7 @@ impl Cli {
         }
 
         let _logger_guard = logger.init().expect("Failed to init logger");
-        let command = std::env::args().collect::<Vec<_>>();
-        debug!("Command ran: {:?}", command);
+        debug!(command =? std::env::args().collect::<Vec<_>>(), "Command ran");
 
         self.send_telemetry().await;
 

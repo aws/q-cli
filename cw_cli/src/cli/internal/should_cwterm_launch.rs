@@ -4,7 +4,6 @@ use std::io::{
     stdout,
     Write,
 };
-use std::process::exit;
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 #[allow(dead_code)]
@@ -24,16 +23,20 @@ enum Status {
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 impl Status {
-    fn unwrap(self) -> ProcessInfo {
+    fn exit_status(self, quiet: bool) -> Result<ProcessInfo, i32> {
         match self {
-            Status::Process(info) => info,
+            Status::Process(info) => Ok(info),
             Status::Launch(s) => {
-                writeln!(stdout(), "✅ {s}").ok();
-                exit(0)
+                if !quiet {
+                    writeln!(stdout(), "✅ {s}").ok();
+                }
+                Err(0)
             },
             Status::DontLaunch(s) => {
-                writeln!(stdout(), "❌ {s}").ok();
-                exit(1)
+                if !quiet {
+                    writeln!(stdout(), "❌ {s}").ok();
+                }
+                Err(1)
             },
         }
     }
@@ -149,108 +152,134 @@ fn grandparent_status(parent_pid: fig_util::process_info::Pid) -> Status {
 }
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
-fn should_launch() -> ! {
+fn should_launch(quiet: bool) -> i32 {
     use fig_util::process_info::PidExt;
 
     let current_pid = fig_util::process_info::Pid::current();
-    let parent_info = parent_status(current_pid).unwrap();
-    let grandparent_info = grandparent_status(parent_info.pid).unwrap();
+    let parent_info = match parent_status(current_pid).exit_status(quiet) {
+        Ok(info) => info,
+        Err(i) => return i,
+    };
+    let grandparent_info = match grandparent_status(parent_info.pid).exit_status(quiet) {
+        Ok(info) => info,
+        Err(i) => return i,
+    };
 
-    let ancestry = format!(
-        "{} {} ({}) <- {} {} ({})",
-        if grandparent_info.is_valid { "✅" } else { "❌" },
-        grandparent_info.name,
-        grandparent_info.pid,
-        if parent_info.is_valid { "✅" } else { "❌" },
-        parent_info.name,
-        parent_info.pid,
-    );
+    if !quiet {
+        let ancestry = format!(
+            "{} {} ({}) <- {} {} ({})",
+            if grandparent_info.is_valid { "✅" } else { "❌" },
+            grandparent_info.name,
+            grandparent_info.pid,
+            if parent_info.is_valid { "✅" } else { "❌" },
+            parent_info.name,
+            parent_info.pid,
+        );
 
-    writeln!(stdout(), "{ancestry}").ok();
+        writeln!(stdout(), "{ancestry}").ok();
+    }
 
     #[cfg(target_os = "macos")]
     {
         if !grandparent_info.is_special {
-            writeln!(stdout(), "🟡 Falling back to old mechanism since on macOS").ok();
-            exit(2);
+            if !quiet {
+                writeln!(stdout(), "🟡 Falling back to old mechanism since on macOS").ok();
+            }
+            return 2;
         }
     }
 
-    exit(i32::from(!(grandparent_info.is_valid && parent_info.is_valid)));
+    i32::from(!(grandparent_info.is_valid && parent_info.is_valid))
 }
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
-pub fn should_figterm_launch() -> ! {
-    if !fig_settings::state::get_bool_or("figterm.enabled", true) {
-        writeln!(stdout(), "❌ figterm.enabled is false").ok();
-        exit(1);
-    }
-
+pub fn should_cwterm_launch_exit_status(quiet: bool) -> i32 {
     if std::env::var_os("PROCESS_LAUNCHED_BY_FIG").is_some() {
-        writeln!(stdout(), "❌ PROCESS_LAUNCHED_BY_FIG").ok();
-        exit(1);
+        if !quiet {
+            writeln!(stdout(), "❌ PROCESS_LAUNCHED_BY_FIG").ok();
+        }
+        return 1;
     }
 
     // Check if inside Emacs
     if std::env::var_os("INSIDE_EMACS").is_some() {
-        writeln!(stdout(), "❌ INSIDE_EMACS").ok();
-        exit(1);
+        if !quiet {
+            writeln!(stdout(), "❌ INSIDE_EMACS").ok();
+        }
+        return 1;
     }
 
     // Check for Warp Terminal
     if let Ok(term_program) = std::env::var("TERM_PROGRAM") {
         if term_program == "WarpTerminal" {
-            writeln!(stdout(), "❌ TERM_PROGRAM = WarpTerminal").ok();
-            exit(1);
+            if !quiet {
+                writeln!(stdout(), "❌ TERM_PROGRAM = WarpTerminal").ok();
+            }
+            return 1;
         }
     }
 
     // Check for SecureCRT
     if let Ok(cf_bundle_identifier) = std::env::var("__CFBundleIdentifier") {
         if cf_bundle_identifier == "com.vandyke.SecureCRT" {
-            writeln!(stdout(), "❌ __CFBundleIdentifier = com.vandyke.SecureCRT").ok();
-            exit(1);
+            if !quiet {
+                writeln!(stdout(), "❌ __CFBundleIdentifier = com.vandyke.SecureCRT").ok();
+            }
+            return 1;
         }
     }
 
     // PWSH var is set when launched by `pwsh -Login`, in which case we don't want to init.
     if std::env::var_os("__PWSH_LOGIN_CHECKED").is_some() {
-        writeln!(stdout(), "❌ __PWSH_LOGIN_CHECKED").ok();
-        exit(1);
+        if !quiet {
+            writeln!(stdout(), "❌ __PWSH_LOGIN_CHECKED").ok();
+        }
+        return 1;
     }
 
     // Make sure we're not in CI
     if fig_util::system_info::in_ci() {
-        writeln!(stdout(), "❌ In CI").ok();
-        exit(1);
+        if !quiet {
+            writeln!(stdout(), "❌ In CI").ok();
+        }
+        return 1;
     }
 
     // If we are in SSH and there is no FIG_PARENT dont launch
     if fig_util::system_info::in_ssh() && std::env::var_os("FIG_PARENT").is_none() {
-        writeln!(stdout(), "❌ In SSH without FIG_PARENT").ok();
-        exit(1);
+        if !quiet {
+            writeln!(stdout(), "❌ In SSH without FIG_PARENT").ok();
+        }
+        return 1;
     }
 
     if fig_util::system_info::in_wsl() {
-        writeln!(stdout(), "🟡 Falling back to old mechanism since in WSL").ok();
-        exit(2)
+        if !quiet {
+            writeln!(stdout(), "🟡 Falling back to old mechanism since in WSL").ok();
+        }
+        2
     } else {
-        should_launch()
+        should_launch(quiet)
     }
 }
 
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub fn should_cwterm_launch() -> ! {
+    std::process::exit(should_cwterm_launch_exit_status(false))
+}
+
 #[cfg(target_os = "windows")]
-pub fn should_figterm_launch() {
+pub fn should_cwterm_launch() {
     use std::os::windows::io::AsRawHandle;
 
     use winapi::um::consoleapi::GetConsoleMode;
 
     let mut mode = 0;
     let stdin_ok = unsafe { GetConsoleMode(std::io::stdin().as_raw_handle() as *mut _, &mut mode) };
-    exit(if stdin_ok == 1 { 2 } else { 1 });
+    std::process::exit(if stdin_ok == 1 { 2 } else { 1 });
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
-pub fn should_figterm_launch() {
-    exit(2);
+pub fn should_cwterm_launch() {
+    std::process::exit(2);
 }

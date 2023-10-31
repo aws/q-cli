@@ -20,24 +20,9 @@ use owo_colors::OwoColorize;
 use tracing::metadata::LevelFilter;
 
 fn main() -> Result<()> {
+    color_eyre::install()?;
+
     let args: Vec<_> = std::env::args().collect();
-
-    // Hyper optimized command parsing for commands we need to be **fast**
-    //
-    // I literally couldnt make it any faster than this
-    if args.get(1).map(String::as_str) == Some("_") {
-        match args.get(2).map(String::as_str) {
-            Some("get-shell") => {
-                cli::internal::get_shell();
-                std::process::exit(0);
-            },
-            Some("should-figterm-launch") => cli::internal::should_figterm_launch::should_figterm_launch(),
-            _ => {},
-        }
-    } else {
-        color_eyre::install()?;
-    }
-
     let multithread = matches!(
         args.get(1).map(String::as_str),
         Some("init" | "_" | "internal" | "tips" | "completion" | "hook" | "bg:tmux" | "app:running")
