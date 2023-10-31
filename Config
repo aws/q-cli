@@ -1,26 +1,24 @@
 package.FigIoDesktop = {
     interfaces = (1.0);
 
-    # https://w.amazon.com/index.php/BrazilBuildSystem/MacTrampolineBuild#Use_Case_1:_As_a_package_owner.2C_I_can_build_my_package_
     build-environment = {
         chroot = basic;
-
-        # network-access is required by MacTrampolineBuild
-        network-access = open;
     };
 
-    build-system = mac-trampoline-build;
-    mac-build-system = custom-build;
+    # Use NoOpBuild. See https://w.amazon.com/index.php/BrazilBuildSystem/NoOpBuild
+    build-system = no-op;
 
+    # build-system = custom-build;
     build-tools = {
         1.0 = {
-            MacTrampolineBuild = 1.0;
-            CargoBrazil = 1.0;
-            RustLang1x = 1.x;
-            Grcov = 0.8.x;
-            NpmPrettyMuch = 1.1;
-            NodeJS = default;
-            BrazilPath = 1.1;
+            NoOpBuild = 1.0;
+
+            # CargoBrazil = 1.0;
+            # RustLang1x = 1.x;
+            # Grcov = 0.8.x;
+            # NpmPrettyMuch = 1.1;
+            # NodeJS = default;
+            # BrazilPath = 1.1;
         };
     };
 
