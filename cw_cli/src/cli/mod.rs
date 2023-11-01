@@ -176,6 +176,7 @@ pub enum CliRootCommands {
     #[command(subcommand, alias("integration"))]
     Integrations(IntegrationsSubcommands),
     /// English -> Bash translation
+    #[command(alias = "q")]
     Ai(ai::AiArgs),
     /// Enable/disable telemetry
     #[command(subcommand, hide = true)]

@@ -638,7 +638,7 @@ impl DoctorCheck for FigtermSocketCheck {
         let term_session = match std::env::var("CWTERM_SESSION_ID") {
             Ok(session) => session,
             Err(_) => {
-                return Ok(doctor_error!(
+                return Err(doctor_error!(
                     "Cwterm is not running, restart your terminal to start using CodeWhisperer. CWTERM_SESSION_ID is unset."
                 ));
             },
