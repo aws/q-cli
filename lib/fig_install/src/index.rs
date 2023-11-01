@@ -321,6 +321,7 @@ mod tests {
                     "7fff5995557907fb90c4808f5c2ab9307ab94464dcb5703cc9b022d25f1f6718",
                     93024994,
                 ),
+                version("0.4.0", "", 0),
             ],
         };
 
@@ -330,6 +331,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "needs vpn"]
     async fn pull_test() {
         let index = pull(&Channel::Stable).await.unwrap();
         println!("{:#?}", index);
@@ -338,6 +340,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "needs vpn"]
     async fn check_test() {
         dbg!(
             check_for_updates(Channel::Stable, Kind::Dmg, Variant::Full, false,)
