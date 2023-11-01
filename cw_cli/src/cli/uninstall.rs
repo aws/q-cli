@@ -60,10 +60,9 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
 
 #[cfg(target_os = "macos")]
 async fn uninstall() -> Result<()> {
-    use fig_install::InstallComponents;
-
     fig_util::open_url(fig_install::UNINSTALL_URL).ok();
-    fig_install::uninstall(InstallComponents::all()).await?;
+    auth::logout().await.ok();
+    fig_install::uninstall(fig_install::InstallComponents::all()).await?;
 
     Ok(())
 }
