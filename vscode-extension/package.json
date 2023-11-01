@@ -1,7 +1,7 @@
 {
 	"name": "fig",
-	"displayName": "Fig",
-	"description": "Companion extension for Fig to help integrate with VS Code",
+	"displayName": "CodeWhisperer for the command line",
+	"description": "VS Code terminal integrations for CodeWhisperer",
 	"version": "0.0.7",
 	"icon": "images/icon.png",
 	"engines": {
