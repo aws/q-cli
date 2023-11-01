@@ -63,6 +63,7 @@ use fig_util::{
 };
 use futures::future::BoxFuture;
 use futures::FutureExt;
+use owo_colors::OwoColorize;
 use regex::Regex;
 use semver::{
     Version,
@@ -1896,6 +1897,44 @@ impl DoctorCheck for SandboxCheck {
     }
 }
 
+struct BashVersionCheck;
+
+#[async_trait]
+impl DoctorCheck for BashVersionCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Bash is up to date".into()
+    }
+
+    fn get_type(&self, _: &(), _platform: Platform) -> DoctorCheckType {
+        if Shell::current_shell() == Some(Shell::Bash) {
+            DoctorCheckType::SoftCheck
+        } else {
+            DoctorCheckType::NoCheck
+        }
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        let (_, version) = Shell::current_shell_version()
+            .await
+            .context("Failed to get bash versions")?;
+
+        let version = semver::Version::parse(&version).context("Failed to parse bash version")?;
+
+        let version_req = semver::VersionReq::parse(">=5.0.0").unwrap();
+        if version_req.matches(&version) {
+            Ok(())
+        } else {
+            Err(doctor_warning!(
+                "Using Bash {version} may cause issues, it is recommended to either update to bash >=5 or switch to zsh.
+  - Install Bash 5 with Brew: {}
+  - Change shell default to ZSH: {}",
+                "brew install bash && bash".bright_magenta(),
+                "chsh -s /bin/zsh && zsh".bright_magenta()
+            ))
+        }
+    }
+}
+
 struct FishVersionCheck;
 
 #[async_trait]
@@ -2208,6 +2247,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             "Let's check if your system is compatible...".into(),
             vec![
                 &SystemVersionCheck,
+                &BashVersionCheck,
                 &FishVersionCheck,
                 #[cfg(target_os = "macos")]
                 &ToolboxInstalledCheck,

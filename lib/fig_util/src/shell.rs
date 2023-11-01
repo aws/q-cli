@@ -3,13 +3,17 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 use clap::ValueEnum;
+use regex::Regex;
 use serde::{
     Deserialize,
     Serialize,
 };
 
-use crate::directories;
 use crate::process_info::get_parent_process_exe;
+use crate::{
+    directories,
+    Error,
+};
 
 /// Shells supported by Fig
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, ValueEnum)]
@@ -68,6 +72,53 @@ impl Shell {
             Some(Shell::Nu)
         } else {
             None
+        }
+    }
+
+    pub async fn current_shell_version() -> Result<(Self, String), Error> {
+        let parent_exe = get_parent_process_exe().ok_or(Error::NoParentProcess)?;
+        let parent_exe_name = parent_exe
+            .to_str()
+            .ok_or_else(|| Error::UnknownShell(parent_exe.to_string_lossy().into()))?;
+        if parent_exe_name.contains("bash") {
+            let version_output = tokio::process::Command::new(parent_exe)
+                .arg("--version")
+                .output()
+                .await?;
+
+            let re = Regex::new(r"GNU bash, version (\d+\.\d+\.\d+)").unwrap();
+            let version_capture = re.captures(std::str::from_utf8(&version_output.stdout)?);
+            let version = version_capture.unwrap().get(1).unwrap().as_str();
+            Ok((Shell::Bash, version.into()))
+        } else if parent_exe_name.contains("zsh") {
+            let version_output = tokio::process::Command::new(parent_exe)
+                .arg("--version")
+                .output()
+                .await?;
+
+            let re = Regex::new(r"(\d+\.\d+\)").unwrap();
+            let version_capture = re.captures(std::str::from_utf8(&version_output.stdout)?);
+            let version = version_capture.unwrap().get(1).unwrap().as_str();
+            Ok((Shell::Zsh, format!("{version}.0")))
+        } else if parent_exe_name.contains("fish") {
+            let version_output = tokio::process::Command::new(parent_exe)
+                .arg("--version")
+                .output()
+                .await?;
+
+            let re = Regex::new(r"(\d+\.\d+\.\d+)").unwrap();
+            let version_capture = re.captures(std::str::from_utf8(&version_output.stdout)?);
+            let version = version_capture.unwrap().get(1).unwrap().as_str();
+            Ok((Shell::Fish, version.into()))
+        } else if parent_exe_name == "nu" || parent_exe_name == "nushell" {
+            let version_output = tokio::process::Command::new(parent_exe)
+                .arg("--version")
+                .output()
+                .await?;
+            let version = std::str::from_utf8(&version_output.stdout)?.trim();
+            Ok((Shell::Nu, version.into()))
+        } else {
+            Err(Error::UnknownShell(parent_exe_name.into()))
         }
     }
 

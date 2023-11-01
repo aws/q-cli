@@ -45,7 +45,7 @@ else
 CARGO_BUILD := debug
 endif
 
-BINARY_NAME ?= fig
+BINARY_NAME ?= cw
 CRATE_NAME  ?= cw_cli
 
 ### Build for each platform
@@ -138,7 +138,3 @@ generate-spec: install-native
 clean:
 	command -v cargo &>/dev/null && cargo clean
 	rm -rf $(BUILT_PRODUCTS_DIR)
-
-### Install for xcode
-install: all
-
