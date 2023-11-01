@@ -635,7 +635,14 @@ impl DoctorCheck for FigtermSocketCheck {
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         // Check that the socket exists
-        let term_session = std::env::var("CWTERM_SESSION_ID").context("No CWTERM_SESSION_ID")?;
+        let term_session = match std::env::var("CWTERM_SESSION_ID") {
+            Ok(session) => session,
+            Err(_) => {
+                return Ok(doctor_error!(
+                    "Cwterm is not running, restart your terminal to start using CodeWhisperer. CWTERM_SESSION_ID is unset."
+                ));
+            },
+        };
         let socket_path = fig_util::directories::figterm_socket_path(term_session).context("No figterm path")?;
 
         if let Err(err) = check_file_exists(&socket_path) {
