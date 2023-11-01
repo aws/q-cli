@@ -5,6 +5,7 @@ if [[ -d "${HOME}/.local/bin" ]] && [[ ":$PATH:" != *":${HOME}/.local/bin:"* ]];
   PATH="${PATH:+"$PATH:"}${HOME}/.local/bin"
 fi
 
+alias q='cw ai'
 
 # Open scripts on keyboard shortcut
 if [[ -z "${FIG_SCRIPTS_KEYBIND}" ]]

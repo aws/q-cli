@@ -4,6 +4,8 @@ or set --append PATH $HOME/.local/bin
 builtin contains $HOME/.local/bin $PATH
 or set --append PATH $HOME/.local/bin
 
+alias q='cw ai'
+
 # if test "$FIG_DID_NOT_EXEC_FIGTERM" = 1
 #     and test "$CW_TERM" != 1
 #     or set --query INSIDE_EMACS
