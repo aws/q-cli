@@ -94,7 +94,7 @@ const generalPreferences = [
         id: "codeWhisperer.shareCodeWhispererContentWithAWS",
         title: "Share CodeWhisperer content with AWS",
         description:
-          "Your content processed by CodeWhisperer may be used for service improvement (except for content processed by CodeWhisperer’s Enterprise tier). Disabling this setting will cause AWS to delete all of your content used for that purpose.",
+          "Your content processed by CodeWhisperer may be used for service improvement (except for content processed by CodeWhisperer’s Enterprise tier or users logged in with AWS IAM Identity Center). Disabling this setting will cause AWS to delete all of your content used for that purpose.",
         example:
           "The information used to provide the CodeWhisperer service to you will not be affected. See the Service Terms for more detail.",
         type: "boolean",

@@ -1,5 +1,6 @@
 import {
   AuthBuilderIdStartDeviceAuthorizationResponse,
+  AuthStatusResponse_AuthKind,
   AuthBuilderIdPollCreateTokenResponse_PollStatus as PollStatus,
 } from "@fig/fig-api-proto/dist/fig.pb";
 import {
@@ -9,7 +10,24 @@ import {
 } from "./requests";
 
 export function status() {
-  return sendAuthStatusRequest({});
+  return sendAuthStatusRequest({}).then((res) => {
+    let authKind: "BuilderId" | "IamIdentityCenter" | undefined = undefined;
+    switch (res.authKind) {
+      case AuthStatusResponse_AuthKind.BUILDER_ID:
+        authKind = "BuilderId";
+        break;
+      case AuthStatusResponse_AuthKind.IAM_IDENTITY_CENTER:
+        authKind = "IamIdentityCenter";
+        break;
+      default:
+        break;
+    }
+
+    return {
+      authed: res.authed,
+      authKind,
+    };
+  });
 }
 
 export function builderIdStartDeviceAuthorization({
