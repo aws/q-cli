@@ -1,4 +1,4 @@
-import { WindowPosition, Settings, Event } from "@withfig/api-bindings";
+import { WindowPosition, Settings } from "@withfig/api-bindings";
 import { SETTINGS } from "@amzn/fig-io-api-bindings-wrappers";
 import React, {
   useState,
@@ -11,13 +11,7 @@ import React, {
 
 import logger from "loglevel";
 import { getCWDForFilesAndFolders } from "@internal/shared/utils";
-import {
-  loadPrivateSpecs,
-  clearFigCaches,
-  resetPreloadPromise,
-  canLoadFigspec,
-} from "@amzn/fig-io-autocomplete-parser";
-import { useRefreshTokenExpirationStatus } from "@amzn/fig-io-api-client";
+import { canLoadSpecProtocol } from "@amzn/fig-io-autocomplete-parser";
 import * as jsxRuntime from "react/jsx-runtime";
 import * as figApiBindings from "@withfig/api-bindings";
 import { getMaxHeight, getMaxWidth, POPOUT_WIDTH } from "./window";
@@ -26,11 +20,9 @@ import { loadHistory } from "./history";
 import "./index.css";
 import AutoSizedList, { AutoSizedHandleRef } from "./components/AutoSizedList";
 
-import { captureError } from "./sentry";
 import {
   useFigKeypress,
   useFigAutocomplete,
-  useFigSubscriptionEffect,
   useFigSettings,
 } from "./fig/hooks";
 
@@ -81,7 +73,7 @@ function App() {
     suggestions,
     selectedIndex,
     visibleState,
-    figState: { buffer, cwd, shellContext, processUserIsIn },
+    figState: { buffer, cwd, shellContext },
     parserResult: { searchTerm, currentArg },
     settings,
     setSettings,
@@ -219,7 +211,7 @@ function App() {
 
   useEffect(() => {
     // Dont preload if we can load the locally cached figspec
-    if (canLoadFigspec()) {
+    if (canLoadSpecProtocol()) {
       return;
     }
 
@@ -544,7 +536,7 @@ function App() {
     );
   }
 
-  //                else {
+  // else {
   //   contents = (
   //     <div className="small-text m-1 w-auto space-y-1.5 whitespace-nowrap rounded bg-amber-500 px-2.5 py-2 text-black">
   //       <div className="font-bold">Not logged in</div>

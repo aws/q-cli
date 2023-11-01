@@ -43,7 +43,7 @@ fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> std::io::Result
     Ok(())
 }
 
-pub async fn update_spec_store(force: bool) -> Result<(), Error> {
+pub async fn _update_spec_store(force: bool) -> Result<(), Error> {
     if !fig_util::manifest::is_full() {
         return Err(Error::DesktopAppNotInstalled);
     }

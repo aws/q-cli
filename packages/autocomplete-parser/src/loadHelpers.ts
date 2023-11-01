@@ -143,18 +143,14 @@ export async function importSpecFromFile(
 /**
  * Specs can only be loaded from non "secure" contexts, so we can't load from https
  */
-export const canLoadFigspec = () => false;
-// TODO: use spec:// everywhere
-// window.location.protocol === "figapp:" ||
-// window.location.protocol === "http:" ||
-// window.location.protocol === "resource:";
+export const canLoadSpecProtocol = () => window.location.protocol !== "https:";
 
 // TODO: fedeci this is a problem for diff-versioned specs
 export async function importFromPublicCDN<T = SpecFileImport>(
   name: string,
   forceReload = false
 ): Promise<T> {
-  if (canLoadFigspec()) {
+  if (canLoadSpecProtocol()) {
     return withTimeout(
       20000,
       import(
@@ -323,7 +319,7 @@ export async function preloadSpecs(
     importFromPrivateCDN(v, authClient)
   );
 
-  if (!canLoadFigspec()) {
+  if (!canLoadSpecProtocol()) {
     promises = [
       ...promises,
       ...MOST_USED_SPECS.map(async (name) => {

@@ -216,11 +216,10 @@ vim main.c
 }
 
 fn warning_message(content: &str) {
-    let a: &[(Regex, fn(&Captures) -> String)] = &[
+    #[allow(clippy::type_complexity)]
+    let warnings: &[(Regex, fn(&Captures) -> String)] = &[
         (Regex::new(r"\bsudo\b").unwrap(), |_m| {
-            format!(
-                "⚠️ Warning: this command contains sudo which will run the command as admin, please make sure you know what you are doing before you run this..."
-            )
+            "⚠️ Warning: this command contains sudo which will run the command as admin, please make sure you know what you are doing before you run this...".into()
         }),
         (
             Regex::new(r"\s+(--hard|--force|-rf|--no-preserve-root)\b").unwrap(),
@@ -232,9 +231,7 @@ fn warning_message(content: &str) {
             },
         ),
         (Regex::new(r"(\s*\/dev\/(\w*)(\s|$))").unwrap(), |_m| {
-            format!(
-                "⚠️ Warning: this command may override one of your disks, please make sure you know what you are doing before you run this..."
-            )
+            "⚠️ Warning: this command may override one of your disks, please make sure you know what you are doing before you run this...".into()
         }),
         (
             Regex::new(r":\s*\(\s*\)\s*\{\s*:\s*\|\s*:\s*&\s*\}\s*;\s*:").unwrap(),
@@ -264,7 +261,7 @@ fn warning_message(content: &str) {
         }),
     ];
 
-    for (re, warning) in a {
+    for (re, warning) in warnings {
         if let Some(capture) = re.captures(content) {
             println!("{}\n", warning(&capture).yellow().bold());
         }
@@ -276,7 +273,7 @@ static PARAM_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"(\$[A-Za-z0-9\_\-]+)
 fn highlighter(s: &str) -> String {
     PARAM_REGEX
         .replace_all(s, |a: &Captures<'_>| {
-            let env = a[0].strip_prefix("$").unwrap();
+            let env = a[0].strip_prefix('$').unwrap();
             if std::env::var_os(env).is_some() {
                 a[0].into()
             } else {
@@ -441,9 +438,9 @@ impl AiArgs {
                             eyre::bail!("{}", error_reason);
                         }
 
-                        spinner.stop_with_message(format!("{spinner_text}{}", highlighter(&choice)));
+                        spinner.stop_with_message(format!("{spinner_text}{}", highlighter(choice)));
                         println!();
-                        warning_message(&choice);
+                        warning_message(choice);
 
                         let actions: Vec<DialogActions> = fig_settings::settings::get("ai.menu-actions")
                             .ok()

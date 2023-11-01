@@ -5,10 +5,13 @@ use http::header::{
     CONTENT_TYPE,
 };
 use http::{
+    HeaderValue,
     Request,
     Response,
     StatusCode,
 };
+
+const CDN_URL: &str = "https://d3e7ef0le33nq1.cloudfront.net";
 
 fn res_404() -> Response<Cow<'static, [u8]>> {
     Response::builder()
@@ -19,40 +22,50 @@ fn res_404() -> Response<Cow<'static, [u8]>> {
         .unwrap()
 }
 
-fn res_ok(bytes: Vec<u8>) -> Response<Cow<'static, [u8]>> {
+fn res_ok(bytes: Vec<u8>, content_type: HeaderValue) -> Response<Cow<'static, [u8]>> {
     Response::builder()
         .status(StatusCode::OK)
-        .header(CONTENT_TYPE, "application/javascript")
+        .header(CONTENT_TYPE, content_type)
         .header(ACCESS_CONTROL_ALLOW_ORIGIN, "*")
         .body(bytes.into())
         .unwrap()
 }
 
-async fn load_spec(spec_path: String) -> anyhow::Result<Option<Cow<'static, [u8]>>> {
-    let path = fig_util::directories::autocomplete_specs_dir()?.join(spec_path);
-    if path.exists() {
-        let content = tokio::fs::read(path).await?;
-        Ok(Some(content.into()))
+fn res_reqwest_err(err: fig_request::ReqwestError) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
+    let mut builder = Response::builder();
+    if let Some(status) = err.status() {
+        builder = builder.status(status);
     } else {
-        Ok(None)
+        builder = builder.status(StatusCode::INTERNAL_SERVER_ERROR);
     }
+    builder = builder
+        .header(CONTENT_TYPE, "text/plain")
+        .header(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+    Ok(builder.body(err.to_string().as_bytes().to_vec().into())?)
 }
 
 // handle `spec://localhost/spec.js`
 pub async fn handle(request: Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
-    let Some((_, ext)) = request.uri().path().rsplit_once('.') else {
+    let Some(client) = fig_request::client() else {
         return Ok(res_404());
     };
 
-    if ext != "js" {
-        return Ok(res_404());
-    };
+    let path = request.uri().path();
 
-    let spec_path = request.uri().path().trim_start_matches('/').to_owned();
+    match client.get(format!("{CDN_URL}{path}")).send().await {
+        Ok(response) => {
+            if let Err(err) = response.error_for_status_ref() {
+                return res_reqwest_err(err);
+            }
 
-    let Ok(Some(spec_content)) = load_spec(spec_path).await else {
-        return Ok(res_404());
-    };
+            let content_type = response
+                .headers()
+                .get(CONTENT_TYPE)
+                .map(|v| v.to_owned())
+                .unwrap_or_else(|| "application/javascript".try_into().unwrap());
 
-    Ok(res_ok(spec_content.into()))
+            Ok(res_ok(response.bytes().await?.to_vec(), content_type))
+        },
+        Err(err) => res_reqwest_err(err),
+    }
 }

@@ -96,7 +96,7 @@ impl Shell {
                 .output()
                 .await?;
 
-            let re = Regex::new(r"(\d+\.\d+\)").unwrap();
+            let re = Regex::new(r"(\d+\.\d+)").unwrap();
             let version_capture = re.captures(std::str::from_utf8(&version_output.stdout)?);
             let version = version_capture.unwrap().get(1).unwrap().as_str();
             Ok((Shell::Zsh, format!("{version}.0")))
