@@ -26,7 +26,7 @@ use image::{
     ImageOutputFormat,
     Rgba,
 };
-use moka::sync::Cache;
+use moka::future::Cache;
 use once_cell::sync::Lazy;
 use percent_encoding::percent_decode_str;
 use tracing::{
@@ -91,7 +91,7 @@ pub enum AssetKind {
 
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 pub async fn process_asset(path: PathBuf) -> Result<ProcessedAsset> {
-    if let Some(asset) = ASSET_CACHE.get(&path) {
+    if let Some(asset) = ASSET_CACHE.get(&path).await {
         trace!("icon cache hit");
         return Ok(asset);
     }
@@ -118,7 +118,7 @@ pub async fn process_asset(path: PathBuf) -> Result<ProcessedAsset> {
         .await??
     };
 
-    ASSET_CACHE.insert(path, built.clone());
+    ASSET_CACHE.insert(path, built.clone()).await;
 
     Ok(built)
 }

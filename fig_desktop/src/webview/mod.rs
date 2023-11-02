@@ -489,7 +489,7 @@ impl WebviewManager {
                             }
                         },
                         Event::ShowMessageNotification { title, body, parent } => {
-                            let mut dialog = rfd::AsyncMessageDialog::new().set_title(&title).set_description(&body);
+                            let mut dialog = rfd::AsyncMessageDialog::new().set_title(title).set_description(body);
 
                             if let Some(parent) = parent {
                                 if let Some(parent_window) = self.fig_id_map.get(&parent) {
