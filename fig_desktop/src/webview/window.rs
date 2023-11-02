@@ -52,8 +52,8 @@ use crate::platform::{
     PlatformState,
 };
 use crate::utils::Rect;
-#[cfg(target_os = "macos")]
-use crate::DASHBOARD_ID;
+// #[cfg(target_os = "macos")]
+// use crate::DASHBOARD_ID;
 use crate::{
     EventLoopWindowTarget,
     AUTOCOMPLETE_ID,
@@ -361,19 +361,20 @@ impl WindowState {
                     self.webview.window().set_resizable(false);
                 }
 
-                #[cfg(target_os = "macos")]
-                if self.window_id == DASHBOARD_ID {
-                    use wry::application::platform::macos::{
-                        ActivationPolicy,
-                        EventLoopWindowTargetExtMacOS,
-                    };
+                // #[cfg(target_os = "macos")]
+                // if self.window_id == DASHBOARD_ID {
+                //     use wry::application::platform::macos::{
+                //         ActivationPolicy,
+                //         EventLoopWindowTargetExtMacOS,
+                //     };
 
-                    let mut policy_lock = platform::ACTIVATION_POLICY.lock();
-                    if *policy_lock != ActivationPolicy::Accessory {
-                        *policy_lock = ActivationPolicy::Accessory;
-                        window_target.set_activation_policy_at_runtime(ActivationPolicy::Accessory);
-                    }
-                }
+                //     let mut policy_lock = platform::ACTIVATION_POLICY.lock();
+                //     if *policy_lock != ActivationPolicy::Accessory {
+                //         *policy_lock = ActivationPolicy::Accessory;
+                //         window_target.
+                // set_activation_policy_at_runtime(ActivationPolicy::Accessory);
+                //     }
+                // }
             },
             WindowEvent::Show => {
                 if self.window_id == AUTOCOMPLETE_ID {
@@ -397,19 +398,19 @@ impl WindowState {
                         );
                     }
                 } else {
-                    #[cfg(target_os = "macos")]
-                    if self.window_id == DASHBOARD_ID {
-                        use wry::application::platform::macos::{
-                            ActivationPolicy,
-                            EventLoopWindowTargetExtMacOS,
-                        };
+                    // #[cfg(target_os = "macos")]
+                    // if self.window_id == DASHBOARD_ID {
+                    //     use wry::application::platform::macos::{
+                    //         ActivationPolicy,
+                    //         EventLoopWindowTargetExtMacOS,
+                    //     };
 
-                        let mut policy_lock = platform::ACTIVATION_POLICY.lock();
-                        if *policy_lock != ActivationPolicy::Regular {
-                            *policy_lock = ActivationPolicy::Regular;
-                            window_target.set_activation_policy_at_runtime(ActivationPolicy::Regular);
-                        }
-                    }
+                    //     let mut policy_lock = platform::ACTIVATION_POLICY.lock();
+                    //     if *policy_lock != ActivationPolicy::Regular {
+                    //         *policy_lock = ActivationPolicy::Regular;
+                    //         window_target.set_activation_policy_at_runtime(ActivationPolicy::Regular);
+                    //     }
+                    // }
 
                     self.webview.window().set_visible(true);
                     self.webview.window().set_focus();

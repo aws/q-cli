@@ -374,20 +374,20 @@ impl AiArgs {
 
                         match $action {
                             Some(DialogActions::Execute { command, .. }) => {
-                                let command = PARAM_REGEX
-                                    .replace_all(command, |a: &Captures<'_>| {
-                                        let env = a[0].strip_prefix("$").unwrap();
-                                        if std::env::var_os(env).is_some() {
-                                            a[0].to_string()
-                                        } else {
-                                            dialoguer::Input::with_theme(&theme())
-                                                .with_prompt(env)
-                                                .with_prompt(format!("{env}"))
-                                                .interact_text()
-                                                .unwrap()
-                                        }
-                                    })
-                                    .to_string();
+                                // let command = PARAM_REGEX
+                                //     .replace_all(command, |a: &Captures<'_>| {
+                                //         let env = a[0].strip_prefix("$").unwrap();
+                                //         if std::env::var_os(env).is_some() {
+                                //             a[0].to_string()
+                                //         } else {
+                                //             dialoguer::Input::with_theme(&theme())
+                                //                 .with_prompt(env)
+                                //                 .with_prompt(format!("{env}"))
+                                //                 .interact_text()
+                                //                 .unwrap()
+                                //         }
+                                //     })
+                                //     .to_string();
 
                                 if send_figterm(command.clone(), true).await.is_err() {
                                     let mut child = tokio::process::Command::new("bash")

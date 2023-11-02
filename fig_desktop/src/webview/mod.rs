@@ -151,9 +151,9 @@ impl WebviewManager {
                 EventLoopExtMacOS,
             };
 
-            use crate::platform::ACTIVATION_POLICY;
+            // use crate::platform::ACTIVATION_POLICY;
 
-            *ACTIVATION_POLICY.lock() = ActivationPolicy::Accessory;
+            // *ACTIVATION_POLICY.lock() = ActivationPolicy::Accessory;
             event_loop.set_activation_policy(ActivationPolicy::Accessory);
         }
 
