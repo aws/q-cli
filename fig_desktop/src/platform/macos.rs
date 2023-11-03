@@ -80,6 +80,8 @@ use wry::application::dpi::{
     Position,
 };
 use wry::application::platform::macos::{
+    ActivationPolicy,
+    EventLoopWindowTargetExtMacOS,
     // ActivationPolicy,
     // EventLoopWindowTargetExtMacOS,
     WindowExtMacOS,
@@ -133,7 +135,7 @@ static MACOS_VERSION: Lazy<semver::Version> = Lazy::new(|| {
     semver::Version::new(version.major as u64, version.minor as u64, version.patch as u64)
 });
 
-// pub static ACTIVATION_POLICY: Mutex<ActivationPolicy> = Mutex::new(ActivationPolicy::Regular);
+pub static ACTIVATION_POLICY: Mutex<ActivationPolicy> = Mutex::new(ActivationPolicy::Regular);
 
 #[allow(dead_code)]
 pub fn is_ventura() -> bool {
@@ -293,7 +295,7 @@ impl PlatformStateImpl {
     pub(super) fn handle(
         self: &Arc<Self>,
         event: PlatformBoundEvent,
-        _window_target: &EventLoopWindowTarget,
+        window_target: &EventLoopWindowTarget,
         window_map: &FigIdMap,
         notifications_state: &Arc<WebviewNotificationsState>,
     ) -> anyhow::Result<()> {
@@ -543,31 +545,30 @@ impl PlatformStateImpl {
                 Ok(())
             },
             PlatformBoundEvent::FullscreenStateUpdated {
-                // fullscreen,
-                // dashboard_visible,
-                ..
+                fullscreen,
+                dashboard_visible,
             } => {
-                // let policy = if fullscreen {
-                //     ActivationPolicy::Accessory
-                // } else {
-                //     let dashboard_visible = dashboard_visible.unwrap_or_else(|| {
-                //         window_map
-                //             .get(&DASHBOARD_ID)
-                //             .map_or(false, |window| window.webview.window().is_visible())
-                //     });
+                let policy = if fullscreen {
+                    ActivationPolicy::Accessory
+                } else {
+                    let dashboard_visible = dashboard_visible.unwrap_or_else(|| {
+                        window_map
+                            .get(&DASHBOARD_ID)
+                            .map_or(false, |window| window.webview.window().is_visible())
+                    });
 
-                //     if dashboard_visible {
-                //         ActivationPolicy::Regular
-                //     } else {
-                //         ActivationPolicy::Accessory
-                //     }
-                // };
+                    if dashboard_visible {
+                        ActivationPolicy::Regular
+                    } else {
+                        ActivationPolicy::Accessory
+                    }
+                };
 
-                // let mut policy_lock = ACTIVATION_POLICY.lock();
-                // if *policy_lock != policy {
-                //     *policy_lock = policy;
-                //     window_target.set_activation_policy_at_runtime(policy);
-                // }
+                let mut policy_lock = ACTIVATION_POLICY.lock();
+                if *policy_lock != policy {
+                    *policy_lock = policy;
+                    window_target.set_activation_policy_at_runtime(policy);
+                }
                 Ok(())
             },
             PlatformBoundEvent::AccessibilityUpdateRequested => {

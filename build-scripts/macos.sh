@@ -89,6 +89,9 @@ mv "${BUNDLE_DIR}/codewhisperer_desktop.app" "${BUNDLE_DIR}/CodeWhisperer.app"
 defaults write "${BUNDLE_DIR}/CodeWhisperer.app/Contents/Info.plist" CFBundleDisplayName CodeWhisperer
 defaults write "${BUNDLE_DIR}/CodeWhisperer.app/Contents/Info.plist" CFBundleName CodeWhisperer
 
+# Specifies the app is an "agent app"
+defaults write "${BUNDLE_DIR}/CodeWhisperer.app/Contents/Info.plist" LSUIElement -bool TRUE
+
 # Add codewhisperer:// association to bundle
 plutil -insert CFBundleURLTypes -xml \
 '<array>
