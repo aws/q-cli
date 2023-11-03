@@ -229,8 +229,8 @@ fn main() {
                     ];
 
                     let epoch_timestamp = match m.create_time {
-                        Some(t) => t.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as ::std::primitive::i64,
-                        None => ::std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as ::std::primitive::i64,
+                        Some(t) => t.duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as ::std::primitive::i64,
+                        None => ::std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as ::std::primitive::i64,
                     };
 
                     ::amzn_toolkit_telemetry::types::MetricDatum::builder()
