@@ -4,10 +4,14 @@ pub fn de_post_metrics_http_error(
     _response_status: u16,
     _response_headers: &::http::header::HeaderMap,
     _response_body: &[u8],
-) -> std::result::Result<crate::operation::post_metrics::PostMetricsOutput, crate::operation::post_metrics::PostMetricsError> {
+) -> std::result::Result<
+    crate::operation::post_metrics::PostMetricsOutput,
+    crate::operation::post_metrics::PostMetricsError,
+> {
     #[allow(unused_mut)]
-    let mut generic_builder = crate::protocol_serde::parse_http_error_metadata(_response_status, _response_headers, _response_body)
-        .map_err(crate::operation::post_metrics::PostMetricsError::unhandled)?;
+    let mut generic_builder =
+        crate::protocol_serde::parse_http_error_metadata(_response_status, _response_headers, _response_body)
+            .map_err(crate::operation::post_metrics::PostMetricsError::unhandled)?;
     generic_builder = ::aws_http::request_id::apply_request_id(generic_builder, _response_headers);
     let generic = generic_builder.build();
     Err(crate::operation::post_metrics::PostMetricsError::generic(generic))
@@ -18,7 +22,10 @@ pub fn de_post_metrics_http_response(
     _response_status: u16,
     _response_headers: &::http::header::HeaderMap,
     _response_body: &[u8],
-) -> std::result::Result<crate::operation::post_metrics::PostMetricsOutput, crate::operation::post_metrics::PostMetricsError> {
+) -> std::result::Result<
+    crate::operation::post_metrics::PostMetricsOutput,
+    crate::operation::post_metrics::PostMetricsError,
+> {
     Ok({
         #[allow(unused_mut)]
         let mut output = crate::operation::post_metrics::builders::PostMetricsOutputBuilder::default();

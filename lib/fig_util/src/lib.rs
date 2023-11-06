@@ -55,7 +55,7 @@ pub enum Error {
     #[error("failed to launch fig: `{0}`")]
     LaunchError(String),
     #[error(transparent)]
-    StrUtf8Error(#[from] std::str::Utf8Error)
+    StrUtf8Error(#[from] std::str::Utf8Error),
 }
 
 pub fn gen_hex_string() -> String {

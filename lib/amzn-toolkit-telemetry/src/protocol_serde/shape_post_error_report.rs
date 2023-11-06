@@ -4,13 +4,19 @@ pub fn de_post_error_report_http_error(
     _response_status: u16,
     _response_headers: &::http::header::HeaderMap,
     _response_body: &[u8],
-) -> std::result::Result<crate::operation::post_error_report::PostErrorReportOutput, crate::operation::post_error_report::PostErrorReportError> {
+) -> std::result::Result<
+    crate::operation::post_error_report::PostErrorReportOutput,
+    crate::operation::post_error_report::PostErrorReportError,
+> {
     #[allow(unused_mut)]
-    let mut generic_builder = crate::protocol_serde::parse_http_error_metadata(_response_status, _response_headers, _response_body)
-        .map_err(crate::operation::post_error_report::PostErrorReportError::unhandled)?;
+    let mut generic_builder =
+        crate::protocol_serde::parse_http_error_metadata(_response_status, _response_headers, _response_body)
+            .map_err(crate::operation::post_error_report::PostErrorReportError::unhandled)?;
     generic_builder = ::aws_http::request_id::apply_request_id(generic_builder, _response_headers);
     let generic = generic_builder.build();
-    Err(crate::operation::post_error_report::PostErrorReportError::generic(generic))
+    Err(crate::operation::post_error_report::PostErrorReportError::generic(
+        generic,
+    ))
 }
 
 #[allow(clippy::unnecessary_wraps)]
@@ -18,7 +24,10 @@ pub fn de_post_error_report_http_response(
     _response_status: u16,
     _response_headers: &::http::header::HeaderMap,
     _response_body: &[u8],
-) -> std::result::Result<crate::operation::post_error_report::PostErrorReportOutput, crate::operation::post_error_report::PostErrorReportError> {
+) -> std::result::Result<
+    crate::operation::post_error_report::PostErrorReportOutput,
+    crate::operation::post_error_report::PostErrorReportError,
+> {
     Ok({
         #[allow(unused_mut)]
         let mut output = crate::operation::post_error_report::builders::PostErrorReportOutputBuilder::default();

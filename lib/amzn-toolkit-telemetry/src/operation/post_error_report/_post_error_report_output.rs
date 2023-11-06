@@ -11,13 +11,15 @@ impl ::aws_http::request_id::RequestId for PostErrorReportOutput {
     }
 }
 impl PostErrorReportOutput {
-    /// Creates a new builder-style object to manufacture [`PostErrorReportOutput`](crate::operation::post_error_report::PostErrorReportOutput).
+    /// Creates a new builder-style object to manufacture
+    /// [`PostErrorReportOutput`](crate::operation::post_error_report::PostErrorReportOutput).
     pub fn builder() -> crate::operation::post_error_report::builders::PostErrorReportOutputBuilder {
         crate::operation::post_error_report::builders::PostErrorReportOutputBuilder::default()
     }
 }
 
-/// A builder for [`PostErrorReportOutput`](crate::operation::post_error_report::PostErrorReportOutput).
+/// A builder for
+/// [`PostErrorReportOutput`](crate::operation::post_error_report::PostErrorReportOutput).
 #[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
 pub struct PostErrorReportOutputBuilder {
@@ -33,7 +35,9 @@ impl PostErrorReportOutputBuilder {
         self._request_id = request_id;
         self
     }
-    /// Consumes the builder and constructs a [`PostErrorReportOutput`](crate::operation::post_error_report::PostErrorReportOutput).
+
+    /// Consumes the builder and constructs a
+    /// [`PostErrorReportOutput`](crate::operation::post_error_report::PostErrorReportOutput).
     pub fn build(self) -> crate::operation::post_error_report::PostErrorReportOutput {
         crate::operation::post_error_report::PostErrorReportOutput {
             _request_id: self._request_id,

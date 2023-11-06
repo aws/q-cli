@@ -13,6 +13,7 @@ impl Userdata {
     pub fn email(&self) -> ::std::option::Option<&str> {
         self.email.as_deref()
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn comment(&self) -> ::std::option::Option<&str> {
         self.comment.as_deref()
@@ -38,29 +39,35 @@ impl UserdataBuilder {
         self.email = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_email(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.email = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_email(&self) -> &::std::option::Option<::std::string::String> {
         &self.email
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn comment(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.comment = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_comment(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.comment = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_comment(&self) -> &::std::option::Option<::std::string::String> {
         &self.comment
     }
+
     /// Consumes the builder and constructs a [`Userdata`](crate::types::Userdata).
     pub fn build(self) -> crate::types::Userdata {
         crate::types::Userdata {

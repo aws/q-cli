@@ -3,7 +3,8 @@
 #[non_exhaustive]
 #[derive(::std::fmt::Debug)]
 pub enum Error {
-    /// An unexpected error occurred (e.g., invalid JSON returned by the service or an unknown error code).
+    /// An unexpected error occurred (e.g., invalid JSON returned by the service or an unknown error
+    /// code).
     Unhandled(::aws_smithy_types::error::Unhandled),
 }
 impl ::std::fmt::Display for Error {
@@ -13,11 +14,14 @@ impl ::std::fmt::Display for Error {
         }
     }
 }
-impl<R> From<::aws_smithy_http::result::SdkError<crate::operation::post_error_report::PostErrorReportError, R>> for Error
+impl<R> From<::aws_smithy_http::result::SdkError<crate::operation::post_error_report::PostErrorReportError, R>>
+    for Error
 where
     R: Send + Sync + std::fmt::Debug + 'static,
 {
-    fn from(err: ::aws_smithy_http::result::SdkError<crate::operation::post_error_report::PostErrorReportError, R>) -> Self {
+    fn from(
+        err: ::aws_smithy_http::result::SdkError<crate::operation::post_error_report::PostErrorReportError, R>,
+    ) -> Self {
         match err {
             ::aws_smithy_http::result::SdkError::ServiceError(context) => Self::from(context.into_err()),
             _ => Error::Unhandled(

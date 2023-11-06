@@ -11,7 +11,8 @@ impl ::aws_http::request_id::RequestId for PostFeedbackOutput {
     }
 }
 impl PostFeedbackOutput {
-    /// Creates a new builder-style object to manufacture [`PostFeedbackOutput`](crate::operation::post_feedback::PostFeedbackOutput).
+    /// Creates a new builder-style object to manufacture
+    /// [`PostFeedbackOutput`](crate::operation::post_feedback::PostFeedbackOutput).
     pub fn builder() -> crate::operation::post_feedback::builders::PostFeedbackOutputBuilder {
         crate::operation::post_feedback::builders::PostFeedbackOutputBuilder::default()
     }
@@ -33,7 +34,9 @@ impl PostFeedbackOutputBuilder {
         self._request_id = request_id;
         self
     }
-    /// Consumes the builder and constructs a [`PostFeedbackOutput`](crate::operation::post_feedback::PostFeedbackOutput).
+
+    /// Consumes the builder and constructs a
+    /// [`PostFeedbackOutput`](crate::operation::post_feedback::PostFeedbackOutput).
     pub fn build(self) -> crate::operation::post_feedback::PostFeedbackOutput {
         crate::operation::post_feedback::PostFeedbackOutput {
             _request_id: self._request_id,

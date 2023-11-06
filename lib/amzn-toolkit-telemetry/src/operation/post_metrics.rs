@@ -11,6 +11,7 @@ impl PostMetrics {
     pub fn new() -> Self {
         Self
     }
+
     pub(crate) async fn orchestrate(
         runtime_plugins: &::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugins,
         input: crate::operation::post_metrics::PostMetricsInput,
@@ -30,9 +31,13 @@ impl PostMetrics {
                     .expect("correct error type")
             })
         };
-        let context = Self::orchestrate_with_stop_point(runtime_plugins, input, ::aws_smithy_runtime::client::orchestrator::StopPoint::None)
-            .await
-            .map_err(map_err)?;
+        let context = Self::orchestrate_with_stop_point(
+            runtime_plugins,
+            input,
+            ::aws_smithy_runtime::client::orchestrator::StopPoint::None,
+        )
+        .await
+        .map_err(map_err)?;
         let output = context.finalize().map_err(map_err)?;
         ::std::result::Result::Ok(
             output
@@ -53,8 +58,14 @@ impl PostMetrics {
         >,
     > {
         let input = ::aws_smithy_runtime_api::client::interceptors::context::Input::erase(input);
-        ::aws_smithy_runtime::client::orchestrator::invoke_with_stop_point("toolkittelemetry", "PostMetrics", input, runtime_plugins, stop_point)
-            .await
+        ::aws_smithy_runtime::client::orchestrator::invoke_with_stop_point(
+            "toolkittelemetry",
+            "PostMetrics",
+            input,
+            runtime_plugins,
+            stop_point,
+        )
+        .await
     }
 
     pub(crate) fn operation_runtime_plugins(
@@ -84,15 +95,20 @@ impl ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugin for PostMet
         cfg.store_put(::aws_smithy_runtime_api::client::ser_de::SharedRequestSerializer::new(
             PostMetricsRequestSerializer,
         ));
-        cfg.store_put(::aws_smithy_runtime_api::client::ser_de::SharedResponseDeserializer::new(
-            PostMetricsResponseDeserializer,
-        ));
+        cfg.store_put(
+            ::aws_smithy_runtime_api::client::ser_de::SharedResponseDeserializer::new(PostMetricsResponseDeserializer),
+        );
 
-        cfg.store_put(::aws_smithy_runtime_api::client::auth::AuthSchemeOptionResolverParams::new(
-            ::aws_smithy_runtime_api::client::auth::static_resolver::StaticAuthSchemeOptionResolverParams::new(),
-        ));
+        cfg.store_put(
+            ::aws_smithy_runtime_api::client::auth::AuthSchemeOptionResolverParams::new(
+                ::aws_smithy_runtime_api::client::auth::static_resolver::StaticAuthSchemeOptionResolverParams::new(),
+            ),
+        );
 
-        cfg.store_put(::aws_smithy_http::operation::Metadata::new("PostMetrics", "toolkittelemetry"));
+        cfg.store_put(::aws_smithy_http::operation::Metadata::new(
+            "PostMetrics",
+            "toolkittelemetry",
+        ));
         let mut signing_options = ::aws_runtime::auth::sigv4::SigningOptions::default();
         signing_options.double_uri_encode = true;
         signing_options.content_sha256_header = false;
@@ -108,16 +124,23 @@ impl ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugin for PostMet
         ::std::option::Option::Some(cfg.freeze())
     }
 
-    fn runtime_components(&self) -> ::std::borrow::Cow<'_, ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder> {
-        // Retry classifiers are operation-specific because they need to downcast operation-specific error types.
+    fn runtime_components(
+        &self,
+    ) -> ::std::borrow::Cow<'_, ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder> {
+        // Retry classifiers are operation-specific because they need to downcast operation-specific error
+        // types.
         let retry_classifiers = ::aws_smithy_runtime_api::client::retries::RetryClassifiers::new()
-            .with_classifier(::aws_smithy_runtime::client::retries::classifier::SmithyErrorClassifier::<
-                crate::operation::post_metrics::PostMetricsError,
-            >::new())
+            .with_classifier(
+                ::aws_smithy_runtime::client::retries::classifier::SmithyErrorClassifier::<
+                    crate::operation::post_metrics::PostMetricsError,
+                >::new(),
+            )
             .with_classifier(::aws_runtime::retries::classifier::AmzRetryAfterHeaderClassifier)
-            .with_classifier(::aws_smithy_runtime::client::retries::classifier::ModeledAsRetryableClassifier::<
-                crate::operation::post_metrics::PostMetricsError,
-            >::new())
+            .with_classifier(
+                ::aws_smithy_runtime::client::retries::classifier::ModeledAsRetryableClassifier::<
+                    crate::operation::post_metrics::PostMetricsError,
+                >::new(),
+            )
             .with_classifier(::aws_runtime::retries::classifier::AwsErrorCodeClassifier::<
                 crate::operation::post_metrics::PostMetricsError,
             >::new())
@@ -128,12 +151,14 @@ impl ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugin for PostMet
                 .with_retry_classifiers(::std::option::Option::Some(retry_classifiers))
                 .with_auth_scheme_option_resolver(::std::option::Option::Some(
                     ::aws_smithy_runtime_api::client::auth::SharedAuthSchemeOptionResolver::new(
-                        ::aws_smithy_runtime_api::client::auth::static_resolver::StaticAuthSchemeOptionResolver::new(vec![
-                            ::aws_runtime::auth::sigv4::SCHEME_ID,
-                        ]),
+                        ::aws_smithy_runtime_api::client::auth::static_resolver::StaticAuthSchemeOptionResolver::new(
+                            vec![::aws_runtime::auth::sigv4::SCHEME_ID],
+                        ),
                     ),
                 ))
-                .with_interceptor(::aws_smithy_runtime_api::client::interceptors::SharedInterceptor::new(PostMetricsEndpointParamsInterceptor) as _),
+                .with_interceptor(::aws_smithy_runtime_api::client::interceptors::SharedInterceptor::new(
+                    PostMetricsEndpointParamsInterceptor,
+                ) as _),
         )
     }
 }
@@ -160,12 +185,20 @@ impl ::aws_smithy_runtime_api::client::ser_de::ResponseDeserializer for PostMetr
 #[derive(Debug)]
 struct PostMetricsRequestSerializer;
 impl ::aws_smithy_runtime_api::client::ser_de::RequestSerializer for PostMetricsRequestSerializer {
-    #[allow(unused_mut, clippy::let_and_return, clippy::needless_borrow, clippy::useless_conversion)]
+    #[allow(
+        unused_mut,
+        clippy::let_and_return,
+        clippy::needless_borrow,
+        clippy::useless_conversion
+    )]
     fn serialize_input(
         &self,
         input: ::aws_smithy_runtime_api::client::interceptors::context::Input,
         _cfg: &mut ::aws_smithy_types::config_bag::ConfigBag,
-    ) -> ::std::result::Result<::aws_smithy_runtime_api::client::orchestrator::HttpRequest, ::aws_smithy_runtime_api::box_error::BoxError> {
+    ) -> ::std::result::Result<
+        ::aws_smithy_runtime_api::client::orchestrator::HttpRequest,
+        ::aws_smithy_runtime_api::box_error::BoxError,
+    > {
         let input = input
             .downcast::<crate::operation::post_metrics::PostMetricsInput>()
             .expect("correct type");
@@ -186,19 +219,30 @@ impl ::aws_smithy_runtime_api::client::ser_de::RequestSerializer for PostMetrics
             fn update_http_builder(
                 input: &crate::operation::post_metrics::PostMetricsInput,
                 builder: ::http::request::Builder,
-            ) -> ::std::result::Result<::http::request::Builder, ::aws_smithy_http::operation::error::BuildError> {
+            ) -> ::std::result::Result<::http::request::Builder, ::aws_smithy_http::operation::error::BuildError>
+            {
                 let mut uri = ::std::string::String::new();
                 uri_base(input, &mut uri)?;
                 ::std::result::Result::Ok(builder.method("POST").uri(uri))
             }
             let mut builder = update_http_builder(&input, ::http::request::Builder::new())?;
-            builder = _header_serialization_settings.set_default_header(builder, ::http::header::CONTENT_TYPE, "application/json");
+            builder = _header_serialization_settings.set_default_header(
+                builder,
+                ::http::header::CONTENT_TYPE,
+                "application/json",
+            );
             builder
         };
-        let body = ::aws_smithy_http::body::SdkBody::from(crate::protocol_serde::shape_post_metrics::ser_post_metrics_input(&input)?);
+        let body = ::aws_smithy_http::body::SdkBody::from(
+            crate::protocol_serde::shape_post_metrics::ser_post_metrics_input(&input)?,
+        );
         if let Some(content_length) = body.content_length() {
             let content_length = content_length.to_string();
-            request_builder = _header_serialization_settings.set_default_header(request_builder, ::http::header::CONTENT_LENGTH, &content_length);
+            request_builder = _header_serialization_settings.set_default_header(
+                request_builder,
+                ::http::header::CONTENT_LENGTH,
+                &content_length,
+            );
         }
         ::std::result::Result::Ok(request_builder.body(body).expect("valid request"))
     }
@@ -227,17 +271,24 @@ impl ::aws_smithy_runtime_api::client::interceptors::Interceptor for PostMetrics
             .ok_or("failed to downcast to PostMetricsInput")?;
 
         let params = crate::config::endpoint::Params::builder().build().map_err(|err| {
-            ::aws_smithy_runtime_api::client::interceptors::error::ContextAttachedError::new("endpoint params could not be built", err)
+            ::aws_smithy_runtime_api::client::interceptors::error::ContextAttachedError::new(
+                "endpoint params could not be built",
+                err,
+            )
         })?;
         cfg.interceptor_state()
-            .store_put(::aws_smithy_runtime_api::client::endpoint::EndpointResolverParams::new(params));
+            .store_put(::aws_smithy_runtime_api::client::endpoint::EndpointResolverParams::new(
+                params,
+            ));
         ::std::result::Result::Ok(())
     }
 }
 
 /// Do not use this.
 ///
-/// Operation `*Error/*ErrorKind` types were combined into a single `*Error` enum. The `.kind` field on `*Error` no longer exists and isn't needed anymore (you can just match on the error directly since it's an enum now).
+/// Operation `*Error/*ErrorKind` types were combined into a single `*Error` enum. The `.kind` field
+/// on `*Error` no longer exists and isn't needed anymore (you can just match on the error directly
+/// since it's an enum now).
 #[deprecated(
     note = "Operation `*Error/*ErrorKind` types were combined into a single `*Error` enum. The `.kind` field on `*Error` no longer exists and isn't needed anymore (you can just match on the error directly since it's an enum now)."
 )]
@@ -246,7 +297,8 @@ pub type PostMetricsErrorKind = PostMetricsError;
 #[non_exhaustive]
 #[derive(::std::fmt::Debug)]
 pub enum PostMetricsError {
-    /// An unexpected error occurred (e.g., invalid JSON returned by the service or an unknown error code).
+    /// An unexpected error occurred (e.g., invalid JSON returned by the service or an unknown error
+    /// code).
     Unhandled(::aws_smithy_types::error::Unhandled),
 }
 impl ::aws_smithy_http::result::CreateUnhandledError for PostMetricsError {
@@ -284,6 +336,7 @@ impl ::aws_smithy_types::retry::ProvideErrorKind for PostMetricsError {
     fn code(&self) -> ::std::option::Option<&str> {
         ::aws_smithy_types::error::metadata::ProvideErrorMetadata::code(self)
     }
+
     fn retryable_error_kind(&self) -> ::std::option::Option<::aws_smithy_types::retry::ErrorKind> {
         ::std::option::Option::None
     }
@@ -291,19 +344,26 @@ impl ::aws_smithy_types::retry::ProvideErrorKind for PostMetricsError {
 impl PostMetricsError {
     /// Creates the `PostMetricsError::Unhandled` variant from any error type.
     pub fn unhandled(
-        err: impl ::std::convert::Into<::std::boxed::Box<dyn ::std::error::Error + ::std::marker::Send + ::std::marker::Sync + 'static>>,
+        err: impl ::std::convert::Into<
+            ::std::boxed::Box<dyn ::std::error::Error + ::std::marker::Send + ::std::marker::Sync + 'static>,
+        >,
     ) -> Self {
         Self::Unhandled(::aws_smithy_types::error::Unhandled::builder().source(err).build())
     }
 
-    /// Creates the `PostMetricsError::Unhandled` variant from a `::aws_smithy_types::error::ErrorMetadata`.
+    /// Creates the `PostMetricsError::Unhandled` variant from a
+    /// `::aws_smithy_types::error::ErrorMetadata`.
     pub fn generic(err: ::aws_smithy_types::error::ErrorMetadata) -> Self {
-        Self::Unhandled(::aws_smithy_types::error::Unhandled::builder().source(err.clone()).meta(err).build())
+        Self::Unhandled(
+            ::aws_smithy_types::error::Unhandled::builder()
+                .source(err.clone())
+                .meta(err)
+                .build(),
+        )
     }
-    ///
+
     /// Returns error metadata, which includes the error code, message,
     /// request ID, and potentially additional information.
-    ///
     pub fn meta(&self) -> &::aws_smithy_types::error::ErrorMetadata {
         use ::aws_smithy_types::error::metadata::ProvideErrorMetadata;
         match self {
@@ -319,9 +379,8 @@ impl ::std::error::Error for PostMetricsError {
     }
 }
 
-pub use crate::operation::post_metrics::_post_metrics_output::PostMetricsOutput;
-
 pub use crate::operation::post_metrics::_post_metrics_input::PostMetricsInput;
+pub use crate::operation::post_metrics::_post_metrics_output::PostMetricsOutput;
 
 mod _post_metrics_input;
 

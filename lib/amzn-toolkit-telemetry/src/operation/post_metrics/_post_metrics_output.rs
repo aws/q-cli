@@ -11,7 +11,8 @@ impl ::aws_http::request_id::RequestId for PostMetricsOutput {
     }
 }
 impl PostMetricsOutput {
-    /// Creates a new builder-style object to manufacture [`PostMetricsOutput`](crate::operation::post_metrics::PostMetricsOutput).
+    /// Creates a new builder-style object to manufacture
+    /// [`PostMetricsOutput`](crate::operation::post_metrics::PostMetricsOutput).
     pub fn builder() -> crate::operation::post_metrics::builders::PostMetricsOutputBuilder {
         crate::operation::post_metrics::builders::PostMetricsOutputBuilder::default()
     }
@@ -33,7 +34,9 @@ impl PostMetricsOutputBuilder {
         self._request_id = request_id;
         self
     }
-    /// Consumes the builder and constructs a [`PostMetricsOutput`](crate::operation::post_metrics::PostMetricsOutput).
+
+    /// Consumes the builder and constructs a
+    /// [`PostMetricsOutput`](crate::operation::post_metrics::PostMetricsOutput).
     pub fn build(self) -> crate::operation::post_metrics::PostMetricsOutput {
         crate::operation::post_metrics::PostMetricsOutput {
             _request_id: self._request_id,

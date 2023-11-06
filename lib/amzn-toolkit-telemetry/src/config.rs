@@ -15,7 +15,6 @@
 /// ```
 ///
 /// The service config can also be constructed manually using its builder.
-///
 #[derive(::std::clone::Clone, ::std::fmt::Debug)]
 pub struct Config {
     // Both `config` and `cloneable` are the same config, but the cloneable one
@@ -31,6 +30,7 @@ impl Config {
     pub fn builder() -> Builder {
         Builder::default()
     }
+
     /// Converts this config back into a builder so that it can be tweaked.
     pub fn to_builder(&self) -> Builder {
         Builder {
@@ -39,14 +39,21 @@ impl Config {
             runtime_plugins: self.runtime_plugins.clone(),
         }
     }
-    /// Return the [`SharedHttpConnector`](::aws_smithy_runtime_api::client::connectors::SharedHttpConnector) to use when making requests, if any.
+
+    /// Return the
+    /// [`SharedHttpConnector`](::aws_smithy_runtime_api::client::connectors::SharedHttpConnector)
+    /// to use when making requests, if any.
     pub fn http_connector(&self) -> Option<::aws_smithy_runtime_api::client::connectors::SharedHttpConnector> {
         self.runtime_components.http_connector()
     }
+
     /// Returns the endpoint resolver.
     pub fn endpoint_resolver(&self) -> ::aws_smithy_runtime_api::client::endpoint::SharedEndpointResolver {
-        self.runtime_components.endpoint_resolver().expect("resolver defaulted if not set")
+        self.runtime_components
+            .endpoint_resolver()
+            .expect("resolver defaulted if not set")
     }
+
     /// Return a reference to the retry configuration contained in this config, if any.
     pub fn retry_config(&self) -> ::std::option::Option<&::aws_smithy_types::retry::RetryConfig> {
         self.config.load::<::aws_smithy_types::retry::RetryConfig>()
@@ -68,17 +75,22 @@ impl Config {
     /// WARNING: This method is unstable and may be removed at any time. Do not rely on this
     /// method for anything!
     pub fn retry_partition(&self) -> ::std::option::Option<&::aws_smithy_runtime::client::retries::RetryPartition> {
-        self.config.load::<::aws_smithy_runtime::client::retries::RetryPartition>()
+        self.config
+            .load::<::aws_smithy_runtime::client::retries::RetryPartition>()
     }
 
     /// Returns interceptors currently registered by the user.
-    pub fn interceptors(&self) -> impl Iterator<Item = ::aws_smithy_runtime_api::client::interceptors::SharedInterceptor> + '_ {
+    pub fn interceptors(
+        &self,
+    ) -> impl Iterator<Item = ::aws_smithy_runtime_api::client::interceptors::SharedInterceptor> + '_ {
         self.runtime_components.interceptors()
     }
+
     /// Return time source used for this service.
     pub fn time_source(&self) -> ::std::option::Option<::aws_smithy_async::time::SharedTimeSource> {
         self.runtime_components.time_source()
     }
+
     /// Returns the name of the app that is using the client, if it was provided.
     ///
     /// This _optional_ name is used to identify the application in the user agent that
@@ -86,30 +98,45 @@ impl Config {
     pub fn app_name(&self) -> ::std::option::Option<&::aws_types::app_name::AppName> {
         self.config.load::<::aws_types::app_name::AppName>()
     }
+
     /// Returns the invocation ID generator if one was given in config.
     ///
-    /// The invocation ID generator generates ID values for the `amz-sdk-invocation-id` header. By default, this will be a random UUID. Overriding it may be useful in tests that examine the HTTP request and need to be deterministic.
-    pub fn invocation_id_generator(&self) -> ::std::option::Option<::aws_runtime::invocation_id::SharedInvocationIdGenerator> {
-        self.config.load::<::aws_runtime::invocation_id::SharedInvocationIdGenerator>().cloned()
+    /// The invocation ID generator generates ID values for the `amz-sdk-invocation-id` header. By
+    /// default, this will be a random UUID. Overriding it may be useful in tests that examine the
+    /// HTTP request and need to be deterministic.
+    pub fn invocation_id_generator(
+        &self,
+    ) -> ::std::option::Option<::aws_runtime::invocation_id::SharedInvocationIdGenerator> {
+        self.config
+            .load::<::aws_runtime::invocation_id::SharedInvocationIdGenerator>()
+            .cloned()
     }
-    /// Creates a new [service config](crate::Config) from a [shared `config`](::aws_types::sdk_config::SdkConfig).
+
+    /// Creates a new [service config](crate::Config) from a [shared
+    /// `config`](::aws_types::sdk_config::SdkConfig).
     pub fn new(config: &::aws_types::sdk_config::SdkConfig) -> Self {
         Builder::from(config).build()
     }
-    /// The signature version 4 service signing name to use in the credential scope when signing requests.
+
+    /// The signature version 4 service signing name to use in the credential scope when signing
+    /// requests.
     ///
     /// The signing service may be overridden by the `Endpoint`, or by specifying a custom
     /// [`SigningService`](aws_types::SigningService) during operation construction
     pub fn signing_service(&self) -> &'static str {
         "execute-api"
     }
+
     /// Returns the AWS region, if it was provided.
     pub fn region(&self) -> ::std::option::Option<&::aws_types::region::Region> {
         self.config.load::<::aws_types::region::Region>()
     }
+
     /// Returns the credentials cache.
     pub fn credentials_cache(&self) -> ::std::option::Option<::aws_credential_types::cache::SharedCredentialsCache> {
-        self.config.load::<::aws_credential_types::cache::SharedCredentialsCache>().cloned()
+        self.config
+            .load::<::aws_credential_types::cache::SharedCredentialsCache>()
+            .cloned()
     }
 }
 /// Builder for creating a `Config`.
@@ -123,7 +150,9 @@ impl ::std::default::Default for Builder {
     fn default() -> Self {
         Self {
             config: ::std::default::Default::default(),
-            runtime_components: ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder::new("service config"),
+            runtime_components: ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder::new(
+                "service config",
+            ),
             runtime_plugins: ::std::default::Default::default(),
         }
     }
@@ -133,6 +162,7 @@ impl Builder {
     pub fn new() -> Self {
         Self::default()
     }
+
     /// Sets the HTTP connector to use when making requests.
     ///
     /// # Examples
@@ -142,10 +172,14 @@ impl Builder {
     /// # #[test]
     /// # fn example() {
     /// use std::time::Duration;
-    /// use aws_smithy_client::{Client, hyper_ext};
+    ///
+    /// use amzn_toolkit_telemetry::config::Config;
     /// use aws_smithy_client::erase::DynConnector;
     /// use aws_smithy_client::http_connector::ConnectorSettings;
-    /// use amzn_toolkit_telemetry::config::Config;
+    /// use aws_smithy_client::{
+    ///     hyper_ext,
+    ///     Client,
+    /// };
     ///
     /// let https_connector = hyper_rustls::HttpsConnectorBuilder::new()
     ///     .with_webpki_roots()
@@ -164,7 +198,10 @@ impl Builder {
     /// # }
     /// # }
     /// ```
-    pub fn http_connector(mut self, http_connector: impl Into<::aws_smithy_client::http_connector::HttpConnector>) -> Self {
+    pub fn http_connector(
+        mut self,
+        http_connector: impl Into<::aws_smithy_client::http_connector::HttpConnector>,
+    ) -> Self {
         self.set_http_connector(::std::option::Option::Some(http_connector));
         self
     }
@@ -178,9 +215,13 @@ impl Builder {
     /// # #[test]
     /// # fn example() {
     /// use std::time::Duration;
-    /// use aws_smithy_client::hyper_ext;
+    ///
+    /// use amzn_toolkit_telemetry::config::{
+    ///     Builder,
+    ///     Config,
+    /// };
     /// use aws_smithy_client::http_connector::ConnectorSettings;
-    /// use amzn_toolkit_telemetry::config::{Builder, Config};
+    /// use aws_smithy_client::hyper_ext;
     ///
     /// fn override_http_connector(builder: &mut Builder) {
     ///     let https_connector = hyper_rustls::HttpsConnectorBuilder::new()
@@ -206,10 +247,14 @@ impl Builder {
     /// # }
     /// # }
     /// ```
-    pub fn set_http_connector(&mut self, http_connector: Option<impl Into<::aws_smithy_client::http_connector::HttpConnector>>) -> &mut Self {
+    pub fn set_http_connector(
+        &mut self,
+        http_connector: Option<impl Into<::aws_smithy_client::http_connector::HttpConnector>>,
+    ) -> &mut Self {
         http_connector.map(|c| self.config.store_put(c.into()));
         self
     }
+
     /// Set the endpoint URL to use when making requests.
     ///
     /// Note: setting an endpoint URL will replace any endpoint resolver that has been set.
@@ -236,38 +281,41 @@ impl Builder {
         }));
         self
     }
+
     /// Sets the endpoint resolver to use when making requests.
     ///
     /// Note: setting an endpoint resolver will replace any endpoint URL that has been set.
-    ///
 
     pub fn endpoint_resolver(
         mut self,
         endpoint_resolver: impl ::aws_smithy_http::endpoint::ResolveEndpoint<crate::config::endpoint::Params> + 'static,
     ) -> Self {
-        self.set_endpoint_resolver(::std::option::Option::Some(::aws_smithy_http::endpoint::SharedEndpointResolver::new(
-            endpoint_resolver,
-        )));
+        self.set_endpoint_resolver(::std::option::Option::Some(
+            ::aws_smithy_http::endpoint::SharedEndpointResolver::new(endpoint_resolver),
+        ));
         self
     }
 
     /// Sets the endpoint resolver to use when making requests.
     ///
-    /// When unset, the client will used a generated endpoint resolver based on the endpoint resolution
-    /// rules for `amzn_toolkit_telemetry`.
+    /// When unset, the client will used a generated endpoint resolver based on the endpoint
+    /// resolution rules for `amzn_toolkit_telemetry`.
     pub fn set_endpoint_resolver(
         &mut self,
-        endpoint_resolver: ::std::option::Option<::aws_smithy_http::endpoint::SharedEndpointResolver<crate::config::endpoint::Params>>,
+        endpoint_resolver: ::std::option::Option<
+            ::aws_smithy_http::endpoint::SharedEndpointResolver<crate::config::endpoint::Params>,
+        >,
     ) -> &mut Self {
         self.config.store_or_unset(endpoint_resolver);
         self
     }
+
     /// Set the retry_config for the builder
     ///
     /// # Examples
     /// ```no_run
-    /// use amzn_toolkit_telemetry::config::Config;
     /// use amzn_toolkit_telemetry::config::retry::RetryConfig;
+    /// use amzn_toolkit_telemetry::config::Config;
     ///
     /// let retry_config = RetryConfig::standard().with_max_attempts(5);
     /// let config = Config::builder().retry_config(retry_config).build();
@@ -281,8 +329,11 @@ impl Builder {
     ///
     /// # Examples
     /// ```no_run
-    /// use amzn_toolkit_telemetry::config::{Builder, Config};
     /// use amzn_toolkit_telemetry::config::retry::RetryConfig;
+    /// use amzn_toolkit_telemetry::config::{
+    ///     Builder,
+    ///     Config,
+    /// };
     ///
     /// fn disable_retries(builder: &mut Builder) {
     ///     let retry_config = RetryConfig::standard().with_max_attempts(1);
@@ -293,16 +344,25 @@ impl Builder {
     /// disable_retries(&mut builder);
     /// let config = builder.build();
     /// ```
-    pub fn set_retry_config(&mut self, retry_config: ::std::option::Option<::aws_smithy_types::retry::RetryConfig>) -> &mut Self {
+    pub fn set_retry_config(
+        &mut self,
+        retry_config: ::std::option::Option<::aws_smithy_types::retry::RetryConfig>,
+    ) -> &mut Self {
         retry_config.map(|r| self.config.store_put(r));
         self
     }
+
     /// Set the sleep_impl for the builder
     ///
     /// # Examples
     ///
     /// ```no_run
-    /// use amzn_toolkit_telemetry::config::{AsyncSleep, Config, SharedAsyncSleep, Sleep};
+    /// use amzn_toolkit_telemetry::config::{
+    ///     AsyncSleep,
+    ///     Config,
+    ///     SharedAsyncSleep,
+    ///     Sleep,
+    /// };
     ///
     /// #[derive(Debug)]
     /// pub struct ForeverSleep;
@@ -326,7 +386,13 @@ impl Builder {
     /// # Examples
     ///
     /// ```no_run
-    /// use amzn_toolkit_telemetry::config::{AsyncSleep, Builder, Config, SharedAsyncSleep, Sleep};
+    /// use amzn_toolkit_telemetry::config::{
+    ///     AsyncSleep,
+    ///     Builder,
+    ///     Config,
+    ///     SharedAsyncSleep,
+    ///     Sleep,
+    /// };
     ///
     /// #[derive(Debug)]
     /// pub struct ForeverSleep;
@@ -346,18 +412,22 @@ impl Builder {
     /// set_never_ending_sleep_impl(&mut builder);
     /// let config = builder.build();
     /// ```
-    pub fn set_sleep_impl(&mut self, sleep_impl: ::std::option::Option<::aws_smithy_async::rt::sleep::SharedAsyncSleep>) -> &mut Self {
+    pub fn set_sleep_impl(
+        &mut self,
+        sleep_impl: ::std::option::Option<::aws_smithy_async::rt::sleep::SharedAsyncSleep>,
+    ) -> &mut Self {
         self.runtime_components.set_sleep_impl(sleep_impl);
         self
     }
+
     /// Set the timeout_config for the builder
     ///
     /// # Examples
     ///
     /// ```no_run
     /// # use std::time::Duration;
-    /// use amzn_toolkit_telemetry::config::Config;
     /// use amzn_toolkit_telemetry::config::timeout::TimeoutConfig;
+    /// use amzn_toolkit_telemetry::config::Config;
     ///
     /// let timeout_config = TimeoutConfig::builder()
     ///     .operation_attempt_timeout(Duration::from_secs(1))
@@ -375,8 +445,11 @@ impl Builder {
     ///
     /// ```no_run
     /// # use std::time::Duration;
-    /// use amzn_toolkit_telemetry::config::{Builder, Config};
     /// use amzn_toolkit_telemetry::config::timeout::TimeoutConfig;
+    /// use amzn_toolkit_telemetry::config::{
+    ///     Builder,
+    ///     Config,
+    /// };
     ///
     /// fn set_request_timeout(builder: &mut Builder) {
     ///     let timeout_config = TimeoutConfig::builder()
@@ -389,10 +462,14 @@ impl Builder {
     /// set_request_timeout(&mut builder);
     /// let config = builder.build();
     /// ```
-    pub fn set_timeout_config(&mut self, timeout_config: ::std::option::Option<::aws_smithy_types::timeout::TimeoutConfig>) -> &mut Self {
+    pub fn set_timeout_config(
+        &mut self,
+        timeout_config: ::std::option::Option<::aws_smithy_types::timeout::TimeoutConfig>,
+    ) -> &mut Self {
         timeout_config.map(|t| self.config.store_put(t));
         self
     }
+
     #[doc(hidden)]
     /// Set the partition for retry-related state. When clients share a retry partition, they will
     /// also share things like token buckets and client rate limiters. By default, all clients
@@ -401,6 +478,7 @@ impl Builder {
         self.set_retry_partition(Some(retry_partition));
         self
     }
+
     #[doc(hidden)]
     /// Set the partition for retry-related state. When clients share a retry partition, they will
     /// also share things like token buckets and client rate limiters. By default, all clients
@@ -413,7 +491,8 @@ impl Builder {
         self
     }
 
-    /// Add an [`Interceptor`](::aws_smithy_runtime_api::client::interceptors::Interceptor) that runs at specific stages of the request execution pipeline.
+    /// Add an [`Interceptor`](::aws_smithy_runtime_api::client::interceptors::Interceptor) that
+    /// runs at specific stages of the request execution pipeline.
     ///
     /// Interceptors targeted at a certain stage are executed according to the pre-defined priority.
     /// The SDK provides a default set of interceptors. An interceptor configured by this method
@@ -425,10 +504,13 @@ impl Builder {
     /// # mod tests {
     /// # #[test]
     /// # fn example() {
-    /// use aws_smithy_runtime_api::client::interceptors::context::phase::BeforeTransmit;
-    /// use aws_smithy_runtime_api::client::interceptors::{Interceptor, InterceptorContext};
-    /// use aws_smithy_types::config_bag::ConfigBag;
     /// use amzn_toolkit_telemetry::config::Config;
+    /// use aws_smithy_runtime_api::client::interceptors::context::phase::BeforeTransmit;
+    /// use aws_smithy_runtime_api::client::interceptors::{
+    ///     Interceptor,
+    ///     InterceptorContext,
+    /// };
+    /// use aws_smithy_types::config_bag::ConfigBag;
     ///
     /// fn base_url() -> String {
     ///     // ...
@@ -457,8 +539,13 @@ impl Builder {
     /// # }
     /// # }
     /// ```
-    pub fn interceptor(mut self, interceptor: impl ::aws_smithy_runtime_api::client::interceptors::Interceptor + 'static) -> Self {
-        self.push_interceptor(::aws_smithy_runtime_api::client::interceptors::SharedInterceptor::new(interceptor));
+    pub fn interceptor(
+        mut self,
+        interceptor: impl ::aws_smithy_runtime_api::client::interceptors::Interceptor + 'static,
+    ) -> Self {
+        self.push_interceptor(::aws_smithy_runtime_api::client::interceptors::SharedInterceptor::new(
+            interceptor,
+        ));
         self
     }
 
@@ -474,10 +561,17 @@ impl Builder {
     /// # mod tests {
     /// # #[test]
     /// # fn example() {
+    /// use amzn_toolkit_telemetry::config::{
+    ///     Builder,
+    ///     Config,
+    /// };
     /// use aws_smithy_runtime_api::client::interceptors::context::phase::BeforeTransmit;
-    /// use aws_smithy_runtime_api::client::interceptors::{Interceptor, InterceptorContext, SharedInterceptor};
+    /// use aws_smithy_runtime_api::client::interceptors::{
+    ///     Interceptor,
+    ///     InterceptorContext,
+    ///     SharedInterceptor,
+    /// };
     /// use aws_smithy_types::config_bag::ConfigBag;
-    /// use amzn_toolkit_telemetry::config::{Builder, Config};
     ///
     /// fn base_url() -> String {
     ///     // ...
@@ -509,7 +603,10 @@ impl Builder {
     /// # }
     /// # }
     /// ```
-    pub fn push_interceptor(&mut self, interceptor: ::aws_smithy_runtime_api::client::interceptors::SharedInterceptor) -> &mut Self {
+    pub fn push_interceptor(
+        &mut self,
+        interceptor: ::aws_smithy_runtime_api::client::interceptors::SharedInterceptor,
+    ) -> &mut Self {
         self.runtime_components.push_interceptor(interceptor);
         self
     }
@@ -522,16 +619,25 @@ impl Builder {
         self.runtime_components.set_interceptors(interceptors.into_iter());
         self
     }
+
     /// Sets the time source used for this service
-    pub fn time_source(mut self, time_source: impl ::std::convert::Into<::aws_smithy_async::time::SharedTimeSource>) -> Self {
+    pub fn time_source(
+        mut self,
+        time_source: impl ::std::convert::Into<::aws_smithy_async::time::SharedTimeSource>,
+    ) -> Self {
         self.set_time_source(::std::option::Option::Some(time_source.into()));
         self
     }
+
     /// Sets the time source used for this service
-    pub fn set_time_source(&mut self, time_source: ::std::option::Option<::aws_smithy_async::time::SharedTimeSource>) -> &mut Self {
+    pub fn set_time_source(
+        &mut self,
+        time_source: ::std::option::Option<::aws_smithy_async::time::SharedTimeSource>,
+    ) -> &mut Self {
         self.runtime_components.set_time_source(time_source);
         self
     }
+
     /// Sets the name of the app that is using the client.
     ///
     /// This _optional_ name is used to identify the application in the user agent that
@@ -540,6 +646,7 @@ impl Builder {
         self.set_app_name(Some(app_name));
         self
     }
+
     /// Sets the name of the app that is using the client.
     ///
     /// This _optional_ name is used to identify the application in the user agent that
@@ -548,18 +655,27 @@ impl Builder {
         self.config.store_or_unset(app_name);
         self
     }
+
     /// Overrides the default invocation ID generator.
     ///
-    /// The invocation ID generator generates ID values for the `amz-sdk-invocation-id` header. By default, this will be a random UUID. Overriding it may be useful in tests that examine the HTTP request and need to be deterministic.
-    pub fn invocation_id_generator(mut self, gen: impl ::aws_runtime::invocation_id::InvocationIdGenerator + 'static) -> Self {
+    /// The invocation ID generator generates ID values for the `amz-sdk-invocation-id` header. By
+    /// default, this will be a random UUID. Overriding it may be useful in tests that examine the
+    /// HTTP request and need to be deterministic.
+    pub fn invocation_id_generator(
+        mut self,
+        gen: impl ::aws_runtime::invocation_id::InvocationIdGenerator + 'static,
+    ) -> Self {
         self.set_invocation_id_generator(::std::option::Option::Some(
             ::aws_runtime::invocation_id::SharedInvocationIdGenerator::new(gen),
         ));
         self
     }
+
     /// Overrides the default invocation ID generator.
     ///
-    /// The invocation ID generator generates ID values for the `amz-sdk-invocation-id` header. By default, this will be a random UUID. Overriding it may be useful in tests that examine the HTTP request and need to be deterministic.
+    /// The invocation ID generator generates ID values for the `amz-sdk-invocation-id` header. By
+    /// default, this will be a random UUID. Overriding it may be useful in tests that examine the
+    /// HTTP request and need to be deterministic.
     pub fn set_invocation_id_generator(
         &mut self,
         gen: ::std::option::Option<::aws_runtime::invocation_id::SharedInvocationIdGenerator>,
@@ -567,33 +683,46 @@ impl Builder {
         self.config.store_or_unset(gen);
         self
     }
+
     /// Sets the AWS region to use when making requests.
     ///
     /// # Examples
     /// ```no_run
+    /// use amzn_toolkit_telemetry::config::{
+    ///     Builder,
+    ///     Config,
+    /// };
     /// use aws_types::region::Region;
-    /// use amzn_toolkit_telemetry::config::{Builder, Config};
     ///
     /// let config = amzn_toolkit_telemetry::Config::builder()
     ///     .region(Region::new("us-east-1"))
     ///     .build();
     /// ```
-    pub fn region(mut self, region: impl ::std::convert::Into<::std::option::Option<::aws_types::region::Region>>) -> Self {
+    pub fn region(
+        mut self,
+        region: impl ::std::convert::Into<::std::option::Option<::aws_types::region::Region>>,
+    ) -> Self {
         self.set_region(region.into());
         self
     }
+
     /// Sets the AWS region to use when making requests.
     pub fn set_region(&mut self, region: ::std::option::Option<::aws_types::region::Region>) -> &mut Self {
         self.config.store_or_unset(region);
         self
     }
+
     /// Sets the credentials provider for this service
-    pub fn credentials_provider(mut self, credentials_provider: impl ::aws_credential_types::provider::ProvideCredentials + 'static) -> Self {
+    pub fn credentials_provider(
+        mut self,
+        credentials_provider: impl ::aws_credential_types::provider::ProvideCredentials + 'static,
+    ) -> Self {
         self.set_credentials_provider(::std::option::Option::Some(
             ::aws_credential_types::provider::SharedCredentialsProvider::new(credentials_provider),
         ));
         self
     }
+
     /// Sets the credentials provider for this service
     pub fn set_credentials_provider(
         &mut self,
@@ -602,38 +731,55 @@ impl Builder {
         self.config.store_or_unset(credentials_provider);
         self
     }
+
     /// Sets the credentials cache for this service
     pub fn credentials_cache(mut self, credentials_cache: ::aws_credential_types::cache::CredentialsCache) -> Self {
         self.set_credentials_cache(::std::option::Option::Some(credentials_cache));
         self
     }
+
     /// Sets the credentials cache for this service
-    pub fn set_credentials_cache(&mut self, credentials_cache: ::std::option::Option<::aws_credential_types::cache::CredentialsCache>) -> &mut Self {
+    pub fn set_credentials_cache(
+        &mut self,
+        credentials_cache: ::std::option::Option<::aws_credential_types::cache::CredentialsCache>,
+    ) -> &mut Self {
         self.config.store_or_unset(credentials_cache);
         self
     }
+
     /// Adds a runtime plugin to the config.
-    pub fn runtime_plugin(mut self, plugin: impl ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugin + 'static) -> Self {
+    pub fn runtime_plugin(
+        mut self,
+        plugin: impl ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugin + 'static,
+    ) -> Self {
         self.push_runtime_plugin(::aws_smithy_runtime_api::client::runtime_plugin::SharedRuntimePlugin::new(plugin));
         self
     }
+
     /// Adds a runtime plugin to the config.
-    pub fn push_runtime_plugin(&mut self, plugin: ::aws_smithy_runtime_api::client::runtime_plugin::SharedRuntimePlugin) -> &mut Self {
+    pub fn push_runtime_plugin(
+        &mut self,
+        plugin: ::aws_smithy_runtime_api::client::runtime_plugin::SharedRuntimePlugin,
+    ) -> &mut Self {
         self.runtime_plugins.push(plugin);
         self
     }
+
     #[cfg(any(feature = "test-util", test))]
     #[allow(unused_mut)]
     /// Apply test defaults to the builder
     pub fn set_test_defaults(&mut self) -> &mut Self {
-        self.set_time_source(::std::option::Option::Some(::aws_smithy_async::time::SharedTimeSource::new(
-            ::aws_smithy_async::time::StaticTimeSource::new(::std::time::UNIX_EPOCH + ::std::time::Duration::from_secs(1234567890)),
-        )));
+        self.set_time_source(::std::option::Option::Some(
+            ::aws_smithy_async::time::SharedTimeSource::new(::aws_smithy_async::time::StaticTimeSource::new(
+                ::std::time::UNIX_EPOCH + ::std::time::Duration::from_secs(1234567890),
+            )),
+        ));
         self.set_credentials_provider(Some(::aws_credential_types::provider::SharedCredentialsProvider::new(
             ::aws_credential_types::Credentials::for_tests(),
         )));
         self
     }
+
     #[cfg(any(feature = "test-util", test))]
     #[allow(unused_mut)]
     /// Apply test defaults to the builder
@@ -641,11 +787,13 @@ impl Builder {
         self.set_test_defaults();
         self
     }
+
     /// Builds a [`Config`].
     #[allow(unused_mut)]
     pub fn build(mut self) -> Config {
         let mut layer = self.config;
-        let mut resolver = ::aws_smithy_runtime::client::config_override::Resolver::initial(&mut layer, &mut self.runtime_components);
+        let mut resolver =
+            ::aws_smithy_runtime::client::config_override::Resolver::initial(&mut layer, &mut self.runtime_components);
         crate::config::set_connector(&mut resolver);
         crate::config::set_endpoint_resolver(&mut resolver);
         if layer.load::<::aws_smithy_types::retry::RetryConfig>().is_none() {
@@ -656,8 +804,13 @@ impl Builder {
             .expect("set to default above")
             .clone();
 
-        if layer.load::<::aws_smithy_runtime::client::retries::RetryPartition>().is_none() {
-            layer.store_put(::aws_smithy_runtime::client::retries::RetryPartition::new("toolkittelemetry"));
+        if layer
+            .load::<::aws_smithy_runtime::client::retries::RetryPartition>()
+            .is_none()
+        {
+            layer.store_put(::aws_smithy_runtime::client::retries::RetryPartition::new(
+                "toolkittelemetry",
+            ));
         }
         let retry_partition = layer
             .load::<::aws_smithy_runtime::client::retries::RetryPartition>()
@@ -675,7 +828,8 @@ impl Builder {
                     .duration_since(::std::time::SystemTime::UNIX_EPOCH)
                     .expect("the present takes place after the UNIX_EPOCH")
                     .as_secs_f64();
-                let client_rate_limiter_partition = ::aws_smithy_runtime::client::retries::ClientRateLimiterPartition::new(retry_partition.clone());
+                let client_rate_limiter_partition =
+                    ::aws_smithy_runtime::client::retries::ClientRateLimiterPartition::new(retry_partition.clone());
                 let client_rate_limiter = CLIENT_RATE_LIMITER.get_or_init(client_rate_limiter_partition, || {
                     ::aws_smithy_runtime::client::retries::ClientRateLimiter::new(seconds_since_unix_epoch)
                 });
@@ -685,7 +839,10 @@ impl Builder {
 
         // The token bucket is used for both standard AND adaptive retries.
         let token_bucket_partition = ::aws_smithy_runtime::client::retries::TokenBucketPartition::new(retry_partition);
-        let token_bucket = TOKEN_BUCKET.get_or_init(token_bucket_partition, ::aws_smithy_runtime::client::retries::TokenBucket::default);
+        let token_bucket = TOKEN_BUCKET.get_or_init(
+            token_bucket_partition,
+            ::aws_smithy_runtime::client::retries::TokenBucket::default,
+        );
         layer.store_put(token_bucket);
 
         // TODO(enableNewSmithyRuntimeCleanup): Should not need to provide a default once smithy-rs#2770
@@ -709,16 +866,22 @@ impl Builder {
             .load::<::aws_types::region::Region>()
             .cloned()
             .map(|r| layer.store_put(::aws_types::region::SigningRegion::from(r)));
-        if let Some(credentials_provider) = layer.load::<::aws_credential_types::provider::SharedCredentialsProvider>().cloned() {
-            let cache_config = layer.load::<::aws_credential_types::cache::CredentialsCache>().cloned().unwrap_or_else({
-                let sleep = self.runtime_components.sleep_impl();
-                || match sleep {
-                    Some(sleep) => ::aws_credential_types::cache::CredentialsCache::lazy_builder()
-                        .sleep(sleep)
-                        .into_credentials_cache(),
-                    None => ::aws_credential_types::cache::CredentialsCache::lazy(),
-                }
-            });
+        if let Some(credentials_provider) = layer
+            .load::<::aws_credential_types::provider::SharedCredentialsProvider>()
+            .cloned()
+        {
+            let cache_config = layer
+                .load::<::aws_credential_types::cache::CredentialsCache>()
+                .cloned()
+                .unwrap_or_else({
+                    let sleep = self.runtime_components.sleep_impl();
+                    || match sleep {
+                        Some(sleep) => ::aws_credential_types::cache::CredentialsCache::lazy_builder()
+                            .sleep(sleep)
+                            .into_credentials_cache(),
+                        None => ::aws_credential_types::cache::CredentialsCache::lazy(),
+                    }
+                });
             let shared_credentials_cache = cache_config.create_cache(credentials_provider);
             layer.store_put(shared_credentials_cache);
         }
@@ -741,7 +904,8 @@ pub(crate) struct ServiceRuntimePlugin {
 impl ServiceRuntimePlugin {
     pub fn new(_service_config: crate::config::Config) -> Self {
         let config = { None };
-        let mut runtime_components = ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder::new("ServiceRuntimePlugin");
+        let mut runtime_components =
+            ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder::new("ServiceRuntimePlugin");
         runtime_components.push_interceptor(::aws_smithy_runtime_api::client::interceptors::SharedInterceptor::new(
             ::aws_smithy_runtime::client::connectors::connection_poisoning::ConnectionPoisoningInterceptor::new(),
         ) as _);
@@ -771,7 +935,10 @@ impl ServiceRuntimePlugin {
                 ),
             );
         }
-        Self { config, runtime_components }
+        Self {
+            config,
+            runtime_components,
+        }
     }
 }
 
@@ -780,7 +947,9 @@ impl ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugin for Service
         self.config.clone()
     }
 
-    fn runtime_components(&self) -> ::std::borrow::Cow<'_, ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder> {
+    fn runtime_components(
+        &self,
+    ) -> ::std::borrow::Cow<'_, ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder> {
         ::std::borrow::Cow::Borrowed(&self.runtime_components)
     }
 }
@@ -812,28 +981,37 @@ impl ConfigOverrideRuntimePlugin {
     ) -> Self {
         let mut layer = config_override.config;
         let mut components = config_override.runtime_components;
-        let mut resolver =
-            ::aws_smithy_runtime::client::config_override::Resolver::overrid(initial_config, initial_components, &mut layer, &mut components);
+        let mut resolver = ::aws_smithy_runtime::client::config_override::Resolver::overrid(
+            initial_config,
+            initial_components,
+            &mut layer,
+            &mut components,
+        );
 
         crate::config::set_connector(&mut resolver);
         crate::config::set_endpoint_resolver(&mut resolver);
         match (
-            resolver.config_mut().load::<::aws_credential_types::cache::CredentialsCache>().cloned(),
+            resolver
+                .config_mut()
+                .load::<::aws_credential_types::cache::CredentialsCache>()
+                .cloned(),
             resolver
                 .config_mut()
                 .load::<::aws_credential_types::provider::SharedCredentialsProvider>()
                 .cloned(),
         ) {
-            (::std::option::Option::None, ::std::option::Option::None) => {}
+            (::std::option::Option::None, ::std::option::Option::None) => {},
             (::std::option::Option::None, _) => {
                 panic!("also specify `.credentials_cache` when overriding credentials provider for the operation");
-            }
+            },
             (_, ::std::option::Option::None) => {
                 panic!("also specify `.credentials_provider` when overriding credentials cache for the operation");
-            }
+            },
             (::std::option::Option::Some(credentials_cache), ::std::option::Option::Some(credentials_provider)) => {
-                resolver.config_mut().store_put(credentials_cache.create_cache(credentials_provider));
-            }
+                resolver
+                    .config_mut()
+                    .store_put(credentials_cache.create_cache(credentials_provider));
+            },
         }
 
         let _ = resolver;
@@ -851,21 +1029,30 @@ impl ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugin for ConfigO
         Some(self.config.clone())
     }
 
-    fn runtime_components(&self) -> ::std::borrow::Cow<'_, ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder> {
+    fn runtime_components(
+        &self,
+    ) -> ::std::borrow::Cow<'_, ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder> {
         ::std::borrow::Cow::Borrowed(&self.components)
     }
 }
 
-pub use ::aws_smithy_runtime_api::client::interceptors::Interceptor;
-pub use ::aws_smithy_runtime_api::client::interceptors::SharedInterceptor;
-pub use ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponents;
-pub use ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder;
-pub use ::aws_smithy_runtime_api::client::runtime_plugin::{RuntimePlugin, SharedRuntimePlugin};
-pub use ::aws_smithy_types::config_bag::ConfigBag;
-pub use ::aws_smithy_types::config_bag::FrozenLayer;
-
 pub use ::aws_credential_types::Credentials;
-
+pub use ::aws_smithy_runtime_api::client::interceptors::{
+    Interceptor,
+    SharedInterceptor,
+};
+pub use ::aws_smithy_runtime_api::client::runtime_components::{
+    RuntimeComponents,
+    RuntimeComponentsBuilder,
+};
+pub use ::aws_smithy_runtime_api::client::runtime_plugin::{
+    RuntimePlugin,
+    SharedRuntimePlugin,
+};
+pub use ::aws_smithy_types::config_bag::{
+    ConfigBag,
+    FrozenLayer,
+};
 pub use ::aws_types::region::Region;
 
 impl From<&::aws_types::sdk_config::SdkConfig> for Builder {
@@ -893,11 +1080,16 @@ impl From<&::aws_types::sdk_config::SdkConfig> for Config {
     }
 }
 
+pub use ::aws_smithy_async::rt::sleep::{
+    AsyncSleep,
+    SharedAsyncSleep,
+    Sleep,
+};
 pub use ::aws_types::app_name::AppName;
 
-pub use ::aws_smithy_async::rt::sleep::{AsyncSleep, SharedAsyncSleep, Sleep};
-
-pub(crate) fn base_client_runtime_plugins(mut config: crate::Config) -> ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugins {
+pub(crate) fn base_client_runtime_plugins(
+    mut config: crate::Config,
+) -> ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugins {
     let mut configured_plugins = ::std::vec::Vec::new();
     ::std::mem::swap(&mut config.runtime_plugins, &mut configured_plugins);
     let mut plugins = ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugins::new()
@@ -931,10 +1123,12 @@ fn set_connector(resolver: &mut ::aws_smithy_runtime::client::config_override::R
             .resolve_config::<::aws_smithy_types::timeout::TimeoutConfig>()
             .cloned()
             .unwrap_or_else(::aws_smithy_types::timeout::TimeoutConfig::disabled);
-        let connector_settings = ::aws_smithy_client::http_connector::ConnectorSettings::from_timeout_config(&timeout_config);
+        let connector_settings =
+            ::aws_smithy_client::http_connector::ConnectorSettings::from_timeout_config(&timeout_config);
         let http_connector = resolver.resolve_config::<::aws_smithy_client::http_connector::HttpConnector>();
 
-        // TODO(enableNewSmithyRuntimeCleanup): Replace the tower-based DynConnector and remove DynConnectorAdapter when deleting the middleware implementation
+        // TODO(enableNewSmithyRuntimeCleanup): Replace the tower-based DynConnector and remove
+        // DynConnectorAdapter when deleting the middleware implementation
         let connector = http_connector
             .and_then(|c| c.connector(&connector_settings, sleep_impl.clone()))
             .or_else(|| crate::config::default_connector(&connector_settings, sleep_impl))
@@ -952,11 +1146,18 @@ fn set_endpoint_resolver(resolver: &mut ::aws_smithy_runtime::client::config_ove
     let endpoint_resolver = if resolver.is_initial() {
         Some(
             resolver
-                .resolve_config::<::aws_smithy_http::endpoint::SharedEndpointResolver<crate::config::endpoint::Params>>()
+                .resolve_config::<::aws_smithy_http::endpoint::SharedEndpointResolver<crate::config::endpoint::Params>>(
+                )
                 .cloned()
-                .unwrap_or_else(|| ::aws_smithy_http::endpoint::SharedEndpointResolver::new(crate::config::endpoint::MissingResolver::new())),
+                .unwrap_or_else(|| {
+                    ::aws_smithy_http::endpoint::SharedEndpointResolver::new(
+                        crate::config::endpoint::MissingResolver::new(),
+                    )
+                }),
         )
-    } else if resolver.is_latest_set::<::aws_smithy_http::endpoint::SharedEndpointResolver<crate::config::endpoint::Params>>() {
+    } else if resolver
+        .is_latest_set::<::aws_smithy_http::endpoint::SharedEndpointResolver<crate::config::endpoint::Params>>()
+    {
         resolver
             .resolve_config::<::aws_smithy_http::endpoint::SharedEndpointResolver<crate::config::endpoint::Params>>()
             .cloned()
@@ -965,7 +1166,9 @@ fn set_endpoint_resolver(resolver: &mut ::aws_smithy_runtime::client::config_ove
     };
     if let Some(endpoint_resolver) = endpoint_resolver {
         let shared = ::aws_smithy_runtime_api::client::endpoint::SharedEndpointResolver::new(
-            ::aws_smithy_runtime::client::orchestrator::endpoints::DefaultEndpointResolver::<crate::config::endpoint::Params>::new(endpoint_resolver),
+            ::aws_smithy_runtime::client::orchestrator::endpoints::DefaultEndpointResolver::<
+                crate::config::endpoint::Params,
+            >::new(endpoint_resolver),
         );
         resolver
             .runtime_components_mut()

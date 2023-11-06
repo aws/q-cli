@@ -8,8 +8,8 @@ pub(crate) struct Handle {
 /// Client for the service
 ///
 /// Client for invoking operations on the service. Each operation on the service is a method on this
-/// this struct. `.send()` MUST be invoked on the generated operations to dispatch the request to the service.
-/// # Using the `Client`
+/// this struct. `.send()` MUST be invoked on the generated operations to dispatch the request to
+/// the service. # Using the `Client`
 ///
 /// A client has a function for every operation that can be performed by the service.
 /// For example, the [`PostErrorReport`](crate::operation::post_error_report) operation has
@@ -24,9 +24,9 @@ pub(crate) struct Handle {
 ///     .await;
 /// ```
 ///
-/// The underlying HTTP requests that get made by this can be modified with the `customize_operation`
-/// function on the fluent builder. See the [`customize`](crate::client::customize) module for more
-/// information.
+/// The underlying HTTP requests that get made by this can be modified with the
+/// `customize_operation` function on the fluent builder. See the
+/// [`customize`](crate::client::customize) module for more information.
 #[derive(::std::clone::Clone, ::std::fmt::Debug)]
 pub struct Client {
     handle: ::std::sync::Arc<Handle>,
@@ -92,10 +92,11 @@ impl Client {
     ///
     /// # Panics
     ///
-    /// - This method will panic if the `sdk_config` is missing an async sleep implementation. If you experience this panic, set
-    ///     the `sleep_impl` on the Config passed into this function to fix it.
-    /// - This method will panic if the `sdk_config` is missing an HTTP connector. If you experience this panic, set the
-    ///     `http_connector` on the Config passed into this function to fix it.
+    /// - This method will panic if the `sdk_config` is missing an async sleep implementation. If
+    ///   you experience this panic, set the `sleep_impl` on the Config passed into this function to
+    ///   fix it.
+    /// - This method will panic if the `sdk_config` is missing an HTTP connector. If you experience
+    ///   this panic, set the `http_connector` on the Config passed into this function to fix it.
     pub fn new(sdk_config: &::aws_types::sdk_config::SdkConfig) -> Self {
         Self::from_conf(sdk_config.into())
     }
