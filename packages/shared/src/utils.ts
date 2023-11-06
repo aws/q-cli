@@ -232,7 +232,7 @@ type ExponentialBackoffOptions = {
 
 export async function exponentialBackoff<T>(
   options: ExponentialBackoffOptions,
-  fn: () => Promise<T>
+  fn: () => Promise<T>,
 ): Promise<T> {
   let retries = 0;
   let delay = options.baseDelay;
@@ -251,5 +251,5 @@ export async function exponentialBackoff<T>(
     }
   }
 
-  throw new Error('Failed to execute function after all retries.');
+  throw new Error("Failed to execute function after all retries.");
 }

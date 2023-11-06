@@ -42,9 +42,16 @@ import { tryResolveSpecToSubcommand } from "./tryResolveSpecToSubcommand.js";
 const searchFigFolder = async (currentDirectory: string) => {
   try {
     return ensureTrailingSlash(
-      await executeCommand(
-        `cd ${currentDirectory} && until [[ -f .fig/autocomplete/build/_shortcuts.js ]] || [[ $PWD = $HOME ]] || [[ $PWD = "/" ]]; do cd ..; done; echo $PWD`
-      )
+      (
+        await executeCommand({
+          command: "bash",
+          args: [
+            "-c",
+            `until [[ -f .fig/autocomplete/build/_shortcuts.js ]] || [[ $PWD = $HOME ]] || [[ $PWD = "/" ]]; do cd ..; done; echo $PWD`,
+          ],
+          cwd: currentDirectory,
+        })
+      ).stdout,
     );
   } catch {
     return ensureTrailingSlash(currentDirectory);
@@ -61,7 +68,7 @@ export const serializeSpecLocation = (location: SpecLocation): string => {
 export const getSpecPath = async (
   name: string,
   cwd: string,
-  isScript?: boolean
+  isScript?: boolean,
 ): Promise<SpecLocation> => {
   if (name === "?") {
     // If the user is searching for _shortcuts.js by using "?"
@@ -137,7 +144,7 @@ type ResolvedSpecLocation =
 
 export const importSpecFromLocation = async (
   specLocation: SpecLocation,
-  localLogger: Logger = logger
+  localLogger: Logger = logger,
 ): Promise<{
   specFile: SpecFileImport;
   resolvedLocation?: ResolvedSpecLocation;
@@ -158,7 +165,7 @@ export const importSpecFromLocation = async (
     const { diffVersionedFile, name } = specLocation;
     specFile = await importFromLocalhost(
       diffVersionedFile ? `${name}/${diffVersionedFile}` : name,
-      devPort
+      devPort,
     );
   }
 
@@ -168,7 +175,7 @@ export const importSpecFromLocation = async (
       const spec = await importSpecFromFile(
         diffVersionedFile ? `${name}/${diffVersionedFile}` : name,
         devPath,
-        localLogger
+        localLogger,
       );
       specFile = spec;
     } catch {
@@ -184,7 +191,7 @@ export const importSpecFromLocation = async (
       const privateSpecMatch = await getSpecInfo(
         basename,
         dirname,
-        localLogger
+        localLogger,
       );
       resolvedLocation = { type: "private", ...privateSpecMatch };
       // specFile = await importFromPrivateCDN(privateSpecMatch, authClient);
@@ -192,7 +199,7 @@ export const importSpecFromLocation = async (
       specFile = await importSpecFromFile(
         basename,
         `${dirname}.fig/autocomplete/build/`,
-        localLogger
+        localLogger,
       );
     }
   } else if (!specFile) {
@@ -207,7 +214,7 @@ export const importSpecFromLocation = async (
       // If we're here, importing was successful.
       try {
         const result = await importFromPublicCDN(
-          versionFileName ? `${name}/${versionFileName}` : name
+          versionFileName ? `${name}/${versionFileName}` : name,
         );
         Debugger.resetDebugger();
 
@@ -228,7 +235,7 @@ export const importSpecFromLocation = async (
         specFile = await importSpecFromFile(
           name,
           `~/.fig/autocomplete/build/`,
-          localLogger
+          localLogger,
         );
       } catch (err) {
         /* empty */
@@ -246,7 +253,7 @@ export const importSpecFromLocation = async (
 export const loadFigSubcommand = async (
   specLocation: SpecLocation,
   context?: Fig.ShellContext,
-  localLogger: Logger = logger
+  localLogger: Logger = logger,
 ): Promise<Fig.Subcommand> => {
   const { name } = specLocation;
   const location = (await isDiffVersionedSpec(name))
@@ -254,7 +261,7 @@ export const loadFigSubcommand = async (
     : specLocation;
   const { specFile, resolvedLocation } = await importSpecFromLocation(
     location,
-    localLogger
+    localLogger,
   );
 
   const subcommand = await tryResolveSpecToSubcommand(specFile, specLocation);
@@ -269,7 +276,7 @@ export const loadFigSubcommand = async (
           sshPrefix: "",
           environmentVariables: {},
         },
-        mixin
+        mixin,
       )
     : subcommand;
 };
@@ -277,7 +284,7 @@ export const loadFigSubcommand = async (
 export const loadSubcommandCached = async (
   specLocation: SpecLocation,
   context?: Fig.ShellContext,
-  localLogger: Logger = logger
+  localLogger: Logger = logger,
 ): Promise<Subcommand> => {
   const { name, type: source } = specLocation;
   const path =
@@ -301,7 +308,7 @@ export const loadSubcommandCached = async (
 
   const subcommand = await withTimeout(
     5000,
-    loadFigSubcommand(specLocation, context, localLogger)
+    loadFigSubcommand(specLocation, context, localLogger),
   );
   const converted = convertSubcommand(subcommand, initializeDefault);
   specCache.set(key, converted);

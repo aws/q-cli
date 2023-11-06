@@ -11,8 +11,8 @@ import {
   withTimeout,
 } from "@internal/shared/utils";
 import {
+  executeCommand,
   executeLoginShell,
-  executeShellCommand,
   getSetting,
   isInDevMode,
   SETTINGS,
@@ -590,14 +590,14 @@ const getInitialState = (
   isEndOfOptions: false,
 });
 
-const historyExecuteShellCommand = async (): Promise<string> => {
+const historyExecuteShellCommand: Fig.ExecuteCommandFunction = async () => {
   throw new ParsingHistoryError(
     "Cannot run shell command while parsing history",
   );
 };
 
 const getExecuteShellCommandFunction = (isParsingHistory = false) =>
-  isParsingHistory ? historyExecuteShellCommand : executeShellCommand;
+  isParsingHistory ? historyExecuteShellCommand : executeCommand;
 
 const generateSpecForState = async (
   state: ArgumentParserState,
@@ -1078,11 +1078,7 @@ export const parseArguments = async (
       } else {
         specPath = { name: "dotslash", type: SpecLocationSource.GLOBAL };
       }
-      spec = await loadSubcommandCached(
-        specPath,
-        context,
-        localLogger,
-      );
+      spec = await loadSubcommandCached(specPath, context, localLogger);
     }
     return getResultFromState(getInitialState(spec, tokens[0].text, specPath));
   }

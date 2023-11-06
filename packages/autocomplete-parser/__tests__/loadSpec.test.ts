@@ -43,7 +43,7 @@ describe("getSpecPath", () => {
 
   it("works for specs containing a slash in the name", async () => {
     expect(
-      await getSpecPath("@withfig/autocomplete-tools", cwd, false)
+      await getSpecPath("@withfig/autocomplete-tools", cwd, false),
     ).toEqual({
       type: SpecLocationSource.GLOBAL,
       name: "@withfig/autocomplete-tools",
@@ -125,7 +125,7 @@ describe("loadFigSubcommand", () => {
   it("works with expected input", async () => {
     const result = await loadFigSubcommand(
       { name: "path", type: SpecLocationSource.LOCAL },
-      authClient
+      authClient,
     );
     expect(loadHelpers.isDiffVersionedSpec).toHaveBeenCalledTimes(1);
     expect(result.name).toBe("loadFromFile");
@@ -147,7 +147,7 @@ describe("loadFigSubcommand", () => {
     expect(importSpecFromFile).toHaveBeenLastCalledWith(
       "git",
       `${FIG_DIR}/autocomplete/build/`,
-      logger
+      logger,
     );
 
     updateSettings({
@@ -192,19 +192,19 @@ describe("loadSubcommandCached", () => {
     await loadSubcommandCached(
       { name: "git", type: SpecLocationSource.LOCAL },
       authClient,
-      context
+      context,
     );
     await loadSubcommandCached(
       { name: "git", type: SpecLocationSource.LOCAL },
       authClient,
-      context
+      context,
     );
     expect(loadFigSubcommand).toHaveBeenCalledTimes(1);
 
     await loadSubcommandCached(
       { name: "hg", type: SpecLocationSource.LOCAL },
       authClient,
-      context
+      context,
     );
     expect(loadFigSubcommand).toHaveBeenCalledTimes(2);
     (loadFigSubcommand as unknown) = oldLoadSpec;

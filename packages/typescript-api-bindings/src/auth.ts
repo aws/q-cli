@@ -1,5 +1,6 @@
 import {
   AuthBuilderIdStartDeviceAuthorizationResponse,
+  // eslint-disable-next-line camelcase
   AuthStatusResponse_AuthKind,
   AuthBuilderIdPollCreateTokenResponse_PollStatus as PollStatus,
 } from "@fig/fig-api-proto/dist/fig.pb";
@@ -11,11 +12,13 @@ import {
 
 export function status() {
   return sendAuthStatusRequest({}).then((res) => {
-    let authKind: "BuilderId" | "IamIdentityCenter" | undefined = undefined;
+    let authKind: "BuilderId" | "IamIdentityCenter" | undefined;
     switch (res.authKind) {
+      // eslint-disable-next-line camelcase
       case AuthStatusResponse_AuthKind.BUILDER_ID:
         authKind = "BuilderId";
         break;
+      // eslint-disable-next-line camelcase
       case AuthStatusResponse_AuthKind.IAM_IDENTITY_CENTER:
         authKind = "IamIdentityCenter";
         break;

@@ -77,7 +77,7 @@ declare module "@internal/fuzzysort" {
     highlight(
       result?: Result,
       highlightOpen?: string,
-      highlightClose?: string
+      highlightClose?: string,
     ): string | null;
     single(search: string, target: string | Prepared): Result | null;
   }

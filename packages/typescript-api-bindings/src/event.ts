@@ -1,17 +1,18 @@
-import { NotificationType } from '@fig/fig-api-proto/dist/fig.pb';
-import { _subscribe, NotificationResponse } from './notifications';
+import { NotificationType } from "@fig/fig-api-proto/dist/fig.pb";
+import { _subscribe, NotificationResponse } from "./notifications";
 
 export function subscribe<T>(
   eventName: string,
-  handler: (payload: T) => NotificationResponse | undefined
+  handler: (payload: T) => NotificationResponse | undefined,
 ) {
   return _subscribe(
     { type: NotificationType.NOTIFY_ON_EVENT },
-    notification => {
+    (notification) => {
       switch (notification?.type?.$case) {
-        case 'eventNotification':
+        case "eventNotification":
           // eslint-disable-next-line no-case-declarations
-          const { eventName: name, payload } = notification.type.eventNotification;
+          const { eventName: name, payload } =
+            notification.type.eventNotification;
           if (name === eventName) {
             try {
               return handler(payload ? JSON.parse(payload) : null);
@@ -25,6 +26,6 @@ export function subscribe<T>(
       }
 
       return { unsubscribe: false };
-    }
+    },
   );
 }

@@ -2,9 +2,9 @@ declare global {
   namespace fig {
     const constants:
       | {
-        version?: string;
-        os?: string;
-      }
+          version?: string;
+          os?: string;
+        }
       | undefined;
     const quiet: boolean | undefined;
   }
@@ -23,4 +23,4 @@ declare global {
   }
 }
 
-export { };
+export {};

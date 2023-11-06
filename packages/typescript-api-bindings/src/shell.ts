@@ -3,14 +3,16 @@ import {
   ProcessChangedNotification,
   ShellPromptReturnedNotification,
   TextUpdate,
-  HistoryUpdatedNotification
+  HistoryUpdatedNotification,
 } from "@fig/fig-api-proto/dist/fig.pb";
 import { sendInsertTextRequest } from "./requests";
 import { _subscribe, NotificationResponse } from "./notifications";
 
 export const processDidChange = {
   subscribe(
-    handler: (notification: ProcessChangedNotification) => NotificationResponse | undefined
+    handler: (
+      notification: ProcessChangedNotification,
+    ) => NotificationResponse | undefined,
   ) {
     return _subscribe(
       { type: NotificationType.NOTIFY_ON_PROCESS_CHANGED },
@@ -23,16 +25,16 @@ export const processDidChange = {
         }
 
         return { unsubscribe: false };
-      }
+      },
     );
-  }
+  },
 };
 
 export const promptDidReturn = {
   subscribe(
     handler: (
-      notification: ShellPromptReturnedNotification
-    ) => NotificationResponse | undefined
+      notification: ShellPromptReturnedNotification,
+    ) => NotificationResponse | undefined,
   ) {
     return _subscribe(
       { type: NotificationType.NOTIFY_ON_PROMPT },
@@ -45,14 +47,16 @@ export const promptDidReturn = {
         }
 
         return { unsubscribe: false };
-      }
+      },
     );
-  }
+  },
 };
 
 export const historyUpdated = {
   subscribe(
-    handler: (notification: HistoryUpdatedNotification) => NotificationResponse | undefined
+    handler: (
+      notification: HistoryUpdatedNotification,
+    ) => NotificationResponse | undefined,
   ) {
     return _subscribe(
       { type: NotificationType.NOTIFY_ON_HISTORY_UPDATED },
@@ -65,24 +69,24 @@ export const historyUpdated = {
         }
 
         return { unsubscribe: false };
-      }
+      },
     );
-  }
+  },
 };
 
 export async function insert(
   text: string,
   request?: Omit<TextUpdate, "insertion">,
-  terminalSessionId?: string
+  terminalSessionId?: string,
 ) {
   if (request) {
     return sendInsertTextRequest({
       terminalSessionId,
-      type: { $case: "update", update: { ...request, insertion: text } }
+      type: { $case: "update", update: { ...request, insertion: text } },
     });
   }
   return sendInsertTextRequest({
     terminalSessionId,
-    type: { $case: "text", text }
+    type: { $case: "text", text },
   });
 }

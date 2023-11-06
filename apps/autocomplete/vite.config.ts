@@ -14,8 +14,7 @@ const csp: Record<string, string> = {
   "img-src": "'self' data: fig: figapp: https: http://localhost:*",
   "style-src":
     " 'self' 'unsafe-inline' figapp: https://d3e7ef0le33nq1.cloudfront.net http://localhost:*",
-  "connect-src":
-    "'self' ws: http://localhost:*",
+  "connect-src": "'self' ws: http://localhost:*",
   "object-src": "'none'",
   "frame-src": "'none'",
 };

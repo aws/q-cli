@@ -12,7 +12,7 @@ export type NotificationResponse = {
 };
 
 export type NotificationHandler = (
-  notification: Notification
+  notification: Notification,
 ) => NotificationResponse | undefined;
 export interface Subscription {
   unsubscribe(): void;
@@ -23,7 +23,7 @@ const handlers: Partial<Record<NotificationType, NotificationHandler[]>> = {};
 // eslint-disable-next-line no-underscore-dangle
 export function _unsubscribe(
   type: NotificationType,
-  handler?: NotificationHandler
+  handler?: NotificationHandler,
 ) {
   if (handler && handlers[type] !== undefined) {
     handlers[type] = (handlers[type] ?? []).filter((x) => x !== handler);
@@ -33,7 +33,7 @@ export function _unsubscribe(
 // eslint-disable-next-line no-underscore-dangle
 export function _subscribe(
   request: NotificationRequest,
-  handler: NotificationHandler
+  handler: NotificationHandler,
 ): Promise<Subscription> | undefined {
   return new Promise<Subscription>((resolve, reject) => {
     const { type } = request;
@@ -68,7 +68,7 @@ export function _subscribe(
 
                 handlers[type] = handlers[type]?.filter(
                   (existingHandler) =>
-                    !handlersToRemove?.includes(existingHandler)
+                    !handlersToRemove?.includes(existingHandler),
                 );
 
                 return true;
@@ -84,7 +84,7 @@ export function _subscribe(
             }
 
             return false;
-          }
+          },
         );
       } else {
         addHandler();

@@ -67,7 +67,7 @@ const historySources: Record<string, HistorySource> = {
 const indexArgumentValues = (
   historyValueIndex: HistoryValueIndex,
   entry: HistoryEntry,
-  entryIndex: number,
+  entryIndex: number
 ) => {
   const { commands } = entry;
   commands.forEach(({ parserResult }) => {
@@ -103,7 +103,7 @@ const indexArgumentValues = (
             spec,
             () => ({ values: [] }) as HistoryArgValues,
             () => ({}),
-            () => ({}),
+            () => ({})
           );
         }
 
@@ -126,7 +126,7 @@ const indexArgumentValues = (
 
 const awaitBatched = async <T>(
   batchSize: number,
-  getPromiseArray: Array<() => Promise<T>>,
+  getPromiseArray: Array<() => Promise<T>>
 ): Promise<T[]> => {
   const results: T[] = [];
   for (let i = 0; i < getPromiseArray.length; i += batchSize) {
@@ -142,7 +142,7 @@ const awaitBatched = async <T>(
 
 export const loadHistorySource = async (
   items: HistoryEntry[],
-  aliases: AliasMap,
+  aliases: AliasMap
 ): Promise<HistorySource> => {
   const entryMap: Record<string, HistoryEntry> = {};
   const allLocations: string[] = [];
@@ -150,7 +150,7 @@ export const loadHistorySource = async (
   const fakeCWD = "_fig/fake_cwd";
   const getCommandLocation = async (
     command: AnnotatedCommand,
-    context?: Partial<HistoryContext>,
+    context?: Partial<HistoryContext>
   ) =>
     getSpecPath(command.command.tokens[0]?.text ?? "", context?.cwd ?? fakeCWD);
 
@@ -183,8 +183,8 @@ export const loadHistorySource = async (
       loadSubcommandCached(
         { name, type: SpecLocationSource.GLOBAL },
         undefined,
-        historyLogger,
-      ).catch((e) => e),
+        historyLogger
+      ).catch((e) => e)
   );
 
   // Pre-load all specs from history.
@@ -214,7 +214,7 @@ export const loadHistorySource = async (
             command.command,
             parseContext,
             true,
-            historyLogger,
+            historyLogger
           );
         } catch (err) {
           // skip errors in parsing commands.
@@ -277,14 +277,14 @@ const loadFigHistory = async (): Promise<HistoryEntry[]> => {
       }
       return acc;
     },
-    { valid: true, items: [] } as { valid: boolean; items: HistoryEntry[] },
+    { valid: true, items: [] } as { valid: boolean; items: HistoryEntry[] }
   ).items;
 };
 
 export const loadHistory = async (aliases: AliasMap) => {
   const loadHistoryCommand = async (
     command: string,
-    shell?: string,
+    shell?: string
   ): Promise<HistorySource> => {
     let items: HistoryEntry[] = [];
     try {
@@ -292,7 +292,12 @@ export const loadHistory = async (aliases: AliasMap) => {
       if (shell) {
         history = await executeLoginShell({ command, shell });
       } else {
-        history = await executeCommand(command);
+        history = (
+          await executeCommand({
+            command: "zsh",
+            args: ["-c", command],
+          })
+        ).stdout;
       }
       items = history
         .split("\n")
@@ -335,7 +340,7 @@ const getFirstWord = (text: string) => text.split(" ", 1)[0] || "";
 
 export function findLastIndex<T>(
   array: Array<T>,
-  predicate: (value: T, index: number) => boolean,
+  predicate: (value: T, index: number) => boolean
 ): number {
   for (let l = array.length - 1; l >= 0; l -= 1) {
     if (predicate(array[l], l)) return l;
@@ -345,13 +350,13 @@ export function findLastIndex<T>(
 
 export const getHistoryArgSuggestions = (
   annotations: Annotation[],
-  currentProcess: string,
+  currentProcess: string
 ): Fig.TemplateSuggestion[] => {
   const shell = currentProcess.slice(currentProcess.lastIndexOf("/") + 1);
   const basicAnnotations = flattenAnnotations(annotations);
   const index = findLastIndex(
     basicAnnotations,
-    (annotation) => "spec" in annotation,
+    (annotation) => "spec" in annotation
   );
 
   const root = basicAnnotations[index];
@@ -370,7 +375,7 @@ export const getHistoryArgSuggestions = (
     }
 
     const getValuesForArgType = (
-      type: TokenType.OptionArg | TokenType.SubcommandArg,
+      type: TokenType.OptionArg | TokenType.SubcommandArg
     ): Fig.TemplateSuggestion[] => {
       const result = walkSubcommand(subcommand, [
         ...specAnnotations.slice(0, -1),
@@ -414,7 +419,7 @@ export const getHistoryArgSuggestions = (
   ) {
     allValues.push(
       ...getValuesFromSource(historySources.zsh),
-      ...getValuesFromSource(historySources.bash),
+      ...getValuesFromSource(historySources.bash)
     );
   } else if (shell in historySources) {
     allValues.push(...getValuesFromSource(historySources[shell]));
@@ -430,7 +435,7 @@ export const getHistoryArgSuggestions = (
 export const getFullHistorySuggestions = (
   buffer: string,
   command: Command | null,
-  currentProcess: string,
+  currentProcess: string
 ): Suggestion[] => {
   const shell = currentProcess.slice(currentProcess.lastIndexOf("/") + 1);
   const tokens = command?.tokens ?? [];
@@ -453,7 +458,7 @@ export const getFullHistorySuggestions = (
   ) {
     historyEntries.push(
       ...historySources.zsh.entries,
-      ...historySources.bash.entries,
+      ...historySources.bash.entries
     );
   } else if (shell in historySources) {
     historyEntries.push(...historySources[shell].entries);

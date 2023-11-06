@@ -25,4 +25,3 @@ export interface ShellContext {
   /** the environment variables of the shell, note that only exported variables are included */
   environmentVariables?: EnvironmentVariable[];
 }
-

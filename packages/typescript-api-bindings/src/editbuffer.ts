@@ -1,20 +1,25 @@
-import { EditBufferChangedNotification, NotificationType } from '@fig/fig-api-proto/dist/fig.pb';
-import { _subscribe, NotificationResponse } from './notifications';
+import {
+  EditBufferChangedNotification,
+  NotificationType,
+} from "@fig/fig-api-proto/dist/fig.pb";
+import { _subscribe, NotificationResponse } from "./notifications";
 
 export function subscribe(
-  handler: (notification: EditBufferChangedNotification) => NotificationResponse | undefined
+  handler: (
+    notification: EditBufferChangedNotification,
+  ) => NotificationResponse | undefined,
 ) {
   return _subscribe(
     { type: NotificationType.NOTIFY_ON_EDITBUFFFER_CHANGE },
-    notification => {
+    (notification) => {
       switch (notification?.type?.$case) {
-        case 'editBufferNotification':
+        case "editBufferNotification":
           return handler(notification.type.editBufferNotification);
         default:
           break;
       }
 
       return { unsubscribe: false };
-    }
+    },
   );
 }

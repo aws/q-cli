@@ -5,8 +5,9 @@ import * as helpers from "../helpers";
 import { GeneratorContext } from "../helpers";
 import { getScriptSuggestions } from "../scriptSuggestionsGenerator";
 
-jest.mock("@amzn/fig-io-api-bindings-wrappers", () =>
-  jest.requireActual("@amzn/fig-io-api-bindings-wrappers/index.ts"),
+jest.mock(
+  "@fig/api-bindings-wrappers",
+  () => jest.requireActual("@fig/api-bindings-wrappers/index.ts"),
 );
 
 const context: GeneratorContext = {
@@ -20,14 +21,15 @@ const context: GeneratorContext = {
 };
 
 describe("getScriptSuggestions", () => {
-  let _runCachedGenerator: jest.SpyInstance;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  let runCachedGenerator: jest.SpyInstance;
   let executeCommand: jest.SpyInstance;
 
   beforeAll(() => {
-    _runCachedGenerator = jest.spyOn(helpers, "runCachedGenerator");
+    runCachedGenerator = jest.spyOn(helpers, "runCachedGenerator");
     executeCommand = jest
-      .spyOn(apiBindingsWrappers, "executeCommand")
-      .mockResolvedValue("a/\nx\nc/\nl");
+      .spyOn(apiBindingsWrappers, "executeCommandTimeout")
+      .mockResolvedValue({ status: 0, stdout: "a/\nx\nc/\nl", stderr: "" });
   });
 
   afterEach(() => {
@@ -35,21 +37,21 @@ describe("getScriptSuggestions", () => {
   });
 
   it("should return empty suggestions if no script in generator", async () => {
-    expect(await getScriptSuggestions({ script: "" }, context, 5000)).toEqual(
+    expect(await getScriptSuggestions({ script: [] }, context, 5000)).toEqual(
       [],
     );
   });
 
   it("should return empty suggestions if no splitOn or postProcess", async () => {
     expect(
-      await getScriptSuggestions({ script: "ascript" }, context, 5000),
+      await getScriptSuggestions({ script: ["ascript"] }, context, 5000),
     ).toEqual([]);
   });
 
   it("should return the result with splitOn", async () => {
     expect(
       await getScriptSuggestions(
-        { script: "ascript", splitOn: "\n" },
+        { script: ["ascript"], splitOn: "\n" },
         context,
         5000,
       ),
@@ -68,7 +70,7 @@ describe("getScriptSuggestions", () => {
 
     expect(
       await getScriptSuggestions(
-        { script: "ascript", postProcess },
+        { script: ["ascript"], postProcess },
         context,
         5000,
       ),
@@ -87,7 +89,7 @@ describe("getScriptSuggestions", () => {
 
     expect(
       await getScriptSuggestions(
-        { script: "ascript", postProcess },
+        { script: ["ascript"], postProcess },
         context,
         5000,
       ),
@@ -110,49 +112,53 @@ describe("getScriptSuggestions", () => {
   // });
 
   it("should call executeCommand", async () => {
-    await getScriptSuggestions({ script: "ascript" }, context, 5000);
-    expect(executeCommand).toHaveBeenCalledWith("cd / && ascript | cat", 5000);
+    await getScriptSuggestions({ script: ["ascript"] }, context, 5000);
+    expect(executeCommand).toHaveBeenCalledWith({
+      "args": [],
+      "command": "ascript",
+      "cwd": "/",
+    }, 5000);
   });
 
   it("should call executeCommand with 'spec-specified' timeout", async () => {
     await getScriptSuggestions(
-      { script: "ascript", scriptTimeout: 6000 },
+      { script: ["ascript"], scriptTimeout: 6000 },
       context,
       5000,
     );
-    expect(executeCommand).toHaveBeenCalledWith("cd / && ascript | cat", 6000);
+    expect(executeCommand).toHaveBeenCalledWith({"args": [], "command": "ascript", "cwd": "/"}, 6000);
   });
 
   it("should use the greatest between the settings timeout and the spec defined one", async () => {
     await getScriptSuggestions(
-      { script: "ascript", scriptTimeout: 3500 },
+      { script: ["ascript"], scriptTimeout: 3500 },
       context,
       7000,
     );
-    expect(executeCommand).toHaveBeenCalledWith("cd / && ascript | cat", 7000);
+    expect(executeCommand).toHaveBeenCalledWith({"args": [], "command": "ascript", "cwd": "/"}, 7000);
   });
 
   it("should call executeCommand without timeout when the user defined ones are negative", async () => {
     await getScriptSuggestions(
-      { script: "ascript", scriptTimeout: -100 },
+      { script: ["ascript"], scriptTimeout: -100 },
       context,
       -1000,
     );
     expect(executeCommand).toHaveBeenCalledWith(
-      "cd / && ascript | cat",
+      {"args": [], "command": "ascript", "cwd": "/"},
       undefined,
     );
   });
 
   it("should call executeCommand with settings timeout when no 'spec-specified' one is defined", async () => {
-    await getScriptSuggestions({ script: "ascript" }, context, 6000);
-    expect(executeCommand).toHaveBeenCalledWith("cd / && ascript | cat", 6000);
+    await getScriptSuggestions({ script: ["ascript"] }, context, 6000);
+    expect(executeCommand).toHaveBeenCalledWith({"args": [], "command": "ascript", "cwd": "/"}, 6000);
   });
 
   describe("deprecated sshPrefix", () => {
     it("should call executeCommand ignoring ssh", async () => {
       await getScriptSuggestions(
-        { script: "ascript" },
+        { script: ["ascript"] },
         {
           ...context,
           sshPrefix: "ssh -i blabla",
@@ -161,7 +167,7 @@ describe("getScriptSuggestions", () => {
       );
 
       expect(executeCommand).toHaveBeenCalledWith(
-        "cd / && ascript | cat",
+        {"args": [], "command": "ascript", "cwd": "/"},
         5000,
       );
     });

@@ -8,7 +8,6 @@ import {
 } from "@internal/shared/utils";
 import {
   executeCommand,
-  executeShellCommand,
   fread,
   isInDevMode,
 } from "@amzn/fig-io-api-bindings-wrappers";
@@ -40,7 +39,7 @@ const makeCdnUrlFactory =
     `${baseUrl}${specName}.js`;
 
 const cdnUrlFactory = makeCdnUrlFactory(
-  "https://d3e7ef0le33nq1.cloudfront.net/"
+  "https://d3e7ef0le33nq1.cloudfront.net/",
 );
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
@@ -68,7 +67,7 @@ type FigConfiguration = {
 
 export const importFromPrivateCDN = async (
   info: CDN.PrivateSpecInfo,
-  authClient: AuthClient
+  authClient: AuthClient,
 ): Promise<SpecFileImport> =>
   Routes.cdn
     .getPrivateSpec(info.namespace, info.name, authClient)
@@ -77,7 +76,7 @@ export const importFromPrivateCDN = async (
 export async function getSpecInfo(
   name: string,
   path: string,
-  localLogger: Logger = logger
+  localLogger: Logger = logger,
 ): Promise<CDN.PrivateSpecInfo> {
   localLogger.info(`Loading local spec in ${path}`);
   const result = await fread(`${ensureTrailingSlash(path)}.fig/config.json`);
@@ -118,7 +117,7 @@ export async function getSpecInfo(
 export async function importSpecFromFile(
   name: string,
   path: string,
-  localLogger: Logger = logger
+  localLogger: Logger = logger,
 ): Promise<SpecFileImport> {
   const importFromPath = async (fullPath: string) => {
     localLogger.info(`Loading spec from ${fullPath}`);
@@ -148,7 +147,7 @@ export const canLoadSpecProtocol = () => window.location.protocol !== "https:";
 // TODO: fedeci this is a problem for diff-versioned specs
 export async function importFromPublicCDN<T = SpecFileImport>(
   name: string,
-  forceReload = false
+  forceReload = false,
 ): Promise<T> {
   if (canLoadSpecProtocol()) {
     return withTimeout(
@@ -156,7 +155,7 @@ export async function importFromPublicCDN<T = SpecFileImport>(
       import(
         /* @vite-ignore */
         `spec://localhost/${name}.js`
-      )
+      ),
     );
   }
 
@@ -170,7 +169,7 @@ export async function importFromPublicCDN<T = SpecFileImport>(
         maxRetries: 5,
         jitter: 100,
       },
-      () => import(cdnUrlFactory(name, forceReload))
+      () => import(cdnUrlFactory(name, forceReload)),
     );
   } catch {
     /**/
@@ -182,14 +181,14 @@ export async function importFromPublicCDN<T = SpecFileImport>(
 // TODO: fedeci this is a problem for diff-versioned specs
 export async function importFromLocalhost<T = SpecFileImport>(
   name: string,
-  port: number | string
+  port: number | string,
 ): Promise<T> {
   return withTimeout(
     20000,
     import(
       /* @vite-ignore */
       `http://localhost:${port}/${name}.js`
-    )
+    ),
   );
 }
 
@@ -200,7 +199,7 @@ export const getCachedCLIVersion = (key: string) =>
 
 export async function getVersionFromFullFile(
   specData: SpecFileImport,
-  name: string
+  name: string,
 ) {
   // if the default export is a function it is a versioned spec
   if (typeof specData.default === "function") {
@@ -212,14 +211,18 @@ export async function getVersionFromFullFile(
       }
 
       if ("getVersionCommand" in specData && specData.getVersionCommand) {
-        const newVersion =
-          await specData.getVersionCommand(executeShellCommand);
+        const newVersion = await specData.getVersionCommand(executeCommand);
         cachedCLIVersions[storageKey] = newVersion;
         return newVersion;
       }
 
       const newVersion = semver.clean(
-        await executeCommand(`${name} --version`)
+        (
+          await executeCommand({
+            command: name,
+            args: ["--version"],
+          })
+        ).stdout,
       );
       if (newVersion) {
         cachedCLIVersions[storageKey] = newVersion;
@@ -271,7 +274,7 @@ export async function isDiffVersionedSpec(name: string): Promise<boolean> {
 }
 
 export async function loadPrivateSpecs(
-  authClient: AuthClient
+  authClient: AuthClient,
 ): Promise<CDN.PrivateSpecInfo[]> {
   try {
     const data = await Routes.cdn.getPrivateSpecList(authClient);
@@ -301,12 +304,12 @@ export function getPrivateSpec({
       spec.name === name &&
       (isScript === undefined ||
         Boolean(spec.isScript) === Boolean(isScript)) &&
-      (namespace === undefined || spec.namespace === namespace)
+      (namespace === undefined || spec.namespace === namespace),
   );
 }
 
 export async function preloadSpecs(
-  authClient: AuthClient
+  authClient: AuthClient,
 ): Promise<SpecFileImport[]> {
   let privateSpecInfo: CDN.PrivateSpecInfo[] = [];
   logger.info("Preloading specs...");
@@ -316,7 +319,7 @@ export async function preloadSpecs(
     logger.info("Failed to load private specs", e);
   }
   let promises = privateSpecInfo.map((v) =>
-    importFromPrivateCDN(v, authClient)
+    importFromPrivateCDN(v, authClient),
   );
 
   if (!canLoadSpecProtocol()) {
@@ -353,18 +356,18 @@ const mergeConflictingMixinFiles = (mixinFiles: MixinFile[]) => {
       ...acc,
       [key]: [...(key in acc ? acc[key] : []), file],
     }),
-    {} as Record<string, Fig.Subcommand[]>
+    {} as Record<string, Fig.Subcommand[]>,
   );
 
   const mergedMixinFilesMap = Object.entries(mixinFilesMap).reduce(
     (mergedAcc, [key, files]) => {
       const mergedFile = files.reduce(
         (acc, file) => mergeSubcommands(acc, file),
-        { name: files[0].name } as Fig.Subcommand
+        { name: files[0].name } as Fig.Subcommand,
       );
       return { ...mergedAcc, [key]: mergedFile };
     },
-    {} as Record<string, Fig.Subcommand>
+    {} as Record<string, Fig.Subcommand>,
   );
 
   return mergedMixinFilesMap;
@@ -388,8 +391,8 @@ export const preloadMixins = (authClient: AuthClient) => {
               .then((file) => ({
                 file,
                 key: getMixinCacheKey(specName, specNamespace),
-              }))
-          )
+              })),
+          ),
         );
 
         const mergedMixinFiles = mergeConflictingMixinFiles(mixinFiles);

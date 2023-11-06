@@ -28,7 +28,7 @@
     "@types/js-yaml": "^4.0.5",
     "@vitejs/plugin-react": "^4.0.3",
     "@withfig/api-bindings": "~0.30.2",
-    "@withfig/autocomplete-types": "^1.28.0",
+    "@withfig/autocomplete-types": "^1.29.0",
     "deep-object-diff": "^1.1.9",
     "exponential-backoff": "^3.1.1",
     "js-yaml": "^4.1.0",

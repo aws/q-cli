@@ -2,7 +2,7 @@ import { Process } from "@withfig/api-bindings";
 import { withTimeout } from "@internal/shared/utils";
 import { createErrorInstance } from "@internal/shared/errors";
 import logger from "loglevel";
-import { executeCommand, cleanOutput } from "./executeCommand.js";
+import { cleanOutput, executeCommandTimeout } from "./executeCommand.js";
 import { fread } from "./fs.js";
 
 export const LoginShellError = createErrorInstance("LoginShellError");
@@ -24,7 +24,12 @@ const getShellExecutable = async (shellName: string) => {
   try {
     return (
       (await etcShells).find((shell) => shell.includes(shellName)) ??
-      (await executeCommand(`which ${shellName}`))
+      (
+        await executeCommandTimeout({
+          command: "/usr/bin/which",
+          args: [shellName],
+        })
+      ).stdout
     );
   } catch (_) {
     return undefined;
@@ -53,7 +58,6 @@ export const executeLoginShell = async ({
     }
   }
   const flags = window.fig.constants?.os === "linux" ? "-lc" : "-lic";
-  const rawCommand = `${exe} ${flags} '${command}'`;
 
   const process = Process.run({
     executable: exe,
@@ -69,7 +73,14 @@ export const executeLoginShell = async ({
     const start = performance.now();
     const result = await withTimeout(
       timeout ?? 5000,
-      process.then((output) => cleanOutput(rawCommand, output)),
+      process.then((output) => {
+        if (output.exitCode !== 0) {
+          logger.warn(
+            `Command ${command} exited with exit code ${output.exitCode}: ${output.stderr}`,
+          );
+        }
+        return cleanOutput(output.stdout);
+      }),
     );
     const idx =
       result.lastIndexOf(DONE_SOURCING_OSC) + DONE_SOURCING_OSC.length;
@@ -86,36 +97,5 @@ export const executeLoginShell = async ({
   }
 };
 
-export const executeCommandInDir = (
-  command: string,
-  dir: string,
-  sshContextString?: string,
-  timeout?: number,
-): Promise<string> => {
-  const inputDir = dir.replace(/[\s()[\]]/g, "\\$&");
-  let commandString = `cd ${inputDir} && ${command} | cat`;
-
-  if (sshContextString) {
-    commandString = commandString.replace(/'/g, `'"'"'`);
-    commandString = `${sshContextString} '${commandString}'`;
-  }
-
-  return executeCommand(
-    commandString,
-    timeout && timeout > 0 ? timeout : undefined,
-  );
-};
-
-export const executeShellCommand = (
-  cmd: string,
-  cwd: string = window.globalCWD,
-): Promise<string> => {
-  try {
-    return executeCommandInDir(cmd, cwd, window.globalSSHString);
-  } catch (err) {
-    logger.error(err);
-    return new Promise((resolve) => {
-      resolve("");
-    });
-  }
-};
+export const executeCommand: Fig.ExecuteCommandFunction = (args) =>
+  executeCommandTimeout(args);

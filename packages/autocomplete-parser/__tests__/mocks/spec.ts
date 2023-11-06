@@ -1,7 +1,7 @@
 import { localProtocol } from "@internal/shared/utils";
 
 const generateSpec = async (
-  tokenArray: string[] | undefined
+  tokenArray: string[] | undefined,
 ): Promise<Fig.Subcommand> => {
   // Throw an error if we find an option in the tokenArray (allows us to
   // test error handling.

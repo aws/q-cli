@@ -1,4 +1,4 @@
-import { sendDebuggerUpdateRequest } from './requests';
+import { sendDebuggerUpdateRequest } from "./requests";
 
 /**
  * @param {string}  message - the message that will appear in the debugger UI.
@@ -8,7 +8,7 @@ import { sendDebuggerUpdateRequest } from './requests';
  */
 export function reportError({
   message,
-  color
+  color,
 }: {
   message: string[];
   color?: string;

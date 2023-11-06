@@ -1,16 +1,13 @@
 import { getVersionFromVersionedSpec } from "@fig/autocomplete-helpers";
 import { splitPath } from "@internal/shared/utils";
 import { SpecLocation } from "@internal/shared/internal";
-import {
-  SpecFileImport,
-  getVersionFromFullFile
-} from "./loadHelpers.js";
+import { SpecFileImport, getVersionFromFullFile } from "./loadHelpers.js";
 import { WrongDiffVersionedSpecError } from "./errors.js";
 import { importSpecFromLocation } from "./loadSpec.js";
 
 export const tryResolveSpecToSubcommand = async (
   spec: SpecFileImport,
-  location: SpecLocation
+  location: SpecLocation,
 ): Promise<Fig.Subcommand> => {
   if (typeof spec.default === "function") {
     // Handle versioned specs, either simple versioned or diff versioned.
@@ -21,19 +18,17 @@ export const tryResolveSpecToSubcommand = async (
       // Handle diff versioned specs.
       const { versionedSpecPath, version } = subcommandOrDiffVersionInfo;
       const [dirname, basename] = splitPath(versionedSpecPath);
-      const { specFile } = await importSpecFromLocation(
-        {
-          ...location,
-          name: dirname.slice(0, -1),
-          diffVersionedFile: basename,
-        }
-      );
+      const { specFile } = await importSpecFromLocation({
+        ...location,
+        name: dirname.slice(0, -1),
+        diffVersionedFile: basename,
+      });
 
       if ("versions" in specFile) {
         const result = getVersionFromVersionedSpec(
           specFile.default,
           specFile.versions,
-          version
+          version,
         );
         return result.spec;
       }

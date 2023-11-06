@@ -30,8 +30,8 @@ describe("getCustomSuggestions", () => {
         {
           custom: () => Promise.resolve([{ name: "hello" }, { name: "world" }]),
         },
-        context,
-      ),
+        context
+      )
     ).toEqual([
       { name: "hello", type: "arg" },
       { name: "world", type: "arg" },
@@ -48,8 +48,8 @@ describe("getCustomSuggestions", () => {
               { name: "world", type: "folder" },
             ]),
         },
-        context,
-      ),
+        context
+      )
     ).toEqual([
       { name: "hello", type: "shortcut" },
       { name: "world", type: "folder" },
@@ -61,7 +61,7 @@ describe("getCustomSuggestions", () => {
       {
         custom: () => Promise.resolve([{ name: "hello" }, { name: "world" }]),
       },
-      context,
+      context
     );
 
     expect(runCachedGenerator).toHaveBeenCalled();

@@ -10,8 +10,8 @@ function mapParam(param: Param): HistoryQueryRequest_Param {
     return {
       type: {
         $case: "null",
-        null: {}
-      }
+        null: {},
+      },
     };
   }
 
@@ -19,8 +19,8 @@ function mapParam(param: Param): HistoryQueryRequest_Param {
     return {
       type: {
         $case: "string",
-        string: param
-      }
+        string: param,
+      },
     };
   }
 
@@ -28,8 +28,8 @@ function mapParam(param: Param): HistoryQueryRequest_Param {
     return {
       type: {
         $case: "integer",
-        integer: param
-      }
+        integer: param,
+      },
     };
   }
 
@@ -37,8 +37,8 @@ function mapParam(param: Param): HistoryQueryRequest_Param {
     return {
       type: {
         $case: "float",
-        float: param
-      }
+        float: param,
+      },
     };
   }
 
@@ -46,8 +46,8 @@ function mapParam(param: Param): HistoryQueryRequest_Param {
     return {
       type: {
         $case: "blob",
-        blob: param
-      }
+        blob: param,
+      },
     };
   }
 
@@ -56,11 +56,11 @@ function mapParam(param: Param): HistoryQueryRequest_Param {
 
 export async function query(
   sql: string,
-  params?: Param[]
+  params?: Param[],
 ): Promise<Array<Record<string, unknown>>> {
   const response = await sendHistoryQueryRequest({
     query: sql,
-    params: params ? params.map(mapParam) : []
+    params: params ? params.map(mapParam) : [],
   });
   return JSON.parse(response.jsonArray);
 }

@@ -1,6 +1,4 @@
-import {
-  sendUserLogoutRequest
-} from './requests';
+import { sendUserLogoutRequest } from "./requests";
 
 export async function logout() {
   return sendUserLogoutRequest({});

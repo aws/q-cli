@@ -5,7 +5,7 @@ export async function run({
   args,
   environment,
   workingDirectory,
-  terminalSessionId
+  terminalSessionId,
 }: {
   executable: string;
   args: string[];
@@ -19,6 +19,6 @@ export async function run({
     arguments: args,
     env: Object.keys(env).map((key) => ({ key, value: env[key] })),
     workingDirectory,
-    terminalSessionId
+    terminalSessionId,
   });
 }

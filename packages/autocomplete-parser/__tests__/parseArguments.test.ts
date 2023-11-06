@@ -35,14 +35,14 @@ const parseArguments = (
   command: Command | null,
   context: Fig.ShellContext,
   isParsingHistory?: boolean,
-  localLogger?: logger.Logger
+  localLogger?: logger.Logger,
 ) =>
   defaultParseArguments(
     command,
     context,
     authClient,
     isParsingHistory,
-    localLogger
+    localLogger,
   );
 
 beforeAll(() => {
@@ -229,7 +229,7 @@ describe("findSubcommand", () => {
 
   it("throws with invalid options", () => {
     expect(() =>
-      findSubcommand(specWithSubcommands, "notASubcommand")
+      findSubcommand(specWithSubcommands, "notASubcommand"),
     ).toThrow();
   });
 });
@@ -253,7 +253,7 @@ describe("parseArguments", () => {
       buffer: string,
       flags: SuggestionFlags,
       currentArg: Internal.Arg | null | undefined,
-      searchTerm: string
+      searchTerm: string,
     ) => {
       // Mock loading of the provided spec.
       (loadSubcommandCached as jest.Mock).mockResolvedValueOnce(cmd);
@@ -532,7 +532,7 @@ describe("parseArguments", () => {
           location[0],
           authClient,
           context,
-          logger
+          logger,
         );
       } else {
         expect(false);
@@ -559,7 +559,7 @@ describe("parseArguments", () => {
         },
         authClient,
         context,
-        logger
+        logger,
       );
     });
 
@@ -578,7 +578,7 @@ describe("parseArguments", () => {
         },
         authClient,
         context,
-        logger
+        logger,
       );
     });
 
@@ -598,7 +598,7 @@ describe("parseArguments", () => {
         },
         authClient,
         context,
-        logger
+        logger,
       );
     });
 
@@ -610,7 +610,7 @@ describe("parseArguments", () => {
 
       const result = await parseArguments(command, context);
       const { isModule } = makeArray(
-        findSubcommand(cmd, "module").args || []
+        findSubcommand(cmd, "module").args || [],
       )[0];
       const moduleName = `${isModule}moduleName`;
 
@@ -623,7 +623,7 @@ describe("parseArguments", () => {
         },
         authClient,
         context,
-        logger
+        logger,
       );
 
       expect(result.suggestionFlags).toBe(SuggestionFlag.Any);
@@ -656,7 +656,7 @@ describe("parseArguments", () => {
       expect(result.searchTerm).toBe("");
       expect(result.annotations.length).toBe(2);
       expect(result.completionObj).toBe(
-        cmd.subcommands.recursiveLoadSpecNestedNested
+        cmd.subcommands.recursiveLoadSpecNestedNested,
       );
     });
 
@@ -666,7 +666,7 @@ describe("parseArguments", () => {
 
       const command = getCommand(
         "cmd recursiveLoadSpec nestedSubcommand doubleNestedSubcommand ",
-        {}
+        {},
       );
       const result = await parseArguments(command, context);
 
@@ -676,11 +676,11 @@ describe("parseArguments", () => {
       expect(result.annotations.length).toBe(3);
       expect(result.currentArg).toStrictEqual(
         cmd.subcommands.recursiveLoadSpecNestedNested.subcommands
-          .doubleNestedSubcommand.args[0]
+          .doubleNestedSubcommand.args[0],
       );
       expect(result.completionObj).toBe(
         cmd.subcommands.recursiveLoadSpecNestedNested.subcommands
-          .doubleNestedSubcommand
+          .doubleNestedSubcommand,
       );
     });
   });
@@ -746,7 +746,7 @@ describe("parseArguments", () => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const newSpec = await generateSpec!(
         ["cmd", "generateSpec", ""],
-        async () => ""
+        async () => "",
       );
       const spec = convertSubcommand(newSpec, initializeDefault);
       expect(result.completionObj).toEqual({

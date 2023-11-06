@@ -1,16 +1,16 @@
 import logger from "loglevel";
-import { executeCommandInDir } from "@amzn/fig-io-api-bindings-wrappers";
+import { executeCommandTimeout } from "@amzn/fig-io-api-bindings-wrappers";
 import { runPipingConsoleMethods } from "../utils";
 import {
-  runCachedGenerator,
   GeneratorContext,
   haveContextForGenerator,
+  runCachedGenerator,
 } from "./helpers";
 
 export async function getScriptSuggestions(
   generator: Fig.Generator,
   context: GeneratorContext,
-  defaultTimeout: number,
+  defaultTimeout: number
 ): Promise<Fig.Suggestion[]> {
   const { script, postProcess, splitOn } = generator;
   if (!script) {
@@ -26,44 +26,59 @@ export async function getScriptSuggestions(
     const { isDangerous, tokenArray, currentWorkingDirectory } = context;
     // A script can either be a string or a function that returns a string.
     // If the script is a function, run it, and get the output string.
-    const scriptToRun =
+    const commandToRun =
       script && typeof script === "function"
         ? runPipingConsoleMethods(() => script(tokenArray))
         : script;
 
-    if (!scriptToRun) {
+    if (!commandToRun) {
       return [];
     }
-    const data = await runCachedGenerator(
+
+    let executeCommandInput: Fig.ExecuteCommandInput;
+    if (Array.isArray(commandToRun)) {
+      executeCommandInput = {
+        command: commandToRun[0],
+        args: commandToRun.slice(1),
+        cwd: currentWorkingDirectory,
+      };
+    } else {
+      executeCommandInput = {
+        cwd: currentWorkingDirectory,
+        ...commandToRun,
+      };
+    }
+
+    // If both timeouts are specified use the greatest of the two timeouts.
+    const timeoutValue =
+      generator.scriptTimeout !== undefined &&
+      generator.scriptTimeout > defaultTimeout
+        ? generator.scriptTimeout
+        : defaultTimeout;
+    const timeoutPositiveOrUndefined =
+      timeoutValue >= 0 ? timeoutValue : undefined;
+
+    const { stdout } = await runCachedGenerator(
       generator,
       context,
       () =>
-        executeCommandInDir(
-          scriptToRun,
-          currentWorkingDirectory,
-          "",
-          // If both timeouts are specified use the greatest of the two timeouts.
-          generator.scriptTimeout !== undefined &&
-            generator.scriptTimeout > defaultTimeout
-            ? generator.scriptTimeout
-            : defaultTimeout,
-        ),
-      generator.cache?.cacheKey ?? scriptToRun,
+        executeCommandTimeout(executeCommandInput, timeoutPositiveOrUndefined),
+      generator.cache?.cacheKey ?? JSON.stringify(executeCommandInput)
     );
 
     let result: Array<Fig.Suggestion | string> = [];
 
     // If we have a splitOn function
     if (splitOn) {
-      result = data.trim() === "" ? [] : data.trim().split(splitOn);
+      result = stdout.trim() === "" ? [] : stdout.trim().split(splitOn);
     } else if (postProcess) {
       // If we have a post process function
       // The function takes one input and outputs an array
       runPipingConsoleMethods(() => {
-        result = postProcess(data, tokenArray);
+        result = postProcess(stdout, tokenArray);
       });
       result = result.filter(
-        (item) => item && (typeof item === "string" || !!item.name),
+        (item) => item && (typeof item === "string" || !!item.name)
       );
     }
 
@@ -71,7 +86,7 @@ export async function getScriptSuggestions(
     return result.map((item) =>
       typeof item === "string"
         ? { type: "arg", name: item, insertValue: item, isDangerous }
-        : { ...item, type: item.type || "arg" },
+        : { ...item, type: item.type || "arg" }
     );
   } catch (e) {
     logger.error("we had an error with the script generator", e);

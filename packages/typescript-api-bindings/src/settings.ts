@@ -1,34 +1,39 @@
-import { SettingsChangedNotification, NotificationType } from '@fig/fig-api-proto/dist/fig.pb';
-import { _subscribe, NotificationResponse } from './notifications';
+import {
+  SettingsChangedNotification,
+  NotificationType,
+} from "@fig/fig-api-proto/dist/fig.pb";
+import { _subscribe, NotificationResponse } from "./notifications";
 
 import {
   sendGetSettingsPropertyRequest,
-  sendUpdateSettingsPropertyRequest
-} from './requests';
+  sendUpdateSettingsPropertyRequest,
+} from "./requests";
 
 export const didChange = {
   subscribe(
-    handler: (notification: SettingsChangedNotification) => NotificationResponse | undefined
+    handler: (
+      notification: SettingsChangedNotification,
+    ) => NotificationResponse | undefined,
   ) {
     return _subscribe(
       { type: NotificationType.NOTIFY_ON_SETTINGS_CHANGE },
-      notification => {
+      (notification) => {
         switch (notification?.type?.$case) {
-          case 'settingsChangedNotification':
+          case "settingsChangedNotification":
             return handler(notification.type.settingsChangedNotification);
           default:
             break;
         }
 
         return { unsubscribe: false };
-      }
+      },
     );
-  }
+  },
 };
 
 export async function get(key: string) {
   return sendGetSettingsPropertyRequest({
-    key
+    key,
   });
 }
 
@@ -36,17 +41,17 @@ export async function get(key: string) {
 export async function set(key: string, value: any): Promise<void> {
   return sendUpdateSettingsPropertyRequest({
     key,
-    value: JSON.stringify(value)
+    value: JSON.stringify(value),
   });
 }
 
 export async function remove(key: string): Promise<void> {
   return sendUpdateSettingsPropertyRequest({
-    key
+    key,
   });
 }
 
 export async function current() {
   const all = await sendGetSettingsPropertyRequest({});
-  return JSON.parse(all.jsonBlob ?? '{}');
+  return JSON.parse(all.jsonBlob ?? "{}");
 }

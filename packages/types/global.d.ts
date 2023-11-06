@@ -32,7 +32,7 @@ declare global {
     const positioning: {
       isValidFrame: (
         frame: Frame,
-        callback?: (isValid: string) => void
+        callback?: (isValid: string) => void,
       ) => void;
       setFrame: (frame: Frame, callback?: () => void) => void;
     };
@@ -45,7 +45,7 @@ declare global {
       tty: string,
       cwd: string,
       processUserIsIn: string,
-      sshContextString: string
+      sshContextString: string,
     ): void;
   }
   interface Window {

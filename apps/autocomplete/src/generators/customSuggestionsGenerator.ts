@@ -1,6 +1,6 @@
 import logger from "loglevel";
 
-import { executeShellCommand } from "@amzn/fig-io-api-bindings-wrappers";
+import { executeCommand } from "@amzn/fig-io-api-bindings-wrappers";
 import { runPipingConsoleMethods } from "../utils";
 import {
   runCachedGenerator,
@@ -10,7 +10,7 @@ import {
 
 export async function getCustomSuggestions(
   generator: Fig.Generator,
-  context: GeneratorContext,
+  context: GeneratorContext
 ): Promise<Fig.Suggestion[]> {
   if (!generator.custom) {
     return [];
@@ -36,16 +36,17 @@ export async function getCustomSuggestions(
       context,
       () =>
         runPipingConsoleMethods(() =>
-          generator.custom!(tokenArray, executeShellCommand, {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          generator.custom!(tokenArray, executeCommand, {
             currentWorkingDirectory,
             currentProcess,
             sshPrefix: "",
             searchTerm,
             environmentVariables,
             isDangerous,
-          }),
+          })
         ),
-      generator.cache?.cacheKey,
+      generator.cache?.cacheKey
     );
 
     return result.map((name) => ({ ...name, type: name.type || "arg" }));

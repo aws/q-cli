@@ -1,6 +1,6 @@
 import {
   sendPseudoterminalExecuteRequest,
-  sendPseudoterminalWriteRequest
+  sendPseudoterminalWriteRequest,
 } from "./requests";
 
 /**
@@ -14,7 +14,7 @@ export async function execute(
     isPipelined?: boolean;
     backgroundJob?: boolean;
     terminalSessionId?: string;
-  }
+  },
 ) {
   return sendPseudoterminalExecuteRequest({
     command,
@@ -22,7 +22,7 @@ export async function execute(
     backgroundJob: options?.backgroundJob ?? true,
     workingDirectory: options?.directory,
     env: [],
-    terminalSessionId: options?.terminalSessionId
+    terminalSessionId: options?.terminalSessionId,
   });
 }
 
@@ -33,7 +33,7 @@ export async function write(text: string): Promise<void> {
   return sendPseudoterminalWriteRequest({
     input: {
       $case: "text",
-      text
-    }
+      text,
+    },
   });
 }

@@ -101,7 +101,7 @@ export async function isInstalled(component: Component) {
 export const installStatus = {
   subscribe: (
     component: "accessibility",
-    handler: (isInstalled: boolean) => NotificationResponse | undefined
+    handler: (isInstalled: boolean) => NotificationResponse | undefined,
   ) => {
     if (component === "accessibility") {
       return _subscribe(
@@ -110,17 +110,16 @@ export const installStatus = {
           switch (notification?.type?.$case) {
             case "accessibilityChangeNotification":
               return handler(
-                notification.type.accessibilityChangeNotification.enabled
+                notification.type.accessibilityChangeNotification.enabled,
               );
             default:
               break;
           }
 
           return { unsubscribe: false };
-        }
+        },
       );
-    } else {
-      throw Error("Not implemented");
     }
+    throw Error("Not implemented");
   },
 };

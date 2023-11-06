@@ -20,8 +20,8 @@
     "build": "npm run clean && npm run generate-requests && npm run build:cjs && npm run build:esm",
     "build:cjs": "tsc --declaration --outDir dist/cjs",
     "build:esm": "tsc --declaration --module esnext --outDir dist/esm",
-    "lint": "eslint src",
-    "lint:fix": "npm run lint --fix",
+    "lint": "eslint src && prettier --check src",
+    "lint:fix": "eslint --fix src && prettier --write src",
     "precommit": "lint-staged",
     "prepublishOnly": "npm run build",
     "generate-requests": "npx ts-node -O '{\"module\":\"commonjs\"}' codegen/generate-requests.ts"
@@ -31,6 +31,7 @@
     "@fig/fig-api-proto": "workspace:^"
   },
   "devDependencies": {
+    "@amzn/fig-io-eslint-config": "workspace:^",
     "@tsconfig/recommended": "^1.0.2",
     "@types/node": "^20.6.0",
     "@typescript-eslint/eslint-plugin": "^6.7.3",
@@ -41,7 +42,7 @@
     "eslint-config-prettier": "^8.0.0",
     "eslint-plugin-import": "^2.28.0",
     "lint-staged": "^14.0.1",
-    "prettier": "^3.0.0",
+    "prettier": "^3.0.3",
     "ts-morph": "^19.0.0",
     "ts-node": "^10.9.1",
     "ts-proto": "~1.159.1",

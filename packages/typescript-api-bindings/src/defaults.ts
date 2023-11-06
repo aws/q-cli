@@ -1,26 +1,26 @@
 import {
   sendGetDefaultsPropertyRequest,
-  sendUpdateDefaultsPropertyRequest
-} from './requests';
+  sendUpdateDefaultsPropertyRequest,
+} from "./requests";
 
 /**
  * @deprecated
  */
 export async function get(
-  key: string
+  key: string,
 ): Promise<boolean | string | number | null> {
   const response = await sendGetDefaultsPropertyRequest({
-    key
+    key,
   });
 
   switch (response.value?.type?.$case) {
-    case 'boolean':
+    case "boolean":
       return response.value?.type?.boolean;
-    case 'integer':
+    case "integer":
       return response.value?.type?.integer;
-    case 'string':
+    case "string":
       return response.value.type.string;
-    case 'null':
+    case "null":
     default:
       return null;
   }
@@ -32,7 +32,7 @@ export async function get(
 export async function setString(key: string, value: string): Promise<void> {
   return sendUpdateDefaultsPropertyRequest({
     key,
-    value: { type: { $case: 'string', string: value } }
+    value: { type: { $case: "string", string: value } },
   });
 }
 
@@ -42,7 +42,7 @@ export async function setString(key: string, value: string): Promise<void> {
 export async function setBoolean(key: string, value: boolean): Promise<void> {
   return sendUpdateDefaultsPropertyRequest({
     key,
-    value: { type: { $case: 'boolean', boolean: value } }
+    value: { type: { $case: "boolean", boolean: value } },
   });
 }
 
@@ -52,7 +52,7 @@ export async function setBoolean(key: string, value: boolean): Promise<void> {
 export async function setNumber(key: string, value: number): Promise<void> {
   return sendUpdateDefaultsPropertyRequest({
     key,
-    value: { type: { $case: 'integer', integer: value } }
+    value: { type: { $case: "integer", integer: value } },
   });
 }
 
@@ -61,6 +61,6 @@ export async function setNumber(key: string, value: number): Promise<void> {
  */
 export async function remove(key: string): Promise<void> {
   return sendUpdateDefaultsPropertyRequest({
-    key
+    key,
   });
 }
