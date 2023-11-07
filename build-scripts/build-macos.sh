@@ -42,10 +42,15 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-export CARGO_HOME=$PWD/../.cargo
+export CARGO_HOME="$PWD/../.cargo"
+RUSTUP_HOME="$PWD/../.rustup"
+
+# clean up old install
+rm -rf "$CARGO_HOME"
+rm -rf "$RUSTUP_HOME"
 
 curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh -s -- -y
-source $CARGO_HOME/env
+source "$CARGO_HOME/env"
 rustup target add x86_64-apple-darwin
 rustup target add aarch64-apple-darwin
 rustup component add clippy
@@ -54,8 +59,8 @@ cargo install tauri-cli@1.5.2 --locked
 
 bash build-scripts/macos.sh 2>&1
 
-# If signing is requested, hande it
-if [[ -n $signing_bucket && -n $signing_queue && -n $apple_id_secret ]]; then
+# If signing is requested, handle it
+if [[ -n "$signing_bucket" && -n "$signing_queue" && -n "$apple_id_secret" ]]; then
     echo signing and notarizing...
     bash build-scripts/sign-and-rebundle-macos.sh "$signing_bucket" "$signing_queue" "$apple_id_secret" 2>&1
 fi
@@ -63,7 +68,7 @@ fi
 shasum -a 256 build/CodeWhisperer.dmg | awk '{printf $1}' > build/CodeWhisperer.dmg.sha256
 
 if [[ -n $output_bucket ]]; then
-    STAGING_LOCATION=s3://$output_bucket/staging/
+    STAGING_LOCATION="s3://$output_bucket/staging/"
     
     echo build complete, publishing to S3...
     aws s3 cp build/CodeWhisperer.dmg "${STAGING_LOCATION}"
