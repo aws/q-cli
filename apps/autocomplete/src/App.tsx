@@ -44,12 +44,7 @@ import {
 import Suggestion from "./components/Suggestion";
 import Description, { DescriptionPosition } from "./components/Description";
 import Preview from "./components/Preview";
-import {
-  setFontFamily,
-  setFontSize,
-  setTheme,
-  setCustomCSS,
-} from "./fig/themes";
+import { setFontFamily, setFontSize, setTheme } from "./fig/themes";
 import { Notifications } from "./components/notifications/Notifications";
 import LoadingIcon from "./components/LoadingIcon";
 
@@ -95,7 +90,6 @@ function App() {
   });
   const {
     [SETTINGS.THEME]: theme,
-    [SETTINGS.USER_STYLES]: userStyles,
     [SETTINGS.FUZZY_SEARCH]: userFuzzySearch,
     [SETTINGS.FONT_FAMILY]: fontFamily,
     [SETTINGS.FONT_SIZE]: settingsFontSize,
@@ -261,9 +255,6 @@ function App() {
     setTheme(systemTheme, theme as string);
   }, [theme, systemTheme]);
   useEffect(() => {
-    setCustomCSS(userStyles as string);
-  }, [userStyles]);
-  useEffect(() => {
     setFontSize(size.fontSize);
   }, [size.fontSize]);
   useEffect(() => {
@@ -369,7 +360,7 @@ function App() {
             );
           })
           .catch((err) => {
-            logger.error("Error setting window position", { err });
+            logger.debug("Unable to set window position", { err });
           });
       },
       // eslint-disable-next-line react-hooks/exhaustive-deps

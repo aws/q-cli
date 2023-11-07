@@ -329,12 +329,3 @@ export function setFontSize(fontSize: number | undefined) {
   );
 }
 
-export function setCustomCSS(css: string | undefined) {
-  const root = document.getElementById("user-style");
-  if (!root) return;
-  if (!css) {
-    root.innerHTML = "";
-  } else {
-    root.innerHTML = css;
-  }
-}

@@ -71,7 +71,6 @@ use crate::platform::{
     PlatformState,
 };
 use crate::protocol::{
-    figapp,
     icons,
     resource,
     spec,
@@ -715,8 +714,8 @@ pub fn build_autocomplete(
                 .unwrap();
         })
         .with_asynchronous_custom_protocol("fig".into(), utils::wrap_custom_protocol(icons::handle))
+        .with_asynchronous_custom_protocol("icon".into(), utils::wrap_custom_protocol(icons::handle))
         .with_asynchronous_custom_protocol("spec".into(), utils::wrap_custom_protocol(spec::handle))
-        .with_asynchronous_custom_protocol("figapp".into(), utils::wrap_custom_protocol(figapp::handle))
         .with_asynchronous_custom_protocol(
             "resource".into(),
             utils::wrap_custom_protocol(resource::handle::<resource::Autocomplete>),
