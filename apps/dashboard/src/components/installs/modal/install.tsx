@@ -30,7 +30,7 @@ export default function InstallModal({
   useEffect(() => {
     if (timeElapsed) return;
 
-    const timer = setTimeout(() => setTimeElapsed(true), 5000);
+    const timer = setTimeout(() => setTimeElapsed(true), 10000);
     return () => clearTimeout(timer);
   }, [timeElapsed]);
 
@@ -55,16 +55,9 @@ export default function InstallModal({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-between items-baseline">
         <h2 className="font-medium text-lg select-none leading-none">
           {check.title}
         </h2>
-        {timeElapsed && (
-          <button className={"text-xs text-black/50"} onClick={skip}>
-            skip
-          </button>
-        )}
-      </div>
       <div className="flex flex-col gap-2 text-base font-light text-zinc-500 select-none items-start leading-tight">
         {check.description.map((d, i) => (
           <p key={i} className="text-sm">
@@ -79,9 +72,14 @@ export default function InstallModal({
         )}
       </div>
       <div className="flex flex-col gap-1">
-        <Button onClick={() => handleInstall(check.installKey)}>
-          {checking ? "Continue" : check.action}
+        <Button disabled={checking} onClick={() => handleInstall(check.installKey)}>
+          {checking ? 'Waiting for permission...' : check.action}
         </Button>
+        {timeElapsed && (
+          <button className={"text-xs text-black/50 self-center"} onClick={skip}>
+            skip
+          </button>
+        )}
         {check.explainer && (
           <Collapsible open={explainerOpen} onOpenChange={setExplainerOpen}>
             <CollapsibleTrigger asChild className="text-zinc-400">

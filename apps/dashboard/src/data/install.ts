@@ -62,9 +62,9 @@ const installChecks: InstallCheckWithInstallKey[] = [
   {
     id: "accessibility",
     installKey: "accessibility",
-    title: "Accessibility settings",
+    title: "Enable accessibility",
     description: [
-      "CodeWhisperer uses this permission to position the Autocomplete window and insert text on your behalf.",
+      "Grant accessibility permissions so CodeWhisperer can position the completion window and insert text on your behalf.",
       "If enabling it isn't working, try toggling it off and on again or restarting CodeWhisperer.",
     ],
     image: accessibility_fig,
