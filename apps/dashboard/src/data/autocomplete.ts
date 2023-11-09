@@ -5,12 +5,11 @@ const autocompleteSettings = [
       {
         id: "autocomplete.insertSpaceAutomatically",
         title:
-          "Automatically insert space for subcommands/options that take arguments",
+          "Automatically insert a space after selecting a subcommand/option that takes a mandatory argument",
         description:
-          "Autocomplete will insert a space after you select a suggestion that contains a mandatory argument.",
-        example: '(e.g. selecting `git clone`)',
+          "Autocomplete will insert a space after you select a suggestion that contains a mandatory argument (e.g. selecting `clone` in `git clone`)",
         type: "boolean",
-        default: true,
+        default: false,
         popular: true,
       },
       // {
@@ -24,15 +23,15 @@ const autocompleteSettings = [
       // },
       {
         id: "autocomplete.immediatelyExecuteAfterSpace",
-        title: "Allow Instant Execute After Space",
-        description: "Immediately execute commands after pressing [space].",
+        title: "Allow instant execute after Space",
+        description: "Immediately execute commands after pressing [space]. This is helpful for users that habitually type a space before exceuting a command",
         type: "boolean",
         default: false,
         popular: false,
       },
       {
         id: "autocomplete.scrollWrapAround",
-        title: "Wrap Around",
+        title: "Wrap around",
         description:
           "If true, when the end of suggestions are reached by pressing the down arrow key, it will wrap back around to the top.",
         type: "boolean",
@@ -50,7 +49,7 @@ const autocompleteSettings = [
       },
       {
         id: "autocomplete.fuzzySearch",
-        title: "Fuzzy Search",
+        title: "Fuzzy search",
         description:
           "Search suggestions using substring matching rather than prefix search.",
         type: "boolean",
@@ -88,7 +87,7 @@ const autocompleteSettings = [
       },
       {
         id: "autocomplete.sortMethod",
-        title: "Sort Suggestions",
+        title: "Sort suggestions",
         description: "Specifies how CodeWhisperer should sort suggestions.",
         type: "select",
         default: "most recent",
@@ -97,7 +96,7 @@ const autocompleteSettings = [
       },
       {
         id: "autocomplete.scriptTimeout",
-        title: "Script Timeout",
+        title: "Script timeout",
         description:
           "Specify the timeout in ms for scripts executed in completion spec generators.",
         type: "number",
@@ -106,7 +105,7 @@ const autocompleteSettings = [
       },
       {
         id: "autocomplete.immediatelyRunDangerousCommands",
-        title: "Dangerous",
+        title: "Allow instant execture of dangerous suggestions",
         description:
           'If true, users will be able to immediately run suggestions that completion specs have marked as "dangerous" rather than having to hit [enter] twice.',
         example: "(e.g. `rm -rf`)",
@@ -118,7 +117,7 @@ const autocompleteSettings = [
         id: "autocomplete.immediatelyRunGitAliases",
         title: "Safe git aliases",
         description:
-          "When disabled, Autocomplete will treat git aliases as dangerous.",
+          "When disabled, Autocomplete will prevent instant execution of git aliases.",
         type: "boolean",
         default: true,
         popular: false,
@@ -126,7 +125,7 @@ const autocompleteSettings = [
       {
         id: "autocomplete.firstTokenCompletion",
         title: "First token completion",
-        description: "Offer completions for the first token of command.",
+        description: "Offer completions for the CLI itself, not just its subcommand, options, and arguments.",
         example: "e.g. `cd`, `git`, etc.",
         type: "boolean",
         default: false,
@@ -216,8 +215,8 @@ const autocompleteSettings = [
     properties: [
       {
         id: "autocomplete.developerMode",
-        title: "Dev Mode",
-        description: "Turns off completion-spec caching and loads completion specs from the Specs Folder specified below.",
+        title: "Dev mode",
+        description: "Turns off completion-spec caching and loads completion specs from the Specs Folder specified in the setting below.",
         example: "Developer Mode changes the way specs are loaded.",
         type: "boolean",
         default: false,
@@ -225,7 +224,7 @@ const autocompleteSettings = [
       },
       {
         id: "autocomplete.devCompletionsFolder",
-        title: "Specs Folder",
+        title: "Specs folder",
         description: "When Developer Mode is enabled, CodeWhisperer loads completion specs from the specified directory.",
         type: "text",
         default: null,
