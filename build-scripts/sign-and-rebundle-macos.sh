@@ -2,22 +2,43 @@
 
 TEAM_ID="94KV3E626L"
 
-BUCKET_NAME="$1"
-SIGNING_BUCKET="s3://$1"        # e.g. nscc-ec-signing-833388527378
-SIGNING_REQUEST_QUEUE_NAME=$2   # e.g. nscc-signing-requests
-NOTARIZING_SECRET_ID=$3         # e.g. nscc-notarizing-apple-id
+BUCKET_NAME="$1"                # e.g. fig-io-desktop-ec-signing-230592382359
+SIGNING_REQUEST_QUEUE_NAME="$2" # e.g. fig-io-desktop-signing-requests
+NOTARIZING_SECRET_ID="$3"       # e.g. fig-io-desktop-notarizing-apple-id
+AWS_ACCOUNT_ID="$4"             # e.g. 230592382359 
+SIGNING_ROLE_NAME="$4"          # e.g. codewhisperer-ec-signing-role
 
 set -eux
 
 function signed_package_exists() {
     local name="$1"
-    aws s3 ls "$SIGNING_BUCKET/signed/$name" &> /dev/null
+    aws s3 ls "s3://$BUCKET_NAME/signed/$name" &> /dev/null
     return $?
 }
 
+# Posts a request to the sqs queue
 function post_request() {
-    local message='{"type": "request", "command": "sign"}'
-    local queue_url=$(aws sqs get-queue-url --queue-name "$SIGNING_REQUEST_QUEUE_NAME" | jq -r '.QueueUrl')
+    # The source bucket and path, e.g. fig-io-desktop-ec-signing-230592382359/pre-signed/package.tar.gz
+    local source="$1"
+    # The source bucket and path, e.g. fig-io-desktop-ec-signing-230592382359/signed/signed.tar.gz
+    local destination="$2"
+    # The aws accound id, e.g 230592382359
+    local account="$3"
+    # The role to use for signing, e.g. codewhisperer-ec-signing-role
+    local role="$4"
+
+    local message
+    message="$(
+        jq -n --arg source "$source" \
+            --arg destination "$destination" \
+            --arg account "$account" \
+            --arg role "$role" \
+            '{"data":{"source":{"arn":"arn:aws:s3:::\($source)"},"destination":{"arn":"arn:aws:s3:::\($destination)"},"iam-role":{"arn":"arn:aws:iam::\($account):role/\($role)"}}}'
+    )"
+
+    local queue_url
+    queue_url=$(aws sqs get-queue-url --queue-name "$SIGNING_REQUEST_QUEUE_NAME" | jq -r '.QueueUrl')
+
     aws sqs send-message --queue-url "$queue_url" --message-body "$message"
 }
 
@@ -58,21 +79,21 @@ function sign_file() {
 
     # Upload package for signing to S3
     echo Uploading...
-    aws s3 rm --recursive "$SIGNING_BUCKET/signed"
-    aws s3 rm --recursive "$SIGNING_BUCKET/pre-signed"
-    aws s3 cp package.tar.gz "$SIGNING_BUCKET/pre-signed/package.tar.gz"
+    aws s3 rm --recursive "s3://$BUCKET_NAME/signed"
+    aws s3 rm --recursive "s3://$BUCKET_NAME/pre-signed"
+    aws s3 cp package.tar.gz "s3://$BUCKET_NAME/pre-signed/package.tar.gz"
     rm package.tar.gz
 
     # Tell the signing host there's something to sign
     echo Sending request...
-    post_request
+    post_request "$BUCKET_NAME/pre-signed/package.tar.gz" "$BUCKET_NAME/signed/signed.tar.gz" "$AWS_ACCOUNT_ID" "$SIGNING_ROLE_NAME"
 
     # Loop until the signed package appears in the S3 bucket, for a maximum of 3 minutes
     max_duration=180
     end_time=$((SECONDS + max_duration))
 
     while [ $SECONDS -lt $end_time ]; do
-        if signed_package_exists "CodeWhisperer.app"; then
+        if signed_package_exists "signed.tar.gz"; then
             break
         else
             echo "No signed package yet. Waiting..."
@@ -90,7 +111,7 @@ function sign_file() {
 
     # Put the signed file back in its original location
     echo Downloading...
-    aws s3 cp "$SIGNING_BUCKET/signed/CodeWhisperer.app" signed.tar.gz
+    aws s3 cp "s3://$BUCKET_NAME/signed/signed.tar.gz" signed.tar.gz
     tar -zxf signed.tar.gz
     cp -R Payload/* "$full_file_path"
     rm -rf Payload signed.tar.gz

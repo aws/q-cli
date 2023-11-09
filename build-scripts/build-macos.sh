@@ -38,6 +38,14 @@ while [[ $# -gt 0 ]]; do
       shift
       apple_id_secret=$1
       ;;
+    --aws-account-id)
+      shift
+      aws_account_id="$1"
+      ;;
+    --signing-role-name)
+      shift
+      signing_role_name="$1"
+      ;;
   esac
   shift
 done
@@ -62,7 +70,7 @@ bash build-scripts/macos.sh 2>&1
 # If signing is requested, handle it
 if [[ -n "$signing_bucket" && -n "$signing_queue" && -n "$apple_id_secret" ]]; then
     echo signing and notarizing...
-    bash build-scripts/sign-and-rebundle-macos.sh "$signing_bucket" "$signing_queue" "$apple_id_secret" 2>&1
+    bash build-scripts/sign-and-rebundle-macos.sh "$signing_bucket" "$signing_queue" "$apple_id_secret" "$aws_account_id" "$signing_role_name" 2>&1
 fi
 
 shasum -a 256 build/CodeWhisperer.dmg | awk '{printf $1}' > build/CodeWhisperer.dmg.sha256
