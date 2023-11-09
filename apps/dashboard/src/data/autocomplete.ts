@@ -9,7 +9,7 @@ const autocompleteSettings = [
         description:
           "Autocomplete will insert a space after you select a suggestion that contains a mandatory argument (e.g. selecting `clone` in `git clone`)",
         type: "boolean",
-        default: false,
+        default: true,
         popular: true,
       },
       // {

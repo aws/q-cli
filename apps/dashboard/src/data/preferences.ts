@@ -83,9 +83,9 @@ const generalPreferences = [
         id: "telemetry.enabled",
         title: "Telemetry",
         description:
-          "By default, AWS collects limited usage information to provide support and improve the product.",
+          "Enable CodeWhisperer for command line to send usage data to AWS",
         example:
-          "Read our statement on privacy at aws.amazon.com/privacy for more details.",
+          "Learn more at https://docs.aws.amazon.com/codewhisperer/latest/userguide/sharing-data.html",
         type: "boolean",
         default: true,
         popular: false,
@@ -94,9 +94,9 @@ const generalPreferences = [
         id: "codeWhisperer.shareCodeWhispererContentWithAWS",
         title: "Share CodeWhisperer content with AWS",
         description:
-          "Your content processed by CodeWhisperer may be used for service improvement (except for content processed by CodeWhisperer’s Enterprise tier or users logged in with AWS IAM Identity Center). Disabling this setting will cause AWS to delete all of your content used for that purpose.",
+          "When checked, your content processed by CodeWhisperer may be used for service improvement (except for content processed by the Professional CodeWhisperer service tier). Unchecking this box will cause AWS to delete any of your content used for that purpose. The information used to provide the CodeWhisperer service to you will not be affected.",
         example:
-          "The information used to provide the CodeWhisperer service to you will not be affected. See the Service Terms for more detail.",
+          "Learn more at https://docs.aws.amazon.com/codewhisperer/latest/userguide/sharing-data.html",
         type: "boolean",
         default: true,
         popular: false,
