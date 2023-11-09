@@ -105,7 +105,7 @@ const autocompleteSettings = [
       },
       {
         id: "autocomplete.immediatelyRunDangerousCommands",
-        title: "Allow instant execture of dangerous suggestions",
+        title: "Allow instant execute of dangerous suggestions",
         description:
           'If true, users will be able to immediately run suggestions that completion specs have marked as "dangerous" rather than having to hit [enter] twice.',
         example: "(e.g. `rm -rf`)",
