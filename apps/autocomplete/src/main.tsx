@@ -5,6 +5,7 @@ import { State } from "@amzn/fig-io-api-bindings-wrappers";
 import App from "./App";
 import { captureError } from "./sentry";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { preloadSpecs } from "@amzn/fig-io-autocomplete-parser";
 
 State.watch();
 
@@ -27,11 +28,9 @@ window.logger = logger;
 
 logger.setDefaultLevel("warn");
 
-// setTimeout(() => {
-//   preloadMixins(authClient);
-//   preloadSpecs(authClient);
-//   preloadClis(authClient);
-// }, 0);
+setTimeout(() => {
+  preloadSpecs();
+}, 0);
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>

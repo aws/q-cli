@@ -196,9 +196,13 @@ function App() {
     changeSize
   );
 
+  useEffect(() => {
+    window.globalCWD = "";
+    window.globalTerminalSessionId = "";
+    window.globalSSHString = "";
+  }, []);
+
   useFigAutocomplete(setFigState);
-  // useLoadAliasEffect(setFigState, processUserIsIn ?? shellContext?.processName);
-  // useLoadClisEffect(setFigState);
   useParseArgumentsEffect(setIsLoadingSuggestions);
   useFigSettings(setSettings);
   useFigKeypress(keypressCallback);

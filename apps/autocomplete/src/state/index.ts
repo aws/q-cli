@@ -61,12 +61,7 @@ const initialState: Partial<AutocompleteState> = {
 };
 
 const getCommandMemoized = memoizeOne(getCommand);
-const mergeAliasesMemoized = memoizeOne(
-  (aliases: AliasMap, other: AliasMap): AliasMap => ({
-    ...aliases,
-    ...other,
-  })
-);
+
 const getEnvVarsMemoized = memoizeOne(
   (arr: Types.EnvironmentVariable[]) =>
     Object.fromEntries(
@@ -80,6 +75,26 @@ const getEnvVarsMemoized = memoizeOne(
       (elem, index) =>
         elem.key === b[index].key && elem.value === b[index].value
     )
+);
+
+const getAliasMemoized = memoizeOne(
+  (alias: string, shellPath?: string) => {
+    const separator = shellPath?.includes("fish") ? " " : "=";
+    return alias
+      .replace(/^alias\s/gm, "")
+      .split("\n")
+      .reduce((acc, a) => {
+        try {
+          const [key, ...value] = a.split(separator);
+          acc[key] = value.join(separator).replace(/^'/, "").replace(/'$/, "");
+        } catch (err) {
+          logger.error(`Error parsing alias: ${a}`, err);
+        }
+        return acc;
+      }, {} as AliasMap);
+  },
+  ([aliasA, shellPathA], [aliasB, shellPathB]) =>
+    aliasA === aliasB && shellPathA === shellPathB
 );
 
 const computeSuggestions = (
@@ -430,7 +445,6 @@ export const useAutocompleteStore = create<AutocompleteState>(
               buffer,
               cursorLocation,
               aliases,
-              cliAliases,
               shellContext,
             } = figState;
 
@@ -445,6 +459,13 @@ export const useAutocompleteStore = create<AutocompleteState>(
               if (shellContext.environmentVariables) {
                 figState.environmentVariables = getEnvVarsMemoized(
                   shellContext.environmentVariables
+                );
+              }
+
+              if (shellContext.alias) {
+                figState.aliases = getAliasMemoized(
+                  shellContext.alias,
+                  shellContext.shellPath
                 );
               }
             }
@@ -473,7 +494,7 @@ export const useAutocompleteStore = create<AutocompleteState>(
             try {
               const command = getCommandMemoized(
                 bufferSliced,
-                mergeAliasesMemoized(aliases, cliAliases),
+                aliases,
                 cursorLocation
               );
               return { figState, command };

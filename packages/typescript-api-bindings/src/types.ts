@@ -24,4 +24,6 @@ export interface ShellContext {
   shellPath?: string;
   /** the environment variables of the shell, note that only exported variables are included */
   environmentVariables?: EnvironmentVariable[];
+  /** the raw output of alias */
+  alias?: string;
 }

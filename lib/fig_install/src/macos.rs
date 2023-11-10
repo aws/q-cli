@@ -50,7 +50,7 @@ pub(crate) async fn update(
 
     // Get all of the paths up front so we can get an error early if something is wrong
 
-    let fig_app_path = fig_util::fig_bundle()
+    let fig_app_path = fig_util::codwhisperer_bundle()
         .ok_or_else(|| Error::UpdateFailed("binary invoked does not reside in a valid app bundle.".into()))?;
 
     let temp_dir = tempfile::Builder::new().prefix("fig-download").tempdir()?;

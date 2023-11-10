@@ -52,6 +52,7 @@ use crate::{
     EXPECTED_BUFFER,
     INSERTION_LOCKED_AT,
     INSERT_ON_NEW_CMD,
+    SHELL_ALIAS,
     SHELL_ENVIRONMENT_VARIABLES,
 };
 
@@ -289,6 +290,9 @@ pub async fn process_figterm_request(
         FigtermRequest::UpdateShellContext(request) => {
             if request.update_environment_variables {
                 *SHELL_ENVIRONMENT_VARIABLES.lock() = request.environment_variables;
+            }
+            if request.update_alias {
+                *SHELL_ALIAS.lock() = request.alias;
             }
             Ok(None)
         },

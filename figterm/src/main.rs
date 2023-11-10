@@ -132,6 +132,7 @@ static INSERTION_LOCKED_AT: RwLock<Option<SystemTime>> = RwLock::new(None);
 static EXPECTED_BUFFER: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new("".to_string()));
 
 static SHELL_ENVIRONMENT_VARIABLES: Lazy<Mutex<Vec<EnvironmentVariable>>> = Lazy::new(|| Mutex::new(vec![]));
+static SHELL_ALIAS: Lazy<Mutex<Option<String>>> = Lazy::new(|| Mutex::new(None));
 
 static USER_ENABLED_SHELLS: Lazy<Vec<String>> = Lazy::new(|| {
     fig_settings::state::get("user.enabled-shells")
@@ -195,6 +196,7 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
         figterm_version: Some(env!("CARGO_PKG_VERSION").into()),
         preexec: Some(shell_state.preexec),
         osc_lock: Some(shell_state.osc_lock),
+        alias: SHELL_ALIAS.lock().clone(),
     }
 }
 

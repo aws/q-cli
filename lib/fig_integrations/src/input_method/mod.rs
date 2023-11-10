@@ -262,13 +262,8 @@ impl std::fmt::Debug for TISInputSource {
 
 impl std::default::Default for InputMethod {
     fn default() -> Self {
-        let fig_app_path =
-            fig_util::fig_bundle().unwrap_or_else(|| "/Applications/CodeWhisperer.app".to_owned().into());
-
-        let bundle_path = fig_app_path
-            .join("Contents")
-            .join("Helpers")
-            .join("CodeWhispererInputMethod.app");
+        let fig_app_path = fig_util::codwhisperer_bundle().unwrap_or_else(|| "/Applications/CodeWhisperer.app".into());
+        let bundle_path = fig_app_path.join("Contents/Helpers/CodeWhispererInputMethod.app");
         Self { bundle_path }
     }
 }
@@ -487,7 +482,7 @@ impl Integration for InputMethod {
         // Can we load input source?
 
         // todo: pull this into a function in fig_directories
-        let cw_cli_path = match fig_util::fig_bundle() {
+        let cw_cli_path = match fig_util::codwhisperer_bundle() {
             Some(bundle) => bundle
                 .join("Contents")
                 .join("MacOS")
@@ -552,7 +547,7 @@ impl Integration for InputMethod {
         }
 
         // todo: pull this into a function in fig_directories
-        let cw_cli_path = match fig_util::fig_bundle() {
+        let cw_cli_path = match fig_util::codwhisperer_bundle() {
             Some(bundle) => bundle
                 .join("Contents")
                 .join("MacOS")

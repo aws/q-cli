@@ -214,6 +214,7 @@ pub enum DebugSubcommand {
     },
     /// Lists installed IntelliJ variants
     #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[command(name = "list-intellij-variants")]
     ListIntelliJVariants,
     /// Disables sourcing of user shell config and instead uses a minimal CodeWhisperer default
     Shell,

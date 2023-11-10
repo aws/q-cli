@@ -594,7 +594,7 @@ message MacosInputMethodResponse {
 message HistoryQueryRequest {
   message Param {
     oneof type {
-      google.protobuf.Empty null = 1;
+      fig_common.Empty null = 1;
       int64 integer = 2;
       double float = 3;
       string string = 4;

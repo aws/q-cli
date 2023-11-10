@@ -136,6 +136,7 @@ if [ -n "${LOCAL_BUILD-}" ]; then
 fi
 
 
+# shellcheck disable=SC2016
 FILE_JSON='{
   "title": "CodeWhisperer",
   "icon": "VolumeIcon.icns",

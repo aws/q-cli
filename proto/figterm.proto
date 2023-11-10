@@ -140,6 +140,8 @@ message InsertOnNewCmdRequest {
 message UpdateShellContextRequest {
   bool update_environment_variables = 1;
   repeated fig_common.EnvironmentVariable environment_variables = 2;
+  bool update_alias = 3;
+  optional string alias = 4;
 }
 
 // Command to notify figterm session that an SSH session has started in the terminal

@@ -566,6 +566,7 @@ impl PlatformStateImpl {
 
                 let mut policy_lock = ACTIVATION_POLICY.lock();
                 if *policy_lock != policy {
+                    debug!(?policy, "Setting application policy");
                     *policy_lock = policy;
                     window_target.set_activation_policy_at_runtime(policy);
                 }
@@ -688,23 +689,15 @@ impl PlatformStateImpl {
                 .post_notification("io.fig.edit_buffer_updated", std::iter::empty::<(&str, &str)>());
         } else {
             let caret = if is_xterm {
-                let cursor = active_window.get_x_term_cursor_elem();
-                /*
-                for i in 0..20 {
-                    // std::thread::sleep(std::time::Duration::from_millis(20));
-                    cursor = active_window.get_x_term_cursor();
-                    // println!("Iter {i}, {cursor:?}");
-                }
-                */
-
-                cursor.and_then(|c| c.frame().ok()).map(Rect::from)
+                active_window
+                    .get_x_term_cursor_elem()
+                    .and_then(|c| c.frame().ok())
+                    .map(Rect::from)
             } else {
-                None
+                self.get_cursor_position()
             };
 
-            let caret = caret
-                .or_else(|| self.get_cursor_position())
-                .context("Failed to get cursor position")?;
+            let caret = caret.context("Failed to get cursor position")?;
             debug!("Sending caret update {:?}", caret);
 
             UNMANAGED

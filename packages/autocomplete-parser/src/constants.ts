@@ -30,4 +30,5 @@ export const MOST_USED_SPECS = [
   "ln",
   "grep",
   "kill",
+  "aws",
 ];

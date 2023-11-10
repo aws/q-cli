@@ -321,7 +321,21 @@ mod tests {
                     "7fff5995557907fb90c4808f5c2ab9307ab94464dcb5703cc9b022d25f1f6718",
                     93024994,
                 ),
-                version("0.4.0", "", 0),
+                version(
+                    "0.4.0",
+                    "21c1145d79cf927a7c6303e40a9933d1efe0dfda52d8bc80e4b9d3ac3643ba7d",
+                    92465710,
+                ),
+                version(
+                    "0.5.0",
+                    "0f85d19c7e90bff7bef16a0643018225465674e0326520171d7e366d47df79d2",
+                    92686534,
+                ),
+                version(
+                    "0.6.0",
+                    "a69a1fec68cd43daa5d80bd6e02c57dfc9e800873a6719d13ad4e20360cb7f9d",
+                    92695962,
+                ),
             ],
         };
 

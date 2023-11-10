@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import logger from "loglevel";
 import {
   EditBufferNotifications,
   Keybindings,
@@ -8,13 +7,10 @@ import {
   Types,
 } from "@withfig/api-bindings";
 import { AliasMap } from "@amzn/fig-io-shell-parser";
-import { splitPath } from "@internal/shared/utils";
 import {
-  executeLoginShell,
   SettingsMap,
   updateSettings,
 } from "@amzn/fig-io-api-bindings-wrappers";
-import { captureError } from "../sentry";
 import { updateSelectSuggestionKeybindings } from "../actions";
 
 // TODO(sean) expose Subscription type from API binding library
@@ -30,7 +26,6 @@ export type FigState = {
   processUserIsIn: string | null;
   sshContextString: string | null;
   aliases: AliasMap;
-  cliAliases: AliasMap;
   environmentVariables: Record<string, string>;
   shellContext?: Types.ShellContext | undefined;
 };
@@ -42,60 +37,8 @@ export const initialFigState: FigState = {
   processUserIsIn: null,
   sshContextString: null,
   aliases: {},
-  cliAliases: {},
   environmentVariables: {},
   shellContext: undefined,
-};
-
-export const useLoadAliasEffect = (
-  setFigState: React.Dispatch<React.SetStateAction<FigState>>,
-  currentProcess?: string
-) => {
-  useEffect(() => {
-    window.globalCWD = "";
-    window.globalTerminalSessionId = "";
-    window.globalSSHString = "";
-  }, []);
-
-  useEffect(() => {
-    let isStale = false;
-    (async () => {
-      const shell = currentProcess ?? "bash";
-      const basename = splitPath(shell)[1];
-      if (shell && ["fish", "bash", "zsh"].includes(basename)) {
-        const separator = shell.includes("fish") ? " " : "=";
-        executeLoginShell({ executable: shell, command: "alias" })
-          .then((aliasData) => {
-            const aliases = aliasData
-              .replace(/^alias\s/gm, "")
-              .split("\n")
-              .reduce((acc, alias) => {
-                try {
-                  const [key, ...value] = alias.split(separator);
-                  acc[key] = value
-                    .join(separator)
-                    .replace(/^'/, "")
-                    .replace(/'$/, "");
-                } catch (err) {
-                  logger.error(`Error parsing alias: ${alias}`, err);
-                }
-                return acc;
-              }, {} as AliasMap);
-
-            if (!isStale) {
-              setFigState((state) => ({ ...state, aliases }));
-            }
-          })
-          .catch((err) => {
-            logger.error("Trouble loading aliases");
-            captureError(err);
-          });
-      }
-    })();
-    return () => {
-      isStale = true;
-    };
-  }, [currentProcess]);
 };
 
 export const useFigSubscriptionEffect = (

@@ -133,67 +133,22 @@ async fn send_figterm(text: String, execute: bool) -> eyre::Result<()> {
 }
 
 async fn generate_response(question: &str, n: i32) -> eyre::Result<Vec<String>> {
-    let response = request_cw(CodewhipererRequest {
+    let prompt = r#"# A collection of macOS shell one-liners that can be run interactively, they all must only be one line and line up with the comment above them
+
+# list all version of node on my path
+which -a node | xargs -I{} bash -c 'echo -n "{}: "; {} --version'
+    
+# Generate all combination (e.g. A,T,C,G)
+set={A,T,C,G}; group=5; for ((i=0; i<$group; i++)); do; repetition=$set$repetition; done; bash -c "echo "$repetition""
+    
+# Find average of input list/file of integers
+i=`wc -l $FILENAME|cut -d ' ' -f1`; cat $FILENAME| echo "scale=2;(`paste -sd+`)/"$i|bc
+    
+#"#;
+
+    let mut request = CodewhipererRequest {
         file_context: CodewhipererFileContext {
-            left_file_content: format!(
-                "# A collection of macOS shell one-liners that can be run interactively
-
-# what is the capital of australia
-# UNIMPLEMENTED: not related to terminal
-
-# ddos the ip address 192.0.1.15
-# UNIMPLEMENTED: harmful
-
-# write a loop to list files
-# UNIMPLEMENTED: multiple lines
-
-# List files
-ls -l
-
-# Count files in current directory
-ls -l | wc -l
-
-# Disk space used by home directory
-du ~
-
-# Replace foo with bar in all .py files
-sed 's/foo/bar/g' *.py
-
-# Add all files to git and create a commit with the message \"feat: add new route\"
-git add -A && git commit -m 'feat: add new route'
-
-# Add all files to git and create a commit
-git add -A && git commit -m \"$MESSAGE\"
-
-# Delete the models subdirectory
-rm -rf ./models
-
-# Delete a subdirectory
-rm -rf $DIRECTORY
-
-# What folder am I in?
-pwd
-
-# install vscode
-brew install visual-studio-code
-
-# list all files on my desktop
-ls ~/Desktop
-
-# list all installed applications
-find / -iname '*.app'
-
-# hide all icons on desktop
-defaults write com.apple.finder CreateDesktop -bool false && killall Finder
-
-# transform a file to mp4 with ffmpeg
-ffmpeg -i \"$IN_FILE\" \"$OUT_NAME.mp4\"
-
-# edit the main.c file with vim
-vim main.c
-
-# {question}\n"
-            ),
+            left_file_content: format!("{prompt}{question}\n"),
             right_file_content: "".into(),
             filename: "commands.sh".into(),
             programming_language: ProgrammingLanguage {
@@ -202,17 +157,31 @@ vim main.c
         },
         max_results: n,
         next_token: None,
-    })
-    .await?;
+    };
 
-    // println!("{:?}", response);
+    let mut completions = vec![];
 
-    Ok(response
-        .completions
-        .unwrap_or_default()
-        .into_iter()
-        .filter_map(|c| c.content)
-        .collect())
+    loop {
+        let response = request_cw(request.clone()).await?;
+        if let Some(a) = response.completions() {
+            for comp in a {
+                if let Some(a) = &comp.content {
+                    completions.push(a.clone());
+                }
+            }
+        }
+        if let Some(next_token) = response.next_token() {
+            if !next_token.is_empty() {
+                request.next_token = Some(next_token.into());
+            } else {
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+
+    Ok(completions)
 }
 
 fn warning_message(content: &str) {
@@ -268,7 +237,7 @@ fn warning_message(content: &str) {
     }
 }
 
-static PARAM_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"(\$[A-Za-z0-9\_\-]+)").unwrap());
+static PARAM_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"(\$[A-Za-z][A-Za-z0-9\_\-]*)").unwrap());
 
 fn highlighter(s: &str) -> String {
     PARAM_REGEX
@@ -367,66 +336,6 @@ impl AiArgs {
 
                 let choices = generate_response(&question, n).await?;
 
-                macro_rules! handle_action {
-                    ($action:expr) => {
-                        let accepted = matches!(&$action, &Some(DialogActions::Execute { .. }));
-                        fig_telemetry::send_translation_actioned(accepted).await;
-
-                        match $action {
-                            Some(DialogActions::Execute { command, .. }) => {
-                                // let command = PARAM_REGEX
-                                //     .replace_all(command, |a: &Captures<'_>| {
-                                //         let env = a[0].strip_prefix("$").unwrap();
-                                //         if std::env::var_os(env).is_some() {
-                                //             a[0].to_string()
-                                //         } else {
-                                //             dialoguer::Input::with_theme(&theme())
-                                //                 .with_prompt(env)
-                                //                 .with_prompt(format!("{env}"))
-                                //                 .interact_text()
-                                //                 .unwrap()
-                                //         }
-                                //     })
-                                //     .to_string();
-
-                                if send_figterm(command.clone(), true).await.is_err() {
-                                    let mut child = tokio::process::Command::new("bash")
-                                        .arg("-c")
-                                        .arg(command)
-                                        .spawn()?;
-                                    child.wait().await?;
-                                }
-                                break 'ask_loop;
-                            },
-                            Some(DialogActions::Edit { command, .. }) => {
-                                if let Err(err) = send_figterm(command.to_owned(), false).await {
-                                    println!("{} {err}", "Failed to insert command:".bright_red().bold());
-                                    println!();
-                                    println!("Command: {command}");
-                                }
-                                break 'ask_loop;
-                            },
-                            Some(DialogActions::Copy { command, .. }) => {
-                                if let Ok(mut clipboard) = Clipboard::new() {
-                                    match clipboard.set_text(command.to_string()) {
-                                        Ok(_) => println!("Copied!"),
-                                        Err(err) => eyre::bail!(err),
-                                    }
-                                }
-                                break 'ask_loop;
-                            },
-                            Some(DialogActions::Regenerate) => {
-                                continue 'generate_loop;
-                            },
-                            Some(DialogActions::Ask) => {
-                                input = None;
-                                continue 'ask_loop;
-                            },
-                            _ => break 'ask_loop,
-                        }
-                    };
-                }
-
                 match &choices[..] {
                     [] => {
                         spinner.stop_with_message(format!("{spinner_text}❌"));
@@ -476,7 +385,61 @@ impl AiArgs {
                             .items(&actions)
                             .interact_opt()?;
 
-                        handle_action!(selected.and_then(|i| actions.get(i)));
+                        let action = selected.and_then(|i| actions.get(i));
+
+                        let accepted = matches!(&action, &Some(DialogActions::Execute { .. }));
+                        fig_telemetry::send_translation_actioned(accepted).await;
+
+                        match action {
+                            Some(DialogActions::Execute { command, .. }) => {
+                                // let command = PARAM_REGEX
+                                //     .replace_all(command, |a: &Captures<'_>| {
+                                //         let env = a[0].strip_prefix("$").unwrap();
+                                //         if std::env::var_os(env).is_some() {
+                                //             a[0].to_string()
+                                //         } else {
+                                //             dialoguer::Input::with_theme(&theme())
+                                //                 .with_prompt(env)
+                                //                 .with_prompt(format!("{env}"))
+                                //                 .interact_text()
+                                //                 .unwrap_or_else(|_| std::process::exit(0))
+                                //         }
+                                //     })
+                                //     .to_string();
+
+                                if send_figterm(command.clone(), true).await.is_err() {
+                                    let mut child =
+                                        tokio::process::Command::new("bash").arg("-c").arg(command).spawn()?;
+                                    child.wait().await?;
+                                }
+                                break 'ask_loop;
+                            },
+                            Some(DialogActions::Edit { command, .. }) => {
+                                if let Err(err) = send_figterm(command.to_owned(), false).await {
+                                    println!("{} {err}", "Failed to insert command:".bright_red().bold());
+                                    println!();
+                                    println!("Command: {command}");
+                                }
+                                break 'ask_loop;
+                            },
+                            Some(DialogActions::Copy { command, .. }) => {
+                                if let Ok(mut clipboard) = Clipboard::new() {
+                                    match clipboard.set_text(command.to_string()) {
+                                        Ok(_) => println!("Copied!"),
+                                        Err(err) => eyre::bail!(err),
+                                    }
+                                }
+                                break 'ask_loop;
+                            },
+                            Some(DialogActions::Regenerate) => {
+                                continue 'generate_loop;
+                            },
+                            Some(DialogActions::Ask) => {
+                                input = None;
+                                continue 'ask_loop;
+                            },
+                            _ => break 'ask_loop,
+                        }
                     },
                     // choices => {
                     //     spinner.stop_with_message(format!("{spinner_text}{}", "<multiple options>".dark_grey()));
@@ -513,7 +476,74 @@ impl AiArgs {
 
 #[cfg(test)]
 mod test {
+    use std::time::Duration;
+
     use super::*;
+
+    #[tokio::test]
+    #[ignore = "for manual eval testing"]
+    async fn eval() {
+        let prompts = [
+            "list all files on desktop",
+            "undo last commit",
+            "create a new branch called test-feature",
+            "check whether an app is codesigned correctly",
+            "generate numbers 1 through 10",
+            "determine whether an app is notarized correctly",
+            "create a new git repository",
+            "publish an npm package",
+            "commit without running checks",
+            "install vscode",
+            "install vscode using brew",
+            "write a loop that deletes all files in the current directory",
+            "list all files larger than 2mb on my desktop",
+            "quit finder",
+            "restart finder",
+            "find out what process is listening on port 3000",
+            "kill the process listening on port 3000",
+            "enumerate eks clusters",
+            "list all versions of node that are installed on my computer",
+            "one-line bash script to list all versions of node installed on my PATH",
+            "upload this folder to s3",
+            "stream logs for heroku app",
+            "hide all icons on desktop macos",
+            "list all usb connections",
+            "delete all files on my computer",
+            "list all usb connections using ioreg",
+            "view a pr",
+            "checkout 134 pr using gh",
+            "checkout a pr using gh",
+            "overwrite current branch with remote changes",
+            "which is better: git or subversion",
+            "add an alias to my dotiles",
+            "Run the last command as root",
+            "Serve the current directory on port 80",
+            "Query google.com dns",
+            "Portforward tcp port 25565",
+            "create a new nextjs project",
+            "create new react project called helloworld",
+            "delete kubectl pod named hello-world",
+            "send ping to unix socket",
+            "Using the kubectl config at ~/.kube/kubconfig2 list all pods",
+            "List kubernetes pods Sorted by Restart Count",
+            "Delete the \"cw4t-test-bucket\" in s3",
+            "List all ubuntu aws instances",
+            "Install onepassword with brew",
+            "what is my ip",
+            "clean terraform cache",
+            "convert from main.pdf to md",
+            "install nextjs 14 with turbopack",
+            "compute md5 checksum of all files in directory output result in ${filename}.md5",
+            "what is the capital of australia",
+        ];
+
+        for prompt in prompts {
+            let a = generate_response(prompt, 1).await.unwrap();
+            let b = a.first().unwrap();
+            println!("{prompt},{b}");
+            tokio::time::sleep(Duration::from_secs(1)).await;
+        }
+    }
 
     #[test]
     fn test_lints() {

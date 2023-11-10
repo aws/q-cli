@@ -63,12 +63,12 @@ import {
   UpdateSettingsPropertyRequest,
   UserLogoutRequest,
   WindowFocusRequest,
-  WriteFileRequest,
+  WriteFileRequest
 } from "@fig/fig-api-proto/dist/fig.pb";
 import { sendMessage } from "./core";
 
 export async function sendPositionWindowRequest(
-  request: PositionWindowRequest,
+  request: PositionWindowRequest
 ): Promise<PositionWindowResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -84,24 +84,21 @@ export async function sendPositionWindowRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'PositionWindowRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'PositionWindowRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendPseudoterminalExecuteRequest(
-  request: PseudoterminalExecuteRequest,
+  request: PseudoterminalExecuteRequest
 ): Promise<PseudoterminalExecuteResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      {
-        $case: "pseudoterminalExecuteRequest",
-        pseudoterminalExecuteRequest: request,
-      },
+      { $case: "pseudoterminalExecuteRequest", pseudoterminalExecuteRequest: request },
       (response) => {
         switch (response?.$case) {
           case "pseudoterminalExecuteResponse":
@@ -113,17 +110,17 @@ export async function sendPseudoterminalExecuteRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'PseudoterminalExecuteRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'PseudoterminalExecuteRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendReadFileRequest(
-  request: ReadFileRequest,
+  request: ReadFileRequest
 ): Promise<ReadFileResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -139,24 +136,21 @@ export async function sendReadFileRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'ReadFileRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'ReadFileRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendContentsOfDirectoryRequest(
-  request: ContentsOfDirectoryRequest,
+  request: ContentsOfDirectoryRequest
 ): Promise<ContentsOfDirectoryResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      {
-        $case: "contentsOfDirectoryRequest",
-        contentsOfDirectoryRequest: request,
-      },
+      { $case: "contentsOfDirectoryRequest", contentsOfDirectoryRequest: request },
       (response) => {
         switch (response?.$case) {
           case "contentsOfDirectoryResponse":
@@ -168,24 +162,21 @@ export async function sendContentsOfDirectoryRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'ContentsOfDirectoryRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'ContentsOfDirectoryRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendGetSettingsPropertyRequest(
-  request: GetSettingsPropertyRequest,
+  request: GetSettingsPropertyRequest
 ): Promise<GetSettingsPropertyResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      {
-        $case: "getSettingsPropertyRequest",
-        getSettingsPropertyRequest: request,
-      },
+      { $case: "getSettingsPropertyRequest", getSettingsPropertyRequest: request },
       (response) => {
         switch (response?.$case) {
           case "getSettingsPropertyResponse":
@@ -197,24 +188,21 @@ export async function sendGetSettingsPropertyRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'GetSettingsPropertyRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'GetSettingsPropertyRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendDestinationOfSymbolicLinkRequest(
-  request: DestinationOfSymbolicLinkRequest,
+  request: DestinationOfSymbolicLinkRequest
 ): Promise<DestinationOfSymbolicLinkResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      {
-        $case: "destinationOfSymbolicLinkRequest",
-        destinationOfSymbolicLinkRequest: request,
-      },
+      { $case: "destinationOfSymbolicLinkRequest", destinationOfSymbolicLinkRequest: request },
       (response) => {
         switch (response?.$case) {
           case "destinationOfSymbolicLinkResponse":
@@ -226,24 +214,21 @@ export async function sendDestinationOfSymbolicLinkRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'DestinationOfSymbolicLinkRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'DestinationOfSymbolicLinkRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendGetDefaultsPropertyRequest(
-  request: GetDefaultsPropertyRequest,
+  request: GetDefaultsPropertyRequest
 ): Promise<GetDefaultsPropertyResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      {
-        $case: "getDefaultsPropertyRequest",
-        getDefaultsPropertyRequest: request,
-      },
+      { $case: "getDefaultsPropertyRequest", getDefaultsPropertyRequest: request },
       (response) => {
         switch (response?.$case) {
           case "getDefaultsPropertyResponse":
@@ -255,17 +240,17 @@ export async function sendGetDefaultsPropertyRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'GetDefaultsPropertyRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'GetDefaultsPropertyRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendGetConfigPropertyRequest(
-  request: GetConfigPropertyRequest,
+  request: GetConfigPropertyRequest
 ): Promise<GetConfigPropertyResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -281,24 +266,21 @@ export async function sendGetConfigPropertyRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'GetConfigPropertyRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'GetConfigPropertyRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendTerminalSessionInfoRequest(
-  request: TerminalSessionInfoRequest,
+  request: TerminalSessionInfoRequest
 ): Promise<TerminalSessionInfoResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      {
-        $case: "terminalSessionInfoRequest",
-        terminalSessionInfoRequest: request,
-      },
+      { $case: "terminalSessionInfoRequest", terminalSessionInfoRequest: request },
       (response) => {
         switch (response?.$case) {
           case "terminalSessionInfoResponse":
@@ -310,24 +292,21 @@ export async function sendTerminalSessionInfoRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'TerminalSessionInfoRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'TerminalSessionInfoRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendApplicationUpdateStatusRequest(
-  request: ApplicationUpdateStatusRequest,
+  request: ApplicationUpdateStatusRequest
 ): Promise<ApplicationUpdateStatusResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      {
-        $case: "applicationUpdateStatusRequest",
-        applicationUpdateStatusRequest: request,
-      },
+      { $case: "applicationUpdateStatusRequest", applicationUpdateStatusRequest: request },
       (response) => {
         switch (response?.$case) {
           case "applicationUpdateStatusResponse":
@@ -339,17 +318,17 @@ export async function sendApplicationUpdateStatusRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'ApplicationUpdateStatusRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'ApplicationUpdateStatusRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendGetLocalStateRequest(
-  request: GetLocalStateRequest,
+  request: GetLocalStateRequest
 ): Promise<GetLocalStateResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -365,17 +344,17 @@ export async function sendGetLocalStateRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'GetLocalStateRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'GetLocalStateRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendRunProcessRequest(
-  request: RunProcessRequest,
+  request: RunProcessRequest
 ): Promise<RunProcessResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -391,17 +370,17 @@ export async function sendRunProcessRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'RunProcessRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'RunProcessRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendMacosInputMethodRequest(
-  request: MacosInputMethodRequest,
+  request: MacosInputMethodRequest
 ): Promise<MacosInputMethodResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -417,17 +396,17 @@ export async function sendMacosInputMethodRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'MacosInputMethodRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'MacosInputMethodRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendInstallRequest(
-  request: InstallRequest,
+  request: InstallRequest
 ): Promise<InstallResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -443,17 +422,17 @@ export async function sendInstallRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'InstallRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'InstallRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendCheckForUpdatesRequest(
-  request: CheckForUpdatesRequest,
+  request: CheckForUpdatesRequest
 ): Promise<CheckForUpdatesResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -469,17 +448,17 @@ export async function sendCheckForUpdatesRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'CheckForUpdatesRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'CheckForUpdatesRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendHistoryQueryRequest(
-  request: HistoryQueryRequest,
+  request: HistoryQueryRequest
 ): Promise<HistoryQueryResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -495,17 +474,17 @@ export async function sendHistoryQueryRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'HistoryQueryRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'HistoryQueryRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendAuthStatusRequest(
-  request: AuthStatusRequest,
+  request: AuthStatusRequest
 ): Promise<AuthStatusResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -521,24 +500,21 @@ export async function sendAuthStatusRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'AuthStatusRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'AuthStatusRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendAuthBuilderIdStartDeviceAuthorizationRequest(
-  request: AuthBuilderIdStartDeviceAuthorizationRequest,
+  request: AuthBuilderIdStartDeviceAuthorizationRequest
 ): Promise<AuthBuilderIdStartDeviceAuthorizationResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      {
-        $case: "authBuilderIdStartDeviceAuthorizationRequest",
-        authBuilderIdStartDeviceAuthorizationRequest: request,
-      },
+      { $case: "authBuilderIdStartDeviceAuthorizationRequest", authBuilderIdStartDeviceAuthorizationRequest: request },
       (response) => {
         switch (response?.$case) {
           case "authBuilderIdStartDeviceAuthorizationResponse":
@@ -550,24 +526,21 @@ export async function sendAuthBuilderIdStartDeviceAuthorizationRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'AuthBuilderIdStartDeviceAuthorizationRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'AuthBuilderIdStartDeviceAuthorizationRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendAuthBuilderIdPollCreateTokenRequest(
-  request: AuthBuilderIdPollCreateTokenRequest,
+  request: AuthBuilderIdPollCreateTokenRequest
 ): Promise<AuthBuilderIdPollCreateTokenResponse> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      {
-        $case: "authBuilderIdPollCreateTokenRequest",
-        authBuilderIdPollCreateTokenRequest: request,
-      },
+      { $case: "authBuilderIdPollCreateTokenRequest", authBuilderIdPollCreateTokenRequest: request },
       (response) => {
         switch (response?.$case) {
           case "authBuilderIdPollCreateTokenResponse":
@@ -579,24 +552,21 @@ export async function sendAuthBuilderIdPollCreateTokenRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'AuthBuilderIdPollCreateTokenRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'AuthBuilderIdPollCreateTokenRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendPseudoterminalWriteRequest(
-  request: PseudoterminalWriteRequest,
+  request: PseudoterminalWriteRequest
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      {
-        $case: "pseudoterminalWriteRequest",
-        pseudoterminalWriteRequest: request,
-      },
+      { $case: "pseudoterminalWriteRequest", pseudoterminalWriteRequest: request },
       (response) => {
         switch (response?.$case) {
           case "success":
@@ -608,17 +578,17 @@ export async function sendPseudoterminalWriteRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'PseudoterminalWriteRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'PseudoterminalWriteRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendWriteFileRequest(
-  request: WriteFileRequest,
+  request: WriteFileRequest
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -634,24 +604,21 @@ export async function sendWriteFileRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'WriteFileRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'WriteFileRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendUpdateSettingsPropertyRequest(
-  request: UpdateSettingsPropertyRequest,
+  request: UpdateSettingsPropertyRequest
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      {
-        $case: "updateSettingsPropertyRequest",
-        updateSettingsPropertyRequest: request,
-      },
+      { $case: "updateSettingsPropertyRequest", updateSettingsPropertyRequest: request },
       (response) => {
         switch (response?.$case) {
           case "success":
@@ -663,17 +630,17 @@ export async function sendUpdateSettingsPropertyRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'UpdateSettingsPropertyRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'UpdateSettingsPropertyRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendInsertTextRequest(
-  request: InsertTextRequest,
+  request: InsertTextRequest
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -689,24 +656,21 @@ export async function sendInsertTextRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'InsertTextRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'InsertTextRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendUpdateApplicationPropertiesRequest(
-  request: UpdateApplicationPropertiesRequest,
+  request: UpdateApplicationPropertiesRequest
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      {
-        $case: "updateApplicationPropertiesRequest",
-        updateApplicationPropertiesRequest: request,
-      },
+      { $case: "updateApplicationPropertiesRequest", updateApplicationPropertiesRequest: request },
       (response) => {
         switch (response?.$case) {
           case "success":
@@ -718,24 +682,21 @@ export async function sendUpdateApplicationPropertiesRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'UpdateApplicationPropertiesRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'UpdateApplicationPropertiesRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendUpdateDefaultsPropertyRequest(
-  request: UpdateDefaultsPropertyRequest,
+  request: UpdateDefaultsPropertyRequest
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      {
-        $case: "updateDefaultsPropertyRequest",
-        updateDefaultsPropertyRequest: request,
-      },
+      { $case: "updateDefaultsPropertyRequest", updateDefaultsPropertyRequest: request },
       (response) => {
         switch (response?.$case) {
           case "success":
@@ -747,17 +708,17 @@ export async function sendUpdateDefaultsPropertyRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'UpdateDefaultsPropertyRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'UpdateDefaultsPropertyRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendTelemetryIdentifyRequest(
-  request: TelemetryIdentifyRequest,
+  request: TelemetryIdentifyRequest
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -773,17 +734,17 @@ export async function sendTelemetryIdentifyRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'TelemetryIdentifyRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'TelemetryIdentifyRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendTelemetryTrackRequest(
-  request: TelemetryTrackRequest,
+  request: TelemetryTrackRequest
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -799,17 +760,17 @@ export async function sendTelemetryTrackRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'TelemetryTrackRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'TelemetryTrackRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendOnboardingRequest(
-  request: OnboardingRequest,
+  request: OnboardingRequest
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -825,17 +786,17 @@ export async function sendOnboardingRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'OnboardingRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'OnboardingRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendWindowFocusRequest(
-  request: WindowFocusRequest,
+  request: WindowFocusRequest
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -851,24 +812,21 @@ export async function sendWindowFocusRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'WindowFocusRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'WindowFocusRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendOpenInExternalApplicationRequest(
-  request: OpenInExternalApplicationRequest,
+  request: OpenInExternalApplicationRequest
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      {
-        $case: "openInExternalApplicationRequest",
-        openInExternalApplicationRequest: request,
-      },
+      { $case: "openInExternalApplicationRequest", openInExternalApplicationRequest: request },
       (response) => {
         switch (response?.$case) {
           case "success":
@@ -880,24 +838,21 @@ export async function sendOpenInExternalApplicationRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'OpenInExternalApplicationRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'OpenInExternalApplicationRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendUpdateConfigPropertyRequest(
-  request: UpdateConfigPropertyRequest,
+  request: UpdateConfigPropertyRequest
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      {
-        $case: "updateConfigPropertyRequest",
-        updateConfigPropertyRequest: request,
-      },
+      { $case: "updateConfigPropertyRequest", updateConfigPropertyRequest: request },
       (response) => {
         switch (response?.$case) {
           case "success":
@@ -909,24 +864,21 @@ export async function sendUpdateConfigPropertyRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'UpdateConfigPropertyRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'UpdateConfigPropertyRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendPseudoterminalRestartRequest(
-  request: PseudoterminalRestartRequest,
+  request: PseudoterminalRestartRequest
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      {
-        $case: "pseudoterminalRestartRequest",
-        pseudoterminalRestartRequest: request,
-      },
+      { $case: "pseudoterminalRestartRequest", pseudoterminalRestartRequest: request },
       (response) => {
         switch (response?.$case) {
           case "success":
@@ -938,17 +890,17 @@ export async function sendPseudoterminalRestartRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'PseudoterminalRestartRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'PseudoterminalRestartRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendDebuggerUpdateRequest(
-  request: DebuggerUpdateRequest,
+  request: DebuggerUpdateRequest
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -964,17 +916,17 @@ export async function sendDebuggerUpdateRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'DebuggerUpdateRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'DebuggerUpdateRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendAppendToFileRequest(
-  request: AppendToFileRequest,
+  request: AppendToFileRequest
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -990,17 +942,17 @@ export async function sendAppendToFileRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'AppendToFileRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'AppendToFileRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendUpdateLocalStateRequest(
-  request: UpdateLocalStateRequest,
+  request: UpdateLocalStateRequest
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -1016,17 +968,17 @@ export async function sendUpdateLocalStateRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'UpdateLocalStateRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'UpdateLocalStateRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendCreateDirectoryRequest(
-  request: CreateDirectoryRequest,
+  request: CreateDirectoryRequest
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -1042,17 +994,17 @@ export async function sendCreateDirectoryRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'CreateDirectoryRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'CreateDirectoryRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendTelemetryPageRequest(
-  request: TelemetryPageRequest,
+  request: TelemetryPageRequest
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -1068,24 +1020,21 @@ export async function sendTelemetryPageRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'TelemetryPageRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'TelemetryPageRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendAggregateSessionMetricActionRequest(
-  request: AggregateSessionMetricActionRequest,
+  request: AggregateSessionMetricActionRequest
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
-      {
-        $case: "aggregateSessionMetricActionRequest",
-        aggregateSessionMetricActionRequest: request,
-      },
+      { $case: "aggregateSessionMetricActionRequest", aggregateSessionMetricActionRequest: request },
       (response) => {
         switch (response?.$case) {
           case "success":
@@ -1097,17 +1046,17 @@ export async function sendAggregateSessionMetricActionRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'AggregateSessionMetricActionRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'AggregateSessionMetricActionRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendUserLogoutRequest(
-  request: UserLogoutRequest,
+  request: UserLogoutRequest
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -1123,17 +1072,17 @@ export async function sendUserLogoutRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'UserLogoutRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'UserLogoutRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
 
 export async function sendUpdateApplicationRequest(
-  request: UpdateApplicationRequest,
+  request: UpdateApplicationRequest
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     sendMessage(
@@ -1149,11 +1098,12 @@ export async function sendUpdateApplicationRequest(
           default:
             reject(
               Error(
-                `Invalid response '${response?.$case}' for 'UpdateApplicationRequest'`,
-              ),
+                `Invalid response '${response?.$case}' for 'UpdateApplicationRequest'`
+              )
             );
         }
-      },
+      }
     );
   });
 }
+

@@ -1,12 +1,12 @@
 syntax = "proto3";
 package stress;
 
-import "google/protobuf/empty.proto";
+import "fig_common.proto";
 
 message Serverbound {
   oneof inner {
     Setup setup = 1;
-    google.protobuf.Empty request_report = 2;
+    fig_common.Empty request_report = 2;
     IncrementTest increment_test = 3;
     EchoResponse echo_response = 4;
   }
@@ -34,7 +34,7 @@ message Serverbound {
 
 message Clientbound {
   oneof inner {
-    google.protobuf.Empty ready = 1;
+    fig_common.Empty ready = 1;
     Report report = 2;
     EchoTest echo_test = 3;
   }

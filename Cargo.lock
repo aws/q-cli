@@ -2942,7 +2942,6 @@ dependencies = [
  "prost-build",
  "prost-reflect",
  "prost-reflect-build",
- "prost-types",
  "rmp-serde",
  "serde",
  "serde_json",

@@ -84,7 +84,7 @@ pub fn current_exe_origin() -> Result<PathBuf, Error> {
 
 #[must_use]
 #[cfg(target_os = "macos")]
-pub fn fig_bundle() -> Option<PathBuf> {
+pub fn codwhisperer_bundle() -> Option<PathBuf> {
     let current_exe = current_exe_origin().ok()?;
 
     // Verify we have .../Bundle.app/Contents/MacOS/binary-name

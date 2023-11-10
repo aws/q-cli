@@ -245,6 +245,7 @@ mod tests {
             figterm_version: None,
             preexec: Some(false),
             osc_lock: Some(true),
+            alias: Some("alias q='cw ai'\n".into()),
         };
         let hook = hooks::new_edit_buffer_hook(Some(ctx), "test", 2, 3, None);
         hooks::hook_to_message(hook)

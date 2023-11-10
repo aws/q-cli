@@ -165,14 +165,7 @@ fig_precmd() {
   FIG_HAS_SET_PROMPT=1
 
   if command -v cw >/dev/null 2>&1; then
-    case $(cw _ pre-cmd) in
-      EXEC_NEW_SHELL)
-        unset FIG_DOTFILES_SOURCED
-        exec zsh
-        ;;
-      *)
-        ;;
-    esac
+    (command cw _ pre-cmd --alias "$(\alias)" > /dev/null 2>&1 &) >/dev/null 2>&1
   fi
 }
 
@@ -196,4 +189,4 @@ fi
 
 fi
 
-(cw _ pre-cmd > /dev/null 2>&1 &) >/dev/null 2>&1
+(command cw _ pre-cmd --alias "$(\alias)" > /dev/null 2>&1 &) >/dev/null 2>&1

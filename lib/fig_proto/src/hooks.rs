@@ -38,14 +38,7 @@ pub fn generate_shell_context(
         session_id: session_id.map(|s| s.into()),
         process_name: Some(shell),
         current_working_directory: Some(cwd.to_string_lossy().into()),
-        shell_path: None,
-        wsl_distro: None,
-        terminal: None,
-        hostname: None,
-        environment_variables: vec![],
-        figterm_version: None,
-        preexec: None,
-        osc_lock: None,
+        ..Default::default()
     })
 }
 

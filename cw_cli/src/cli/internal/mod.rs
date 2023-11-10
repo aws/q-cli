@@ -184,7 +184,10 @@ pub enum StateComponent {
 pub enum InternalSubcommand {
     /// Command that is run during the PreCmd section of
     /// the fig integrations.
-    PreCmd,
+    PreCmd {
+        #[arg(long)]
+        alias: Option<String>,
+    },
     /// Change the local-state file
     LocalState(local_state::LocalStateArgs),
     /// Callback used for the internal pseudoterminal
@@ -356,7 +359,7 @@ impl InternalSubcommand {
                 components.set(InstallComponents::BINARY, false);
                 fig_install::uninstall(components).await?;
             },
-            InternalSubcommand::PreCmd => pre_cmd().await,
+            InternalSubcommand::PreCmd { alias } => pre_cmd(alias).await,
             InternalSubcommand::LocalState(local_state) => local_state.execute().await?,
             InternalSubcommand::Callback(CallbackArgs {
                 handler_id,
@@ -879,7 +882,7 @@ pub fn get_shell() {
     exit(1);
 }
 
-pub async fn pre_cmd() {
+pub async fn pre_cmd(alias: Option<String>) {
     let Ok(session_id) = std::env::var("CWTERM_SESSION_ID") else {
         return;
     };
@@ -896,6 +899,8 @@ pub async fn pre_cmd() {
                                 value: Some(value),
                             })
                             .collect(),
+                        update_alias: true,
+                        alias,
                     })),
                 };
                 if let Err(err) = figterm_stream.send_message(message).await {

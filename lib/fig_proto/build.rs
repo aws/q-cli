@@ -62,6 +62,8 @@ fn main() -> Result<()> {
         "#[cfg_attr(feature = \"arbitrary\", derive(arbitrary::Arbitrary))]",
     );
 
+    config.extern_path(".fig_common.Empty", "()");
+
     prost_reflect_build::Builder::new()
         .file_descriptor_set_path(PathBuf::from(std::env::var("OUT_DIR").unwrap()).join("file_descriptor_set.bin"))
         .descriptor_pool("crate::DESCRIPTOR_POOL")

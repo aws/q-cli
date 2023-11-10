@@ -87,14 +87,7 @@ function __fig_pre_prompt () {
   fig_osc "User=%s" "${USER:-root}"
 
   if command -v cw >/dev/null 2>&1; then
-    case $(cw _ pre-cmd) in
-      EXEC_NEW_SHELL)
-        unset FIG_DOTFILES_SOURCED
-        exec bash
-        ;;
-      *)
-        ;;
-    esac
+    (command cw _ pre-cmd --alias "$(\alias)" > /dev/null 2>&1 &) >/dev/null 2>&1
   fi
 
   # Work around bug in CentOS 7.2 where preexec doesn't run if you press ^C
@@ -205,4 +198,4 @@ fi
 
 fi
 
-(cw _ pre-cmd > /dev/null 2>&1 &) >/dev/null 2>&1
+(command cw _ pre-cmd --alias "$(\alias)" > /dev/null 2>&1 &) >/dev/null 2>&1

@@ -124,11 +124,7 @@ function fig_precmd --on-event fish_prompt
     set fig_has_set_prompt 1
 
     if command -v cw &>/dev/null
-        switch (cw _ pre-cmd)
-            case EXEC_NEW_SHELL
-                set -ge FIG_DOTFILES_SOURCED
-                exec fish
-        end
+        begin; command cw _ pre-cmd --alias (alias) &> /dev/null &; end
     end
 end
 
@@ -138,4 +134,4 @@ if test -n "$PROCESS_LAUNCHED_BY_FIG"
     fig_osc DoneSourcing
 end
 
-begin; cw _ pre-cmd &> /dev/null &; end
+begin; command cw _ pre-cmd --alias (alias) &> /dev/null &; end
