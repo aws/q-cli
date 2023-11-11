@@ -372,8 +372,8 @@ importers:
         specifier: workspace:^
         version: link:../shell-parser
       '@fig/autocomplete-generators':
-        specifier: ^2.3.0
-        version: 2.3.0
+        specifier: ^2.4.0
+        version: 2.4.0
       '@fig/autocomplete-helpers':
         specifier: ^1.0.7
         version: 1.0.7
@@ -2158,8 +2158,8 @@ packages:
     resolution: {integrity: sha512-1S8uAY/MTJqVx0SC4epBq+N2yhuwtNwLbJYNZyhL2pO1ZVKn5HFXav5T41Ryzy9K9V7ZId2JB2oy/W4aCd9/2w==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
 
-  /@fig/autocomplete-generators@2.3.0:
-    resolution: {integrity: sha512-AqSFjGU7AjsZFtRXRXhHFlMOHTDa74wjzMQlEU3ArEpImL7JmPXkLXJ5oZ7IJSarNs7boQqOJhcuZZuh4Es9OQ==}
+  /@fig/autocomplete-generators@2.4.0:
+    resolution: {integrity: sha512-fiaaCGmsgnbUJbVbNAcVDmrnCGj/SmfarK6WKt/lfQP9k1hLHkkmZQ836VSMJvPP1vAKFAiXpdJziG6EGyjAYg==}
     dev: false
 
   /@fig/autocomplete-helpers@1.0.7:

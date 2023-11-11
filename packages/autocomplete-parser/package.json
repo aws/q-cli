@@ -34,7 +34,7 @@
     "@amzn/fig-io-api-bindings-wrappers": "workspace:^",
     "@amzn/fig-io-api-client": "workspace:^",
     "@amzn/fig-io-shell-parser": "workspace:^",
-    "@fig/autocomplete-generators": "^2.3.0",
+    "@fig/autocomplete-generators": "^2.4.0",
     "@fig/autocomplete-helpers": "^1.0.7",
     "@fig/autocomplete-shared": "^1.1.2",
     "@withfig/api-bindings": "~0.30.2",
