@@ -38,7 +38,7 @@ export TARGET=universal-apple-darwin
 
 mkdir -p "$BUILD_DIR"
 
-# build dashboard
+# build dashboard and autocomplete
 pnpm install --frozen-lockfile
 pnpm build
 rm -rf "$BUILD_DIR/dashboard"
@@ -112,9 +112,19 @@ cp -r "${BUILD_DIR}/CodeWhispererInputMethod.app" "${BUNDLE_DIR}/CodeWhisperer.a
 rm -rf "${BUILD_DIR}/themes"
 git clone https://github.com/withfig/themes.git "${BUILD_DIR}/themes"
 
+# generate licenses files
+mkdir -p "${BUILD_DIR}/license"
+pnpm licenses list --json -P > "${BUILD_DIR}/license/npm.json"
+cargo license -j --avoid-dev-deps --avoid-build-deps > "${BUILD_DIR}/license/cargo.json"
+
+# put the licenses in the dashboard so it can access them
+mkdir -p "${BUILD_DIR}/dashboard/assets/license"
+cp -r "${BUILD_DIR}/license" "${BUILD_DIR}/dashboard/assets/"
+
 cp -r "${BUILD_DIR}/dashboard" "${BUNDLE_DIR}/CodeWhisperer.app/Contents/Resources/"
 cp -r "${BUILD_DIR}/autocomplete" "${BUNDLE_DIR}/CodeWhisperer.app/Contents/Resources/"
 cp -r "${BUILD_DIR}/themes/themes" "${BUNDLE_DIR}/CodeWhisperer.app/Contents/Resources/"
+cp -r "${BUILD_DIR}/license" "${BUNDLE_DIR}/CodeWhisperer.app/Contents/Resources/"
 
 
 BUNDLE_PATH="${BUNDLE_DIR}/CodeWhisperer.app"

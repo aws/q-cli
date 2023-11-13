@@ -64,6 +64,7 @@ rustup target add aarch64-apple-darwin
 rustup component add clippy
 
 cargo install tauri-cli@1.5.2 --locked
+cargo install cargo-license@0.4.2 --locked
 
 bash build-scripts/macos.sh 2>&1
 
