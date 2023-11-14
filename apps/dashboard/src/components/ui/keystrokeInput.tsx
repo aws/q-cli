@@ -109,8 +109,6 @@ export default function KeystrokeGroup({
   const [inputValue, setInputValue] = useState<string[] | null>(null);
   const [isInvalid, setIsInvalid] = useState(false);
 
-  console.log({inputValue})
-
   const inputOpen = listening === id
 
   type keypressEvent = {

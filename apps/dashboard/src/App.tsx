@@ -10,6 +10,7 @@ import Predict from "./pages/terminal/predict";
 import Preferences from "./pages/settings/preferences";
 import Integrations from "./pages/settings/integrations";
 import Keybindings from "./pages/settings/keybindings";
+import Licenses from "./pages/licenses";
 import ModalContext from "./context/modal";
 import { useEffect, useRef, useState } from "react";
 import Modal from "./components/modal";
@@ -121,6 +122,7 @@ function App() {
               <Route path="keybindings" element={<Keybindings />} />
               <Route path="integrations" element={<Integrations />} />
               <Route path="preferences" element={<Preferences />} />
+              <Route path="licenses" element={<Licenses />} />
             </Route>
           </Routes>
           {modal && <Modal>{modal}</Modal>}

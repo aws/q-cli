@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import settings from "@/data/preferences";
 import { Auth, User } from "@withfig/api-bindings";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 export default function Page() {
   const [authed, setAuthed] = useState<boolean>(false)
@@ -67,6 +68,20 @@ export default function Page() {
             </div>
           </div>
         </div>
+      </section>
+      <section className={`flex flex-col py-4 gap-4`}>
+        <h2
+          id={`subhead-licenses`}
+          className="font-bold text-medium text-zinc-400 leading-none mt-2"
+        >
+          Licenses
+        </h2>
+        <Link
+                to={"/licenses"}
+                className="text-blue-500 hover:underline decoration-1 underline-offset-1 hover:text-blue-800 hover:underline-offset-4 transition-all duration-100 text-sm"
+              >
+                View licenses
+              </Link>
       </section>
     </>
   );
