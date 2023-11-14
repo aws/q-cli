@@ -184,23 +184,19 @@ pub async fn start_device_authorization(
 ) -> Result<StartDeviceAuthorizationResponse> {
     let client = client(region.clone().map(Region::new));
 
-    dbg!(&client);
-
     let DeviceRegistration {
         client_id,
         client_secret,
         ..
     } = DeviceRegistration::register(&client, secret_store).await?;
 
-    let output = dbg!(
-        client
-            .start_device_authorization()
-            .client_id(&client_id)
-            .client_secret(&client_secret.0)
-            .start_url(start_url.as_deref().unwrap_or(START_URL))
-            .send()
-            .await?
-    );
+    let output = client
+        .start_device_authorization()
+        .client_id(&client_id)
+        .client_secret(&client_secret.0)
+        .start_url(start_url.as_deref().unwrap_or(START_URL))
+        .send()
+        .await?;
 
     Ok(StartDeviceAuthorizationResponse {
         device_code: output.device_code.unwrap_or_default(),
