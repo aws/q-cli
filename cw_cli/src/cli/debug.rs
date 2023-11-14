@@ -250,7 +250,7 @@ impl DebugSubcommand {
                 println!("Running the CodeWhisperer.app executable directly from {fig_path}.");
                 println!("You will need to grant accessibility permissions to the current terminal{terminal_text}!");
 
-                Command::new(format!("{fig_path}/Contents/MacOS/fig")).spawn()?.wait()?;
+                Command::new(format!("{fig_path}/Contents/MacOS/cw")).spawn()?.wait()?;
             },
             DebugSubcommand::Build { build, app } => match build {
                 Some(build) => {

@@ -54,7 +54,6 @@ use crate::{
 
 const CLIENT_NAME: &str = "CodeWhisperer";
 
-const OIDC_BUILDER_ID_ENDPOINT: &str = "https://oidc.us-east-1.amazonaws.com";
 const OIDC_BUILDER_ID_REGION: Region = Region::from_static("us-east-1");
 
 const SCOPES: &[&str] = &[
@@ -79,9 +78,10 @@ fn is_expired(expiration_time: &OffsetDateTime) -> bool {
 
 fn client(region: Option<Region>) -> Client {
     let retry_config = RetryConfig::standard().with_max_attempts(3);
+    let region = region.unwrap_or(OIDC_BUILDER_ID_REGION);
     let sdk_config = aws_types::SdkConfig::builder()
-        .endpoint_url(OIDC_BUILDER_ID_ENDPOINT)
-        .region(region.unwrap_or(OIDC_BUILDER_ID_REGION))
+        .endpoint_url(format!("https://oidc.{region}.amazonaws.com"))
+        .region(region)
         .retry_config(retry_config)
         .sleep_impl(SharedAsyncSleep::new(TokioSleep::new()))
         .app_name(APP_NAME.clone())
@@ -184,19 +184,23 @@ pub async fn start_device_authorization(
 ) -> Result<StartDeviceAuthorizationResponse> {
     let client = client(region.clone().map(Region::new));
 
+    dbg!(&client);
+
     let DeviceRegistration {
         client_id,
         client_secret,
         ..
     } = DeviceRegistration::register(&client, secret_store).await?;
 
-    let output = client
-        .start_device_authorization()
-        .client_id(&client_id)
-        .client_secret(&client_secret.0)
-        .start_url(start_url.as_deref().unwrap_or(START_URL))
-        .send()
-        .await?;
+    let output = dbg!(
+        client
+            .start_device_authorization()
+            .client_id(&client_id)
+            .client_secret(&client_secret.0)
+            .start_url(start_url.as_deref().unwrap_or(START_URL))
+            .send()
+            .await?
+    );
 
     Ok(StartDeviceAuthorizationResponse {
         device_code: output.device_code.unwrap_or_default(),
@@ -463,11 +467,14 @@ mod tests {
     #[ignore = "login flow"]
     #[tokio::test]
     async fn test_login() {
+        let region = Some("us-west-2".to_owned());
         let secret_store = SecretStore::load().await.unwrap();
-        let res = start_device_authorization(&secret_store, None, None).await.unwrap();
+        let res = start_device_authorization(&secret_store, None, region.clone())
+            .await
+            .unwrap();
         println!("{:?}", res);
         loop {
-            match poll_create_token(&secret_store, res.device_code.clone(), None, None).await {
+            match poll_create_token(&secret_store, res.device_code.clone(), region.clone(), None).await {
                 PollCreateToken::Pending => {
                     tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
                 },
