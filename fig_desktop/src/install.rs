@@ -272,7 +272,7 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
             .join("Contents")
             .join("MacOS")
             .join(CODEWHISPERER_DESKTOP_PROCESS_NAME);
-        let startup_launch_agent = LaunchdPlist::new("io.fig.launcher")
+        let startup_launch_agent = LaunchdPlist::new("com.amazon.codewhisperer.launcher")
             .program_arguments([&exe.to_string_lossy(), "--is-startup", "--no-dashboard"])
             .associated_bundle_identifiers([CODEWHISPERER_BUNDLE_ID])
             .run_at_load(true);

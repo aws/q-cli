@@ -684,9 +684,11 @@ impl PlatformStateImpl {
         // .unwrap_or(false);
 
         if !is_xterm && supports_ime {
-            tracing::debug!("Sending notif io.fig.edit_buffer_updated");
-            NotificationCenter::distributed_center()
-                .post_notification("io.fig.edit_buffer_updated", std::iter::empty::<(&str, &str)>());
+            tracing::debug!("Sending notif com.amazon.codewhisperer.edit_buffer_updated");
+            NotificationCenter::distributed_center().post_notification(
+                "com.amazon.codewhisperer.edit_buffer_updated",
+                std::iter::empty::<(&str, &str)>(),
+            );
         } else {
             let caret = if is_xterm {
                 active_window

@@ -320,12 +320,12 @@ impl DebugSubcommand {
                     let mut files = files.as_ref().clone();
                     let mut paths = Vec::new();
 
-                    if files.iter().any(|f| f == "figterm") {
+                    if files.iter().any(|f| f == "cwterm") {
                         // Remove figterm from the list of files to open
-                        files.retain(|f| f != "figterm");
+                        files.retain(|f| f != "cwterm");
 
                         // Add figterm*.log to the list of files to open
-                        let pattern = logs_dir.join("figterm*.log");
+                        let pattern = logs_dir.join("cwterm*.log");
                         let globset = glob([pattern.to_str().unwrap()])?;
                         let figterm_logs = glob_dir(&globset, &logs_dir)?;
                         paths.extend(figterm_logs);
@@ -761,7 +761,7 @@ impl DebugSubcommand {
 
                 let tmp_dir = TempDir::new()?;
 
-                let mut command = Command::new("figterm");
+                let mut command = Command::new("cwterm");
                 command.env("FIG_IN_TEST", "1").arg("--");
 
                 match Shell::current_shell() {

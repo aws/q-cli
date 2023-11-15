@@ -22,7 +22,7 @@ function post_request() {
     local source="$1"
     # The source bucket and path, e.g. fig-io-desktop-ec-signing-230592382359/signed/signed.tar.gz
     local destination="$2"
-    # The aws accound id, e.g 230592382359
+    # The aws account id, e.g 230592382359
     local account="$3"
     # The role to use for signing, e.g. codewhisperer-ec-signing-role
     local role="$4"

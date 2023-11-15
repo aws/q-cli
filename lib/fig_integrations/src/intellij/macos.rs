@@ -12,9 +12,11 @@ use crate::{
     Integration,
 };
 
-const PLUGIN_PREFIX: &str = "jetbrains-extension-";
-const PLUGIN_SLUG: &str = "jetbrains-extension-2.0.0";
-const PLUGIN_JAR: &str = "jetbrains-extension-2.0.0.jar";
+const PLUGIN_PREFIX: &str = "codewhisperer-for-command-line-helper";
+const OLD_PLUGIN_SLUG: &str = "jetbrains-extension-2.0.0";
+const PLUGIN_SLUG: &str = "codewhisperer-for-command-line-helper";
+const PLUGIN_JAR: &str = "codewhisperer-for-command-line-helper.jar";
+
 static PLUGIN_CONTENTS: &[u8] = include_bytes!("plugin.jar");
 
 pub async fn variants_installed() -> Result<Vec<IntelliJIntegration>> {
@@ -105,6 +107,9 @@ impl Integration for IntelliJIntegration {
 
         let plugins_folder = application_folder.join("plugins");
 
+        tokio::fs::remove_dir_all(plugins_folder.join(OLD_PLUGIN_SLUG))
+            .await
+            .ok();
         tokio::fs::create_dir_all(&plugins_folder).await?;
 
         let destination_folder = plugins_folder.join(PLUGIN_SLUG);
@@ -161,5 +166,20 @@ impl Integration for IntelliJIntegration {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn abc() {
+        dbg!(
+            IntelliJIntegration {
+                variant: IntelliJVariant::IdeaUltimate
+            }
+            .application_folder()
+        );
     }
 }

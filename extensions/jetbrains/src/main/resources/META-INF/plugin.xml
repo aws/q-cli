@@ -1,0 +1,41 @@
+<!-- Copyright 2000-2020 JetBrains s.r.o. and other contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file. -->
+
+<idea-plugin>
+
+  <!-- Unique id for this plugin. Must stay constant for the life of the plugin. -->
+  <id>com.amazon.codewhisperer.jetbrains</id>
+
+  <!-- Text to display as name on Preferences/Settings | Plugin page -->
+  <name>CodeWhisperer for Command-Line Helper</name>
+
+  <!-- Product and plugin compatibility requirements -->
+  <depends>org.jetbrains.plugins.terminal</depends>
+
+  <!-- Text to display as description on Preferences/Settings | Plugin page -->
+  <description>
+    <![CDATA[
+      This is an amazing description for the Fig plugin.
+    ]]>
+  </description>
+  <change-notes>
+    <![CDATA[
+      This is an amazing change-note for the Fig plugin.
+    ]]>
+  </change-notes>
+
+  <!-- Text to display as company information on Preferences/Settings | Plugin page -->
+  <vendor url="https://plugins.jetbrains.com">IntelliJ Platform SDK</vendor>
+
+  <projectListeners>
+    <listener class="io.fig.jetbrains.FigWindowListener"
+              topic="com.intellij.openapi.wm.ex.ToolWindowManagerListener" />
+  </projectListeners>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <applicationService serviceImplementation="io.fig.jetbrains.FigService"/>
+  </extensions>
+
+  <depends>org.jetbrains.plugins.terminal</depends>
+  <depends>com.intellij.modules.platform</depends>
+
+</idea-plugin>

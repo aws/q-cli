@@ -314,7 +314,7 @@ mod test {
 
     #[test]
     fn test_plist() {
-        let plist = LaunchdPlist::new("io.fig.test")
+        let plist = LaunchdPlist::new("com.amazon.codewhisperer.test")
             .program("hello")
             .program_arguments(["hello", "test"])
             .environment_variables([("TEST", "test"), ("TEST2", "test2")])
@@ -334,7 +334,7 @@ mod test {
 <plist version="1.0">
     <dict>
         <key>Label</key>
-        <string>io.fig.test</string>
+        <string>com.amazon.codewhisperer.test</string>
         <key>Program</key>
         <string>hello</string>
         <key>ProgramArguments</key>

@@ -625,12 +625,12 @@ impl DoctorCheck for FigIntegrationsCheck {
     }
 }
 
-struct FigtermSocketCheck;
+struct CwtermSocketCheck;
 
 #[async_trait]
-impl DoctorCheck for FigtermSocketCheck {
+impl DoctorCheck for CwtermSocketCheck {
     fn name(&self) -> Cow<'static, str> {
-        "Figterm".into()
+        "Cwterm".into()
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
@@ -2239,7 +2239,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             "Let's see if CodeWhisperer is in a working state...".into(),
             vec![
                 #[cfg(unix)]
-                &FigtermSocketCheck,
+                &CwtermSocketCheck,
                 &AutocompleteDevModeCheck,
                 &PluginDevModeCheck,
                 &DashboardHostCheck,

@@ -74,6 +74,8 @@ use crate::error::{
 };
 use crate::Integration;
 
+const INPUT_SOURCE_ID: &str = "com.amazon.codewhispererinputmethod";
+
 pub enum __TISInputSource {}
 pub type TISInputSourceRef = *const __TISInputSource;
 
@@ -146,7 +148,7 @@ pub enum InputMethodError {
     NotEnabled,
     #[error("Input source is not selected")]
     NotSelected,
-    #[error("Could not locate Fig CLI")]
+    #[error("Could not locate CodeWhisperer CLI")]
     HelperExecutableNotFound,
     #[error("Input method not running")]
     NotRunning,
@@ -334,7 +336,6 @@ extern "C" {}
 impl InputMethod {
     pub fn input_source(&self) -> Result<TISInputSource, InputMethodError> {
         let bundle_id_string: String = self.bundle_id()?;
-
         let bundle_identifier = CFString::from(bundle_id_string.as_str());
 
         unsafe {
@@ -348,7 +349,10 @@ impl InputMethod {
                     category_key.as_CFType(),
                     CFString::from_static_string("TISCategoryPaletteInputSource").as_CFType(),
                 ),
-                (input_source_key.as_CFType(), bundle_identifier.as_CFType()),
+                (
+                    input_source_key.as_CFType(),
+                    CFString::from_static_string(INPUT_SOURCE_ID).as_CFType(),
+                ),
             ]);
 
             let sources = InputMethod::list_all_input_sources(Some(&properties), true);
@@ -736,9 +740,9 @@ mod tests {
         sources.into_iter().next().unwrap()
     }
 
-    const TEST_INPUT_METHOD_BUNDLE_ID: &str = "io.fig.caret.4";
+    const TEST_INPUT_METHOD_BUNDLE_ID: &str = "com.amazon.codewhisperer.com.amazon.codewhispererinputmethod";
     const TEST_INPUT_METHOD_BUNDLE_URL: &str =
-        "/Users/mschrage/p/macos/fig_input_method/build/CodeWhispererInputMethod4.app";
+        "/Applications/CodeWhisperer.app/Contents/Helpers/CodeWhispererInputMethod.app";
 
     #[ignore]
     #[test]
@@ -846,6 +850,6 @@ mod tests {
 
         assert!(!sources.is_empty());
 
-        sources.iter().for_each(|source| source.show());
+        sources.iter().for_each(|source| println!("{source:?}"));
     }
 }

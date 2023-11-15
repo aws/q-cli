@@ -99,7 +99,11 @@ client: client];
         (*this).set_ivar::<BOOL>("is_active", NO);
 
         let mut center = NotificationCenter::distributed_center();
-        center.subscribe_with_observer("io.fig.edit_buffer_updated", this, sel!(handleCursorPositionRequest:));
+        center.subscribe_with_observer(
+            "com.amazon.codewhisperer.edit_buffer_updated",
+            this,
+            sel!(handleCursorPositionRequest:),
+        );
 
         this
     }
