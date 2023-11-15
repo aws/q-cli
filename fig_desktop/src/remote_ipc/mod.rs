@@ -7,7 +7,10 @@ use std::sync::atomic::{
 };
 use std::sync::Arc;
 
-use anyhow::Result;
+use anyhow::{
+    Context,
+    Result,
+};
 use fig_ipc::{
     BufferedReader,
     RecvMessage,
@@ -72,13 +75,8 @@ pub async fn start_remote_ipc(
     let socket_path = directories::remote_socket_path()?;
     if let Some(parent) = socket_path.parent() {
         if !parent.exists() {
-            std::fs::create_dir_all(parent).expect("Failed creating socket path");
+            std::fs::create_dir_all(parent).context("Failed creating socket path")?;
         }
-    }
-
-    #[cfg(unix)]
-    if let Err(err) = fig_ipc::util::set_sockets_dir_permissions() {
-        error!(%err, "Failed to set permissions on sockets directory");
     }
 
     tokio::fs::remove_file(&socket_path).await.ok();

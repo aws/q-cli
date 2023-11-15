@@ -423,7 +423,7 @@ impl DoctorCheck for FigSocketCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let fig_socket_path = directories::fig_socket_path().context("No socket path")?;
+        let fig_socket_path = directories::desktop_socket_path().context("No socket path")?;
         let parent = fig_socket_path.parent().map(PathBuf::from);
 
         if let Some(parent) = parent {
@@ -440,7 +440,7 @@ impl DoctorCheck for FigSocketCheck {
             }
         }
 
-        check_file_exists(directories::fig_socket_path().expect("No home directory")).map_err(|_| {
+        check_file_exists(directories::desktop_socket_path().expect("No home directory")).map_err(|_| {
             doctor_fix_async!({
                 reason: "CodeWhisperer socket missing",
                 fix: restart_fig()

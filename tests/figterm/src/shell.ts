@@ -53,7 +53,7 @@ class FigtermListener {
     this.sessionId = sessionId;
 
     const makeNextPromptPromise = () =>
-      new Promise<void>(resolve => {
+      new Promise<void>((resolve) => {
         this.onPrompt = () => {
           resolve();
           this.nextPrompt = makeNextPromptPromise();
@@ -99,7 +99,7 @@ class FigtermListener {
   }
 
   listen() {
-    this.id = socketListen(this.path, data => {
+    this.id = socketListen(this.path, (data) => {
       let buf = data;
       while (buf.length > 0) {
         const dataType = buf.slice(2, 10).toString();
@@ -136,7 +136,7 @@ class FigCliListener {
   commands: string[] = [];
 
   constructor(sessionId: string, path = '/tmp/mock_cw_cli.socket') {
-    this.id = socketListen(path, data => {
+    this.id = socketListen(path, (data) => {
       const message = String(Buffer.from(data.toString(), 'base64'));
       const tokens = message.slice(0, -1).split(' ');
       if (tokens[2] === sessionId) {
@@ -210,7 +210,7 @@ class Shell {
     if (mockedCLICommands) {
       environment.PATH = `${__dirname}/bin:${environment.PATH}`;
 
-      Object.keys(mockedCLICommands).forEach(key => {
+      Object.keys(mockedCLICommands).forEach((key) => {
         environment[`MOCK_${key.replaceAll(':', '_')}`] =
           mockedCLICommands[key];
       });
@@ -225,7 +225,8 @@ class Shell {
 
     this.cliListener = new FigCliListener(this.initialEnv.TERM_SESSION_ID);
     this.figtermListener = new FigtermListener(
-      `/var/tmp/fig/${os.userInfo().username}/fig.socket`,
+      // TOOD: fix this is not the correct path anymore
+      `/var/tmp/fig/${os.userInfo().username}/desktop.socket`,
       this.initialEnv.TERM_SESSION_ID
     );
     const firstPrompt = this.figtermListener.nextPrompt;
@@ -244,11 +245,11 @@ class Shell {
     });
 
     let commandOutputBuffer = '';
-    this.pty.onData(data => {
+    this.pty.onData((data) => {
       commandOutputBuffer += data;
       this.sessionBuffer += data;
       let shouldClear = false;
-      this.commandOutputWatchers.filter(watcher => {
+      this.commandOutputWatchers.filter((watcher) => {
         const { pattern, callback, clearOnMatch } = watcher;
         const matches = commandOutputBuffer.match(pattern);
         if (matches) {
@@ -267,8 +268,8 @@ class Shell {
     });
 
     this.exitPty = (signal?: string) => {
-      const prom = new Promise<void>(resolve =>
-        this.pty?.onExit(() => resolve())
+      const prom = new Promise<void>(
+        (resolve) => this.pty?.onExit(() => resolve())
       );
       this.pty?.kill(signal ?? 'SIGKILL');
       this.pty = undefined;
@@ -335,7 +336,7 @@ class Shell {
   }
 
   type(text: string) {
-    return new Promise<void>(resolve => {
+    return new Promise<void>((resolve) => {
       const chars = text.split('');
       const interval = setInterval(() => {
         if (chars.length === 0) {
@@ -350,13 +351,16 @@ class Shell {
   }
 
   getEnv() {
-    return this.execute('env').then(env =>
-      env.split(CRLF).reduce((dict, line) => {
-        const [key, ...valueParts] = line.split('=');
-        // eslint-disable-next-line no-param-reassign
-        dict[key] = valueParts.join('=');
-        return dict;
-      }, {} as Record<string, string>)
+    return this.execute('env').then((env) =>
+      env.split(CRLF).reduce(
+        (dict, line) => {
+          const [key, ...valueParts] = line.split('=');
+          // eslint-disable-next-line no-param-reassign
+          dict[key] = valueParts.join('=');
+          return dict;
+        },
+        {} as Record<string, string>
+      )
     );
   }
 

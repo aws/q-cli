@@ -519,7 +519,7 @@ fn launch_shell(command: Option<&[String]>) -> Result<()> {
 fn figterm_main(command: Option<&[String]>) -> Result<()> {
     fig_settings::settings::init_global().ok();
 
-    let session_id = uuid::Uuid::new_v4().to_string();
+    let session_id = uuid::Uuid::new_v4().simple().to_string();
     std::env::set_var("CWTERM_SESSION_ID", &session_id);
 
     let parent_id = std::env::var("FIG_PARENT").ok();

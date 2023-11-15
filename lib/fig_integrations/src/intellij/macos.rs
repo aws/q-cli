@@ -180,6 +180,7 @@ mod tests {
                 variant: IntelliJVariant::IdeaUltimate
             }
             .application_folder()
-        );
+        )
+        .unwrap();
     }
 }

@@ -145,7 +145,7 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
         },
     }
 
-    std::fs::remove_file(directories::fig_socket_path()?).ok();
+    std::fs::remove_file(directories::desktop_socket_path()?).ok();
 
     let mut common_args = vec![];
     if !args.open_dashboard {
@@ -201,7 +201,7 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
     }
 
     // Wait for socket to exist
-    let path = directories::fig_socket_path()?;
+    let path = directories::desktop_socket_path()?;
 
     cfg_if::cfg_if! {
         if #[cfg(windows)] {

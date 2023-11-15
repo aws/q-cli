@@ -3,7 +3,10 @@ mod hooks;
 
 use std::sync::Arc;
 
-use anyhow::Result;
+use anyhow::{
+    Context,
+    Result,
+};
 use fig_install::UpdateOptions;
 use fig_ipc::{
     BufferedUnixStream,
@@ -51,16 +54,11 @@ pub async fn start_local_ipc(
     webview_notifications_state: Arc<WebviewNotificationsState>,
     proxy: EventLoopProxy,
 ) -> Result<()> {
-    let socket_path = directories::fig_socket_path()?;
+    let socket_path = directories::desktop_socket_path()?;
     if let Some(parent) = socket_path.parent() {
         if !parent.exists() {
-            std::fs::create_dir_all(parent).expect("Failed creating socket path");
+            std::fs::create_dir_all(parent).context("Failed creating socket path")?;
         }
-    }
-
-    #[cfg(unix)]
-    if let Err(err) = fig_ipc::util::set_sockets_dir_permissions() {
-        error!(%err, "Failed to set permissions on sockets directory");
     }
 
     tokio::fs::remove_file(&socket_path).await.ok();

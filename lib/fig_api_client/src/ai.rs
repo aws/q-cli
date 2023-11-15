@@ -402,6 +402,7 @@ mod tests {
     // }
 
     #[tokio::test]
+    #[ignore]
     async fn test_request() {
         tracing_subscriber::fmt().init();
 

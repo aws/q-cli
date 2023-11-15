@@ -163,11 +163,6 @@ pub async fn spawn_figterm_ipc(
         }
     }
 
-    #[cfg(unix)]
-    if let Err(err) = fig_ipc::util::set_sockets_dir_permissions() {
-        error!(%err, "Failed to set permissions on sockets directory");
-    }
-
     tokio::fs::remove_file(&socket_path).await.ok();
     let socket_listener = tokio::net::UnixListener::bind(&socket_path)?;
 

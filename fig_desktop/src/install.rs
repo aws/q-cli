@@ -20,12 +20,6 @@ pub async fn run_install(_ignore_immediate_update: bool) {
     #[cfg(not(target_os = "linux"))]
     let ignore_immediate_update = _ignore_immediate_update;
 
-    tokio::spawn(async {
-        if let Err(err) = fig_sync::themes::clone_or_update().await {
-            error!(%err, "Failed to clone or update themes");
-        }
-    });
-
     #[cfg(target_os = "macos")]
     initialize_fig_dir().await.ok();
 

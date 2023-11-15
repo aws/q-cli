@@ -52,3 +52,4 @@ nix = { version = "0.27.1", features = ["signal", "process", "fs", "feature"] }
 [dev-dependencies]
 fig_test = { path = "../fig_test" }
 insta = "1.24.1"
+uuid = { version = "1.5.0", features = ["v4"] }

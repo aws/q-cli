@@ -1,9 +1,6 @@
 use std::convert::TryInto;
 use std::fmt::Display;
-use std::path::{
-    Path,
-    PathBuf,
-};
+use std::path::PathBuf;
 
 use camino::Utf8PathBuf;
 use thiserror::Error;
@@ -11,7 +8,7 @@ use time::OffsetDateTime;
 
 #[cfg(target_os = "macos")]
 use crate::consts::CODEWHISPERER_CLI_BINARY_NAME;
-use crate::system_info::is_remote;
+// use crate::system_info::is_remote;
 
 macro_rules! debug_env_binding {
     ($path:literal) => {
@@ -39,6 +36,8 @@ macro_rules! utf8_dir {
 pub enum DirectoryError {
     #[error("home directory not found")]
     NoHomeDirectory,
+    #[error("runtime directory not found: neither XDG_RUNTIME_DIR nor TMPDIR were found")]
+    NoRuntimeDirectory,
     #[error("non absolute path: {0:?}")]
     NonAbsolutePath(PathBuf),
     #[error("file does not exist: {0:?}")]
@@ -110,21 +109,28 @@ pub fn cache_dir() -> Result<PathBuf> {
     }
 }
 
+/// Runtime dir is used for runtime data that should not be persisted for a long time, e.g. socket
+/// files and logs
+///
+/// The XDG_RUNTIME_DIR is set by systemd <https://www.freedesktop.org/software/systemd/man/latest/file-hierarchy.html#/run/user/>,
+/// if this is not set such as on macOS it will fallback to TMPDIR which is secure on macOS
 #[cfg(unix)]
-pub fn root_socket_dir() -> &'static Path {
-    Path::new("/var/tmp/codewhisperer")
+fn runtime_dir() -> Result<PathBuf> {
+    dirs::runtime_dir()
+        .or_else(|| std::env::var_os("TMPDIR").map(PathBuf::from))
+        .ok_or(DirectoryError::NoRuntimeDirectory)
 }
 
 /// The codewhisperer sockets directory of the local codewhisperer installation
 ///
-/// - Linux: /var/tmp/codewhisperer/Alice
-/// - MacOS: /var/tmp/codewhisperer/Alice
+/// - Linux: $XDG_RUNTIME_DIR/cwsock
+/// - MacOS: $TMPDIR/cwsock
 pub fn sockets_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_SOCKETS_DIR");
 
     cfg_if::cfg_if! {
         if #[cfg(unix)] {
-            Ok(root_socket_dir().join(whoami::username()))
+            Ok(runtime_dir()?.join("cwrun"))
         } else if #[cfg(windows)] {
             Ok(fig_dir()?.join("sockets"))
         }
@@ -136,25 +142,26 @@ pub fn sockets_dir() -> Result<PathBuf> {
 /// In WSL, this will correctly return the host machine socket path.
 /// In other remote environments, it returns the same as `sockets_dir`
 ///
-/// - Linux: /var/tmp/codewhisperer/Alice
-/// - MacOS: /var/tmp/codewhisperer/Alice
+/// - Linux: $XDG_RUNTIME_DIR/cwsock
+/// - MacOS: $TMPDIR/cwsock
 pub fn host_sockets_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_HOST_SOCKETS_DIR");
 
-    #[cfg(target_os = "linux")]
-    if crate::system_info::in_wsl() {
-        use std::ffi::OsStr;
-        use std::os::unix::prelude::OsStrExt;
-        use std::process::Command;
+    // TODO: make this work again
+    // #[cfg(target_os = "linux")]
+    // if crate::system_info::in_wsl() {
+    //     use std::ffi::OsStr;
+    //     use std::os::unix::prelude::OsStrExt;
+    //     use std::process::Command;
 
-        use bstr::ByteSlice;
+    //     use bstr::ByteSlice;
 
-        let socket_dir = Command::new("fig.exe").args(["_", "sockets-dir"]).output()?;
-        let wsl_socket = Command::new("wslpath")
-            .arg(OsStr::from_bytes(socket_dir.stdout.trim()))
-            .output()?;
-        return Ok(PathBuf::from(OsStr::from_bytes(wsl_socket.stdout.trim())));
-    }
+    //     let socket_dir = Command::new("fig.exe").args(["_", "sockets-dir"]).output()?;
+    //     let wsl_socket = Command::new("wslpath")
+    //         .arg(OsStr::from_bytes(socket_dir.stdout.trim()))
+    //         .output()?;
+    //     return Ok(PathBuf::from(OsStr::from_bytes(wsl_socket.stdout.trim())));
+    // }
 
     sockets_dir()
 }
@@ -200,21 +207,15 @@ pub fn autocomplete_specs_dir() -> Result<PathBuf> {
     Ok(autocomplete_dir()?.join("specs"))
 }
 
-/// The path to the cloned repo containing the themes
-pub fn themes_repo_dir() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_THEMES_REPO_DIR");
-    Ok(fig_data_dir()?.join("themes"))
-}
-
 /// The directory to all the fig logs
 /// - Linux: `/tmp/fig/$USER/logs`
-/// - MacOS: `~/.fig/logs`
+/// - MacOS: `$TMPDIR/logs`
 /// - Windows: `%TEMP%\fig\logs`
 pub fn logs_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_LOGS_DIR");
     cfg_if::cfg_if! {
         if #[cfg(unix)] {
-            Ok(std::env::temp_dir().join("codewhisperer").join(whoami::username()).join("logs"))
+            Ok(runtime_dir()?.join("cwlog"))
         } else if #[cfg(windows)] {
             Ok(std::env::temp_dir().join("codewhisperer").join("logs"))
         }
@@ -255,55 +256,61 @@ pub fn scripts_cache_dir() -> Result<PathBuf> {
 
 /// The desktop app socket path
 ///
-/// - Linux/MacOS: `/var/tmp/fig/$USER/fig.socket`
-/// - Windows: `%APPDATA%/Fig/fig.sock`
-pub fn fig_socket_path() -> Result<PathBuf> {
+/// - MacOS: `$TMPDIR/cwrun/desktop.sock`
+/// - Linux: `$XDG_RUNTIME_DIR/cwrun/desktop.sock`
+/// - Windows: `%APPDATA%/Fig/desktop.sock`
+pub fn desktop_socket_path() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_FIG_SOCKET_PATH");
-    Ok(host_sockets_dir()?.join("fig.socket"))
+    Ok(host_sockets_dir()?.join("desktop.sock"))
 }
 
 /// The path to remote socket
-///
-/// - Linux/MacOS on ssh: `/var/tmp/fig-parent-$USER.socket`
-/// - Linux/MacOS not on ssh: `/var/tmp/fig/$USER/secure.socket`
-/// - Windows: `%APPDATA%/Fig/%USER%/secure.sock`
+// - Linux/MacOS on ssh:
+// - Linux/MacOS not on ssh:
+/// - MacOS: `$TMPDIR/cwrun/remote.sock`
+/// - Linux: `$XDG_RUNTIME_DIR/cwrun/remote.sock`
+/// - Windows: `%APPDATA%/Fig/%USER%/remote.sock`
 pub fn remote_socket_path() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_REMOTE_SOCKET_PATH");
-    if is_remote() {
-        if let Ok(parent_id) = std::env::var("FIG_PARENT") {
-            if !parent_id.is_empty() {
-                return parent_socket_path(&parent_id);
-            }
-        }
-    }
+    // TODO: reenable remote cw
+    // if is_remote() {
+    //     if let Ok(parent_id) = std::env::var("FIG_PARENT") {
+    //         if !parent_id.is_empty() {
+    //             return parent_socket_path(&parent_id);
+    //         }
+    //     }
+    // }
     local_remote_socket_path()
 }
 
-/// The path to fig parent socket
-///
-/// - Linux/MacOS: `/var/tmp/fig-parent-$FIG_PARENT.socket`
-/// - Windows: unused
-pub fn parent_socket_path(parent_id: &str) -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_PARENT_SOCKET_PATH");
-    Ok(Path::new(&format!("/var/tmp/fig-parent-{parent_id}.socket")).to_path_buf())
-}
+// The path to fig parent socket
+//
+// - Linux/MacOS: `/var/tmp/fig-parent-$FIG_PARENT.sock`
+// - Windows: unused
+// pub fn parent_socket_path(parent_id: &str) -> Result<PathBuf> {
+//     debug_env_binding!("FIG_DIRECTORIES_PARENT_SOCKET_PATH");
+//     Ok(Path::new(&format!("/var/tmp/fig-parent-{parent_id}.sock")).to_path_buf())
+// }
 
 /// The path to local remote socket
 ///
-/// - Linux/MacOS: `/var/tmp/fig/$USER/secure.socket`
-/// - Windows: `%APPDATA%/Fig/%USER%/secure.sock`
+/// - MacOS: `$TMPDIR/cwrun/desktop.sock`
+/// - Linux: `$XDG_RUNTIME_DIR/cwrun/desktop.sock`
+/// - Windows: `%APPDATA%/Fig/%USER%/remote.sock`
 pub fn local_remote_socket_path() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_LOCAL_REMOTE_SOCKET_PATH");
-    Ok(host_sockets_dir()?.join("secure.socket"))
+    Ok(host_sockets_dir()?.join("remote.sock"))
 }
 
 /// Get path to a figterm socket
 ///
-/// - Linux/Macos: `/var/tmp/fig/%USERNAME%/figterm/$SESSION_ID.socket`
-/// - Windows: `%APPDATA%\Fig\$SESSION_ID.socket`
+/// - Linux/Macos: `/var/tmp/fig/%USERNAME%/figterm/$SESSION_ID.sock`
+/// - MacOS: `$TMPDIR/cwrun/t/$SESSION_ID.sock`
+/// - Linux: `$XDG_RUNTIME_DIR/cwrun/t/$SESSION_ID.sock`
+/// - Windows: `%APPDATA%\Fig\$SESSION_ID.sock`
 pub fn figterm_socket_path(session_id: impl Display) -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_FIGTERM_SOCKET_PATH");
-    Ok(sockets_dir()?.join("cwterm").join(format!("{session_id}.socket")))
+    Ok(sockets_dir()?.join("t").join(format!("{session_id}.sock")))
 }
 
 /// The path to the resources directory
@@ -378,16 +385,6 @@ pub fn credentials_path() -> Result<PathBuf> {
     Ok(fig_data_dir()?.join("credentials.json"))
 }
 
-/// The path to the saved ssh identities file
-///
-/// - Linux: `$XDG_DATA_HOME/fig or $HOME/.local/share/fig/access/ssh_saved_identities`
-/// - MacOS: `$HOME/Library/Application Support/fig/access/ssh_saved_identities`
-/// - Windows: `%LOCALAPPDATA%/Fig/userdata/access/ssh_saved_identities`
-pub fn ssh_saved_identities() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_SSH_SAVED_IDENTITIES");
-    Ok(fig_data_dir()?.join("access").join("ssh_saved_identities"))
-}
-
 /// The path to the cli, relative to the running binary
 pub fn relative_cli_path() -> Result<PathBuf> {
     cfg_if::cfg_if! {
@@ -414,7 +411,6 @@ utf8_dir!(managed_binaries_dir);
 utf8_dir!(managed_cw_cli_path);
 utf8_dir!(backups_dir);
 utf8_dir!(logs_dir);
-utf8_dir!(ssh_saved_identities);
 utf8_dir!(relative_cli_path);
 
 #[cfg(any(debug_assertions, test))]
@@ -451,22 +447,21 @@ mod test {
         test_environment_path!(host_sockets_dir, "FIG_DIRECTORIES_HOST_SOCKETS_DIR");
         test_environment_path!(managed_binaries_dir, "FIG_DIRECTORIES_MANAGED_BINARIES_DIR");
         test_environment_path!(themes_dir, "FIG_DIRECTORIES_THEMES_DIR");
-        test_environment_path!(themes_repo_dir, "FIG_DIRECTORIES_THEMES_REPO_DIR");
         test_environment_path!(logs_dir, "FIG_DIRECTORIES_LOGS_DIR");
         test_environment_path!(backups_dir, "FIG_DIRECTORIES_BACKUPS_DIR");
         test_environment_path!(utc_backup_dir, "FIG_DIRECTORIES_UTC_BACKUP_DIR");
         test_environment_path!(scripts_cache_dir, "FIG_DIRECTORIES_SCRIPTS_CACHE_DIR");
-        test_environment_path!(fig_socket_path, "FIG_DIRECTORIES_FIG_SOCKET_PATH");
+        test_environment_path!(desktop_socket_path, "FIG_DIRECTORIES_FIG_SOCKET_PATH");
         test_environment_path!(manifest_path, "FIG_DIRECTORIES_MANIFEST_PATH");
         test_environment_path!(managed_cw_cli_path, "FIG_DIRECTORIES_MANAGED_FIG_CLI_PATH");
         test_environment_path!(settings_path, "FIG_DIRECTORIES_SETTINGS_PATH");
         test_environment_path!(state_path, "FIG_DIRECTORIES_STATE_PATH");
-        test_environment_path!(ssh_saved_identities, "FIG_DIRECTORIES_SSH_SAVED_IDENTITIES");
     }
 }
 
 #[cfg(test)]
 mod tests {
+
     use insta;
 
     use super::*;
@@ -503,132 +498,138 @@ mod tests {
     }
 
     fn sanitized_directory_path(path: Result<PathBuf>) -> String {
+        let mut path = path.ok().unwrap().into_os_string().into_string().unwrap();
+
+        if let Ok(home) = std::env::var("HOME") {
+            let home = home.strip_suffix("/").unwrap_or(&home);
+            path = path.replace(&home, "$HOME");
+        }
+
         let user = whoami::username();
-        path.ok()
-            .unwrap()
-            .into_os_string()
-            .into_string()
-            .unwrap()
-            .replace(&user, "$USER")
+        path = path.replace(&user, "$USER");
+
+        if let Ok(tmpdir) = std::env::var("TMPDIR") {
+            let tmpdir = tmpdir.strip_suffix("/").unwrap_or(&tmpdir);
+            path = path.replace(&tmpdir, "$TMPDIR");
+        }
+
+        if let Some(xdg_runtime_dir) = std::env::var("XDG_RUNTIME_DIR").ok() {
+            let xdg_runtime_dir = xdg_runtime_dir.strip_suffix("/").unwrap_or(&xdg_runtime_dir);
+            path = path.replace(&xdg_runtime_dir, "$XDG_RUNTIME_DIR");
+        }
+
+        path
     }
 
-    #[ignore]
     #[test]
-    fn _snapshot_fig_data_dir() {
-        linux!(fig_data_dir(), @"/home/$USER/.local/share/fig");
-        macos!(fig_data_dir(), @"/Users/$USER/Library/Application Support/fig");
+    fn snapshot_fig_data_dir() {
+        linux!(fig_data_dir(), @"$USER/.local/share/codewhisperer");
+        macos!(fig_data_dir(), @"$HOME/Library/Application Support/codewhisperer");
         windows!(fig_data_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata");
     }
 
-    #[ignore]
     #[test]
-    fn _snapshot_sockets_dir() {
-        linux!(sockets_dir(), @"/var/tmp/fig/$USER");
-        macos!(sockets_dir(), @"/var/tmp/fig/$USER");
+    fn snapshot_sockets_dir() {
+        linux!(sockets_dir(), @"$XDG_RUNTIME_DIR/cwrun");
+        macos!(sockets_dir(), @"$TMPDIR/cwrun");
         windows!(sockets_dir(), @r"C:\Users\$USER\AppData\Local\Fig\sockets");
     }
 
-    #[ignore]
     #[test]
-    fn _snapshot_themes_dir() {
+    fn snapshot_themes_dir() {
         linux!(themes_dir(), @"/home/$USER/.local/share/fig/themes/themes");
-        macos!(themes_dir(), @"/Users/$USER/Library/Application Support/fig/themes/themes");
+        macos!(themes_dir(), @"/Applications/CodeWhisperer.app/Contents/Resources/themes");
         windows!(themes_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\themes\themes");
     }
 
-    #[ignore]
     #[test]
-    fn _snapshot_themes_repo_dir() {
-        linux!(themes_repo_dir(), @"/home/$USER/.local/share/fig/themes");
-        macos!(themes_repo_dir(), @"/Users/$USER/Library/Application Support/fig/themes");
-        windows!(themes_repo_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\themes");
-    }
-
-    #[ignore]
-    #[test]
-    fn _snapshot_backups_dir() {
-        linux!(backups_dir(), @"/home/$USER/.fig.dotfiles.bak");
-        macos!(backups_dir(), @"/Users/$USER/.fig.dotfiles.bak");
+    fn snapshot_backups_dir() {
+        linux!(backups_dir(), @"$HOME/.codewhisperer.dotfiles.bak");
+        macos!(backups_dir(), @"$HOME/.codewhisperer.dotfiles.bak");
         windows!(backups_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\backups");
     }
 
-    #[ignore]
     #[test]
-    fn _snapshot_fig_socket_path() {
-        linux!(fig_socket_path(), @"/var/tmp/fig/$USER/fig.socket");
-        macos!(fig_socket_path(), @"/var/tmp/fig/$USER/fig.socket");
-        windows!(fig_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\fig.socket");
+    fn snapshot_fig_socket_path() {
+        linux!(desktop_socket_path(), @"$XDG_RUNTIME_DIR/cwrun/desktop.sock");
+        macos!(desktop_socket_path(), @"$TMPDIR/cwrun/desktop.sock");
+        windows!(desktop_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\desktop.sock");
     }
 
-    #[ignore]
     #[test]
-    fn _snapshot_remote_socket_path() {
-        linux!(remote_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
-        macos!(remote_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
-        windows!(remote_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\secure.socket");
+    fn snapshot_remote_socket_path() {
+        linux!(remote_socket_path(), @"$XDG_RUNTIME_DIR/cwrun/remote.sock");
+        macos!(remote_socket_path(), @"$TMPDIR/cwrun/remote.sock");
+        windows!(remote_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\remote.sock");
     }
 
-    #[ignore]
+    // #[test]
+    // fn snapshot_parent_socket_path() {
+    //     linux!(parent_socket_path("$FIG_PARENT"), @"/var/tmp/fig-parent-$FIG_PARENT.sock");
+    //     macos!(parent_socket_path("$FIG_PARENT"), @"/var/tmp/fig-parent-$FIG_PARENT.sock");
+    //     // windows does not have a parent socket
+    // }
+
     #[test]
-    fn _snapshot_parent_socket_path() {
-        linux!(parent_socket_path("$FIG_PARENT"), @"/var/tmp/fig-parent-$FIG_PARENT.socket");
-        macos!(parent_socket_path("$FIG_PARENT"), @"/var/tmp/fig-parent-$FIG_PARENT.socket");
-        // windows does not have a parent socket
+    fn snapshot_local_remote_socket_path() {
+        linux!(local_remote_socket_path(), @"$XDG_RUNTIME_DIR/cwrun/remote.sock");
+        macos!(local_remote_socket_path(), @"$TMPDIR/cwrun/remote.sock");
+        windows!(local_remote_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\remote.sock");
     }
 
-    #[ignore]
     #[test]
-    fn _snapshot_local_remote_socket_path() {
-        linux!(local_remote_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
-        macos!(local_remote_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
-        windows!(local_remote_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\secure.socket");
+    fn snapshot_figterm_socket_path() {
+        linux!(figterm_socket_path("$SESSION_ID"), @"$XDG_RUNTIME_DIR/cwrun/t/$SESSION_ID.sock");
+        macos!(figterm_socket_path("$SESSION_ID"), @"$TMPDIR/cwrun/t/$SESSION_ID.sock");
+        windows!(figterm_socket_path("$SESSION_ID"), @r"C:\Users\$USER\AppData\Local\Fig\sockets\figterm\$SESSION_ID.sock");
     }
 
-    #[ignore]
     #[test]
-    fn _snapshot_figterm_socket_path() {
-        linux!(figterm_socket_path("$SESSION_ID"), @"/var/tmp/fig/$USER/figterm/$SESSION_ID.socket");
-        macos!(figterm_socket_path("$SESSION_ID"), @"/var/tmp/fig/$USER/figterm/$SESSION_ID.socket");
-        windows!(figterm_socket_path("$SESSION_ID"), @r"C:\Users\$USER\AppData\Local\Fig\sockets\figterm\$SESSION_ID.socket");
-    }
-
-    #[ignore]
-    #[test]
-    fn _snapshot_settings_path() {
-        linux!(settings_path(), @"/home/$USER/.fig/settings.json");
-        macos!(settings_path(), @"/Users/$USER/.fig/settings.json");
+    fn snapshot_settings_path() {
+        linux!(settings_path(), @"$HOME/.local/share/codewhisperer/settings.json");
+        macos!(settings_path(), @"$HOME/Library/Application Support/codewhisperer/settings.json");
         windows!(settings_path(), @r"C:\Users\$USER\AppData\Lcoal\Fig\settings.json");
     }
 
-    #[ignore]
     #[test]
-    fn _snapshot_state_path() {
-        linux!(state_path(), @"/home/$USER/.local/share/fig/state.json");
-        macos!(state_path(), @"/Users/$USER/Library/Application Support/fig/state.json");
+    fn snapshot_state_path() {
+        linux!(state_path(), @"$HOME/.local/share/codewhisperer/state.json");
+        macos!(state_path(), @"$HOME/Library/Application Support/codewhisperer/state.json");
         windows!(state_path(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\state.json");
     }
 
-    #[ignore]
     #[test]
-    fn _snapshot_update_lock_path() {
-        linux!(update_lock_path(), @"/home/$USER/.local/share/fig/update.lock");
-        macos!(update_lock_path(), @"/Users/$USER/Library/Application Support/fig/update.lock");
+    fn snapshot_update_lock_path() {
+        linux!(update_lock_path(), @"$HOME/.local/share/codewhisperer/update.lock");
+        macos!(update_lock_path(), @"$HOME/Library/Application Support/codewhisperer/update.lock");
         windows!(update_lock_path(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\update.lock");
     }
 
-    #[ignore]
     #[test]
-    fn _snapshot_credentials_path() {
-        linux!(credentials_path(), @"/home/$USER/.local/share/fig/credentials.json");
-        macos!(credentials_path(), @"/Users/$USER/Library/Application Support/fig/credentials.json");
+    fn snapshot_credentials_path() {
+        linux!(credentials_path(), @"$HOME/.local/share/codewhisperer/credentials.json");
+        macos!(credentials_path(), @"$HOME/Library/Application Support/codewhisperer/credentials.json");
         windows!(credentials_path(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\credentials.json");
     }
 
-    #[ignore]
     #[test]
-    fn _snapshot_ssh_saved_identities() {
-        linux!(ssh_saved_identities(), @"/home/$USER/.local/share/fig/access/ssh_saved_identities");
-        macos!(ssh_saved_identities(), @"/Users/$USER/Library/Application Support/fig/access/ssh_saved_identities");
-        windows!(ssh_saved_identities(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\access\ssh_saved_identities");
+    #[cfg(unix)]
+    fn socket_path_length() {
+        use std::os::unix::ffi::OsStrExt;
+        /// Sockets are bounded at 100 bytes, why, because legacy compat
+        const MAX_SOCKET_LEN: usize = 100;
+
+        let uuid = uuid::Uuid::new_v4().simple().to_string();
+        let cwterm_socket = figterm_socket_path(uuid.to_string()).unwrap();
+        let cwterm_socket_bytes = cwterm_socket.as_os_str().as_bytes().len();
+        assert!(cwterm_socket_bytes <= MAX_SOCKET_LEN);
+
+        let fig_socket = desktop_socket_path().unwrap();
+        let fig_socket_bytes = fig_socket.as_os_str().as_bytes().len();
+        assert!(fig_socket_bytes <= MAX_SOCKET_LEN);
+
+        let secure_socket = remote_socket_path().unwrap();
+        let secure_socket_bytes = secure_socket.as_os_str().as_bytes().len();
+        assert!(secure_socket_bytes <= MAX_SOCKET_LEN);
     }
 }
