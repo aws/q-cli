@@ -58,7 +58,7 @@ pub enum Error {
 
 const APP_NAME: &str = "codewhisperer-terminal";
 
-static CLIENT: Lazy<TelemetryClient> = Lazy::new(|| TelemetryClient::new(TelemetryStage::BETA));
+static CLIENT: Lazy<TelemetryClient> = Lazy::new(|| TelemetryClient::new(TelemetryStage::EXTERNAL_PROD));
 
 #[derive(Debug, Clone)]
 #[non_exhaustive]
