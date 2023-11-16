@@ -16,6 +16,7 @@ use std::path::{
 use std::process::exit;
 use std::time::Duration;
 
+use base64::Engine;
 use fig_util::consts::{
     CODEWHISPERER_BUNDLE_ID,
     CODEWHISPERER_CLI_BINARY_NAME,
@@ -67,7 +68,16 @@ pub(crate) async fn update(
 
     debug!(?dmg_path, "downloading dmg");
 
-    download_dmg(update.download, &dmg_path, update.size, tx.clone()).await?;
+    let real_digest = download_dmg(update.download, &dmg_path, update.size, tx.clone()).await?;
+    let real_hash = base64::engine::general_purpose::STANDARD.encode(real_digest);
+
+    // validate the dmg hash
+    let expected_hash = update.sha256;
+    if expected_hash != real_hash {
+        return Err(Error::UpdateFailed(format!(
+            "dmg hash mismatch. Expected: {expected_hash}, Actual: {real_hash}"
+        )));
+    }
 
     tx.send(UpdateStatus::Message("Unpacking update...".into())).await.ok();
 
@@ -398,14 +408,18 @@ async fn download_dmg(
     dst: impl AsRef<Path>,
     size: u64,
     tx: Sender<UpdateStatus>,
-) -> Result<(), Error> {
+) -> Result<ring::digest::Digest, Error> {
     let client = fig_request::client().expect("fig_request client must be instantiated on first request");
     let mut response = client.get(src).timeout(Duration::from_secs(30 * 60)).send().await?;
 
     let mut bytes_downloaded = 0;
     let mut file = tokio::fs::File::create(&dst).await?;
+    let mut ctx = ring::digest::Context::new(&ring::digest::SHA256);
+
     while let Some(mut bytes) = response.chunk().await? {
         bytes_downloaded += bytes.len() as u64;
+
+        ctx.update(&bytes);
 
         tx.send(UpdateStatus::Percent(bytes_downloaded as f32 / size as f32 * 100.0))
             .await
@@ -424,7 +438,9 @@ async fn download_dmg(
 
     tx.send(UpdateStatus::Percent(100.0)).await.ok();
 
-    Ok(())
+    let digest = ctx.finish();
+
+    Ok(digest)
 }
 
 pub fn swap(src: impl AsRef<CStr>, dst: impl AsRef<CStr>) -> Result<(), Error> {

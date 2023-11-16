@@ -283,9 +283,9 @@ impl ShellScriptShellIntegration {
                     Shell::Nu => "".into(),
                 };
                 let add_to_path_line = match self.shell {
-                    Shell::Bash | Shell::Zsh => "_FIG_LOCAL_BIN=~/.local/bin \n\
-                        [[ \":$PATH:\" != *\":$_FIG_LOCAL_BIN:\"* ]] && PATH=\"${PATH:+\"$PATH:\"}$_FIG_LOCAL_BIN\" \n\
-                        unset _FIG_LOCAL_BIN",
+                    Shell::Bash | Shell::Zsh => "_CW_LOCAL_BIN=~/.local/bin \n\
+                        [[ \":$PATH:\" != *\":$_CW_LOCAL_BIN:\"* ]] && PATH=\"${PATH:+\"$PATH:\"}$_CW_LOCAL_BIN\" \n\
+                        unset _CW_LOCAL_BIN",
                     Shell::Fish => "contains $HOME/.local/bin $PATH; or set -a PATH $HOME/.local/bin",
                     Shell::Nu => "",
                 };

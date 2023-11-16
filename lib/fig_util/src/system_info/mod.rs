@@ -110,12 +110,12 @@ static IN_SSH: Lazy<bool> = Lazy::new(|| {
         || std::env::var_os("SSH_TTY").is_some()
 });
 
-static HAS_PARENT: Lazy<bool> = Lazy::new(|| std::env::var_os("FIG_PARENT").is_some());
+static HAS_PARENT: Lazy<bool> = Lazy::new(|| std::env::var_os("CW_PARENT").is_some());
 
 static IN_CODESPACES: Lazy<bool> =
-    Lazy::new(|| std::env::var_os("CODESPACES").is_some() || std::env::var_os("FIG_CODESPACES").is_some());
+    Lazy::new(|| std::env::var_os("CODESPACES").is_some() || std::env::var_os("CW_CODESPACES").is_some());
 
-static IN_CI: Lazy<bool> = Lazy::new(|| std::env::var_os("CI").is_some() || std::env::var_os("FIG_CI").is_some());
+static IN_CI: Lazy<bool> = Lazy::new(|| std::env::var_os("CI").is_some() || std::env::var_os("CW_CI").is_some());
 
 /// The support level for different platforms
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -283,7 +283,7 @@ pub fn in_wsl() -> bool {
 /// Is Fig running on a remote instance
 pub fn is_remote() -> bool {
     // TODO(chay): Add detection for inside docker container
-    in_ssh() || in_wsl() || std::env::var_os("FIG_FAKE_IS_REMOTE").is_some()
+    in_ssh() || in_wsl() || std::env::var_os("CW_FAKE_IS_REMOTE").is_some()
 }
 
 /// Whether Fig has a parent. Determines if we have an IPC path to a Desktop app from a remote
@@ -369,7 +369,7 @@ pub fn get_system_id() -> Option<&'static str> {
 }
 
 pub fn get_platform() -> &'static str {
-    if let Some(over_ride) = option_env!("FIG_OVERRIDE_PLATFORM") {
+    if let Some(over_ride) = option_env!("CW_OVERRIDE_PLATFORM") {
         over_ride
     } else {
         std::env::consts::OS
@@ -377,7 +377,7 @@ pub fn get_platform() -> &'static str {
 }
 
 pub fn get_arch() -> &'static str {
-    if let Some(over_ride) = option_env!("FIG_OVERRIDE_ARCH") {
+    if let Some(over_ride) = option_env!("CW_OVERRIDE_ARCH") {
         over_ride
     } else {
         std::env::consts::ARCH

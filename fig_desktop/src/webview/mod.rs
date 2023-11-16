@@ -91,8 +91,6 @@ use crate::{
     InterceptState,
 };
 
-pub const FIG_PROTO_MESSAGE_RECEIVED: &str = "FigProtoMessageRecieved";
-
 pub const DASHBOARD_ID: WindowId = WindowId(Cow::Borrowed("dashboard"));
 pub const AUTOCOMPLETE_ID: WindowId = WindowId(Cow::Borrowed("autocomplete"));
 

@@ -9,8 +9,8 @@ def pathadd [path: string] {
 let-env PATH = pathadd $"($env.HOME)/.local/bin"
 let-env PATH = pathadd $"($env.HOME)/.local/bin"
 
-let-env FIG_SET_PARENT = $env.CWTERM_SESSION_ID
-let-env LC_FIG_SET_PARENT = $env.CWTERM_SESSION_ID
+let-env CWSET_PARENT = $env.CWTERM_SESSION_ID
+let-env LC_CWSET_PARENT = $env.CWTERM_SESSION_ID
 
 let-env CW_SHELL = (^cw _ get-shell)
 
@@ -44,75 +44,75 @@ def-env fig_pre_execution_hook [] {
   print_fig_osc "PreExec"
 
   # let-env PROMPT_COMMAND = if "PROMPT_COMMAND" in $env {
-  #   if "FIG_USER_PROMPT_COMMAND" in $env {
-  #       $env.FIG_USER_PROMPT_COMMAND
+  #   if "CW_USER_PROMPT_COMMAND" in $env {
+  #       $env.CW_USER_PROMPT_COMMAND
   #   } else {
   #       $env.PROMPT_COMMAND
   #   }
   # } else { $nothing }
 
-  # if "PROMPT_COMMAND" in $env and "FIG_USER_PROMPT_COMMAND" in $env {
-  #   let-env PROMPT_COMMAND = $env.FIG_USER_PROMPT_COMMAND
+  # if "PROMPT_COMMAND" in $env and "CW_USER_PROMPT_COMMAND" in $env {
+  #   let-env PROMPT_COMMAND = $env.CW_USER_PROMPT_COMMAND
   # }
 
   # let-env PROMPT_COMMAND_RIGHT = if "PROMPT_COMMAND_RIGHT" in $env {
-  #   if "FIG_USER_PROMPT_COMMAND_RIGHT" in $env {
-  #       $env.FIG_USER_PROMPT_COMMAND_RIGHT
+  #   if "CW_USER_PROMPT_COMMAND_RIGHT" in $env {
+  #       $env.CW_USER_PROMPT_COMMAND_RIGHT
   #   } else {
   #       $env.PROMPT_COMMAND_RIGHT
   #   }
   # } else { $nothing }
   
-  # if "PROMPT_COMMAND_RIGHT" in $env and "FIG_USER_PROMPT_COMMAND_RIGHT" in $env {
-  #   let-env PROMPT_COMMAND_RIGHT = $env.FIG_USER_PROMPT_COMMAND_RIGHT
+  # if "PROMPT_COMMAND_RIGHT" in $env and "CW_USER_PROMPT_COMMAND_RIGHT" in $env {
+  #   let-env PROMPT_COMMAND_RIGHT = $env.CW_USER_PROMPT_COMMAND_RIGHT
   # }
 
   # let-env PROMPT_INDICATOR = if "PROMPT_INDICATOR" in $env {
-  #   if "FIG_USER_PROMPT_INDICATOR" in $env {
-  #       $env.FIG_USER_PROMPT_INDICATOR
+  #   if "CW_USER_PROMPT_INDICATOR" in $env {
+  #       $env.CW_USER_PROMPT_INDICATOR
   #   } else {
   #       $env.PROMPT_INDICATOR
   #   }
   # } else { $nothing }
   
-  # if "PROMPT_INDICATOR" in $env and "FIG_USER_PROMPT_INDICATOR" in $env {
-  #   let-env PROMPT_INDICATOR = $env.FIG_USER_PROMPT_INDICATOR
+  # if "PROMPT_INDICATOR" in $env and "CW_USER_PROMPT_INDICATOR" in $env {
+  #   let-env PROMPT_INDICATOR = $env.CW_USER_PROMPT_INDICATOR
   # }
 
   # let-env PROMPT_INDICATOR_VI_INSERT = if "PROMPT_INDICATOR_VI_INSERT" in $env {
-  #   if "FIG_USER_PROMPT_INDICATOR_VI_INSERT" in $env {
-  #       $env.FIG_USER_PROMPT_INDICATOR_VI_INSERT
+  #   if "CW_USER_PROMPT_INDICATOR_VI_INSERT" in $env {
+  #       $env.CW_USER_PROMPT_INDICATOR_VI_INSERT
   #   } else {
   #       $env.PROMPT_INDICATOR_VI_INSERT
   #   }
   # } else { $nothing }
   
-  # if "PROMPT_INDICATOR_VI_INSERT" in $env and "FIG_USER_PROMPT_INDICATOR_VI_INSERT" in $env {
-  #   let-env PROMPT_INDICATOR_VI_INSERT = $env.FIG_USER_PROMPT_INDICATOR_VI_INSERT
+  # if "PROMPT_INDICATOR_VI_INSERT" in $env and "CW_USER_PROMPT_INDICATOR_VI_INSERT" in $env {
+  #   let-env PROMPT_INDICATOR_VI_INSERT = $env.CW_USER_PROMPT_INDICATOR_VI_INSERT
   # }
 
   # let-env PROMPT_INDICATOR_VI_NORMAL = if "PROMPT_INDICATOR_VI_NORMAL" in $env {
-  #   if "FIG_USER_PROMPT_INDICATOR_VI_NORMAL" in $env {
-  #       $env.FIG_USER_PROMPT_INDICATOR_VI_NORMAL
+  #   if "CW_USER_PROMPT_INDICATOR_VI_NORMAL" in $env {
+  #       $env.CW_USER_PROMPT_INDICATOR_VI_NORMAL
   #   } else {
   #       $env.PROMPT_INDICATOR_VI_NORMAL
   #   }
   # } else { $nothing }
   
-  # if "PROMPT_INDICATOR_VI_NORMAL" in $env and "FIG_USER_PROMPT_INDICATOR_VI_NORMAL" in $env {
-  #   let-env PROMPT_INDICATOR_VI_NORMAL = $env.FIG_USER_PROMPT_INDICATOR_VI_NORMAL
+  # if "PROMPT_INDICATOR_VI_NORMAL" in $env and "CW_USER_PROMPT_INDICATOR_VI_NORMAL" in $env {
+  #   let-env PROMPT_INDICATOR_VI_NORMAL = $env.CW_USER_PROMPT_INDICATOR_VI_NORMAL
   # }
 
   # let-env PROMPT_MULTILINE_INDICATOR = if "PROMPT_MULTILINE_INDICATOR" in $env {
-  #   if "FIG_USER_PROMPT_MULTILINE_INDICATOR" in $env {
-  #       $env.FIG_USER_PROMPT_MULTILINE_INDICATOR
+  #   if "CW_USER_PROMPT_MULTILINE_INDICATOR" in $env {
+  #       $env.CW_USER_PROMPT_MULTILINE_INDICATOR
   #   } else {
   #       $env.PROMPT_MULTILINE_INDICATOR
   #   }
   # } else { $nothing }
   
-  # if "PROMPT_MULTILINE_INDICATOR" in $env and "FIG_USER_PROMPT_MULTILINE_INDICATOR" in $env {
-  #   let-env PROMPT_MULTILINE_INDICATOR = $env.FIG_USER_PROMPT_MULTILINE_INDICATOR
+  # if "PROMPT_MULTILINE_INDICATOR" in $env and "CW_USER_PROMPT_MULTILINE_INDICATOR" in $env {
+  #   let-env PROMPT_MULTILINE_INDICATOR = $env.CW_USER_PROMPT_MULTILINE_INDICATOR
   # }
 }
 
@@ -131,8 +131,8 @@ def-env fig_pre_prompt_hook [] {
       print_fig_osc $"ExitCode=($env.LAST_EXIT_CODE)"
     }
     print_fig_osc $"TTY=(^tty)"
-    if "FIG_LOG_LEVEL" in $env {
-      print_fig_osc $"Log=($env.FIG_LOG_LEVEL)"
+    if "CW_LOG_LEVEL" in $env {
+      print_fig_osc $"Log=($env.CW_LOG_LEVEL)"
     }
 
     print_fig_osc $"NuHintColor=($env.config.color_config.hints)"
@@ -143,14 +143,14 @@ def-env fig_pre_prompt_hook [] {
       print_fig_osc "User=root"
     }
 
-    # if $env.FIG_HAS_SET_PROMPT == 1 {
+    # if $env.CW_HAS_SET_PROMPT == 1 {
     #   fig_pre_execution_hook
     # }
   
     if (which fig | length) >= 1 {
       let result = (cw _ pre-cmd | complete)
       if $result.stdout == "EXEC_NEW_SHELL" {
-        let-env FIG_DOTFILES_SOURCED = $nothing
+        let-env CW_DOTFILES_SOURCED = $nothing
         exec nu
       } else if $result.stdout == "" {
         # do nothing
@@ -159,49 +159,49 @@ def-env fig_pre_prompt_hook [] {
       }
     }
 
-    let-env FIG_HAS_SET_PROMPT = 1
+    let-env CW_HAS_SET_PROMPT = 1
 }
 
 def-env fig_set_prompt [] {
   if "PROMPT_COMMAND" in $env {
-    let-env FIG_PROMPT_COMMAND = $env.PROMPT_COMMAND
+    let-env CW_PROMPT_COMMAND = $env.PROMPT_COMMAND
     let-env PROMPT_COMMAND = {
-      $"(fig_osc 'StartPrompt')(do $env.FIG_PROMPT_COMMAND)"
+      $"(fig_osc 'StartPrompt')(do $env.CW_PROMPT_COMMAND)"
     }
   }
   
   if "PROMPT_COMMAND_RIGHT" in $env {
-    let-env FIG_PROMPT_COMMAND_RIGHT = $env.PROMPT_COMMAND_RIGHT
+    let-env CW_PROMPT_COMMAND_RIGHT = $env.PROMPT_COMMAND_RIGHT
     let-env PROMPT_COMMAND_RIGHT = {
-      $"(fig_osc 'StartPrompt')(do $env.FIG_PROMPT_COMMAND_RIGHT)(fig_osc 'EndPrompt')"
+      $"(fig_osc 'StartPrompt')(do $env.CW_PROMPT_COMMAND_RIGHT)(fig_osc 'EndPrompt')"
     }
   }
 
   if "PROMPT_INDICATOR" in $env {
-    let-env FIG_PROMPT_INDICATOR = $env.PROMPT_INDICATOR
+    let-env CW_PROMPT_INDICATOR = $env.PROMPT_INDICATOR
     let-env PROMPT_INDICATOR = {
-      $"(do $env.FIG_PROMPT_INDICATOR)(fig_osc 'EndPrompt')(fig_osc $"NewCmd=($env.CWTERM_SESSION_ID)")"
+      $"(do $env.CW_PROMPT_INDICATOR)(fig_osc 'EndPrompt')(fig_osc $"NewCmd=($env.CWTERM_SESSION_ID)")"
     }
   }
 
   if "PROMPT_INDICATOR_VI_INSERT" in $env {
-    let-env FIG_PROMPT_INDICATOR_VI_INSERT = $env.PROMPT_INDICATOR_VI_INSERT
+    let-env CW_PROMPT_INDICATOR_VI_INSERT = $env.PROMPT_INDICATOR_VI_INSERT
     let-env PROMPT_INDICATOR_VI_INSERT = {
-      $"(do $env.FIG_PROMPT_INDICATOR_VI_INSERT)(fig_osc 'EndPrompt')(fig_osc $"NewCmd=($env.CWTERM_SESSION_ID)")"
+      $"(do $env.CW_PROMPT_INDICATOR_VI_INSERT)(fig_osc 'EndPrompt')(fig_osc $"NewCmd=($env.CWTERM_SESSION_ID)")"
     }
   }
 
   if "PROMPT_INDICATOR_VI_NORMAL" in $env {
-    let-env FIG_PROMPT_INDICATOR_VI_NORMAL = $env.PROMPT_INDICATOR_VI_NORMAL
+    let-env CW_PROMPT_INDICATOR_VI_NORMAL = $env.PROMPT_INDICATOR_VI_NORMAL
     let-env PROMPT_INDICATOR_VI_NORMAL = {
-      $"(do $env.FIG_PROMPT_INDICATOR_VI_NORMAL)(fig_osc 'EndPrompt')(fig_osc $"NewCmd=($env.CWTERM_SESSION_ID)")"
+      $"(do $env.CW_PROMPT_INDICATOR_VI_NORMAL)(fig_osc 'EndPrompt')(fig_osc $"NewCmd=($env.CWTERM_SESSION_ID)")"
     }
   }
 
   if "PROMPT_MULTILINE_INDICATOR" in $env {
-    let-env FIG_PROMPT_MULTILINE_INDICATOR = $env.PROMPT_MULTILINE_INDICATOR
+    let-env CW_PROMPT_MULTILINE_INDICATOR = $env.PROMPT_MULTILINE_INDICATOR
     let-env PROMPT_MULTILINE_INDICATOR = {
-      $"(fig_osc 'StartPrompt')(do $env.FIG_PROMPT_MULTILINE_INDICATOR)(fig_osc 'EndPrompt')"
+      $"(fig_osc 'StartPrompt')(do $env.CW_PROMPT_MULTILINE_INDICATOR)(fig_osc 'EndPrompt')"
     }
   }
 }
@@ -209,7 +209,7 @@ def-env fig_set_prompt [] {
 fig_set_prompt
 fig_reset_hooks
 
-if "PROCESS_LAUNCHED_BY_FIG" in $env {
+if "PROCESS_LAUNCHED_BY_CW" in $env {
   print_fig_osc "DoneSourcing"
 }
 

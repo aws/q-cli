@@ -7,35 +7,14 @@ fi
 
 alias q='cw ai'
 
-# if [[ $TTY != "not a tty" ]]; then
-  # # Open scripts on keyboard shortcut
-  # if [[ -z "${FIG_SCRIPTS_KEYBIND}" ]]
-  # then
-  #   export FIG_SCRIPTS_KEYBIND='^f'
-  # fi
-  #
-  # fig-open-scripts() {
-  #     fig run < $TTY
-  #     zle .kill-whole-line
-  #     zle .accept-line
-  # }
-  # zle -N fig-open-scripts
-  # bindkey ${FIG_SCRIPTS_KEYBIND} fig-open-scripts
-# fi
-
-# if [[ "$FIG_DID_NOT_EXEC_FIGTERM" = 1 && "$CW_TERM" != 1 ]] || [[ -n "${INSIDE_EMACS+x}" ]]; then
-#   unset FIG_DID_NOT_EXEC_FIGTERM
-#   return
-# fi
-
 if [[ -z "${TTY}" ]]; then
   TTY=$(tty)
 fi
 export TTY
 
-export FIG_PID="$$"
-export FIG_SET_PARENT=$CWTERM_SESSION_ID
-export LC_FIG_SET_PARENT=$CWTERM_SESSION_ID
+export SHELL_PID="$$"
+export CWSET_PARENT=$CWTERM_SESSION_ID
+export LC_CWSET_PARENT=$CWTERM_SESSION_ID
 
 if [[ -z "${CW_SHELL}" ]]; then
   CW_SHELL=$(cw _ get-shell)
@@ -44,30 +23,30 @@ fi
 # shellcheck disable=SC2059
 function fig_osc { printf "\033]697;$1\007" "${@:2}"; }
 
-FIG_HAS_SET_PROMPT=0
+CW_HAS_SET_PROMPT=0
 
 fig_preexec() {
   # Restore user defined prompt before executing.
-  [[ -v PS1 ]] && PS1="$FIG_USER_PS1"
-  [[ -v PROMPT ]] && PROMPT="$FIG_USER_PROMPT"
-  [[ -v prompt ]] && prompt="$FIG_USER_prompt"
+  [[ -v PS1 ]] && PS1="$CW_USER_PS1"
+  [[ -v PROMPT ]] && PROMPT="$CW_USER_PROMPT"
+  [[ -v prompt ]] && prompt="$CW_USER_prompt"
 
-  [[ -v PS2 ]] && PS2="$FIG_USER_PS2"
-  [[ -v PROMPT2 ]] && PROMPT2="$FIG_USER_PROMPT2"
+  [[ -v PS2 ]] && PS2="$CW_USER_PS2"
+  [[ -v PROMPT2 ]] && PROMPT2="$CW_USER_PROMPT2"
 
-  [[ -v PS3 ]] && PS3="$FIG_USER_PS3"
-  [[ -v PROMPT3 ]] && PROMPT3="$FIG_USER_PROMPT3"
+  [[ -v PS3 ]] && PS3="$CW_USER_PS3"
+  [[ -v PROMPT3 ]] && PROMPT3="$CW_USER_PROMPT3"
 
-  [[ -v PS4 ]] && PS4="$FIG_USER_PS4"
-  [[ -v PROMPT4 ]] && PROMPT4="$FIG_USER_PROMPT4"
+  [[ -v PS4 ]] && PS4="$CW_USER_PS4"
+  [[ -v PROMPT4 ]] && PROMPT4="$CW_USER_PROMPT4"
 
-  [[ -v RPS1 ]] && RPS1="$FIG_USER_RPS1"
-  [[ -v RPROMPT ]] && RPROMPT="$FIG_USER_RPROMPT"
+  [[ -v RPS1 ]] && RPS1="$CW_USER_RPS1"
+  [[ -v RPROMPT ]] && RPROMPT="$CW_USER_RPROMPT"
 
-  [[ -v RPS2 ]] && RPS2="$FIG_USER_RPS2"
-  [[ -v RPROMPT2 ]] && RPROMPT2="$FIG_USER_RPROMPT2"
+  [[ -v RPS2 ]] && RPS2="$CW_USER_RPS2"
+  [[ -v RPROMPT2 ]] && RPROMPT2="$CW_USER_RPROMPT2"
 
-  FIG_HAS_SET_PROMPT=0
+  CW_HAS_SET_PROMPT=0
 
   fig_osc "OSCLock=%s" "${CWTERM_SESSION_ID}"
   fig_osc PreExec
@@ -88,12 +67,12 @@ fig_precmd() {
   fig_osc "PID=%d" "$$"
   fig_osc "ExitCode=%s" "${LAST_STATUS}"
   fig_osc "TTY=%s" "${TTY}"
-  fig_osc "Log=%s" "${FIG_LOG_LEVEL}"
+  fig_osc "Log=%s" "${CW_LOG_LEVEL}"
   fig_osc "ZshAutosuggestionColor=%s" "${ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE}"
-  fig_osc "FigAutosuggestionColor=%s" "${FIG_AUTOSUGGEST_HIGHLIGHT_STYLE}"
+  fig_osc "FigAutosuggestionColor=%s" "${CW_AUTOSUGGEST_HIGHLIGHT_STYLE}"
   fig_osc "User=%s" "${USER:-root}"
 
-  if [ "$FIG_HAS_SET_PROMPT" -eq 1 ]; then
+  if [ "$CW_HAS_SET_PROMPT" -eq 1 ]; then
     # ^C pressed while entering command, call preexec manually to clear fig prompts.
     fig_preexec
   fi
@@ -103,24 +82,24 @@ fig_precmd() {
   NEW_CMD=$'\033]697;NewCmd='"${CWTERM_SESSION_ID}"$'\007'
 
   # Save user defined prompts.
-  FIG_USER_PS1="$PS1"
-  FIG_USER_PROMPT="$PROMPT"
-  FIG_USER_prompt="$prompt"
+  CW_USER_PS1="$PS1"
+  CW_USER_PROMPT="$PROMPT"
+  CW_USER_prompt="$prompt"
 
-  FIG_USER_PS2="$PS2"
-  FIG_USER_PROMPT2="$PROMPT2"
+  CW_USER_PS2="$PS2"
+  CW_USER_PROMPT2="$PROMPT2"
 
-  FIG_USER_PS3="$PS3"
-  FIG_USER_PROMPT3="$PROMPT3"
+  CW_USER_PS3="$PS3"
+  CW_USER_PROMPT3="$PROMPT3"
 
-  FIG_USER_PS4="$PS4"
-  FIG_USER_PROMPT4="$PROMPT4"
+  CW_USER_PS4="$PS4"
+  CW_USER_PROMPT4="$PROMPT4"
 
-  FIG_USER_RPS1="$RPS1"
-  FIG_USER_RPROMPT="$RPROMPT"
+  CW_USER_RPS1="$RPS1"
+  CW_USER_RPROMPT="$RPROMPT"
 
-  FIG_USER_RPS2="$RPS2"
-  FIG_USER_RPROMPT2="$RPROMPT2"
+  CW_USER_RPS2="$RPS2"
+  CW_USER_RPROMPT2="$RPROMPT2"
 
   if [[ -v PROMPT ]]; then
     PROMPT="%{$START_PROMPT%}$PROMPT%{$END_PROMPT$NEW_CMD%}"
@@ -162,7 +141,7 @@ fig_precmd() {
     RPS2="%{$START_PROMPT%}$RPS2%{$END_PROMPT%}"
   fi
 
-  FIG_HAS_SET_PROMPT=1
+  CW_HAS_SET_PROMPT=1
 
   if command -v cw >/dev/null 2>&1; then
     (command cw _ pre-cmd --alias "$(\alias)" > /dev/null 2>&1 &) >/dev/null 2>&1
@@ -183,7 +162,7 @@ fig_reset_hooks() {
 }
 
 fig_reset_hooks
-if [[ -n "${PROCESS_LAUNCHED_BY_FIG}" ]]; then
+if [[ -n "${PROCESS_LAUNCHED_BY_CW}" ]]; then
   fig_osc DoneSourcing
 fi
 

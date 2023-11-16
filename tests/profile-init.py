@@ -37,7 +37,7 @@ def test(shell: str, stage: str, cycles: int):
     pretty = []
     for (num, run) in enumerate(runs):
         for i in range(len(run)):
-            if b'FIG_PID' in run[i][1]:
+            if b'SHELL_PID' in run[i][1]:
                 continue
             if run[i][1] != runs[0][i][1]:
                 print(

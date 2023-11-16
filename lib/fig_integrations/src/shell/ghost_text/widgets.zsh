@@ -5,13 +5,13 @@
 
 # Disable suggestions
 _fig_autosuggest_disable() {
-	typeset -g _FIG_AUTOSUGGEST_DISABLED
+	typeset -g _CW_AUTOSUGGEST_DISABLED
 	_fig_autosuggest_clear
 }
 
 # Enable suggestions
 _fig_autosuggest_enable() {
-	unset _FIG_AUTOSUGGEST_DISABLED
+	unset _CW_AUTOSUGGEST_DISABLED
 
 	if (( $#BUFFER )); then
 		_fig_autosuggest_fetch
@@ -20,7 +20,7 @@ _fig_autosuggest_enable() {
 
 # Toggle suggestions (enable/disable)
 _fig_autosuggest_toggle() {
-	if (( ${+_FIG_AUTOSUGGEST_DISABLED} )); then
+	if (( ${+_CW_AUTOSUGGEST_DISABLED} )); then
 		_fig_autosuggest_enable
 	else
 		_fig_autosuggest_disable
@@ -68,13 +68,13 @@ _fig_autosuggest_modify() {
 	fi
 
 	# Bail out if suggestions are disabled
-	if (( ${+_FIG_AUTOSUGGEST_DISABLED} )); then
+	if (( ${+_CW_AUTOSUGGEST_DISABLED} )); then
 		return $?
 	fi
 
 	# Get a new suggestion if the buffer is not empty after modification
 	if (( $#BUFFER > 0 )); then
-		if [[ -z "$FIG_AUTOSUGGEST_BUFFER_MAX_SIZE" ]] || (( $#BUFFER <= $FIG_AUTOSUGGEST_BUFFER_MAX_SIZE )); then
+		if [[ -z "$CW_AUTOSUGGEST_BUFFER_MAX_SIZE" ]] || (( $#BUFFER <= $CW_AUTOSUGGEST_BUFFER_MAX_SIZE )); then
 			_fig_autosuggest_fetch
 		fi
 	fi
@@ -84,7 +84,7 @@ _fig_autosuggest_modify() {
 
 # Fetch a new suggestion based on what's currently in the buffer
 _fig_autosuggest_fetch() {
-	if (( ${+FIG_AUTOSUGGEST_USE_ASYNC} )); then
+	if (( ${+CW_AUTOSUGGEST_USE_ASYNC} )); then
 		_fig_autosuggest_async_request "$BUFFER"
 	else
 		local suggestion
@@ -199,9 +199,9 @@ _fig_autosuggest_partial_accept() {
 }
 
 () {
-	typeset -ga _FIG_AUTOSUGGEST_BUILTIN_ACTIONS
+	typeset -ga _CW_AUTOSUGGEST_BUILTIN_ACTIONS
 
-	_FIG_AUTOSUGGEST_BUILTIN_ACTIONS=(
+	_CW_AUTOSUGGEST_BUILTIN_ACTIONS=(
 		clear
 		fetch
 		suggest
@@ -213,7 +213,7 @@ _fig_autosuggest_partial_accept() {
 	)
 
 	local action
-	for action in $_FIG_AUTOSUGGEST_BUILTIN_ACTIONS modify partial_accept; do
+	for action in $_CW_AUTOSUGGEST_BUILTIN_ACTIONS modify partial_accept; do
 		eval "_fig_autosuggest_widget_$action() {
 			local -i retval
 
@@ -230,7 +230,7 @@ _fig_autosuggest_partial_accept() {
 		}"
 	done
 
-	for action in $_FIG_AUTOSUGGEST_BUILTIN_ACTIONS; do
+	for action in $_CW_AUTOSUGGEST_BUILTIN_ACTIONS; do
 		zle -N autosuggest-$action _fig_autosuggest_widget_$action
 	done
 }

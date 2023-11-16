@@ -458,11 +458,11 @@ fn build_shell_command(command: Option<&[String]>) -> Result<CommandBuilder> {
             let parent_shell = get_parent_shell()?;
             let mut builder = CommandBuilder::new(parent_shell);
 
-            if env::var("FIG_IS_LOGIN_SHELL").ok().as_deref() == Some("1") {
+            if env::var("CW_IS_LOGIN_SHELL").ok().as_deref() == Some("1") {
                 builder.arg("--login");
             }
 
-            if let Some(execution_string) = env::var("FIG_EXECUTION_STRING").ok().filter(|s| !s.is_empty()) {
+            if let Some(execution_string) = env::var("CW_EXECUTION_STRING").ok().filter(|s| !s.is_empty()) {
                 builder.args(["-c", &execution_string]);
             }
 
@@ -481,10 +481,10 @@ fn build_shell_command(command: Option<&[String]>) -> Result<CommandBuilder> {
 
     // Clean up environment and launch shell.
     builder.env_remove("CW_SHELL");
-    builder.env_remove("FIG_IS_LOGIN_SHELL");
-    builder.env_remove("FIG_START_TEXT");
+    builder.env_remove("CW_IS_LOGIN_SHELL");
+    builder.env_remove("CW_START_TEXT");
     builder.env_remove("CW_SHELL_EXTRA_ARGS");
-    builder.env_remove("FIG_EXECUTION_STRING");
+    builder.env_remove("CW_EXECUTION_STRING");
 
     if let Ok(dir) = std::env::current_dir() {
         builder.cwd(dir);
@@ -522,7 +522,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
     let session_id = uuid::Uuid::new_v4().simple().to_string();
     std::env::set_var("CWTERM_SESSION_ID", &session_id);
 
-    let parent_id = std::env::var("FIG_PARENT").ok();
+    let parent_id = std::env::var("CW_PARENT").ok();
 
     let mut terminal = SystemTerminal::new_from_stdio()?;
     let screen_size = terminal.get_screen_size()?;
@@ -680,7 +680,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
         let result: Result<()> = 'select_loop: loop {
             if first_time && term.shell_state().has_seen_prompt {
                 trace!("Has seen prompt and first time");
-                let initial_command = env::var("FIG_START_TEXT").ok().filter(|s| !s.is_empty());
+                let initial_command = env::var("CW_START_TEXT").ok().filter(|s| !s.is_empty());
                 if let Some(mut initial_command) = initial_command {
                     debug!("Sending initial text: {initial_command}");
                     initial_command.push('\n');
@@ -1044,7 +1044,7 @@ fn main() {
     let cli = Cli::parse();
     let command = cli.command.as_deref();
 
-    logger::stdio_debug_log(format!("FIG_LOG_LEVEL={}", fig_log::get_fig_log_level()));
+    logger::stdio_debug_log(format!("CW_LOG_LEVEL={}", fig_log::get_fig_log_level()));
 
     if !state::get_bool_or("figterm.enabled", true) {
         println!("[NOTE] figterm is disabled. Autocomplete will not work.");

@@ -60,13 +60,13 @@ type Result<T, E = DirectoryError> = std::result::Result<T, E>;
 /// - MacOS: /Users/Alice
 /// - Windows: C:\Users\Alice
 pub fn home_dir() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_HOME_DIR");
+    debug_env_binding!("CW_DIRECTORIES_HOME_DIR");
     dirs::home_dir().ok_or(DirectoryError::NoHomeDirectory)
 }
 
 /// The config directory
 ///
-/// - Linux: `$XDG_CONFIG_HOME` or `$HOME/.config`
+/// - Linux: `$XDG_CONCW_HOME` or `$HOME/.config`
 /// - MacOS: `$HOME/Library/Application Support`
 /// - Windows: `{FOLDERID_RoamingAppData}`
 pub fn config_dir() -> Result<PathBuf> {
@@ -78,7 +78,7 @@ pub fn config_dir() -> Result<PathBuf> {
 /// - Linux: `$XDG_DATA_HOME/codewhisperer` or `$HOME/.local/share/codewhisperer`
 /// - MacOS: `$HOME/Library/Application Support/codewhisperer`
 pub fn fig_data_dir() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_FIG_DATA_DIR");
+    debug_env_binding!("CW_DIRECTORIES_CW_DATA_DIR");
 
     cfg_if::cfg_if! {
         if #[cfg(unix)] {
@@ -96,7 +96,7 @@ pub fn fig_data_dir() -> Result<PathBuf> {
 /// - Linux: `$XDG_CACHE_HOME/codewhisperer` or `$HOME/.cache/codewhisperer`
 /// - MacOS: `$HOME/Library/Caches/codewhisperer`
 pub fn cache_dir() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_CACHE_DIR");
+    debug_env_binding!("CW_DIRECTORIES_CACHE_DIR");
 
     cfg_if::cfg_if! {
         if #[cfg(unix)] {
@@ -126,7 +126,7 @@ fn runtime_dir() -> Result<PathBuf> {
 /// - Linux: $XDG_RUNTIME_DIR/cwsock
 /// - MacOS: $TMPDIR/cwsock
 pub fn sockets_dir() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_SOCKETS_DIR");
+    debug_env_binding!("CW_DIRECTORIES_SOCKETS_DIR");
 
     cfg_if::cfg_if! {
         if #[cfg(unix)] {
@@ -145,7 +145,7 @@ pub fn sockets_dir() -> Result<PathBuf> {
 /// - Linux: $XDG_RUNTIME_DIR/cwsock
 /// - MacOS: $TMPDIR/cwsock
 pub fn host_sockets_dir() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_HOST_SOCKETS_DIR");
+    debug_env_binding!("CW_DIRECTORIES_HOST_SOCKETS_DIR");
 
     // TODO: make this work again
     // #[cfg(target_os = "linux")]
@@ -172,7 +172,7 @@ pub fn host_sockets_dir() -> Result<PathBuf> {
 /// - MacOS: UNIMPLEMENTED
 /// - Windows: %LOCALAPPDATA%\Fig\bin
 pub fn managed_binaries_dir() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_MANAGED_BINARIES_DIR");
+    debug_env_binding!("CW_DIRECTORIES_MANAGED_BINARIES_DIR");
 
     cfg_if::cfg_if! {
         if #[cfg(target_os = "macos")] {
@@ -190,20 +190,20 @@ pub fn managed_binaries_dir() -> Result<PathBuf> {
 
 /// The path to all of the themes
 pub fn themes_dir() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_THEMES_DIR");
+    debug_env_binding!("CW_DIRECTORIES_THEMES_DIR");
 
     Ok(resources_path()?.join("themes"))
 }
 
 /// The autocomplete directory
 pub fn autocomplete_dir() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_AUTOCOMPLETE_DIR");
+    debug_env_binding!("CW_DIRECTORIES_AUTOCOMPLETE_DIR");
     Ok(fig_data_dir()?.join("autocomplete"))
 }
 
 /// The autocomplete specs directory
 pub fn autocomplete_specs_dir() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_AUTOCOMPLETE_SPECS_DIR");
+    debug_env_binding!("CW_DIRECTORIES_AUTOCOMPLETE_SPECS_DIR");
     Ok(autocomplete_dir()?.join("specs"))
 }
 
@@ -212,7 +212,7 @@ pub fn autocomplete_specs_dir() -> Result<PathBuf> {
 /// - MacOS: `$TMPDIR/logs`
 /// - Windows: `%TEMP%\fig\logs`
 pub fn logs_dir() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_LOGS_DIR");
+    debug_env_binding!("CW_DIRECTORIES_LOGS_DIR");
     cfg_if::cfg_if! {
         if #[cfg(unix)] {
             Ok(runtime_dir()?.join("cwlog"))
@@ -224,7 +224,7 @@ pub fn logs_dir() -> Result<PathBuf> {
 
 /// The directory where fig places all data-sensitive backups
 pub fn backups_dir() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_BACKUPS_DIR");
+    debug_env_binding!("CW_DIRECTORIES_BACKUPS_DIR");
 
     cfg_if::cfg_if! {
         if #[cfg(unix)] {
@@ -239,7 +239,7 @@ pub fn backups_dir() -> Result<PathBuf> {
 ///
 /// NOTE: This changes every second and cannot be cached
 pub fn utc_backup_dir() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_UTC_BACKUP_DIR");
+    debug_env_binding!("CW_DIRECTORIES_UTC_BACKUP_DIR");
 
     let now = OffsetDateTime::now_utc().format(time::macros::format_description!(
         "[year]-[month]-[day]_[hour]-[minute]-[second]"
@@ -250,7 +250,7 @@ pub fn utc_backup_dir() -> Result<PathBuf> {
 
 /// The directory where cached scripts are stored
 pub fn scripts_cache_dir() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_SCRIPTS_CACHE_DIR");
+    debug_env_binding!("CW_DIRECTORIES_SCRIPTS_CACHE_DIR");
     Ok(cache_dir()?.join("scripts"))
 }
 
@@ -260,7 +260,7 @@ pub fn scripts_cache_dir() -> Result<PathBuf> {
 /// - Linux: `$XDG_RUNTIME_DIR/cwrun/desktop.sock`
 /// - Windows: `%APPDATA%/Fig/desktop.sock`
 pub fn desktop_socket_path() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_FIG_SOCKET_PATH");
+    debug_env_binding!("CW_DIRECTORIES_CW_SOCKET_PATH");
     Ok(host_sockets_dir()?.join("desktop.sock"))
 }
 
@@ -271,10 +271,10 @@ pub fn desktop_socket_path() -> Result<PathBuf> {
 /// - Linux: `$XDG_RUNTIME_DIR/cwrun/remote.sock`
 /// - Windows: `%APPDATA%/Fig/%USER%/remote.sock`
 pub fn remote_socket_path() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_REMOTE_SOCKET_PATH");
+    debug_env_binding!("CW_DIRECTORIES_REMOTE_SOCKET_PATH");
     // TODO: reenable remote cw
     // if is_remote() {
-    //     if let Ok(parent_id) = std::env::var("FIG_PARENT") {
+    //     if let Ok(parent_id) = std::env::var("CW_PARENT") {
     //         if !parent_id.is_empty() {
     //             return parent_socket_path(&parent_id);
     //         }
@@ -285,10 +285,10 @@ pub fn remote_socket_path() -> Result<PathBuf> {
 
 // The path to fig parent socket
 //
-// - Linux/MacOS: `/var/tmp/fig-parent-$FIG_PARENT.sock`
+// - Linux/MacOS: `/var/tmp/fig-parent-$CW_PARENT.sock`
 // - Windows: unused
 // pub fn parent_socket_path(parent_id: &str) -> Result<PathBuf> {
-//     debug_env_binding!("FIG_DIRECTORIES_PARENT_SOCKET_PATH");
+//     debug_env_binding!("CW_DIRECTORIES_PARENT_SOCKET_PATH");
 //     Ok(Path::new(&format!("/var/tmp/fig-parent-{parent_id}.sock")).to_path_buf())
 // }
 
@@ -298,7 +298,7 @@ pub fn remote_socket_path() -> Result<PathBuf> {
 /// - Linux: `$XDG_RUNTIME_DIR/cwrun/desktop.sock`
 /// - Windows: `%APPDATA%/Fig/%USER%/remote.sock`
 pub fn local_remote_socket_path() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_LOCAL_REMOTE_SOCKET_PATH");
+    debug_env_binding!("CW_DIRECTORIES_LOCAL_REMOTE_SOCKET_PATH");
     Ok(host_sockets_dir()?.join("remote.sock"))
 }
 
@@ -309,7 +309,7 @@ pub fn local_remote_socket_path() -> Result<PathBuf> {
 /// - Linux: `$XDG_RUNTIME_DIR/cwrun/t/$SESSION_ID.sock`
 /// - Windows: `%APPDATA%\Fig\$SESSION_ID.sock`
 pub fn figterm_socket_path(session_id: impl Display) -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_FIGTERM_SOCKET_PATH");
+    debug_env_binding!("CW_DIRECTORIES_FIGTERM_SOCKET_PATH");
     Ok(sockets_dir()?.join("t").join(format!("{session_id}.sock")))
 }
 
@@ -318,7 +318,7 @@ pub fn figterm_socket_path(session_id: impl Display) -> Result<PathBuf> {
 /// - MacOS: "/Applications/CodeWhisperer.app/Contents/Resources"
 /// - Linux: "/usr/share/fig"
 pub fn resources_path() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_RESOURCES_PATH");
+    debug_env_binding!("CW_DIRECTORIES_RESOURCES_PATH");
 
     cfg_if::cfg_if! {
         if #[cfg(all(unix, not(target_os = "macos")))] {
@@ -334,7 +334,7 @@ pub fn resources_path() -> Result<PathBuf> {
 /// - MacOS: "/Applications/CodeWhisperer.app/Contents/Resources/manifest.json"
 /// - Linux: "/usr/share/fig/manifest.json"
 pub fn manifest_path() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_MANIFEST_PATH");
+    debug_env_binding!("CW_DIRECTORIES_MANIFEST_PATH");
 
     cfg_if::cfg_if! {
         if #[cfg(unix)] {
@@ -349,7 +349,7 @@ pub fn manifest_path() -> Result<PathBuf> {
 ///
 /// Note this is not implemented on Linux or MacOS
 pub fn managed_cw_cli_path() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_MANAGED_FIG_CLI_PATH");
+    debug_env_binding!("CW_DIRECTORIES_MANAGED_CW_CLI_PATH");
 
     cfg_if::cfg_if! {
         if #[cfg(unix)] {
@@ -362,19 +362,19 @@ pub fn managed_cw_cli_path() -> Result<PathBuf> {
 
 /// The path to the fig settings file
 pub fn settings_path() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_SETTINGS_PATH");
+    debug_env_binding!("CW_DIRECTORIES_SETTINGS_PATH");
     Ok(fig_data_dir()?.join("settings.json"))
 }
 
 /// The path to the fig state file
 pub fn state_path() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_STATE_PATH");
+    debug_env_binding!("CW_DIRECTORIES_STATE_PATH");
     Ok(fig_data_dir()?.join("state.json"))
 }
 
 /// The path to the lock file used to indicate that the app is updating
 pub fn update_lock_path() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_UPDATE_LOCK_PATH");
+    debug_env_binding!("CW_DIRECTORIES_UPDATE_LOCK_PATH");
 
     let data_dir = fig_data_dir()?;
     Ok(data_dir.join("update.lock"))
@@ -441,21 +441,21 @@ mod test {
             };
         }
 
-        test_environment_path!(home_dir, "FIG_DIRECTORIES_HOME_DIR");
-        test_environment_path!(fig_data_dir, "FIG_DIRECTORIES_FIG_DATA_DIR");
-        test_environment_path!(sockets_dir, "FIG_DIRECTORIES_SOCKETS_DIR");
-        test_environment_path!(host_sockets_dir, "FIG_DIRECTORIES_HOST_SOCKETS_DIR");
-        test_environment_path!(managed_binaries_dir, "FIG_DIRECTORIES_MANAGED_BINARIES_DIR");
-        test_environment_path!(themes_dir, "FIG_DIRECTORIES_THEMES_DIR");
-        test_environment_path!(logs_dir, "FIG_DIRECTORIES_LOGS_DIR");
-        test_environment_path!(backups_dir, "FIG_DIRECTORIES_BACKUPS_DIR");
-        test_environment_path!(utc_backup_dir, "FIG_DIRECTORIES_UTC_BACKUP_DIR");
-        test_environment_path!(scripts_cache_dir, "FIG_DIRECTORIES_SCRIPTS_CACHE_DIR");
-        test_environment_path!(desktop_socket_path, "FIG_DIRECTORIES_FIG_SOCKET_PATH");
-        test_environment_path!(manifest_path, "FIG_DIRECTORIES_MANIFEST_PATH");
-        test_environment_path!(managed_cw_cli_path, "FIG_DIRECTORIES_MANAGED_FIG_CLI_PATH");
-        test_environment_path!(settings_path, "FIG_DIRECTORIES_SETTINGS_PATH");
-        test_environment_path!(state_path, "FIG_DIRECTORIES_STATE_PATH");
+        test_environment_path!(home_dir, "CW_DIRECTORIES_HOME_DIR");
+        test_environment_path!(fig_data_dir, "CW_DIRECTORIES_CW_DATA_DIR");
+        test_environment_path!(sockets_dir, "CW_DIRECTORIES_SOCKETS_DIR");
+        test_environment_path!(host_sockets_dir, "CW_DIRECTORIES_HOST_SOCKETS_DIR");
+        test_environment_path!(managed_binaries_dir, "CW_DIRECTORIES_MANAGED_BINARIES_DIR");
+        test_environment_path!(themes_dir, "CW_DIRECTORIES_THEMES_DIR");
+        test_environment_path!(logs_dir, "CW_DIRECTORIES_LOGS_DIR");
+        test_environment_path!(backups_dir, "CW_DIRECTORIES_BACKUPS_DIR");
+        test_environment_path!(utc_backup_dir, "CW_DIRECTORIES_UTC_BACKUP_DIR");
+        test_environment_path!(scripts_cache_dir, "CW_DIRECTORIES_SCRIPTS_CACHE_DIR");
+        test_environment_path!(desktop_socket_path, "CW_DIRECTORIES_CW_SOCKET_PATH");
+        test_environment_path!(manifest_path, "CW_DIRECTORIES_MANIFEST_PATH");
+        test_environment_path!(managed_cw_cli_path, "CW_DIRECTORIES_MANAGED_CW_CLI_PATH");
+        test_environment_path!(settings_path, "CW_DIRECTORIES_SETTINGS_PATH");
+        test_environment_path!(state_path, "CW_DIRECTORIES_STATE_PATH");
     }
 }
 
@@ -577,8 +577,8 @@ mod tests {
 
     // #[test]
     // fn snapshot_parent_socket_path() {
-    //     linux!(parent_socket_path("$FIG_PARENT"), @"/var/tmp/fig-parent-$FIG_PARENT.sock");
-    //     macos!(parent_socket_path("$FIG_PARENT"), @"/var/tmp/fig-parent-$FIG_PARENT.sock");
+    //     linux!(parent_socket_path("$CW_PARENT"), @"/var/tmp/fig-parent-$CW_PARENT.sock");
+    //     macos!(parent_socket_path("$CW_PARENT"), @"/var/tmp/fig-parent-$CW_PARENT.sock");
     //     // windows does not have a parent socket
     // }
 

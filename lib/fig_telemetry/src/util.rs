@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 /// Returns whether or not the user has disabled telemetry through settings or environment
 pub fn telemetry_is_disabled() -> bool {
-    std::env::var_os("FIG_DISABLE_TELEMETRY").is_some()
+    std::env::var_os("CW_DISABLE_TELEMETRY").is_some()
         || !fig_settings::settings::get_value("telemetry.enabled")
             .ok()
             .flatten()

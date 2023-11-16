@@ -70,9 +70,9 @@ pub fn create_default_root_cert_store(native_certs: bool) -> RootCertStore {
         }
     }
 
-    let custom_cert = std::env::var("FIG_CUSTOM_CERT")
+    let custom_cert = std::env::var("CW_CUSTOM_CERT")
         .ok()
-        .or_else(|| fig_settings::state::get_string("FIG_CUSTOM_CERT").ok().flatten());
+        .or_else(|| fig_settings::state::get_string("CW_CUSTOM_CERT").ok().flatten());
 
     if let Some(custom_cert) = custom_cert {
         match File::open(Path::new(&custom_cert)) {

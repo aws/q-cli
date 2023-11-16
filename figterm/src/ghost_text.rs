@@ -32,52 +32,9 @@ use crate::history::{
 
 static LAST_RECEIVED: Lazy<Mutex<Option<SystemTime>>> = Lazy::new(|| Mutex::new(None));
 
-static CACHE_ENABLED: Lazy<bool> = Lazy::new(|| std::env::var_os("FIG_CODEX_CACHE_DISABLE").is_none());
+static CACHE_ENABLED: Lazy<bool> = Lazy::new(|| std::env::var_os("CW_GHOST_TEXT_CACHE_DISABLE").is_none());
 pub static COMPLETION_CACHE: Lazy<Mutex<radix_trie::Trie<String, f64>>> =
     Lazy::new(|| Mutex::new(radix_trie::Trie::new()));
-
-// const DEFAULT_MIN_DURATION: Duration = Duration::from_millis(300);
-// const DEFAULT_GROWTH_FACTOR: f64 = 1.5;
-//
-// fn growth_factor() -> f64 {
-//     std::env::var("FIG_CODEX_GROWTH_FACTOR")
-//         .ok()
-//         .and_then(|s| s.parse().ok())
-//         .unwrap_or(DEFAULT_GROWTH_FACTOR)
-// }
-//
-// fn min_duration() -> Duration {
-//     std::env::var("FIG_CODEX_DEBOUNCE_MIN_MS")
-//         .ok()
-//         .and_then(|s| Some(Duration::from_millis(s.parse().ok()?)))
-//         .unwrap_or(DEFAULT_MIN_DURATION)
-// }
-//
-// struct Debouncer {
-//     attempt: i32,
-//     min_duration: Duration,
-//     max_duration: Duration,
-// }
-//
-// impl Debouncer {
-//     pub fn new(max_duration: Duration) -> Self {
-//         Self {
-//             attempt: 0,
-//             min_duration: min_duration(),
-//             max_duration,
-//         }
-//     }
-//
-//     pub fn reset(&mut self) {
-//         self.attempt = 0;
-//     }
-//
-//     pub fn delay(&mut self) -> Duration {
-//         let delay = self.min_duration.mul_f64(growth_factor().powi(self.attempt));
-//         self.attempt += 1;
-//         delay.min(self.max_duration)
-//     }
-// }
 
 pub async fn handle_request(
     figterm_request: GhostTextCompleteRequest,
@@ -117,7 +74,7 @@ pub async fn handle_request(
 
     // debounce requests
     let debounce_duration = Duration::from_millis(
-        std::env::var("FIG_CODEX_DEBOUNCE_MS")
+        std::env::var("CW_GHOST_TEXT_DEBOUNCE_MS")
             .ok()
             .and_then(|s| s.parse().ok())
             .unwrap_or(300),
@@ -153,7 +110,7 @@ pub async fn handle_request(
         if let Err(err) = history_sender
             .send_async(history::HistoryCommand::Query(
                 HistoryQueryParams {
-                    limit: std::env::var("FIG_CODEX_HISTORY_COUNT")
+                    limit: std::env::var("CW_GHOST_TEXT_HISTORY_COUNT")
                         .ok()
                         .and_then(|s| s.parse().ok())
                         .unwrap_or(25),

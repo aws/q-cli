@@ -12,7 +12,7 @@ _fig_autosuggest_fetch_suggestion() {
 	local strategy
 
 	# Ensure we are working with an array
-	strategies=(${=FIG_AUTOSUGGEST_STRATEGY})
+	strategies=(${=CW_AUTOSUGGEST_STRATEGY})
 
 	for strategy in $strategies; do
 		# Try to get a suggestion from this strategy

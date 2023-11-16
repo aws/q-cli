@@ -7,32 +7,16 @@ fi
 
 alias q='cw ai'
 
-# Open scripts on keyboard shortcut
-if [[ -z "${FIG_SCRIPTS_KEYBIND}" ]]
-then
-  export FIG_SCRIPTS_KEYBIND='^f'
-fi
-
-# we *would* install the keybind here, but the bash syntax is painful and we don't want to risk it
-# if [[ "$(set -o | grep 'emacs\|\bvi\b' | cut -f2 | tr '\n' ':')" != 'off:off:' ]]; then
-#   bind "\"${FIG_SCRIPTS_KEYBIND}\":\"fig run\n\""
-# fi
-
-# if [[ "$FIG_DID_NOT_EXEC_FIGTERM" = 1 && "$CW_TERM" != 1 ]] || [[ -n "${INSIDE_EMACS+x}" ]]; then
-#   unset FIG_DID_NOT_EXEC_FIGTERM
-#   return
-# fi
-
 if [[ -z "${TTY}" ]]; then
   TTY=$(tty)
 fi
 export TTY
 
-export FIG_PID="$$"
+export SHELL_PID="$$"
 
-FIG_LAST_PS1="$PS1"
-FIG_LAST_PS2="$PS2"
-FIG_LAST_PS3="$PS3"
+CW_LAST_PS1="$PS1"
+CW_LAST_PS2="$PS2"
+CW_LAST_PS3="$PS3"
 
 if [[ -z "${CW_SHELL}" ]]; then
   CW_SHELL=$(cw _ get-shell)
@@ -48,17 +32,17 @@ function __fig_preexec() {
 
   # Reset user prompts before executing a command, but only if it hasn't
   # changed since we last set it.
-  if [[ -n "${FIG_USER_PS1+x}" && "${PS1}" = "${FIG_LAST_PS1}" ]]; then
-    FIG_LAST_PS1="${FIG_USER_PS1}"
-    export PS1="${FIG_USER_PS1}"
+  if [[ -n "${CW_USER_PS1+x}" && "${PS1}" = "${CW_LAST_PS1}" ]]; then
+    CW_LAST_PS1="${CW_USER_PS1}"
+    export PS1="${CW_USER_PS1}"
   fi
-  if [[ -n "${FIG_USER_PS2+x}" && "${PS2}" = "${FIG_LAST_PS2}" ]]; then
-    FIG_LAST_PS2="${FIG_USER_PS2}"
-    export PS2="${FIG_USER_PS2}"
+  if [[ -n "${CW_USER_PS2+x}" && "${PS2}" = "${CW_LAST_PS2}" ]]; then
+    CW_LAST_PS2="${CW_USER_PS2}"
+    export PS2="${CW_USER_PS2}"
   fi
-  if [[ -n "${FIG_USER_PS3+x}" && "${PS3}" = "${FIG_LAST_PS3}" ]]; then
-    FIG_LAST_PS3="${FIG_USER_PS3}"
-    export PS3="${FIG_USER_PS3}"
+  if [[ -n "${CW_USER_PS3+x}" && "${PS3}" = "${CW_LAST_PS3}" ]]; then
+    CW_LAST_PS3="${CW_USER_PS3}"
+    export PS3="${CW_USER_PS3}"
   fi
 
   _fig_done_preexec="yes"
@@ -83,7 +67,7 @@ function __fig_pre_prompt () {
   fig_osc "PID=%d" "$$"
   fig_osc "ExitCode=%s" "$__fig_ret_value"
   fig_osc "TTY=%s" "${TTY}"
-  fig_osc "Log=%s" "${FIG_LOG_LEVEL}"
+  fig_osc "Log=%s" "${CW_LOG_LEVEL}"
   fig_osc "User=%s" "${USER:-root}"
 
   if command -v cw >/dev/null 2>&1; then
@@ -104,15 +88,15 @@ function __fig_post_prompt () {
 
   __fig_reset_hooks
 
-  # If FIG_USER_PSx is undefined or PSx changed by user, update FIG_USER_PSx.
-  if [[ -z "${FIG_USER_PS1+x}" || "${PS1}" != "${FIG_LAST_PS1}" ]]; then
-    FIG_USER_PS1="${PS1}"
+  # If CW_USER_PSx is undefined or PSx changed by user, update CW_USER_PSx.
+  if [[ -z "${CW_USER_PS1+x}" || "${PS1}" != "${CW_LAST_PS1}" ]]; then
+    CW_USER_PS1="${PS1}"
   fi
-  if [[ -z "${FIG_USER_PS2+x}" || "${PS2}" != "${FIG_LAST_PS2}" ]]; then
-    FIG_USER_PS2="${PS2}"
+  if [[ -z "${CW_USER_PS2+x}" || "${PS2}" != "${CW_LAST_PS2}" ]]; then
+    CW_USER_PS2="${PS2}"
   fi
-  if [[ -z "${FIG_USER_PS3+x}" || "${PS3}" != "${FIG_LAST_PS3}" ]]; then
-    FIG_USER_PS3="${PS3}"
+  if [[ -z "${CW_USER_PS3+x}" || "${PS3}" != "${CW_LAST_PS3}" ]]; then
+    CW_USER_PS3="${PS3}"
   fi
 
   START_PROMPT="\[$(fig_osc StartPrompt)\]"
@@ -121,15 +105,15 @@ function __fig_post_prompt () {
   # it's already double quoted, dummy
   NEW_CMD="\[$(fig_osc NewCmd=${CWTERM_SESSION_ID})\]"
 
-  # Reset $? first in case it's used in $FIG_USER_PSx.
+  # Reset $? first in case it's used in $CW_USER_PSx.
   __bp_set_ret_value "${__fig_ret_value}" "${__bp_last_argument_prev_command}"
-  export PS1="${START_PROMPT}${FIG_USER_PS1}${END_PROMPT}${NEW_CMD}"
-  export PS2="${START_PROMPT}${FIG_USER_PS2}${END_PROMPT}"
-  export PS3="${START_PROMPT}${FIG_USER_PS3}${END_PROMPT}${NEW_CMD}"
+  export PS1="${START_PROMPT}${CW_USER_PS1}${END_PROMPT}${NEW_CMD}"
+  export PS2="${START_PROMPT}${CW_USER_PS2}${END_PROMPT}"
+  export PS3="${START_PROMPT}${CW_USER_PS3}${END_PROMPT}${NEW_CMD}"
 
-  FIG_LAST_PS1="${PS1}"
-  FIG_LAST_PS2="${PS2}"
-  FIG_LAST_PS3="${PS3}"
+  CW_LAST_PS1="${PS1}"
+  CW_LAST_PS2="${PS2}"
+  CW_LAST_PS3="${PS3}"
 }
 
 __fig_reset_hooks() {
@@ -192,7 +176,7 @@ if [[ "${TERM_PROGRAM}" != "WarpTerminal" ]]; then
   __bp_install_after_session_init
 fi
 __fig_reset_hooks
-if [[ -n "${PROCESS_LAUNCHED_BY_FIG}" ]]; then
+if [[ -n "${PROCESS_LAUNCHED_BY_CW}" ]]; then
   fig_osc DoneSourcing
 fi
 

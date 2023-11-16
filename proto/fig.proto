@@ -2,7 +2,6 @@ syntax = "proto3";
 package fig;
 
 import "fig_common.proto";
-import "google/protobuf/empty.proto";
 
 message ClientOriginatedMessage {
   optional int64 id = 1;

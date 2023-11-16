@@ -25,18 +25,18 @@ mod tests {
     #[fig_test::test]
     fn stress_test_1() {
         for _ in 0..10000 {
-            std::env::set_var("FIG_TEST_VAR", "1");
-            assert_eq!(std::env::var("FIG_TEST_VAR").unwrap(), "1");
-            std::env::set_var("FIG_TEST_VAR", "2");
+            std::env::set_var("CW_TEST_VAR", "1");
+            assert_eq!(std::env::var("CW_TEST_VAR").unwrap(), "1");
+            std::env::set_var("CW_TEST_VAR", "2");
         }
     }
 
     #[fig_test::test]
     fn stress_test_2() {
         for _ in 0..10000 {
-            std::env::set_var("FIG_TEST_VAR", "3");
-            assert_eq!(std::env::var("FIG_TEST_VAR").unwrap(), "3");
-            std::env::set_var("FIG_TEST_VAR", "4");
+            std::env::set_var("CW_TEST_VAR", "3");
+            assert_eq!(std::env::var("CW_TEST_VAR").unwrap(), "3");
+            std::env::set_var("CW_TEST_VAR", "4");
         }
     }
 }

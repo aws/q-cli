@@ -4,17 +4,17 @@
 #--------------------------------------------------------------------#
 
 _fig_autosuggest_incr_bind_count() {
-	typeset -gi bind_count=$((_FIG_AUTOSUGGEST_BIND_COUNTS[$1]+1))
-	_FIG_AUTOSUGGEST_BIND_COUNTS[$1]=$bind_count
+	typeset -gi bind_count=$((_CW_AUTOSUGGEST_BIND_COUNTS[$1]+1))
+	_CW_AUTOSUGGEST_BIND_COUNTS[$1]=$bind_count
 }
 
 # Bind a single widget to an autosuggest widget, saving a reference to the original widget
 _fig_autosuggest_bind_widget() {
-	typeset -gA _FIG_AUTOSUGGEST_BIND_COUNTS
+	typeset -gA _CW_AUTOSUGGEST_BIND_COUNTS
 
 	local widget=$1
 	local autosuggest_action=$2
-	local prefix=$FIG_AUTOSUGGEST_ORIGINAL_WIDGET_PREFIX
+	local prefix=$CW_AUTOSUGGEST_ORIGINAL_WIDGET_PREFIX
 
 	local -i bind_count
 
@@ -22,7 +22,7 @@ _fig_autosuggest_bind_widget() {
 	case $widgets[$widget] in
 		# Already bound
 		user:_fig_autosuggest_(bound|orig)_*)
-			bind_count=$((_FIG_AUTOSUGGEST_BIND_COUNTS[$widget]))
+			bind_count=$((_CW_AUTOSUGGEST_BIND_COUNTS[$widget]))
 			;;
 
 		# User-defined widget
@@ -69,20 +69,20 @@ _fig_autosuggest_bind_widgets() {
 	ignore_widgets=(
 		.\*
 		_\*
-		${_FIG_AUTOSUGGEST_BUILTIN_ACTIONS/#/autosuggest-}
-		$FIG_AUTOSUGGEST_ORIGINAL_WIDGET_PREFIX\*
-		$FIG_AUTOSUGGEST_IGNORE_WIDGETS
+		${_CW_AUTOSUGGEST_BUILTIN_ACTIONS/#/autosuggest-}
+		$CW_AUTOSUGGEST_ORIGINAL_WIDGET_PREFIX\*
+		$CW_AUTOSUGGEST_IGNORE_WIDGETS
 	)
 
 	# Find every widget we might want to bind and bind it appropriately
 	for widget in ${${(f)"$(builtin zle -la)"}:#${(j:|:)~ignore_widgets}}; do
-		if [[ -n ${FIG_AUTOSUGGEST_CLEAR_WIDGETS[(r)$widget]} ]]; then
+		if [[ -n ${CW_AUTOSUGGEST_CLEAR_WIDGETS[(r)$widget]} ]]; then
 			_fig_autosuggest_bind_widget $widget clear
-		elif [[ -n ${FIG_AUTOSUGGEST_ACCEPT_WIDGETS[(r)$widget]} ]]; then
+		elif [[ -n ${CW_AUTOSUGGEST_ACCEPT_WIDGETS[(r)$widget]} ]]; then
 			_fig_autosuggest_bind_widget $widget accept
-		elif [[ -n ${FIG_AUTOSUGGEST_EXECUTE_WIDGETS[(r)$widget]} ]]; then
+		elif [[ -n ${CW_AUTOSUGGEST_EXECUTE_WIDGETS[(r)$widget]} ]]; then
 			_fig_autosuggest_bind_widget $widget execute
-		elif [[ -n ${FIG_AUTOSUGGEST_PARTIAL_ACCEPT_WIDGETS[(r)$widget]} ]]; then
+		elif [[ -n ${CW_AUTOSUGGEST_PARTIAL_ACCEPT_WIDGETS[(r)$widget]} ]]; then
 			_fig_autosuggest_bind_widget $widget partial_accept
 		else
 			# Assume any unspecified widget might modify the buffer

@@ -50,7 +50,6 @@ pub use webview::{
     AUTOCOMPLETE_ID,
     AUTOCOMPLETE_WINDOW_TITLE,
     DASHBOARD_ID,
-    FIG_PROTO_MESSAGE_RECEIVED,
 };
 use wry::application::event_loop::{
     EventLoop as WryEventLoop,
@@ -237,7 +236,7 @@ async fn main() {
 
     #[cfg(target_os = "linux")]
     {
-        match std::env::var("FIG_BACKEND").ok().as_deref() {
+        match std::env::var("CW_BACKEND").ok().as_deref() {
             Some("default") => {},
             Some(backend) => std::env::set_var("GDK_BACKEND", backend),
             None => std::env::set_var("GDK_BACKEND", "x11"),

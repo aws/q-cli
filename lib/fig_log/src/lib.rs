@@ -21,7 +21,7 @@ use tracing_subscriber::{
 const DEFAULT_MAX_FILE_SIZE: u64 = 10 * 1024 * 1024;
 const DEFAULT_FILTER: LevelFilter = LevelFilter::ERROR;
 
-static FIG_LOG_LEVEL: Mutex<Option<String>> = Mutex::new(None);
+static CW_LOG_LEVEL: Mutex<Option<String>> = Mutex::new(None);
 static MAX_LEVEL: Mutex<Option<LevelFilter>> = Mutex::new(None);
 static ENV_FILTER_RELOADABLE_HANDLE: Mutex<Option<tracing_subscriber::reload::Handle<EnvFilter, Registry>>> =
     Mutex::new(None);
@@ -43,17 +43,17 @@ fn log_path(log_file_name: impl AsRef<str>) -> Result<PathBuf> {
 }
 
 fn try_fig_log_level() -> Option<String> {
-    FIG_LOG_LEVEL
+    CW_LOG_LEVEL
         .lock()
         .clone()
-        .or_else(|| std::env::var("FIG_LOG_LEVEL").ok())
+        .or_else(|| std::env::var("CW_LOG_LEVEL").ok())
 }
 
 fn fig_log_level() -> String {
-    FIG_LOG_LEVEL
+    CW_LOG_LEVEL
         .lock()
         .clone()
-        .unwrap_or_else(|| std::env::var("FIG_LOG_LEVEL").unwrap_or_else(|_| DEFAULT_FILTER.to_string()))
+        .unwrap_or_else(|| std::env::var("CW_LOG_LEVEL").unwrap_or_else(|_| DEFAULT_FILTER.to_string()))
 }
 
 fn create_filter_layer() -> EnvFilter {
@@ -69,7 +69,7 @@ pub fn set_fig_log_level(level: String) -> Result<String> {
     info!("Setting log level to {level:?}");
 
     let old_level = fig_log_level();
-    *FIG_LOG_LEVEL.lock() = Some(level);
+    *CW_LOG_LEVEL.lock() = Some(level);
 
     let filter_layer = create_filter_layer();
     *MAX_LEVEL.lock() = filter_layer.max_level_hint();

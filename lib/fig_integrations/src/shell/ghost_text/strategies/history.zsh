@@ -22,8 +22,8 @@ _fig_autosuggest_strategy_history() {
 	# Get the history items that match the prefix, excluding those that match
 	# the ignore pattern
 	local pattern="$prefix*"
-	if [[ -n $FIG_AUTOSUGGEST_HISTORY_IGNORE ]]; then
-		pattern="($pattern)~($FIG_AUTOSUGGEST_HISTORY_IGNORE)"
+	if [[ -n $CW_AUTOSUGGEST_HISTORY_IGNORE ]]; then
+		pattern="($pattern)~($CW_AUTOSUGGEST_HISTORY_IGNORE)"
 	fi
 
 	# Give the first history item matching the pattern as the suggestion

@@ -110,20 +110,20 @@ _fig_autosuggest_strategy_completion() {
 	zmodload zsh/zpty 2>/dev/null || return
 
 	# Exit if our search string matches the ignore pattern
-	[[ -n "$FIG_AUTOSUGGEST_COMPLETION_IGNORE" ]] && [[ "$1" == $~FIG_AUTOSUGGEST_COMPLETION_IGNORE ]] && return
+	[[ -n "$CW_AUTOSUGGEST_COMPLETION_IGNORE" ]] && [[ "$1" == $~CW_AUTOSUGGEST_COMPLETION_IGNORE ]] && return
 
 	# Zle will be inactive if we are in async mode
 	if zle; then
-		zpty $FIG_AUTOSUGGEST_COMPLETIONS_PTY_NAME _fig_autosuggest_capture_completion_sync
+		zpty $CW_AUTOSUGGEST_COMPLETIONS_PTY_NAME _fig_autosuggest_capture_completion_sync
 	else
-		zpty $FIG_AUTOSUGGEST_COMPLETIONS_PTY_NAME _fig_autosuggest_capture_completion_async "\$1"
-		zpty -w $FIG_AUTOSUGGEST_COMPLETIONS_PTY_NAME $'\t'
+		zpty $CW_AUTOSUGGEST_COMPLETIONS_PTY_NAME _fig_autosuggest_capture_completion_async "\$1"
+		zpty -w $CW_AUTOSUGGEST_COMPLETIONS_PTY_NAME $'\t'
 	fi
 
 	{
 		# The completion result is surrounded by null bytes, so read the
 		# content between the first two null bytes.
-		zpty -r $FIG_AUTOSUGGEST_COMPLETIONS_PTY_NAME line '*'$'\0''*'$'\0'
+		zpty -r $CW_AUTOSUGGEST_COMPLETIONS_PTY_NAME line '*'$'\0''*'$'\0'
 
 		# Extract the suggestion from between the null bytes.  On older
 		# versions of zsh (older than 5.3), we sometimes get extra bytes after
@@ -132,6 +132,6 @@ _fig_autosuggest_strategy_completion() {
 		suggestion="${${(@0)line}[2]}"
 	} always {
 		# Destroy the pty
-		zpty -d $FIG_AUTOSUGGEST_COMPLETIONS_PTY_NAME
+		zpty -d $CW_AUTOSUGGEST_COMPLETIONS_PTY_NAME
 	}
 }

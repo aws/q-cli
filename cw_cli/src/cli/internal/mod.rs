@@ -347,7 +347,7 @@ impl InternalSubcommand {
                     InstallComponents::all()
                 };
                 if components.contains(InstallComponents::BINARY) {
-                    if option_env!("FIG_IS_PACKAGE_MANAGED").is_some() {
+                    if option_env!("CW_IS_PACKAGE_MANAGED").is_some() {
                         println!("Uninstall Fig via your package manager");
                     } else {
                         fig_install::uninstall(InstallComponents::BINARY).await?;
@@ -804,7 +804,7 @@ impl InternalSubcommand {
                 //         Match all\n  \
                 //         RemoteForward /var/tmp/fig-parent-{uuid}.socket
                 // /var/tmp/fig/${{USER}}/remote.socket\n  \         SetEnv
-                // LC_FIG_SET_PARENT={uuid} FIG_SET_PARENT={uuid}\n  \
+                // LC_CWSET_PARENT={uuid} CWSET_PARENT={uuid}\n  \
                 //         StreamLocalBindMask 600\n  \
                 //         StreamLocalBindUnlink yes\n  \
                 //         PermitLocalCommand yes\n  \

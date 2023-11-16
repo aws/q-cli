@@ -71,7 +71,7 @@ impl EnvVarDiagnostic {
     fn new() -> EnvVarDiagnostic {
         let env_vars = std::env::vars()
             .filter(|(key, val)| {
-                (key.starts_with("FIG_")
+                (key.starts_with("CW_")
                     || key == "SHELL"
                     || key == "DISPLAY"
                     || key == "PATH"
@@ -268,7 +268,7 @@ impl Diagnostics {
 
         let mut lines = vec![];
 
-        lines.push("fig-details:".into());
+        lines.push("CODEWHISPERER-details:".into());
         lines.extend(print_indent(&[self.version.to_owned()], "  ", 1));
         lines.push("hardware-info:".into());
         lines.extend(print_indent(&self.hardware.user_readable(), "  ", 1));

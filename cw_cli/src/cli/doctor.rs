@@ -570,7 +570,7 @@ impl DoctorCheck for FigIntegrationsCheck {
             });
         }
 
-        if std::env::var_os("PROCESS_LAUNCHED_BY_FIG").is_some() {
+        if std::env::var_os("PROCESS_LAUNCHED_BY_CW").is_some() {
             return Err(DoctorError::Error {
                 reason: "CodeWhisperer can not run in a process it launched".into(),
                 info: vec![],
@@ -1005,7 +1005,7 @@ impl DoctorCheck<()> for SshdConfigCheck {
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         let info = vec![
             "The /etc/ssh/sshd_config file needs to have the following line:".into(),
-            "  AcceptEnv LANG LC_* FIG_*".magenta().to_string().into(),
+            "  AcceptEnv LANG LC_* CW_*".magenta().to_string().into(),
             "  AllowStreamLocalForwarding yes".magenta().to_string().into(),
             "".into(),
             "See https://fig.io/user-manual/autocomplete/ssh for more info".into(),
@@ -1016,8 +1016,8 @@ impl DoctorCheck<()> for SshdConfigCheck {
         let sshd_config = std::fs::read_to_string(sshd_config_path)
             .context("Could not read sshd_config")
             .map_err(|err| {
-                if std::env::var_os("FIG_PARENT").is_some() {
-                    // We will assume the integration is correct if FIG_PARENT is set
+                if std::env::var_os("CW_PARENT").is_some() {
+                    // We will assume the integration is correct if CW_PARENT is set
                     doctor_warning!(
                         "Could not read sshd_config, check https://fig.io/user-manual/autocomplete/ssh for more info"
                     )
@@ -1032,8 +1032,7 @@ impl DoctorCheck<()> for SshdConfigCheck {
             })?;
 
         let accept_env_regex =
-            Regex::new(r"(?m)^\s*AcceptEnv\s+.*(LC_\*|FIG_\*|LC_FIG_SET_PARENT|FIG_SET_PARENT)([^\S\r\n]+.*$|$)")
-                .unwrap();
+            Regex::new(r"(?m)^\s*AcceptEnv\s+.*(LC_\*|CW_\*|LC_CWSET_PARENT|CWSET_PARENT)([^\S\r\n]+.*$|$)").unwrap();
 
         let allow_stream_local_forwarding_regex =
             Regex::new(r"(?m)^\s*AllowStreamLocalForwarding\s+yes([^\S\r\n]+.*$|$)").unwrap();

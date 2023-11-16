@@ -159,13 +159,13 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<Str
             to_source.push(guard_source(
                 shell,
                 false,
-                "FIG_DOTFILES_SOURCED",
+                "CW_DOTFILES_SOURCED",
                 GuardAssignment::AfterSourcing,
                 fig_integrations::shell::ghost_text_plugin::ZSH_SCRIPT,
             ));
         }
 
-        // if stdin().is_tty() && env::var_os("PROCESS_LAUNCHED_BY_FIG").is_none() {
+        // if stdin().is_tty() && env::var_os("PROCESS_LAUNCHED_BY_CW").is_none() {
         //     // if no value, assume that we have seen onboarding already.
         //     // this is explicitly set in onboarding in macOS app.
         //     let has_seen_onboarding: bool = fig_settings::state::get_bool_or("user.onboarding", true);
@@ -186,9 +186,9 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<Str
 
     if when == &When::Pre && shell == &Shell::Bash && is_jetbrains_terminal {
         // JediTerm does not launch as a 'true' login shell, so our normal "shopt -q login_shell" check does
-        // not work. Thus, FIG_IS_LOGIN_SHELL will be incorrect. We must manually set it so the
+        // not work. Thus, CW_IS_LOGIN_SHELL will be incorrect. We must manually set it so the
         // user's bash_profile is sourced. https://github.com/JetBrains/intellij-community/blob/master/plugins/terminal/resources/jediterm-bash.in
-        to_source.push("FIG_IS_LOGIN_SHELL=1".into())
+        to_source.push("CW_IS_LOGIN_SHELL=1".into())
     }
 
     let shell_integration_source = shell.get_fig_integration_source(when);
@@ -232,7 +232,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<Str
             to_source.push(guard_source(
                 shell,
                 false,
-                "FIG_JETBRAINS_SHELL_INTEGRATION",
+                "CW_JETBRAINS_SHELL_INTEGRATION",
                 GuardAssignment::BeforeSourcing,
                 source,
             ));
@@ -257,7 +257,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<Str
                 to_source.push(guard_source(
                     shell,
                     false,
-                    "FIG_INPUT_METHOD_PROMPT",
+                    "CW_INPUT_METHOD_PROMPT",
                     GuardAssignment::AfterSourcing,
                     format!(
                         "printf '\\n🚀 CodeWhisperer supports {terminal} Terminal!\\nEnable integrations with {terminal} by \

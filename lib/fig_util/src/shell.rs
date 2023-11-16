@@ -127,7 +127,7 @@ impl Shell {
         match self {
             Shell::Bash => Ok(directories::home_dir()?),
             Shell::Zsh => match std::env::var_os("ZDOTDIR")
-                .or_else(|| std::env::var_os("FIG_ZDOTDIR"))
+                .or_else(|| std::env::var_os("CW_ZDOTDIR"))
                 .map(PathBuf::from)
             {
                 Some(dir) => Ok(dir),

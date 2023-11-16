@@ -16,9 +16,9 @@ let config = vscode.workspace.getConfiguration()
 let shouldLog = config.get('fig.log') === true;
 
 
-// Ensure that any VSCode terminal session has FIG_NEW_SESSION set as an environment variable
+// Ensure that any VSCode terminal session has CW_NEW_SESSION set as an environment variable
 let osxEnv = config.get("terminal.integrated.env.osx")
-osxEnv["FIG_NEW_SESSION"] = "1"
+osxEnv["CW_NEW_SESSION"] = "1"
 config.update("terminal.integrated.env.osx", osxEnv, true)
 
 function log(...args) {

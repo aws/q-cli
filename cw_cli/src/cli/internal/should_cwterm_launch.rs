@@ -194,9 +194,9 @@ fn should_launch(quiet: bool) -> i32 {
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub fn should_cwterm_launch_exit_status(quiet: bool) -> i32 {
-    if std::env::var_os("PROCESS_LAUNCHED_BY_FIG").is_some() {
+    if std::env::var_os("PROCESS_LAUNCHED_BY_CW").is_some() {
         if !quiet {
-            writeln!(stdout(), "❌ PROCESS_LAUNCHED_BY_FIG").ok();
+            writeln!(stdout(), "❌ PROCESS_LAUNCHED_BY_CW").ok();
         }
         return 1;
     }
@@ -245,10 +245,10 @@ pub fn should_cwterm_launch_exit_status(quiet: bool) -> i32 {
         return 1;
     }
 
-    // If we are in SSH and there is no FIG_PARENT dont launch
-    if fig_util::system_info::in_ssh() && std::env::var_os("FIG_PARENT").is_none() {
+    // If we are in SSH and there is no CW_PARENT dont launch
+    if fig_util::system_info::in_ssh() && std::env::var_os("CW_PARENT").is_none() {
         if !quiet {
-            writeln!(stdout(), "❌ In SSH without FIG_PARENT").ok();
+            writeln!(stdout(), "❌ In SSH without CW_PARENT").ok();
         }
         return 1;
     }

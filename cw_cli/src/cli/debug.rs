@@ -762,7 +762,7 @@ impl DebugSubcommand {
                 let tmp_dir = TempDir::new()?;
 
                 let mut command = Command::new("cwterm");
-                command.env("FIG_IN_TEST", "1").arg("--");
+                command.env("CW_IN_TEST", "1").arg("--");
 
                 match Shell::current_shell() {
                     Some(shell) => {

@@ -9,9 +9,9 @@ _fig_autosuggest_start() {
 	# wrappers. Specifically, highlighting breaks if our widgets are wrapped by
 	# zsh-syntax-highlighting widgets. This also allows modifications to the
 	# widget list variables to take effect on the next precmd. However this has
-	# a decent performance hit, so users can set FIG_AUTOSUGGEST_MANUAL_REBIND
+	# a decent performance hit, so users can set CW_AUTOSUGGEST_MANUAL_REBIND
 	# to disable the automatic re-binding.
-	if (( ${+FIG_AUTOSUGGEST_MANUAL_REBIND} )); then
+	if (( ${+CW_AUTOSUGGEST_MANUAL_REBIND} )); then
 		add-zsh-hook -d precmd _fig_autosuggest_start
 	fi
 
@@ -26,7 +26,7 @@ autoload -Uz add-zsh-hook is-at-least
 # work immediately after fetching a suggestion.
 # See https://github.com/zsh-users/zsh-autosuggestions/issues/364
 if is-at-least 5.0.8; then
-	typeset -g FIG_AUTOSUGGEST_USE_ASYNC=
+	typeset -g CW_AUTOSUGGEST_USE_ASYNC=
 fi
 
 # Start the autosuggestion widgets on the next precmd

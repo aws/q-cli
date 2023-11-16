@@ -2846,6 +2846,7 @@ dependencies = [
 name = "fig_install"
 version = "0.6.0"
 dependencies = [
+ "base64 0.21.5",
  "bitflags 2.4.1",
  "camino",
  "cfg-if",
@@ -2859,6 +2860,7 @@ dependencies = [
  "once_cell",
  "regex",
  "reqwest",
+ "ring 0.17.5",
  "security-framework",
  "semver",
  "serde",
