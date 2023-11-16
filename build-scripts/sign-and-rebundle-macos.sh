@@ -6,7 +6,7 @@ BUCKET_NAME="$1"                # e.g. fig-io-desktop-ec-signing-230592382359
 SIGNING_REQUEST_QUEUE_NAME="$2" # e.g. fig-io-desktop-signing-requests
 NOTARIZING_SECRET_ID="$3"       # e.g. fig-io-desktop-notarizing-apple-id
 AWS_ACCOUNT_ID="$4"             # e.g. 230592382359 
-SIGNING_ROLE_NAME="$4"          # e.g. codewhisperer-ec-signing-role
+SIGNING_ROLE_NAME="$5"          # e.g. codewhisperer-ec-signing-role
 
 set -eux
 
