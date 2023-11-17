@@ -50,7 +50,6 @@ export default function LoginModal({ next }: { next: () => void }) {
 
   useEffect(() => {
     if (loginState !== "logged in") return;
-
     next();
   }, [loginState, next]);
 

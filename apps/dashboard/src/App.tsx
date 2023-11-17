@@ -39,11 +39,16 @@ function App() {
     try {
       Telemetry.page("", location.pathname, { ...location });
     } catch (e) {
-      // ignore errors
+      console.error(e);
     }
   }, [location]);
 
   useEffect(() => {
+    function close() {
+      setLoggedIn(true);
+      setModal(null);
+    }
+
     if (onboardingComplete === null) {
       State.get("desktop.completedOnboarding")
         .then((r) => {
@@ -55,26 +60,19 @@ function App() {
         .catch(() => {
           setOnboardingComplete(false);
         });
-    }
+    } else {
+      if (onboardingComplete === false) {
+        setModal(<InstallModal />);
+      }
 
-    if (onboardingComplete === false) {
-      setModal(<InstallModal />);
-      return;
-    }
-
-    function close() {
-      setLoggedIn(true);
-      setModal(null);
-    }
-
-    if (onboardingComplete && loggedIn === false) {
-      setModal(<LoginModal next={close} />);
+      if (onboardingComplete && loggedIn === false) {
+        setModal(<LoginModal next={close} />);
+      }
     }
   }, [onboardingComplete, loggedIn]);
 
   useEffect(() => {
     if (loggedIn) return;
-
     Auth.status().then((r) => setLoggedIn(r.authed));
   }, [loggedIn]);
 

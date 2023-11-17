@@ -26,6 +26,7 @@ export default function InstallModal({
   const [isInstalled] = useStatusCheck(check.installKey as installKey);
   const [timeElapsed, setTimeElapsed] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (timeElapsed) return;
@@ -36,7 +37,6 @@ export default function InstallModal({
 
   useEffect(() => {
     if (!isInstalled) return;
-
     next();
   }, [isInstalled, next]);
 
@@ -49,15 +49,24 @@ export default function InstallModal({
     }
 
     Install.install(key)
-      .then(() => setChecking(true))
-      .catch((e) => console.error(e));
+      .then(() => {
+        if (key === "dotfiles") {
+          next();
+        } else {
+          setChecking(true);
+        }
+      })
+      .catch((e) => {
+        setError(e.message);
+        console.error(e);
+      });
   }
 
   return (
     <div className="flex flex-col gap-4">
-        <h2 className="font-medium text-lg select-none leading-none">
-          {check.title}
-        </h2>
+      <h2 className="font-medium text-lg select-none leading-none">
+        {check.title}
+      </h2>
       <div className="flex flex-col gap-2 text-base font-light text-zinc-500 select-none items-start leading-tight">
         {check.description.map((d, i) => (
           <p key={i} className="text-sm">
@@ -72,11 +81,18 @@ export default function InstallModal({
         )}
       </div>
       <div className="flex flex-col gap-1">
-        <Button disabled={checking} onClick={() => handleInstall(check.installKey)}>
-          {checking ? 'Waiting for permission...' : check.action}
+        {error && <p className="text-xs text-red-500">{error}</p>}
+        <Button
+          disabled={checking}
+          onClick={() => handleInstall(check.installKey)}
+        >
+          {checking ? "Waiting for permission..." : check.action}
         </Button>
         {timeElapsed && (
-          <button className={"text-xs text-black/50 self-center"} onClick={skip}>
+          <button
+            className={"text-xs text-black/50 self-center"}
+            onClick={skip}
+          >
             skip
           </button>
         )}

@@ -9,7 +9,6 @@ import { useStatusCheck } from "@/hooks/store/useStatusCheck";
 import LoginModal from "./login";
 import InstallModal from "./install";
 
-
 export function WelcomeModal({ next }: { next: () => void }) {
   return (
     <div className="flex flex-col items-center gap-8 gradient-cw-secondary-light -m-10 p-4 pt-10 rounded-lg text-white">
@@ -39,10 +38,10 @@ export default function OnboardingModal() {
   const [accessibilityCheck, refreshAccessibility] =
     useStatusCheck("accessibility");
 
-  // these let us skip steps
-  const [dotfiles, setDotfiles] = useState(dotfilesCheck);
-  const [accessibility, setAccessibility] = useState(accessibilityCheck);
-  const checksComplete = dotfiles && accessibility;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_dotfiles, setDotfiles] = useState(dotfilesCheck);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_accessibility, setAccessibility] = useState(accessibilityCheck);
 
   // console.log({ id: check.id, checksComplete, dotfiles, accessibility })
 
@@ -51,24 +50,17 @@ export default function OnboardingModal() {
     refreshDotfiles();
   }, [refreshAccessibility, refreshDotfiles]);
 
-  useEffect(() => {
-    if (!checksComplete) return;
+  function nextStep() {
+    setStep(step + 1);
+  }
+
+  function finish() {
+    refreshAccessibility();
+    refreshDotfiles();
     Internal.sendOnboardingRequest({
       action: Fig.OnboardingAction.FINISH_ONBOARDING,
     });
     setModal(null);
-  }, [checksComplete, setModal]);
-
-  function nextStep() {
-    if (step >= onboarding.length - 1) {
-      Internal.sendOnboardingRequest({
-        action: Fig.OnboardingAction.FINISH_ONBOARDING,
-      });
-      setModal(null);
-      return;
-    }
-
-    setStep(step + 1);
   }
 
   function skipInstall() {
@@ -85,16 +77,16 @@ export default function OnboardingModal() {
     }
   }
 
-  if (check.id === "dotfiles" || check.id === "accessibility") {
-    return <InstallModal check={check} skip={skipInstall} next={nextStep} />;
-  }
-
   if (check.id === "welcome") {
     return <WelcomeModal next={nextStep} />;
   }
 
+  if (check.id === "dotfiles" || check.id === "accessibility") {
+    return <InstallModal check={check} skip={skipInstall} next={nextStep} />;
+  }
+
   if (check.id === "login") {
-    return <LoginModal next={nextStep} />;
+    return <LoginModal next={finish} />;
   }
 
   return null;
