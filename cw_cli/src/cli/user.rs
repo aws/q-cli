@@ -109,8 +109,8 @@ impl RootUserSubcommand {
                             match poll_create_token(
                                 &secret_store,
                                 device_auth.device_code.clone(),
-                                region.clone(),
                                 start_url.clone(),
+                                region.clone(),
                             )
                             .await
                             {

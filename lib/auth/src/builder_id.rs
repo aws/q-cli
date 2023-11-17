@@ -374,8 +374,8 @@ pub enum PollCreateToken {
 pub async fn poll_create_token(
     secret_store: &SecretStore,
     device_code: String,
-    region: Option<String>,
     start_url: Option<String>,
+    region: Option<String>,
 ) -> PollCreateToken {
     let region = region.clone().map(Region::new).unwrap_or(OIDC_BUILDER_ID_REGION);
     let client = client(region.clone());
@@ -488,11 +488,14 @@ mod tests {
     #[ignore = "login flow"]
     #[tokio::test]
     async fn test_login() {
+        let start_url = Some("https://d-90678a77a2.awsapps.com/start".into());
         let secret_store = SecretStore::load().await.unwrap();
-        let res = start_device_authorization(&secret_store, None, None).await.unwrap();
+        let res = start_device_authorization(&secret_store, start_url.clone(), None)
+            .await
+            .unwrap();
         println!("{:?}", res);
         loop {
-            match poll_create_token(&secret_store, res.device_code.clone(), None, None).await {
+            match poll_create_token(&secret_store, res.device_code.clone(), start_url.clone(), None).await {
                 PollCreateToken::Pending => {
                     tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
                 },
@@ -501,7 +504,7 @@ mod tests {
                     break;
                 },
                 PollCreateToken::Error(err) => {
-                    println!("{:?}", err);
+                    println!("{}", err);
                     break;
                 },
             }

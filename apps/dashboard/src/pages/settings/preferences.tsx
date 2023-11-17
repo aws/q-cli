@@ -30,8 +30,8 @@ export default function Page() {
 
   function logout() {
     User.logout().then(() => {
-      setAuthed(false);
-      setAccountType(undefined);
+      window.location.pathname = "/";
+      window.location.reload();
     });
   }
 

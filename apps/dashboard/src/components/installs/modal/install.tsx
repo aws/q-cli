@@ -26,7 +26,7 @@ export default function InstallModal({
   const [isInstalled] = useStatusCheck(check.installKey as installKey);
   const [timeElapsed, setTimeElapsed] = useState(false);
   const [checking, setChecking] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (timeElapsed) return;

@@ -90,8 +90,8 @@ pub async fn builder_id_poll_create_token(
     let response = match auth::builder_id::poll_create_token(
         &secret_store,
         builder_init.device_code,
-        Some(builder_init.region),
         Some(builder_init.start_url),
+        Some(builder_init.region),
     )
     .await
     {

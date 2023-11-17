@@ -10,6 +10,7 @@ export default function LoginModal({ next }: { next: () => void }) {
   >("not started");
   const [loginCode, setLoginCode] = useState<string | null>(null);
   const [tab, setTab] = useState<"builderId" | "iam">("builderId");
+  const [error, setError] = useState<string | null>(null);
 
   async function handleLogin(startUrl?: string, region?: string) {
     setLoginState("loading");
@@ -18,6 +19,8 @@ export default function LoginModal({ next }: { next: () => void }) {
       region,
     }).catch((err) => {
       setLoginState("not started");
+      setLoginCode(null);
+      setError(err.message);
       console.error(err);
     });
 
@@ -37,6 +40,8 @@ export default function LoginModal({ next }: { next: () => void }) {
       })
       .catch((err) => {
         setLoginState("not started");
+        setLoginCode(null);
+        setError(err.message);
         console.error(err);
       });
   }
@@ -61,6 +66,12 @@ export default function LoginModal({ next }: { next: () => void }) {
           Sign in to get started
         </h2>
       </div>
+      {error && (
+        <div className="w-full bg-red-200 border border-red-600 rounded py-1 px-1">
+          <p className="text-black font-semibold text-center">Failed to login</p>
+          <p className="text-black text-center">{error}</p>
+        </div>
+      )}
       <div className="flex flex-col gap-4 text-white text-sm">
         {loginCode ? (
           <>
@@ -80,7 +91,15 @@ export default function LoginModal({ next }: { next: () => void }) {
             </Button>
           </>
         ) : (
-          <Tab tab={tab} handleLogin={handleLogin} toggleTab={tab === 'builderId' ? () => setTab('iam') : () => setTab('builderId')} />
+          <Tab
+            tab={tab}
+            handleLogin={handleLogin}
+            toggleTab={
+              tab === "builderId"
+                ? () => setTab("iam")
+                : () => setTab("builderId")
+            }
+          />
         )}
       </div>
     </div>

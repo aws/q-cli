@@ -1,4 +1,7 @@
-use aws_sdk_ssooidc::error::SdkError;
+use aws_sdk_ssooidc::error::{
+    DisplayErrorContext,
+    SdkError,
+};
 use aws_sdk_ssooidc::operation::create_token::CreateTokenError;
 use aws_sdk_ssooidc::operation::register_client::RegisterClientError;
 use aws_sdk_ssooidc::operation::start_device_authorization::StartDeviceAuthorizationError;
@@ -6,13 +9,13 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error(transparent)]
+    #[error("{}", DisplayErrorContext(&.0))]
     Ssooidc(#[from] Box<aws_sdk_ssooidc::Error>),
-    #[error(transparent)]
+    #[error("{}", DisplayErrorContext(&.0))]
     SdkRegisterClient(#[from] SdkError<RegisterClientError>),
-    #[error(transparent)]
+    #[error("{}", DisplayErrorContext(&.0))]
     SdkCreateToken(#[from] SdkError<CreateTokenError>),
-    #[error(transparent)]
+    #[error("{}", DisplayErrorContext(&.0))]
     SdkStartDeviceAuthorization(#[from] SdkError<StartDeviceAuthorizationError>),
     #[error(transparent)]
     Io(#[from] std::io::Error),
