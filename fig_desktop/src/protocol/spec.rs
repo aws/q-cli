@@ -12,7 +12,8 @@ use http::{
 };
 use once_cell::sync::Lazy;
 
-static CDN_URL: Lazy<&str> = Lazy::new(|| option_env!("CDN_URL").unwrap_or("https://d3e7ef0le33nq1.cloudfront.net"));
+static CDN_URL: Lazy<&str> =
+    Lazy::new(|| option_env!("CW_BUILD_SPECS_URL").unwrap_or("https://specs.codewhisperer.us-east-1.amazonaws.com"));
 
 fn res_404() -> Response<Cow<'static, [u8]>> {
     Response::builder()

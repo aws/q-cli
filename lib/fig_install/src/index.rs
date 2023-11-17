@@ -29,8 +29,9 @@ use tracing::{
 
 use crate::Error;
 
-static CLOUDFRONT_URL: Lazy<&str> =
-    Lazy::new(|| option_env!("CLOUDFRONT_URL").unwrap_or("https://d8tyq03ena56l.cloudfront.net"));
+static CLOUDFRONT_URL: Lazy<&str> = Lazy::new(|| {
+    option_env!("CW_BUILD_DESKTOP_RELEASE_URL").unwrap_or("desktop-release.codewhisperer.us-east-1.amazonaws.com")
+});
 
 #[allow(unused)]
 #[derive(Deserialize, Serialize, Debug)]

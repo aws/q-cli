@@ -22,24 +22,24 @@ import {
 
 export type SpecFileImport =
   | {
-      default: Fig.Spec;
-      getVersionCommand?: Fig.GetVersionCommand;
-    }
+    default: Fig.Spec;
+    getVersionCommand?: Fig.GetVersionCommand;
+  }
   | {
-      default: Fig.Subcommand;
-      versions: Fig.VersionDiffMap;
-    };
+    default: Fig.Subcommand;
+    versions: Fig.VersionDiffMap;
+  };
 
 // All private specs a users has access to
 let privateSpecs: CDN.PrivateSpecInfo[] = [];
 
 const makeCdnUrlFactory =
   (baseUrl: string) =>
-  (specName: string, _forceReload = false) =>
-    `${baseUrl}${specName}.js`;
+    (specName: string, _forceReload = false) =>
+      `${baseUrl}${specName}.js`;
 
 const cdnUrlFactory = makeCdnUrlFactory(
-  "https://d3e7ef0le33nq1.cloudfront.net/"
+  "https://specs.codewhisperer.us-east-1.amazonaws.com/"
 );
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
@@ -243,9 +243,9 @@ interface PublicSpecsModule {
 // TODO(fedeci): cache this request using SWR strategy
 let publicSpecsRequest:
   | Promise<{
-      specs: Set<string>;
-      diffVersionedSpecs: Set<string>;
-    }>
+    specs: Set<string>;
+    diffVersionedSpecs: Set<string>;
+  }>
   | undefined;
 
 const createPublicSpecsRequest = async () => {
