@@ -187,7 +187,9 @@ pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
             });
         },
         "user-manual" => {
-            if let Err(err) = fig_util::open_url("https://fig.io/user-manual") {
+            if let Err(err) =
+                fig_util::open_url("https://docs.aws.amazon.com/codewhisperer/latest/userguide/command-line.html")
+            {
                 error!(%err, "Failed to open user manual url")
             }
         },
