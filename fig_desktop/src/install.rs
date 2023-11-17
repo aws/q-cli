@@ -258,7 +258,7 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
 
     if let Some(cw_cli_path) = get_bundle_path_for_executable(CODEWHISPERER_CLI_BINARY_NAME) {
         let dest = local_bin.join(CODEWHISPERER_CLI_BINARY_NAME);
-        symlink(&cw_cli_path, dest).ok();
+        symlink(cw_cli_path, dest).ok();
     }
 
     if let Some(bundle_path) = get_bundle_path() {

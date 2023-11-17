@@ -102,7 +102,7 @@ pub struct DeviceRegistration {
 }
 
 impl DeviceRegistration {
-    const SECRET_KEY: &str = "codewhisperer:odic:device-registration";
+    const SECRET_KEY: &'static str = "codewhisperer:odic:device-registration";
 
     async fn load_from_secret_store(secret_store: &SecretStore, region: &Region) -> Result<Option<Self>> {
         let device_registration = secret_store.get(Self::SECRET_KEY).await?;
@@ -234,7 +234,7 @@ pub struct BuilderIdToken {
 }
 
 impl BuilderIdToken {
-    const SECRET_KEY: &str = "codewhisperer:odic:token";
+    const SECRET_KEY: &'static str = "codewhisperer:odic:token";
 
     /// Load the token from the keychain, refresh the token if it is expired and return it
     pub async fn load(secret_store: &SecretStore) -> Result<Option<Self>> {
