@@ -12,8 +12,6 @@ use crate::{
     ConnectError,
 };
 
-const SOCKET_FOLDER_MODE: u32 = 0o700;
-
 /// Connects to a unix socket
 pub async fn socket_connect(socket: impl AsRef<Path>) -> Result<UnixStream, ConnectError> {
     let socket = socket.as_ref();
@@ -22,9 +20,9 @@ pub async fn socket_connect(socket: impl AsRef<Path>) -> Result<UnixStream, Conn
     if let Some(parent) = socket.parent() {
         use std::os::unix::fs::PermissionsExt;
         let mode = parent.metadata()?.permissions().mode();
-        if mode & 0o777 != SOCKET_FOLDER_MODE {
+        if !validate_mode_bits(mode) {
             error!(?socket, mode, "Socket folder permissions are not 0o700");
-            return Err(ConnectError::Permissions);
+            return Err(ConnectError::IncorrectSocketPermissions);
         }
     }
 
@@ -54,6 +52,10 @@ pub async fn socket_connect_timeout(socket: impl AsRef<Path>, timeout: Duration)
     }
 }
 
+fn validate_mode_bits(mode: u32) -> bool {
+    mode & 0o777 == 0o700
+}
+
 pub type BufferedUnixStream = BufferedReader<UnixStream>;
 
 impl BufferedUnixStream {
@@ -76,6 +78,14 @@ mod tests {
     /// and double check with security
     #[test]
     fn test_socket_folder_mode() {
-        assert_eq!(SOCKET_FOLDER_MODE, 0o700);
+        assert!(validate_mode_bits(0o700));
+
+        for i in 0..0o700 {
+            assert!(!validate_mode_bits(i));
+        }
+
+        for i in 0o701..0o777 {
+            assert!(!validate_mode_bits(i));
+        }
     }
 }

@@ -26,7 +26,7 @@ pub enum ConnectError {
     #[error("timeout connecting to socket")]
     Timeout,
     #[error("invalid permissions on socket dir")]
-    Permissions,
+    IncorrectSocketPermissions,
 }
 
 #[derive(Debug, Error)]
