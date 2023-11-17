@@ -13,7 +13,7 @@ export default function Page() {
         <h1 className="text-2xl font-bold select-none">Getting started</h1>
       </div>
       <div className="flex flex-col gap-2 w-full border bg-slate-50 border-slate-200 rounded-lg p-4 mb-4">
-      <h2 className="font-bold font-ember tracking-tight text-lg">Launch your terminal to start using autocomplete!</h2>
+      <h2 className="font-bold font-ember tracking-tight text-lg">Launch a new shell session to start using autocomplete!</h2>
 
         <ol className="flex flex-col text-zinc-600">
           <li>
