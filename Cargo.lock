@@ -578,6 +578,7 @@ dependencies = [
  "aws-types",
  "fig_telemetry",
  "fig_util",
+ "insta",
  "once_cell",
  "serde",
  "serde_json",

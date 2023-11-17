@@ -76,11 +76,14 @@ fn is_expired(expiration_time: &OffsetDateTime) -> bool {
     &(now + time::Duration::minutes(1)) > expiration_time
 }
 
-fn client(region: Option<Region>) -> Client {
+fn oidc_url(region: &Region) -> String {
+    format!("https://oidc.{region}.amazonaws.com")
+}
+
+fn client(region: Region) -> Client {
     let retry_config = RetryConfig::standard().with_max_attempts(3);
-    let region = region.unwrap_or(OIDC_BUILDER_ID_REGION);
     let sdk_config = aws_types::SdkConfig::builder()
-        .endpoint_url(format!("https://oidc.{region}.amazonaws.com"))
+        .endpoint_url(oidc_url(&region))
         .region(region)
         .retry_config(retry_config)
         .sleep_impl(SharedAsyncSleep::new(TokioSleep::new()))
@@ -95,12 +98,13 @@ pub struct DeviceRegistration {
     pub client_secret: Secret,
     #[serde(with = "time::serde::rfc3339::option")]
     pub client_secret_expires_at: Option<time::OffsetDateTime>,
+    pub region: String,
 }
 
 impl DeviceRegistration {
     const SECRET_KEY: &str = "codewhisperer:odic:device-registration";
 
-    async fn load_from_secret_store(secret_store: &SecretStore) -> Result<Option<Self>> {
+    async fn load_from_secret_store(secret_store: &SecretStore, region: &Region) -> Result<Option<Self>> {
         let device_registration = secret_store.get(Self::SECRET_KEY).await?;
 
         if let Some(device_registration) = device_registration {
@@ -108,7 +112,7 @@ impl DeviceRegistration {
             let device_registration: Self = serde_json::from_str(&device_registration.0)?;
 
             if let Some(client_secret_expires_at) = device_registration.client_secret_expires_at {
-                if !is_expired(&client_secret_expires_at) {
+                if !is_expired(&client_secret_expires_at) && device_registration.region == region.as_ref() {
                     return Ok(Some(device_registration));
                 }
             }
@@ -123,8 +127,8 @@ impl DeviceRegistration {
     }
 
     /// Register the client with OIDC and cache the response for the expiration period
-    pub async fn register(client: &Client, secret_store: &SecretStore) -> Result<Self> {
-        match Self::load_from_secret_store(secret_store).await {
+    pub async fn register(client: &Client, secret_store: &SecretStore, region: &Region) -> Result<Self> {
+        match Self::load_from_secret_store(secret_store, region).await {
             Ok(Some(device_registration)) => return Ok(device_registration),
             Ok(None) => {},
             Err(err) => {
@@ -145,6 +149,7 @@ impl DeviceRegistration {
             client_id: output.client_id.unwrap_or_default(),
             client_secret: output.client_secret.unwrap_or_default().into(),
             client_secret_expires_at: time::OffsetDateTime::from_unix_timestamp(output.client_secret_expires_at).ok(),
+            region: region.to_string(),
         };
 
         if let Err(err) = secret_store
@@ -182,13 +187,16 @@ pub async fn start_device_authorization(
     start_url: Option<String>,
     region: Option<String>,
 ) -> Result<StartDeviceAuthorizationResponse> {
-    let client = client(region.clone().map(Region::new));
+    let region = region.clone().map(Region::new).unwrap_or(OIDC_BUILDER_ID_REGION);
+    let client = client(region.clone());
 
     let DeviceRegistration {
         client_id,
         client_secret,
         ..
-    } = DeviceRegistration::register(&client, secret_store).await?;
+    } = DeviceRegistration::register(&client, secret_store, &region).await?;
+
+    dbg!((&client_id, &client_secret,));
 
     let output = client
         .start_device_authorization()
@@ -205,7 +213,7 @@ pub async fn start_device_authorization(
         verification_uri_complete: output.verification_uri_complete.unwrap_or_default(),
         expires_in: output.expires_in,
         interval: output.interval,
-        region: region.unwrap_or_else(|| OIDC_BUILDER_ID_REGION.as_ref().to_owned()),
+        region: region.to_string(),
         start_url: start_url.unwrap_or_else(|| START_URL.to_owned()),
     })
 }
@@ -235,10 +243,12 @@ impl BuilderIdToken {
                 let token: Option<Self> = serde_json::from_str(&secret.0)?;
                 match token {
                     Some(token) => {
-                        let client = client(token.region.clone().map(Region::new));
+                        let region = token.region.clone().map(Region::new).unwrap_or(OIDC_BUILDER_ID_REGION);
+
+                        let client = client(region.clone());
                         // if token is expired try to refresh
                         if token.is_expired() {
-                            token.refresh_token(&client, secret_store).await
+                            token.refresh_token(&client, secret_store, &region).await
                         } else {
                             Ok(Some(token))
                         }
@@ -255,14 +265,19 @@ impl BuilderIdToken {
     }
 
     /// Refresh the access token
-    pub async fn refresh_token(&self, client: &Client, secret_store: &SecretStore) -> Result<Option<Self>> {
+    pub async fn refresh_token(
+        &self,
+        client: &Client,
+        secret_store: &SecretStore,
+        region: &Region,
+    ) -> Result<Option<Self>> {
         // TODO: add telem on error https://github.com/aws/aws-toolkit-vscode/blob/df9fc7315b37844a09b7f60b49c604fa267a88ab/src/auth/sso/ssoAccessTokenProvider.ts#L135-L143
 
         let DeviceRegistration {
             client_id,
             client_secret,
             ..
-        } = DeviceRegistration::register(client, secret_store).await?;
+        } = DeviceRegistration::register(client, secret_store, region).await?;
 
         let Some(refresh_token) = &self.refresh_token else {
             // if the token is expired and has no refresh token, delete it
@@ -283,7 +298,7 @@ impl BuilderIdToken {
             .await
         {
             Ok(output) => {
-                let token: BuilderIdToken = Self::from_output(output, self.region.clone(), self.start_url.clone());
+                let token: BuilderIdToken = Self::from_output(output, region.clone(), self.start_url.clone());
 
                 if let Err(err) = token.save(secret_store).await {
                     error!(?err, "Failed to store builder id access token");
@@ -330,12 +345,12 @@ impl BuilderIdToken {
         Ok(())
     }
 
-    fn from_output(output: CreateTokenOutput, region: Option<String>, start_url: Option<String>) -> Self {
+    fn from_output(output: CreateTokenOutput, region: Region, start_url: Option<String>) -> Self {
         Self {
             access_token: output.access_token.unwrap_or_default().into(),
             expires_at: time::OffsetDateTime::now_utc() + time::Duration::seconds(output.expires_in as i64),
             refresh_token: output.refresh_token.map(|t| t.into()),
-            region,
+            region: Some(region.to_string()),
             start_url,
         }
     }
@@ -362,13 +377,14 @@ pub async fn poll_create_token(
     region: Option<String>,
     start_url: Option<String>,
 ) -> PollCreateToken {
-    let client = client(region.clone().map(Region::new));
+    let region = region.clone().map(Region::new).unwrap_or(OIDC_BUILDER_ID_REGION);
+    let client = client(region.clone());
 
     let DeviceRegistration {
         client_id,
         client_secret,
         ..
-    } = match DeviceRegistration::register(&client, secret_store).await {
+    } = match DeviceRegistration::register(&client, secret_store, &region).await {
         Ok(res) => res,
         Err(err) => {
             return PollCreateToken::Error(err);
@@ -449,6 +465,9 @@ impl IdentityResolver for BearerResolver {
 mod tests {
     use super::*;
 
+    const US_EAST_1: Region = Region::from_static("us-east-1");
+    const US_WEST_2: Region = Region::from_static("us-west-2");
+
     #[test]
     fn test_app_name() {
         println!("{:?}", *APP_NAME);
@@ -456,21 +475,24 @@ mod tests {
 
     #[test]
     fn test_client() {
-        println!("{:?}", client(None));
-        println!("{:?}", client(Some(Region::new("us-west-2"))));
+        println!("{:?}", client(US_EAST_1));
+        println!("{:?}", client(US_WEST_2));
+    }
+
+    #[test]
+    fn oidc_url_snapshot() {
+        insta::assert_snapshot!(oidc_url(&US_EAST_1), @"https://oidc.us-east-1.amazonaws.com");
+        insta::assert_snapshot!(oidc_url(&US_WEST_2), @"https://oidc.us-west-2.amazonaws.com");
     }
 
     #[ignore = "login flow"]
     #[tokio::test]
     async fn test_login() {
-        let region = Some("us-west-2".to_owned());
         let secret_store = SecretStore::load().await.unwrap();
-        let res = start_device_authorization(&secret_store, None, region.clone())
-            .await
-            .unwrap();
+        let res = start_device_authorization(&secret_store, None, None).await.unwrap();
         println!("{:?}", res);
         loop {
-            match poll_create_token(&secret_store, res.device_code.clone(), region.clone(), None).await {
+            match poll_create_token(&secret_store, res.device_code.clone(), None, None).await {
                 PollCreateToken::Pending => {
                     tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
                 },
@@ -498,10 +520,11 @@ mod tests {
     #[ignore = "not in ci"]
     #[tokio::test]
     async fn test_refresh() {
-        let client = client(None);
+        let region = Region::new("us-east-1");
+        let client = client(region.clone());
         let secret_store = SecretStore::load().await.unwrap();
         let token = BuilderIdToken::load(&secret_store).await.unwrap().unwrap();
-        let token = token.refresh_token(&client, &secret_store).await;
+        let token = token.refresh_token(&client, &secret_store, &region).await;
         println!("{:?}", token);
         // println!("{:?}", token.unwrap().unwrap().access_token.0);
     }
