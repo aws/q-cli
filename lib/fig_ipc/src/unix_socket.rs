@@ -12,6 +12,8 @@ use crate::{
     ConnectError,
 };
 
+const SOCKET_FOLDER_MODE: u32 = 0o700;
+
 /// Connects to a unix socket
 pub async fn socket_connect(socket: impl AsRef<Path>) -> Result<UnixStream, ConnectError> {
     let socket = socket.as_ref();
@@ -20,7 +22,7 @@ pub async fn socket_connect(socket: impl AsRef<Path>) -> Result<UnixStream, Conn
     if let Some(parent) = socket.parent() {
         use std::os::unix::fs::PermissionsExt;
         let mode = parent.metadata()?.permissions().mode();
-        if mode & 0o777 != 0o700 {
+        if mode & 0o777 != SOCKET_FOLDER_MODE {
             error!(?socket, mode, "Socket folder permissions are not 0o700");
             return Err(ConnectError::Permissions);
         }
@@ -63,5 +65,17 @@ impl BufferedUnixStream {
     /// Connect to a unix socket with a timeout
     pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Result<Self, ConnectError> {
         Ok(Self::new(socket_connect_timeout(socket, timeout).await?))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// If this test fails, we need to reevaluate the permissions model design around our sockets
+    /// and double check with security
+    #[test]
+    fn test_socket_folder_mode() {
+        assert_eq!(SOCKET_FOLDER_MODE, 0o700);
     }
 }
