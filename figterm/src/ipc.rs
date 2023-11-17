@@ -161,6 +161,13 @@ pub async fn spawn_figterm_ipc(
         if let Err(err) = std::fs::create_dir_all(parent) {
             error!(%err, "Failed to create figterm socket directory");
         }
+
+        #[cfg(unix)]
+        {
+            use std::fs::Permissions;
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(parent, Permissions::from_mode(0o700))?;
+        }
     }
 
     tokio::fs::remove_file(&socket_path).await.ok();

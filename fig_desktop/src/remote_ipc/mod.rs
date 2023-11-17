@@ -77,6 +77,13 @@ pub async fn start_remote_ipc(
         if !parent.exists() {
             std::fs::create_dir_all(parent).context("Failed creating socket path")?;
         }
+
+        #[cfg(unix)]
+        {
+            use std::fs::Permissions;
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(parent, Permissions::from_mode(0o700))?;
+        }
     }
 
     tokio::fs::remove_file(&socket_path).await.ok();

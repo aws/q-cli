@@ -25,6 +25,8 @@ pub enum ConnectError {
     Io(#[from] std::io::Error),
     #[error("timeout connecting to socket")]
     Timeout,
+    #[error("invalid permissions on socket dir")]
+    Permissions,
 }
 
 #[derive(Debug, Error)]

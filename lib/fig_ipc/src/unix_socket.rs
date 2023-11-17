@@ -15,6 +15,17 @@ use crate::{
 /// Connects to a unix socket
 pub async fn socket_connect(socket: impl AsRef<Path>) -> Result<UnixStream, ConnectError> {
     let socket = socket.as_ref();
+
+    #[cfg(unix)]
+    if let Some(parent) = socket.parent() {
+        use std::os::unix::fs::PermissionsExt;
+        let mode = parent.metadata()?.permissions().mode();
+        if mode & 0o777 != 0o700 {
+            error!(?socket, ?mode, "Socket folder permissions are not 0o700");
+            return Err(ConnectError::Permissions);
+        }
+    }
+
     let stream = match UnixStream::connect(socket).await {
         Ok(stream) => stream,
         Err(err) => {

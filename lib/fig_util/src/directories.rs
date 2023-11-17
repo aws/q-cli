@@ -461,10 +461,22 @@ mod test {
 
 #[cfg(test)]
 mod tests {
-
     use insta;
 
     use super::*;
+
+    /// If this test fails then either of these paths were changed.
+    ///
+    /// Since we set the permssions of the parent of these paths, make sure they're in folders we
+    /// own otherwise we will set permissions of directories we shouldn't
+    #[test]
+    fn test_socket_paths() {
+        assert_eq!(host_sockets_dir().unwrap().file_name().unwrap(), "cwrun");
+        assert_eq!(
+            figterm_socket_path("").unwrap().parent().unwrap().file_name().unwrap(),
+            "t"
+        );
+    }
 
     macro_rules! assert_directory {
         ($value:expr, @ $snapshot:literal) => {
