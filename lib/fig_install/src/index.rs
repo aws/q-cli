@@ -15,6 +15,7 @@ use fig_util::manifest::{
     Variant,
 };
 use fig_util::system_info::get_system_id;
+use once_cell::sync::Lazy;
 use serde::{
     Deserialize,
     Serialize,
@@ -28,7 +29,8 @@ use tracing::{
 
 use crate::Error;
 
-pub const CLOUDFRONT_URL: &str = "https://d8tyq03ena56l.cloudfront.net";
+static CLOUDFRONT_URL: Lazy<&str> =
+    Lazy::new(|| option_env!("CLOUDFRONT_URL").unwrap_or("https://d8tyq03ena56l.cloudfront.net"));
 
 #[allow(unused)]
 #[derive(Deserialize, Serialize, Debug)]
@@ -106,13 +108,7 @@ impl PackageArchitecture {
 }
 
 fn index_endpoint(_channel: &Channel) -> &'static str {
-    "https://d8tyq03ena56l.cloudfront.net/index.json"
-    // match channel {
-    //     Channel::Nightly => "https://repo.fig.io/generic/nightly/index.json",
-    //     Channel::Qa => "https://repo.fig.io/generic/qa/index.json",
-    //     Channel::Beta => "https://repo.fig.io/generic/beta/index.json",
-    //     Channel::Stable => "https://repo.fig.io/generic/stable/index.json",
-    // }
+    *CLOUDFRONT_URL
 }
 
 pub async fn pull(channel: &Channel) -> Result<Index, Error> {
@@ -271,7 +267,7 @@ pub async fn query_index(
 
     Ok(Some(UpdatePackage {
         version: chosen.version.to_string(),
-        download: format!("{CLOUDFRONT_URL}/{}", package.download),
+        download: format!("{}/{}", *CLOUDFRONT_URL, package.download),
         sha256: package.sha256,
         size: package.size,
     }))

@@ -10,8 +10,9 @@ use http::{
     Response,
     StatusCode,
 };
+use once_cell::sync::Lazy;
 
-const CDN_URL: &str = "https://d3e7ef0le33nq1.cloudfront.net";
+static CDN_URL: Lazy<&str> = Lazy::new(|| option_env!("CDN_URL").unwrap_or("https://d3e7ef0le33nq1.cloudfront.net"));
 
 fn res_404() -> Response<Cow<'static, [u8]>> {
     Response::builder()
@@ -52,7 +53,7 @@ pub async fn handle(request: Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'s
 
     let path = request.uri().path();
 
-    match client.get(format!("{CDN_URL}{path}")).send().await {
+    match client.get(format!("{}{path}", *CDN_URL)).send().await {
         Ok(response) => {
             if let Err(err) = response.error_for_status_ref() {
                 return res_reqwest_err(err);
