@@ -29,8 +29,9 @@ use tracing::{
 
 use crate::Error;
 
-static CLOUDFRONT_URL: Lazy<&str> = Lazy::new(|| {
-    option_env!("CW_BUILD_DESKTOP_RELEASE_URL").unwrap_or("desktop-release.codewhisperer.us-east-1.amazonaws.com")
+static RELEASE_URL: Lazy<&str> = Lazy::new(|| {
+    option_env!("CW_BUILD_DESKTOP_RELEASE_URL")
+        .unwrap_or("https://desktop-release.codewhisperer.us-east-1.amazonaws.com")
 });
 
 #[allow(unused)]
@@ -109,7 +110,7 @@ impl PackageArchitecture {
 }
 
 fn index_endpoint(_channel: &Channel) -> &'static str {
-    *CLOUDFRONT_URL
+    *RELEASE_URL
 }
 
 pub async fn pull(channel: &Channel) -> Result<Index, Error> {
@@ -268,7 +269,7 @@ pub async fn query_index(
 
     Ok(Some(UpdatePackage {
         version: chosen.version.to_string(),
-        download: format!("{}/{}", *CLOUDFRONT_URL, package.download),
+        download: format!("{}/{}", *RELEASE_URL, package.download),
         sha256: package.sha256,
         size: package.size,
     }))

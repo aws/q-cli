@@ -12,7 +12,7 @@ use http::{
 };
 use once_cell::sync::Lazy;
 
-static CDN_URL: Lazy<&str> =
+static SPECS_URL: Lazy<&str> =
     Lazy::new(|| option_env!("CW_BUILD_SPECS_URL").unwrap_or("https://specs.codewhisperer.us-east-1.amazonaws.com"));
 
 fn res_404() -> Response<Cow<'static, [u8]>> {
@@ -54,7 +54,7 @@ pub async fn handle(request: Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'s
 
     let path = request.uri().path();
 
-    match client.get(format!("{}{path}", *CDN_URL)).send().await {
+    match client.get(format!("{}{path}", *SPECS_URL)).send().await {
         Ok(response) => {
             if let Err(err) = response.error_for_status_ref() {
                 return res_reqwest_err(err);
