@@ -6,7 +6,6 @@ import SidebarLink from "./components/sidebar/link";
 import Autocomplete from "./pages/terminal/autocomplete";
 import Translate from "./pages/terminal/translate";
 import Onboarding from "./pages/onboarding";
-import Predict from "./pages/terminal/predict";
 import Preferences from "./pages/settings/preferences";
 import Integrations from "./pages/settings/integrations";
 import Keybindings from "./pages/settings/keybindings";
@@ -114,7 +113,7 @@ function App() {
               {/* <Route index element={<WhatsNew />} /> */}
               <Route path="help" element={<Help />} />
               <Route path="autocomplete" element={<Autocomplete />} />
-              <Route path="predict" element={<Predict />} />
+              {/* <Route path="predict" element={<Predict />} /> */}
               <Route path="translate" element={<Translate />} />
               <Route path="account" element={<Account />} />
               <Route path="keybindings" element={<Keybindings />} />
@@ -165,11 +164,11 @@ const NAV_DATA = [
     name: "Translation",
     link: "/translate",
   },
-  {
-    type: "link",
-    name: "GhostText",
-    link: "/predict",
-  },
+  // {
+  //   type: "link",
+  //   name: "GhostText",
+  //   link: "/predict",
+  // },
   {
     type: "header",
     name: "Settings",
