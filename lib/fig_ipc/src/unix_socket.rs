@@ -21,7 +21,7 @@ pub async fn socket_connect(socket: impl AsRef<Path>) -> Result<UnixStream, Conn
         use std::os::unix::fs::PermissionsExt;
         let mode = parent.metadata()?.permissions().mode();
         if mode & 0o777 != 0o700 {
-            error!(?socket, ?mode, "Socket folder permissions are not 0o700");
+            error!(?socket, mode, "Socket folder permissions are not 0o700");
             return Err(ConnectError::Permissions);
         }
     }
