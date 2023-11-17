@@ -1032,7 +1032,7 @@ impl DoctorCheck<()> for SshdConfigCheck {
             })?;
 
         let accept_env_regex =
-            Regex::new(r"(?m)^\s*AcceptEnv\s+.*(LC_\*|CW_\*|LC_CWSET_PARENT|CWSET_PARENT)([^\S\r\n]+.*$|$)").unwrap();
+            Regex::new(r"(?m)^\s*AcceptEnv\s+.*(LC_\*|CW_\*|LC_CW_SET_PARENT|CW_SET_PARENT)([^\S\r\n]+.*$|$)").unwrap();
 
         let allow_stream_local_forwarding_regex =
             Regex::new(r"(?m)^\s*AllowStreamLocalForwarding\s+yes([^\S\r\n]+.*$|$)").unwrap();

@@ -18,13 +18,13 @@ if "CW_NEW_SESSION" in $env {
 }
 
 if "CW_SET_PARENT_CHECK" not-in $env {
-  if "CWSET_PARENT" not-in $env and "LC_CWSET_PARENT" in $env {
-    let-env CWSET_PARENT = $env.LC_CWSET_PARENT
-    let-env LC_CWSET_PARENT = $nothing
+  if "CW_SET_PARENT" not-in $env and "LC_CW_SET_PARENT" in $env {
+    let-env CW_SET_PARENT = $env.LC_CW_SET_PARENT
+    let-env LC_CW_SET_PARENT = $nothing
   }
-  if "CW_PARENT" not-in $env and "CWSET_PARENT" in $env {
-    let-env CW_PARENT = $env.CWSET_PARENT
-    let-env CWSET_PARENT = $nothing
+  if "CW_PARENT" not-in $env and "CW_SET_PARENT" in $env {
+    let-env CW_PARENT = $env.CW_SET_PARENT
+    let-env CW_SET_PARENT = $nothing
   }
   let-env CW_SET_PARENT_CHECK = 1
 }

@@ -804,7 +804,7 @@ impl InternalSubcommand {
                 //         Match all\n  \
                 //         RemoteForward /var/tmp/fig-parent-{uuid}.socket
                 // /var/tmp/fig/${{USER}}/remote.socket\n  \         SetEnv
-                // LC_CWSET_PARENT={uuid} CWSET_PARENT={uuid}\n  \
+                // LC_CW_SET_PARENT={uuid} CW_SET_PARENT={uuid}\n  \
                 //         StreamLocalBindMask 600\n  \
                 //         StreamLocalBindUnlink yes\n  \
                 //         PermitLocalCommand yes\n  \
