@@ -1,6 +1,6 @@
 const path = require('path');
 
-const { runTests } = require('vscode-test');
+const { runTests } = require('@vscode/test-electron');
 
 async function main() {
 	try {

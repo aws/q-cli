@@ -12,9 +12,11 @@ use crate::{
     Integration,
 };
 
-static EXTENSION: &[u8] = include_bytes!("fig.vsix");
+const OLD_EXTENSION_PREFIX: &str = "withfig.fig-";
+const EXTENSION_PREFIX: &str = "amazonwebservices.codewhisperer-for-command-line-companion-";
 
-const EXTENSION_VERSION: &str = "0.0.7";
+const EXTENSION_VERSION: &str = "0.1.0";
+static EXTENSION: &[u8] = include_bytes!("codewhisperer-for-command-line-companion-0.1.0.vsix");
 
 #[derive(Clone)]
 pub struct VSCodeVariant {
@@ -117,6 +119,16 @@ impl VSCodeIntegration {
             .join(self.variant.config_folder_name)
             .join("extensions"))
     }
+
+    async fn remove_ext_by_prefix(&self, prefix: &str) -> Result<()> {
+        let mut entries = tokio::fs::read_dir(self.extensions_dir()?).await?;
+        while let Some(entry) = entries.next_entry().await? {
+            if entry.file_name().to_string_lossy().starts_with(prefix) {
+                tokio::fs::remove_dir_all(entry.path()).await?;
+            }
+        }
+        Ok(())
+    }
 }
 
 #[async_trait]
@@ -130,6 +142,8 @@ impl Integration for VSCodeIntegration {
             return Ok(());
         }
 
+        self.remove_ext_by_prefix(OLD_EXTENSION_PREFIX).await.ok();
+
         let bundle_path = path_for_application(self.variant.bundle_identifier)
             .ok_or_else(|| Error::ApplicationNotInstalled(self.variant.application_name.into()))?;
 
@@ -141,7 +155,7 @@ impl Integration for VSCodeIntegration {
             .join("Contents/Resources/app/bin")
             .join(self.variant.cli_executable_name);
 
-        let extension_path = temp_dir().join("fig.vsix");
+        let extension_path = temp_dir().join("codewhisperer-for-command-line-helper.vsix");
         tokio::fs::write(&extension_path, &EXTENSION).await?;
 
         let output = Command::new(cli_path)
@@ -164,18 +178,13 @@ impl Integration for VSCodeIntegration {
     }
 
     async fn uninstall(&self) -> Result<()> {
-        let mut entries = tokio::fs::read_dir(self.extensions_dir()?).await?;
-        while let Some(entry) = entries.next_entry().await? {
-            if entry.file_name().to_string_lossy().starts_with("withfig.fig-") {
-                tokio::fs::remove_dir_all(entry.path()).await?;
-            }
-        }
-
-        Ok(())
+        self.remove_ext_by_prefix(EXTENSION_PREFIX).await
     }
 
     async fn is_installed(&self) -> Result<()> {
-        let extension_path = self.extensions_dir()?.join(format!("withfig.fig-{EXTENSION_VERSION}"));
+        let extension_path = self
+            .extensions_dir()?
+            .join(format!("{EXTENSION_PREFIX}{EXTENSION_VERSION}"));
 
         if !extension_path.exists() {
             return Err(Error::Custom("Extension not installed".into()));

@@ -12,10 +12,10 @@ use crate::{
     Integration,
 };
 
-const PLUGIN_PREFIX: &str = "codewhisperer-for-command-line-helper";
+const PLUGIN_PREFIX: &str = "codewhisperer-for-command-line-companion";
 const OLD_PLUGIN_SLUG: &str = "jetbrains-extension-2.0.0";
-const PLUGIN_SLUG: &str = "codewhisperer-for-command-line-helper";
-const PLUGIN_JAR: &str = "codewhisperer-for-command-line-helper.jar";
+const PLUGIN_SLUG: &str = "codewhisperer-for-command-line-companion";
+const PLUGIN_JAR: &str = "codewhisperer-for-command-line-companion.jar";
 
 static PLUGIN_CONTENTS: &[u8] = include_bytes!("plugin.jar");
 

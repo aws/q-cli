@@ -1,49 +1,50 @@
 {
-	"name": "codewhisperer_for_the_command_line",
-	"displayName": "CodeWhisperer for Command-Line",
-	"description": "This is the CodeWhisperer for command line companion extension for the IDE. It only supports completions in your IDEs' terminal emulator. If you would like completions in your editor, please download the \"AWS Toolkit\" plugin and set up CodeWhisperer",
-	"version": "0.0.7",
-	"icon": "images/icon.png",
-	"engines": {
-		"vscode": "^1.51.0"
-	},
-	"categories": [
-		"Other"
-	],
-	"activationEvents": [
-		"onStartupFinished"
-	],
-	"capabilities": {
-		"untrustedWorkspaces": {
-			"supported": true
-		}
-	},
-	"publisher": "Amazon Web Services",
-	"main": "./extension.js",
-	"scripts": {
-		"lint": "eslint .",
-		"pretest": "npm run lint",
-		"test": "node ./test/runTest.js",
-		"package": "vsce package",
-		"build": "vsce package && code --install-extension fig-0.0.5.vsix"
-	},
-	"fig": {
-		"build": {
-			"description": "Build extension and install in VSCode"
-		},
-		"package": {
-			"description": "Package extension as .vsix file"
-		}
-	},
-	"devDependencies": {
-		"@types/glob": "^8.1.0",
-		"@types/mocha": "^10.0.1",
-		"@types/node": "^20.4.5",
-		"@types/vscode": "^1.80.0",
-		"eslint": "^8.45.0",
-		"glob": "^10.3.3",
-		"mocha": "^10.2.0",
-		"typescript": "^5.1.6",
-		"vscode-test": "^1.6.1"
-	}
+  "name": "codewhisperer-for-command-line-companion",
+  "displayName": "CodeWhisperer for command line",
+  "description": "The IDE companion extension for the CodeWhisperer for command line desktop app",
+  "version": "0.1.0",
+  "icon": "images/icon.png",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    }
+  },
+  "publisher": "amazonwebservices",
+  "main": "./extension.js",
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "npm run lint",
+    "test": "node ./test/runTest.js",
+    "build": "vsce package --skip-license --allow-missing-repository",
+    "build-install": "pnpm run build && code --install-extension codewhisperer-for-command-line-companion-*.vsix"
+  },
+  "fig": {
+    "build": {
+      "description": "Build extension and install in VSCode"
+    },
+    "package": {
+      "description": "Package extension as .vsix file"
+    }
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^20.4.5",
+    "@types/vscode": "^1.80.0",
+    "@vscode/test-electron": "^1.6.1",
+    "@vscode/vsce": "^2.22.0",
+    "eslint": "^8.45.0",
+    "glob": "^10.3.3",
+    "mocha": "^10.2.0",
+    "typescript": "^5.1.6"
+  }
 }

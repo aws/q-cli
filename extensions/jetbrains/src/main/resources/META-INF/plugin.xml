@@ -6,7 +6,7 @@
   <id>com.amazon.codewhisperer.jetbrains</id>
 
   <!-- Text to display as name on Preferences/Settings | Plugin page -->
-  <name>CodeWhisperer for Command-Line Helper</name>
+  <name>CodeWhisperer for command line</name>
 
   <!-- Product and plugin compatibility requirements -->
   <depends>org.jetbrains.plugins.terminal</depends>
@@ -14,12 +14,12 @@
   <!-- Text to display as description on Preferences/Settings | Plugin page -->
   <description>
     <![CDATA[
-      This is the CodeWhisperer for command line companion extension for the IDE. It only supports completions in your IDEs' terminal emulator. If you would like completions in your editor, please download the "AWS Toolkit" plugin and set up CodeWhisperer
+      This is the CodeWhisperer for command line IDE extension. It only supports completions in your IDEs' terminal emulator. If you would like completions in your editor, please download the AWS Toolkit extension and set up CodeWhisperer
     ]]>
   </description>
   <change-notes>
     <![CDATA[
-      This is the CodeWhisperer for command line companion extension for the IDE. It only supports completions in your IDEs' terminal emulator. If you would like completions in your editor, please download the "AWS Toolkit" plugin and set up CodeWhisperer
+      - [0.1.0]: Initial release
     ]]>
   </change-notes>
 

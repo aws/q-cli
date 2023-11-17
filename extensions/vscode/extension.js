@@ -13,7 +13,7 @@ let config = vscode.workspace.getConfiguration()
 // fig.log is an internal setting as it's intended for developers only, this means it won't show up
 // in the settings UI/editor. Add `"fig.log": true` to your settings.json and reload the window to
 // enable logging.
-let shouldLog = config.get('fig.log') === true;
+let shouldLog = config.get('cw.log') === true;
 
 
 // Ensure that any VSCode terminal session has CW_NEW_SESSION set as an environment variable
@@ -23,12 +23,12 @@ config.update("terminal.integrated.env.osx", osxEnv, true)
 
 function log(...args) {
 	if (shouldLog) {
-		console.log(`fig: ${args[0]}`, args.slice(1));
+		console.log(`cw: ${args[0]}`, args.slice(1));
 	}
 }
 
 function logError(message) {
-	console.error(`fig: ${message}`);
+	console.error(`cw: ${message}`);
 }
 
 function updateActiveTerminal(terminal) {

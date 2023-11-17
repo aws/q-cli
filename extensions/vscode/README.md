@@ -1,5 +1,5 @@
-# Fig VS Code Extension
+# CodeWhisperer for command line
 
-This extension is used to determine when the the VS Code integrated terminal has keyboard focus.
+This is the CodeWhisperer for command line IDE extension. It only supports completions in your IDEs' terminal emulator.
 
-Please report any issues by emailing hello@withfig.com or running `fig report`
+If you would like completions in your editor, please download the [AWS Toolkit extension](https://marketplace.visualstudio.com/items?itemName=AmazonWebServices.aws-toolkit-vscode) and set up CodeWhisperer
