@@ -74,8 +74,6 @@ use crate::error::{
 };
 use crate::Integration;
 
-const INPUT_SOURCE_ID: &str = "com.amazon.codewhispererinputmethod";
-
 pub enum __TISInputSource {}
 pub type TISInputSourceRef = *const __TISInputSource;
 
@@ -349,10 +347,7 @@ impl InputMethod {
                     category_key.as_CFType(),
                     CFString::from_static_string("TISCategoryPaletteInputSource").as_CFType(),
                 ),
-                (
-                    input_source_key.as_CFType(),
-                    CFString::from_static_string(INPUT_SOURCE_ID).as_CFType(),
-                ),
+                (input_source_key.as_CFType(), bundle_identifier.as_CFType()),
             ]);
 
             let sources = InputMethod::list_all_input_sources(Some(&properties), true);
@@ -730,19 +725,17 @@ mod tests {
     // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
 
-    fn input_method() -> TISInputSource {
-        let bundle_identifier = "io.fig.caret";
+    const TEST_INPUT_METHOD_BUNDLE_ID: &str = "com.amazon.inputmethod.codewhisperer";
+    const TEST_INPUT_METHOD_BUNDLE_URL: &str =
+        "/Applications/CodeWhisperer.app/Contents/Helpers/CodeWhispererInputMethod.app";
 
+    fn input_method() -> TISInputSource {
         let key: CFString = unsafe { CFString::wrap_under_create_rule(kTISPropertyBundleID) };
-        let value = CFString::from_static_string(bundle_identifier);
+        let value = CFString::from_static_string(TEST_INPUT_METHOD_BUNDLE_ID);
         let properties = CFDictionary::from_CFType_pairs(&[(key.as_CFType(), value.as_CFType())]);
         let sources = InputMethod::list_all_input_sources(Some(&properties), true).unwrap_or_default();
         sources.into_iter().next().unwrap()
     }
-
-    const TEST_INPUT_METHOD_BUNDLE_ID: &str = "com.amazon.codewhisperer.com.amazon.codewhispererinputmethod";
-    const TEST_INPUT_METHOD_BUNDLE_URL: &str =
-        "/Applications/CodeWhisperer.app/Contents/Helpers/CodeWhispererInputMethod.app";
 
     #[ignore]
     #[test]

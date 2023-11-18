@@ -8,8 +8,8 @@ version.workspace = true
 
 [package.metadata.bundle]
 bundle_name = "CodeWhispererInputMethod"
-bundle_identifier = "com.amazon.codewhispererinputmethod"
-input_source_identifier = "com.amazon.codewhispererinputmethod"
+bundle_identifier = "com.amazon.inputmethod.codewhisperer"
+input_source_identifier = "com.amazon.inputmethod.codewhisperer"
 invisible_in_system_ui = true
 input_method_type = "palette"
 

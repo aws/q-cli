@@ -19,5 +19,5 @@ app:
       :identifier: com.amazon.cwterm
       signing_args:
     Contents/Helpers/CodeWhispererInputMethod.app:
-      :identifier: com.amazon.codewhispererinputmethod
+      :identifier: com.amazon.inputmethod.codewhisperer
       signing_args:
