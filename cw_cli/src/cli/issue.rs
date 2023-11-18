@@ -24,15 +24,6 @@ pub struct IssueArgs {
 impl IssueArgs {
     #[allow(unreachable_code)]
     pub async fn execute(&self) -> Result<()> {
-        println!(
-            "Please run {} and then share that output + your issue in the {} slack channel",
-            "cw diagnostic".magenta(),
-            "#codewhisperer-command-line-interest".bold()
-        );
-        println!();
-        println!("This is temporary, we will have better issue management resources soon.");
-        return Ok(());
-
         // Check if fig is running
         if !self.force && !fig_util::is_codewhisperer_desktop_running() {
             println!(
@@ -175,14 +166,17 @@ impl IssueArgs {
 
         let env_string = environment.user_readable().join("\n");
 
-        let url = url::Url::parse_with_params("https://github.com/withfig/fig/issues/new", &[
-            ("template", "1_main_issue_template.yml"),
-            ("title", &issue_title),
-            ("labels", &labels.join(",")),
-            ("assignees", &assignees.join(",")),
-            ("os", &os),
-            ("environment", &env_string),
-        ])?;
+        let url = url::Url::parse_with_params(
+            "https://github.com/aws/codewhisperer-command-line-discussion/issues/new",
+            &[
+                ("template", "1_main_issue_template.yml"),
+                ("title", &issue_title),
+                ("labels", &labels.join(",")),
+                ("assignees", &assignees.join(",")),
+                ("os", &os),
+                ("environment", &env_string),
+            ],
+        )?;
 
         println!("Heading over to GitHub...");
         if fig_util::open_url(url.as_str()).is_err() {
@@ -197,7 +191,7 @@ async fn search_github_issues(query: &str) -> Option<Vec<(String, usize, String,
     let client = fig_request::reqwest_client::reqwest_client(true)?;
 
     let search_url = format!(
-        "https://api.github.com/search/issues?q={}+repo:withfig/fig+type:issue",
+        "https://api.github.com/search/issues?q={}+repo:aws/codewhisperer-command-line-discussion+type:issue",
         query
     );
 
