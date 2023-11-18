@@ -2,6 +2,12 @@
 
 set -eux
 
+BUCKET_NAME="$1"                # e.g. fig-io-desktop-ec-signing-230592382359
+SIGNING_REQUEST_QUEUE_NAME="$2" # e.g. fig-io-desktop-signing-requests
+NOTARIZING_SECRET_ID="$3"       # e.g. fig-io-desktop-notarizing-apple-id
+AWS_ACCOUNT_ID="$4"             # e.g. 230592382359 
+SIGNING_ROLE_NAME="$5"          # e.g. codewhisperer-ec-signing-role
+
 # check that the user is in the git root dir
 if [ ! -f "Config" ]; then
     echo "Please run this script from the root of the git repo"
@@ -55,8 +61,8 @@ lipo -create -output "$BUILD_DIR/cw-$TARGET" target/{x86_64,aarch64}-apple-darwi
 # build figterm
 cargo build --target=x86_64-apple-darwin --target=aarch64-apple-darwin --locked --release --package figterm
 lipo -create -output "$BUILD_DIR/cwterm-$TARGET" target/{x86_64,aarch64}-apple-darwin/release/figterm
- 
-./build-scripts/ime.sh
+
+./build-scripts/ime.sh "$BUCKET_NAME" "$SIGNING_REQUEST_QUEUE_NAME" "$NOTARIZING_SECRET_ID" "$AWS_ACCOUNT_ID" "$SIGNING_ROLE_NAME"
 
 . build-scripts/common.sh
 

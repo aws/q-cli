@@ -18,6 +18,3 @@ app:
     Contents/MacOS/cwterm:
       :identifier: com.amazon.cwterm
       signing_args:
-    Contents/Helpers/CodeWhispererInputMethod.app:
-      :identifier: com.amazon.inputmethod.codewhisperer
-      signing_args:
