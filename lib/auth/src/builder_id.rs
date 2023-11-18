@@ -196,8 +196,6 @@ pub async fn start_device_authorization(
         ..
     } = DeviceRegistration::register(&client, secret_store, &region).await?;
 
-    dbg!((&client_id, &client_secret,));
-
     let output = client
         .start_device_authorization()
         .client_id(&client_id)
