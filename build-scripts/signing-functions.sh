@@ -2,6 +2,8 @@
 
 set -eux
 
+TEAM_ID="94KV3E626L"
+
 BUCKET_NAME="$1"                # e.g. fig-io-desktop-ec-signing-230592382359
 SIGNING_REQUEST_QUEUE_NAME="$2" # e.g. fig-io-desktop-signing-requests
 NOTARIZING_SECRET_ID="$3"       # e.g. fig-io-desktop-notarizing-apple-id
