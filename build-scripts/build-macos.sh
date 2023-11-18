@@ -66,7 +66,7 @@ rustup component add clippy
 cargo install tauri-cli@1.5.2 --locked
 cargo install cargo-license@0.4.2 --locked
 
-bash build-scripts/macos.sh 2>&1
+bash build-scripts/macos.sh "$signing_bucket" "$signing_queue" "$apple_id_secret" "$aws_account_id" "$signing_role_name" 2>&1
 
 # If signing is requested, handle it
 if [[ -n "$signing_bucket" && -n "$signing_queue" && -n "$apple_id_secret" ]]; then
