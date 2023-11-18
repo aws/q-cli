@@ -136,7 +136,7 @@ impl<Value: Debug + Clone> KeyMap<Value> {
 
     /// Insert a value into the keymap
     pub fn insert<K: AsRef<[u8]>>(&mut self, key: K, value: Value) {
-        self.root.insert(key.as_ref(), value)
+        self.root.insert(key.as_ref(), value);
     }
 
     /// Perform a lookup for `key`.

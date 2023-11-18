@@ -173,7 +173,7 @@ pub(crate) async fn update(
 
             match out.trim() {
                 "success" => {
-                    debug!("swapped app bundle")
+                    debug!("swapped app bundle");
                 },
                 other => {
                     return Err(Error::UpdateFailed(other.to_owned()));
@@ -351,7 +351,7 @@ pub async fn uninstall_terminal_integrations() {
                                         .ok();
                                 },
                                 Err(err) => {
-                                    warn!("Could not create Hyper config: {err}")
+                                    warn!("Could not create Hyper config: {err}");
                                 },
                             }
                         },
@@ -385,7 +385,7 @@ pub async fn uninstall_terminal_integrations() {
                                         .ok();
                                 },
                                 Err(err) => {
-                                    warn!("Could not create Kitty config: {err}")
+                                    warn!("Could not create Kitty config: {err}");
                                 },
                             }
                         },

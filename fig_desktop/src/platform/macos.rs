@@ -256,7 +256,7 @@ impl PlatformStateImpl {
         F: MethodImplementation<Callee = Object>,
     {
         // https://github.com/tauri-apps/wry/blob/17d324b70e4d580c43c9d4ab37bd265005356bf4/src/webview/wkwebview/mod.rs#L258
-        Self::override_objc_class_method("WryWebView", sel, func)
+        Self::override_objc_class_method("WryWebView", sel, func);
     }
 
     fn override_app_delegate_method<F>(sel: Sel, func: F)
@@ -264,7 +264,7 @@ impl PlatformStateImpl {
         F: MethodImplementation<Callee = Object>,
     {
         // https://github.com/tauri-apps/tao/blob/75eb0c1e7e83a766af0e083ce09c761d1974cde4/src/platform_impl/macos/app_delegate.rs#L42
-        Self::override_objc_class_method("TaoAppDelegateParent", sel, func)
+        Self::override_objc_class_method("TaoAppDelegateParent", sel, func);
     }
 
     fn override_objc_class_method<F>(class: &str, sel: Sel, func: F)
@@ -524,7 +524,7 @@ impl PlatformStateImpl {
                 }
 
                 if let Some(window) = window_map.get(&AUTOCOMPLETE_ID) {
-                    let ns_window = window.webview.window().ns_window() as *mut Object;
+                    let ns_window = window.webview.window().ns_window().cast::<Object>();
                     // Handle iTerm Quake mode by explicitly setting window level. See
                     // https://github.com/gnachman/iTerm2/blob/1a5a09f02c62afcc70a647603245e98862e51911/sources/iTermProfileHotKey.m#L276-L310
                     // for more on window levels.
@@ -674,10 +674,9 @@ impl PlatformStateImpl {
 
         let supports_ime = current_terminal
             .clone()
-            .map(|t| t.supports_macos_input_method())
-            .unwrap_or(false);
+            .is_some_and(|t| t.supports_macos_input_method());
 
-        let is_xterm = current_terminal.map(|t| t.is_xterm()).unwrap_or(false);
+        let is_xterm = current_terminal.is_some_and(|t| t.is_xterm());
 
         // let supports_accessibility = current_terminal
         // .map(|t| t.supports_macos_accessibility())
@@ -727,6 +726,7 @@ impl PlatformStateImpl {
         Ok(())
     }
 
+    #[allow(clippy::unused_self)]
     pub(super) fn position_window(
         &self,
         webview_window: &wry::application::window::Window,
@@ -737,6 +737,7 @@ impl PlatformStateImpl {
         std::result::Result::Ok(())
     }
 
+    #[allow(clippy::unused_self)]
     pub(super) fn get_cursor_position(&self) -> Option<Rect> {
         let caret: CaretPosition = unsafe { get_caret_position(true) };
 

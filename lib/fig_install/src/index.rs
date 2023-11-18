@@ -198,7 +198,7 @@ pub async fn query_index(
 
     let mut chosen = None;
     #[allow(clippy::never_loop)] // todo(mia): fix
-    for entry in valid_versions.into_iter() {
+    for entry in valid_versions {
         if let Some(rollout) = &entry.rollout {
             if ignore_rollout {
                 trace!("accepted update candidate {} because rollout is ignored", entry.version);
@@ -376,16 +376,14 @@ mod tests {
     async fn pull_test() {
         let index = pull(&Channel::Stable).await.unwrap();
         println!("{:#?}", index);
-        assert!(index.supported.len() > 0);
-        assert!(index.versions.len() > 0);
+        assert!(!index.supported.is_empty());
+        assert!(!index.versions.is_empty());
     }
 
     #[tokio::test]
     async fn check_test() {
-        dbg!(
-            check_for_updates(Channel::Stable, Kind::Dmg, Variant::Full, false,)
-                .await
-                .unwrap()
-        );
+        check_for_updates(Channel::Stable, Kind::Dmg, Variant::Full, false)
+            .await
+            .unwrap();
     }
 }

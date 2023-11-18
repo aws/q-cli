@@ -249,7 +249,7 @@ impl History {
     }
 }
 
-fn map_row(row: &rusqlite::Row) -> rusqlite::Result<CommandInfo> {
+fn map_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<CommandInfo> {
     let start_time = row
         .get::<_, Option<i64>>(6)?
         .and_then(|t| std::time::UNIX_EPOCH.checked_add(std::time::Duration::from_secs(u64::try_from(t).ok()?)));

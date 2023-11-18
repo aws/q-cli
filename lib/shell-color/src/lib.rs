@@ -104,7 +104,7 @@ pub fn get_color_support() -> ColorSupport {
                 support_term256 = true;
             }
         } else {
-            support_term256 = true
+            support_term256 = true;
         }
     }
 

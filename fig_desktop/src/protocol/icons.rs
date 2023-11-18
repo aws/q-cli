@@ -100,8 +100,7 @@ pub async fn process_asset(path: PathBuf) -> Result<ProcessedAsset> {
     let is_svg = path
         .extension()
         .and_then(OsStr::to_str)
-        .map(|ext| ext.to_lowercase() == "svg")
-        .unwrap_or(true);
+        .map_or(true, |ext| ext.to_lowercase() == "svg");
 
     let built = if is_svg {
         (Arc::new(tokio::fs::read(&path).await?.into()), AssetKind::Svg)
@@ -176,11 +175,11 @@ pub async fn handle(request: Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'s
     let url = Url::parse(&request.uri().to_string())?;
     let domain = url.domain();
     // rust really doesn't like us not specifying RandomState here
-    let pairs: HashMap<_, _, RandomState> = HashMap::from_iter(url.query_pairs());
+    let pairs: HashMap<_, _, RandomState> = url.query_pairs().collect();
 
     let res = match domain {
         Some("template") => {
-            let query_pairs: HashMap<Cow<str>, Cow<str>> = url.query_pairs().collect();
+            let query_pairs: HashMap<Cow<'_, str>, Cow<'_, str>> = url.query_pairs().collect();
 
             let asset = ASSETS.get(&AssetSpecifier::Named("template".into())).unwrap();
             let mut image = image::load_from_memory_with_format(asset, image::ImageFormat::Png).unwrap();
@@ -203,7 +202,7 @@ pub async fn handle(request: Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'s
             image.write_to(&mut png_bytes, image::ImageFormat::Png).unwrap();
             Some(build_asset_response(png_bytes.into_inner().into(), AssetKind::Png))
         },
-        Some("icon") | Some("asset") => match pairs.get("asset").or_else(|| pairs.get("type")) {
+        Some("icon" | "asset") => match pairs.get("asset").or_else(|| pairs.get("type")) {
             Some(name) => Some(cached_asset_response(&AssetSpecifier::Named(Cow::Borrowed(name)), None).await),
             None => None,
         },

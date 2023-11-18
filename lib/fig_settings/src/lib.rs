@@ -243,6 +243,7 @@ pub trait JsonStore: Sized {
                     let mut file = FileRwLock::new(File::open(Self::path()?)?);
                     let mut read = file.write()?;
                     let mut content = String::new();
+                    #[allow(clippy::verbose_file_reads)]
                     read.read_to_string(&mut content)?;
                     Ok(content)
                 })();
@@ -284,14 +285,11 @@ pub trait JsonStore: Sized {
         let mut file = FileRwLock::new(file_opts.open(&path)?);
         let mut lock = file.write()?;
 
-        match serde_json::to_writer_pretty(&mut *lock, &*self.map()) {
-            Ok(_) => {},
-            Err(_) => {
-                // Write {} to the file if the serialization failed
-                lock.seek(SeekFrom::Start(0))?;
-                lock.set_len(0)?;
-                lock.write_all(b"{}")?;
-            },
+        if let Err(_err) = serde_json::to_writer_pretty(&mut *lock, &*self.map()) {
+            // Write {} to the file if the serialization failed
+            lock.seek(SeekFrom::Start(0))?;
+            lock.set_len(0)?;
+            lock.write_all(b"{}")?;
         };
         lock.flush()?;
 

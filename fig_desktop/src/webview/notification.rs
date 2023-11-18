@@ -65,7 +65,7 @@ impl WebviewNotificationsState {
                     event_name: EmitEventName::Notification,
                     payload: BASE64_STANDARD.encode(encoded).into(),
                 },
-            })?
+            })?;
         }
 
         Ok(())

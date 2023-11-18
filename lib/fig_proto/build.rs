@@ -30,8 +30,8 @@ fn protoc_version() -> Option<Version> {
 fn main() -> Result<()> {
     let proto_files = std::fs::read_dir("../../proto")?
         .filter_map(|entry| entry.ok())
-        .filter(|entry| entry.file_type().map(|t| t.is_file()).unwrap_or(false))
-        .filter(|entry| entry.path().extension().map(|ext| ext == "proto").unwrap_or(false))
+        .filter(|entry| entry.file_type().is_ok_and(|t| t.is_file()))
+        .filter(|entry| entry.path().extension().is_some_and(|ext| ext == "proto"))
         .map(|entry| entry.path())
         .collect::<Vec<_>>();
 

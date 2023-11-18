@@ -31,11 +31,13 @@ pub fn update(
     }
 
     let key_bindings = KeyBindings::load_from_settings("autocomplete")
-        .map(|key_bindings| key_bindings.into_iter())
-        .unwrap_or_else(|err| {
-            error!(%err, "Failed to load keybindings");
-            vec![].into_iter()
-        })
+        .map_or_else(
+            |err| {
+                error!(%err, "Failed to load keybindings");
+                vec![].into_iter()
+            },
+            |key_bindings| key_bindings.into_iter(),
+        )
         .map(|KeyBinding { identifier, binding }| fig_proto::figterm::Action {
             identifier,
             bindings: vec![binding],

@@ -190,7 +190,7 @@ pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
             if let Err(err) =
                 fig_util::open_url("https://docs.aws.amazon.com/codewhisperer/latest/userguide/command-line.html")
             {
-                error!(%err, "Failed to open user manual url")
+                error!(%err, "Failed to open user manual url");
             }
         },
         id => {
@@ -207,9 +207,7 @@ pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
         },
     }
 
-    tokio::spawn(fig_telemetry::send_menu_bar_actioned(Some(
-        menu_event.id().0.to_owned(),
-    )));
+    tokio::spawn(fig_telemetry::send_menu_bar_actioned(Some(menu_event.id().0.clone())));
 }
 
 #[cfg(target_os = "linux")]
@@ -452,7 +450,7 @@ fn menu() -> Vec<MenuElement> {
         // .join()
         // .unwrap();
 
-        // TOOD: renable, the lib is broken rn
+        // TODO: renable, the lib is broken rn
         // let accessibility_not_installed = !PlatformState::accessibility_is_enabled().unwrap_or(true);
 
         // TODO: Add input method check

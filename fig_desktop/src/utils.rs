@@ -51,8 +51,7 @@ where
                     if accept_json {
                         response.header(CONTENT_TYPE, "application/json").body(
                             serde_json::to_vec(&json!({ "error": err.to_string() }))
-                                .map(Into::into)
-                                .unwrap_or_else(|_| b"{}".as_ref().into()),
+                                .map_or_else(|_| b"{}".as_ref().into(), Into::into),
                         )
                     } else {
                         response

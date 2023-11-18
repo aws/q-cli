@@ -213,24 +213,24 @@ impl Terminal {
     /// Get the bundle identifier for the terminal
     /// Note: this does not gracefully handle terminals that have changed bundle identifiers
     /// recently such as VSCodium & Alacritty. We default to the current identifier.
-    pub fn to_bundle_id(&self) -> String {
+    pub fn to_bundle_id(&self) -> Option<String> {
         match self {
-            Terminal::Iterm => String::from("com.googlecode.iterm2"),
-            Terminal::TerminalApp => String::from("com.apple.Terminal"),
-            Terminal::Hyper => String::from("co.zeit.hyper"),
-            Terminal::Alacritty => String::from("org.alacritty"),
-            Terminal::Kitty => String::from("net.kovidgoyal.kitty"),
-            Terminal::VSCode => String::from("com.microsoft.VSCode"),
-            Terminal::VSCodeInsiders => String::from("com.microsoft.VSCodeInsiders"),
-            Terminal::VSCodium => String::from("com.vscodium"),
-            Terminal::Tabby => String::from("org.tabby"),
-            Terminal::Nova => String::from("com.panic.Nova"),
-            Terminal::WezTerm => String::from("com.github.wez.wezterm"),
-            Terminal::IntelliJ(Some(variant)) => variant.bundle_identifier().into(),
-            Terminal::Zed => String::from("dev.zed.Zed"),
-            Terminal::Cursor => String::from("com.todesktop.230313mzl4w4u92"),
-            Terminal::CursorNightly => String::from("com.todesktop.23052492jqa5xjo"),
-            _ => todo!(),
+            Terminal::Iterm => Some(String::from("com.googlecode.iterm2")),
+            Terminal::TerminalApp => Some(String::from("com.apple.Terminal")),
+            Terminal::Hyper => Some(String::from("co.zeit.hyper")),
+            Terminal::Alacritty => Some(String::from("org.alacritty")),
+            Terminal::Kitty => Some(String::from("net.kovidgoyal.kitty")),
+            Terminal::VSCode => Some(String::from("com.microsoft.VSCode")),
+            Terminal::VSCodeInsiders => Some(String::from("com.microsoft.VSCodeInsiders")),
+            Terminal::VSCodium => Some(String::from("com.vscodium")),
+            Terminal::Tabby => Some(String::from("org.tabby")),
+            Terminal::Nova => Some(String::from("com.panic.Nova")),
+            Terminal::WezTerm => Some(String::from("com.github.wez.wezterm")),
+            Terminal::IntelliJ(Some(variant)) => Some(variant.bundle_identifier().into()),
+            Terminal::Zed => Some(String::from("dev.zed.Zed")),
+            Terminal::Cursor => Some(String::from("com.todesktop.230313mzl4w4u92")),
+            Terminal::CursorNightly => Some(String::from("com.todesktop.23052492jqa5xjo")),
+            _ => None,
         }
     }
 

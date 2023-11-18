@@ -50,10 +50,7 @@ use fig_util::desktop::{
     launch_fig_desktop,
     LaunchArgs,
 };
-use fig_util::directories::{
-    settings_path,
-    state_path,
-};
+use fig_util::directories::settings_path;
 use fig_util::system_info::SupportLevel;
 use fig_util::{
     directories,
@@ -246,8 +243,8 @@ where
     })))
 }
 
-fn is_installed(app: impl AsRef<OsStr>) -> bool {
-    match app_path_from_bundle_id(app) {
+fn is_installed(app: Option<impl AsRef<OsStr>>) -> bool {
+    match app.and_then(app_path_from_bundle_id) {
         Some(x) => !x.is_empty(),
         None => false,
     }
@@ -291,7 +288,7 @@ fn print_status_result(name: impl Display, status: &Result<(), DoctorError>, ver
             }
             if let Some(error) = error {
                 if verbose {
-                    println!("  {error:?}")
+                    println!("  {error:?}");
                 }
             }
         },
@@ -440,7 +437,7 @@ impl DoctorCheck for FigSocketCheck {
             }
         }
 
-        check_file_exists(directories::desktop_socket_path().expect("No home directory")).map_err(|_| {
+        check_file_exists(directories::desktop_socket_path().expect("No home directory")).map_err(|_err| {
             doctor_fix_async!({
                 reason: "CodeWhisperer socket missing",
                 fix: restart_fig()
@@ -466,34 +463,11 @@ impl DoctorCheck for SettingsCorruptionCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        fig_settings::Settings::load().map_err(|_| DoctorError::Error {
+        fig_settings::Settings::load().map_err(|_err| DoctorError::Error {
             reason: "CodeWhisperer settings file is corrupted".into(),
             info: vec![],
             fix: Some(DoctorFix::Sync(Box::new(|| {
                 std::fs::write(settings_path()?, "{}")?;
-                Ok(())
-            }))),
-            error: None,
-        })?;
-
-        Ok(())
-    }
-}
-
-struct StateCorruptionCheck;
-
-#[async_trait]
-impl DoctorCheck for StateCorruptionCheck {
-    fn name(&self) -> Cow<'static, str> {
-        "State Corruption".into()
-    }
-
-    async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        fig_settings::state::all().map_err(|_| DoctorError::Error {
-            reason: "CodeWhisperer state file is corrupted".into(),
-            info: vec![],
-            fix: Some(DoctorFix::Sync(Box::new(|| {
-                std::fs::write(state_path()?, "{}")?;
                 Ok(())
             }))),
             error: None,
@@ -790,8 +764,10 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
         let path = directories::home_dir()
             .ok()
             .and_then(|home_dir| self.integration.path().strip_prefix(&home_dir).ok().map(PathBuf::from))
-            .map(|path| format!("~/{}", path.display()))
-            .unwrap_or_else(|| self.integration.path().display().to_string());
+            .map_or_else(
+                || self.integration.path().display().to_string(),
+                |path| format!("~/{}", path.display()),
+            );
 
         let shell = self.integration.get_shell();
 
@@ -839,7 +815,7 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
 
                     let path = self.integration.path();
                     if path.exists() {
-                        access(&self.integration.path(), AccessFlags::R_OK | AccessFlags::W_OK).map_err(|_| {
+                        access(&self.integration.path(), AccessFlags::R_OK | AccessFlags::W_OK).map_err(|err| {
                             DoctorError::Error {
                                 reason: format!("{} is not read or writable", path.display()).into(),
                                 info: vec![
@@ -856,6 +832,8 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                                     .into(),
                                     format!("    2. {}", "cw integrations install dotfiles".magenta()).into(),
                                     format!("    3. {}", "cw doctor".magenta()).into(),
+                                    "".into(),
+                                    format!("    Error: {err}").into(),
                                 ],
                                 fix: None,
                                 error: None,
@@ -1591,7 +1569,7 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
             Some(terminal) if terminal.supports_macos_input_method() => {
                 let app = running_applications()
                     .into_iter()
-                    .find(|app| app.bundle_identifier == Some(terminal.to_bundle_id()));
+                    .find(|app| app.bundle_identifier == terminal.to_bundle_id());
 
                 if let Some(app) = app {
                     if !input_method.enabled_for_terminal_instance(terminal, app.process_identifier) {
@@ -2030,7 +2008,7 @@ where
 
         if !config.strict && check_type == DoctorCheckType::SoftCheck {
             if let Err(DoctorError::Error { reason, .. }) = result {
-                result = Err(DoctorError::Warning(reason))
+                result = Err(DoctorError::Warning(reason));
             }
         }
 
@@ -2060,7 +2038,7 @@ where
                     println!("Re-running check...");
                     println!();
                     if let Ok(new_context) = get_context().await {
-                        context = new_context
+                        context = new_context;
                     }
                     let fix_result = check.check(&context).await;
                     print_status_result(&name, &fix_result, config.verbose);
@@ -2214,7 +2192,6 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 #[cfg(target_os = "windows")]
                 &WindowsConsoleCheck,
                 &SettingsCorruptionCheck,
-                &StateCorruptionCheck,
                 &FigIntegrationsCheck,
                 // &SshIntegrationCheck,
                 // &SshdConfigCheck,
@@ -2356,7 +2333,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             "If you are not sure how to fix it, please open an issue with {} to let us know!",
             "cw issue".magenta()
         );
-        println!()
+        println!();
     } else {
         // If early exit is disabled, no errors are thrown
         if !config.verbose {
@@ -2367,7 +2344,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             "  CodeWhisperer still not working? Run {} to let us know!",
             "cw issue".magenta()
         );
-        println!()
+        println!();
     }
 
     if fig_settings::state::get_bool_or("doctor.prompt-restart-terminal", false) {

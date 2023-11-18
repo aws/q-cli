@@ -166,27 +166,27 @@ pub fn host_sockets_dir() -> Result<PathBuf> {
     sockets_dir()
 }
 
-/// Path to the managed binaries directory
-///
-/// - Linux: UNIMPLEMENTED
-/// - MacOS: UNIMPLEMENTED
-/// - Windows: %LOCALAPPDATA%\Fig\bin
-pub fn managed_binaries_dir() -> Result<PathBuf> {
-    debug_env_binding!("CW_DIRECTORIES_MANAGED_BINARIES_DIR");
+// Path to the managed binaries directory
+//
+// - Linux: UNIMPLEMENTED
+// - MacOS: UNIMPLEMENTED
+// - Windows: %LOCALAPPDATA%\Fig\bin
+// pub fn _managed_binaries_dir() -> Result<PathBuf> {
+//     debug_env_binding!("CW_DIRECTORIES_MANAGED_BINARIES_DIR");
 
-    cfg_if::cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            // TODO: use fig_app_bundle() here!
-            todo!();
-        } else if #[cfg(target_os = "linux")] {
-            todo!();
-        } else if #[cfg(target_os = "windows")] {
-            Ok(fig_dir()?.join("bin"))
-        } else {
-            todo!();
-        }
-    }
-}
+//     cfg_if::cfg_if! {
+//         if #[cfg(target_os = "macos")] {
+//             // TODO: use fig_app_bundle() here!
+//             todo!();
+//         } else if #[cfg(target_os = "linux")] {
+//             todo!();
+//         } else if #[cfg(target_os = "windows")] {
+//             Ok(fig_dir()?.join("bin"))
+//         } else {
+//             todo!();
+//         }
+//     }
+// }
 
 /// The path to all of the themes
 pub fn themes_dir() -> Result<PathBuf> {
@@ -345,31 +345,25 @@ pub fn manifest_path() -> Result<PathBuf> {
     }
 }
 
-/// The path to the managed fig cli binary
-///
-/// Note this is not implemented on Linux or MacOS
-pub fn managed_cw_cli_path() -> Result<PathBuf> {
-    debug_env_binding!("CW_DIRECTORIES_MANAGED_CW_CLI_PATH");
+// The path to the managed fig cli binary
+//
+// Note this is not implemented on Linux or MacOS
+// pub fn managed_cw_cli_path() -> Result<PathBuf> {
+//     debug_env_binding!("CW_DIRECTORIES_MANAGED_CW_CLI_PATH");
 
-    cfg_if::cfg_if! {
-        if #[cfg(unix)] {
-            todo!();
-        } else if #[cfg(windows)] {
-            Ok(managed_binaries_dir()?.join("fig.exe"))
-        }
-    }
-}
+//     cfg_if::cfg_if! {
+//         if #[cfg(unix)] {
+//             todo!();
+//         } else if #[cfg(windows)] {
+//             Ok(managed_binaries_dir()?.join("fig.exe"))
+//         }
+//     }
+// }
 
 /// The path to the fig settings file
 pub fn settings_path() -> Result<PathBuf> {
     debug_env_binding!("CW_DIRECTORIES_SETTINGS_PATH");
     Ok(fig_data_dir()?.join("settings.json"))
-}
-
-/// The path to the fig state file
-pub fn state_path() -> Result<PathBuf> {
-    debug_env_binding!("CW_DIRECTORIES_STATE_PATH");
-    Ok(fig_data_dir()?.join("state.json"))
 }
 
 /// The path to the lock file used to indicate that the app is updating
@@ -407,8 +401,8 @@ utf8_dir!(sockets_dir);
 utf8_dir!(remote_socket_path);
 utf8_dir!(figterm_socket_path, session_id: impl Display);
 utf8_dir!(manifest_path);
-utf8_dir!(managed_binaries_dir);
-utf8_dir!(managed_cw_cli_path);
+// utf8_dir!(managed_binaries_dir);
+// utf8_dir!(managed_cw_cli_path);
 utf8_dir!(backups_dir);
 utf8_dir!(logs_dir);
 utf8_dir!(relative_cli_path);
@@ -445,7 +439,7 @@ mod test {
         test_environment_path!(fig_data_dir, "CW_DIRECTORIES_CW_DATA_DIR");
         test_environment_path!(sockets_dir, "CW_DIRECTORIES_SOCKETS_DIR");
         test_environment_path!(host_sockets_dir, "CW_DIRECTORIES_HOST_SOCKETS_DIR");
-        test_environment_path!(managed_binaries_dir, "CW_DIRECTORIES_MANAGED_BINARIES_DIR");
+        // test_environment_path!(managed_binaries_dir, "CW_DIRECTORIES_MANAGED_BINARIES_DIR");
         test_environment_path!(themes_dir, "CW_DIRECTORIES_THEMES_DIR");
         test_environment_path!(logs_dir, "CW_DIRECTORIES_LOGS_DIR");
         test_environment_path!(backups_dir, "CW_DIRECTORIES_BACKUPS_DIR");
@@ -453,9 +447,8 @@ mod test {
         test_environment_path!(scripts_cache_dir, "CW_DIRECTORIES_SCRIPTS_CACHE_DIR");
         test_environment_path!(desktop_socket_path, "CW_DIRECTORIES_CW_SOCKET_PATH");
         test_environment_path!(manifest_path, "CW_DIRECTORIES_MANIFEST_PATH");
-        test_environment_path!(managed_cw_cli_path, "CW_DIRECTORIES_MANAGED_CW_CLI_PATH");
+        // test_environment_path!(managed_cw_cli_path, "CW_DIRECTORIES_MANAGED_CW_CLI_PATH");
         test_environment_path!(settings_path, "CW_DIRECTORIES_SETTINGS_PATH");
-        test_environment_path!(state_path, "CW_DIRECTORIES_STATE_PATH");
     }
 }
 
@@ -467,7 +460,7 @@ mod tests {
 
     /// If this test fails then either of these paths were changed.
     ///
-    /// Since we set the permssions of the parent of these paths, make sure they're in folders we
+    /// Since we set the permissions of the parent of these paths, make sure they're in folders we
     /// own otherwise we will set permissions of directories we shouldn't
     #[test]
     fn test_socket_paths() {
@@ -513,21 +506,21 @@ mod tests {
         let mut path = path.ok().unwrap().into_os_string().into_string().unwrap();
 
         if let Ok(home) = std::env::var("HOME") {
-            let home = home.strip_suffix("/").unwrap_or(&home);
-            path = path.replace(&home, "$HOME");
+            let home = home.strip_suffix('/').unwrap_or(&home);
+            path = path.replace(home, "$HOME");
         }
 
         let user = whoami::username();
         path = path.replace(&user, "$USER");
 
         if let Ok(tmpdir) = std::env::var("TMPDIR") {
-            let tmpdir = tmpdir.strip_suffix("/").unwrap_or(&tmpdir);
-            path = path.replace(&tmpdir, "$TMPDIR");
+            let tmpdir = tmpdir.strip_suffix('/').unwrap_or(&tmpdir);
+            path = path.replace(tmpdir, "$TMPDIR");
         }
 
-        if let Some(xdg_runtime_dir) = std::env::var("XDG_RUNTIME_DIR").ok() {
-            let xdg_runtime_dir = xdg_runtime_dir.strip_suffix("/").unwrap_or(&xdg_runtime_dir);
-            path = path.replace(&xdg_runtime_dir, "$XDG_RUNTIME_DIR");
+        if let Ok(xdg_runtime_dir) = std::env::var("XDG_RUNTIME_DIR") {
+            let xdg_runtime_dir = xdg_runtime_dir.strip_suffix('/').unwrap_or(&xdg_runtime_dir);
+            path = path.replace(xdg_runtime_dir, "$XDG_RUNTIME_DIR");
         }
 
         path
@@ -601,13 +594,6 @@ mod tests {
         linux!(settings_path(), @"$HOME/.local/share/codewhisperer/settings.json");
         macos!(settings_path(), @"$HOME/Library/Application Support/codewhisperer/settings.json");
         windows!(settings_path(), @r"C:\Users\$USER\AppData\Lcoal\Fig\settings.json");
-    }
-
-    #[test]
-    fn snapshot_state_path() {
-        linux!(state_path(), @"$HOME/.local/share/codewhisperer/state.json");
-        macos!(state_path(), @"$HOME/Library/Application Support/codewhisperer/state.json");
-        windows!(state_path(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\state.json");
     }
 
     #[test]

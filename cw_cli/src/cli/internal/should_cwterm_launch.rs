@@ -147,7 +147,7 @@ fn grandparent_status(parent_pid: fig_util::process_info::Pid) -> Status {
         pid: grandparent_pid,
         name: grandparent_name.into(),
         is_valid: valid_grandparent.is_some(),
-        is_special: valid_grandparent.map(|term| term.is_special()).unwrap_or(false),
+        is_special: valid_grandparent.is_some_and(|term| term.is_special()),
     })
 }
 

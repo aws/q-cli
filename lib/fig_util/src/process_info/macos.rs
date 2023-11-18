@@ -21,7 +21,7 @@ impl PidExt for Pid {
                 pid,
                 nix::libc::PROC_PIDTBSDINFO,
                 0,
-                &mut info as *mut _ as *mut _,
+                info.as_mut_ptr().cast(),
                 std::mem::size_of::<nix::libc::proc_bsdinfo>() as _,
             )
         };
@@ -38,7 +38,7 @@ impl PidExt for Pid {
     fn exe(&self) -> Option<PathBuf> {
         let mut buffer = [0u8; 4096];
         let pid = self.0;
-        let buffer_ptr = buffer.as_mut_ptr() as *mut std::ffi::c_void;
+        let buffer_ptr = buffer.as_mut_ptr().cast::<std::ffi::c_void>();
         let buffer_size = buffer.len() as u32;
         let ret = unsafe { nix::libc::proc_pidpath(pid, buffer_ptr, buffer_size) };
         match ret {

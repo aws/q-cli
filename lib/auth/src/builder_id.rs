@@ -187,7 +187,7 @@ pub async fn start_device_authorization(
     start_url: Option<String>,
     region: Option<String>,
 ) -> Result<StartDeviceAuthorizationResponse> {
-    let region = region.clone().map(Region::new).unwrap_or(OIDC_BUILDER_ID_REGION);
+    let region = region.clone().map_or(OIDC_BUILDER_ID_REGION, Region::new);
     let client = client(region.clone());
 
     let DeviceRegistration {
@@ -241,7 +241,7 @@ impl BuilderIdToken {
                 let token: Option<Self> = serde_json::from_str(&secret.0)?;
                 match token {
                     Some(token) => {
-                        let region = token.region.clone().map(Region::new).unwrap_or(OIDC_BUILDER_ID_REGION);
+                        let region = token.region.clone().map_or(OIDC_BUILDER_ID_REGION, Region::new);
 
                         let client = client(region.clone());
                         // if token is expired try to refresh
@@ -375,7 +375,7 @@ pub async fn poll_create_token(
     start_url: Option<String>,
     region: Option<String>,
 ) -> PollCreateToken {
-    let region = region.clone().map(Region::new).unwrap_or(OIDC_BUILDER_ID_REGION);
+    let region = region.clone().map_or(OIDC_BUILDER_ID_REGION, Region::new);
     let client = client(region.clone());
 
     let DeviceRegistration {

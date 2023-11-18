@@ -359,6 +359,7 @@ impl DotfileShellIntegration {
         })
     }
 
+    #[allow(clippy::unused_self)]
     fn description(&self, when: When) -> String {
         match when {
             When::Pre => "# CodeWhisperer pre block. Keep at the top of this file.".into(),

@@ -57,7 +57,7 @@ async fn main() {
         let loaded_nib: BOOL = msg_send![class!(NSBundle), loadNibNamed:nib_name
                                 owner:app];
         info!("RUNNING {loaded_nib:?}!");
-        app.run()
+        app.run();
     }
 }
 

@@ -128,7 +128,7 @@ pub async fn execute(request: PseudoterminalExecuteRequest, figterm_state: &Figt
         let output = cmd
             .output()
             .await
-            .map_err(|_| format!("Failed running command: {:?}", request.command))?;
+            .map_err(|err| format!("Failed running command {:?}: {err}", request.command))?;
 
         RequestResult::Ok(Box::new(ServerOriginatedSubMessage::PseudoterminalExecuteResponse(
             PseudoterminalExecuteResponse {
@@ -171,8 +171,8 @@ pub async fn run(request: RunProcessRequest, state: &FigtermState) -> RequestRes
 
         let response = timeout(Duration::from_secs(10), rx)
             .await
-            .map_err(|_| "Timed out waiting for figterm response")?
-            .map_err(|_| "Failed to receive figterm response")?;
+            .map_err(|_err| "Timed out waiting for figterm response")?
+            .map_err(|err| format!("Failed to receive figterm response: {err}"))?;
 
         if let hostbound::response::Response::RunProcess(response) = response {
             RequestResult::Ok(Box::new(ServerOriginatedSubMessage::RunProcessResponse(
@@ -210,7 +210,7 @@ pub async fn run(request: RunProcessRequest, state: &FigtermState) -> RequestRes
         let output = cmd
             .output()
             .await
-            .map_err(|_| format!("Failed running command: {:?}", request.executable))?;
+            .map_err(|err| format!("Failed running command {:?}: {err}", request.executable))?;
 
         RequestResult::Ok(Box::new(ServerOriginatedSubMessage::RunProcessResponse(
             RunProcessResponse {

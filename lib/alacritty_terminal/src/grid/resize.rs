@@ -334,8 +334,7 @@ impl<T: GridCell + Default + PartialEq + Clone> Grid<T> {
 
                 if wrapped
                     .last()
-                    .map(|c| c.flags().contains(ShellFlags::WRAPLINE) && i >= 1)
-                    .unwrap_or(false)
+                    .is_some_and(|c| c.flags().contains(ShellFlags::WRAPLINE) && i >= 1)
                     && wrapped.len() < columns
                 {
                     // Make sure previous wrap flag doesn't linger around.

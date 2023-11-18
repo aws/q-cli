@@ -261,10 +261,9 @@ impl WindowState {
                         )
                     });
 
-                let overflows_window_below = platform_state
-                    .get_active_window()
-                    .map(|window| window.rect.bottom(scale_factor) < max_height + caret_position.y + caret_size.height)
-                    .unwrap_or(false);
+                let overflows_window_below = platform_state.get_active_window().is_some_and(|window| {
+                    window.rect.bottom(scale_factor) < max_height + caret_position.y + caret_size.height
+                });
 
                 let above = !overflows_monitor_above & (overflows_monitor_below | overflows_window_below);
 
@@ -297,7 +296,7 @@ impl WindowState {
         if !dry_run {
             match platform_state.position_window(self.webview.window(), &self.window_id, position) {
                 Ok(_) => {
-                    tracing::trace!(window_id =% self.window_id, ?position, ?size, ?anchor, "updated window geometry")
+                    tracing::trace!(window_id =% self.window_id, ?position, ?size, ?anchor, "updated window geometry");
                 },
                 Err(err) => tracing::error!(%err, window_id =% self.window_id, "failed to position window"),
             }
@@ -307,7 +306,7 @@ impl WindowState {
 
             match platform_state.position_window(self.webview.window(), &self.window_id, position) {
                 Ok(_) => {
-                    tracing::trace!(window_id =% self.window_id, ?position, ?size, ?anchor, "updated window geometry")
+                    tracing::trace!(window_id =% self.window_id, ?position, ?size, ?anchor, "updated window geometry");
                 },
                 Err(err) => tracing::error!(%err, window_id =% self.window_id, "failed to position window"),
             }
@@ -431,7 +430,7 @@ impl WindowState {
                         event_name: Some(event_name.to_string()),
                         payload: Some(payload.to_string()),
                     })),
-                })
+                });
             },
             WindowEvent::NavigateForward => {
                 self.webview.evaluate_script("window.history.forward();").unwrap();
@@ -445,7 +444,7 @@ impl WindowState {
                         event_name: Some(event_name.into_owned()),
                         payload: payload.map(|s| s.into_owned()),
                     })),
-                })
+                });
             },
             WindowEvent::ReloadIfNotLoaded => {
                 info!(%self.window_id, "Reloading window if not loaded");
@@ -564,7 +563,7 @@ impl WindowState {
                 match message.encode(&mut encoded) {
                     Ok(_) => {
                         debug!(?notification_type, %window_id, "Sending notification");
-                        self.emit(EmitEventName::ProtoMessageReceived, BASE64_STANDARD.encode(encoded))
+                        self.emit(EmitEventName::ProtoMessageReceived, BASE64_STANDARD.encode(encoded));
                     },
                     Err(err) => error!(%err, "Failed to encode notification"),
                 }
@@ -587,6 +586,7 @@ impl WindowState {
         self.enabled.load(std::sync::atomic::Ordering::SeqCst)
     }
 
+    #[allow(clippy::unused_self)]
     pub fn set_theme(&self, _theme: Option<Theme>) {
         // TODO: blocked on https://github.com/tauri-apps/tao/issues/582
     }

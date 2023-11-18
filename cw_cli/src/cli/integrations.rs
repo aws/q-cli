@@ -215,7 +215,7 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
     }
 
     if !installed && !silent {
-        println!("Already installed")
+        println!("Already installed");
     }
 
     result
@@ -322,11 +322,11 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
     };
 
     if uninstalled && result.is_ok() && !silent {
-        println!("Uninstalled!")
+        println!("Uninstalled!");
     }
 
     if !uninstalled && !silent {
-        println!("Not installed")
+        println!("Not installed");
     }
 
     result
@@ -338,9 +338,9 @@ async fn status(integration: Integration) -> Result<()> {
         Integration::Ssh => {
             let ssh_integration = SshIntegration::new()?;
             if ssh_integration.is_installed().await.is_ok() {
-                println!("Installed")
+                println!("Installed");
             } else {
-                println!("Not installed")
+                println!("Not installed");
             }
             Ok(())
         },
@@ -372,9 +372,9 @@ async fn status(integration: Integration) -> Result<()> {
                 if #[cfg(target_os = "macos")] {
                     let input_method = fig_integrations::input_method::InputMethod::default();
                     if input_method.is_installed().await.is_ok() {
-                        println!("Installed")
+                        println!("Installed");
                     } else {
-                        println!("Not installed")
+                        println!("Not installed");
                     }
                     Ok(())
                 } else {

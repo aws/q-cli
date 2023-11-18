@@ -120,8 +120,7 @@ fn create_command(executable: impl AsRef<Path>, working_directory: impl AsRef<Pa
             .find_map(|(key, value)| if key == "PATH" { Some(value.as_str()) } else { None });
 
         which::which_in(executable.as_ref(), path, working_directory.as_ref())
-            .map(Command::new)
-            .unwrap_or_else(|_| Command::new(executable.as_ref()))
+            .map_or_else(|_| Command::new(executable.as_ref()), Command::new)
     };
 
     #[cfg(target_os = "windows")]
@@ -267,10 +266,9 @@ pub async fn process_figterm_request(
                 }
             };
 
-            let (edit_buffer, cursor_position) = term
-                .get_current_buffer()
-                .map(|buf| (Some(buf.buffer), buf.cursor_idx.and_then(|i| i.try_into().ok())))
-                .unwrap_or((None, None));
+            let (edit_buffer, cursor_position) = term.get_current_buffer().map_or((None, None), |buf| {
+                (Some(buf.buffer), buf.cursor_idx.and_then(|i| i.try_into().ok()))
+            });
 
             let response = FigtermResponse::Diagnostics(figterm::DiagnosticsResponse {
                 shell_context: Some(shell_state_to_context(term.shell_state())),
@@ -365,7 +363,7 @@ async fn send_figterm_response_hostbound(
                 nonce,
                 response: Some(match response {
                     FigtermResponse::Diagnostics(diagnostics) => Response::Diagnostics(diagnostics),
-                    FigtermResponse::GhostTextComplete(_ghost_text_complete) => unimplemented!(),
+                    FigtermResponse::GhostTextComplete(_ghost_text_complete) => unreachable!(),
                 }),
             })),
         };
@@ -502,8 +500,7 @@ pub async fn process_remote_message(
                         .local_context
                         .shell_path
                         .as_ref()
-                        .map(|x| x.as_os_str())
-                        .unwrap_or_else(|| OsStr::new("/bin/bash"))
+                        .map_or_else(|| OsStr::new("/bin/bash"), |x| x.as_os_str())
                         .to_owned();
 
                     // TODO(sean): better SHELL_ARGs handling here based on shell.

@@ -130,13 +130,13 @@ impl CurrentEnvironment {
         let shell_pid = self_pid.parent();
         let shell_exe = shell_pid.and_then(|pid| pid.exe()).map(|p| p.display().to_string());
 
-        let current_dir = std::env::current_dir()
-            .map(|path| path.to_string_lossy().into_owned())
-            .unwrap_or_else(|_| "Could not get working directory".into());
+        let current_dir = std::env::current_dir().map_or_else(
+            |_| "Could not get working directory".into(),
+            |path| path.to_string_lossy().into_owned(),
+        );
 
-        let executable_location = std::env::current_exe()
-            .map(|path| path.to_string_lossy().into_owned())
-            .unwrap_or_else(|_| "<unknown>".into());
+        let executable_location =
+            std::env::current_exe().map_or_else(|_| "<unknown>".into(), |path| path.to_string_lossy().into_owned());
 
         let terminal = fig_util::terminal::Terminal::parent_terminal();
 
@@ -269,7 +269,7 @@ impl Diagnostics {
         let mut lines = vec![];
 
         lines.push("CODEWHISPERER-details:".into());
-        lines.extend(print_indent(&[self.version.to_owned()], "  ", 1));
+        lines.extend(print_indent(&[self.version.clone()], "  ", 1));
         lines.push("hardware-info:".into());
         lines.extend(print_indent(&self.hardware.user_readable(), "  ", 1));
         lines.push("os-info:".into());

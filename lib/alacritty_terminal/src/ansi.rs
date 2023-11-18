@@ -1280,11 +1280,11 @@ where
     #[allow(clippy::cognitive_complexity)]
     #[inline]
     fn csi_dispatch(&mut self, params: &Params, intermediates: &[u8], has_ignored_intermediates: bool, action: char) {
-        let handler = &mut self.handler;
-
         macro_rules! unhandled {
             () => {{
-                if handler.unhandled_csi_dispatch(params, intermediates, has_ignored_intermediates, action)
+                if self
+                    .handler
+                    .unhandled_csi_dispatch(params, intermediates, has_ignored_intermediates, action)
                     == HandledStatus::Unhandled
                 {
                     debug!(
@@ -1311,24 +1311,24 @@ where
         };
 
         match (action, intermediates) {
-            ('@', []) => handler.insert_blank(next_param_or(1) as usize),
-            ('A', []) => handler.move_up(next_param_or(1) as usize),
-            ('B', []) | ('e', []) => handler.move_down(next_param_or(1) as usize),
+            ('@', []) => self.handler.insert_blank(next_param_or(1) as usize),
+            ('A', []) => self.handler.move_up(next_param_or(1) as usize),
+            ('B' | 'e', []) => self.handler.move_down(next_param_or(1) as usize),
             ('b', []) => {
                 if let Some(c) = self.state.preceding_char {
                     for _ in 0..next_param_or(1) {
-                        handler.input(c);
+                        self.handler.input(c);
                     }
                 } else {
                     debug!("tried to repeat with no preceding char");
                 }
             },
-            ('C', []) | ('a', []) => handler.move_forward(Column(next_param_or(1) as usize)),
-            ('D', []) => handler.move_backward(Column(next_param_or(1) as usize)),
-            ('d', []) => handler.goto_line(Line(next_param_or(1) as i32 - 1)),
-            ('E', []) => handler.move_down_and_cr(next_param_or(1) as usize),
-            ('F', []) => handler.move_up_and_cr(next_param_or(1) as usize),
-            ('G', []) | ('`', []) => handler.goto_col(Column(next_param_or(1) as usize - 1)),
+            ('C' | 'a', []) => self.handler.move_forward(Column(next_param_or(1) as usize)),
+            ('D', []) => self.handler.move_backward(Column(next_param_or(1) as usize)),
+            ('d', []) => self.handler.goto_line(Line(next_param_or(1) as i32 - 1)),
+            ('E', []) => self.handler.move_down_and_cr(next_param_or(1) as usize),
+            ('F', []) => self.handler.move_up_and_cr(next_param_or(1) as usize),
+            ('G' | '`', []) => self.handler.goto_col(Column(next_param_or(1) as usize - 1)),
             ('g', []) => {
                 let mode = match next_param_or(0) {
                     0 => TabulationClearMode::Current,
@@ -1339,22 +1339,22 @@ where
                     },
                 };
 
-                handler.clear_tabs(mode);
+                self.handler.clear_tabs(mode);
             },
-            ('H', []) | ('f', []) => {
+            ('H' | 'f', []) => {
                 let y = next_param_or(1) as i32;
                 let x = next_param_or(1) as usize;
-                handler.goto(Line(y - 1), Column(x - 1));
+                self.handler.goto(Line(y - 1), Column(x - 1));
             },
             ('h', intermediates) => {
                 for param in params_iter.map(|param| param[0]) {
                     match Mode::from_primitive(intermediates.first(), param) {
-                        Some(mode) => handler.set_mode(mode),
+                        Some(mode) => self.handler.set_mode(mode),
                         None => unhandled!(),
                     }
                 }
             },
-            ('I', []) => handler.move_forward_tabs(next_param_or(1)),
+            ('I', []) => self.handler.move_forward_tabs(next_param_or(1)),
             ('J', []) => {
                 let mode = match next_param_or(0) {
                     0 => ClearMode::Below,
@@ -1367,7 +1367,7 @@ where
                     },
                 };
 
-                handler.clear_screen(mode);
+                self.handler.clear_screen(mode);
             },
             ('K', []) => {
                 let mode = match next_param_or(0) {
@@ -1380,31 +1380,31 @@ where
                     },
                 };
 
-                handler.clear_line(mode);
+                self.handler.clear_line(mode);
             },
-            ('L', []) => handler.insert_blank_lines(next_param_or(1) as usize),
+            ('L', []) => self.handler.insert_blank_lines(next_param_or(1) as usize),
             ('l', intermediates) => {
                 for param in params_iter.map(|param| param[0]) {
                     match Mode::from_primitive(intermediates.first(), param) {
-                        Some(mode) => handler.unset_mode(mode),
+                        Some(mode) => self.handler.unset_mode(mode),
                         None => unhandled!(),
                     }
                 }
             },
-            ('M', []) => handler.delete_lines(next_param_or(1) as usize),
+            ('M', []) => self.handler.delete_lines(next_param_or(1) as usize),
             ('m', []) => {
                 if params.is_empty() {
-                    handler.terminal_attribute(Attr::Reset);
+                    self.handler.terminal_attribute(Attr::Reset);
                 } else {
                     for attr in attrs_from_sgr_parameters(&mut params_iter) {
                         match attr {
-                            Some(attr) => handler.terminal_attribute(attr),
+                            Some(attr) => self.handler.terminal_attribute(attr),
                             None => unhandled!(),
                         }
                     }
                 }
             },
-            ('P', []) => handler.delete_chars(next_param_or(1) as usize),
+            ('P', []) => self.handler.delete_chars(next_param_or(1) as usize),
             ('q', [b' ']) => {
                 // DECSCUSR (CSI Ps SP q) -- Set Cursor Style.
                 let cursor_style_id = next_param_or(0);
@@ -1423,7 +1423,7 @@ where
                     blinking: cursor_style_id % 2 == 1,
                 });
 
-                handler.set_cursor_style(cursor_style);
+                self.handler.set_cursor_style(cursor_style);
             },
             ('r', []) => {
                 let top = next_param_or(1) as usize;
@@ -1432,19 +1432,19 @@ where
                     .map(|param| param[0] as usize)
                     .filter(|&param| param != 0);
 
-                handler.set_scrolling_region(top, bottom);
+                self.handler.set_scrolling_region(top, bottom);
             },
-            ('S', []) => handler.scroll_up(next_param_or(1) as usize),
-            ('s', []) => handler.save_cursor_position(),
-            ('T', []) => handler.scroll_down(next_param_or(1) as usize),
+            ('S', []) => self.handler.scroll_up(next_param_or(1) as usize),
+            ('s', []) => self.handler.save_cursor_position(),
+            ('T', []) => self.handler.scroll_down(next_param_or(1) as usize),
             ('t', []) => match next_param_or(1) as usize {
-                22 => handler.push_title(),
-                23 => handler.pop_title(),
+                22 => self.handler.push_title(),
+                23 => self.handler.pop_title(),
                 _ => unhandled!(),
             },
-            ('u', []) => handler.restore_cursor_position(),
-            ('X', []) => handler.erase_chars(Column(next_param_or(1) as usize)),
-            ('Z', []) => handler.move_backward_tabs(next_param_or(1)),
+            ('u', []) => self.handler.restore_cursor_position(),
+            ('X', []) => self.handler.erase_chars(Column(next_param_or(1) as usize)),
+            ('Z', []) => self.handler.move_backward_tabs(next_param_or(1)),
             _ => unhandled!(),
         }
     }
@@ -1489,7 +1489,7 @@ where
             (b'M', []) => self.handler.reverse_index(),
             (b'c', []) => self.handler.reset_state(),
             (b'0', intermediates) => {
-                configure_charset!(StandardCharset::SpecialCharacterAndLineDrawing, intermediates)
+                configure_charset!(StandardCharset::SpecialCharacterAndLineDrawing, intermediates);
             },
             (b'7', []) => self.handler.save_cursor_position(),
             (b'8', [b'#']) => self.handler.decaln(),

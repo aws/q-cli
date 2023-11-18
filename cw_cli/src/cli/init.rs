@@ -150,7 +150,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<Str
     if let When::Post = when {
         if !matches!(
             (shell, rcfile.as_deref()),
-            (Shell::Zsh, Some("zprofile")) | (Shell::Bash, Some("profile") | Some("bash_profile"))
+            (Shell::Zsh, Some("zprofile")) | (Shell::Bash, Some("profile" | "bash_profile"))
         ) && fig_settings::state::get_bool_or("dotfiles.enabled", true)
             && shell == &Shell::Zsh
             && when == &When::Post
@@ -189,7 +189,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<Str
         // JediTerm does not launch as a 'true' login shell, so our normal "shopt -q login_shell" check does
         // not work. Thus, CW_IS_LOGIN_SHELL will be incorrect. We must manually set it so the
         // user's bash_profile is sourced. https://github.com/JetBrains/intellij-community/blob/master/plugins/terminal/resources/jediterm-bash.in
-        to_source.push("CW_IS_LOGIN_SHELL=1".into())
+        to_source.push("CW_IS_LOGIN_SHELL=1".into());
     }
 
     let shell_integration_source = shell.get_fig_integration_source(when);

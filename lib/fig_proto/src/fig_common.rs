@@ -164,7 +164,7 @@ impl From<Value> for Json {
 impl From<Json> for Value {
     fn from(json: Json) -> Self {
         match json.value {
-            Some(json::Value::Null(_)) => Value::Null,
+            Some(json::Value::Null(_)) | None => Value::Null,
             Some(json::Value::Bool(b)) => b.into(),
             Some(json::Value::Number(n)) => match n.number {
                 Some(json::number::Number::I64(i)) => i.into(),
@@ -180,7 +180,6 @@ impl From<Json> for Value {
                     .map(|(key, value)| (key, Value::from(value)))
                     .collect(),
             ),
-            None => Value::Null,
         }
     }
 }

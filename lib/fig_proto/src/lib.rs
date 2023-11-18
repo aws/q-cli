@@ -293,7 +293,7 @@ mod tests {
 
         let hook = match decoded_message.r#type.unwrap() {
             local::local_message::Type::Hook(hook) => hook,
-            _ => panic!(),
+            local::local_message::Type::Command(_) => panic!(),
         };
 
         let caret_position = match hook.hook.unwrap() {

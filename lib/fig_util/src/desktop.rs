@@ -140,7 +140,7 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
         true => return Ok(()),
         false => {
             if args.verbose {
-                println!("Launching CodeWhisperer...")
+                println!("Launching CodeWhisperer...");
             }
         },
     }

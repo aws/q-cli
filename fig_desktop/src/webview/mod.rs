@@ -272,10 +272,7 @@ impl WebviewManager {
                         message,
                         Ok(ClientOriginatedMessage {
                             id: _,
-                            submessage: Some(Submessage::PositionWindowRequest(_))
-                        }) | Ok(ClientOriginatedMessage {
-                            id: _,
-                            submessage: Some(Submessage::WindowFocusRequest(_))
+                            submessage: Some(Submessage::PositionWindowRequest(_) | Submessage::WindowFocusRequest(_))
                         })
                     ) {
                         sync_api_handler_tx.send((fig_id, message)).ok();

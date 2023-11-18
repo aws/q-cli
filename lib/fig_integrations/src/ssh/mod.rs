@@ -29,6 +29,7 @@ impl SshIntegration {
         Ok(SshIntegration { path })
     }
 
+    #[allow(clippy::unused_self)]
     fn get_integration_path(&self) -> Result<PathBuf> {
         Ok(directories::fig_data_dir()?.join("ssh"))
     }
@@ -52,6 +53,7 @@ impl SshIntegration {
         Ok(Regex::new(&regex)?)
     }
 
+    #[allow(clippy::unused_self)]
     fn description(&self) -> String {
         "# Fig ssh integration. Keep at the bottom of this file.".into()
     }

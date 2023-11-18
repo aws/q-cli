@@ -6,6 +6,9 @@ homepage.workspace = true
 publish.workspace = true
 version.workspace = true
 
+[lints]
+workspace = true
+
 [dependencies]
 aws-credential-types = "0.56.1"
 aws-sdk-ssooidc = "0.33.0"

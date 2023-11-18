@@ -315,7 +315,59 @@ impl KeyCode {
 
     /// <https://sw.kovidgoyal.net/kitty/keyboard-protocol/#functional-key-definitions>
     fn kitty_function_code(self) -> Option<u32> {
-        use KeyCode::*;
+        use KeyCode::{
+            Add,
+            ApplicationDownArrow,
+            ApplicationLeftArrow,
+            ApplicationRightArrow,
+            ApplicationUpArrow,
+            Backspace,
+            CapsLock,
+            Decimal,
+            Divide,
+            End,
+            Enter,
+            Escape,
+            Function,
+            Home,
+            Insert,
+            LeftAlt,
+            LeftControl,
+            LeftShift,
+            LeftWindows,
+            MediaNextTrack,
+            MediaPlayPause,
+            MediaPrevTrack,
+            MediaStop,
+            Menu,
+            Multiply,
+            NumLock,
+            Numpad0,
+            Numpad1,
+            Numpad2,
+            Numpad3,
+            Numpad4,
+            Numpad5,
+            Numpad6,
+            Numpad7,
+            Numpad8,
+            Numpad9,
+            PageDown,
+            PageUp,
+            Pause,
+            PrintScreen,
+            RightAlt,
+            RightControl,
+            RightShift,
+            RightWindows,
+            ScrollLock,
+            Separator,
+            Subtract,
+            Tab,
+            VolumeDown,
+            VolumeMute,
+            VolumeUp,
+        };
         Some(match self {
             Escape => 27,
             Enter => 13,
@@ -376,7 +428,23 @@ impl KeyCode {
     }
 
     fn encode_kitty(&self, mods: Modifiers, is_down: bool, flags: KittyKeyboardFlags) -> Result<String> {
-        use KeyCode::*;
+        use KeyCode::{
+            Backspace,
+            Char,
+            Delete,
+            DownArrow,
+            End,
+            Enter,
+            Function,
+            Home,
+            Insert,
+            LeftArrow,
+            PageDown,
+            PageUp,
+            RightArrow,
+            Tab,
+            UpArrow,
+        };
 
         if !flags.contains(KittyKeyboardFlags::REPORT_EVENT_TYPES) && !is_down {
             return Ok(String::new());
@@ -517,7 +585,93 @@ impl KeyCode {
             return Ok(String::new());
         }
 
-        use KeyCode::*;
+        use KeyCode::{
+            Add,
+            Alt,
+            ApplicationDownArrow,
+            ApplicationLeftArrow,
+            ApplicationRightArrow,
+            ApplicationUpArrow,
+            Applications,
+            Backspace,
+            BrowserBack,
+            BrowserFavorites,
+            BrowserForward,
+            BrowserHome,
+            BrowserRefresh,
+            BrowserSearch,
+            BrowserStop,
+            Cancel,
+            CapsLock,
+            Char,
+            Clear,
+            Control,
+            Copy,
+            Cut,
+            Decimal,
+            Delete,
+            Divide,
+            DownArrow,
+            End,
+            Enter,
+            Escape,
+            Execute,
+            Function,
+            Help,
+            Home,
+            Hyper,
+            Insert,
+            InternalPasteEnd,
+            InternalPasteStart,
+            LeftAlt,
+            LeftArrow,
+            LeftControl,
+            LeftMenu,
+            LeftShift,
+            LeftWindows,
+            MediaNextTrack,
+            MediaPlayPause,
+            MediaPrevTrack,
+            MediaStop,
+            Menu,
+            Meta,
+            Multiply,
+            NumLock,
+            Numpad0,
+            Numpad1,
+            Numpad2,
+            Numpad3,
+            Numpad4,
+            Numpad5,
+            Numpad6,
+            Numpad7,
+            Numpad8,
+            Numpad9,
+            PageDown,
+            PageUp,
+            Paste,
+            Pause,
+            Print,
+            PrintScreen,
+            RightAlt,
+            RightArrow,
+            RightControl,
+            RightMenu,
+            RightShift,
+            RightWindows,
+            ScrollLock,
+            Select,
+            Separator,
+            Shift,
+            Sleep,
+            Subtract,
+            Super,
+            Tab,
+            UpArrow,
+            VolumeDown,
+            VolumeMute,
+            VolumeUp,
+        };
 
         let key = self.normalize_shift_to_upper_case(mods);
         // Normalize the modifier state for Char's that are uppercase; remove
@@ -1608,7 +1762,7 @@ impl InputParser {
                             self.advance_buf(len);
                             self.dispatch_callback(&mut callback, event.clone());
                         },
-                        (Found::Ambiguous(_, _), true) | (Found::NeedData, true) => {
+                        (Found::Ambiguous(_, _) | Found::NeedData, true) => {
                             return;
                         },
                         (Found::None, _) | (Found::NeedData, false) => {
@@ -1872,7 +2026,7 @@ mod test {
         p.parse(input, |_, e| inputs.push(e), false);
         p.parse(input2, |_, e| inputs.push(e), false);
 
-        assert_eq!(vec![InputEvent::Paste("12345678".to_owned())], inputs)
+        assert_eq!(vec![InputEvent::Paste("12345678".to_owned())], inputs);
     }
 
     #[test]
@@ -1887,7 +2041,7 @@ mod test {
 
         p.parse(&input, |_, e| inputs.push(e), false);
 
-        assert_eq!(vec![InputEvent::Paste("abcdefg".repeat(4000))], inputs)
+        assert_eq!(vec![InputEvent::Paste("abcdefg".repeat(4000))], inputs);
     }
 
     #[test]
@@ -1912,7 +2066,7 @@ mod test {
                 "hijklmno".repeat(4000)
             )),],
             inputs
-        )
+        );
     }
 
     #[test]

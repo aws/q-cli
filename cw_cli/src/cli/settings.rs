@@ -78,7 +78,7 @@ impl SettingsArgs {
                     },
                     OutputFormat::Json => println!("{}", serde_json::to_string(&settings)?),
                     OutputFormat::JsonPretty => {
-                        println!("{}", serde_json::to_string_pretty(&settings)?)
+                        println!("{}", serde_json::to_string_pretty(&settings)?);
                     },
                 }
 

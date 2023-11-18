@@ -89,8 +89,7 @@ impl fig_remote_ipc::RemoteHookHandler for RemoteHook {
             let current_session_expired = session
                 .current_session_metrics
                 .as_ref()
-                .map(|metrics| received_at > metrics.end_time + Duration::from_secs(5))
-                .unwrap_or(true);
+                .map_or(false, |metrics| received_at > metrics.end_time + Duration::from_secs(5));
 
             if current_session_expired {
                 let previous = session.current_session_metrics.clone();
@@ -321,7 +320,7 @@ impl fig_remote_ipc::RemoteHookHandler for RemoteHook {
                             current_working_directory: hook
                                 .context
                                 .as_ref()
-                                .and_then(|ctx| ctx.current_working_directory.to_owned()),
+                                .and_then(|ctx| ctx.current_working_directory.clone()),
                             session_id: Some(session_id.to_string()),
                             hostname: hook.context.as_ref().and_then(|ctx| ctx.hostname.clone()),
                             exit_code: hook.exit_code,

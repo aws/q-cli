@@ -416,7 +416,6 @@ mod tests {
 1519  11.10.2023 14:20  git log --reverse
 1520  11.10.2023 14:32  git status
 1521  11.10.2023 14:32  git add .
-1522  11.10.2023 14:32  git satus
 1523  11.10.2023 14:32  git status
 1524  11.10.2023 14:32  git diff --staged
 1525  11.10.2023 14:32  git status
@@ -469,7 +468,7 @@ mod tests {
         println!("{res:?}");
         println!("time: {:?}", time.elapsed());
         for (i, a) in res.completions.unwrap_or_default().iter().enumerate() {
-            println!("rec {i}: {:?}", a.content)
+            println!("rec {i}: {:?}", a.content);
         }
 
         let time = std::time::Instant::now();
@@ -483,7 +482,7 @@ mod tests {
                 println!("{res:?}");
                 println!("time: {:?}", time.elapsed());
                 for (i, a) in res.completions.unwrap_or_default().iter().enumerate() {
-                    println!("rec {i}: {:?}", a.content)
+                    println!("rec {i}: {:?}", a.content);
                 }
             }
         }

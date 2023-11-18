@@ -6,6 +6,9 @@ homepage = "https://aws.amazon.com/codewhisperer"
 publish.workspace = true
 version.workspace = true
 
+[lints]
+workspace = true
+
 [package.metadata.bundle]
 name = "Fig"
 icon = [

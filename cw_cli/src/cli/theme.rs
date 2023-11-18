@@ -113,9 +113,10 @@ impl ThemeArgs {
                 let theme =
                     fig_settings::settings::get_value("autocomplete.theme")?.unwrap_or_else(|| json!(DEFAULT_THEME));
 
-                let theme_str = theme.as_str().map(String::from).unwrap_or_else(|| {
-                    serde_json::to_string_pretty(&theme).unwrap_or_else(|_| DEFAULT_THEME.to_string())
-                });
+                let theme_str = theme.as_str().map_or_else(
+                    || serde_json::to_string_pretty(&theme).unwrap_or_else(|_| DEFAULT_THEME.to_string()),
+                    String::from,
+                );
 
                 println!("{theme_str}");
                 Ok(())

@@ -573,12 +573,12 @@ impl Integration for InputMethod {
                 }
             }
 
-            tokio::time::sleep(std::time::Duration::from_secs(1)).await
+            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
         }
 
         // Store PIDs of all relevant terminal emulators (input method will not work until these
         // processes are restarted)
-        applications::running_applications().iter().for_each(|app| {
+        for app in applications::running_applications().iter() {
             if let Some(bundle_id) = &app.bundle_identifier {
                 match Terminal::from_bundle_id(bundle_id) {
                     Some(terminal) if terminal.supports_macos_input_method() => {
@@ -591,7 +591,7 @@ impl Integration for InputMethod {
                     _ => (),
                 }
             }
-        });
+        }
 
         self.set_is_enabled(true);
 
@@ -748,7 +748,7 @@ mod tests {
             "{} enabled: {}",
             method.input_source().unwrap().bundle_id().unwrap(),
             method.input_source().unwrap().is_enabled().unwrap()
-        )
+        );
     }
 
     #[ignore]
@@ -790,7 +790,7 @@ mod tests {
             Some(true) => {
                 source.select().ok();
                 assert!(source.is_selected().unwrap_or_default());
-                dbg!(source.deselect().ok());
+                source.deselect().ok();
                 assert!(!source.is_selected().unwrap_or(true));
                 source.select().ok();
                 assert!(selected == source.is_selected());
@@ -820,7 +820,7 @@ mod tests {
                 assert!(sources[0].bundle_id().unwrap() == bundle_identifier);
                 assert!(sources[0].category().unwrap() == "TISCategoryPaletteInputSource");
 
-                println!("{:?}", sources[0])
+                println!("{:?}", sources[0]);
             },
             None => unreachable!("{} should always exist.", bundle_identifier),
         }
@@ -830,10 +830,10 @@ mod tests {
     #[test]
     fn uninstall_all() {
         let sources = InputMethod::list_input_sources_for_bundle_id(TEST_INPUT_METHOD_BUNDLE_ID).unwrap_or_default();
-        sources.iter().for_each(|s| {
+        for s in sources.iter() {
             s.deselect().ok();
             s.disable().ok();
-        })
+        }
     }
 
     #[ignore]

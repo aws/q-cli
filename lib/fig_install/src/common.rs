@@ -33,7 +33,7 @@ pub async fn uninstall(components: InstallComponents) -> Result<(), Error> {
     let shell_integration_result = {
         for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
             for integration in shell.get_shell_integrations()? {
-                integration.uninstall().await?
+                integration.uninstall().await?;
             }
         }
         Ok(())
@@ -115,7 +115,7 @@ pub async fn install(components: InstallComponents) -> Result<(), Error> {
     #[cfg(target_os = "macos")]
     if components.contains(InstallComponents::INPUT_METHOD) {
         use fig_integrations::input_method::InputMethod;
-        InputMethod::default().install().await?
+        InputMethod::default().install().await?;
     }
 
     Ok(())

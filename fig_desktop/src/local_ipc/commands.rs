@@ -72,7 +72,7 @@ pub async fn quit(_: QuitCommand, proxy: &EventLoopProxy) -> LocalResult {
     proxy
         .send_event(Event::ControlFlow(ControlFlow::Exit))
         .map(|_| LocalResponse::Success(None))
-        .map_err(|_| exit(0))
+        .map_err(|_err| exit(0))
 }
 
 pub async fn diagnostic(_: DiagnosticsCommand, figterm_state: &FigtermState) -> LocalResult {

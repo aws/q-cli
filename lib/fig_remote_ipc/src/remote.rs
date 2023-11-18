@@ -322,8 +322,8 @@ async fn handle_remote_ipc(
                             }
                             None
                         },
-                        Some(hostbound::Packet::Request(hostbound::Request { request: None, .. }))
-                            | Some(hostbound::Packet::Response(hostbound::Response { response: None, .. }))
+                        Some(hostbound::Packet::Request(hostbound::Request { request: None, .. })
+                            | hostbound::Packet::Response(hostbound::Response { response: None, .. }))
                             | None => {
                             warn!(?message.packet, "Received unknown remote packet");
                             None

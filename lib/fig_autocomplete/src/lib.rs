@@ -54,7 +54,7 @@ pub async fn _update_spec_store(force: bool) -> Result<(), Error> {
 
     if force
         || fig_settings::state::get::<String>(SETTINGS_SPEC_VERSION).ok().flatten()
-            != Some(latest_release.tag_name.to_owned())
+            != Some(latest_release.tag_name.clone())
     {
         let data = get_zipped_specs_from(&latest_release).await?;
         ZipArchive::new(Cursor::new(data))?.extract(&temp_dir)?;

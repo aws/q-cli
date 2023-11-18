@@ -31,7 +31,7 @@ pub async fn user_data_listener(notifications_state: Arc<WebviewNotificationsSta
     let mut watcher = notify::recommended_watcher(move |res| match res {
         Ok(event) => {
             if let Err(err) = tx.send(event) {
-                error!(%err, "failed to send notify event")
+                error!(%err, "failed to send notify event");
             }
         },
         Err(err) => error!(%err, "notify watcher"),

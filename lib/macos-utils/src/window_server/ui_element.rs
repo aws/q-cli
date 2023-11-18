@@ -280,7 +280,7 @@ impl UIElement {
             .into_iter()
             .filter_map(|elem| {
                 elem.role().ok().and_then(|role| {
-                    let role: std::borrow::Cow<str> = (&role).into();
+                    let role: std::borrow::Cow<'_, str> = (&role).into();
                     if XTERM_ROLES.contains(&role.as_ref()) {
                         elem.find_x_term_caret_tree().ok()
                     } else {

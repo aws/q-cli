@@ -6,6 +6,9 @@ homepage.workspace = true
 publish.workspace = true
 version.workspace = true
 
+[lints]
+workspace = true
+
 [dependencies]
 fig_settings = { path = "../fig_settings" }
 fig_api_client = { path = "../fig_api_client" }

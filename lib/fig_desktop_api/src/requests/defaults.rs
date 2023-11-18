@@ -26,7 +26,7 @@ pub async fn get(request: GetDefaultsPropertyRequest) -> RequestResult {
         .ok()
         .and_then(|file| {
             let mut value: Value = serde_json::from_slice(&file).ok()?;
-            match value.get_mut(key).map(|v| v.take()).unwrap_or(Value::Null) {
+            match value.get_mut(key).map_or(Value::Null, |v| v.take()) {
                 Value::Null => Some(Type::Null(true)),
                 Value::Bool(b) => Some(Type::Boolean(b)),
                 Value::Number(i) => i.as_i64().map(Type::Integer),
@@ -60,7 +60,7 @@ pub async fn update(request: UpdateDefaultsPropertyRequest) -> RequestResult {
             if !path.exists() {
                 match path.parent() {
                     Some(parent) if !parent.exists() => {
-                        fs::create_dir_all(parent).await.map_err(|err| err.to_string())?
+                        fs::create_dir_all(parent).await.map_err(|err| err.to_string())?;
                     },
                     _ => {},
                 }
@@ -87,7 +87,7 @@ pub async fn update(request: UpdateDefaultsPropertyRequest) -> RequestResult {
                 Type::String(s) => Value::from(s),
                 Type::Boolean(b) => Value::from(b),
                 Type::Integer(i) => Value::from(i),
-                _ => unreachable!(),
+                Type::Null(_) => unreachable!(),
             };
 
             let path = directories::fig_data_dir()
@@ -96,7 +96,7 @@ pub async fn update(request: UpdateDefaultsPropertyRequest) -> RequestResult {
             if !path.exists() {
                 match path.parent() {
                     Some(parent) if !parent.exists() => {
-                        fs::create_dir_all(parent).await.map_err(|err| err.to_string())?
+                        fs::create_dir_all(parent).await.map_err(|err| err.to_string())?;
                     },
                     _ => {},
                 }

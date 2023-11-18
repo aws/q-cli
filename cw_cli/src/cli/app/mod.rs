@@ -226,7 +226,7 @@ impl AppSubcommand {
                                     "(To turn off automatic updates, run {})",
                                     "fig settings app.disableAutoupdates true".magenta()
                                 );
-                                state::set_value("DISPLAYED_AUTOUPDATE_SETTINGS_HINT", true)?
+                                state::set_value("DISPLAYED_AUTOUPDATE_SETTINGS_HINT", true)?;
                             }
 
                             // trigger forced update. This will QUIT the macOS app, it must be relaunched...
@@ -264,7 +264,7 @@ impl AppSubcommand {
                                 "(To turn off autolaunch, run {})",
                                 "fig settings app.disableAutolaunch true".magenta()
                             );
-                            fig_settings::state::set_value("DISPLAYED_AUTOLAUNCH_SETTINGS_HINT", true)?
+                            fig_settings::state::set_value("DISPLAYED_AUTOLAUNCH_SETTINGS_HINT", true)?;
                         }
 
                         launch_fig_desktop(LaunchArgs {

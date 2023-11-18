@@ -1,5 +1,3 @@
-use std::process::Command;
-
 use clap::{
     ArgGroup,
     Args,
@@ -11,7 +9,6 @@ use eyre::{
     Result,
 };
 use fig_ipc::local::restart_settings_listener;
-use fig_util::directories;
 use serde_json::json;
 
 use crate::cli::OutputFormat;
@@ -20,8 +17,6 @@ use crate::cli::OutputFormat;
 pub enum LocalStateSubcommand {
     /// Reload the state listener
     Init,
-    /// Open the state file
-    Open,
     /// List all the settings
     All {
         #[arg(long, short, value_enum, default_value_t)]
@@ -71,13 +66,6 @@ impl LocalStateArgs {
                     Err(err.into())
                 },
             },
-            Some(LocalStateSubcommand::Open) => {
-                let path = directories::state_path()?;
-                match Command::new("open").arg(path).status()?.success() {
-                    true => Ok(()),
-                    false => Err(eyre!("Could not open state file")),
-                }
-            },
             Some(LocalStateSubcommand::All { format }) => {
                 let state = fig_settings::state::all()?;
                 match format {
@@ -88,7 +76,7 @@ impl LocalStateArgs {
                     },
                     OutputFormat::Json => println!("{}", serde_json::to_string(&state)?),
                     OutputFormat::JsonPretty => {
-                        println!("{}", serde_json::to_string_pretty(&state)?)
+                        println!("{}", serde_json::to_string_pretty(&state)?);
                     },
                 }
 

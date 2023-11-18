@@ -63,8 +63,7 @@ pub async fn handle(request: Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'s
             let content_type = response
                 .headers()
                 .get(CONTENT_TYPE)
-                .map(|v| v.to_owned())
-                .unwrap_or_else(|| "application/javascript".try_into().unwrap());
+                .map_or_else(|| "application/javascript".try_into().unwrap(), |v| v.to_owned());
 
             Ok(res_ok(response.bytes().await?.to_vec(), content_type))
         },

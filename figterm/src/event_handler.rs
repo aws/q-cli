@@ -52,7 +52,7 @@ impl EventHandler {
 }
 
 impl EventListener for EventHandler {
-    fn send_event(&self, event: Event, shell_state: &ShellState) {
+    fn send_event(&self, event: Event<'_>, shell_state: &ShellState) {
         debug!(?event, ?shell_state, "Handling event");
         match event {
             Event::Prompt => {
@@ -117,7 +117,7 @@ impl EventListener for EventHandler {
                 tokio::spawn(async { *COMPLETION_CACHE.lock().await = radix_trie::Trie::new() });
 
                 let context = shell_state_to_context(shell_state);
-                let hook = new_postexec_hook(context, command_info.command.to_owned(), command_info.exit_code);
+                let hook = new_postexec_hook(context, command_info.command.clone(), command_info.exit_code);
                 let message = hook_to_message(hook);
                 if let Err(err) = self.socket_sender.send(message) {
                     error!(%err, "Sender error");

@@ -152,7 +152,49 @@ async fn handle_request<Ctx: KVStore, E: EventHandler<Ctx = Ctx> + Sync>(
     match message.submessage {
         Some(submessage) => {
             use requests::*;
-            use ClientOriginatedSubMessage::*;
+            use ClientOriginatedSubMessage::{
+                AggregateSessionMetricActionRequest,
+                AppendToFileRequest,
+                ApplicationUpdateStatusRequest,
+                AuthBuilderIdPollCreateTokenRequest,
+                AuthBuilderIdStartDeviceAuthorizationRequest,
+                AuthStatusRequest,
+                CheckForUpdatesRequest,
+                ContentsOfDirectoryRequest,
+                CreateDirectoryRequest,
+                DebuggerUpdateRequest,
+                DestinationOfSymbolicLinkRequest,
+                GetConfigPropertyRequest,
+                GetDefaultsPropertyRequest,
+                GetLocalStateRequest,
+                GetSettingsPropertyRequest,
+                HistoryQueryRequest,
+                InsertTextRequest,
+                InstallRequest,
+                MacosInputMethodRequest,
+                NotificationRequest,
+                OnboardingRequest,
+                OpenInExternalApplicationRequest,
+                PositionWindowRequest,
+                PseudoterminalExecuteRequest,
+                PseudoterminalRestartRequest,
+                PseudoterminalWriteRequest,
+                ReadFileRequest,
+                RunProcessRequest,
+                TelemetryIdentifyRequest,
+                TelemetryPageRequest,
+                TelemetryTrackRequest,
+                TerminalSessionInfoRequest,
+                UpdateApplicationPropertiesRequest,
+                UpdateApplicationRequest,
+                UpdateConfigPropertyRequest,
+                UpdateDefaultsPropertyRequest,
+                UpdateLocalStateRequest,
+                UpdateSettingsPropertyRequest,
+                UserLogoutRequest,
+                WindowFocusRequest,
+                WriteFileRequest,
+            };
 
             match submessage {
                 // debug

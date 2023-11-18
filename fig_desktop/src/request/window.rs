@@ -100,7 +100,7 @@ pub async fn focus(request: WindowFocusRequest, window_id: WindowId, proxy: &Eve
                 })
                 .unwrap();
         },
-        FocusAction::ReturnFocus => todo!(),
+        FocusAction::ReturnFocus => return Err("ReturnFocus not implemented".into()),
     }
 
     RequestResult::success()

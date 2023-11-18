@@ -44,7 +44,7 @@ pub async fn update(request: UpdateSettingsPropertyRequest) -> RequestResult {
             fig_settings::settings::set_value(key, value).map_err(|err| format!("Failed setting {key}: {err}"))?;
         },
         (Some(key), None) => {
-            fig_settings::settings::remove_value(key).map_err(|err| format!("Failed removing {key}: {err}"))?
+            fig_settings::settings::remove_value(key).map_err(|err| format!("Failed removing {key}: {err}"))?;
         },
         (None, _) => {
             return RequestResult::error("No key provided with request");

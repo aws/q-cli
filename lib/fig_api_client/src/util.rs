@@ -14,7 +14,7 @@ pub enum ElementOrList<T> {
 }
 
 impl<T> ElementOrList<T> {
-    pub fn iter(&self) -> ElementOrListIterator<T> {
+    pub fn iter(&self) -> ElementOrListIterator<'_, T> {
         match self {
             ElementOrList::Element(e) => ElementOrListIterator::Element(Some(e)),
             ElementOrList::List(l) => ElementOrListIterator::List(l.iter()),
@@ -93,7 +93,7 @@ where
 {
     String::deserialize(deserializer).and_then(|s| {
         s.parse()
-            .map_err(|_| serde::de::Error::invalid_value(Unexpected::Other("invalid u64"), &"valid u64"))
+            .map_err(|_err| serde::de::Error::invalid_value(Unexpected::Other("invalid u64"), &"valid u64"))
     })
 }
 
@@ -124,7 +124,7 @@ where
         v.into_iter()
             .map(|s| {
                 s.parse()
-                    .map_err(|_| serde::de::Error::invalid_value(Unexpected::Other("invalid u64"), &"valid u64"))
+                    .map_err(|_err| serde::de::Error::invalid_value(Unexpected::Other("invalid u64"), &"valid u64"))
             })
             .collect()
     })

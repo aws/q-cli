@@ -61,7 +61,7 @@ impl Spinner {
                         Err(TryRecvError::Empty) => (false, None),
                     };
 
-                    let frame = stop_symbol.unwrap_or_else(|| frame.to_string());
+                    let frame = stop_symbol.unwrap_or_else(|| (*frame).to_string());
 
                     let line = components.iter().fold(String::new(), |mut acc, elem| {
                         acc.push_str(match elem {

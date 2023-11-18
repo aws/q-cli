@@ -171,8 +171,8 @@ impl<T> Storage<T> {
             // Cast to a qword array to opt out of copy restrictions and avoid
             // drop hazards. Byte array is no good here since for whatever
             // reason LLVM won't optimized it.
-            let a_ptr = self.inner.as_mut_ptr().add(a) as *mut usize;
-            let b_ptr = self.inner.as_mut_ptr().add(b) as *mut usize;
+            let a_ptr = self.inner.as_mut_ptr().add(a).cast::<usize>();
+            let b_ptr = self.inner.as_mut_ptr().add(b).cast::<usize>();
 
             // Copy 1 qword at a time.
             //

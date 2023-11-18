@@ -837,7 +837,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                                                     .and_then(|b| String::from_utf8(b.to_vec()).ok())
                                                     .unwrap_or_default();
                                                 let context = shell_state_to_context(term.shell_state());
-                                                let hook = fig_proto::remote_hooks::new_intercepted_key_hook(context, action.to_string(), s);
+                                                let hook = fig_proto::remote_hooks::new_intercepted_key_hook(context, action, s);
                                                 remote_sender.send(hook_to_message(hook)).unwrap();
 
                                                 if event.key == KeyCode::Escape {

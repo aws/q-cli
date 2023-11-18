@@ -187,7 +187,7 @@ i=`wc -l $FILENAME|cut -d ' ' -f1`; cat $FILENAME| echo "scale=2;(`paste -sd+`)/
 
 fn warning_message(content: &str) {
     #[allow(clippy::type_complexity)]
-    let warnings: &[(Regex, fn(&Captures) -> String)] = &[
+    let warnings: &[(Regex, fn(&Captures<'_>) -> String)] = &[
         (Regex::new(r"\bsudo\b").unwrap(), |_m| {
             "⚠️ Warning: this command contains sudo which will run the command as admin, please make sure you know what you are doing before you run this...".into()
         }),

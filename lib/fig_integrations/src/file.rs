@@ -22,7 +22,7 @@ impl Integration for FileIntegration {
 
     async fn is_installed(&self) -> Result<()> {
         let current_contents = std::fs::read_to_string(&self.path)
-            .map_err(|_| Error::Custom(format!("{} does not exist.", self.path.display()).into()))?;
+            .map_err(|err| Error::Custom(format!("{} does not exist: {err}", self.path.display()).into()))?;
         if current_contents.ne(&self.contents) {
             let message = format!("{} should contain:\n{}", self.path.display(), self.contents);
             return Err(Error::ImproperInstallation(message.into()));

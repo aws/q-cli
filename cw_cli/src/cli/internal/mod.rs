@@ -326,7 +326,7 @@ impl InternalSubcommand {
             InternalSubcommand::Install(args) => {
                 let no_confirm = args.no_confirm;
                 let force = args.force;
-                install_cli(args.into(), no_confirm, force).await?
+                install_cli(args.into(), no_confirm, force).await?;
             },
             InternalSubcommand::Uninstall {
                 daemon,
@@ -351,7 +351,7 @@ impl InternalSubcommand {
                         println!("Uninstall Fig via your package manager");
                     } else {
                         fig_install::uninstall(InstallComponents::BINARY).await?;
-                        println!("\n{}\n", "Fig binary has been uninstalled".bold())
+                        println!("\n{}\n", "Fig binary has been uninstalled".bold());
                     }
                 }
 

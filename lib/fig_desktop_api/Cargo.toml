@@ -6,6 +6,9 @@ homepage.workspace = true
 publish.workspace = true
 version.workspace = true
 
+[lints]
+workspace = true
+
 [dependencies]
 async-trait = "0.1.73"
 auth = { path = "../auth" }

@@ -129,6 +129,7 @@ impl HookSubcommand {
                         .open(installed_hosts_file)?;
 
                     let mut contents = String::new();
+                    #[allow(clippy::verbose_file_reads)]
                     installed_hosts.read_to_string(&mut contents)?;
 
                     if !contents.contains(remote_dest) {

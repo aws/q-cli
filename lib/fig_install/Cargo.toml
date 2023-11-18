@@ -6,6 +6,9 @@ homepage.workspace = true
 publish.workspace = true
 version.workspace = true
 
+[lints]
+workspace = true
+
 [dependencies]
 bitflags = "2.4.0"
 camino = "1.1.3"

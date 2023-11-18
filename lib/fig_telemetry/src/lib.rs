@@ -290,7 +290,7 @@ mod test {
             })
             .await;
         finish_telemetry_unwrap().await;
-        assert!(!logs_contain("ERROR"))
+        assert!(!logs_contain("ERROR"));
     }
 
     #[tracing_test::traced_test]

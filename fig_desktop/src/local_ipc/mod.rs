@@ -107,7 +107,28 @@ async fn handle_local_ipc(
                         message: Some("Local ipc command was None".into()),
                     },
                     Some(command) => {
-                        use fig_proto::local::command::Command::*;
+                        use fig_proto::local::command::Command::{
+                            DebugMode,
+                            Devtools,
+                            Diagnostics,
+                            DumpState,
+                            InputMethod,
+                            ListTerminalIntegrations,
+                            LogLevel,
+                            Login,
+                            Logout,
+                            OpenBrowser,
+                            OpenUiElement,
+                            PromptAccessibility,
+                            Quit,
+                            ReportWindow,
+                            ResetCache,
+                            Restart,
+                            RestartSettingsListener,
+                            RunInstallScript,
+                            TerminalIntegration,
+                            Update,
+                        };
 
                         match command {
                             DebugMode(command) => commands::debug(command, &proxy).await,
@@ -130,9 +151,9 @@ async fn handle_local_ipc(
                             )
                             .await
                             .map(|_| LocalResponse::Success(None))
-                            .map_err(|_| LocalResponse::Error {
+                            .map_err(|err| LocalResponse::Error {
                                 code: None,
-                                message: Some("Failed to check for updates".to_owned()),
+                                message: Some(format!("Failed to check for updates: {err}")),
                             }),
                             Devtools(command) => {
                                 let window_id = match command.window() {
@@ -195,7 +216,25 @@ async fn handle_local_ipc(
                 }
             },
             Some(LocalMessageType::Hook(hook)) => {
-                use fig_proto::local::hook::Hook::*;
+                use fig_proto::local::hook::Hook::{
+                    Callback,
+                    CaretPosition,
+                    EditBuffer,
+                    Event,
+                    FileChanged,
+                    FocusChange,
+                    FocusedWindowData,
+                    Hide,
+                    Init,
+                    IntegrationReady,
+                    InterceptedKey,
+                    KeyboardFocusChanged,
+                    OpenedSshConnection,
+                    PostExec,
+                    PreExec,
+                    Prompt,
+                    TmuxPaneChanged,
+                };
                 use fig_proto::ReflectMessage;
 
                 if let Err(err) = match hook.hook {

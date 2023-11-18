@@ -360,7 +360,7 @@ impl DebugSubcommand {
                                     path.push(bundle_path);
                                     path
                                 } else {
-                                    bundle_path.to_path_buf()
+                                    bundle_path.clone()
                                 };
 
                                 InputMethod { bundle_path }
@@ -373,7 +373,7 @@ impl DebugSubcommand {
                         println!(
                             "Successfully installed input method '{}'",
                             input_method.bundle_id().unwrap()
-                        )
+                        );
                     },
                     InputMethodDebugAction::Uninstall { bundle_path } => {
                         let input_method = match bundle_path {
@@ -383,7 +383,7 @@ impl DebugSubcommand {
                                     path.push(bundle_path);
                                     path
                                 } else {
-                                    bundle_path.to_path_buf()
+                                    bundle_path.clone()
                                 };
 
                                 InputMethod { bundle_path }
@@ -396,7 +396,7 @@ impl DebugSubcommand {
                         println!(
                             "Successfully uninstalled input method '{}'",
                             input_method.bundle_id().unwrap()
-                        )
+                        );
                     },
                     InputMethodDebugAction::List => match InputMethod::list_all_input_sources(None, true) {
                         Some(sources) => sources.iter().for_each(|source| println!("{source:#?}")),
@@ -410,7 +410,7 @@ impl DebugSubcommand {
                                     path.push(bundle_path);
                                     path
                                 } else {
-                                    bundle_path.to_path_buf()
+                                    bundle_path.clone()
                                 };
 
                                 InputMethod { bundle_path }
@@ -531,7 +531,7 @@ impl DebugSubcommand {
                     cfg_if::cfg_if! {
                         if #[cfg(target_os = "macos")] {
                             let diagnostic = get_diagnostics().await?;
-                            println!("Accessibility Enabled: {}", diagnostic.accessibility)
+                            println!("Accessibility Enabled: {}", diagnostic.accessibility);
                         } else {
                             println!("Unable to get accessibility status on this platform");
                         }
@@ -613,7 +613,7 @@ impl DebugSubcommand {
                     writeln!(&mut out, "{}", "Edit Buffer".bold())?;
                     writeln!(&mut out, "{}", "━".repeat(term_width))?;
 
-                    if diagnostic.shell_context.as_ref().map(|c| c.preexec()).unwrap_or(false) {
+                    if diagnostic.shell_context.as_ref().is_some_and(|c| c.preexec()) {
                         writeln!(&mut out, "{}", "<Running Process>".dim())?;
                     } else {
                         writeln!(&mut out, "{}", edit_buffer.unwrap_or_else(|| "None".into()))?;
@@ -647,16 +647,14 @@ impl DebugSubcommand {
                             "Preexec: {}",
                             shell_context
                                 .preexec
-                                .map(|s| s.to_string())
-                                .unwrap_or_else(|| "None".to_string())
+                                .map_or_else(|| "None".to_string(), |s| s.to_string())
                         )?;
                         writeln!(
                             &mut out,
                             "OSCLock: {}",
                             shell_context
                                 .osc_lock
-                                .map(|s| s.to_string())
-                                .unwrap_or_else(|| "None".to_string())
+                                .map_or_else(|| "None".to_string(), |s| s.to_string())
                         )?;
                     }
 
@@ -784,7 +782,7 @@ impl DebugSubcommand {
                                 command.args(["fish", "--no-config", "-C", "cw init fish post | source"]);
                                 command
                             },
-                            _ => eyre::bail!("Unsupported shell for debug"),
+                            Shell::Nu => eyre::bail!("Unsupported shell for debug"),
                         };
 
                         profile.as_file().sync_all()?;

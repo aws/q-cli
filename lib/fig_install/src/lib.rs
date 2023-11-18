@@ -115,10 +115,7 @@ pub fn get_max_channel() -> Channel {
         .flatten()
         .and_then(|s| Channel::from_str(&s).ok())
         .unwrap_or(Channel::Stable);
-    let manifest_channel = manifest()
-        .as_ref()
-        .map(|m| m.default_channel)
-        .unwrap_or(Channel::Stable);
+    let manifest_channel = manifest().as_ref().map_or(Channel::Stable, |m| m.default_channel);
     let settings_channel = if fig_settings::settings::get_bool_or("app.beta", false) {
         Channel::Beta
     } else {

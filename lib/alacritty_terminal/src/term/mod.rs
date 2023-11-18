@@ -904,7 +904,7 @@ impl<T: EventListener> Handler for Term<T> {
     #[inline]
     fn set_title(&mut self, title: Option<String>) {
         trace!("Setting title to '{:?}'", title);
-        self.title = title
+        self.title = title;
     }
 
     /// A character to be displayed.
@@ -1027,13 +1027,13 @@ impl<T: EventListener> Handler for Term<T> {
     #[inline]
     fn goto_line(&mut self, line: Line) {
         trace!("Going to line: {}", line);
-        self.goto(line, self.grid.cursor.point.column)
+        self.goto(line, self.grid.cursor.point.column);
     }
 
     #[inline]
     fn goto_col(&mut self, col: Column) {
         trace!("Going to column: {}", col);
-        self.goto(self.grid.cursor.point.line, col)
+        self.goto(self.grid.cursor.point.line, col);
     }
 
     #[inline]
@@ -1065,13 +1065,13 @@ impl<T: EventListener> Handler for Term<T> {
     #[inline]
     fn move_up(&mut self, lines: usize) {
         trace!("Moving up: {}", lines);
-        self.goto(self.grid.cursor.point.line - lines, self.grid.cursor.point.column)
+        self.goto(self.grid.cursor.point.line - lines, self.grid.cursor.point.column);
     }
 
     #[inline]
     fn move_down(&mut self, lines: usize) {
         trace!("Moving down: {}", lines);
-        self.goto(self.grid.cursor.point.line + lines, self.grid.cursor.point.column)
+        self.goto(self.grid.cursor.point.line + lines, self.grid.cursor.point.column);
     }
 
     #[inline]
@@ -1092,13 +1092,13 @@ impl<T: EventListener> Handler for Term<T> {
     #[inline]
     fn move_down_and_cr(&mut self, lines: usize) {
         trace!("Moving down and cr: {}", lines);
-        self.goto(self.grid.cursor.point.line + lines, Column(0))
+        self.goto(self.grid.cursor.point.line + lines, Column(0));
     }
 
     #[inline]
     fn move_up_and_cr(&mut self, lines: usize) {
         trace!("Moving up and cr: {}", lines);
-        self.goto(self.grid.cursor.point.line - lines, Column(0))
+        self.goto(self.grid.cursor.point.line - lines, Column(0));
     }
 
     /// Insert tab at cursor position.
