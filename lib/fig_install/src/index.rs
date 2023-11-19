@@ -109,8 +109,8 @@ impl PackageArchitecture {
     }
 }
 
-fn index_endpoint(_channel: &Channel) -> &'static str {
-    *RELEASE_URL
+fn index_endpoint(_channel: &Channel) -> String {
+    format!("{}/index.json", *RELEASE_URL)
 }
 
 pub async fn pull(channel: &Channel) -> Result<Index, Error> {
@@ -304,35 +304,45 @@ mod tests {
                 variant: Variant::Full,
             }],
             versions: vec![
+                // version(
+                //     "0.1.0",
+                //     "c588348eb6cc6f4a3b2ececa262ab630e89422d0087fdaf03001499bbb917af0",
+                //     93018817,
+                // ),
+                // version(
+                //     "0.2.0",
+                //     "1b51608c6d5b8cbc43d05396b1ec74557958df05298f6b6d1efadb203bf9b50a0",
+                //     93022923,
+                // ),
+                // version(
+                //     "0.3.0",
+                //     "7fff5995557907fb90c4808f5c2ab9307ab94464dcb5703cc9b022d25f1f6718",
+                //     93024994,
+                // ),
+                // version(
+                //     "0.4.0",
+                //     "21c1145d79cf927a7c6303e40a9933d1efe0dfda52d8bc80e4b9d3ac3643ba7d",
+                //     92465710,
+                // ),
+                // version(
+                //     "0.5.0",
+                //     "0f85d19c7e90bff7bef16a0643018225465674e0326520171d7e366d47df79d2",
+                //     92686534,
+                // ),
+                // version(
+                //     "0.6.0",
+                //     "a69a1fec68cd43daa5d80bd6e02c57dfc9e800873a6719d13ad4e20360cb7f9d",
+                //     92695962,
+                // ),
                 version(
-                    "0.1.0",
-                    "c588348eb6cc6f4a3b2ececa262ab630e89422d0087fdaf03001499bbb917af0",
-                    93018817,
+                    "0.7.0",
+                    "4213d7649e4b1a2ec50adc0266d32d3e1e1f952ed6a863c28d7538190dc92472",
+                    82975504,
                 ),
                 version(
-                    "0.2.0",
-                    "1b51608c6d5b8cbc43d05396b1ec74557958df05298f6b6d1efadb203bf9b50a0",
-                    93022923,
-                ),
-                version(
-                    "0.3.0",
-                    "7fff5995557907fb90c4808f5c2ab9307ab94464dcb5703cc9b022d25f1f6718",
-                    93024994,
-                ),
-                version(
-                    "0.4.0",
-                    "21c1145d79cf927a7c6303e40a9933d1efe0dfda52d8bc80e4b9d3ac3643ba7d",
-                    92465710,
-                ),
-                version(
-                    "0.5.0",
-                    "0f85d19c7e90bff7bef16a0643018225465674e0326520171d7e366d47df79d2",
-                    92686534,
-                ),
-                version(
-                    "0.6.0",
-                    "a69a1fec68cd43daa5d80bd6e02c57dfc9e800873a6719d13ad4e20360cb7f9d",
-                    92695962,
+                    "0.8.0",
+                    "ee0a8074f094dd2aac3a8d6c136778ab46a1911288d6f2dc9c6f12066578ee4d",
+                    82957941,
                 ),
             ],
         };
@@ -343,7 +353,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "needs vpn"]
     async fn pull_test() {
         let index = pull(&Channel::Stable).await.unwrap();
         println!("{:#?}", index);
@@ -352,7 +361,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "needs vpn"]
     async fn check_test() {
         dbg!(
             check_for_updates(Channel::Stable, Kind::Dmg, Variant::Full, false,)
