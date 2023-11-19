@@ -19,7 +19,7 @@ authors = ["Amazon CodeWhisperer Devs"]
 edition = "2021"
 homepage = "https://aws.amazon.com/codewhisperer"
 publish = false
-version = "0.7.0"
+version = "0.8.0"
 
 [workspace.metadata]
 channel = "none"
