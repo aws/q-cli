@@ -10,7 +10,7 @@ const supportSteps = {
     // },
     {
       text: 'User manual',
-      url: 'http://fig.io/user-manual'
+      url: 'https://docs.aws.amazon.com/codewhisperer/latest/userguide/command-line.html'
     }
   ]
 }

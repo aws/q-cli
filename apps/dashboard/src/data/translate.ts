@@ -7,7 +7,6 @@ const translateSettings = [{
       description: "Comments in the shell will be substituted with the `cw ai` command.",
       type: "boolean",
       default: true,
-      inverted: true,
     },
     // {
     //   id: "ai.menu-actions",
