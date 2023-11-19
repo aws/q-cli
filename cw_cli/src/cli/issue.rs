@@ -167,9 +167,9 @@ impl IssueArgs {
         let env_string = environment.user_readable().join("\n");
 
         let url = url::Url::parse_with_params(
-            "https://github.com/aws/codewhisperer-command-line-discussion/issues/new",
+            "https://github.com/aws/codewhisperer-command-line-discussions/discussions/new",
             &[
-                ("template", "1_main_issue_template.yml"),
+                ("category", "bug-report"),
                 ("title", &issue_title),
                 ("labels", &labels.join(",")),
                 ("assignees", &assignees.join(",")),
