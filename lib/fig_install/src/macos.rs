@@ -16,12 +16,12 @@ use std::path::{
 use std::process::exit;
 use std::time::Duration;
 
-use base64::Engine;
 use fig_util::consts::{
     CODEWHISPERER_BUNDLE_ID,
     CODEWHISPERER_CLI_BINARY_NAME,
 };
 use fig_util::directories;
+use hex::encode;
 use regex::Regex;
 use reqwest::IntoUrl;
 use tokio::io::{
@@ -69,7 +69,7 @@ pub(crate) async fn update(
     debug!(?dmg_path, "downloading dmg");
 
     let real_digest = download_dmg(update.download, &dmg_path, update.size, tx.clone()).await?;
-    let real_hash = base64::engine::general_purpose::STANDARD.encode(real_digest);
+    let real_hash = encode(real_digest);
 
     // validate the dmg hash
     let expected_hash = update.sha256;
@@ -465,15 +465,36 @@ pub fn swap(src: impl AsRef<CStr>, dst: impl AsRef<CStr>) -> Result<(), Error> {
     Ok(())
 }
 
-// #[cfg(test)]
-// mod test {
-//     use super::*;
+#[cfg(test)]
+mod test {
+    use tempfile::TempDir;
 
-//     #[ignore]
-//     #[tokio::test]
-//     async fn test_download_dmg() -> Result<(), Error> {
-//         let temp_dir = TempDir::new("fig")?;
-//         let dmg_path = temp_dir.path().join("Fig.dmg");
-//         download_dmg("https://desktop.docker.com/mac/main/arm64/Docker.dmg?utm_source=docker&utm_medium=webreferral&utm_campaign=docs-driven-download-mac-arm64", dmg_path).await
-//     }
-// }
+    use super::*;
+
+    #[ignore]
+    #[tokio::test]
+    async fn test_download_dmg() -> Result<(), Error> {
+        let (tx, mut rx) = tokio::sync::mpsc::channel(1);
+
+        // dump
+        tokio::spawn(async move {
+            while let Some(a) = rx.recv().await {
+                drop(a);
+            }
+        });
+
+        let temp_dir = TempDir::new().unwrap();
+        let dmg_path = temp_dir.path().join("CodeWhisperer.dmg");
+        let real_digest = download_dmg(
+            "https://desktop-release.codewhisperer.us-east-1.amazonaws.com/latest/CodeWhisperer.dmg",
+            dmg_path,
+            0,
+            tx,
+        )
+        .await
+        .unwrap();
+        let real_hash = encode(real_digest);
+        println!("{real_hash}");
+        Ok(())
+    }
+}
