@@ -90,4 +90,4 @@ typeset -g CW_AUTOSUGGEST_ORIGINAL_WIDGET_PREFIX=autosuggest-orig-
 
 # Pty name for capturing completions for completion suggestion strategy
 (( ! ${+CW_AUTOSUGGEST_COMPLETIONS_PTY_NAME} )) &&
-typeset -g CW_AUTOSUGGEST_COMPLETIONS_PTY_NAME=fig_autosuggest_completion_pty
+typeset -g CW_AUTOSUGGEST_COMPLETIONS_PTY_NAME=cw_autosuggest_completion_pty

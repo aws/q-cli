@@ -276,11 +276,6 @@ pub async fn send_menu_bar_actioned(menu_bar_item: Option<impl Into<String>>) {
 
 #[cfg(test)]
 mod test {
-    use aws_toolkit_telemetry_definitions::types::{
-        CodewhispererterminalDuration,
-        CodewhispererterminalTimeToSuggestion,
-    };
-
     use super::*;
 
     #[tracing_test::traced_test]
@@ -288,16 +283,41 @@ mod test {
     async fn test_send() {
         let client = TelemetryClient::new(TelemetryStage::BETA);
         client
-            .post_metric(metrics::CodewhispererterminalTranslationActioned {
+            .post_metric(metrics::CodewhispererterminalCliSubcommandExecuted {
                 create_time: None,
                 value: None,
-                codewhispererterminal_duration: Some(CodewhispererterminalDuration(100)),
-                codewhispererterminal_time_to_suggestion: Some(CodewhispererterminalTimeToSuggestion(1)),
-                codewhispererterminal_accepted: Some(CodewhispererterminalAccepted(true)),
+                codewhispererterminal_subcommand: Some(CodewhispererterminalSubcommand("doctor".into())),
             })
             .await;
         finish_telemetry_unwrap().await;
         assert!(!logs_contain("ERROR"))
+    }
+
+    #[tracing_test::traced_test]
+    #[tokio::test]
+    async fn test_all_telemetry() {
+        send_user_logged_in().await;
+
+        send_completion_inserted("cw").await;
+
+        send_ghost_text_actioned(true, 1, 2).await;
+
+        send_translation_actioned(true).await;
+
+        send_cli_subcommand_executed("doctor").await;
+
+        send_doctor_check_failed("").await;
+
+        send_dashboard_page_viewed("/").await;
+
+        send_menu_bar_actioned(Some("Settings")).await;
+
+        finish_telemetry_unwrap().await;
+        assert!(!logs_contain("ERROR"));
+        assert!(!logs_contain("error"));
+        assert!(!logs_contain("WARN"));
+        assert!(!logs_contain("warn"));
+        assert!(!logs_contain("Failed to post metric"))
     }
 }
 

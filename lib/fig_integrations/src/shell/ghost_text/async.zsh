@@ -3,7 +3,7 @@
 # Async                                                              #
 #--------------------------------------------------------------------#
 
-_fig_autosuggest_async_request() {
+_cw_autosuggest_async_request() {
 	zmodload zsh/system 2>/dev/null # For `$sysparams`
 
 	typeset -g _CW_AUTOSUGGEST_ASYNC_FD _CW_AUTOSUGGEST_CHILD_PID
@@ -38,7 +38,7 @@ _fig_autosuggest_async_request() {
 
 		# Fetch and print the suggestion
 		local suggestion
-		_fig_autosuggest_fetch_suggestion "$1"
+		_cw_autosuggest_fetch_suggestion "$1"
 		echo -nE "$suggestion"
 	)
 
@@ -51,13 +51,13 @@ _fig_autosuggest_async_request() {
 	read _CW_AUTOSUGGEST_CHILD_PID <&$_CW_AUTOSUGGEST_ASYNC_FD
 
 	# When the fd is readable, call the response handler
-	zle -F "$_CW_AUTOSUGGEST_ASYNC_FD" _fig_autosuggest_async_response
+	zle -F "$_CW_AUTOSUGGEST_ASYNC_FD" _cw_autosuggest_async_response
 }
 
 # Called when new data is ready to be read from the pipe
 # First arg will be fd ready for reading
 # Second arg will be passed in case of error
-_fig_autosuggest_async_response() {
+_cw_autosuggest_async_response() {
 	emulate -L zsh
 
 	local suggestion

@@ -4,39 +4,39 @@
 #--------------------------------------------------------------------#
 
 # Disable suggestions
-_fig_autosuggest_disable() {
+_cw_autosuggest_disable() {
 	typeset -g _CW_AUTOSUGGEST_DISABLED
-	_fig_autosuggest_clear
+	_cw_autosuggest_clear
 }
 
 # Enable suggestions
-_fig_autosuggest_enable() {
+_cw_autosuggest_enable() {
 	unset _CW_AUTOSUGGEST_DISABLED
 
 	if (( $#BUFFER )); then
-		_fig_autosuggest_fetch
+		_cw_autosuggest_fetch
 	fi
 }
 
 # Toggle suggestions (enable/disable)
-_fig_autosuggest_toggle() {
+_cw_autosuggest_toggle() {
 	if (( ${+_CW_AUTOSUGGEST_DISABLED} )); then
-		_fig_autosuggest_enable
+		_cw_autosuggest_enable
 	else
-		_fig_autosuggest_disable
+		_cw_autosuggest_disable
 	fi
 }
 
 # Clear the suggestion
-_fig_autosuggest_clear() {
+_cw_autosuggest_clear() {
 	# Remove the suggestion
 	unset POSTDISPLAY
 
-	_fig_autosuggest_invoke_original_widget $@
+	_cw_autosuggest_invoke_original_widget $@
 }
 
 # Modify the buffer and get a new suggestion
-_fig_autosuggest_modify() {
+_cw_autosuggest_modify() {
 	local -i retval
 
 	# Only available in zsh >= 5.4
@@ -50,7 +50,7 @@ _fig_autosuggest_modify() {
 	unset POSTDISPLAY
 
 	# Original widget may modify the buffer
-	_fig_autosuggest_invoke_original_widget $@
+	_cw_autosuggest_invoke_original_widget $@
 	retval=$?
 
 	emulate -L zsh
@@ -75,7 +75,7 @@ _fig_autosuggest_modify() {
 	# Get a new suggestion if the buffer is not empty after modification
 	if (( $#BUFFER > 0 )); then
 		if [[ -z "$CW_AUTOSUGGEST_BUFFER_MAX_SIZE" ]] || (( $#BUFFER <= $CW_AUTOSUGGEST_BUFFER_MAX_SIZE )); then
-			_fig_autosuggest_fetch
+			_cw_autosuggest_fetch
 		fi
 	fi
 
@@ -83,18 +83,18 @@ _fig_autosuggest_modify() {
 }
 
 # Fetch a new suggestion based on what's currently in the buffer
-_fig_autosuggest_fetch() {
+_cw_autosuggest_fetch() {
 	if (( ${+CW_AUTOSUGGEST_USE_ASYNC} )); then
-		_fig_autosuggest_async_request "$BUFFER"
+		_cw_autosuggest_async_request "$BUFFER"
 	else
 		local suggestion
-		_fig_autosuggest_fetch_suggestion "$BUFFER"
-		_fig_autosuggest_suggest "$suggestion"
+		_cw_autosuggest_fetch_suggestion "$BUFFER"
+		_cw_autosuggest_suggest "$suggestion"
 	fi
 }
 
 # Offer a suggestion
-_fig_autosuggest_suggest() {
+_cw_autosuggest_suggest() {
 	emulate -L zsh
 
 	local suggestion="$1"
@@ -107,7 +107,7 @@ _fig_autosuggest_suggest() {
 }
 
 # Accept the entire suggestion
-_fig_autosuggest_accept() {
+_cw_autosuggest_accept() {
 	local -i retval max_cursor_pos=$#BUFFER
 
 	# When vicmd keymap is active, the cursor can't move all the way
@@ -119,7 +119,7 @@ _fig_autosuggest_accept() {
 	# If we're not in a valid state to accept a suggestion, just run the
 	# original widget and bail out
 	if (( $CURSOR != $max_cursor_pos || !$#POSTDISPLAY )); then
-		_fig_autosuggest_invoke_original_widget $@
+		_cw_autosuggest_invoke_original_widget $@
 		return
 	fi
 
@@ -134,7 +134,7 @@ _fig_autosuggest_accept() {
 
 	# Run the original widget before manually moving the cursor so that the
 	# cursor movement doesn't make the widget do something unexpected
-	_fig_autosuggest_invoke_original_widget $@
+	_cw_autosuggest_invoke_original_widget $@
 	retval=$?
 
 	# Move the cursor to the end of the buffer
@@ -148,7 +148,7 @@ _fig_autosuggest_accept() {
 }
 
 # Accept the entire suggestion and execute it
-_fig_autosuggest_execute() {
+_cw_autosuggest_execute() {
 	# background so we don't block the terminal
 	(cw _ ghost-text-accept --buffer "$BUFFER" --suggestion "$POSTDISPLAY" > /dev/null 2>&1 &)
 
@@ -160,11 +160,11 @@ _fig_autosuggest_execute() {
 
 	# Call the original `accept-line` to handle syntax highlighting or
 	# other potential custom behavior
-	_fig_autosuggest_invoke_original_widget "accept-line"
+	_cw_autosuggest_invoke_original_widget "accept-line"
 }
 
 # Partially accept the suggestion
-_fig_autosuggest_partial_accept() {
+_cw_autosuggest_partial_accept() {
 	local -i retval cursor_loc
 
 	# Save the contents of the buffer so we can restore later if needed
@@ -174,7 +174,7 @@ _fig_autosuggest_partial_accept() {
 	BUFFER="$BUFFER$POSTDISPLAY"
 
 	# Original widget moves the cursor
-	_fig_autosuggest_invoke_original_widget $@
+	_cw_autosuggest_invoke_original_widget $@
 	retval=$?
 
 	# Normalize cursor location across vi/emacs modes
@@ -214,15 +214,15 @@ _fig_autosuggest_partial_accept() {
 
 	local action
 	for action in $_CW_AUTOSUGGEST_BUILTIN_ACTIONS modify partial_accept; do
-		eval "_fig_autosuggest_widget_$action() {
+		eval "_cw_autosuggest_widget_$action() {
 			local -i retval
 
-			_fig_autosuggest_highlight_reset
+			_cw_autosuggest_highlight_reset
 
-			_fig_autosuggest_$action \$@
+			_cw_autosuggest_$action \$@
 			retval=\$?
 
-			_fig_autosuggest_highlight_apply
+			_cw_autosuggest_highlight_apply
 
 			zle -R
 
@@ -231,6 +231,6 @@ _fig_autosuggest_partial_accept() {
 	done
 
 	for action in $_CW_AUTOSUGGEST_BUILTIN_ACTIONS; do
-		zle -N autosuggest-$action _fig_autosuggest_widget_$action
+		zle -N autosuggest-$action _cw_autosuggest_widget_$action
 	done
 }

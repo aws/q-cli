@@ -4,7 +4,7 @@
 #--------------------------------------------------------------------#
 
 # If there was a highlight, remove it
-_fig_autosuggest_highlight_reset() {
+_cw_autosuggest_highlight_reset() {
 	typeset -g _CW_AUTOSUGGEST_LAST_HIGHLIGHT
 
 	if [[ -n "$_CW_AUTOSUGGEST_LAST_HIGHLIGHT" ]]; then
@@ -14,7 +14,7 @@ _fig_autosuggest_highlight_reset() {
 }
 
 # If there's a suggestion, highlight it
-_fig_autosuggest_highlight_apply() {
+_cw_autosuggest_highlight_apply() {
 	typeset -g _CW_AUTOSUGGEST_LAST_HIGHLIGHT
 
 	if (( $#POSTDISPLAY )); then

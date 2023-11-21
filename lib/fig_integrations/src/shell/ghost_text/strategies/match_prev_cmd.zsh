@@ -20,7 +20,7 @@
 # preserve the history order such as `HIST_IGNORE_ALL_DUPS` or
 # `HIST_EXPIRE_DUPS_FIRST`.
 
-_fig_autosuggest_strategy_match_prev_cmd() {
+_cw_autosuggest_strategy_match_prev_cmd() {
 	# Reset options to defaults and enable LOCAL_OPTIONS
 	emulate -L zsh
 
@@ -46,7 +46,7 @@ _fig_autosuggest_strategy_match_prev_cmd() {
 	local histkey="${history_match_keys[1]}"
 
 	# Get the previously executed command
-	local prev_cmd="$(_fig_autosuggest_escape_command "${history[$((HISTCMD-1))]}")"
+	local prev_cmd="$(_cw_autosuggest_escape_command "${history[$((HISTCMD-1))]}")"
 
 	# Iterate up to the first 200 history event numbers that match $prefix
 	for key in "${(@)history_match_keys[1,200]}"; do

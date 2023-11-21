@@ -38,11 +38,11 @@ pub mod ghost_text_plugin {
             // Ensure script has license
             assert!(ZSH_SCRIPT.contains("Copyright"));
 
-            // Ensure script has _fig_autosuggest_strategy_ghost_text()
-            assert!(ZSH_SCRIPT.contains("_fig_autosuggest_strategy_ghost_text()"));
+            // Ensure script has _cw_autosuggest_strategy_ghost_text()
+            assert!(ZSH_SCRIPT.contains("_cw_autosuggest_strategy_ghost_text()"));
 
             // Ensure script adds precmd hook
-            assert!(ZSH_SCRIPT.contains("add-zsh-hook precmd _fig_autosuggest_start"));
+            assert!(ZSH_SCRIPT.contains("add-zsh-hook precmd _cw_autosuggest_start"));
         }
     }
 }

@@ -6,7 +6,7 @@
 # prefix.
 #
 
-_fig_autosuggest_strategy_history() {
+_cw_autosuggest_strategy_history() {
 	# Reset options to defaults and enable LOCAL_OPTIONS
 	emulate -L zsh
 

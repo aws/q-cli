@@ -4,7 +4,7 @@
 #--------------------------------------------------------------------#
 
 # Start the autosuggestion widgets
-_fig_autosuggest_start() {
+_cw_autosuggest_start() {
 	# By default we re-bind widgets on every precmd to ensure we wrap other
 	# wrappers. Specifically, highlighting breaks if our widgets are wrapped by
 	# zsh-syntax-highlighting widgets. This also allows modifications to the
@@ -12,10 +12,10 @@ _fig_autosuggest_start() {
 	# a decent performance hit, so users can set CW_AUTOSUGGEST_MANUAL_REBIND
 	# to disable the automatic re-binding.
 	if (( ${+CW_AUTOSUGGEST_MANUAL_REBIND} )); then
-		add-zsh-hook -d precmd _fig_autosuggest_start
+		add-zsh-hook -d precmd _cw_autosuggest_start
 	fi
 
-	_fig_autosuggest_bind_widgets
+	_cw_autosuggest_bind_widgets
 }
 
 # Mark for auto-loading the functions that we use
@@ -30,4 +30,4 @@ if is-at-least 5.0.8; then
 fi
 
 # Start the autosuggestion widgets on the next precmd
-add-zsh-hook precmd _fig_autosuggest_start
+add-zsh-hook precmd _cw_autosuggest_start

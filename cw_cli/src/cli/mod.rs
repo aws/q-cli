@@ -42,7 +42,6 @@ use fig_util::desktop::{
 };
 use fig_util::{
     manifest,
-    open_url_async,
     system_info,
 };
 use serde::Serialize;
@@ -93,7 +92,7 @@ pub enum Processes {
 #[derive(Debug, PartialEq, Subcommand)]
 pub enum CliRootCommands {
     /// Interact with the desktop app
-    #[command(subcommand)]
+    #[command(subcommand, hide = true)]
     App(app::AppSubcommand),
     /// Hook commands
     #[command(subcommand, hide = true)]
@@ -104,8 +103,8 @@ pub enum CliRootCommands {
     /// Customize appearance & behavior
     #[command(alias("setting"))]
     Settings(settings::SettingsArgs),
-    /// Enable/disable fig tips
-    #[command(subcommand)]
+    /// Enable/disable CodeWhisperer tips
+    #[command(subcommand, hide = true)]
     Tips(tips::TipsSubcommand),
     /// Install fig cli components
     Install(internal::InstallArgs),
@@ -118,10 +117,6 @@ pub enum CliRootCommands {
     },
     /// Update dotfiles
     Update {
-        /// (deprecated) Use --non-interactive instead
-        #[deprecated = "Use --non-interactive instead"]
-        #[arg(long, hide = true)]
-        no_confirm: bool,
         /// Don't prompt for confirmation
         #[arg(long, short = 'y')]
         non_interactive: bool,
@@ -144,7 +139,7 @@ pub enum CliRootCommands {
     /// Root level user subcommands
     #[command(flatten)]
     RootUser(user::RootUserSubcommand),
-    /// Manage your fig user
+    /// Manage your CodeWhisperer account
     #[command(subcommand)]
     User(user::UserSubcommand),
     /// Check CodeWhisperer is properly configured
@@ -171,17 +166,18 @@ pub enum CliRootCommands {
     /// Manage system integrations
     #[command(subcommand, alias("integration"))]
     Integrations(IntegrationsSubcommands),
-    /// English -> Bash translation
+    /// Natural Language to Shell translation
     #[command(alias = "q")]
     Ai(ai::AiArgs),
     /// Enable/disable telemetry
     #[command(subcommand, hide = true)]
     Telemetry(telemetry::TelemetrySubcommand),
     /// Version
+    #[command(hide = true)]
     Version,
     /// Print help for all subcommands
     HelpAll,
-    /// Open the fig dashboard
+    /// Open the CodeWhisperer dashboard
     Dashboard,
 }
 
@@ -222,7 +218,7 @@ impl CliRootCommands {
 }
 
 #[derive(Debug, Parser)]
-#[command(version, about)]
+#[command(version, about, name = "cw")]
 #[command(help_template = "\x1B[1;95m
  cw\x1B[0m (Amazon CodeWhisperer CLI)
 ╭──────────────────────────────────────────────────────╮
@@ -232,7 +228,7 @@ impl CliRootCommands {
 
  \x1B[1;95mPopular Subcommands\x1B[0m           \x1B[1;90mUsage:\x1B[0;90m cw [subcommand]\x1B[0m
 ╭──────────────────────────────────────────────────────╮
-│ \x1B[1mai\x1B[0m             \x1B[0;90mAi :D\x1B[0m                                 |
+│ \x1B[1mai\x1B[0m             \x1B[0;90mNatural Language to Shell translation\x1B[0m |
 │ \x1B[1msettings\x1B[0m       \x1B[0;90mCustomize appearance & behavior\x1B[0m       │
 │ \x1B[1mquit\x1B[0m           \x1B[0;90mQuit the CodeWhisperer app\x1B[0m            │
 ╰──────────────────────────────────────────────────────╯
@@ -310,15 +306,16 @@ impl Cli {
                 CliRootCommands::HelpAll => {
                     let mut cmd = Self::command().help_template("{all-args}");
                     eprintln!();
-                    eprintln!(
-                        "  \x1B[1m███████╗██╗ ██████╗
-  ██╔════╝██║██╔════╝
-  █████╗  ██║██║  ███╗
-  ██╔══╝  ██║██║   ██║
-  ██║     ██║╚██████╔╝
-  ╚═╝     ╚═╝ ╚═════╝ CLI\x1B[0m\n"
-                    );
-                    println!("{}\n    {}\n", "USAGE:".yellow(), "fig [OPTIONS] [SUBCOMMAND]".green());
+                    // TODO: maybe add back art :)
+                    //                     eprintln!(
+                    //                         "  \x1B[1m███████╗██╗ ██████╗
+                    //   ██╔════╝██║██╔════╝
+                    //   █████╗  ██║██║  ███╗
+                    //   ██╔══╝  ██║██║   ██║
+                    //   ██║     ██║╚██████╔╝
+                    //   ╚═╝     ╚═╝ ╚═════╝ CLI\x1B[0m\n"
+                    //                     );
+                    println!("{}\n    cw [OPTIONS] [SUBCOMMAND]\n", "USAGE:".bold().underlined(),);
                     cmd.print_long_help()?;
                     Ok(())
                 },
@@ -348,11 +345,7 @@ impl Cli {
 
 async fn launch_dashboard() -> Result<()> {
     if manifest::is_headless() || system_info::is_remote() {
-        match open_url_async("https://app.fig.io").await {
-            Ok(_) => eprintln!("Opening {} in browser...", "https://app.fig.io".magenta()),
-            Err(_) => eprintln!("Go to {} to open the dashboard", "https://app.fig.io".magenta()),
-        }
-        return Ok(());
+        eyre::bail!("Opening the dashboard from a remote machine is not supported");
     }
 
     launch_fig_desktop(LaunchArgs {

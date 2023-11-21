@@ -2,12 +2,15 @@ use std::borrow::Cow;
 
 /// Returns whether or not the user has disabled telemetry through settings or environment
 pub fn telemetry_is_disabled() -> bool {
-    std::env::var_os("CW_DISABLE_TELEMETRY").is_some()
-        || !fig_settings::settings::get_value("telemetry.enabled")
-            .ok()
-            .flatten()
-            .and_then(|v| v.as_bool())
-            .unwrap_or(true)
+    let is_test = cfg!(test);
+    let env_var = std::env::var_os("CW_DISABLE_TELEMETRY").is_some();
+    let setting = !fig_settings::settings::get_value("telemetry.enabled")
+        .ok()
+        .flatten()
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+
+    !is_test && (env_var || setting)
 }
 
 /// Generates or gets the client id and caches the result

@@ -11,30 +11,12 @@ or set --append PATH $HOME/.local/bin
 
 alias q='cw ai'
 
-# if test "$FIG_DID_NOT_EXEC_FIGTERM" = 1
-#     and test "$CW_TERM" != 1
-#     or set --query INSIDE_EMACS
-#     set --erase FIG_DID_NOT_EXEC_FIGTERM
-#     exit
-# end
-
-
-# Open scripts on keyboard shortcut
-set --query FIG_SCRIPTS_KEYBIND; or set FIG_SCRIPTS_KEYBIND '\cf'
-
-# function fig-open-scripts
-#     fig run
-#     commandline -f repaint
-# end
-
-# bind (string unescape $FIG_SCRIPTS_KEYBIND) fig-open-scripts
-
 set --query TTY; or set TTY (command tty)
 set --export TTY
 
-set --export FIG_PID $fish_pid
-set --export FIG_SET_PARENT $TERM_SESSION_ID
-set --export LC_FIG_SET_PARENT $TERM_SESSION_ID
+set --export SHELL_PID $fish_pid
+set --export CW_SET_PARENT $TERM_SESSION_ID
+set --export LC_CW_SET_PARENT $TERM_SESSION_ID
 
 set --query CW_SHELL; or set CW_SHELL (cw _ get-shell)
 
@@ -93,7 +75,7 @@ function fig_precmd --on-event fish_prompt
     fig_osc "PID=%d" "$fish_pid"
     fig_osc "ExitCode=%s" "$last_status"
     fig_osc "TTY=%s" "$TTY"
-    fig_osc "Log=%s" "$FIG_LOG_LEVEL"
+    fig_osc "Log=%s" "$CW_LOG_LEVEL"
     fig_osc "FishSuggestionColor=%s" "$fish_color_autosuggestion"
 
     if test -n "$USER"
@@ -135,7 +117,7 @@ end
 
 set fig_has_set_prompt 0
 
-if test -n "$PROCESS_LAUNCHED_BY_FIG"
+if test -n "$PROCESS_LAUNCHED_BY_CW"
     fig_osc DoneSourcing
 end
 

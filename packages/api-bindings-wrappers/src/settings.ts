@@ -47,7 +47,7 @@ export enum SETTINGS {
 
   FIRST_COMMAND_COMPLETION = "autocomplete.firstTokenCompletion",
 
-  TELEMETRY_DISABLED = "telemetry.disabled",
+  TELEMETRY_ENABLED = "telemetry.enabled",
 }
 
 export type SettingsMap = { [key in SETTINGS]?: unknown };
