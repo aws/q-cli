@@ -51,8 +51,8 @@ pub enum Integration {
     InputMethod,
     #[command(name = "vscode")]
     VSCode,
-    #[command(name = "intellij", alias = "jetbrains")]
-    IntelliJ,
+    #[command(alias = "jetbrains-plugin")]
+    IntellijPlugin,
     #[doc(hidden)]
     All,
 }
@@ -190,7 +190,7 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
                 }
             }
         },
-        Integration::IntelliJ => {
+        Integration::IntellijPlugin => {
             cfg_if::cfg_if! {
                 if #[cfg(any(target_os = "macos", target_os = "linux"))] {
                     let variants = fig_integrations::intellij::variants_installed().await?;
@@ -303,7 +303,7 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
                 }
             }
         },
-        Integration::IntelliJ => {
+        Integration::IntellijPlugin => {
             cfg_if::cfg_if! {
                 if #[cfg(any(target_os = "macos", target_os = "linux"))] {
                     for variant in fig_integrations::intellij::variants_installed().await? {
@@ -403,7 +403,7 @@ async fn status(integration: Integration) -> Result<()> {
                 }
             }
         },
-        Integration::IntelliJ => {
+        Integration::IntellijPlugin => {
             cfg_if::cfg_if! {
                 if #[cfg(any(target_os = "macos", target_os = "linux"))] {
                     let variants = fig_integrations::intellij::variants_installed().await?;
