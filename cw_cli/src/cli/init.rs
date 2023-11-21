@@ -155,6 +155,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<Str
             && shell == &Shell::Zsh
             && when == &When::Post
             && fig_settings::settings::get_bool_or("ghost-text.enabled", false)
+            && !*IS_SNAPSHOT_TEST
         {
             to_source.push(guard_source(
                 shell,
