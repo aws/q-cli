@@ -28,11 +28,7 @@ export default function Page() {
                   <span>{i + 1}.</span>
                   {stringAsArray.map((substr, i) => {
                     if (i === 1) {
-                      return (
-                        <Code key={i}>
-                          {substr}
-                        </Code>
-                      );
+                      return <Code key={i}>{substr}</Code>;
                     }
 
                     return <span key={i}>{substr}</span>;
@@ -42,7 +38,7 @@ export default function Page() {
             })}
           </ol>
           <div className="flex flex-col">
-            <span className="text-slate-500">
+            <span className="text-zinc-500 dark:text-zinc-400">
               You can also check out the following:
             </span>
             <div className="flex gap-4">
@@ -51,7 +47,7 @@ export default function Page() {
                   <ExternalLink
                     key={i}
                     href={link.url}
-                    className="text-blue-500 font-medium"
+                    className="text-cyan-500 dark:text-cyan-400 font-medium"
                   >
                     {link.text} →
                   </ExternalLink>

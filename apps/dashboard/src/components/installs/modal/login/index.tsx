@@ -68,8 +68,10 @@ export default function LoginModal({ next }: { next: () => void }) {
       </div>
       {error && (
         <div className="w-full bg-red-200 border border-red-600 rounded py-1 px-1">
-          <p className="text-black font-semibold text-center">Failed to login</p>
-          <p className="text-black text-center">{error}</p>
+          <p className="text-black dark:text-white font-semibold text-center">
+            Failed to login
+          </p>
+          <p className="text-black dark:text-white text-center">{error}</p>
         </div>
       )}
       <div className="flex flex-col gap-4 text-white text-sm">

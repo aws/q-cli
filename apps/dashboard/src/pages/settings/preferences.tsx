@@ -52,7 +52,7 @@ export default function Page() {
               Users can log in with either AWS Builder ID or AWS IAM Identity
               Center
             </p>
-            <p className="font-light leading-tight text-sm text-black/50">
+            <p className="font-light leading-tight text-sm text-black/50 dark:text-white/50">
               {authed
                 ? accountType
                   ? `Logged in with ${accountType}`
@@ -65,7 +65,7 @@ export default function Page() {
                 onClick={() => logout()}
                 disabled={!authed}
               >
-                Logout
+                Log out
               </Button>
             </div>
           </div>

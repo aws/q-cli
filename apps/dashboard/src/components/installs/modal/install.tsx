@@ -64,10 +64,10 @@ export default function InstallModal({
 
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="font-medium text-lg select-none leading-none">
+      <h2 className="font-medium text-lg select-none leading-none dark:text-zinc-300">
         {check.title}
       </h2>
-      <div className="flex flex-col gap-2 text-base font-light text-zinc-500 select-none items-start leading-tight">
+      <div className="flex flex-col gap-2 text-base font-light text-zinc-500 dark:text-zinc-300 select-none items-start leading-tight">
         {check.description.map((d, i) => (
           <p key={i} className="text-sm">
             {d}
@@ -76,21 +76,24 @@ export default function InstallModal({
         {check.image && (
           <img
             src={check.image}
-            className="h-auto w-full min-h-40 rounded-sm bg-zinc-200 border border-zinc-300"
+            className="h-auto w-full min-h-40 rounded-sm bg-zinc-200 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700"
           />
         )}
       </div>
-      <div className="flex flex-col gap-1">
-        {error && <p className="text-xs text-red-500">{error}</p>}
+      <div className="flex flex-col gap-2">
+        {error && (
+          <p className="text-xs text-red-500 dark:text-red-400">{error}</p>
+        )}
         <Button
           disabled={checking}
           onClick={() => handleInstall(check.installKey)}
+          className="dark:bg-dusk-600"
         >
           {checking ? "Waiting for permission..." : check.action}
         </Button>
         {timeElapsed && (
           <button
-            className={"text-xs text-black/50 self-center"}
+            className={"text-xs text-zinc-400 dark:text-zinc-400 self-center"}
             onClick={skip}
           >
             skip
@@ -111,7 +114,7 @@ export default function InstallModal({
               </div>
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <ul className="flex flex-col gap-4 py-4">
+              <ul className="flex flex-col gap-4 py-4 dark:text-zinc-300">
                 {check.explainer.steps.map((step, i) => {
                   return (
                     <li key={i} className="flex items-baseline gap-2 text-xs">

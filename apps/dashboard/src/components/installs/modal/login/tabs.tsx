@@ -6,14 +6,20 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../../ui/select"
+} from "../../../ui/select";
 import { Input } from "../../../ui/input";
 import { useState } from "react";
 
-function BuilderIdTab({ handleLogin, toggleTab }: { handleLogin: () => void, toggleTab: () => void }) {
+function BuilderIdTab({
+  handleLogin,
+  toggleTab,
+}: {
+  handleLogin: () => void;
+  toggleTab: () => void;
+}) {
   return (
     <div className="flex flex-col items-center gap-1">
-    <Button
+      <Button
         variant="glass"
         onClick={() => handleLogin()}
         className="flex gap-4 pl-2 self-center"
@@ -21,14 +27,26 @@ function BuilderIdTab({ handleLogin, toggleTab }: { handleLogin: () => void, tog
         <AwsLogo />
         Sign in
       </Button>
-      <Button className="h-auto p-1 px-2 hover:bg-white/20 hover:text-white" variant={'ghost'} onClick={toggleTab}>
-        <span className="text-xs">Pro account? Switch to IAM Identity Center</span>
+      <Button
+        className="h-auto p-1 px-2 hover:bg-white/20 hover:text-white"
+        variant={"ghost"}
+        onClick={toggleTab}
+      >
+        <span className="text-xs">
+          Pro account? Switch to IAM Identity Center
+        </span>
       </Button>
     </div>
   );
 }
 
-function IamTab({ handleLogin, toggleTab }: { handleLogin: (startUrl: string, region: string) => void, toggleTab: () => void }) {
+function IamTab({
+  handleLogin,
+  toggleTab,
+}: {
+  handleLogin: (startUrl: string, region: string) => void;
+  toggleTab: () => void;
+}) {
   // TODO: this should be fetched from https://idetoolkits.amazonwebservices.com/endpoints.json
   const REGIONS = {
     "af-south-1": {
@@ -134,7 +152,7 @@ function IamTab({ handleLogin, toggleTab }: { handleLogin: (startUrl: string, re
         <Input
           value={startUrl}
           onChange={(e) => setStartUrl(e.target.value)}
-          className="text-black"
+          className="text-black dark:text-white"
           type="url"
         />
       </div>
@@ -142,14 +160,14 @@ function IamTab({ handleLogin, toggleTab }: { handleLogin: (startUrl: string, re
         <p className="font-bold">Region</p>
         <p>AWS Region that hosts Identity directory</p>
         <Select onValueChange={(value) => setRegion(value)} value={region}>
-          <SelectTrigger className="w-full text-black">
+          <SelectTrigger className="w-full text-black dark:text-white">
             <SelectValue placeholder="Theme" />
           </SelectTrigger>
           <SelectContent className="h-96">
             {Object.entries(REGIONS).map(([key, value]) => (
               <SelectItem key={key} value={key}>
                 <span className="font-mono mr-2">{key}</span>
-                <span className="text-xs text-neutral-600">
+                <span className="text-xs text-zinc-600">
                   {value.description}
                 </span>
               </SelectItem>
@@ -158,18 +176,22 @@ function IamTab({ handleLogin, toggleTab }: { handleLogin: (startUrl: string, re
         </Select>
       </div>
       <div className="flex flex-col items-center gap-1">
-    <Button
-        variant="glass"
-        onClick={() => handleLogin(startUrl, region)}
-        className="flex gap-4 pl-2 self-center"
-      >
-        <AwsLogo />
-        Sign in
-      </Button>
-      <Button className="h-auto p-1 px-2 hover:bg-white/20 hover:text-white" variant={'ghost'} onClick={toggleTab}>
-        <span className="text-xs">Personal account? Use Builder ID</span>
-      </Button>
-    </div>
+        <Button
+          variant="glass"
+          onClick={() => handleLogin(startUrl, region)}
+          className="flex gap-4 pl-2 self-center"
+        >
+          <AwsLogo />
+          Sign in
+        </Button>
+        <Button
+          className="h-auto p-1 px-2 hover:bg-white/20 hover:text-white"
+          variant={"ghost"}
+          onClick={toggleTab}
+        >
+          <span className="text-xs">Personal account? Use Builder ID</span>
+        </Button>
+      </div>
     </div>
   );
 }
@@ -177,11 +199,11 @@ function IamTab({ handleLogin, toggleTab }: { handleLogin: (startUrl: string, re
 export default function Tab({
   tab,
   handleLogin,
-  toggleTab
+  toggleTab,
 }: {
   tab: "builderId" | "iam";
   handleLogin: () => void;
-  toggleTab: () => void
+  toggleTab: () => void;
 }) {
   switch (tab) {
     case "builderId":

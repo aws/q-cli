@@ -41,24 +41,24 @@ export default function StatusCheck({
           } cursor-pointer text-zinc-400`}
         />
       </CollapsibleTrigger>
-      <div className="flex flex-col border-b-[1px] border-zinc-200 py-4 flex-auto gap-1">
+      <div className="flex flex-col border-b-[1px] border-zinc-200 dark:border-zinc-600 py-4 flex-auto gap-1">
         <div className="flex gap-2 items-center">
           <h2 className="font-medium text-lg select-none">{check.title}</h2>
           {status !== undefined &&
             (status ? (
-              <Check className="h-5 w-5 text-green-600" />
+              <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
             ) : (
-              <X className="h-5 w-5 text-red-600" />
+              <X className="h-5 w-5 text-red-600 dark:text-red-400" />
             ))}
         </div>
-        <CollapsibleContent className="flex flex-col gap-2 text-base font-light text-zinc-500 select-none items-start leading-tight">
+        <CollapsibleContent className="flex flex-col gap-2 text-base font-light text-zinc-500 dark:text-zinc-400 select-none items-start leading-tight">
           {check.description.map((d, i) => (
             <p key={i}>{d}</p>
           ))}
           <Button
             onClick={fixInstall}
             disabled={status}
-            className="disabled:bg-zinc-400 h-auto py-2 px-6 mt-1"
+            className="disabled:bg-zinc-400 dark:disabled:bg-zinc-600 dark:disabled:border-zinc-400 dark:bg-dusk-600 dark:border dark:border-dusk-400 dark:hover:border-dusk-700 dark:hover:bg-dusk-800 h-auto py-2 px-6 mt-1"
           >
             {status ? "Enabled" : check.action}
           </Button>

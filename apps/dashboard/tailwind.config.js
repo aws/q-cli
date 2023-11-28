@@ -1,20 +1,20 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: ["class"],
+  darkMode: ["media"],
   content: [
-    './pages/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-    './app/**/*.{ts,tsx}',
-    './src/**/*.{ts,tsx}',
-	],
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+  ],
   fontSize: {
-    sm: '0.66rem',
-    base: '0.75rem',
-    md: '0.875rem',
-    lg: '1rem',
-    xl: '1.5rem',
-    '2xl': '2rem',
-    '3xl': '3rem'
+    sm: "0.66rem",
+    base: "0.75rem",
+    md: "0.875rem",
+    lg: "1rem",
+    xl: "1.5rem",
+    "2xl": "2rem",
+    "3xl": "3rem",
   },
   theme: {
     container: {
@@ -59,6 +59,32 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        cyan: {
+          50: "#eef7ff",
+          100: "#d9ebff",
+          200: "#bcddff",
+          300: "#8ec8ff",
+          400: "#59a9ff",
+          500: "#3e8dff",
+          600: "#1b65f5",
+          700: "#1450e1",
+          800: "#1741b6",
+          900: "#193a8f",
+          950: "#142557",
+        },
+        dusk: {
+          50: "#f4f3ff",
+          100: "#ebe9fe",
+          200: "#d8d5ff",
+          300: "#bcb4fe",
+          400: "#9c89fc",
+          500: "#7c59f9",
+          600: "#6e3bf1",
+          700: "#5c24dd",
+          800: "#4c1eb9",
+          900: "#401b97",
+          950: "#250e67",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -80,9 +106,9 @@ module.exports = {
         "accordion-up": "accordion-up 0.2s ease-out",
       },
       fontFamily: {
-        'ember': ['Ember', 'sans-serif']
-      }
+        ember: ["Ember", "sans-serif"],
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],
-}
+};

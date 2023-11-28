@@ -438,7 +438,7 @@ function App() {
       <div className="ml-2 flex flex-col gap-1 text-xs">
         <div>
           •{" "}
-          <code className="rounded-sm bg-neutral-700 p-0.5 text-neutral-200">
+          <code className="rounded-sm bg-zinc-700 p-0.5 text-zinc-200">
             Ctrl + C
           </code>{" "}
           in the dev mode process
@@ -530,21 +530,6 @@ function App() {
       </>
     );
   }
-
-  // else {
-  //   contents = (
-  //     <div className="small-text m-1 w-auto space-y-1.5 whitespace-nowrap rounded bg-amber-500 px-2.5 py-2 text-black">
-  //       <div className="font-bold">Not logged in</div>
-  //       <div className="text-sm">
-  //         Please run{" "}
-  //         <code className="rounded-sm bg-neutral-700 p-0.5 text-neutral-200">
-  //           cw login
-  //         </code>{" "}
-  //         to login/signup
-  //       </div>
-  //     </div>
-  //   );
-  // }
 
   return (
     <div

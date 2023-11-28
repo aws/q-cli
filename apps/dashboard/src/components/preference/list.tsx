@@ -8,7 +8,6 @@ import ExternalLink from "../util/external-link";
 import { interpolateSettingBoolean } from "@/lib/utils";
 import { useSetting } from "@/hooks/store/useSetting";
 import { Switch } from "../ui/switch";
-// import { Code } from "../text/code";
 import { parseBackticksToCode } from "@/lib/strings";
 
 type PrefSection = {
@@ -51,13 +50,16 @@ function FeatureIntro({ intro }: { intro: Intro }) {
     <section className="flex flex-col p-6 gap-4 w-full gradient-cw-secondary-light rounded-lg items-start text-white">
       <div className="flex gap-4 justify-between w-full">
         <div className="flex gap-4">
-        {getIconFromName(intro.title, 48)}
+          {getIconFromName(intro.title, 48)}
           <div className="flex flex-col">
             <h1 className="font-bold text-2xl font-ember leading-none">
               {intro.title}
             </h1>
             <p className="text-base">
-              {parseBackticksToCode(intro.description, "border-white bg-white/20 text-white py-[1px]")}
+              {parseBackticksToCode(
+                intro.description,
+                "!border-white !bg-white/20 !text-white py-[1px]"
+              )}
               <ExternalLink
                 href={intro.link}
                 className="pl-1 text-white font-medium underline underline-offset-4 "
@@ -68,7 +70,7 @@ function FeatureIntro({ intro }: { intro: Intro }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="font-bold">{localValue ? 'On' : 'Off'}</span>
+          <span className="font-bold">{localValue ? "On" : "Off"}</span>
           <Switch
             onClick={toggleSwitch}
             checked={localValue as boolean}

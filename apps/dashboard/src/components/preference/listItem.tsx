@@ -90,10 +90,12 @@ export function Setting({
           <p className="font-light text-sm">
             {/* {parseBracketsToKbd(data.description, 'py-[1px] text-xs -top-[1px]')} */}
             {data.description}
-            </p>
+          </p>
         )}
         {data.example && (
-          <p className="font-light leading-tight text-sm">{parseBackticksToCode(data.example, 'py-[1px]')}</p>
+          <p className="font-light leading-tight text-sm">
+            {parseBackticksToCode(data.example, "py-[1px]")}
+          </p>
         )}
         {data.type !== "boolean" && (
           <div className="pt-1">
@@ -131,7 +133,6 @@ export function Setting({
                   <DropdownMenuContent className="w-60">
                     {data.options?.map((o, i) => {
                       const included = multiSelectValue.includes(o) as boolean;
-                      // console.log(o, included)
                       return (
                         <DropdownMenuCheckboxItem
                           key={i}

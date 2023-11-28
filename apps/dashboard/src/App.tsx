@@ -201,7 +201,7 @@ function Layout() {
   const error = accessibilityCheck === false || dotfilesCheck === false;
 
   return (
-    <div className="flex flex-row h-screen w-full overflow-hidden">
+    <div className="flex flex-row h-screen w-full overflow-hidden bg-white dark:bg-zinc-800 text-black dark:text-zinc-200">
       <nav className="w-[240px] flex-none h-full flex flex-col items-center gap-1 p-4">
         {NAV_DATA.map((item) =>
           item.type === "link" ? (
