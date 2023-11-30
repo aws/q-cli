@@ -90,7 +90,7 @@ def build_signed_package(type: SigningType, file_path: pathlib.Path, name: str):
         manifest_path = working_dir / "manifest.yaml.template"
         manifest_path.write_text(manifest_path.read_text().replace("__NAME__", name))
 
-    shutil.copytree(file_path, working_dir / "artifact")
+    shutil.copytree(file_path, working_dir / "artifact" / file_path.name)
     shutil.rmtree(file_path)
     run_cmd(
         [
