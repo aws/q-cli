@@ -88,4 +88,4 @@ build_params_json="$(
         }'
 )"
 
-python3 build-scripts/build.py "${build_params_json}"
+python3 build-scripts/build.py "${build_params_json}" 2>&1
