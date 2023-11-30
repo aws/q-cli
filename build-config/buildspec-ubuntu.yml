@@ -7,10 +7,16 @@ phases:
   install:
     commands:
       - sudo apt-get update
-      - sudo apt-get install -y clang cmake curl git jq unzip libayatana-appindicator3-dev libgtk-3-dev libibus-1.0-dev libwebkit2gtk-4.1-dev libjavascriptcoregtk-4.1-dev valac protobuf-compiler python3 nodejs
+      - sudo apt-get install -y clang cmake curl git jq unzip libayatana-appindicator3-dev libgtk-3-dev libibus-1.0-dev libwebkit2gtk-4.1-dev libjavascriptcoregtk-4.1-dev valac protobuf-compiler python3
       # Install cargo
       - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - . $HOME/.cargo/env
+      # Install node via rtx
+      - curl https://rtx.pub/rtx-latest-linux-amd64 > ~/bin/rtx
+      - chmod +x ~/bin/rtx
+      - eval "$(~/bin/rtx activate bash)"
+      - rtx install
+      - corepack enable
       # - cargo install tauri-cli
   build:
     commands:

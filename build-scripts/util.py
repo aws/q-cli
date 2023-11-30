@@ -54,6 +54,16 @@ def run_cmd_status(
     return res.returncode
 
 
-# True if the length of string is nonzero
+# Emulating -n from bash
 def n(val: Any, key: str) -> bool:
-    return key in val and isinstance(val[key], str) and len(val[key]) > 0
+    if key in val:
+        if isinstance(val[key], str) and len(val[key]) > 0:
+            return True
+        elif isinstance(val[key], int):
+            return True
+        elif isinstance(val[key], bool):
+            return True
+        else:
+            return False
+    else:
+        return False

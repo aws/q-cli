@@ -1,2 +1,3 @@
 [tools]
-node = "18"
+node = "20"
+python = "3"

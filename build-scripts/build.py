@@ -4,7 +4,7 @@ import datetime
 import pathlib
 import shutil
 import sys
-from typing import Dict
+from typing import Dict, Sequence
 from util import IS_DARWIN, IS_LINUX, n, run_cmd, run_cmd_output, info
 from signing import SigningData, SigningType, rebundle_dmg, sign_file, notarize_file
 
@@ -52,7 +52,9 @@ def rust_env(linker=None) -> Dict[str, str]:
     return env
 
 
-def build_cargo_bin(package: str, output_name: str | None = None) -> pathlib.Path:
+def build_cargo_bin(
+    package: str, output_name: str | None = None, features: Sequence[str] | None = None
+) -> pathlib.Path:
     if IS_DARWIN:
         targets = ["x86_64-apple-darwin", "aarch64-apple-darwin"]
     elif IS_LINUX:
@@ -63,6 +65,9 @@ def build_cargo_bin(package: str, output_name: str | None = None) -> pathlib.Pat
     args = ["cargo", "build", "--release", "--locked", "--package", package]
     for target in targets:
         args.extend(["--target", target])
+
+    if features:
+        args.extend(["--features", ",".join(features)])
 
     run_cmd(
         args,
@@ -192,6 +197,7 @@ def build_desktop_app(
     cw_cli_path: pathlib.Path,
     npm_packages: Dict[str, pathlib.Path],
     signing_data: SigningData | None,
+    features: Sequence[str] | None = None,
 ) -> pathlib.Path:
     target = "universal-apple-darwin"
 
@@ -209,15 +215,21 @@ def build_desktop_app(
     )
 
     info("Building fig_desktop")
+
+    cargo_tauri_args = [
+        "cargo-tauri",
+        "build",
+        "--config",
+        "build-config.json",
+        "--target",
+        target,
+    ]
+
+    if features:
+        cargo_tauri_args.extend(["--features", ",".join(features)])
+
     run_cmd(
-        [
-            "cargo-tauri",
-            "build",
-            "--config",
-            "build-config.json",
-            "--target",
-            target,
-        ],
+        cargo_tauri_args,
         cwd="fig_desktop",
         env={**os.environ, **rust_env(), "BUILD_DIR": OUTDIR},
     )
@@ -348,6 +360,30 @@ def sign_and_rebundle_macos(
     info("Done signing!!")
 
 
+def linux_bundle(
+    cwterm_path: pathlib.Path,
+    cw_cli_path: pathlib.Path,
+    codewhisperer_desktop_path: pathlib.Path,
+    is_headless: bool,
+):
+    if not is_headless:
+        for res in [16, 22, 24, 32, 48, 64, 128, 256, 512]:
+            shutil.copy2(
+                f"fig_desktop/icons/{res}x{res}.png",
+                f"build/usr/share/icons/hicolor/{res}x{res}/apps/fig.png",
+            )
+
+    info("Copying bundle files")
+    bin_path = pathlib.Path("build/usr/bin")
+    bin_path.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(cw_cli_path, bin_path)
+    shutil.copy2(cwterm_path, bin_path)
+    shutil.copytree("bundle/linux/headless", OUTDIR, dirs_exist_ok=True)
+    if not is_headless:
+        shutil.copytree("bundle/linux/desktop", OUTDIR, dirs_exist_ok=True)
+        shutil.copy2(codewhisperer_desktop_path, bin_path)
+
+
 def generate_sha(path: pathlib.Path) -> pathlib.Path:
     shasum_output = run_cmd_output(["shasum", "-a", "256", path])
     sha = shasum_output.split(" ")[0]
@@ -373,6 +409,12 @@ if (
 else:
     signing_data = None
 
+if n(build_args, "gamma"):
+    features = ["gamma"]
+else:
+    features = None
+
+info(f"Cargo features: {features}")
 info(f"Signing app: {signing_data is not None}")
 
 OUTDIR.mkdir(parents=True, exist_ok=True)
@@ -381,10 +423,10 @@ info("Building npm packages")
 npm_packages = build_npm_packages()
 
 info("Building cw_cli")
-cw_cli_path = build_cargo_bin("cw_cli", output_name="cw")
+cw_cli_path = build_cargo_bin("cw_cli", output_name="cw", features=features)
 
 info("Building figterm")
-cwterm_path = build_cargo_bin("figterm", output_name="cwterm")
+cwterm_path = build_cargo_bin("figterm", output_name="cwterm", features=features)
 
 if IS_DARWIN:
     info("Building CodeWhisperer.dmg")
@@ -393,6 +435,7 @@ if IS_DARWIN:
         cwterm_path=cwterm_path,
         npm_packages=npm_packages,
         signing_data=signing_data,
+        features=features,
     )
 
     sha_path = generate_sha(dmg_path)
@@ -404,4 +447,14 @@ if IS_DARWIN:
         run_cmd(["aws", "s3", "cp", dmg_path, staging_location])
         run_cmd(["aws", "s3", "cp", sha_path, staging_location])
 elif IS_LINUX:
-    build_cargo_bin("fig_desktop", output_name="codewhisperer_desktop")
+    if n(build_args, "output_bucket"):
+        staging_location = f"s3://{build_args['output_bucket']}/staging/"
+        info(f"Build complete, sending to {staging_location}")
+
+        run_cmd(["aws", "s3", "cp", cw_cli_path, staging_location])
+        run_cmd(["aws", "s3", "cp", cwterm_path, staging_location])
+
+    # disabled for now
+    # build_cargo_bin(
+    #     "fig_desktop", output_name="codewhisperer_desktop", features=features
+    # )
