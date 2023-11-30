@@ -61,25 +61,31 @@ curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh -s -- -y
 source "$CARGO_HOME/env"
 rustup target add x86_64-apple-darwin
 rustup target add aarch64-apple-darwin
-rustup component add clippy
 
 cargo install tauri-cli@1.5.2 --locked
-cargo install cargo-license@0.4.2 --locked
 
-bash build-scripts/macos.sh "$signing_bucket" "$signing_queue" "$apple_id_secret" "$aws_account_id" "$signing_role_name" 2>&1
+build_params_json="$(
+    jq -n \
+        --arg allow_dev_functionality "${allow_dev_functionality:-}" \
+        --arg output_bucket "${output_bucket:-}" \
+        --arg tauri_private_key_secret "${tauri_private_key_secret:-}" \
+        --arg tauri_private_key_password_secret "${tauri_private_key_password_secret:-}" \
+        --arg signing_bucket "${signing_bucket:-}" \
+        --arg signing_queue "${signing_queue:-}" \
+        --arg apple_id_secret "${apple_id_secret:-}" \
+        --arg aws_account_id "${aws_account_id:-}" \
+        --arg signing_role_name "${signing_role_name:-}" \
+        '{
+            "allow_dev_functionality": $allow_dev_functionality,
+            "output_bucket": $output_bucket,
+            "tauri_private_key_secret": $tauri_private_key_secret,
+            "tauri_private_key_password_secret": $tauri_private_key_password_secret,
+            "signing_bucket": $signing_bucket,
+            "signing_queue": $signing_queue,
+            "apple_id_secret": $apple_id_secret,
+            "aws_account_id": $aws_account_id,
+            "signing_role_name": $signing_role_name
+        }'
+)"
 
-# If signing is requested, handle it
-if [[ -n "$signing_bucket" && -n "$signing_queue" && -n "$apple_id_secret" ]]; then
-    echo signing and notarizing...
-    bash build-scripts/sign-and-rebundle-macos.sh "$signing_bucket" "$signing_queue" "$apple_id_secret" "$aws_account_id" "$signing_role_name" 2>&1
-fi
-
-shasum -a 256 build/CodeWhisperer.dmg | awk '{printf $1}' > build/CodeWhisperer.dmg.sha256
-
-if [[ -n $output_bucket ]]; then
-    STAGING_LOCATION="s3://$output_bucket/staging/"
-    
-    echo build complete, publishing to S3...
-    aws s3 cp build/CodeWhisperer.dmg "${STAGING_LOCATION}"
-    aws s3 cp build/CodeWhisperer.dmg.sha256 "${STAGING_LOCATION}"
-fi
+python3 build-scripts/build.py "${build_params_json}"
