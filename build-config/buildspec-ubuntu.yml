@@ -12,7 +12,7 @@ phases:
       - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - . $HOME/.cargo/env
       # Install node via rtx
-      - curl https://rtx.pub/rtx-latest-linux-amd64 > /usr/bin/rtxs
+      - curl https://rtx.pub/rtx-latest-linux-amd64 > /usr/bin/rtx
       - chmod +x /usr/bin/rtx
       - eval "$(rtx activate bash)"
       - rtx install
