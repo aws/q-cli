@@ -34,9 +34,6 @@ def run_cmd(
     args_str = [str(arg) for arg in args]
     print(f"+ {shlex.join(args_str)}")
     subprocess.run(args, env=env, cwd=cwd, check=True)
-    # if res.returncode != 0:
-    #     fail(f"Command ({shlex.join(args)}) failed: {res.returncode}")
-    #     sys.exit(res.returncode)
 
 
 def run_cmd_output(
@@ -44,11 +41,7 @@ def run_cmd_output(
     env: Env | None = None,
     cwd: Cwd | None = None,
 ) -> str:
-    # print(f"+ {shlex.join(args)}")
     res = subprocess.run(args, env=env, cwd=cwd, check=True, stdout=subprocess.PIPE)
-    # if res.returncode != 0:
-    #     fail(f"Command ({shlex.join(args)}) failed: {res.returncode}")
-    #     sys.exit(res.returncode)
     return res.stdout.decode("utf-8")
 
 
