@@ -123,13 +123,13 @@ pub async fn process_asset(path: PathBuf) -> Result<ProcessedAsset> {
     Ok(built)
 }
 
-fn resolve_asset(asset: &AssetSpecifier, fallback: Option<&str>) -> (Arc<Cow<'static, [u8]>>, AssetKind) {
+async fn resolve_asset(asset: &AssetSpecifier<'_>, fallback: Option<&str>) -> (Arc<Cow<'static, [u8]>>, AssetKind) {
     match &asset {
-        AssetSpecifier::Named(_) => ASSETS
-            .get(asset)
-            .map(|asset| (asset.clone(), AssetKind::Png))
-            .or_else(|| PlatformState::icon_lookup(asset)),
-        AssetSpecifier::PathBased(_) => PlatformState::icon_lookup(asset),
+        AssetSpecifier::Named(_) => match ASSETS.get(asset).map(|asset| (asset.clone(), AssetKind::Png)) {
+            Some(asset) => Some(asset),
+            None => PlatformState::icon_lookup(asset).await,
+        },
+        AssetSpecifier::PathBased(_) => PlatformState::icon_lookup(asset).await,
     }
     .or_else(|| match fallback {
         Some(fallback) => ASSETS
@@ -157,14 +157,14 @@ fn build_asset_response(data: Cow<'static, [u8]>, asset_kind: AssetKind) -> Resp
         .unwrap()
 }
 
-fn cached_asset_response(asset: &AssetSpecifier, fallback: Option<&str>) -> Response<Cow<'static, [u8]>> {
+async fn cached_asset_response(asset: &AssetSpecifier<'_>, fallback: Option<&str>) -> Response<Cow<'static, [u8]>> {
     trace!(?asset, "building response for asset");
-    let (data, asset_kind) = resolve_asset(asset, fallback);
+    let (data, asset_kind) = resolve_asset(asset, fallback).await;
     build_asset_response((*data).clone(), asset_kind)
 }
 
-fn build_default() -> Response<Cow<'static, [u8]>> {
-    cached_asset_response(&AssetSpecifier::Named(DEFAULT_ICON.into()), None)
+async fn build_default() -> Response<Cow<'static, [u8]>> {
+    cached_asset_response(&AssetSpecifier::Named(DEFAULT_ICON.into()), None).await
 }
 
 fn scale(a: u8, b: u8) -> u8 {
@@ -178,7 +178,7 @@ pub async fn handle(request: Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'s
     // rust really doesn't like us not specifying RandomState here
     let pairs: HashMap<_, _, RandomState> = HashMap::from_iter(url.query_pairs());
 
-    Ok(match domain {
+    let res = match domain {
         Some("template") => {
             let query_pairs: HashMap<Cow<str>, Cow<str>> = url.query_pairs().collect();
 
@@ -203,10 +203,10 @@ pub async fn handle(request: Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'s
             image.write_to(&mut png_bytes, image::ImageFormat::Png).unwrap();
             Some(build_asset_response(png_bytes.into_inner().into(), AssetKind::Png))
         },
-        Some("icon") | Some("asset") => pairs
-            .get("asset")
-            .or_else(|| pairs.get("type"))
-            .map(|name| cached_asset_response(&AssetSpecifier::Named(Cow::Borrowed(name)), None)),
+        Some("icon") | Some("asset") => match pairs.get("asset").or_else(|| pairs.get("type")) {
+            Some(name) => Some(cached_asset_response(&AssetSpecifier::Named(Cow::Borrowed(name)), None).await),
+            None => None,
+        },
         Some("path") => {
             let decoded_str = &*percent_decode_str(url.path()).decode_utf8().map_err(|err| {
                 warn!(%err, "Failed to decode fig url");
@@ -244,14 +244,15 @@ pub async fn handle(request: Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'s
                 },
             };
 
-            Some(cached_asset_response(
-                &AssetSpecifier::PathBased(Cow::Borrowed(path)),
-                fallback,
-            ))
+            Some(cached_asset_response(&AssetSpecifier::PathBased(Cow::Borrowed(path)), fallback).await)
         },
         _ => None,
+    };
+
+    match res {
+        Some(res) => Ok(res),
+        None => Ok(build_default().await),
     }
-    .unwrap_or_else(build_default))
 }
 
 /// Translate a unix style path into a windows style path assuming root dir is the drive

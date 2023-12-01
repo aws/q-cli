@@ -85,7 +85,7 @@ pub fn is_codewhisperer_desktop_running() -> bool {
             };
 
             match std::str::from_utf8(&output.stdout) {
-                Ok(result) => result.contains(FIG_DESKTOP_PROCESS_NAME),
+                Ok(result) => result.contains(CODEWHISPERER_DESKTOP_PROCESS_NAME),
                 Err(_) => false,
             }
         } else {
@@ -109,7 +109,7 @@ pub fn is_codewhisperer_desktop_running() -> bool {
                     };
 
                     return match std::str::from_utf8(&output.stdout) {
-                        Ok(result) => result.contains(FIG_DESKTOP_PROCESS_NAME),
+                        Ok(result) => result.contains(CODEWHISPERER_DESKTOP_PROCESS_NAME),
                         Err(_) => false,
                     };
                 },

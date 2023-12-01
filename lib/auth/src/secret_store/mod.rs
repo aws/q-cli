@@ -1,7 +1,11 @@
 #[cfg(target_os = "macos")]
 mod macos;
+#[cfg(target_os = "linux")]
+mod linux;
 #[cfg(target_os = "macos")]
 use macos::SecretStoreImpl;
+#[cfg(target_os = "linux")]
+use linux::SecretStoreImpl;
 
 use crate::Result;
 

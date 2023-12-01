@@ -59,16 +59,20 @@ fn get_theme() -> String {
     SELECTED_THEME.lock().to_string()
 }
 
-pub(super) fn lookup(name: &str) -> Option<ProcessedAsset> {
-    freedesktop_icons::lookup(name)
+pub(super) async fn lookup(name: &str) -> Option<ProcessedAsset> {
+    if let Some(path) = freedesktop_icons::lookup(name)
         .with_theme(&get_theme())
         .with_cache()
         .find()
-        .and_then(|path| match process_asset(path.clone()) {
+    {
+        match process_asset(path.clone()).await {
             Ok(s) => Some(s),
             Err(err) => {
                 error!("failed processing asset at {path:?}: {err:?}");
                 None
             },
-        })
+        }
+    } else {
+        None
+    }
 }

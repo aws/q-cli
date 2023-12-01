@@ -42,4 +42,4 @@ opt-level = 3
 # Commenting these out for now since we are not doing Windows right now and they are just not up to date
 # tokio = { git = "https://github.com/sullivan-sean/tokio" }
 # mio = { git = "https://github.com/sullivan-sean/mio" }
-console = { git = "https://github.com/withfig/console" }
+# console = { git = "https://github.com/withfig/console" }

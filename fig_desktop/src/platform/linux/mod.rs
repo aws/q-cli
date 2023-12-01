@@ -38,6 +38,7 @@ use crate::protocol::icons::{
     AssetSpecifier,
     ProcessedAsset,
 };
+use crate::webview::notification::WebviewNotificationsState;
 use crate::webview::window::WindowId;
 use crate::webview::FigIdMap;
 use crate::{
@@ -88,6 +89,7 @@ impl PlatformStateImpl {
         event: PlatformBoundEvent,
         _: &EventLoopWindowTarget,
         _: &FigIdMap,
+        _: &Arc<WebviewNotificationsState>,
     ) -> anyhow::Result<()> {
         match event {
             PlatformBoundEvent::Initialize => {
@@ -219,9 +221,9 @@ impl PlatformStateImpl {
         }
     }
 
-    pub(super) fn icon_lookup(asset: &AssetSpecifier) -> Option<ProcessedAsset> {
+    pub(super) async fn icon_lookup(asset: &AssetSpecifier) -> Option<ProcessedAsset> {
         match asset {
-            AssetSpecifier::Named(name) => icons::lookup(name),
+            AssetSpecifier::Named(name) => icons::lookup(name).await,
             AssetSpecifier::PathBased(path) => path
                 .metadata()
                 .ok()

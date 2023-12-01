@@ -1671,13 +1671,14 @@ dependencies = [
 [[package]]
 name = "console"
 version = "0.15.7"
-source = "git+https://github.com/withfig/console#f912968acce45d31c002f0fd3e2cea5a51019e2c"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c926e00cc70edefdc64d3a5ff31cc65bb97a3460097762bd23afb4d8145fccf8"
 dependencies = [
  "encode_unicode",
  "lazy_static",
  "libc",
  "unicode-width",
- "windows-sys 0.48.0",
+ "windows-sys 0.45.0",
 ]
 
 [[package]]

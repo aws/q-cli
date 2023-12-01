@@ -759,7 +759,7 @@ impl PlatformStateImpl {
         })
     }
 
-    pub(super) fn icon_lookup(asset: &AssetSpecifier) -> Option<ProcessedAsset> {
+    pub(super) async fn icon_lookup(asset: &AssetSpecifier<'_>) -> Option<ProcessedAsset> {
         let data = match asset {
             AssetSpecifier::Named(name) => unsafe { macos_utils::image::png_for_name(name)? },
             AssetSpecifier::PathBased(path) => (unsafe { macos_utils::image::png_for_path(path) })

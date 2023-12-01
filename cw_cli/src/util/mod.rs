@@ -141,6 +141,7 @@ pub async fn quit_fig(verbose: bool) -> Result<()> {
         if second_try.is_err() {
             cfg_if! {
                 if #[cfg(target_os = "linux")] {
+                    use fig_util::CODEWHISPERER_DESKTOP_PROCESS_NAME;
                     if let Ok(output) = Command::new("killall").arg(CODEWHISPERER_DESKTOP_PROCESS_NAME).output() {
                         if output.status.success() {
                             return Ok(());
@@ -227,6 +228,7 @@ pub fn get_fig_version() -> Result<String> {
             let fig_version = get_plist_field("CFBundleShortVersionString")?;
            Ok(fig_version)
         } else {
+            use fig_util::CODEWHISPERER_DESKTOP_PROCESS_NAME;
             use std::process::Command;
             Ok(String::from_utf8_lossy(&Command::new(CODEWHISPERER_DESKTOP_PROCESS_NAME).arg("--version").output()?.stdout)
                 .replace(CODEWHISPERER_DESKTOP_PROCESS_NAME, "").trim().into())

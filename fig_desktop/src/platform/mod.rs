@@ -84,8 +84,8 @@ impl PlatformState {
     }
 
     /// Looks up icons by name on the platform
-    pub fn icon_lookup(name: &AssetSpecifier) -> Option<ProcessedAsset> {
-        PlatformStateImpl::icon_lookup(name)
+    pub async fn icon_lookup(name: &AssetSpecifier<'_>) -> Option<ProcessedAsset> {
+        PlatformStateImpl::icon_lookup(name).await
     }
 
     /// The shell to execute processes in
