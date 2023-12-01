@@ -103,6 +103,21 @@ def build_cargo_bin(
         return out_path
 
 
+def run_cargo_tests(features: Sequence[str] | None = None):
+    args = ["cargo", "test", "--release", "--locked"]
+    if features:
+        args.extend(["--features", ",".join(features)])
+
+    run_cmd(
+        args,
+        env={
+            **os.environ,
+            **rust_env(),
+            "RUST_BACKTRACE": "1",
+        },
+    )
+
+
 def version() -> str:
     output = run_cmd_output(
         [
@@ -421,6 +436,9 @@ OUTDIR.mkdir(parents=True, exist_ok=True)
 
 info("Building npm packages")
 npm_packages = build_npm_packages()
+
+info("Running cargo tests")
+run_cargo_tests(features=features)
 
 info("Building cw_cli")
 cw_cli_path = build_cargo_bin("cw_cli", output_name="cw", features=features)
