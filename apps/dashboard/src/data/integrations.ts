@@ -5,6 +5,8 @@ const integrationOptions = [
       {
         id: "integrations.terminal.disabled",
         title: "Terminal",
+        description: "Add CodeWhisperer to Terminal.app",
+
         type: "boolean",
         default: false,
         inverted: true,
@@ -12,20 +14,23 @@ const integrationOptions = [
       {
         id: "integrations.hyper.disabled",
         title: "Hyper",
+        description: "Add CodeWhisperer to Hyper",
         type: "boolean",
         default: false,
         inverted: true,
       },
       {
         id: "integrations.vscode.disabled",
-        title: "VSCode",
+        title: "VS Code Terminal",
+        description: "Add CodeWhisperer to VS Code's built-in terminal",
         type: "boolean",
         default: false,
         inverted: true,
       },
       {
         id: "integrations.iterm.disabled",
-        title: "iTerm",
+        title: "iTerm 2",
+        description: "Add CodeWhisperer to iTerm 2",
         type: "boolean",
         default: false,
         inverted: true,

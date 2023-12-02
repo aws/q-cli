@@ -21,6 +21,7 @@ import Keystroke from "../ui/keystrokeInput";
 import { interpolateSettingBoolean } from "@/lib/utils";
 import { useSetting } from "@/hooks/store";
 import { parseBackticksToCode } from "@/lib/strings";
+import IntegrationCard from "../installs/integrations";
 
 export function Setting({
   data,
@@ -69,6 +70,12 @@ export function Setting({
 
     const updatedArray = [...multiSelectValue, option];
     setSetting(updatedArray);
+  }
+
+  if (data.id.split(".")[0] === "integrations") {
+    return (
+      <IntegrationCard integration={data} enabled={localValue as boolean} />
+    );
   }
 
   return (

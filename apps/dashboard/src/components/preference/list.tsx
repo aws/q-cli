@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Settings } from "@withfig/api-bindings";
 import { getIconFromName } from "@/lib/icons";
 import ExternalLink from "../util/external-link";
-import { interpolateSettingBoolean } from "@/lib/utils";
+import { cn, interpolateSettingBoolean } from "@/lib/utils";
 import { useSetting } from "@/hooks/store/useSetting";
 import { Switch } from "../ui/switch";
 import { parseBackticksToCode } from "@/lib/strings";
@@ -112,7 +112,9 @@ export function UserPrefSection({
 
   return (
     <section
-      className={`flex flex-col py-4 ${disabled && "opacity-30 select-none"}`}
+      className={`flex flex-col gap-4 py-4 ${
+        disabled && "opacity-30 select-none"
+      }`}
     >
       <SectionHeading index={index}>{data.title}</SectionHeading>
 
@@ -129,10 +131,12 @@ export function UserPrefView({
   array,
   children,
   intro,
+  className,
 }: {
   array: PrefSection[];
   children?: React.ReactNode;
   intro?: Intro;
+  className?: string;
 }) {
   const [viewDisabled, setViewDisabled] = useState<string | undefined>();
   const localDisabled = intro?.enable.inverted ? !viewDisabled : viewDisabled;
@@ -154,7 +158,7 @@ export function UserPrefView({
   }, [intro, intro?.enable.flag]);
 
   return (
-    <>
+    <div className={cn("w-full flex flex-col", className)}>
       {intro && <FeatureIntro intro={intro} />}
       {children}
       {array.map((section, i) => (
@@ -165,6 +169,6 @@ export function UserPrefView({
           key={i}
         />
       ))}
-    </>
+    </div>
   );
 }

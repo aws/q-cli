@@ -10,6 +10,11 @@ export type Pref = {
   default: PrefDefault;
   popular?: boolean;
   options?: string[];
+  icon?: string;
+  background?: {
+    color: string;
+    image: string;
+  };
 };
 
 export type Action = {
