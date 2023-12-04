@@ -10,6 +10,11 @@ use fig_proto::fig::{
     RunProcessResponse,
 };
 use fig_proto::remote::hostbound;
+use fig_remote_ipc::figterm::{
+    FigtermCommand,
+    FigtermSessionId,
+    FigtermState,
+};
 use tokio::process::Command;
 use tokio::time::timeout;
 use tracing::{
@@ -20,11 +25,6 @@ use tracing::{
 use super::{
     RequestResult,
     RequestResultImpl,
-};
-use crate::figterm::{
-    FigtermCommand,
-    FigtermSessionId,
-    FigtermState,
 };
 use crate::platform::PlatformState;
 

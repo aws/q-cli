@@ -15,6 +15,7 @@ use fig_proto::local::{
     QuitCommand,
     UiElement,
 };
+use fig_remote_ipc::figterm::FigtermState;
 use parking_lot::Mutex;
 use tracing::error;
 use wry::application::event_loop::ControlFlow;
@@ -27,7 +28,6 @@ use crate::event::{
     Event,
     WindowEvent,
 };
-use crate::figterm::FigtermState;
 use crate::webview::notification::WebviewNotificationsState;
 use crate::webview::{
     DASHBOARD_SIZE,

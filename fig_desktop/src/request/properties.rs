@@ -1,4 +1,10 @@
 use fig_proto::fig::UpdateApplicationPropertiesRequest;
+use fig_remote_ipc::figterm::{
+    FigtermCommand,
+    FigtermSessionId,
+    FigtermState,
+    InterceptMode,
+};
 use fig_settings::keybindings::{
     KeyBinding,
     KeyBindings,
@@ -8,12 +14,6 @@ use tracing::error;
 use super::{
     RequestResult,
     RequestResultImpl,
-};
-use crate::figterm::{
-    FigtermCommand,
-    FigtermSessionId,
-    FigtermState,
-    InterceptMode,
 };
 use crate::InterceptState;
 

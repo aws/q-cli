@@ -1,6 +1,6 @@
 mod cli;
 mod event;
-mod figterm;
+// mod figterm;
 mod file_watcher;
 mod install;
 mod local_ipc;

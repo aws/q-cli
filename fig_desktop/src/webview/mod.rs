@@ -15,6 +15,7 @@ use fig_desktop_api::init_script::javascript_init;
 use fig_desktop_api::kv::DashKVStore;
 use fig_proto::fig::client_originated_message::Submessage;
 use fig_proto::fig::ClientOriginatedMessage;
+use fig_remote_ipc::figterm::FigtermState;
 use fig_util::directories;
 use fnv::FnvBuildHasher;
 use muda::MenuEvent;
@@ -61,7 +62,6 @@ use crate::event::{
     Event,
     WindowEvent,
 };
-use crate::figterm::FigtermState;
 use crate::notification_bus::{
     JsonNotification,
     NOTIFICATION_BUS,
@@ -75,6 +75,7 @@ use crate::protocol::{
     resource,
     spec,
 };
+use crate::remote_ipc::RemoteHook;
 use crate::request::api_request;
 use crate::tray::{
     self,
@@ -83,7 +84,6 @@ use crate::tray::{
 use crate::{
     file_watcher,
     local_ipc,
-    remote_ipc,
     utils,
     DebugState,
     EventLoop,
@@ -214,10 +214,13 @@ impl WebviewManager {
             self.event_loop.create_proxy(),
         ));
 
-        tokio::spawn(remote_ipc::start_remote_ipc(
+        tokio::spawn(fig_remote_ipc::remote::start_remote_ipc(
+            fig_util::directories::local_remote_socket_path().unwrap(),
             self.figterm_state.clone(),
-            self.notifications_state.clone(),
-            self.event_loop.create_proxy(),
+            RemoteHook {
+                notifications_state: self.notifications_state.clone(),
+                proxy: self.event_loop.create_proxy(),
+            },
         ));
 
         let (api_handler_tx, mut api_handler_rx) = tokio::sync::mpsc::unbounded_channel::<(WindowId, String)>();

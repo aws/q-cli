@@ -36,6 +36,7 @@ use fig_proto::fig::{
     UserLogoutRequest,
     WindowFocusRequest,
 };
+use fig_remote_ipc::figterm::FigtermState;
 use tracing::{
     trace,
     warn,
@@ -46,7 +47,6 @@ use crate::event::{
     Event,
     WindowEvent,
 };
-use crate::figterm::FigtermState;
 use crate::webview::notification::WebviewNotificationsState;
 use crate::webview::window::WindowId;
 use crate::{

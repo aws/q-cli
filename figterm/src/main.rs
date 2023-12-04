@@ -519,7 +519,10 @@ fn launch_shell(command: Option<&[String]>) -> Result<()> {
 fn figterm_main(command: Option<&[String]>) -> Result<()> {
     fig_settings::settings::init_global().ok();
 
-    let session_id = uuid::Uuid::new_v4().simple().to_string();
+    let session_id = match std::env::var("MOCK_CWTERM_SESSION_ID") {
+        Ok(id) => id,
+        Err(_) => uuid::Uuid::new_v4().simple().to_string(),
+    };
     std::env::set_var("CWTERM_SESSION_ID", &session_id);
 
     let parent_id = std::env::var("CW_PARENT").ok();
@@ -1058,7 +1061,7 @@ fn main() {
         },
         Err(err) => {
             error!("Error in async runtime: {err}");
-            println!("Fig had an Error!: {err:?}");
+            println!("CodeWhisperer had an Error!: {err:?}");
             // capture_anyhow(&err);
 
             // Fallback to normal shell

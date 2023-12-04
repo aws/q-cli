@@ -1,0 +1,18 @@
+[package]
+name = "figterm2"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+publish.workspace = true
+version.workspace = true
+
+[dependencies]
+anyhow = "1.0.75"
+async-trait = "0.1.74"
+fig_ipc = { version = "0.12.0", path = "../../lib/fig_ipc" }
+fig_proto = { version = "0.12.0", path = "../../lib/fig_proto" }
+fig_remote_ipc = { version = "0.12.0", path = "../../lib/fig_remote_ipc" }
+portable-pty = { version = "0.8.1" }
+tempfile = "3.8.1"
+tokio = { version = "1.34.0", features = ["full"] }
+uuid = { version = "1.6.1", features = ["v4"] }

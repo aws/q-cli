@@ -3,12 +3,12 @@ use fig_proto::fig::aggregate_session_metric_action_request::{
     Increment,
 };
 use fig_proto::fig::AggregateSessionMetricActionRequest;
+use fig_remote_ipc::figterm::FigtermState;
 
 use super::{
     RequestResult,
     RequestResultImpl,
 };
-use crate::figterm::FigtermState;
 
 pub fn handle_aggregate_session_metric_action_request(
     request: AggregateSessionMetricActionRequest,

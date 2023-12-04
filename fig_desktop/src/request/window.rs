@@ -5,6 +5,7 @@ use fig_proto::fig::{
     PositionWindowResponse,
     WindowFocusRequest,
 };
+use fig_remote_ipc::figterm::FigtermState;
 use tracing::debug;
 use wry::application::dpi::LogicalSize;
 
@@ -16,7 +17,6 @@ use crate::event::{
     Event,
     WindowEvent,
 };
-use crate::figterm::FigtermState;
 use crate::webview::window::WindowId;
 use crate::{
     EventLoopProxy,

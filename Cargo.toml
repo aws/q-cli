@@ -10,6 +10,7 @@ members = [
     "lib/macos_utils/accessibility-master/accessibility-sys",
     "lib/macos_utils/appkit-nsworkspace-bindings",
     "tests/fig-api/fig-api-mock",
+    "tests/figterm2",
     "tests/stress/stress_client",
     "tests/stress/stress_server",
 ]

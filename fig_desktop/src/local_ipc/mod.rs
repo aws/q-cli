@@ -21,6 +21,7 @@ use fig_proto::local::{
     LocalMessage,
     SuccessResponse,
 };
+use fig_remote_ipc::figterm::FigtermState;
 use fig_util::directories;
 use tokio::net::UnixListener;
 use tracing::{
@@ -31,7 +32,6 @@ use tracing::{
 };
 
 use crate::event::Event;
-use crate::figterm::FigtermState;
 use crate::platform::PlatformState;
 use crate::webview::notification::WebviewNotificationsState;
 use crate::{

@@ -1,13 +1,13 @@
 use fig_proto::fig::InsertTextRequest;
+use fig_remote_ipc::figterm::{
+    FigtermCommand,
+    FigtermSessionId,
+    FigtermState,
+};
 
 use super::{
     RequestResult,
     RequestResultImpl,
-};
-use crate::figterm::{
-    FigtermCommand,
-    FigtermSessionId,
-    FigtermState,
 };
 
 pub async fn insert_text(request: InsertTextRequest, state: &FigtermState) -> RequestResult {

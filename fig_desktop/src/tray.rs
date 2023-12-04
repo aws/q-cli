@@ -5,6 +5,7 @@ use fig_install::{
     InstallComponents,
     UpdateOptions,
 };
+use fig_remote_ipc::figterm::FigtermState;
 use fig_util::manifest::Channel;
 use muda::{
     Menu,
@@ -30,7 +31,6 @@ use crate::event::{
     Event,
     WindowEvent,
 };
-use crate::figterm::FigtermState;
 use crate::webview::LOGIN_PATH;
 use crate::{
     DebugState,

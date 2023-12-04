@@ -115,6 +115,10 @@ pub struct FigtermState {
 }
 
 impl FigtermState {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     /// Inserts a new session id
     pub fn insert(&self, session: FigtermSession) {
         let mut figterm_state = self.inner.lock();

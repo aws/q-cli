@@ -17,6 +17,10 @@ use fig_proto::fig::{
 };
 use fig_proto::local::caret_position_hook::Origin;
 use fig_proto::prost::Message;
+use fig_remote_ipc::figterm::{
+    FigtermCommand,
+    FigtermState,
+};
 use parking_lot::Mutex;
 use tokio::sync::mpsc::UnboundedSender;
 use tracing::{
@@ -42,10 +46,6 @@ use crate::event::{
     EmitEventName,
     WindowEvent,
     WindowPosition,
-};
-use crate::figterm::{
-    FigtermCommand,
-    FigtermState,
 };
 use crate::platform::{
     self,
