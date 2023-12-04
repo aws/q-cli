@@ -74,7 +74,11 @@ export function Setting({
 
   if (data.id.split(".")[0] === "integrations") {
     return (
-      <IntegrationCard integration={data} enabled={localValue as boolean} />
+      <IntegrationCard
+        toggleSwitch={toggleSwitch}
+        integration={data}
+        enabled={localValue as boolean}
+      />
     );
   }
 
