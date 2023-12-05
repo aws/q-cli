@@ -27,7 +27,59 @@ impl Debug for SuggestionColor {
     }
 }
 
-// don't want to deviate too much from original logic
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum VTermColor {
+    Rgb { red: u8, green: u8, blue: u8 },
+    Indexed { idx: u8 },
+}
+
+impl VTermColor {
+    const fn from_idx(idx: u8) -> Self {
+        VTermColor::Indexed { idx }
+    }
+
+    const fn from_rgb(red: u8, green: u8, blue: u8) -> Self {
+        VTermColor::Rgb { red, green, blue }
+    }
+}
+
+impl From<nu_ansi_term::Color> for VTermColor {
+    fn from(color: nu_ansi_term::Color) -> Self {
+        use nu_ansi_term::Color;
+        match color {
+            Color::Black => VTermColor::from_idx(0),
+            Color::Red => VTermColor::from_idx(1),
+            Color::Green => VTermColor::from_idx(2),
+            Color::Yellow => VTermColor::from_idx(3),
+            Color::Blue => VTermColor::from_idx(4),
+            Color::Purple => VTermColor::from_idx(5),
+            Color::Magenta => VTermColor::from_idx(5),
+            Color::Cyan => VTermColor::from_idx(6),
+            Color::White => VTermColor::from_idx(7),
+            Color::DarkGray => VTermColor::from_idx(8),
+            Color::LightRed => VTermColor::from_idx(9),
+            Color::LightGreen => VTermColor::from_idx(10),
+            Color::LightYellow => VTermColor::from_idx(11),
+            Color::LightBlue => VTermColor::from_idx(12),
+            Color::LightPurple => VTermColor::from_idx(13),
+            Color::LightMagenta => VTermColor::from_idx(13),
+            Color::LightCyan => VTermColor::from_idx(14),
+            Color::LightGray => VTermColor::from_idx(16),
+            Color::Fixed(i) => VTermColor::from_idx(i),
+            Color::Rgb(r, g, b) => VTermColor::from_rgb(r, g, b),
+            Color::Default => VTermColor::from_idx(7),
+        }
+    }
+}
+
+bitflags::bitflags! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct ColorSupport: u32 {
+        const TERM256 = 1 << 1;
+        const TERM24BIT = 1 << 2;
+    }
+}
+
 #[allow(clippy::if_same_then_else)]
 // Updates our idea of whether we support term256 and term24bit (see issue #10222).
 pub fn get_color_support() -> ColorSupport {
@@ -102,12 +154,6 @@ pub fn get_color_support() -> ColorSupport {
     support
 }
 
-pub fn parse_suggestion_color_fish(suggestion_str: &str, color_support: ColorSupport) -> Option<SuggestionColor> {
-    let c = parse_fish_color_from_string(suggestion_str, color_support);
-    let vc = color_to_vterm_color(c, color_support)?;
-    Some(SuggestionColor { fg: Some(vc), bg: None })
-}
-
 pub fn parse_suggestion_color_zsh_autosuggest(suggestion_str: &str, color_support: ColorSupport) -> SuggestionColor {
     let mut sc = SuggestionColor { fg: None, bg: None };
 
@@ -134,7 +180,7 @@ pub fn parse_suggestion_color_zsh_autosuggest(suggestion_str: &str, color_suppor
                     index < 256
                 };
                 if index_supported {
-                    let vc = vterm_color_indexed(index as u8);
+                    let vc = VTermColor::Indexed { idx: index as u8 };
                     if is_fg {
                         sc.fg = Some(vc);
                     } else {
@@ -155,6 +201,12 @@ pub fn parse_suggestion_color_zsh_autosuggest(suggestion_str: &str, color_suppor
     sc
 }
 
+pub fn parse_suggestion_color_fish(suggestion_str: &str, color_support: ColorSupport) -> Option<SuggestionColor> {
+    let c = parse_fish_color_from_string(suggestion_str, color_support);
+    let vc = color_to_vterm_color(c, color_support)?;
+    Some(SuggestionColor { fg: Some(vc), bg: None })
+}
+
 pub fn parse_hint_color_nu(suggestion_str: impl AsRef<str>) -> SuggestionColor {
     let color = nu_color_config::lookup_ansi_color_style(suggestion_str.as_ref());
     SuggestionColor {
@@ -163,82 +215,21 @@ pub fn parse_hint_color_nu(suggestion_str: impl AsRef<str>) -> SuggestionColor {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub enum VTermColor {
-    Rgb { red: u8, green: u8, blue: u8 },
-    Indexed { idx: u8 },
-}
-
-impl VTermColor {
-    const fn idx(idx: u8) -> Self {
-        VTermColor::Indexed { idx }
-    }
-
-    const fn rgb(red: u8, green: u8, blue: u8) -> Self {
-        VTermColor::Rgb { red, green, blue }
-    }
-}
-
-pub const fn vterm_color_indexed(idx: u8) -> VTermColor {
-    VTermColor::Indexed { idx }
-}
-
-pub const fn vterm_color_rgb(red: u8, green: u8, blue: u8) -> VTermColor {
-    VTermColor::Rgb { red, green, blue }
-}
-
-impl From<nu_ansi_term::Color> for VTermColor {
-    fn from(color: nu_ansi_term::Color) -> Self {
-        use nu_ansi_term::Color;
-        match color {
-            Color::Black => VTermColor::idx(0),
-            Color::Red => VTermColor::idx(1),
-            Color::Green => VTermColor::idx(2),
-            Color::Yellow => VTermColor::idx(3),
-            Color::Blue => VTermColor::idx(4),
-            Color::Purple => VTermColor::idx(5),
-            Color::Magenta => VTermColor::idx(5),
-            Color::Cyan => VTermColor::idx(6),
-            Color::White => VTermColor::idx(7),
-            Color::DarkGray => VTermColor::idx(8),
-            Color::LightRed => VTermColor::idx(9),
-            Color::LightGreen => VTermColor::idx(10),
-            Color::LightYellow => VTermColor::idx(11),
-            Color::LightBlue => VTermColor::idx(12),
-            Color::LightPurple => VTermColor::idx(13),
-            Color::LightMagenta => VTermColor::idx(13),
-            Color::LightCyan => VTermColor::idx(14),
-            Color::LightGray => VTermColor::idx(16),
-            Color::Fixed(i) => VTermColor::idx(i),
-            Color::Rgb(r, g, b) => VTermColor::rgb(r, g, b),
-            Color::Default => VTermColor::idx(7),
-        }
-    }
-}
-
-bitflags::bitflags! {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-    pub struct ColorSupport: u32 {
-        const TERM256 = 1 << 1;
-        const TERM24BIT = 1 << 2;
-    }
-}
-
 #[derive(PartialEq, Eq, Debug)]
 #[repr(u8)]
-pub enum ColorType {
+enum ColorType {
     Named = 1,
     Rgb   = 2,
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Color {
+struct Color {
     kind: ColorType,
     name_idx: u8,
     rgb: [u8; 3],
 }
 
-pub fn bool_from_string(x: &str) -> bool {
+fn bool_from_string(x: &str) -> bool {
     match x.chars().next() {
         Some(first) => "YTyt1".contains(first),
         None => false,
@@ -442,14 +433,14 @@ fn color_to_vterm_color(c: Option<Color>, color_support: ColorSupport) -> Option
     let c = c?;
     if c.kind == ColorType::Rgb {
         if color_support.contains(ColorSupport::TERM24BIT) {
-            Some(vterm_color_rgb(c.rgb[0], c.rgb[1], c.rgb[2]))
+            Some(VTermColor::from_rgb(c.rgb[0], c.rgb[1], c.rgb[2]))
         } else if color_support.contains(ColorSupport::TERM256) {
-            Some(vterm_color_indexed(term256_color_for_rgb(c.rgb)))
+            Some(VTermColor::from_idx(term256_color_for_rgb(c.rgb)))
         } else {
-            Some(vterm_color_indexed(term16_color_for_rgb(c.rgb)))
+            Some(VTermColor::from_idx(term16_color_for_rgb(c.rgb)))
         }
     } else {
-        Some(vterm_color_indexed(c.name_idx))
+        Some(VTermColor::from_idx(c.name_idx))
     }
 }
 
@@ -630,23 +621,23 @@ mod test {
             // color support supports rgb
             parse_suggestion_color_zsh_autosuggest("fg=#123,bg=#456", ColorSupport::TERM24BIT),
             SuggestionColor {
-                fg: Some(vterm_color_rgb(0x11, 0x22, 0x33)),
-                bg: Some(vterm_color_rgb(0x44, 0x55, 0x66)),
+                fg: Some(VTermColor::from_rgb(0x11, 0x22, 0x33)),
+                bg: Some(VTermColor::from_rgb(0x44, 0x55, 0x66)),
             }
         );
         assert_eq!(
             // color support doesn't support rgb
             parse_suggestion_color_zsh_autosuggest("fg=#123,bg=#456", ColorSupport::empty()),
             SuggestionColor {
-                fg: Some(vterm_color_indexed(0)),
-                bg: Some(vterm_color_indexed(8)),
+                fg: Some(VTermColor::from_idx(0)),
+                bg: Some(VTermColor::from_idx(8)),
             }
         );
         assert_eq!(
             // default
             parse_suggestion_color_zsh_autosuggest("fg=8", ColorSupport::empty()),
             SuggestionColor {
-                fg: Some(vterm_color_indexed(8)),
+                fg: Some(VTermColor::from_idx(8)),
                 bg: None,
             }
         );
@@ -655,7 +646,7 @@ mod test {
             parse_suggestion_color_zsh_autosuggest("invalid=!,,=,bg=cyan", ColorSupport::empty()),
             SuggestionColor {
                 fg: None,
-                bg: Some(vterm_color_indexed(6))
+                bg: Some(VTermColor::from_idx(6))
             }
         );
     }
