@@ -9,6 +9,7 @@ use clap::Args;
 use color_eyre::owo_colors::OwoColorize;
 use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;
+use eyre::bail;
 use fig_api_client::ai::{
     request_cw,
     CodewhipererFileContext,
@@ -254,6 +255,10 @@ fn highlighter(s: &str) -> String {
 
 impl AiArgs {
     pub async fn execute(self) -> eyre::Result<()> {
+        if !auth::is_logged_in().await {
+            bail!("You are not logged in. Run `cw login` to login.")
+        }
+
         let interactive = std::io::stdin().is_terminal();
 
         // show onboarding if it hasnt been seen
