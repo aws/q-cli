@@ -30,8 +30,7 @@ pub async fn read_file(request: ReadFileRequest) -> RequestResult {
         Type::Data(
             tokio::fs::read(&*resolved_path)
                 .await
-                .map_err(|err| format!("Failed reading file at {resolved_path}: {err}"))?
-                .into(),
+                .map_err(|err| format!("Failed reading file at {resolved_path}: {err}"))?,
         )
     } else {
         Type::Text(

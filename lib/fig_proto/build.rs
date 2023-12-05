@@ -56,8 +56,6 @@ fn main() -> Result<()> {
 
     config.protoc_arg("--experimental_allow_proto3_optional");
 
-    config.bytes(["."]);
-
     #[cfg(feature = "arbitrary")]
     config.type_attribute(
         ".",
