@@ -33,4 +33,4 @@ which = "5.0.0"
 whoami = "1.3.0"
 
 [target.'cfg(target_os="macos")'.dependencies]
-macos_utils = { path = "../macos_utils" }
+macos-utils = { path = "../macos-utils" }

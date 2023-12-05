@@ -204,15 +204,15 @@ pub struct ShellState {
     /// Position of start of cmd
     pub cmd_cursor: Option<Point>,
     /// Fish suggestion color
-    pub fish_suggestion_color: Option<fig_color::SuggestionColor>,
+    pub fish_suggestion_color: Option<shell_color::SuggestionColor>,
     /// Zsh autosuggestion color
-    pub zsh_autosuggestion_color: Option<fig_color::SuggestionColor>,
+    pub zsh_autosuggestion_color: Option<shell_color::SuggestionColor>,
     /// Fig autosuggestion color
-    pub fig_autosuggestion_color: Option<fig_color::SuggestionColor>,
+    pub fig_autosuggestion_color: Option<shell_color::SuggestionColor>,
     /// Nu hint color
-    pub nu_hint_color: Option<fig_color::SuggestionColor>,
+    pub nu_hint_color: Option<shell_color::SuggestionColor>,
     /// Color support
-    pub color_support: Option<fig_color::ColorSupport>,
+    pub color_support: Option<shell_color::ColorSupport>,
     /// Command info
     pub command_info: Option<CommandInfo>,
     /// Fig Log Level
@@ -318,7 +318,7 @@ impl<T> Term<T> {
 
         let mut shell_state = ShellState::new();
         shell_state.get_mut_context().session_id = Some(session_id);
-        shell_state.color_support = Some(fig_color::get_color_support());
+        shell_state.color_support = Some(shell_color::get_color_support());
 
         Term {
             grid,
@@ -1455,10 +1455,10 @@ impl<T: EventListener> Handler for Term<T> {
 
         let cursor = &mut self.grid.cursor;
 
-        let color_match = |color: Color, vtermcolor: fig_color::VTermColor| match (color, vtermcolor) {
-            (Color::Named(name), fig_color::VTermColor::Indexed { idx }) => (name as usize % 256) == idx as usize,
-            (Color::Indexed(i), fig_color::VTermColor::Indexed { idx }) => i == idx,
-            (Color::Spec(rgb), fig_color::VTermColor::Rgb { red, green, blue }) => {
+        let color_match = |color: Color, vtermcolor: shell_color::VTermColor| match (color, vtermcolor) {
+            (Color::Named(name), shell_color::VTermColor::Indexed { idx }) => (name as usize % 256) == idx as usize,
+            (Color::Indexed(i), shell_color::VTermColor::Indexed { idx }) => i == idx,
+            (Color::Spec(rgb), shell_color::VTermColor::Rgb { red, green, blue }) => {
                 rgb.r == red && rgb.g == green && rgb.b == blue
             },
             _ => false,
@@ -1850,7 +1850,7 @@ impl<T: EventListener> Handler for Term<T> {
         trace!("Fig fish suggestion color: {color:?}");
 
         if let Some(color_support) = self.shell_state().color_support {
-            self.shell_state.fish_suggestion_color = fig_color::parse_suggestion_color_fish(color, color_support);
+            self.shell_state.fish_suggestion_color = shell_color::parse_suggestion_color_fish(color, color_support);
         }
     }
 
@@ -1862,8 +1862,10 @@ impl<T: EventListener> Handler for Term<T> {
         trace!("Fig zsh suggestion color: {color:?}");
 
         if let Some(color_support) = self.shell_state().color_support {
-            self.shell_state.zsh_autosuggestion_color =
-                Some(fig_color::parse_suggestion_color_zsh_autosuggest(color, color_support));
+            self.shell_state.zsh_autosuggestion_color = Some(shell_color::parse_suggestion_color_zsh_autosuggest(
+                color,
+                color_support,
+            ));
         }
     }
 
@@ -1875,8 +1877,10 @@ impl<T: EventListener> Handler for Term<T> {
         trace!("Fig suggestion color: {color:?}");
 
         if let Some(color_support) = self.shell_state().color_support {
-            self.shell_state.fig_autosuggestion_color =
-                Some(fig_color::parse_suggestion_color_zsh_autosuggest(color, color_support));
+            self.shell_state.fig_autosuggestion_color = Some(shell_color::parse_suggestion_color_zsh_autosuggest(
+                color,
+                color_support,
+            ));
         }
     }
 
@@ -1886,7 +1890,7 @@ impl<T: EventListener> Handler for Term<T> {
             return;
         }
         trace!("Fig nu hint color: {color:?}");
-        self.shell_state.nu_hint_color = Some(fig_color::parse_hint_color_nu(color));
+        self.shell_state.nu_hint_color = Some(shell_color::parse_hint_color_nu(color));
     }
 
     #[inline]

@@ -1,5 +1,5 @@
 [package]
-name = "macos_utils"
+name = "macos-utils"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true

@@ -433,7 +433,7 @@ mod tests {
 1536  11.10.2023 14:39  cr
 1537  11.10.2023 15:00  git add .
 1538  11.10.2023 15:01  brazil ws sync
-1539  11.10.2023 15:10  cd lib/fig_color
+1539  11.10.2023 15:10  cd lib/shell-color
 1540  11.10.2023 15:10  cargo rt
 1541  11.10.2023 15:10  cargo t
 1542  11.10.2023 15:18  git status

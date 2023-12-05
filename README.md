@@ -194,6 +194,14 @@ This will build the project and copy it to the correct place.
 - `staging` branch is auto pushed to beta/staging
 - `master` branch is auto pushed to prod
 
+## Running tests
+
+To test MacOS, first run
+`brew install shellcheck fish`
+
+Then to run rust tests, ensure cargo is installed and run
+`cargo test`
+
 ---
 
 Team: fig.io

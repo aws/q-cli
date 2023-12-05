@@ -1,5 +1,5 @@
 [package]
-name = "fig_color"
+name = "shell-color"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true

@@ -92,9 +92,9 @@ version = "0.12.0"
 dependencies = [
  "bitflags 2.4.1",
  "camino",
- "fig_color",
  "serde",
  "serde_yaml",
+ "shell-color",
  "tracing",
  "unicode-width",
  "vte 0.12.0",
@@ -2076,7 +2076,7 @@ dependencies = [
  "humantime",
  "indicatif",
  "insta",
- "macos_utils",
+ "macos-utils",
  "nix 0.27.1",
  "once_cell",
  "owo-colors",
@@ -2692,16 +2692,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fig_color"
-version = "0.12.0"
-dependencies = [
- "bitflags 2.4.1",
- "fig_test",
- "nu-ansi-term 0.49.0",
- "nu-color-config",
-]
-
-[[package]]
 name = "fig_desktop"
 version = "0.12.0"
 dependencies = [
@@ -2741,7 +2731,7 @@ dependencies = [
  "infer",
  "keyboard-types",
  "libc",
- "macos_utils",
+ "macos-utils",
  "mime",
  "moka",
  "muda",
@@ -2795,7 +2785,7 @@ dependencies = [
  "fig_telemetry",
  "fig_util",
  "fnv",
- "macos_utils",
+ "macos-utils",
  "serde",
  "serde_json",
  "shellexpand",
@@ -2834,7 +2824,7 @@ dependencies = [
  "fig_proto",
  "fig_util",
  "libc",
- "macos_utils",
+ "macos-utils",
  "objc",
  "plist",
  "rand 0.8.5",
@@ -2888,7 +2878,7 @@ dependencies = [
  "fig_settings",
  "fig_telemetry",
  "fig_util",
- "macos_utils",
+ "macos-utils",
  "objc",
  "plist",
  "regex",
@@ -3034,7 +3024,7 @@ dependencies = [
  "fig_request",
  "fig_settings",
  "fig_util",
- "macos_utils",
+ "macos-utils",
  "once_cell",
  "parking_lot",
  "serde",
@@ -3076,7 +3066,7 @@ dependencies = [
  "fig_test",
  "hex",
  "insta",
- "macos_utils",
+ "macos-utils",
  "nix 0.27.1",
  "objc",
  "once_cell",
@@ -3116,7 +3106,6 @@ dependencies = [
  "dashmap",
  "dialoguer",
  "fig_api_client",
- "fig_color",
  "fig_ipc",
  "fig_log",
  "fig_proto",
@@ -3141,6 +3130,7 @@ dependencies = [
  "serde",
  "serde_json",
  "shared_library",
+ "shell-color",
  "shell-words",
  "sysinfo 0.29.10",
  "time",
@@ -4606,7 +4596,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "macos_utils"
+name = "macos-utils"
 version = "0.12.0"
 dependencies = [
  "accessibility",
@@ -6899,6 +6889,16 @@ checksum = "5a9e7e0f2bfae24d8a5b5a66c5b257a83c7412304311512a0c054cd5e619da11"
 dependencies = [
  "lazy_static",
  "libc",
+]
+
+[[package]]
+name = "shell-color"
+version = "0.12.0"
+dependencies = [
+ "bitflags 2.4.1",
+ "fig_test",
+ "nu-ansi-term 0.49.0",
+ "nu-color-config",
 ]
 
 [[package]]

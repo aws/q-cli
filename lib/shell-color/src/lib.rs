@@ -1,88 +1,29 @@
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub enum VTermColor {
-    Rgb { red: u8, green: u8, blue: u8 },
-    Indexed { idx: u8 },
-}
+//! Parsing for terminal color
 
-impl VTermColor {
-    const fn idx(idx: u8) -> Self {
-        VTermColor::Indexed { idx }
-    }
+use std::fmt::Debug;
 
-    const fn rgb(red: u8, green: u8, blue: u8) -> Self {
-        VTermColor::Rgb { red, green, blue }
-    }
-}
-
-pub const fn vterm_color_indexed(idx: u8) -> VTermColor {
-    VTermColor::Indexed { idx }
-}
-
-pub const fn vterm_color_rgb(red: u8, green: u8, blue: u8) -> VTermColor {
-    VTermColor::Rgb { red, green, blue }
-}
-
-impl From<nu_ansi_term::Color> for VTermColor {
-    fn from(color: nu_ansi_term::Color) -> Self {
-        use nu_ansi_term::Color;
-        match color {
-            Color::Black => VTermColor::idx(0),
-            Color::Red => VTermColor::idx(1),
-            Color::Green => VTermColor::idx(2),
-            Color::Yellow => VTermColor::idx(3),
-            Color::Blue => VTermColor::idx(4),
-            Color::Purple => VTermColor::idx(5),
-            Color::Magenta => VTermColor::idx(5),
-            Color::Cyan => VTermColor::idx(6),
-            Color::White => VTermColor::idx(7),
-            Color::DarkGray => VTermColor::idx(8),
-            Color::LightRed => VTermColor::idx(9),
-            Color::LightGreen => VTermColor::idx(10),
-            Color::LightYellow => VTermColor::idx(11),
-            Color::LightBlue => VTermColor::idx(12),
-            Color::LightPurple => VTermColor::idx(13),
-            Color::LightMagenta => VTermColor::idx(13),
-            Color::LightCyan => VTermColor::idx(14),
-            Color::LightGray => VTermColor::idx(16),
-            Color::Fixed(i) => VTermColor::idx(i),
-            Color::Rgb(r, g, b) => VTermColor::rgb(r, g, b),
-            Color::Default => VTermColor::idx(7),
-        }
-    }
-}
-
-bitflags::bitflags! {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-    pub struct ColorSupport: u32 {
-        const TERM256 = 1 << 1;
-        const TERM24BIT = 1 << 2;
-    }
-}
-
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct SuggestionColor {
     pub fg: Option<VTermColor>,
     pub bg: Option<VTermColor>,
 }
 
-#[derive(PartialEq, Eq, Debug)]
-#[repr(u8)]
-pub enum ColorType {
-    Named = 1,
-    Rgb   = 2,
+impl SuggestionColor {
+    pub fn fg(&self) -> Option<VTermColor> {
+        self.fg.clone().map(VTermColor::from)
+    }
+
+    pub fn bg(&self) -> Option<VTermColor> {
+        self.bg.clone().map(VTermColor::from)
+    }
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct Color {
-    kind: ColorType,
-    name_idx: u8,
-    rgb: [u8; 3],
-}
-
-pub fn bool_from_string(x: &str) -> bool {
-    match x.chars().next() {
-        Some(first) => "YTyt1".contains(first),
-        None => false,
+impl Debug for SuggestionColor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SuggestionColor")
+            .field("fg", &self.fg())
+            .field("bg", &self.bg())
+            .finish()
     }
 }
 
@@ -159,6 +100,149 @@ pub fn get_color_support() -> ColorSupport {
     }
 
     support
+}
+
+pub fn parse_suggestion_color_fish(suggestion_str: &str, color_support: ColorSupport) -> Option<SuggestionColor> {
+    let c = parse_fish_color_from_string(suggestion_str, color_support);
+    let vc = color_to_vterm_color(c, color_support)?;
+    Some(SuggestionColor { fg: Some(vc), bg: None })
+}
+
+pub fn parse_suggestion_color_zsh_autosuggest(suggestion_str: &str, color_support: ColorSupport) -> SuggestionColor {
+    let mut sc = SuggestionColor { fg: None, bg: None };
+
+    for mut color_name in suggestion_str.to_string().split(',') {
+        let is_fg = color_name.starts_with("fg=");
+        let is_bg = color_name.starts_with("bg=");
+        if is_fg || is_bg {
+            (_, color_name) = color_name.split_at(3);
+            // TODO(sean): currently using fish's parsing logic for named colors.
+            // This can fail in two cases:
+            // 1. false positives from fish colors that aren't supported in zsh (e.g. brblack)
+            // 2. false negatives that aren't supported in fish (e.g. abbreviations like bl for black)
+            // note (mia): this todo was in the old c code - maybe it isn't needed anymore?
+            let mut color = try_parse_named(color_name);
+            if color.is_none() && color_name.starts_with('#') {
+                color = try_parse_rgb(color_name);
+            }
+            if color.is_none() {
+                // custom zsh logic - try 256 indexed colors first.
+                let index = color_name.parse::<u64>().unwrap_or(0);
+                let index_supported = if color_support.is_empty() {
+                    index < 16
+                } else {
+                    index < 256
+                };
+                if index_supported {
+                    let vc = vterm_color_indexed(index as u8);
+                    if is_fg {
+                        sc.fg = Some(vc);
+                    } else {
+                        sc.bg = Some(vc);
+                    }
+                }
+            } else {
+                let vc = color_to_vterm_color(color, color_support);
+                if is_fg {
+                    sc.fg = vc;
+                } else {
+                    sc.bg = vc;
+                }
+            }
+        }
+    }
+
+    sc
+}
+
+pub fn parse_hint_color_nu(suggestion_str: impl AsRef<str>) -> SuggestionColor {
+    let color = nu_color_config::lookup_ansi_color_style(suggestion_str.as_ref());
+    SuggestionColor {
+        fg: color.foreground.map(VTermColor::from),
+        bg: color.background.map(VTermColor::from),
+    }
+}
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum VTermColor {
+    Rgb { red: u8, green: u8, blue: u8 },
+    Indexed { idx: u8 },
+}
+
+impl VTermColor {
+    const fn idx(idx: u8) -> Self {
+        VTermColor::Indexed { idx }
+    }
+
+    const fn rgb(red: u8, green: u8, blue: u8) -> Self {
+        VTermColor::Rgb { red, green, blue }
+    }
+}
+
+pub const fn vterm_color_indexed(idx: u8) -> VTermColor {
+    VTermColor::Indexed { idx }
+}
+
+pub const fn vterm_color_rgb(red: u8, green: u8, blue: u8) -> VTermColor {
+    VTermColor::Rgb { red, green, blue }
+}
+
+impl From<nu_ansi_term::Color> for VTermColor {
+    fn from(color: nu_ansi_term::Color) -> Self {
+        use nu_ansi_term::Color;
+        match color {
+            Color::Black => VTermColor::idx(0),
+            Color::Red => VTermColor::idx(1),
+            Color::Green => VTermColor::idx(2),
+            Color::Yellow => VTermColor::idx(3),
+            Color::Blue => VTermColor::idx(4),
+            Color::Purple => VTermColor::idx(5),
+            Color::Magenta => VTermColor::idx(5),
+            Color::Cyan => VTermColor::idx(6),
+            Color::White => VTermColor::idx(7),
+            Color::DarkGray => VTermColor::idx(8),
+            Color::LightRed => VTermColor::idx(9),
+            Color::LightGreen => VTermColor::idx(10),
+            Color::LightYellow => VTermColor::idx(11),
+            Color::LightBlue => VTermColor::idx(12),
+            Color::LightPurple => VTermColor::idx(13),
+            Color::LightMagenta => VTermColor::idx(13),
+            Color::LightCyan => VTermColor::idx(14),
+            Color::LightGray => VTermColor::idx(16),
+            Color::Fixed(i) => VTermColor::idx(i),
+            Color::Rgb(r, g, b) => VTermColor::rgb(r, g, b),
+            Color::Default => VTermColor::idx(7),
+        }
+    }
+}
+
+bitflags::bitflags! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct ColorSupport: u32 {
+        const TERM256 = 1 << 1;
+        const TERM24BIT = 1 << 2;
+    }
+}
+
+#[derive(PartialEq, Eq, Debug)]
+#[repr(u8)]
+pub enum ColorType {
+    Named = 1,
+    Rgb   = 2,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct Color {
+    kind: ColorType,
+    name_idx: u8,
+    rgb: [u8; 3],
+}
+
+pub fn bool_from_string(x: &str) -> bool {
+    match x.chars().next() {
+        Some(first) => "YTyt1".contains(first),
+        None => false,
+    }
 }
 
 const fn squared_difference(p1: i64, p2: i64) -> u64 {
@@ -277,7 +361,7 @@ fn try_parse_named(s: &str) -> Option<Color> {
     None
 }
 
-pub const fn term16_color_for_rgb(rgb: [u8; 3]) -> u8 {
+const fn term16_color_for_rgb(rgb: [u8; 3]) -> u8 {
     const K_COLORS: &[u32] = &[
         0x000000, // Black
         0x800000, // Red
@@ -299,7 +383,7 @@ pub const fn term16_color_for_rgb(rgb: [u8; 3]) -> u8 {
     convert_color(rgb, K_COLORS)
 }
 
-pub const fn term256_color_for_rgb(rgb: [u8; 3]) -> u8 {
+const fn term256_color_for_rgb(rgb: [u8; 3]) -> u8 {
     const K_COLORS: &[u32] = &[
         0x000000, 0x00005f, 0x000087, 0x0000af, 0x0000d7, 0x0000ff, 0x005f00, 0x005f5f, 0x005f87, 0x005faf, 0x005fd7,
         0x005fff, 0x008700, 0x00875f, 0x008787, 0x0087af, 0x0087d7, 0x0087ff, 0x00af00, 0x00af5f, 0x00af87, 0x00afaf,
@@ -327,7 +411,7 @@ pub const fn term256_color_for_rgb(rgb: [u8; 3]) -> u8 {
     16 + convert_color(rgb, K_COLORS)
 }
 
-pub fn parse_fish_color_from_string(s: &str, color_support: ColorSupport) -> Option<Color> {
+fn parse_fish_color_from_string(s: &str, color_support: ColorSupport) -> Option<Color> {
     let mut first_rgb = None;
     let mut first_named = None;
 
@@ -354,7 +438,7 @@ pub fn parse_fish_color_from_string(s: &str, color_support: ColorSupport) -> Opt
     first_named
 }
 
-pub fn color_to_vterm_color(c: Option<Color>, color_support: ColorSupport) -> Option<VTermColor> {
+fn color_to_vterm_color(c: Option<Color>, color_support: ColorSupport) -> Option<VTermColor> {
     let c = c?;
     if c.kind == ColorType::Rgb {
         if color_support.contains(ColorSupport::TERM24BIT) {
@@ -367,59 +451,6 @@ pub fn color_to_vterm_color(c: Option<Color>, color_support: ColorSupport) -> Op
     } else {
         Some(vterm_color_indexed(c.name_idx))
     }
-}
-
-pub fn parse_suggestion_color_fish(s: &str, color_support: ColorSupport) -> Option<SuggestionColor> {
-    let c = parse_fish_color_from_string(s, color_support);
-    let vc = color_to_vterm_color(c, color_support)?;
-    Some(SuggestionColor { fg: Some(vc), bg: None })
-}
-
-pub fn parse_suggestion_color_zsh_autosuggest(s: &str, color_support: ColorSupport) -> SuggestionColor {
-    let mut sc = SuggestionColor { fg: None, bg: None };
-
-    for mut color_name in s.to_string().split(',') {
-        let is_fg = color_name.starts_with("fg=");
-        let is_bg = color_name.starts_with("bg=");
-        if is_fg || is_bg {
-            (_, color_name) = color_name.split_at(3);
-            // TODO(sean): currently using fish's parsing logic for named colors.
-            // This can fail in two cases:
-            // 1. false positives from fish colors that aren't supported in zsh (e.g. brblack)
-            // 2. false negatives that aren't supported in fish (e.g. abbreviations like bl for black)
-            // note (mia): this todo was in the old c code - maybe it isn't needed anymore?
-            let mut color = try_parse_named(color_name);
-            if color.is_none() && color_name.starts_with('#') {
-                color = try_parse_rgb(color_name);
-            }
-            if color.is_none() {
-                // custom zsh logic - try 256 indexed colors first.
-                let index = color_name.parse::<u64>().unwrap_or(0);
-                let index_supported = if color_support.is_empty() {
-                    index < 16
-                } else {
-                    index < 256
-                };
-                if index_supported {
-                    let vc = vterm_color_indexed(index as u8);
-                    if is_fg {
-                        sc.fg = Some(vc);
-                    } else {
-                        sc.bg = Some(vc);
-                    }
-                }
-            } else {
-                let vc = color_to_vterm_color(color, color_support);
-                if is_fg {
-                    sc.fg = vc;
-                } else {
-                    sc.bg = vc;
-                }
-            }
-        }
-    }
-
-    sc
 }
 
 #[cfg(test)]

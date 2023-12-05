@@ -245,22 +245,22 @@ pub async fn process_figterm_request(
             Ok(None)
         },
         FigtermRequest::Diagnostics(_) => {
-            let map_color = |color: &fig_color::VTermColor| -> figterm::TermColor {
+            let map_color = |color: &shell_color::VTermColor| -> figterm::TermColor {
                 figterm::TermColor {
                     color: Some(match color {
-                        fig_color::VTermColor::Rgb { red, green, blue } => {
+                        shell_color::VTermColor::Rgb { red, green, blue } => {
                             figterm::term_color::Color::Rgb(figterm::term_color::Rgb {
                                 r: *red as i32,
                                 b: *blue as i32,
                                 g: *green as i32,
                             })
                         },
-                        fig_color::VTermColor::Indexed { idx } => figterm::term_color::Color::Indexed(*idx as u32),
+                        shell_color::VTermColor::Indexed { idx } => figterm::term_color::Color::Indexed(*idx as u32),
                     }),
                 }
             };
 
-            let map_style = |style: &fig_color::SuggestionColor| -> figterm::TermStyle {
+            let map_style = |style: &shell_color::SuggestionColor| -> figterm::TermStyle {
                 figterm::TermStyle {
                     fg: style.fg().as_ref().map(map_color),
                     bg: style.bg().as_ref().map(map_color),

@@ -14,7 +14,7 @@ fig_request = { path = "../fig_request" }
 fig_settings = { path = "../fig_settings" }
 fig_util = { path = "../fig_util" }
 amzn-toolkit-telemetry = { path = "../amzn-toolkit-telemetry" }
-macos_utils = { path = "../macos_utils" }
+macos-utils = { path = "../macos-utils" }
 once_cell = { version = "1.17.1", features = ["parking_lot"] }
 parking_lot = "0.12.1"
 serde = "1.0.185"

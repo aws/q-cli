@@ -99,7 +99,7 @@ nix = { version = "0.27.1", features = ["user"] }
 skim = { version = "0.10.4", default-features = false }
 
 [target.'cfg(target_os = "macos")'.dependencies]
-macos_utils = { path = "../lib/macos_utils" }
+macos-utils = { path = "../lib/macos-utils" }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0.51.1", features = ["Win32_System_Threading"] }

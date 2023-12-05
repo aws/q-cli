@@ -168,19 +168,3 @@ impl Integration for IntelliJIntegration {
         Ok(())
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn abc() {
-        dbg!(
-            IntelliJIntegration {
-                variant: IntelliJVariant::IdeaUltimate
-            }
-            .application_folder()
-        )
-        .unwrap();
-    }
-}
