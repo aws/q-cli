@@ -10,6 +10,10 @@
     "preview": "vite preview",
     "clean": "rm -rf dist"
   },
+  "browserslist": [
+    "defaults",
+    "Safari >= 11"
+  ],
   "dependencies": {
     "@radix-ui/react-collapsible": "^1.0.3",
     "@radix-ui/react-dropdown-menu": "^2.0.6",

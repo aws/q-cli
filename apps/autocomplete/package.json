@@ -16,6 +16,10 @@
     "lint:fix": "eslint src --fix && prettier --write src",
     "clean": "rm -rf dist"
   },
+  "browserslist": [
+    "defaults",
+    "Safari >= 11"
+  ],
   "dependencies": {
     "@amzn/fig-io-api-bindings-wrappers": "workspace:^",
     "@amzn/fig-io-api-client": "workspace:^",
