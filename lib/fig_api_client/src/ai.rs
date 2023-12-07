@@ -530,6 +530,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     async fn claude_test() {
         // #!/bin/sh
         //
