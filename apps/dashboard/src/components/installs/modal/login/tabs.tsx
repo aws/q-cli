@@ -9,6 +9,8 @@ import {
 } from "../../../ui/select";
 import { Input } from "../../../ui/input";
 import { useState } from "react";
+import { useLocalState, useLocalStateZodDefault } from "@/hooks/store/useState";
+import { z } from "zod";
 
 function BuilderIdTab({
   handleLogin,
@@ -137,8 +139,16 @@ function IamTab({
 
   const DEFAULT_SSO_REGION = "us-east-1";
 
-  const [startUrl, setStartUrl] = useState("");
-  const [region, setRegion] = useState(DEFAULT_SSO_REGION);
+  const [startUrl, setStartUrl] = useLocalStateZodDefault(
+    "auth.idc.start-url",
+    z.string(),
+    ""
+  );
+  const [region, setRegion] = useLocalStateZodDefault(
+    "auth.idc.region",
+    z.string(),
+    DEFAULT_SSO_REGION
+  );
 
   return (
     <div className="border rounded p-4 flex flex-col bg-black/20 gap-4">
