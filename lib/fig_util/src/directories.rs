@@ -50,6 +50,10 @@ pub enum DirectoryError {
     Utf8FromPath(#[from] camino::FromPathError),
     #[error(transparent)]
     Utf8FromPathBuf(#[from] camino::FromPathBufError),
+    #[error(transparent)]
+    FromVecWithNul(#[from] std::ffi::FromVecWithNulError),
+    #[error(transparent)]
+    IntoString(#[from] std::ffi::IntoStringError),
 }
 
 type Result<T, E = DirectoryError> = std::result::Result<T, E>;
@@ -109,6 +113,19 @@ pub fn cache_dir() -> Result<PathBuf> {
     }
 }
 
+/// Get the macos tempdir from the `confstr` function
+///
+/// See: <https://man7.org/linux/man-pages/man3/confstr.3.html>
+#[cfg(target_os = "macos")]
+fn macos_tempdir() -> Result<PathBuf> {
+    let len = unsafe { libc::confstr(libc::_CS_DARWIN_USER_TEMP_DIR, std::ptr::null::<i8>().cast_mut(), 0) };
+    let mut buf: Vec<u8> = vec![0; len];
+    unsafe { libc::confstr(libc::_CS_DARWIN_USER_TEMP_DIR, buf.as_mut_ptr().cast(), buf.len()) };
+    let c_string = std::ffi::CString::from_vec_with_nul(buf)?;
+    let str = c_string.into_string()?;
+    Ok(PathBuf::from(str))
+}
+
 /// Runtime dir is used for runtime data that should not be persisted for a long time, e.g. socket
 /// files and logs
 ///
@@ -116,9 +133,16 @@ pub fn cache_dir() -> Result<PathBuf> {
 /// if this is not set such as on macOS it will fallback to TMPDIR which is secure on macOS
 #[cfg(unix)]
 fn runtime_dir() -> Result<PathBuf> {
-    dirs::runtime_dir()
-        .or_else(|| std::env::var_os("TMPDIR").map(PathBuf::from))
-        .ok_or(DirectoryError::NoRuntimeDirectory)
+    let mut dir = dirs::runtime_dir();
+    dir = dir.or_else(|| std::env::var_os("TMPDIR").map(PathBuf::from));
+
+    #[cfg(target_os = "macos")]
+    {
+        let macos_tempdir = macos_tempdir()?;
+        dir = dir.or_else(|| Some(macos_tempdir));
+    }
+
+    dir.ok_or(DirectoryError::NoRuntimeDirectory)
 }
 
 /// The codewhisperer sockets directory of the local codewhisperer installation
@@ -503,7 +527,7 @@ mod tests {
     }
 
     fn sanitized_directory_path(path: Result<PathBuf>) -> String {
-        let mut path = path.ok().unwrap().into_os_string().into_string().unwrap();
+        let mut path = path.unwrap().into_os_string().into_string().unwrap();
 
         if let Ok(home) = std::env::var("HOME") {
             let home = home.strip_suffix('/').unwrap_or(&home);
@@ -629,5 +653,12 @@ mod tests {
         let secure_socket = remote_socket_path().unwrap();
         let secure_socket_bytes = secure_socket.as_os_str().as_bytes().len();
         assert!(secure_socket_bytes <= MAX_SOCKET_LEN);
+    }
+
+    #[test]
+    #[cfg(target_os = "macos")]
+    fn macos_tempdir_test() {
+        let tmpdir = macos_tempdir().unwrap();
+        println!("{:?}", tmpdir);
     }
 }
