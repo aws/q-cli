@@ -542,6 +542,15 @@ mod tests {
             path = path.replace(tmpdir, "$TMPDIR");
         }
 
+        #[cfg(target_os = "macos")]
+        {
+            if let Ok(tmpdir) = macos_tempdir() {
+                let tmpdir = tmpdir.to_str().unwrap();
+                let tmpdir = tmpdir.strip_suffix('/').unwrap_or(&tmpdir);
+                path = path.replace(tmpdir, "$TMPDIR");
+            };
+        }
+
         if let Ok(xdg_runtime_dir) = std::env::var("XDG_RUNTIME_DIR") {
             let xdg_runtime_dir = xdg_runtime_dir.strip_suffix('/').unwrap_or(&xdg_runtime_dir);
             path = path.replace(xdg_runtime_dir, "$XDG_RUNTIME_DIR");
