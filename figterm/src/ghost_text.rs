@@ -164,26 +164,23 @@ pub async fn handle_request(
                 let mut completion_cache = COMPLETION_CACHE.lock().await;
 
                 for choice in &recommendations {
-                    if let Some(text) = &choice.content {
-                        // let logprob = match &choice.logprobs {
-                        //     Some(logprobs) => match &logprobs.token_logprobs {
-                        //         Some(token_logprobs) => *token_logprobs.first().unwrap_or(&1.0),
-                        //         None => 1.0,
-                        //     },
-                        //     None => 1.0,
-                        // };
-                        let logprob = 1.0;
+                    // let logprob = match &choice.logprobs {
+                    //     Some(logprobs) => match &logprobs.token_logprobs {
+                    //         Some(token_logprobs) => *token_logprobs.first().unwrap_or(&1.0),
+                    //         None => 1.0,
+                    //     },
+                    //     None => 1.0,
+                    // };
+                    let logprob = 1.0;
 
-                        let full_text = format!("{}{}", figterm_request.buffer, text.trim_end());
+                    let full_text = format!("{}{}", figterm_request.buffer, choice.content.trim_end());
 
-                        completion_cache.insert(full_text, logprob);
-                    }
+                    completion_cache.insert(full_text, logprob);
                 }
 
-                match recommendations.get(0) {
-                    Some(choice) => choice.content.as_ref().map(|text| text.trim_end().to_owned()),
-                    None => None,
-                }
+                recommendations
+                    .get(0)
+                    .map(|choice| choice.content.trim_end().to_owned())
             },
             Err(err) => {
                 error!(%err, "Failed to get ghost_text completion");

@@ -10,11 +10,11 @@ version.workspace = true
 workspace = true
 
 [dependencies]
-aws-credential-types = "0.56.1"
-aws-sdk-ssooidc = "0.33.0"
-aws-smithy-async = "0.56.1"
-aws-smithy-runtime-api = { version = "0.56.1", features = ["http-auth"] }
-aws-types = "0.56.1"
+aws-credential-types = "1.0.3"
+aws-sdk-ssooidc = "1.4.0"
+aws-smithy-async = "1.0.3"
+aws-smithy-runtime-api = { version = "1.0.3", features = ["http-auth"] }
+aws-types = "1.0.3"
 fig_telemetry = { path = "../fig_telemetry" }
 fig_util = { path = "../fig_util" }
 once_cell = "1.18"

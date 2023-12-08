@@ -164,12 +164,8 @@ i=`wc -l $FILENAME|cut -d ' ' -f1`; cat $FILENAME| echo "scale=2;(`paste -sd+`)/
 
     loop {
         let response = request_cw(request.clone()).await?;
-        if let Some(a) = response.completions() {
-            for comp in a {
-                if let Some(a) = &comp.content {
-                    completions.push(a.clone());
-                }
-            }
+        for comp in response.completions() {
+            completions.push(comp.content.clone());
         }
         if let Some(next_token) = response.next_token() {
             if !next_token.is_empty() {

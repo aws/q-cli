@@ -24,19 +24,20 @@
 use aws_sdk_ssooidc::client::Client;
 use aws_sdk_ssooidc::config::retry::RetryConfig;
 use aws_sdk_ssooidc::config::{
+    BehaviorVersion,
     ConfigBag,
+    RuntimeComponents,
     SharedAsyncSleep,
 };
 use aws_sdk_ssooidc::error::SdkError;
 use aws_sdk_ssooidc::operation::create_token::CreateTokenOutput;
-use aws_smithy_async::future::now_or_later::NowOrLater;
 use aws_smithy_async::rt::sleep::TokioSleep;
 use aws_smithy_runtime_api::client::identity::http::Token;
 use aws_smithy_runtime_api::client::identity::{
     Identity,
-    IdentityResolver,
+    IdentityFuture,
+    ResolveIdentity,
 };
-use aws_smithy_runtime_api::client::orchestrator::Future;
 use aws_types::app_name::AppName;
 use aws_types::region::Region;
 use once_cell::sync::Lazy;
@@ -83,6 +84,7 @@ fn oidc_url(region: &Region) -> String {
 fn client(region: Region) -> Client {
     let retry_config = RetryConfig::standard().with_max_attempts(3);
     let sdk_config = aws_types::SdkConfig::builder()
+        .behavior_version(BehaviorVersion::v2023_11_09())
         .endpoint_url(oidc_url(&region))
         .region(region)
         .retry_config(retry_config)
@@ -443,9 +445,13 @@ pub async fn logout() -> Result<()> {
 #[derive(Debug, Clone)]
 pub struct BearerResolver;
 
-impl IdentityResolver for BearerResolver {
-    fn resolve_identity(&self, _config_bag: &ConfigBag) -> Future<Identity> {
-        NowOrLater::new(Box::pin(async {
+impl ResolveIdentity for BearerResolver {
+    fn resolve_identity<'a>(
+        &'a self,
+        _runtime_components: &'a RuntimeComponents,
+        _config_bag: &'a ConfigBag,
+    ) -> IdentityFuture<'a> {
+        IdentityFuture::new_boxed(Box::pin(async {
             let secret_store = SecretStore::load().await?;
             let token = BuilderIdToken::load(&secret_store).await?;
             match token {

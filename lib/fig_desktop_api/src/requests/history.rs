@@ -19,7 +19,7 @@ pub async fn query(request: HistoryQueryRequest) -> RequestResult {
             Some(Type::Integer(i)) => Value::Integer(*i),
             Some(Type::Float(f)) => Value::Real(*f),
             Some(Type::String(s)) => Value::Text(s.clone()),
-            Some(Type::Blob(b)) => Value::Blob(b.to_vec()),
+            Some(Type::Blob(b)) => Value::Blob(b.clone()),
             None => return Err(format!("History query parameter {i} is missing type").into()),
         };
         params.push(param);

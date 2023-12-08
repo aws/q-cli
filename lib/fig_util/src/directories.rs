@@ -139,7 +139,7 @@ fn runtime_dir() -> Result<PathBuf> {
     #[cfg(target_os = "macos")]
     {
         let macos_tempdir = macos_tempdir()?;
-        dir = dir.or_else(|| Some(macos_tempdir));
+        dir = dir.or(Some(macos_tempdir));
     }
 
     dir.ok_or(DirectoryError::NoRuntimeDirectory)

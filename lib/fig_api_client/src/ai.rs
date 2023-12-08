@@ -1,20 +1,21 @@
-use amzn_codewhisperer_bearer::config::interceptors::BeforeTransmitInterceptorContextMut;
-use amzn_codewhisperer_bearer::config::{
-    Interceptor,
+use amzn_codewhisperer_client::config::interceptors::BeforeTransmitInterceptorContextMut;
+use amzn_codewhisperer_client::config::{
+    Intercept,
     RuntimeComponents,
 };
-use amzn_codewhisperer_bearer::operation::generate_completions::{
+use amzn_codewhisperer_client::error::SdkError;
+use amzn_codewhisperer_client::operation::generate_completions::{
     GenerateCompletionsError,
     GenerateCompletionsOutput,
 };
-use amzn_codewhisperer_bearer::Client;
+use amzn_codewhisperer_client::Client;
 use auth::builder_id::BearerResolver;
-use aws_config::AppName;
+use aws_config::{
+    AppName,
+    BehaviorVersion,
+};
 use aws_credential_types::Credentials;
-use aws_smithy_http::body::SdkBody;
-use aws_smithy_http::result::SdkError;
 use aws_smithy_types::config_bag::ConfigBag;
-use http::response::Response;
 use http::{
     HeaderName,
     HeaderValue,
@@ -39,7 +40,7 @@ fn is_codewhisperer_content_optout() -> bool {
 #[derive(Debug, Clone)]
 struct OptOutInterceptor;
 
-impl Interceptor for OptOutInterceptor {
+impl Intercept for OptOutInterceptor {
     fn name(&self) -> &'static str {
         "OptOutInterceptor"
     }
@@ -49,9 +50,9 @@ impl Interceptor for OptOutInterceptor {
         context: &mut BeforeTransmitInterceptorContextMut<'_>,
         _runtime_components: &RuntimeComponents,
         _cfg: &mut ConfigBag,
-    ) -> Result<(), amzn_codewhisperer_bearer::error::BoxError> {
+    ) -> Result<(), amzn_codewhisperer_client::error::BoxError> {
         context.request_mut().headers_mut().insert(
-            &X_AMZN_CODEWHISPERER_OPT_OUT_HEADER,
+            X_AMZN_CODEWHISPERER_OPT_OUT_HEADER.clone(),
             if is_codewhisperer_content_optout() {
                 HeaderValue::from_static("true")
             } else {
@@ -75,13 +76,13 @@ async fn cw_client() -> &'static Client {
                 std::env::set_var("PATH", std::env::join_paths(paths).unwrap());
             }
 
-            let sdk = aws_config::from_env()
+            let sdk = aws_config::defaults(BehaviorVersion::v2023_11_09())
                 .region(DEFAULT_REGION)
                 .credentials_provider(Credentials::new("xxx", "xxx", None, None, "xxx"))
                 .load()
                 .await;
 
-            let conf_builder: amzn_codewhisperer_bearer::config::Builder = (&sdk).into();
+            let conf_builder: amzn_codewhisperer_client::config::Builder = (&sdk).into();
 
             let conf = conf_builder
                 .bearer_token_resolver(BearerResolver)
@@ -192,61 +193,29 @@ pub struct AiRequest {
 
 pub async fn request_cw(
     request: CodewhipererRequest,
-) -> Result<GenerateCompletionsOutput, SdkError<GenerateCompletionsError, Response<SdkBody>>> {
+) -> Result<
+    GenerateCompletionsOutput,
+    SdkError<GenerateCompletionsError, aws_smithy_runtime_api::client::orchestrator::HttpResponse>,
+> {
     cw_client()
         .await
         .generate_completions()
         .file_context(
-            amzn_codewhisperer_bearer::types::FileContext::builder()
+            amzn_codewhisperer_client::types::FileContext::builder()
                 .left_file_content(request.file_context.left_file_content)
                 .right_file_content(request.file_context.right_file_content)
                 .filename(request.file_context.filename)
                 .programming_language(
-                    amzn_codewhisperer_bearer::types::ProgrammingLanguage::builder()
+                    amzn_codewhisperer_client::types::ProgrammingLanguage::builder()
                         .language_name(request.file_context.programming_language.language_name.as_ref())
-                        .build(),
+                        .build()?,
                 )
-                .build(),
+                .build()?,
         )
         .max_results(request.max_results)
         .set_next_token(request.next_token)
         .send()
         .await
-
-    // curl -k
-    //    -X POST $ENDPOINT_URL
-    //    -H "Authorization: Bearer $BEARER_TK"
-    //    -H "Content-Type:application/x-amz-json-1.0"
-    //    -H "X-Amz-Target:com.amazon.aws.codewhisperer.runtime.AmazonCodeWhispererService.
-    // GenerateCompletions"    -H "Accept: application/json, text/javascript, */*"
-    //    -d '{"fileContext":{"leftFileContent":"def
-    // addTwoNumbers","rightFileContent":"","filename":"calculator.py","programmingLanguage":{"
-    // languageName":"python"}},"maxLinesPerRecommendations":1,"maxRecommendations":3}'
-    //
-    // let txt = r#"{"fileContext":{"leftFileContent":"def
-    // addTwoNumbers","rightFileContent":"","filename":"calculator.py","programmingLanguage":{"
-    // languageName":"python"}},"maxLinesPerRecommendations":1,"maxRecommendations":3}"#; dbg!(
-    //     fig_request::client()
-    //         .unwrap()
-    //         .post(CODEWHISPERER_ENDPOINT)
-    //         .header("Authorization", format!("Bearer {TOKEN}"))
-    //         .header("Content-Type", "application/x-amz-json-1.0")
-    //         .header("Content-Encoding", "amz-1.0")
-    //         .header(
-    //             "X-Amz-Target",
-    //             "AWSCodeWhispererService.GenerateRecommendations"
-    //         )
-    //         .header("Accept", "application/json, text/javascript, */*")
-    //         .body(txt)
-    //         // .json(&request)
-    //         .send()
-    //         .await
-    //         .unwrap()
-    //         .text()
-    //         .await
-    // );
-
-    // todo!()
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
