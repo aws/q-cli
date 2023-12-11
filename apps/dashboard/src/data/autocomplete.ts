@@ -26,7 +26,7 @@ const autocompleteSettings = [
         title: "Allow instant execute after Space",
         description: "Immediately execute commands after pressing [space]. This is helpful for users that habitually type a space before executing a command",
         type: "boolean",
-        default: true,
+        default: false,
         popular: false,
       },
       {
