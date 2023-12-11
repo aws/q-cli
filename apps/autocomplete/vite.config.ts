@@ -9,7 +9,8 @@ import react from "@vitejs/plugin-react";
 
 const csp: Record<string, string> = {
   "default-src": "'self'",
-  "script-src": "'self' spec:",
+  // blob: is needed for loading dev specs
+  "script-src": "'self' spec: blob:",
   "style-src": "'self' spec:",
   "img-src": "'self' data: fig: icon: https:",
   "connect-src": "'self'",
