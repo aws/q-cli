@@ -105,9 +105,11 @@ def build_cargo_bin(
 
 def run_cargo_tests(features: Sequence[str] | None = None):
     args = ["cargo", "test", "--release", "--locked"]
+
+    # disable fig_desktop tests for now
     if IS_LINUX:
-        # disable fig_desktop tests for now
-        args.extend(["--exclude", "fig_desktop"])
+        args.extend(["--workspace", "--exclude", "fig_desktop"])
+
     if features:
         args.extend(["--features", ",".join(features)])
 
