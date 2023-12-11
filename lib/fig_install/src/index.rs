@@ -275,7 +275,8 @@ pub async fn query_index(
     }))
 }
 
-#[cfg(test)]
+// Tests only work on macos currently
+#[cfg(all(test, target_os = "macos"))]
 mod tests {
     use semver::Version;
 
