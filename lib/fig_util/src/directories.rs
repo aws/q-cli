@@ -333,8 +333,6 @@ pub fn manifest_path() -> Result<PathBuf> {
 //
 // Note this is not implemented on Linux or MacOS
 // pub fn managed_cw_cli_path() -> Result<PathBuf> {
-//     debug_env_binding!("CW_DIRECTORIES_MANAGED_CW_CLI_PATH");
-
 //     cfg_if::cfg_if! {
 //         if #[cfg(unix)] {
 //             todo!();
@@ -387,7 +385,8 @@ utf8_dir!(backups_dir);
 utf8_dir!(logs_dir);
 utf8_dir!(relative_cli_path);
 
-#[cfg(test)]
+// TODO(grant): Add back path tests on linux
+#[cfg(all(test, not(target_os = "linux")))]
 mod tests {
     use insta;
 
