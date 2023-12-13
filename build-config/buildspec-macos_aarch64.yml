@@ -10,6 +10,7 @@ env:
 phases:
   build:
     commands:
+      - export AWS_MAX_ATTEMPTS=10
       - echo "path - $PATH"
       - AWS_ACCOUNT=`aws sts get-caller-identity | jq -r '.Account'`
       # For now assume there is a suitable EC2 instance running. Obviously, we could add a StepFunction here to
