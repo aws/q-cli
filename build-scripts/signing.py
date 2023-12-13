@@ -156,7 +156,7 @@ def sign_file(file: pathlib.Path, type: SigningType, signing_data: SigningData):
     info("Sending request...")
     post_request(
         f"{signing_data.bucket_name}/pre-signed/package.tar.gz",
-        f"{signing_data.bucket_name}/signed/signed.tar.gz",
+        f"{signing_data.bucket_name}/signed/signed.zip",
         signing_data,
     )
 
@@ -166,7 +166,7 @@ def sign_file(file: pathlib.Path, type: SigningType, signing_data: SigningData):
     i = 1
     while True:
         info(f"Checking for signed package {i}")
-        if signed_package_exists("signed/signed.tar.gz", signing_data):
+        if signed_package_exists("signed/signed.zip", signing_data):
             break
         if time.time() >= end_time:
             raise RuntimeError("Signed package did not appear, check signer logs")
@@ -181,17 +181,11 @@ def sign_file(file: pathlib.Path, type: SigningType, signing_data: SigningData):
             "aws",
             "s3",
             "cp",
-            f"s3://{signing_data.bucket_name}/signed/signed.tar.gz",
-            "signed.tar.gz",
+            f"s3://{signing_data.bucket_name}/signed/signed.zip",
+            "signed.zip",
         ]
     )
-    run_cmd(
-        [
-            "gtar",
-            "-xzf",
-            "signed.tar.gz",
-        ]
-    )
+    run_cmd(["unzip", "signed.zip"])
 
     # find child of Payload
     children = list(pathlib.Path("Payload").iterdir())
@@ -200,7 +194,7 @@ def sign_file(file: pathlib.Path, type: SigningType, signing_data: SigningData):
 
     shutil.copytree(children[0], file)
 
-    pathlib.Path("signed.tar.gz").unlink()
+    pathlib.Path("signed.zip").unlink()
     shutil.rmtree("Payload")
 
     info(f"Signing status of {file}")
