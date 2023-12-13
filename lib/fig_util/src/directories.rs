@@ -441,7 +441,9 @@ fn map_env_dir(path: &std::ffi::OsStr) -> Result<PathBuf> {
 
 // TODO(grant): Add back path tests on linux
 #[cfg(all(test, not(target_os = "linux")))]
-mod test {
+mod tests {
+    use insta;
+
     use super::*;
 
     #[ignore]
@@ -475,13 +477,6 @@ mod test {
         // test_environment_path!(managed_cw_cli_path, "CW_DIRECTORIES_MANAGED_CW_CLI_PATH");
         test_environment_path!(settings_path, "CW_DIRECTORIES_SETTINGS_PATH");
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use insta;
-
-    use super::*;
 
     /// If this test fails then either of these paths were changed.
     ///
