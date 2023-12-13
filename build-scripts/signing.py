@@ -267,9 +267,9 @@ def notarize_file(file: pathlib.Path, signing_data: SigningData):
             "--team-id",
             TEAM_ID,
             "--apple-id",
-            secrets["APPLE_ID"],
+            secrets["appleId"],
             "--password",
-            secrets["APPLE_ID_PASSWORD"],
+            secrets["appleIdPassword"],
             "--wait",
         ]
     )
