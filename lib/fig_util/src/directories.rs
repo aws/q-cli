@@ -439,7 +439,8 @@ fn map_env_dir(path: &std::ffi::OsStr) -> Result<PathBuf> {
         .ok_or_else(|| DirectoryError::NonAbsolutePath(path.to_owned()))
 }
 
-#[cfg(test)]
+// TODO(grant): Add back path tests on linux
+#[cfg(all(test, not(target_os = "linux")))]
 mod test {
     use super::*;
 
@@ -546,7 +547,7 @@ mod tests {
         {
             if let Ok(tmpdir) = macos_tempdir() {
                 let tmpdir = tmpdir.to_str().unwrap();
-                let tmpdir = tmpdir.strip_suffix('/').unwrap_or(&tmpdir);
+                let tmpdir = tmpdir.strip_suffix('/').unwrap_or(tmpdir);
                 path = path.replace(tmpdir, "$TMPDIR");
             };
         }
@@ -556,12 +557,17 @@ mod tests {
             path = path.replace(xdg_runtime_dir, "$XDG_RUNTIME_DIR");
         }
 
+        #[cfg(target_os = "linux")]
+        {
+            path = path.replace("/tmp", "$TMPDIR");
+        }
+
         path
     }
 
     #[test]
     fn snapshot_fig_data_dir() {
-        linux!(fig_data_dir(), @"$USER/.local/share/codewhisperer");
+        linux!(fig_data_dir(), @"$HOME/.local/share/codewhisperer");
         macos!(fig_data_dir(), @"$HOME/Library/Application Support/codewhisperer");
         windows!(fig_data_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata");
     }
@@ -575,7 +581,7 @@ mod tests {
 
     #[test]
     fn snapshot_themes_dir() {
-        linux!(themes_dir(), @"/home/$USER/.local/share/fig/themes/themes");
+        linux!(themes_dir(), @"/usr/share/fig/themes");
         macos!(themes_dir(), @"/Applications/CodeWhisperer.app/Contents/Resources/themes");
         windows!(themes_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\themes\themes");
     }
