@@ -31,12 +31,9 @@ class SigningData:
 
 
 def signed_package_exists(name: str, signing_data: SigningData) -> bool:
-    return (
-        run_cmd_status(
-            ["aws", "s3", "ls", f"s3://{signing_data.bucket_name}/{name}.signed"]
-        )
-        == 0
-    )
+    s3_path = f"s3://{signing_data.bucket_name}/{name}"
+    info(f"Checking if {s3_path} exists")
+    return run_cmd_status(["aws", "s3", "ls", s3_path]) == 0
 
 
 def post_request(source: str, destination: str, signing_data: SigningData):
@@ -166,13 +163,15 @@ def sign_file(file: pathlib.Path, type: SigningType, signing_data: SigningData):
     # Loop until the signed package appears in the S3 bucket, for a maximum of 3 minutes
     max_duration = 180
     end_time = time.time() + max_duration
-    while time.time() < end_time:
-        if signed_package_exists(name, signing_data):
+    i = 1
+    while True:
+        info(f"Checking for signed package {i}")
+        if signed_package_exists("signed/signed.tar.gz", signing_data):
             break
+        if time.time() >= end_time:
+            raise RuntimeError("Signed package did not appear, check signer logs")
         time.sleep(10)
-
-    if time.time() >= end_time:
-        raise RuntimeError("Signed package did not appear, check signer logs")
+        i += 1
 
     info("Signed!")
 
