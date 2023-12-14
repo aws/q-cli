@@ -202,8 +202,17 @@ def sign_file(file: pathlib.Path, type: SigningType, signing_data: SigningData):
     if len(children) != 1:
         raise RuntimeError("Payload directory should have exactly one child")
 
-    shutil.copytree(children[0], file)
+    child_path = children[0]
 
+    # copy child to the original file location
+    if child_path.is_dir():
+        shutil.copytree(child_path, file)
+    elif child_path.is_file():
+        shutil.copy2(child_path, file)
+    else:
+        raise Exception(f"Unknown file type: {child_path}")
+
+    # clean up
     pathlib.Path("signed.zip").unlink()
     shutil.rmtree("Payload")
 
