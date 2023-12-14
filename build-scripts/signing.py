@@ -207,6 +207,7 @@ def rebundle_dmg(dmg_path: pathlib.Path, app_path: pathlib.Path):
     info(f"Rebunding {dmg_path}")
 
     tempdmg_path = pathlib.Path.home() / "temp.dmg"
+    tempdmg_path.unlink(missing_ok=True)
 
     # Convert the dmg to writable
     run_cmd(["hdiutil", "convert", dmg_path, "-format", "UDRW", "-o", tempdmg_path])
