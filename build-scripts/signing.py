@@ -84,8 +84,11 @@ def build_signed_package(type: SigningType, file_path: pathlib.Path, name: str):
 
     if type == SigningType.DMG:
         # Our dmg file names vary by platform, so this is templated in the manifest
-        manifest_path = working_dir / "manifest.yaml.template"
-        manifest_path.write_text(manifest_path.read_text().replace("__NAME__", name))
+        manifest_template_path = working_dir / "manifest.yaml.template"
+        manifest_path = working_dir / "manifest.yaml"
+        manifest_path.write_text(
+            manifest_template_path.read_text().replace("__NAME__", name)
+        )
 
     if file_path.is_dir():
         shutil.copytree(file_path, working_dir / "artifact" / file_path.name)
