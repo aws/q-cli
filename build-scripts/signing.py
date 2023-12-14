@@ -90,7 +90,7 @@ def build_signed_package(type: SigningType, file_path: pathlib.Path, name: str):
     if file_path.is_dir():
         shutil.copytree(file_path, working_dir / "artifact" / file_path.name)
     elif file_path.is_file():
-        shutil.copy(file_path, working_dir / "artifact" / file_path.name)
+        shutil.copy2(file_path, working_dir / "artifact" / file_path.name)
     else:
         raise Exception(f"Unknown file type: {file_path}")
     
