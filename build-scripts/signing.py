@@ -89,12 +89,13 @@ def build_signed_package(type: SigningType, file_path: pathlib.Path, name: str):
 
     if file_path.is_dir():
         shutil.copytree(file_path, working_dir / "artifact" / file_path.name)
+        shutil.rmtree(file_path)
     elif file_path.is_file():
         shutil.copy2(file_path, working_dir / "artifact" / file_path.name)
+        file_path.unlink()
     else:
         raise Exception(f"Unknown file type: {file_path}")
-    
-    shutil.rmtree(file_path)
+
     run_cmd(
         [
             "gtar",
@@ -211,6 +212,10 @@ def rebundle_dmg(dmg_path: pathlib.Path, app_path: pathlib.Path):
     mounting_path = pathlib.Path("/Volumes/CodeWhisperer")
 
     info(f"Rebunding {dmg_path}")
+
+    # Try to unmount a dmg if it is already there
+    if mounting_path.is_dir():
+        run_cmd(["hdiutil", "detach", mounting_path])
 
     tempdmg_path = pathlib.Path.home() / "temp.dmg"
     tempdmg_path.unlink(missing_ok=True)
