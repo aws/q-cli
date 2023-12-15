@@ -61,6 +61,9 @@ const SCOPES: &[&str] = &[
     "sso:account:access",
     "codewhisperer:completions",
     "codewhisperer:analysis",
+    "codewhisperer:conversations",
+    // "codewhisperer:taskassist",
+    // "codewhisperer:transformations",
 ];
 const CLIENT_TYPE: &str = "public";
 const START_URL: &str = "https://view.awsapps.com/start";
@@ -422,7 +425,7 @@ pub async fn poll_create_token(
 }
 
 pub async fn is_logged_in() -> bool {
-    let Ok(secret_store) = SecretStore::load().await else {
+    let Ok(secret_store) = SecretStore::new().await else {
         return false;
     };
 
@@ -430,14 +433,17 @@ pub async fn is_logged_in() -> bool {
 }
 
 pub async fn logout() -> Result<()> {
-    let Ok(secret_store) = SecretStore::load().await else {
+    let Ok(secret_store) = SecretStore::new().await else {
         return Ok(());
     };
 
-    tokio::try_join!(
+    let (builder_res, device_res) = tokio::join!(
         secret_store.delete(BuilderIdToken::SECRET_KEY),
         secret_store.delete(DeviceRegistration::SECRET_KEY),
-    )?;
+    );
+
+    builder_res?;
+    device_res?;
 
     Ok(())
 }
@@ -452,7 +458,7 @@ impl ResolveIdentity for BearerResolver {
         _config_bag: &'a ConfigBag,
     ) -> IdentityFuture<'a> {
         IdentityFuture::new_boxed(Box::pin(async {
-            let secret_store = SecretStore::load().await?;
+            let secret_store = SecretStore::new().await?;
             let token = BuilderIdToken::load(&secret_store).await?;
             match token {
                 Some(token) => Ok(Identity::new(
@@ -489,17 +495,38 @@ mod tests {
         insta::assert_snapshot!(oidc_url(&US_WEST_2), @"https://oidc.us-west-2.amazonaws.com");
     }
 
+    #[ignore = "not in ci"]
+    #[tokio::test]
+    async fn logout_test() {
+        logout().await.unwrap();
+    }
+
     #[ignore = "login flow"]
     #[tokio::test]
     async fn test_login() {
-        let start_url = Some("https://d-90678a77a2.awsapps.com/start".into());
-        let secret_store = SecretStore::load().await.unwrap();
-        let res = start_device_authorization(&secret_store, start_url.clone(), None)
-            .await
-            .unwrap();
+        let start_url = Some("https://amzn.awsapps.com/start".into());
+        let region = Some("us-east-1".into());
+
+        // let start_url = None;
+        // let region = None;
+
+        let secret_store = SecretStore::new().await.unwrap();
+        let res: StartDeviceAuthorizationResponse =
+            start_device_authorization(&secret_store, start_url.clone(), region.clone())
+                .await
+                .unwrap();
+
         println!("{:?}", res);
+
         loop {
-            match poll_create_token(&secret_store, res.device_code.clone(), start_url.clone(), None).await {
+            match poll_create_token(
+                &secret_store,
+                res.device_code.clone(),
+                start_url.clone(),
+                region.clone(),
+            )
+            .await
+            {
                 PollCreateToken::Pending => {
                     tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
                 },
@@ -518,7 +545,7 @@ mod tests {
     #[ignore = "not in ci"]
     #[tokio::test]
     async fn test_load() {
-        let secret_store = SecretStore::load().await.unwrap();
+        let secret_store = SecretStore::new().await.unwrap();
         let token = BuilderIdToken::load(&secret_store).await;
         println!("{:?}", token);
         // println!("{:?}", token.unwrap().unwrap().access_token.0);
@@ -529,7 +556,7 @@ mod tests {
     async fn test_refresh() {
         let region = Region::new("us-east-1");
         let client = client(region.clone());
-        let secret_store = SecretStore::load().await.unwrap();
+        let secret_store = SecretStore::new().await.unwrap();
         let token = BuilderIdToken::load(&secret_store).await.unwrap().unwrap();
         let token = token.refresh_token(&client, &secret_store, &region).await;
         println!("{:?}", token);

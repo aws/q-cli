@@ -33,8 +33,8 @@ pub struct SecretStore {
 }
 
 impl SecretStore {
-    pub async fn load() -> Result<Self> {
-        SecretStoreImpl::load().await.map(|_inner| Self { _inner })
+    pub async fn new() -> Result<Self> {
+        SecretStoreImpl::new().await.map(|_inner| Self { _inner })
     }
 
     pub async fn set(&self, key: &str, password: &str) -> Result<()> {
@@ -58,7 +58,7 @@ mod tests {
     #[ignore = "not on ci"]
     async fn test_set_password() {
         let key = "test_set_password";
-        let store = SecretStore::load().await.unwrap();
+        let store = SecretStore::new().await.unwrap();
         store.set(key, "test").await.unwrap();
         assert_eq!(store.get(key).await.unwrap().unwrap().0, "test");
         store.delete(key).await.unwrap();
@@ -68,7 +68,7 @@ mod tests {
     #[ignore = "not on ci"]
     async fn secret_get_time() {
         let key = "test_secret_get_time";
-        let store = SecretStore::load().await.unwrap();
+        let store = SecretStore::new().await.unwrap();
         store.set(key, "1234").await.unwrap();
 
         let now = std::time::Instant::now();
@@ -86,7 +86,7 @@ mod tests {
     async fn secret_delete() {
         let key = "test_secret_delete";
 
-        let store = SecretStore::load().await.unwrap();
+        let store = SecretStore::new().await.unwrap();
         store.set(key, "1234").await.unwrap();
         assert_eq!(store.get(key).await.unwrap().unwrap().0, "1234");
         store.delete(key).await.unwrap();

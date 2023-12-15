@@ -81,7 +81,7 @@ impl RootUserSubcommand {
                             },
                         };
 
-                        let secret_store = SecretStore::load().await?;
+                        let secret_store = SecretStore::new().await?;
                         let device_auth =
                             start_device_authorization(&secret_store, start_url.clone(), region.clone()).await?;
 
@@ -152,7 +152,7 @@ impl RootUserSubcommand {
                 Ok(())
             },
             Self::Whoami { format } => {
-                let secret_store = SecretStore::load().await?;
+                let secret_store = SecretStore::new().await?;
                 let builder_id = BuilderIdToken::load(&secret_store).await;
 
                 match builder_id {

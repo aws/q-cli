@@ -23,7 +23,7 @@ use crate::kv::KVStore;
 const BUILDER_ID_DATA_KEY: &str = "builder-id-data";
 
 pub async fn status(_request: AuthStatusRequest) -> RequestResult {
-    let secret_store = SecretStore::load()
+    let secret_store = SecretStore::new()
         .await
         .map_err(|err| format!("Failed to load secret store: {err}"))?;
 
@@ -50,7 +50,7 @@ pub async fn builder_id_start_device_authorization(
         return Err("start_url and region must both be specified or both be omitted".into());
     }
 
-    let secret_store = SecretStore::load()
+    let secret_store = SecretStore::new()
         .await
         .map_err(|err| format!("Failed to load secret store: {err}"))?;
 
@@ -80,7 +80,7 @@ pub async fn builder_id_poll_create_token(
     AuthBuilderIdPollCreateTokenRequest { auth_request_id }: AuthBuilderIdPollCreateTokenRequest,
     ctx: &impl KVStore,
 ) -> RequestResult {
-    let secret_store = SecretStore::load()
+    let secret_store = SecretStore::new()
         .await
         .map_err(|err| format!("Failed to load secret store: {err}"))?;
 

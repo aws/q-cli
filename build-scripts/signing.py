@@ -239,7 +239,6 @@ def rebundle_dmg(dmg_path: pathlib.Path, app_path: pathlib.Path):
     run_cmd(["hdiutil", "attach", tempdmg_path])
 
     # Copy in the new app
-    # shutil.copytree(app_path, mounting_path, dirs_exist_ok=True)
     run_cmd(["cp", "-R", app_path, mounting_path])
 
     # Unmount the dmg

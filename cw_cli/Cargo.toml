@@ -11,8 +11,11 @@ workspace = true
 
 [features]
 default = []
+gamma = []
 
 [dependencies]
+amzn-codewhisperer-client = { path = "../lib/amzn-codewhisperer-client" }
+amzn-codewhisperer-streaming-client = { path = "../lib/amzn-codewhisperer-streaming-client" }
 arboard = { version = "3.1.1", default-features = false, features = [
     "wayland-data-control",
 ] }

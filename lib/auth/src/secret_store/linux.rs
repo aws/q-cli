@@ -9,7 +9,7 @@ pub struct SecretStoreImpl {
 }
 
 impl SecretStoreImpl {
-    pub async fn load() -> Result<Self> {
+    pub async fn new() -> Result<Self> {
         Ok(Self { _private: () })
     }
 

@@ -8,11 +8,11 @@ use amzn_codewhisperer_client::operation::generate_completions::{
     GenerateCompletionsError,
     GenerateCompletionsOutput,
 };
-use amzn_codewhisperer_client::Client;
 use auth::builder_id::BearerResolver;
 use aws_config::{
     AppName,
     BehaviorVersion,
+    SdkConfig,
 };
 use aws_credential_types::Credentials;
 use aws_smithy_types::config_bag::ConfigBag;
@@ -30,8 +30,6 @@ const APP_NAME: &str = "codewhisperer-terminal";
 // Opt out constants
 const SHARE_CODEWHISPERER_CONTENT_SETTINGS_KEY: &str = "codeWhisperer.shareCodeWhispererContentWithAWS";
 static X_AMZN_CODEWHISPERER_OPT_OUT_HEADER: HeaderName = HeaderName::from_static("x-amzn-codewhisperer-optout");
-
-static AWS_CLIENT: OnceCell<Client> = OnceCell::const_new();
 
 fn is_codewhisperer_content_optout() -> bool {
     !fig_settings::settings::get_bool_or(SHARE_CODEWHISPERER_CONTENT_SETTINGS_KEY, true)
@@ -64,33 +62,42 @@ impl Intercept for OptOutInterceptor {
     }
 }
 
-async fn cw_client() -> &'static Client {
+async fn sdk_config() -> SdkConfig {
+    aws_config::defaults(BehaviorVersion::v2023_11_09())
+        .region(DEFAULT_REGION)
+        .credentials_provider(Credentials::new("xxx", "xxx", None, None, "xxx"))
+        .load()
+        .await
+}
+
+pub async fn cw_client() -> &'static amzn_codewhisperer_client::Client {
+    static AWS_CLIENT: OnceCell<amzn_codewhisperer_client::Client> = OnceCell::const_new();
     AWS_CLIENT
         .get_or_init(|| async {
-            let toolbox_bin = fig_util::directories::home_dir().unwrap().join(".toolbox/bin");
-            if toolbox_bin.exists() {
-                let mut paths = std::env::split_paths(&std::env::var_os("PATH").unwrap()).collect::<Vec<_>>();
-                if !paths.contains(&toolbox_bin) {
-                    paths.insert(0, toolbox_bin);
-                }
-                std::env::set_var("PATH", std::env::join_paths(paths).unwrap());
-            }
-
-            let sdk = aws_config::defaults(BehaviorVersion::v2023_11_09())
-                .region(DEFAULT_REGION)
-                .credentials_provider(Credentials::new("xxx", "xxx", None, None, "xxx"))
-                .load()
-                .await;
-
-            let conf_builder: amzn_codewhisperer_client::config::Builder = (&sdk).into();
-
+            let conf_builder: amzn_codewhisperer_client::config::Builder = (&sdk_config().await).into();
             let conf = conf_builder
+                .interceptor(OptOutInterceptor)
                 .bearer_token_resolver(BearerResolver)
                 .app_name(AppName::new(APP_NAME).unwrap())
                 .endpoint_url(CODEWHISPERER_ENDPOINT)
                 .build();
+            amzn_codewhisperer_client::Client::from_conf(conf)
+        })
+        .await
+}
 
-            Client::from_conf(conf)
+pub async fn cw_streaming_client() -> &'static amzn_codewhisperer_streaming_client::Client {
+    static AWS_CLIENT: OnceCell<amzn_codewhisperer_streaming_client::Client> = OnceCell::const_new();
+    AWS_CLIENT
+        .get_or_init(|| async {
+            let conf_builder: amzn_codewhisperer_streaming_client::config::Builder = (&sdk_config().await).into();
+            let conf = conf_builder
+                .interceptor(OptOutInterceptor)
+                .bearer_token_resolver(BearerResolver)
+                .app_name(AppName::new(APP_NAME).unwrap())
+                .endpoint_url(CODEWHISPERER_ENDPOINT)
+                .build();
+            amzn_codewhisperer_streaming_client::Client::from_conf(conf)
         })
         .await
 }

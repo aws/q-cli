@@ -4,6 +4,7 @@ import subprocess
 import sys
 from typing import Any, Mapping, Sequence
 
+IS_CI = os.environ.get("CI") is not None
 
 IS_DARWIN = sys.platform.startswith("darwin")
 IS_LINUX = sys.platform.startswith("linux")
@@ -14,11 +15,17 @@ ENDC = "\033[0m"
 
 
 def info(s: str):
-    print(f"{INFO}INFO:{ENDC} {s}")
+    if IS_CI:
+        print(f"INFO: {s}")
+    else:
+        print(f"{INFO}INFO:{ENDC} {s}")
 
 
 def fail(s: str):
-    print(f"{FAIL}FAIL:{ENDC} {s}")
+    if IS_CI:
+        print(f"FAIL: {s}")
+    else:
+        print(f"{FAIL}FAIL:{ENDC} {s}")
 
 
 Args = Sequence[str | os.PathLike]
