@@ -2,7 +2,7 @@ import os
 import shlex
 import subprocess
 import sys
-from typing import Any, Mapping, Sequence
+from typing import Mapping, Sequence
 
 IS_CI = os.environ.get("CI") is not None
 
@@ -59,18 +59,3 @@ def run_cmd_status(
 ) -> int:
     res = subprocess.run(args, env=env, cwd=cwd)
     return res.returncode
-
-
-# Emulating -n from bash
-def n(val: Any, key: str) -> bool:
-    if key in val:
-        if isinstance(val[key], str) and len(val[key]) > 0:
-            return True
-        elif isinstance(val[key], int):
-            return True
-        elif isinstance(val[key], bool):
-            return True
-        else:
-            return False
-    else:
-        return False

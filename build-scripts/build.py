@@ -5,7 +5,7 @@ import pathlib
 import shutil
 import sys
 from typing import Dict, Sequence
-from util import IS_DARWIN, IS_LINUX, n, run_cmd, run_cmd_output, info
+from util import IS_DARWIN, IS_LINUX, run_cmd, run_cmd_output, info
 from signing import SigningData, SigningType, rebundle_dmg, sign_file, notarize_file
 
 
@@ -77,7 +77,7 @@ def build_cargo_bin(
         },
     )
 
-    # create "univeral" binary for macos
+    # create "universal" binary for macos
     if IS_DARWIN:
         outpath = OUTDIR / f"{output_name or package}-universal-apple-darwin"
 
@@ -412,29 +412,48 @@ def generate_sha(path: pathlib.Path) -> pathlib.Path:
     return path
 
 
-build_args = json.loads(sys.argv[1] if len(sys.argv) > 1 else "{}")
+# parse argv[1] for json and build into dict, then grab each known value
+build_args = {
+    k: v
+    for (k, v) in json.loads(sys.argv[1] if len(sys.argv) > 1 else "{}").items()
+    if isinstance(k, str) and isinstance(v, str)
+}
+
+output_bucket = build_args.get("output_bucket")
+signing_bucket = build_args.get("signing_bucket")
+aws_account_id = build_args.get("aws_account_id")
+apple_id_secret = build_args.get("apple_id_secret")
+signing_queue = build_args.get("signing_queue")
+signing_role_name = build_args.get("signing_role_name")
+stage_name = build_args.get("stage_name")
 
 if (
-    n(build_args, "signing_bucket")
-    and n(build_args, "signing_queue")
-    and n(build_args, "apple_id_secret")
+    signing_bucket
+    and aws_account_id
+    and apple_id_secret
+    and signing_queue
+    and signing_role_name
 ):
     signing_data = SigningData(
-        bucket_name=build_args["signing_bucket"],
-        aws_account_id=build_args["aws_account_id"],
-        notarizing_secret_id=build_args["apple_id_secret"],
-        signing_request_queue_name=build_args["signing_queue"],
-        signing_role_name=build_args["signing_role_name"],
+        bucket_name=signing_bucket,
+        aws_account_id=aws_account_id,
+        notarizing_secret_id=apple_id_secret,
+        signing_request_queue_name=signing_queue,
+        signing_role_name=signing_role_name,
     )
 else:
     signing_data = None
 
-if n(build_args, "gamma"):
-    features = ["gamma"]
+if stage_name == "prod" or stage_name is None:
+    info("Building for prod")
+    cargo_features = []
+elif stage_name == "gamma":
+    info("Building for gamma")
+    cargo_features = ["gamma"]
 else:
-    features = None
+    raise ValueError(f"Unknown stage name: {stage_name}")
 
-info(f"Cargo features: {features}")
+info(f"Cargo features: {cargo_features}")
 info(f"Signing app: {signing_data is not None}")
 
 OUTDIR.mkdir(parents=True, exist_ok=True)
@@ -443,13 +462,13 @@ info("Building npm packages")
 npm_packages = build_npm_packages()
 
 info("Running cargo tests")
-run_cargo_tests(features=features)
+run_cargo_tests(features=cargo_features)
 
 info("Building cw_cli")
-cw_cli_path = build_cargo_bin("cw_cli", output_name="cw", features=features)
+cw_cli_path = build_cargo_bin("cw_cli", output_name="cw", features=cargo_features)
 
 info("Building figterm")
-cwterm_path = build_cargo_bin("figterm", output_name="cwterm", features=features)
+cwterm_path = build_cargo_bin("figterm", output_name="cwterm", features=cargo_features)
 
 if IS_DARWIN:
     info("Building CodeWhisperer.dmg")
@@ -458,19 +477,19 @@ if IS_DARWIN:
         cwterm_path=cwterm_path,
         npm_packages=npm_packages,
         signing_data=signing_data,
-        features=features,
+        features=cargo_features,
     )
 
     sha_path = generate_sha(dmg_path)
 
-    if n(build_args, "output_bucket"):
+    if output_bucket:
         staging_location = f"s3://{build_args['output_bucket']}/staging/"
         info(f"Build complete, sending to {staging_location}")
 
         run_cmd(["aws", "s3", "cp", dmg_path, staging_location])
         run_cmd(["aws", "s3", "cp", sha_path, staging_location])
 elif IS_LINUX:
-    if n(build_args, "output_bucket"):
+    if output_bucket:
         staging_location = f"s3://{build_args['output_bucket']}/staging/"
         info(f"Build complete, sending to {staging_location}")
 
