@@ -364,7 +364,7 @@ importers:
   packages/api-client:
     dependencies:
       '@amzn/fig-io-api-bindings-wrappers':
-        specifier: link:../api-bindings-wrappers
+        specifier: workspace:^
         version: link:../api-bindings-wrappers
       '@withfig/api-bindings':
         specifier: workspace:~

@@ -28,7 +28,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "@amzn/fig-io-api-bindings-wrappers": "link:../api-bindings-wrappers",
+    "@amzn/fig-io-api-bindings-wrappers": "workspace:^",
     "@withfig/api-bindings": "workspace:~",
     "react": "^18.2.0"
   },
