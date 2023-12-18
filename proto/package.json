@@ -13,9 +13,9 @@
   },
   "dependencies": {
     "long": "^5.2.3",
-    "protobufjs": "^7.2.4"
+    "protobufjs": "^7.2.5"
   },
   "devDependencies": {
-    "ts-proto": "~1.159.1"
+    "ts-proto": "~1.159.3"
   }
 }

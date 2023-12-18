@@ -9,7 +9,7 @@ from util import IS_DARWIN, IS_LINUX, run_cmd, run_cmd_output, info
 from signing import SigningData, SigningType, rebundle_dmg, sign_file, notarize_file
 
 
-OUTDIR = pathlib.Path("build").absolute()
+BUILD_DIR = pathlib.Path(os.environ.get("BUILD_DIR") or "build").absolute()
 
 
 def build_npm_packages() -> Dict[str, pathlib.Path]:
@@ -17,11 +17,11 @@ def build_npm_packages() -> Dict[str, pathlib.Path]:
     run_cmd(["pnpm", "build"])
 
     # copy to output
-    dashboard_path = OUTDIR / "dashboard"
+    dashboard_path = BUILD_DIR / "dashboard"
     shutil.rmtree(dashboard_path, ignore_errors=True)
     shutil.copytree("apps/dashboard/dist", dashboard_path)
 
-    autocomplete_path = OUTDIR / "autocomplete"
+    autocomplete_path = BUILD_DIR / "autocomplete"
     shutil.rmtree(autocomplete_path, ignore_errors=True)
     shutil.copytree("apps/autocomplete/dist", autocomplete_path)
 
@@ -79,7 +79,7 @@ def build_cargo_bin(
 
     # create "universal" binary for macos
     if IS_DARWIN:
-        outpath = OUTDIR / f"{output_name or package}-universal-apple-darwin"
+        outpath = BUILD_DIR / f"{output_name or package}-universal-apple-darwin"
 
         args = [
             "lipo",
@@ -98,7 +98,7 @@ def build_cargo_bin(
     else:
         # assumes linux
         target_path = pathlib.Path("target/x86_64-unknown-linux-gnu/release") / package
-        out_path = OUTDIR / (output_name or package)
+        out_path = BUILD_DIR / (output_name or package)
         shutil.copy2(target_path, out_path)
         return out_path
 
@@ -251,7 +251,7 @@ def build_desktop_app(
     run_cmd(
         cargo_tauri_args,
         cwd="fig_desktop",
-        env={**os.environ, **rust_env(), "BUILD_DIR": OUTDIR},
+        env={**os.environ, **rust_env(), "BUILD_DIR": BUILD_DIR},
     )
 
     # clean up
@@ -261,7 +261,7 @@ def build_desktop_app(
     target_bundle = pathlib.Path(
         f"target/{target}/release/bundle/macos/codewhisperer_desktop.app"
     )
-    bundle_path = OUTDIR / "CodeWhisperer.app"
+    bundle_path = BUILD_DIR / "CodeWhisperer.app"
     shutil.rmtree(bundle_path, ignore_errors=True)
     shutil.copytree(target_bundle, bundle_path)
 
@@ -318,7 +318,7 @@ def build_desktop_app(
     shutil.copytree(ime_app, helpers_dir.joinpath("CodeWhispererInputMethod.app"))
 
     info("Grabbing themes")
-    theme_repo = OUTDIR / "themes"
+    theme_repo = BUILD_DIR / "themes"
     shutil.rmtree(theme_repo, ignore_errors=True)
     run_cmd(["git", "clone", "https://github.com/withfig/themes.git", theme_repo])
     shutil.copytree(theme_repo / "themes", bundle_path / "Contents/Resources/themes")
@@ -342,7 +342,7 @@ def build_desktop_app(
     dmg_spec_path = pathlib.Path("bundle/dmg/spec.json")
     dmg_spec_path.write_text(json.dumps(dmg_spec))
 
-    dmg_path = OUTDIR.joinpath("CodeWhisperer.dmg")
+    dmg_path = BUILD_DIR.joinpath("CodeWhisperer.dmg")
     dmg_path.unlink(missing_ok=True)
 
     run_cmd(["pnpm", "appdmg", dmg_spec_path, dmg_path])
@@ -398,9 +398,9 @@ def linux_bundle(
     bin_path.mkdir(parents=True, exist_ok=True)
     shutil.copy2(cw_cli_path, bin_path)
     shutil.copy2(cwterm_path, bin_path)
-    shutil.copytree("bundle/linux/headless", OUTDIR, dirs_exist_ok=True)
+    shutil.copytree("bundle/linux/headless", BUILD_DIR, dirs_exist_ok=True)
     if not is_headless:
-        shutil.copytree("bundle/linux/desktop", OUTDIR, dirs_exist_ok=True)
+        shutil.copytree("bundle/linux/desktop", BUILD_DIR, dirs_exist_ok=True)
         shutil.copy2(codewhisperer_desktop_path, bin_path)
 
 
@@ -456,7 +456,7 @@ else:
 info(f"Cargo features: {cargo_features}")
 info(f"Signing app: {signing_data is not None}")
 
-OUTDIR.mkdir(parents=True, exist_ok=True)
+BUILD_DIR.mkdir(parents=True, exist_ok=True)
 
 info("Building npm packages")
 npm_packages = build_npm_packages()

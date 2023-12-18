@@ -22,7 +22,6 @@ __pycache__
 
 target/
 build
-bin/
 
 # ide folders
 .vscode/
