@@ -4,7 +4,8 @@ import datetime
 import pathlib
 import shutil
 import sys
-from typing import Dict, Sequence
+import itertools
+from typing import Dict, Mapping, Sequence
 from util import IS_DARWIN, IS_LINUX, run_cmd, run_cmd_output, info
 from signing import SigningData, SigningType, rebundle_dmg, sign_file, notarize_file
 
@@ -53,7 +54,9 @@ def rust_env(linker=None) -> Dict[str, str]:
 
 
 def build_cargo_bin(
-    package: str, output_name: str | None = None, features: Sequence[str] | None = None
+    package: str,
+    output_name: str | None = None,
+    features: Mapping[str, Sequence[str]] | None = None,
 ) -> pathlib.Path:
     if IS_DARWIN:
         targets = ["x86_64-apple-darwin", "aarch64-apple-darwin"]
@@ -66,8 +69,8 @@ def build_cargo_bin(
     for target in targets:
         args.extend(["--target", target])
 
-    if features:
-        args.extend(["--features", ",".join(features)])
+    if features and features.get(package):
+        args.extend(["--features", ",".join(features[package])])
 
     run_cmd(
         args,
@@ -103,7 +106,7 @@ def build_cargo_bin(
         return out_path
 
 
-def run_cargo_tests(features: Sequence[str] | None = None):
+def run_cargo_tests(features: Mapping[str, Sequence[str]] | None = None):
     args = ["cargo", "test", "--release", "--locked"]
 
     # disable fig_desktop tests for now
@@ -111,7 +114,12 @@ def run_cargo_tests(features: Sequence[str] | None = None):
         args.extend(["--workspace", "--exclude", "fig_desktop"])
 
     if features:
-        args.extend(["--features", ",".join(features)])
+        args.extend(
+            [
+                "--features",
+                ",".join(set(itertools.chain.from_iterable(features.values()))),
+            ]
+        )
 
     run_cmd(
         args,
@@ -217,7 +225,7 @@ def build_desktop_app(
     cw_cli_path: pathlib.Path,
     npm_packages: Dict[str, pathlib.Path],
     signing_data: SigningData | None,
-    features: Sequence[str] | None = None,
+    features: Mapping[str, Sequence[str]] | None = None,
 ) -> pathlib.Path:
     target = "universal-apple-darwin"
 
@@ -245,8 +253,8 @@ def build_desktop_app(
         target,
     ]
 
-    if features:
-        cargo_tauri_args.extend(["--features", ",".join(features)])
+    if features and features.get("fig_desktop"):
+        cargo_tauri_args.extend(["--features", ",".join(features["fig_desktop"])])
 
     run_cmd(
         cargo_tauri_args,
@@ -419,6 +427,8 @@ build_args = {
     if isinstance(k, str) and isinstance(v, str)
 }
 
+info(f"{build_args}")
+
 output_bucket = build_args.get("output_bucket")
 signing_bucket = build_args.get("signing_bucket")
 aws_account_id = build_args.get("aws_account_id")
@@ -444,12 +454,13 @@ if (
 else:
     signing_data = None
 
+cargo_features: Mapping[str, Sequence[str]] = {}
+
 if stage_name == "prod" or stage_name is None:
     info("Building for prod")
-    cargo_features = []
 elif stage_name == "gamma":
     info("Building for gamma")
-    cargo_features = ["gamma"]
+    cargo_features = {"cw_cli": ["cw_cli/gamma"]}
 else:
     raise ValueError(f"Unknown stage name: {stage_name}")
 
