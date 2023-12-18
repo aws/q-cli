@@ -48,7 +48,7 @@ fig_integrations = { path = "../lib/fig_integrations", features = ["dispatch"] }
 fig_ipc = { path = "../lib/fig_ipc" }
 fig_log = { path = "../lib/fig_log" }
 fig_proto = { path = "../lib/fig_proto" }
-fig_remote_ipc = { version = "0.12.0", path = "../lib/fig_remote_ipc" }
+fig_remote_ipc = { path = "../lib/fig_remote_ipc" }
 fig_request = { path = "../lib/fig_request" }
 fig_settings = { path = "../lib/fig_settings" }
 fig_telemetry = { path = "../lib/fig_telemetry" }

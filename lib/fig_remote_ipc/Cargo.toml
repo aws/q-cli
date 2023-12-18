@@ -12,9 +12,9 @@ workspace = true
 [dependencies]
 anyhow = "1.0.75"
 async-trait = "0.1.74"
-fig_ipc = { version = "0.12.0", path = "../fig_ipc" }
-fig_proto = { version = "0.12.0", path = "../fig_proto" }
-fig_util = { version = "0.12.0", path = "../fig_util" }
+fig_ipc = { path = "../fig_ipc" }
+fig_proto = { path = "../fig_proto" }
+fig_util = { path = "../fig_util" }
 flume = "0.11.0"
 parking_lot = { version = "0.12.1", features = ["serde"] }
 serde = { version = "1.0.193", features = ["derive"] }
