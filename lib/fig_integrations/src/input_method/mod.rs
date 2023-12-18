@@ -494,7 +494,7 @@ impl Integration for InputMethod {
             .arg(&self.bundle_path)
             .output()
             .await
-            .context("Could not run fig cli")?;
+            .context("Could not run cw cli")?;
 
         if out.status.code() == Some(0) {
             self.set_is_enabled(true);
@@ -560,7 +560,7 @@ impl Integration for InputMethod {
                 .arg(&self.bundle_path)
                 .output()
                 .await
-                .context("Could not run fig cli")?;
+                .context("Could not run cw cli")?;
 
             if out.status.code() == Some(0) {
                 info!("Input method installed successfully!");

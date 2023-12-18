@@ -10,13 +10,12 @@ interface GlobalAPIError {
 }
 
 const FigGlobalErrorOccurred = "FigGlobalErrorOccurred";
-const FigProtoMessageReceivedTypo = "FigProtoMessageRecieved";
 const FigProtoMessageReceived = "FigProtoMessageReceived";
 
 type shouldKeepListening = boolean;
 
 export type APIResponseHandler = (
-  response: ServerOriginatedMessage["submessage"],
+  response: ServerOriginatedMessage["submessage"]
 ) => shouldKeepListening | void;
 
 let messageId = 0;
@@ -28,7 +27,7 @@ export function setHandlerForId(handler: APIResponseHandler, id: number) {
 
 export function sendMessage(
   message: ClientOriginatedMessage["submessage"],
-  handler?: APIResponseHandler,
+  handler?: APIResponseHandler
 ) {
   const request: ClientOriginatedMessage = {
     id: (messageId += 1),
@@ -47,14 +46,14 @@ export function sendMessage(
   } else if (window.webkit) {
     if (!window.webkit?.messageHandlers?.proto) {
       console.error(
-        "This version of Fig does not support using protocol buffers. Please update.",
+        "This version of Fig does not support using protocol buffers. Please update."
       );
       return;
     }
     window.webkit.messageHandlers.proto.postMessage(b64);
   } else {
     console.error(
-      "Cannot send request. Fig.js is not supported in this browser.",
+      "Cannot send request. Fig.js is not supported in this browser."
     );
   }
 }
@@ -81,13 +80,6 @@ const setupEventListeners = (): void => {
   document.addEventListener(FigGlobalErrorOccurred, (event: Event) => {
     const response = (event as CustomEvent).detail as GlobalAPIError;
     console.error(response.error);
-  });
-
-  document.addEventListener(FigProtoMessageReceivedTypo, (event: Event) => {
-    const raw = (event as CustomEvent).detail as string;
-    const bytes = b64ToBytes(raw);
-    const message = ServerOriginatedMessage.decode(bytes);
-    receivedMessage(message);
   });
 
   document.addEventListener(FigProtoMessageReceived, (event: Event) => {

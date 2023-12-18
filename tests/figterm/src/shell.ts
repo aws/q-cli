@@ -225,7 +225,7 @@ class Shell {
 
     this.cliListener = new FigCliListener(this.initialEnv.TERM_SESSION_ID);
     this.figtermListener = new FigtermListener(
-      // TOOD: fix this is not the correct path anymore
+      // TODO: fix this is not the correct path anymore
       `/var/tmp/fig/${os.userInfo().username}/desktop.socket`,
       this.initialEnv.TERM_SESSION_ID
     );

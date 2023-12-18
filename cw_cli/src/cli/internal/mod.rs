@@ -192,9 +192,9 @@ pub enum InternalSubcommand {
     LocalState(local_state::LocalStateArgs),
     /// Callback used for the internal pseudoterminal
     Callback(CallbackArgs),
-    /// Install fig cli
+    /// Install CodeWhsiperer cli
     Install(InstallArgs),
-    /// Uninstall fig cli
+    /// Uninstall CodeWhsiperer cli
     Uninstall {
         /// Uninstall only the daemon
         #[arg(long)]

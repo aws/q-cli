@@ -31,7 +31,7 @@ export function useInputMethodCheck() {
 
 /**
  * @param check The install method to check
- * @returns The status of the check is installed, if undefinied it is is either loading 
+ * @returns The status of the check is installed, if undefined it is is either loading 
  * or unable to get a status, the second part is a callback to refresh the status
  */
 export function useStatusCheck(

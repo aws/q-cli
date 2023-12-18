@@ -179,7 +179,7 @@ pub async fn handle_request(
                 }
 
                 recommendations
-                    .get(0)
+                    .first()
                     .map(|choice| choice.content.trim_end().to_owned())
             },
             Err(err) => {

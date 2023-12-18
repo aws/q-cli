@@ -55,7 +55,7 @@ pub fn menu_bar() -> Menu {
                 .unwrap()
                 .build(),
             &MenuItemBuilder::new()
-                .text("Quit Fig (UI)")
+                .text("Quit CodeWhisperer (UI)")
                 .id(DASHBOARD_QUIT.into())
                 .acccelerator(Some("super+q"))
                 .unwrap()

@@ -1,21 +1,12 @@
-# - Instead of using a dictionary of known-good words, it uses
-#   an efficient dictionary of known typos.
-# - It breaks down files into a list of words, using clever splitting
-#   algorithms
-# - "identifiers" are consecutive sequences of characters, eg. `source_regex`
-# - "words" are the parts of identifiers, eg. `source_regex` -> "source", "regex"
-
 [files]
 extend-exclude = [
-  "fig/settings/assets/*",
-  "*.html",                # Any HTML, CSS, etc. files are legacy.
-  "*.css",
-  "*.svg",
-  "*.jar",
-  "*.min.*",
-  "*.storyboard",
-  "typos.toml",
-  ".yarn/*",
+  "__tests__",
+  "lib/amzn-codewhisperer-client",
+  "lib/amzn-codewhisperer-streaming-client",
+  "lib/amzn-consolas-client",
+  "lib/aws-toolkit-telemetry-definitions/def.json",
+  "packages/fuzzysort",
+  "apps/dashboard/public/license/NOTICE.txt",
 ]
 
 [default.extend-words]
@@ -26,13 +17,6 @@ xmodifiers = "xmodifiers"
 zvariant = "zvariant"
 ser = "ser"
 sur = "sur"
-
-[default.extend-identifiers]
-# Originally mistakes, but will be too hard to fix now
-FigProtoMessageRecieved = "FigProtoMessageRecieved"
-FigJSONMessageRecieved = "FigJSONMessageRecieved"
-jsonMessageRecieved = "jsonMessageRecieved"
-protoMessageRecieved = "protoMessageRecieved"
 
 [type.rust.extend-identifiers]
 # typos really wanted to correct 2ND -> 2AND

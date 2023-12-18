@@ -108,7 +108,7 @@ pub enum CliRootCommands {
     /// Enable/disable CodeWhisperer tips
     #[command(subcommand, hide = true)]
     Tips(tips::TipsSubcommand),
-    /// Install fig cli components
+    /// Install CodeWhisperer cli components
     Install(internal::InstallArgs),
     /// Uninstall fig
     #[command(hide = true)]
