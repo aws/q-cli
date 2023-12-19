@@ -2,11 +2,12 @@ import os
 import json
 import datetime
 import pathlib
+import platform
 import shutil
 import sys
 import itertools
-from typing import Dict, Mapping, Sequence
-from util import IS_DARWIN, IS_LINUX, run_cmd, run_cmd_output, info
+from typing import Dict, List, Mapping, Sequence
+from util import isDarwin, isLinux, run_cmd, run_cmd_output, info
 from signing import SigningData, SigningType, rebundle_dmg, sign_file, notarize_file
 
 
@@ -37,7 +38,7 @@ def rust_env(linker=None) -> Dict[str, str]:
     if linker:
         rustflags.append(f"-C link-arg=-fuse-ld={linker}")
 
-    if IS_LINUX:
+    if isLinux():
         rustflags.append("-C link-arg=-Wl,--compress-debug-sections=zlib")
 
     env = {
@@ -47,10 +48,20 @@ def rust_env(linker=None) -> Dict[str, str]:
         "CARGO_NET_GIT_FETCH_WITH_CLI": "true",
     }
 
-    if IS_DARWIN:
+    if isDarwin():
         env["MACOSX_DEPLOYMENT_TARGET"] = "10.13"
 
     return env
+
+
+def rust_targets() -> List[str]:
+    match platform.system():
+        case "Darwin":
+            return ["x86_64-apple-darwin", "aarch64-apple-darwin"]
+        case "Linux":
+            return ["x86_64-unknown-linux-gnu"]
+        case _:
+            raise ValueError("Unsupported platform")
 
 
 def build_cargo_bin(
@@ -58,14 +69,9 @@ def build_cargo_bin(
     output_name: str | None = None,
     features: Mapping[str, Sequence[str]] | None = None,
 ) -> pathlib.Path:
-    if IS_DARWIN:
-        targets = ["x86_64-apple-darwin", "aarch64-apple-darwin"]
-    elif IS_LINUX:
-        targets = ["x86_64-unknown-linux-gnu"]
-    else:
-        raise ValueError("Unsupported platform")
-
     args = ["cargo", "build", "--release", "--locked", "--package", package]
+
+    targets = rust_targets()
     for target in targets:
         args.extend(["--target", target])
 
@@ -81,7 +87,7 @@ def build_cargo_bin(
     )
 
     # create "universal" binary for macos
-    if IS_DARWIN:
+    if isDarwin():
         outpath = BUILD_DIR / f"{output_name or package}-universal-apple-darwin"
 
         args = [
@@ -109,8 +115,11 @@ def build_cargo_bin(
 def run_cargo_tests(features: Mapping[str, Sequence[str]] | None = None):
     args = ["cargo", "test", "--release", "--locked"]
 
+    for target in rust_targets():
+        args.extend(["--target", target])
+
     # disable fig_desktop tests for now
-    if IS_LINUX:
+    if isLinux():
         args.extend(["--workspace", "--exclude", "fig_desktop"])
 
     if features:
@@ -481,7 +490,7 @@ cw_cli_path = build_cargo_bin("cw_cli", output_name="cw", features=cargo_feature
 info("Building figterm")
 cwterm_path = build_cargo_bin("figterm", output_name="cwterm", features=cargo_features)
 
-if IS_DARWIN:
+if isDarwin():
     info("Building CodeWhisperer.dmg")
     dmg_path = build_desktop_app(
         cw_cli_path=cw_cli_path,
@@ -499,7 +508,7 @@ if IS_DARWIN:
 
         run_cmd(["aws", "s3", "cp", dmg_path, staging_location])
         run_cmd(["aws", "s3", "cp", sha_path, staging_location])
-elif IS_LINUX:
+elif isLinux():
     if output_bucket:
         staging_location = f"s3://{build_args['output_bucket']}/staging/"
         info(f"Build complete, sending to {staging_location}")

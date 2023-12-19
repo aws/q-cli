@@ -1,28 +1,36 @@
 import os
 import shlex
 import subprocess
-import sys
+import platform
 from typing import Mapping, Sequence
 
-IS_CI = os.environ.get("CI") is not None
-
-IS_DARWIN = sys.platform.startswith("darwin")
-IS_LINUX = sys.platform.startswith("linux")
 
 INFO = "\033[95m"
 FAIL = "\033[91m"
 ENDC = "\033[0m"
 
 
+def isCi() -> bool:
+    return os.environ.get("CI") is not None
+
+
+def isDarwin() -> bool:
+    return platform.system() == "Darwin"
+
+
+def isLinux() -> bool:
+    return platform.system() == "Linux"
+
+
 def info(s: str):
-    if IS_CI:
+    if isCi():
         print(f"INFO: {s}")
     else:
         print(f"{INFO}INFO:{ENDC} {s}")
 
 
 def fail(s: str):
-    if IS_CI:
+    if isCi():
         print(f"FAIL: {s}")
     else:
         print(f"{FAIL}FAIL:{ENDC} {s}")
