@@ -113,10 +113,33 @@ def build_cargo_bin(
 
 
 def run_cargo_tests(features: Mapping[str, Sequence[str]] | None = None):
-    args = ["cargo", "test", "--release", "--locked"]
+    # build the tests using the same config as normal builds
+    args = ["cargo", "build", "--tests", "--release", "--locked"]
 
     for target in rust_targets():
         args.extend(["--target", target])
+
+    if isLinux():
+        args.extend(["--workspace", "--exclude", "fig_desktop"])
+
+    if features:
+        args.extend(
+            [
+                "--features",
+                ",".join(set(itertools.chain.from_iterable(features.values()))),
+            ]
+        )
+
+    run_cmd(
+        args,
+        env={
+            **os.environ,
+            **rust_env(),
+            "RUST_BACKTRACE": "1",
+        },
+    )
+
+    args = ["cargo", "test", "--release", "--locked"]
 
     # disable fig_desktop tests for now
     if isLinux():
