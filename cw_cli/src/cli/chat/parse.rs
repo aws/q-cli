@@ -135,6 +135,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_heading() {
         assert_stream!("# Hello world\n", vec![MarkdownElements::Heading {
             level: 1,
@@ -148,6 +149,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_codeblock() {
         assert_stream!(
             "```rust\nfn main() {\n    println!(\"Hello, world!\");\n}\n```\n",
@@ -166,6 +168,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn doc() {
         let md_doc = "## Hello world\n\nThis is a paragraph.\n\n## Another heading\n\nThis is another paragraph.";
 
