@@ -13,6 +13,7 @@ impl InternalServerError {
     pub fn retryable_error_kind(&self) -> ::aws_smithy_types::retry::ErrorKind {
         ::aws_smithy_types::retry::ErrorKind::ServerError
     }
+
     /// Returns the error message.
     pub fn message(&self) -> &str {
         &self.message
@@ -40,7 +41,8 @@ impl ::aws_smithy_types::error::metadata::ProvideErrorMetadata for InternalServe
     }
 }
 impl InternalServerError {
-    /// Creates a new builder-style object to manufacture [`InternalServerError`](crate::types::error::InternalServerError).
+    /// Creates a new builder-style object to manufacture
+    /// [`InternalServerError`](crate::types::error::InternalServerError).
     pub fn builder() -> crate::types::error::builders::InternalServerErrorBuilder {
         crate::types::error::builders::InternalServerErrorBuilder::default()
     }
@@ -60,15 +62,18 @@ impl InternalServerErrorBuilder {
         self.message = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_message(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.message = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_message(&self) -> &::std::option::Option<::std::string::String> {
         &self.message
     }
+
     /// Sets error metadata
     pub fn meta(mut self, meta: ::aws_smithy_types::error::ErrorMetadata) -> Self {
         self.meta = Some(meta);
@@ -80,10 +85,15 @@ impl InternalServerErrorBuilder {
         self.meta = meta;
         self
     }
-    /// Consumes the builder and constructs a [`InternalServerError`](crate::types::error::InternalServerError).
-    /// This method will fail if any of the following fields are not set:
+
+    /// Consumes the builder and constructs a
+    /// [`InternalServerError`](crate::types::error::InternalServerError). This method will fail
+    /// if any of the following fields are not set:
     /// - [`message`](crate::types::error::builders::InternalServerErrorBuilder::message)
-    pub fn build(self) -> ::std::result::Result<crate::types::error::InternalServerError, ::aws_smithy_types::error::operation::BuildError> {
+    pub fn build(
+        self,
+    ) -> ::std::result::Result<crate::types::error::InternalServerError, ::aws_smithy_types::error::operation::BuildError>
+    {
         ::std::result::Result::Ok(crate::types::error::InternalServerError {
             message: self.message.ok_or_else(|| {
                 ::aws_smithy_types::error::operation::BuildError::missing_field(

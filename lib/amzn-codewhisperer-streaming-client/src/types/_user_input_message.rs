@@ -17,10 +17,12 @@ impl UserInputMessage {
         use std::ops::Deref;
         self.content.deref()
     }
+
     /// Chat message context associated with the Chat Message
     pub fn user_input_message_context(&self) -> ::std::option::Option<&crate::types::UserInputMessageContext> {
         self.user_input_message_context.as_ref()
     }
+
     /// User Intent
     pub fn user_intent(&self) -> ::std::option::Option<&crate::types::UserIntent> {
         self.user_intent.as_ref()
@@ -36,7 +38,8 @@ impl ::std::fmt::Debug for UserInputMessage {
     }
 }
 impl UserInputMessage {
-    /// Creates a new builder-style object to manufacture [`UserInputMessage`](crate::types::UserInputMessage).
+    /// Creates a new builder-style object to manufacture
+    /// [`UserInputMessage`](crate::types::UserInputMessage).
     pub fn builder() -> crate::types::builders::UserInputMessageBuilder {
         crate::types::builders::UserInputMessageBuilder::default()
     }
@@ -57,47 +60,61 @@ impl UserInputMessageBuilder {
         self.content = ::std::option::Option::Some(input.into());
         self
     }
+
     /// The content of the chat message.
     pub fn set_content(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.content = input;
         self
     }
+
     /// The content of the chat message.
     pub fn get_content(&self) -> &::std::option::Option<::std::string::String> {
         &self.content
     }
+
     /// Chat message context associated with the Chat Message
     pub fn user_input_message_context(mut self, input: crate::types::UserInputMessageContext) -> Self {
         self.user_input_message_context = ::std::option::Option::Some(input);
         self
     }
+
     /// Chat message context associated with the Chat Message
-    pub fn set_user_input_message_context(mut self, input: ::std::option::Option<crate::types::UserInputMessageContext>) -> Self {
+    pub fn set_user_input_message_context(
+        mut self,
+        input: ::std::option::Option<crate::types::UserInputMessageContext>,
+    ) -> Self {
         self.user_input_message_context = input;
         self
     }
+
     /// Chat message context associated with the Chat Message
     pub fn get_user_input_message_context(&self) -> &::std::option::Option<crate::types::UserInputMessageContext> {
         &self.user_input_message_context
     }
+
     /// User Intent
     pub fn user_intent(mut self, input: crate::types::UserIntent) -> Self {
         self.user_intent = ::std::option::Option::Some(input);
         self
     }
+
     /// User Intent
     pub fn set_user_intent(mut self, input: ::std::option::Option<crate::types::UserIntent>) -> Self {
         self.user_intent = input;
         self
     }
+
     /// User Intent
     pub fn get_user_intent(&self) -> &::std::option::Option<crate::types::UserIntent> {
         &self.user_intent
     }
+
     /// Consumes the builder and constructs a [`UserInputMessage`](crate::types::UserInputMessage).
     /// This method will fail if any of the following fields are not set:
     /// - [`content`](crate::types::builders::UserInputMessageBuilder::content)
-    pub fn build(self) -> ::std::result::Result<crate::types::UserInputMessage, ::aws_smithy_types::error::operation::BuildError> {
+    pub fn build(
+        self,
+    ) -> ::std::result::Result<crate::types::UserInputMessage, ::aws_smithy_types::error::operation::BuildError> {
         ::std::result::Result::Ok(crate::types::UserInputMessage {
             content: self.content.ok_or_else(|| {
                 ::aws_smithy_types::error::operation::BuildError::missing_field(

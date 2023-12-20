@@ -20,19 +20,23 @@ impl TextDocumentDiagnostic {
     pub fn document(&self) -> &crate::types::TextDocument {
         &self.document
     }
+
     /// The range at which the message applies.
     pub fn range(&self) -> &crate::types::Range {
         &self.range
     }
+
     /// A human-readable string describing the source of the diagnostic
     pub fn source(&self) -> &str {
         use std::ops::Deref;
         self.source.deref()
     }
+
     /// Diagnostic Error type
     pub fn severity(&self) -> &crate::types::DiagnosticSeverity {
         &self.severity
     }
+
     /// The diagnostic's message.
     pub fn message(&self) -> &str {
         use std::ops::Deref;
@@ -51,7 +55,8 @@ impl ::std::fmt::Debug for TextDocumentDiagnostic {
     }
 }
 impl TextDocumentDiagnostic {
-    /// Creates a new builder-style object to manufacture [`TextDocumentDiagnostic`](crate::types::TextDocumentDiagnostic).
+    /// Creates a new builder-style object to manufacture
+    /// [`TextDocumentDiagnostic`](crate::types::TextDocumentDiagnostic).
     pub fn builder() -> crate::types::builders::TextDocumentDiagnosticBuilder {
         crate::types::builders::TextDocumentDiagnosticBuilder::default()
     }
@@ -74,83 +79,102 @@ impl TextDocumentDiagnosticBuilder {
         self.document = ::std::option::Option::Some(input);
         self
     }
+
     /// Represents a Text Document associated with Diagnostic
     pub fn set_document(mut self, input: ::std::option::Option<crate::types::TextDocument>) -> Self {
         self.document = input;
         self
     }
+
     /// Represents a Text Document associated with Diagnostic
     pub fn get_document(&self) -> &::std::option::Option<crate::types::TextDocument> {
         &self.document
     }
+
     /// The range at which the message applies.
     /// This field is required.
     pub fn range(mut self, input: crate::types::Range) -> Self {
         self.range = ::std::option::Option::Some(input);
         self
     }
+
     /// The range at which the message applies.
     pub fn set_range(mut self, input: ::std::option::Option<crate::types::Range>) -> Self {
         self.range = input;
         self
     }
+
     /// The range at which the message applies.
     pub fn get_range(&self) -> &::std::option::Option<crate::types::Range> {
         &self.range
     }
+
     /// A human-readable string describing the source of the diagnostic
     /// This field is required.
     pub fn source(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.source = ::std::option::Option::Some(input.into());
         self
     }
+
     /// A human-readable string describing the source of the diagnostic
     pub fn set_source(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.source = input;
         self
     }
+
     /// A human-readable string describing the source of the diagnostic
     pub fn get_source(&self) -> &::std::option::Option<::std::string::String> {
         &self.source
     }
+
     /// Diagnostic Error type
     /// This field is required.
     pub fn severity(mut self, input: crate::types::DiagnosticSeverity) -> Self {
         self.severity = ::std::option::Option::Some(input);
         self
     }
+
     /// Diagnostic Error type
     pub fn set_severity(mut self, input: ::std::option::Option<crate::types::DiagnosticSeverity>) -> Self {
         self.severity = input;
         self
     }
+
     /// Diagnostic Error type
     pub fn get_severity(&self) -> &::std::option::Option<crate::types::DiagnosticSeverity> {
         &self.severity
     }
+
     /// The diagnostic's message.
     /// This field is required.
     pub fn message(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.message = ::std::option::Option::Some(input.into());
         self
     }
+
     /// The diagnostic's message.
     pub fn set_message(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.message = input;
         self
     }
+
     /// The diagnostic's message.
     pub fn get_message(&self) -> &::std::option::Option<::std::string::String> {
         &self.message
     }
-    /// Consumes the builder and constructs a [`TextDocumentDiagnostic`](crate::types::TextDocumentDiagnostic).
-    /// This method will fail if any of the following fields are not set:
+
+    /// Consumes the builder and constructs a
+    /// [`TextDocumentDiagnostic`](crate::types::TextDocumentDiagnostic). This method will fail
+    /// if any of the following fields are not set:
     /// - [`document`](crate::types::builders::TextDocumentDiagnosticBuilder::document)
     /// - [`range`](crate::types::builders::TextDocumentDiagnosticBuilder::range)
     /// - [`source`](crate::types::builders::TextDocumentDiagnosticBuilder::source)
     /// - [`severity`](crate::types::builders::TextDocumentDiagnosticBuilder::severity)
     /// - [`message`](crate::types::builders::TextDocumentDiagnosticBuilder::message)
-    pub fn build(self) -> ::std::result::Result<crate::types::TextDocumentDiagnostic, ::aws_smithy_types::error::operation::BuildError> {
+    pub fn build(
+        self,
+    ) -> ::std::result::Result<crate::types::TextDocumentDiagnostic, ::aws_smithy_types::error::operation::BuildError>
+    {
         ::std::result::Result::Ok(crate::types::TextDocumentDiagnostic {
             document: self.document.ok_or_else(|| {
                 ::aws_smithy_types::error::operation::BuildError::missing_field(

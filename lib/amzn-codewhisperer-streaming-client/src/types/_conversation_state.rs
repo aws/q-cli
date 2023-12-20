@@ -18,23 +18,28 @@ impl ConversationState {
     pub fn conversation_id(&self) -> ::std::option::Option<&str> {
         self.conversation_id.as_deref()
     }
+
     /// Holds the history of chat messages.
     ///
-    /// If no value was sent for this field, a default will be set. If you want to determine if no value was sent, use `.history.is_none()`.
+    /// If no value was sent for this field, a default will be set. If you want to determine if no
+    /// value was sent, use `.history.is_none()`.
     pub fn history(&self) -> &[crate::types::ChatMessage] {
         self.history.as_deref().unwrap_or_default()
     }
+
     /// Holds the current message being processed or displayed.
     pub fn current_message(&self) -> &crate::types::ChatMessage {
         &self.current_message
     }
+
     /// Trigger Reason for Chat
     pub fn chat_trigger_type(&self) -> &crate::types::ChatTriggerType {
         &self.chat_trigger_type
     }
 }
 impl ConversationState {
-    /// Creates a new builder-style object to manufacture [`ConversationState`](crate::types::ConversationState).
+    /// Creates a new builder-style object to manufacture
+    /// [`ConversationState`](crate::types::ConversationState).
     pub fn builder() -> crate::types::builders::ConversationStateBuilder {
         crate::types::builders::ConversationStateBuilder::default()
     }
@@ -55,15 +60,18 @@ impl ConversationStateBuilder {
         self.conversation_id = ::std::option::Option::Some(input.into());
         self
     }
+
     /// Unique identifier for the chat conversation stream
     pub fn set_conversation_id(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.conversation_id = input;
         self
     }
+
     /// Unique identifier for the chat conversation stream
     pub fn get_conversation_id(&self) -> &::std::option::Option<::std::string::String> {
         &self.conversation_id
     }
+
     /// Appends an item to `history`.
     ///
     /// To override the contents of this collection use [`set_history`](Self::set_history).
@@ -75,50 +83,62 @@ impl ConversationStateBuilder {
         self.history = ::std::option::Option::Some(v);
         self
     }
+
     /// Holds the history of chat messages.
     pub fn set_history(mut self, input: ::std::option::Option<::std::vec::Vec<crate::types::ChatMessage>>) -> Self {
         self.history = input;
         self
     }
+
     /// Holds the history of chat messages.
     pub fn get_history(&self) -> &::std::option::Option<::std::vec::Vec<crate::types::ChatMessage>> {
         &self.history
     }
+
     /// Holds the current message being processed or displayed.
     /// This field is required.
     pub fn current_message(mut self, input: crate::types::ChatMessage) -> Self {
         self.current_message = ::std::option::Option::Some(input);
         self
     }
+
     /// Holds the current message being processed or displayed.
     pub fn set_current_message(mut self, input: ::std::option::Option<crate::types::ChatMessage>) -> Self {
         self.current_message = input;
         self
     }
+
     /// Holds the current message being processed or displayed.
     pub fn get_current_message(&self) -> &::std::option::Option<crate::types::ChatMessage> {
         &self.current_message
     }
+
     /// Trigger Reason for Chat
     /// This field is required.
     pub fn chat_trigger_type(mut self, input: crate::types::ChatTriggerType) -> Self {
         self.chat_trigger_type = ::std::option::Option::Some(input);
         self
     }
+
     /// Trigger Reason for Chat
     pub fn set_chat_trigger_type(mut self, input: ::std::option::Option<crate::types::ChatTriggerType>) -> Self {
         self.chat_trigger_type = input;
         self
     }
+
     /// Trigger Reason for Chat
     pub fn get_chat_trigger_type(&self) -> &::std::option::Option<crate::types::ChatTriggerType> {
         &self.chat_trigger_type
     }
-    /// Consumes the builder and constructs a [`ConversationState`](crate::types::ConversationState).
-    /// This method will fail if any of the following fields are not set:
+
+    /// Consumes the builder and constructs a
+    /// [`ConversationState`](crate::types::ConversationState). This method will fail if any of
+    /// the following fields are not set:
     /// - [`current_message`](crate::types::builders::ConversationStateBuilder::current_message)
     /// - [`chat_trigger_type`](crate::types::builders::ConversationStateBuilder::chat_trigger_type)
-    pub fn build(self) -> ::std::result::Result<crate::types::ConversationState, ::aws_smithy_types::error::operation::BuildError> {
+    pub fn build(
+        self,
+    ) -> ::std::result::Result<crate::types::ConversationState, ::aws_smithy_types::error::operation::BuildError> {
         ::std::result::Result::Ok(crate::types::ConversationState {
             conversation_id: self.conversation_id,
             history: self.history,

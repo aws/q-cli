@@ -14,13 +14,15 @@ impl EditorState {
     pub fn document(&self) -> ::std::option::Option<&crate::types::TextDocument> {
         self.document.as_ref()
     }
+
     /// Position of the cursor
     pub fn cursor_state(&self) -> ::std::option::Option<&crate::types::CursorState> {
         self.cursor_state.as_ref()
     }
 }
 impl EditorState {
-    /// Creates a new builder-style object to manufacture [`EditorState`](crate::types::EditorState).
+    /// Creates a new builder-style object to manufacture
+    /// [`EditorState`](crate::types::EditorState).
     pub fn builder() -> crate::types::builders::EditorStateBuilder {
         crate::types::builders::EditorStateBuilder::default()
     }
@@ -39,29 +41,35 @@ impl EditorStateBuilder {
         self.document = ::std::option::Option::Some(input);
         self
     }
+
     /// Represents currently edited file
     pub fn set_document(mut self, input: ::std::option::Option<crate::types::TextDocument>) -> Self {
         self.document = input;
         self
     }
+
     /// Represents currently edited file
     pub fn get_document(&self) -> &::std::option::Option<crate::types::TextDocument> {
         &self.document
     }
+
     /// Position of the cursor
     pub fn cursor_state(mut self, input: crate::types::CursorState) -> Self {
         self.cursor_state = ::std::option::Option::Some(input);
         self
     }
+
     /// Position of the cursor
     pub fn set_cursor_state(mut self, input: ::std::option::Option<crate::types::CursorState>) -> Self {
         self.cursor_state = input;
         self
     }
+
     /// Position of the cursor
     pub fn get_cursor_state(&self) -> &::std::option::Option<crate::types::CursorState> {
         &self.cursor_state
     }
+
     /// Consumes the builder and constructs a [`EditorState`](crate::types::EditorState).
     pub fn build(self) -> crate::types::EditorState {
         crate::types::EditorState {

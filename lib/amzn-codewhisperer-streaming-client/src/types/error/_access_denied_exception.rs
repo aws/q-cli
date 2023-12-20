@@ -36,7 +36,8 @@ impl ::aws_smithy_types::error::metadata::ProvideErrorMetadata for AccessDeniedE
     }
 }
 impl AccessDeniedError {
-    /// Creates a new builder-style object to manufacture [`AccessDeniedError`](crate::types::error::AccessDeniedError).
+    /// Creates a new builder-style object to manufacture
+    /// [`AccessDeniedError`](crate::types::error::AccessDeniedError).
     pub fn builder() -> crate::types::error::builders::AccessDeniedErrorBuilder {
         crate::types::error::builders::AccessDeniedErrorBuilder::default()
     }
@@ -56,15 +57,18 @@ impl AccessDeniedErrorBuilder {
         self.message = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_message(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.message = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_message(&self) -> &::std::option::Option<::std::string::String> {
         &self.message
     }
+
     /// Sets error metadata
     pub fn meta(mut self, meta: ::aws_smithy_types::error::ErrorMetadata) -> Self {
         self.meta = Some(meta);
@@ -76,10 +80,15 @@ impl AccessDeniedErrorBuilder {
         self.meta = meta;
         self
     }
-    /// Consumes the builder and constructs a [`AccessDeniedError`](crate::types::error::AccessDeniedError).
-    /// This method will fail if any of the following fields are not set:
+
+    /// Consumes the builder and constructs a
+    /// [`AccessDeniedError`](crate::types::error::AccessDeniedError). This method will fail if
+    /// any of the following fields are not set:
     /// - [`message`](crate::types::error::builders::AccessDeniedErrorBuilder::message)
-    pub fn build(self) -> ::std::result::Result<crate::types::error::AccessDeniedError, ::aws_smithy_types::error::operation::BuildError> {
+    pub fn build(
+        self,
+    ) -> ::std::result::Result<crate::types::error::AccessDeniedError, ::aws_smithy_types::error::operation::BuildError>
+    {
         ::std::result::Result::Ok(crate::types::error::AccessDeniedError {
             message: self.message.ok_or_else(|| {
                 ::aws_smithy_types::error::operation::BuildError::missing_field(

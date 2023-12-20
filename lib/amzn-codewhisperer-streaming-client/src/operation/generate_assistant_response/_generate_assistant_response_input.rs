@@ -14,13 +14,17 @@ impl GenerateAssistantResponseInput {
     }
 }
 impl GenerateAssistantResponseInput {
-    /// Creates a new builder-style object to manufacture [`GenerateAssistantResponseInput`](crate::operation::generate_assistant_response::GenerateAssistantResponseInput).
+    /// Creates a new builder-style object to manufacture
+    /// [`GenerateAssistantResponseInput`](crate::operation::generate_assistant_response::GenerateAssistantResponseInput).
+    ///
     pub fn builder() -> crate::operation::generate_assistant_response::builders::GenerateAssistantResponseInputBuilder {
         crate::operation::generate_assistant_response::builders::GenerateAssistantResponseInputBuilder::default()
     }
 }
 
-/// A builder for [`GenerateAssistantResponseInput`](crate::operation::generate_assistant_response::GenerateAssistantResponseInput).
+/// A builder for
+/// [`GenerateAssistantResponseInput`](crate::operation::generate_assistant_response::GenerateAssistantResponseInput).
+///
 #[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
 pub struct GenerateAssistantResponseInputBuilder {
@@ -33,24 +37,31 @@ impl GenerateAssistantResponseInputBuilder {
         self.conversation_state = ::std::option::Option::Some(input);
         self
     }
+
     /// Structure to represent the current state of a chat conversation.
     pub fn set_conversation_state(mut self, input: ::std::option::Option<crate::types::ConversationState>) -> Self {
         self.conversation_state = input;
         self
     }
+
     /// Structure to represent the current state of a chat conversation.
     pub fn get_conversation_state(&self) -> &::std::option::Option<crate::types::ConversationState> {
         &self.conversation_state
     }
-    /// Consumes the builder and constructs a [`GenerateAssistantResponseInput`](crate::operation::generate_assistant_response::GenerateAssistantResponseInput).
+
+    /// Consumes the builder and constructs a
+    /// [`GenerateAssistantResponseInput`](crate::operation::generate_assistant_response::GenerateAssistantResponseInput).
+    ///
     pub fn build(
         self,
     ) -> ::std::result::Result<
         crate::operation::generate_assistant_response::GenerateAssistantResponseInput,
         ::aws_smithy_types::error::operation::BuildError,
     > {
-        ::std::result::Result::Ok(crate::operation::generate_assistant_response::GenerateAssistantResponseInput {
-            conversation_state: self.conversation_state,
-        })
+        ::std::result::Result::Ok(
+            crate::operation::generate_assistant_response::GenerateAssistantResponseInput {
+                conversation_state: self.conversation_state,
+            },
+        )
     }
 }

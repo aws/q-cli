@@ -14,13 +14,15 @@ impl UserInputMessageContext {
     pub fn editor_state(&self) -> ::std::option::Option<&crate::types::EditorState> {
         self.editor_state.as_ref()
     }
+
     /// Diagnostic chat message context.
     pub fn diagnostic(&self) -> ::std::option::Option<&crate::types::Diagnostic> {
         self.diagnostic.as_ref()
     }
 }
 impl UserInputMessageContext {
-    /// Creates a new builder-style object to manufacture [`UserInputMessageContext`](crate::types::UserInputMessageContext).
+    /// Creates a new builder-style object to manufacture
+    /// [`UserInputMessageContext`](crate::types::UserInputMessageContext).
     pub fn builder() -> crate::types::builders::UserInputMessageContextBuilder {
         crate::types::builders::UserInputMessageContextBuilder::default()
     }
@@ -39,30 +41,37 @@ impl UserInputMessageContextBuilder {
         self.editor_state = ::std::option::Option::Some(input);
         self
     }
+
     /// Editor state chat message context.
     pub fn set_editor_state(mut self, input: ::std::option::Option<crate::types::EditorState>) -> Self {
         self.editor_state = input;
         self
     }
+
     /// Editor state chat message context.
     pub fn get_editor_state(&self) -> &::std::option::Option<crate::types::EditorState> {
         &self.editor_state
     }
+
     /// Diagnostic chat message context.
     pub fn diagnostic(mut self, input: crate::types::Diagnostic) -> Self {
         self.diagnostic = ::std::option::Option::Some(input);
         self
     }
+
     /// Diagnostic chat message context.
     pub fn set_diagnostic(mut self, input: ::std::option::Option<crate::types::Diagnostic>) -> Self {
         self.diagnostic = input;
         self
     }
+
     /// Diagnostic chat message context.
     pub fn get_diagnostic(&self) -> &::std::option::Option<crate::types::Diagnostic> {
         &self.diagnostic
     }
-    /// Consumes the builder and constructs a [`UserInputMessageContext`](crate::types::UserInputMessageContext).
+
+    /// Consumes the builder and constructs a
+    /// [`UserInputMessageContext`](crate::types::UserInputMessageContext).
     pub fn build(self) -> crate::types::UserInputMessageContext {
         crate::types::UserInputMessageContext {
             editor_state: self.editor_state,

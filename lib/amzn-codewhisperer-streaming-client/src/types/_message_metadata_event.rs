@@ -14,7 +14,8 @@ impl MessageMetadataEvent {
     }
 }
 impl MessageMetadataEvent {
-    /// Creates a new builder-style object to manufacture [`MessageMetadataEvent`](crate::types::MessageMetadataEvent).
+    /// Creates a new builder-style object to manufacture
+    /// [`MessageMetadataEvent`](crate::types::MessageMetadataEvent).
     pub fn builder() -> crate::types::builders::MessageMetadataEventBuilder {
         crate::types::builders::MessageMetadataEventBuilder::default()
     }
@@ -32,16 +33,20 @@ impl MessageMetadataEventBuilder {
         self.conversation_id = ::std::option::Option::Some(input.into());
         self
     }
+
     /// Unique identifier for the conversation
     pub fn set_conversation_id(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.conversation_id = input;
         self
     }
+
     /// Unique identifier for the conversation
     pub fn get_conversation_id(&self) -> &::std::option::Option<::std::string::String> {
         &self.conversation_id
     }
-    /// Consumes the builder and constructs a [`MessageMetadataEvent`](crate::types::MessageMetadataEvent).
+
+    /// Consumes the builder and constructs a
+    /// [`MessageMetadataEvent`](crate::types::MessageMetadataEvent).
     pub fn build(self) -> crate::types::MessageMetadataEvent {
         crate::types::MessageMetadataEvent {
             conversation_id: self.conversation_id,

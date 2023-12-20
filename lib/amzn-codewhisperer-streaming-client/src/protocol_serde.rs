@@ -3,7 +3,9 @@ pub(crate) fn type_erase_result<O, E>(
     result: ::std::result::Result<O, E>,
 ) -> ::std::result::Result<
     ::aws_smithy_runtime_api::client::interceptors::context::Output,
-    ::aws_smithy_runtime_api::client::orchestrator::OrchestratorError<::aws_smithy_runtime_api::client::interceptors::context::Error>,
+    ::aws_smithy_runtime_api::client::orchestrator::OrchestratorError<
+        ::aws_smithy_runtime_api::client::interceptors::context::Error,
+    >,
 >
 where
     O: ::std::fmt::Debug + ::std::marker::Send + ::std::marker::Sync + 'static,
@@ -30,11 +32,7 @@ pub(crate) mod shape_generate_assistant_response;
 pub(crate) mod shape_generate_task_assist_plan;
 
 pub(crate) fn or_empty_doc(data: &[u8]) -> &[u8] {
-    if data.is_empty() {
-        b"{}"
-    } else {
-        data
-    }
+    if data.is_empty() { b"{}" } else { data }
 }
 
 pub(crate) mod shape_access_denied_exception;

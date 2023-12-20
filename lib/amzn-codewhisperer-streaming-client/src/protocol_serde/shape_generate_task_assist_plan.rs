@@ -14,9 +14,12 @@ pub fn de_generate_task_assist_plan_http_response(
     let _response_headers = response.headers();
     Ok({
         #[allow(unused_mut)]
-        let mut output = crate::operation::generate_task_assist_plan::builders::GenerateTaskAssistPlanOutputBuilder::default();
+        let mut output =
+            crate::operation::generate_task_assist_plan::builders::GenerateTaskAssistPlanOutputBuilder::default();
         output = output.set_planning_response_stream(Some(
-            crate::protocol_serde::shape_generate_task_assist_plan_output::de_planning_response_stream_payload(_response_body)?,
+            crate::protocol_serde::shape_generate_task_assist_plan_output::de_planning_response_stream_payload(
+                _response_body,
+            )?,
         ));
         output._set_request_id(::aws_types::request_id::RequestId::request_id(_response_headers).map(str::to_string));
         output
@@ -35,105 +38,131 @@ pub fn de_generate_task_assist_plan_http_error(
     crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError,
 > {
     #[allow(unused_mut)]
-    let mut generic_builder = crate::protocol_serde::parse_http_error_metadata(_response_status, _response_headers, _response_body)
-        .map_err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled)?;
+    let mut generic_builder =
+        crate::protocol_serde::parse_http_error_metadata(_response_status, _response_headers, _response_body)
+            .map_err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled)?;
     generic_builder = ::aws_types::request_id::apply_request_id(generic_builder, _response_headers);
     let generic = generic_builder.build();
     let error_code = match generic.code() {
         Some(code) => code,
         None => {
-            return Err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled(
-                generic,
-            ))
-        }
+            return Err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled(generic));
+        },
     };
 
     let _error_message = generic.message().map(|msg| msg.to_owned());
     Err(match error_code {
-        "ThrottlingException" => crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::ThrottlingError({
-            #[allow(unused_mut)]
-            let mut tmp = {
+        "ThrottlingException" => {
+            crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::ThrottlingError({
                 #[allow(unused_mut)]
-                let mut output = crate::types::error::builders::ThrottlingErrorBuilder::default();
-                output = crate::protocol_serde::shape_throttling_exception::de_throttling_exception_json_err(_response_body, output)
+                let mut tmp = {
+                    #[allow(unused_mut)]
+                    let mut output = crate::types::error::builders::ThrottlingErrorBuilder::default();
+                    output = crate::protocol_serde::shape_throttling_exception::de_throttling_exception_json_err(
+                        _response_body,
+                        output,
+                    )
                     .map_err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled)?;
-                let output = output.meta(generic);
-                crate::serde_util::throttling_exception_correct_errors(output)
-                    .build()
-                    .map_err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled)?
-            };
-            tmp
-        }),
-        "ConflictException" => crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::ConflictError({
-            #[allow(unused_mut)]
-            let mut tmp = {
+                    let output = output.meta(generic);
+                    crate::serde_util::throttling_exception_correct_errors(output)
+                        .build()
+                        .map_err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled)?
+                };
+                tmp
+            })
+        },
+        "ConflictException" => {
+            crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::ConflictError({
                 #[allow(unused_mut)]
-                let mut output = crate::types::error::builders::ConflictErrorBuilder::default();
-                output = crate::protocol_serde::shape_conflict_exception::de_conflict_exception_json_err(_response_body, output)
+                let mut tmp = {
+                    #[allow(unused_mut)]
+                    let mut output = crate::types::error::builders::ConflictErrorBuilder::default();
+                    output = crate::protocol_serde::shape_conflict_exception::de_conflict_exception_json_err(
+                        _response_body,
+                        output,
+                    )
                     .map_err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled)?;
-                let output = output.meta(generic);
-                crate::serde_util::conflict_exception_correct_errors(output)
-                    .build()
-                    .map_err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled)?
-            };
-            tmp
-        }),
-        "ValidationException" => crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::ValidationError({
-            #[allow(unused_mut)]
-            let mut tmp = {
+                    let output = output.meta(generic);
+                    crate::serde_util::conflict_exception_correct_errors(output)
+                        .build()
+                        .map_err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled)?
+                };
+                tmp
+            })
+        },
+        "ValidationException" => {
+            crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::ValidationError({
                 #[allow(unused_mut)]
-                let mut output = crate::types::error::builders::ValidationErrorBuilder::default();
-                output = crate::protocol_serde::shape_validation_exception::de_validation_exception_json_err(_response_body, output)
+                let mut tmp = {
+                    #[allow(unused_mut)]
+                    let mut output = crate::types::error::builders::ValidationErrorBuilder::default();
+                    output = crate::protocol_serde::shape_validation_exception::de_validation_exception_json_err(
+                        _response_body,
+                        output,
+                    )
                     .map_err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled)?;
-                let output = output.meta(generic);
-                crate::serde_util::validation_exception_correct_errors(output)
-                    .build()
-                    .map_err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled)?
-            };
-            tmp
-        }),
-        "InternalServerError" => crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::InternalServerError({
-            #[allow(unused_mut)]
-            let mut tmp = {
+                    let output = output.meta(generic);
+                    crate::serde_util::validation_exception_correct_errors(output)
+                        .build()
+                        .map_err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled)?
+                };
+                tmp
+            })
+        },
+        "InternalServerError" => {
+            crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::InternalServerError({
                 #[allow(unused_mut)]
-                let mut output = crate::types::error::builders::InternalServerErrorBuilder::default();
-                output = crate::protocol_serde::shape_internal_server_error::de_internal_server_error_json_err(_response_body, output)
+                let mut tmp = {
+                    #[allow(unused_mut)]
+                    let mut output = crate::types::error::builders::InternalServerErrorBuilder::default();
+                    output = crate::protocol_serde::shape_internal_server_error::de_internal_server_error_json_err(
+                        _response_body,
+                        output,
+                    )
                     .map_err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled)?;
-                let output = output.meta(generic);
-                crate::serde_util::internal_server_error_correct_errors(output)
-                    .build()
-                    .map_err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled)?
-            };
-            tmp
-        }),
-        "ResourceNotFoundException" => crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::ResourceNotFoundError({
-            #[allow(unused_mut)]
-            let mut tmp = {
+                    let output = output.meta(generic);
+                    crate::serde_util::internal_server_error_correct_errors(output)
+                        .build()
+                        .map_err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled)?
+                };
+                tmp
+            })
+        },
+        "ResourceNotFoundException" => {
+            crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::ResourceNotFoundError({
                 #[allow(unused_mut)]
-                let mut output = crate::types::error::builders::ResourceNotFoundErrorBuilder::default();
-                output = crate::protocol_serde::shape_resource_not_found_exception::de_resource_not_found_exception_json_err(_response_body, output)
+                let mut tmp = {
+                    #[allow(unused_mut)]
+                    let mut output = crate::types::error::builders::ResourceNotFoundErrorBuilder::default();
+                    output = crate::protocol_serde::shape_resource_not_found_exception::de_resource_not_found_exception_json_err(_response_body, output)
                     .map_err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled)?;
-                let output = output.meta(generic);
-                crate::serde_util::resource_not_found_exception_correct_errors(output)
-                    .build()
-                    .map_err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled)?
-            };
-            tmp
-        }),
-        "AccessDeniedException" => crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::AccessDeniedError({
-            #[allow(unused_mut)]
-            let mut tmp = {
+                    let output = output.meta(generic);
+                    crate::serde_util::resource_not_found_exception_correct_errors(output)
+                        .build()
+                        .map_err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled)?
+                };
+                tmp
+            })
+        },
+        "AccessDeniedException" => {
+            crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::AccessDeniedError({
                 #[allow(unused_mut)]
-                let mut output = crate::types::error::builders::AccessDeniedErrorBuilder::default();
-                output = crate::protocol_serde::shape_access_denied_exception::de_access_denied_exception_json_err(_response_body, output)
+                let mut tmp = {
+                    #[allow(unused_mut)]
+                    let mut output = crate::types::error::builders::AccessDeniedErrorBuilder::default();
+                    output = crate::protocol_serde::shape_access_denied_exception::de_access_denied_exception_json_err(
+                        _response_body,
+                        output,
+                    )
                     .map_err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled)?;
-                let output = output.meta(generic);
-                crate::serde_util::access_denied_exception_correct_errors(output)
-                    .build()
-                    .map_err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled)?
-            };
-            tmp
-        }),
+                    let output = output.meta(generic);
+                    crate::serde_util::access_denied_exception_correct_errors(output)
+                        .build()
+                        .map_err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled)?
+                };
+                tmp
+            })
+        },
         _ => crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::generic(generic),
     })
 }
@@ -143,7 +172,10 @@ pub fn ser_generate_task_assist_plan_input(
 ) -> Result<::aws_smithy_types::body::SdkBody, ::aws_smithy_types::error::operation::SerializationError> {
     let mut out = String::new();
     let mut object = ::aws_smithy_json::serialize::JsonObjectWriter::new(&mut out);
-    crate::protocol_serde::shape_generate_task_assist_plan_input::ser_generate_task_assist_plan_input_input(&mut object, input)?;
+    crate::protocol_serde::shape_generate_task_assist_plan_input::ser_generate_task_assist_plan_input_input(
+        &mut object,
+        input,
+    )?;
     object.finish();
     Ok(::aws_smithy_types::body::SdkBody::from(out))
 }
