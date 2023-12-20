@@ -23,7 +23,6 @@ impl GenerateTaskAssistPlanInput {
 impl GenerateTaskAssistPlanInput {
     /// Creates a new builder-style object to manufacture
     /// [`GenerateTaskAssistPlanInput`](crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanInput).
-    ///
     pub fn builder() -> crate::operation::generate_task_assist_plan::builders::GenerateTaskAssistPlanInputBuilder {
         crate::operation::generate_task_assist_plan::builders::GenerateTaskAssistPlanInputBuilder::default()
     }
@@ -31,7 +30,6 @@ impl GenerateTaskAssistPlanInput {
 
 /// A builder for
 /// [`GenerateTaskAssistPlanInput`](crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanInput).
-///
 #[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
 pub struct GenerateTaskAssistPlanInputBuilder {
@@ -77,7 +75,6 @@ impl GenerateTaskAssistPlanInputBuilder {
 
     /// Consumes the builder and constructs a
     /// [`GenerateTaskAssistPlanInput`](crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanInput).
-    ///
     pub fn build(
         self,
     ) -> ::std::result::Result<

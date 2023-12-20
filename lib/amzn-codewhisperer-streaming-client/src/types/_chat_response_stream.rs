@@ -115,7 +115,6 @@ impl ChatResponseStream {
 
     /// Returns true if this is a
     /// [`SupplementaryWebLinksEvent`](crate::types::ChatResponseStream::SupplementaryWebLinksEvent).
-    ///
     pub fn is_supplementary_web_links_event(&self) -> bool {
         self.as_supplementary_web_links_event().is_ok()
     }

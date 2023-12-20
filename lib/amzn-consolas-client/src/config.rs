@@ -332,7 +332,9 @@ impl Builder {
     ///
     /// # Examples
     /// Create a custom endpoint resolver that resolves a different endpoing per-stage, e.g. staging
-    /// vs. production. ```no_run
+    /// vs. production.
+    ///
+    /// ```no_run
     /// use amzn_consolas_client::config::endpoint::{
     ///     Endpoint,
     ///     EndpointFuture,
