@@ -639,6 +639,7 @@ message AuthBuilderIdPollCreateTokenResponse {
 
   PollStatus status = 1;
   optional string error = 2;
+  optional string error_verbose = 3;
 }
 
 message AuthStatusRequest {}

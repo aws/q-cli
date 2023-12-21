@@ -98,14 +98,17 @@ pub async fn builder_id_poll_create_token(
         PollCreateToken::Pending => AuthBuilderIdPollCreateTokenResponse {
             status: PollStatus::Pending.into(),
             error: None,
+            error_verbose: None,
         },
         PollCreateToken::Complete(_) => AuthBuilderIdPollCreateTokenResponse {
             status: PollStatus::Complete.into(),
             error: None,
+            error_verbose: None,
         },
         PollCreateToken::Error(err) => AuthBuilderIdPollCreateTokenResponse {
             status: PollStatus::Error.into(),
             error: Some(err.to_string()),
+            error_verbose: Some(err.to_verbose_string()),
         },
     };
 

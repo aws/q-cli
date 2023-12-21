@@ -9,13 +9,13 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("{}", DisplayErrorContext(&.0))]
+    #[error(transparent)]
     Ssooidc(#[from] Box<aws_sdk_ssooidc::Error>),
-    #[error("{}", DisplayErrorContext(&.0))]
+    #[error(transparent)]
     SdkRegisterClient(#[from] SdkError<RegisterClientError>),
-    #[error("{}", DisplayErrorContext(&.0))]
+    #[error(transparent)]
     SdkCreateToken(#[from] SdkError<CreateTokenError>),
-    #[error("{}", DisplayErrorContext(&.0))]
+    #[error(transparent)]
     SdkStartDeviceAuthorization(#[from] SdkError<StartDeviceAuthorizationError>),
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -33,6 +33,18 @@ pub enum Error {
     StrFromUtf8(#[from] std::str::Utf8Error),
     #[error("No token")]
     NoToken,
+}
+
+impl Error {
+    pub fn to_verbose_string(&self) -> String {
+        match self {
+            Error::Ssooidc(s) => DisplayErrorContext(s).to_string(),
+            Error::SdkRegisterClient(s) => DisplayErrorContext(s).to_string(),
+            Error::SdkCreateToken(s) => DisplayErrorContext(s).to_string(),
+            Error::SdkStartDeviceAuthorization(s) => DisplayErrorContext(s).to_string(),
+            other => other.to_string(),
+        }
+    }
 }
 
 pub(crate) type Result<T, E = Error> = std::result::Result<T, E>;

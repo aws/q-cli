@@ -68,6 +68,7 @@ export async function builderIdPollCreateToken({
       case PollStatus.PENDING:
         break;
       case PollStatus.ERROR:
+        console.error("Failed to poll builder id token", pollStatus);
         throw new Error(pollStatus.error);
       default:
         throw new Error(`Unknown poll status: ${pollStatus.status}`);
