@@ -8,7 +8,7 @@
     "@withfig/api-bindings": "workspace:^",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
-    "jsdom": "^22.1.0",
+    "jsdom": "^23.0.1",
     "ts-jest": "^29.1.1",
     "typescript": "^5.3.3"
   },

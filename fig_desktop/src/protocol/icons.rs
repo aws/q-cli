@@ -23,6 +23,8 @@ use http::{
 };
 use image::imageops::FilterType;
 use image::{
+    GenericImage,
+    GenericImageView,
     ImageOutputFormat,
     Rgba,
 };
@@ -191,9 +193,16 @@ pub async fn handle(request: Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'s
                         u8::from_str_radix(&color[2..4], 16),
                         u8::from_str_radix(&color[4..6], 16),
                     ) {
-                        imageproc::map::map_colors_mut(&mut image, |Rgba([r, g, b, a])| {
-                            Rgba([scale(r, color_r), scale(g, color_g), scale(b, color_b), a])
-                        });
+                        for y in 0..image.height() {
+                            for x in 0..image.width() {
+                                let Rgba([r, g, b, a]) = image.get_pixel(x, y);
+                                image.put_pixel(
+                                    x,
+                                    y,
+                                    Rgba([scale(r, color_r), scale(g, color_g), scale(b, color_b), a]),
+                                );
+                            }
+                        }
                     }
                 }
             }
