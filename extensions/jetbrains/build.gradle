@@ -6,7 +6,7 @@ plugins {
 }
 
 group 'org.intellij.sdk'
-version '1.0.0'
+version '1.0.1'
 
 sourceCompatibility = 17
 
@@ -27,5 +27,5 @@ buildSearchableOptions {
 patchPluginXml {
   version = project.version
   sinceBuild = '222'
-  untilBuild = '233'
+  untilBuild = '999'
 }
