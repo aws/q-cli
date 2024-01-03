@@ -17,11 +17,15 @@ export default function StatusCheck({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [status, refreshStatus] = useStatusCheck(check.installKey);
+  const [err, setErr] = useState('');
 
   function fixInstall() {
     Install.install(check.installKey)
       .then(() => refreshStatus())
-      .catch((e) => console.error(e));
+      .catch((e) => {
+        console.error(e);
+        setErr(e.toString());
+      });
   }
 
   useEffect(() => {
@@ -51,17 +55,20 @@ export default function StatusCheck({
               <X className="h-5 w-5 text-red-600 dark:text-red-400" />
             ))}
         </div>
-        <CollapsibleContent className="flex flex-col gap-2 text-base font-light text-zinc-500 dark:text-zinc-400 select-none items-start leading-tight">
+        <CollapsibleContent className="flex flex-col gap-2 text-base font-light text-zinc-500 dark:text-zinc-400 items-start leading-tight">
           {check.description.map((d, i) => (
             <p key={i}>{d}</p>
           ))}
           <Button
             onClick={fixInstall}
             disabled={status}
-            className="disabled:bg-zinc-400 dark:disabled:bg-zinc-600 dark:disabled:border-zinc-400 dark:bg-dusk-600 dark:border dark:border-dusk-400 dark:hover:border-dusk-700 dark:hover:bg-dusk-800 h-auto py-2 px-6 mt-1"
+            className="disabled:bg-zinc-400 dark:disabled:bg-zinc-600 dark:disabled:border-zinc-400 dark:bg-dusk-600 dark:border dark:border-dusk-400 dark:hover:border-dusk-700 dark:hover:bg-dusk-800 select-none h-auto py-2 px-6 mt-1"
           >
             {status ? "Enabled" : check.action}
           </Button>
+          {status !== undefined && status == false && err !== "" &&
+            <p className="text-zinc-200 bg-red-600 border-red-400 flex items-center justify-center leading-none p-2 px-2 rounded">{err}</p>
+          }
         </CollapsibleContent>
       </div>
     </Collapsible>
