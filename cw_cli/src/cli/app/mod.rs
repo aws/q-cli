@@ -40,7 +40,7 @@ pub struct UninstallArgs {
     /// Remove input method
     #[arg(long)]
     pub input_method: bool,
-    /// Remove Fig daemon
+    /// Remove CodeWhisperer daemon
     #[arg(long)]
     pub daemon: bool,
     /// Remove dotfile shell integration
@@ -59,22 +59,22 @@ pub struct UninstallArgs {
 
 #[derive(Debug, PartialEq, Eq, Subcommand)]
 pub enum AppSubcommand {
-    /// Install the Fig app
+    /// Install the CodeWhisperer app
     Install,
-    /// Run the Fig tutorial again
+    /// Run the CodeWhisperer tutorial again
     Onboarding,
-    /// Check if Fig is running
+    /// Check if CodeWhisperer is running
     Running,
-    /// Launch the Fig desktop app
+    /// Launch the CodeWhisperer desktop app
     Launch,
-    /// Restart the Fig desktop app
+    /// Restart the CodeWhisperer desktop app
     Restart,
-    /// Quit the Fig desktop app
+    /// Quit the CodeWhisperer desktop app
     Quit,
     /// Set the internal pseudo-terminal path
     #[deprecated]
     SetPath,
-    /// Uninstall the Fig app
+    /// Uninstall the CodeWhisperer app
     Uninstall(UninstallArgs),
     /// Prompts shown on terminal startup
     Prompts,
@@ -98,7 +98,7 @@ impl From<&UninstallArgs> for InstallComponents {
 
 pub async fn restart_fig() -> Result<()> {
     if fig_util::system_info::is_remote() {
-        bail!("Please restart Fig from your host machine");
+        bail!("Please restart CodeWhisperer from your host machine");
     }
 
     if !is_codewhisperer_desktop_running() {
@@ -157,9 +157,9 @@ impl AppSubcommand {
    Start typing to use {}
 
    * Change settings? Run {}
-   * Fig not working? Run {}
+   * CodeWhisperer not working? Run {}
                                 ",
-                                "Fig Autocomplete".bold(),
+                                "CodeWhisperer Autocomplete".bold(),
                                 "cw".bold().magenta(),
                                 "cw doctor".bold().magenta(),
                             );
@@ -194,7 +194,7 @@ impl AppSubcommand {
                     if let Ok(Some(version)) = state::get_string("update.latestVersion") {
                         writeln!(
                             std::io::stdout(),
-                            "A new version ({version}) of Fig is available! Please update from your package manager."
+                            "A new version ({version}) of CodeWhisperer is available! Please update from your package manager."
                         )
                         .ok();
                     }
@@ -236,7 +236,7 @@ impl AppSubcommand {
                             // Sleep for a bit
                             tokio::time::sleep(std::time::Duration::from_millis(3000)).await;
 
-                            trace!("launching updated version of Fig");
+                            trace!("launching updated version of CodeWhisperer");
                             launch_fig_desktop(LaunchArgs {
                                 wait_for_socket: true,
                                 open_dashboard: false,
@@ -247,7 +247,7 @@ impl AppSubcommand {
                         } else {
                             trace!("autoupdates are disabled.");
 
-                            println!("A new version of Fig is available. (Autoupdates are disabled)");
+                            println!("A new version of CodeWhisperer is available. (Autoupdates are disabled)");
                             println!("To update, run: {}", "fig update".magenta());
                         }
                     }
@@ -258,7 +258,7 @@ impl AppSubcommand {
                     if !no_autolaunch && !user_quit_app && !fig_util::system_info::in_ssh() {
                         let already_seen_hint: bool =
                             fig_settings::state::get_bool_or("DISPLAYED_AUTOLAUNCH_SETTINGS_HINT", false);
-                        println!("Launching {}...", "Fig".magenta());
+                        println!("Launching {}...", "CodeWhisperer".magenta());
                         if !already_seen_hint {
                             println!(
                                 "(To turn off autolaunch, run {})",
@@ -307,7 +307,7 @@ impl AppSubcommand {
             AppSubcommand::Quit => crate::util::quit_fig(true).await?,
             AppSubcommand::Launch => {
                 if is_codewhisperer_desktop_running() {
-                    println!("Fig is already running!");
+                    println!("CodeWhisperer is already running!");
                     return Ok(());
                 }
 

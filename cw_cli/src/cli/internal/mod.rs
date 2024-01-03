@@ -348,10 +348,10 @@ impl InternalSubcommand {
                 };
                 if components.contains(InstallComponents::BINARY) {
                     if option_env!("CW_IS_PACKAGE_MANAGED").is_some() {
-                        println!("Uninstall Fig via your package manager");
+                        println!("Uninstall CodeWhisperer via your package manager");
                     } else {
                         fig_install::uninstall(InstallComponents::BINARY).await?;
-                        println!("\n{}\n", "Fig binary has been uninstalled".bold());
+                        println!("\n{}\n", "CodeWhisperer binary has been uninstalled".bold());
                     }
                 }
 

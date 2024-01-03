@@ -52,7 +52,7 @@ pub enum Error {
     UnknownDisplayServer(String),
     #[error("unknown desktop `{0}`")]
     UnknownDesktop(String),
-    #[error("failed to launch fig: `{0}`")]
+    #[error("failed to launch CodeWhisperer: `{0}`")]
     LaunchError(String),
     #[error(transparent)]
     StrUtf8Error(#[from] std::str::Utf8Error),

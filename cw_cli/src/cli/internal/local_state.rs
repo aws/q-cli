@@ -48,8 +48,8 @@ impl LocalStateArgs {
         macro_rules! print_connection_error {
             () => {
                 println!(
-                    "\n{}\nFig might not be running, to launch Fig run: {}\n",
-                    "Unable to connect to Fig".bold(),
+                    "\n{}\nCodeWhisperer might not be running, to launch CodeWhisperer run: {}\n",
+                    "Unable to connect to CodeWhisperer".bold(),
                     "fig launch".magenta()
                 )
             };

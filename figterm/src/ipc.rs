@@ -159,7 +159,7 @@ pub async fn spawn_figterm_ipc(
     let socket_path = directories::figterm_socket_path(session_id)?;
     if let Some(parent) = socket_path.parent() {
         if let Err(err) = std::fs::create_dir_all(parent) {
-            error!(%err, "Failed to create figterm socket directory");
+            error!(%err, "Failed to create cwterm socket directory");
         }
 
         #[cfg(unix)]

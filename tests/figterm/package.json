@@ -1,7 +1,7 @@
 {
   "name": "dotenv",
   "version": "1.0.0",
-  "description": "Testing for shell integration and figterm",
+  "description": "Testing for shell integration and cwterm",
   "main": "test.js",
   "scripts": {
     "test": "jest --runInBand --detectOpenHandles",

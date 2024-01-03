@@ -191,7 +191,7 @@ pub(crate) async fn update(
         .await?;
 
     if !output.status.success() {
-        error!(command =% String::from_utf8_lossy(&output.stderr).to_string(), "the update succeeded, but fig failed to unmount the dmg");
+        error!(command =% String::from_utf8_lossy(&output.stderr).to_string(), "the update succeeded, but CodeWhisperer failed to unmount the dmg");
     } else {
         debug!("unmounted dmg");
     }

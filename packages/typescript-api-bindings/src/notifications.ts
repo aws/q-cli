@@ -107,6 +107,6 @@ const unsubscribeFromAll = () => {
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 if (!window?.fig?.quiet) {
-  console.log("[fig] unsubscribing any existing notifications...");
+  console.log("[cw] unsubscribing any existing notifications...");
 }
 unsubscribeFromAll();

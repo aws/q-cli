@@ -64,16 +64,16 @@ pub enum Error {
     SystemTime(#[from] SystemTimeError),
     #[error(transparent)]
     Strum(#[from] strum::ParseError),
-    #[error("could not determine fig version")]
+    #[error("could not determine CodeWhisperer version")]
     UnclearVersion,
     #[error("please update from your package manager")]
     PackageManaged,
-    #[error("failed to update fig: `{0}`")]
+    #[error("failed to update CodeWhisperer: `{0}`")]
     UpdateFailed(String),
-    #[error("failed to update fig: `{0}`")]
+    #[error("failed to update CodeWhisperer: `{0}`")]
     UpdateFailedPermissions(String),
     #[cfg(target_os = "macos")]
-    #[error("failed to update fig due to auth error: `{0}`")]
+    #[error("failed to update CodeWhisperer due to auth error: `{0}`")]
     SecurityFramework(#[from] security_framework::base::Error),
     #[error("your system is not supported on this channel")]
     SystemNotOnChannel,

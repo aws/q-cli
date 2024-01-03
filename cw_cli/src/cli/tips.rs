@@ -54,10 +54,10 @@ fn get_all_tips() -> Vec<Tip> {
         Tip {
             id: "tip-1".into(),
             text: format!(
-                "{} 🚀 Customize keybindings\n\nFig lets you customize keybindings for:\n  • inserting text (like \
+                "{} 🚀 Customize keybindings\n\nCodeWhisperer lets you customize keybindings for:\n  • inserting text (like \
                  tab/enter)\n  • navigating (like {} & {} arrow keys)\n  • toggling the description pop out (like \
                  ⌘+i)\n  • and more\n\nJust run {} and then select {}",
-                "Fig tips (1/5):".bold(),
+                "CodeWhisperer tips (1/5):".bold(),
                 "↑".bold(),
                 "↓".bold(),
                 "fig settings".bold().magenta(),
@@ -73,7 +73,7 @@ fn get_all_tips() -> Vec<Tip> {
                 "{} ⚙️  Adjust settings\n\nCustomize autocomplete's look and feel for things like:\n  • Width & \
                  height\n  • Font family, font size, theme\n  • Auto-execute functionality (e.g. allowing \
                  auto-execute after space)\n\nJust run {}",
-                "Fig Tips (2/5)".bold(),
+                "CodeWhisperer Tips (2/5)".bold(),
                 "fig settings".bold().magenta()
             ),
             priority: 9,
@@ -83,10 +83,10 @@ fn get_all_tips() -> Vec<Tip> {
         Tip {
             id: "tip-3".into(),
             text: format!(
-                "{} 😎 Private autocomplete\n\nDid you know Fig lets you create private completions for your own \
+                "{} 😎 Private autocomplete\n\nDid you know CodeWhisperer lets you create private completions for your own \
                  personal\n shortcuts or even your team's internal CLI tool?\n\nBuild private completions in less \
                  than 2 minutes:\n  1. {} {}\n2. {} {}",
-                "Fig Tips (3/5)".bold(),
+                "CodeWhisperer Tips (3/5)".bold(),
                 "Personal:".bold(),
                 "fig.io/shortcuts".underlined(),
                 "Team:".bold(),
@@ -99,9 +99,9 @@ fn get_all_tips() -> Vec<Tip> {
         Tip {
             id: "tip-4".into(),
             text: format!(
-                "{} 🎉 Share Fig with friends\n\nEnjoying Fig and think your friends & teammates would too?\n\nShare \
-                 Fig with friends!\n\nClaim your custom invite link by running: {}",
-                "Fig Tips (4/5)".bold(),
+                "{} 🎉 Share CodeWhisperer with friends\n\nEnjoying CodeWhisperer and think your friends & teammates would too?\n\nShare \
+                 CodeWhisperer with friends!\n\nClaim your custom invite link by running: {}",
+                "CodeWhisperer Tips (4/5)".bold(),
                 "fig invite".bold().magenta(),
             ),
             priority: 7,
@@ -112,9 +112,9 @@ fn get_all_tips() -> Vec<Tip> {
             id: "tip-5".into(),
             text: format!(
                 "\n{} 🤗 Contribute to autocomplete for public CLIs\n\nMissing completions for a CLI? Finding some \
-                 errors in completions\nfor an existing CLI?\n\nAll of Fig's completions for public CLI tools like \
+                 errors in completions\nfor an existing CLI?\n\nAll of CodeWhisperer's completions for public CLI tools like \
                  cd, git, docker,\n kubectl are open source and community driven!\n\nStart contributing at: {}",
-                "Fig Tips (5/5)".bold(),
+                "CodeWhisperer Tips (5/5)".bold(),
                 "github.com/withfig/autocomplete".underlined(),
             ),
             priority: 6,
@@ -153,11 +153,11 @@ impl TipsSubcommand {
         match self {
             TipsSubcommand::Enable => {
                 fig_settings::settings::set_value("cli.tips.disabled", false)?;
-                println!("\n→ Fig Tips enabled...\n");
+                println!("\n→ CodeWhisperer Tips enabled...\n");
             },
             TipsSubcommand::Disable => {
                 fig_settings::settings::set_value("cli.tips.disabled", true)?;
-                println!("\n→ Fig Tips disabled...\n");
+                println!("\n→ CodeWhisperer Tips disabled...\n");
             },
             TipsSubcommand::Reset => {
                 let mut tips = Tips::load()?;

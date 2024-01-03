@@ -51,7 +51,7 @@ pub const SPECIAL_TERMINALS: &[Terminal] = &[
 
 pub static CURRENT_TERMINAL: Lazy<Option<Terminal>> = Lazy::new(Terminal::parent_terminal);
 
-/// Terminals supported by Fig
+/// Terminals supported by CodeWhisperer
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Terminal {

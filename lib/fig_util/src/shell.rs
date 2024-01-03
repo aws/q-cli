@@ -15,7 +15,7 @@ use crate::{
     Error,
 };
 
-/// Shells supported by Fig
+/// Shells supported by CodeWhisperer
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, ValueEnum)]
 #[serde(rename_all = "camelCase")]
 pub enum Shell {

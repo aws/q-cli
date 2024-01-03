@@ -226,7 +226,7 @@ impl DebugSubcommand {
             DebugSubcommand::App => {
                 let app_info = get_app_info().unwrap_or_else(|_| "".into());
                 if app_info.is_empty() {
-                    println!("Fig app is not currently running. Attempting to start...");
+                    println!("CodeWhisperer app is not currently running. Attempting to start...");
                     if Command::new("open")
                         .args(["-g", "-b", CODEWHISPERER_BUNDLE_ID])
                         .spawn()?
@@ -259,7 +259,11 @@ impl DebugSubcommand {
                         Build::Beta => "beta".into(),
                         Build::Develop => "develop".into(),
                     })?;
-                    println!("Fig will now use the {} build of {}", build.magenta(), app.magenta());
+                    println!(
+                        "CodeWhisperer will now use the {} build of {}",
+                        build.magenta(),
+                        app.magenta()
+                    );
                 },
                 None => {
                     let current_build = fig_settings::settings::get_string_opt(format!("developer.{app}.build"));
@@ -455,11 +459,15 @@ impl DebugSubcommand {
                     .args(["info", "-only", "-pid", "-app", CODEWHISPERER_BUNDLE_ID])
                     .output()?;
                 let pid_str = String::from_utf8(output.stdout)?;
-                let pid = pid_str.split('=').nth(1).context("Could not get Fig app pid")?.trim();
+                let pid = pid_str
+                    .split('=')
+                    .nth(1)
+                    .context("Could not get CodeWhisperer app pid")?
+                    .trim();
                 let outfile = Path::new("/tmp").join("fig-sample");
 
                 println!(
-                    "Sampling Fig process ({}). Writing output to {}",
+                    "Sampling CodeWhisperer process ({}). Writing output to {}",
                     pid,
                     outfile.display()
                 );
@@ -470,11 +478,11 @@ impl DebugSubcommand {
                     .spawn()?
                     .wait();
                 if result.is_err() {
-                    println!("Could not sample Fig process.");
-                    eyre::bail!("Failed to sample Fig process.");
+                    println!("Could not sample CodeWhisperer process.");
+                    eyre::bail!("Failed to sample CodeWhisperer process.");
                 }
                 println!("\n\n\n-------\nFinished writing to {}", outfile.display());
-                println!("Please send this file to the Fig Team");
+                println!("Please send this file to the CodeWhisperer Team");
                 println!("Or attach it to a Github issue (run '{}')", "fig issue".magenta());
             },
             DebugSubcommand::VerifyCodesign => {
@@ -672,7 +680,7 @@ impl DebugSubcommand {
                             crossterm::terminal::Clear(crossterm::terminal::ClearType::All),
                             crossterm::cursor::MoveTo(0, 0),
                             crossterm::style::Print(format!(
-                                "Fig Diagnostics (use {} to quit)\n\n",
+                                "CodeWhisperer Diagnostics (use {} to quit)\n\n",
                                 "ctrl-c".magenta()
                             )),
                             crossterm::style::Print(out),

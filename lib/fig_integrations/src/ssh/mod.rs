@@ -55,7 +55,7 @@ impl SshIntegration {
 
     #[allow(clippy::unused_self)]
     fn description(&self) -> String {
-        "# Fig ssh integration. Keep at the bottom of this file.".into()
+        "# CodeWhisperer ssh integration. Keep at the bottom of this file.".into()
     }
 
     fn source_text(&self) -> Result<String> {
@@ -141,7 +141,10 @@ impl Integration for SshIntegration {
 
         self.get_file_integration()?.is_installed().await?;
         if !self.source_regex()?.is_match(&filtered_contents) {
-            let message = format!("{} does not source Fig's ssh integration", self.path.display());
+            let message = format!(
+                "{} does not source CodeWhisperer's ssh integration",
+                self.path.display()
+            );
             return Err(Error::NotInstalled(message.into()));
         }
 

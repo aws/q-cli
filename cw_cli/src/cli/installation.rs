@@ -49,7 +49,7 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
         }
         if !no_confirm && manual_install {
             println!();
-            println!("To install Fig manually you will have to add the following to your rc files");
+            println!("To install CodeWhisperer manually you will have to add the following to your rc files");
             println!();
             println!("At the top of your .bashrc or .zshrc file:");
             println!("bash:    . \"$HOME/.fig/shell/bashrc.pre.bash\"");
@@ -61,7 +61,7 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
             println!();
 
             if let Err(err) = install(InstallComponents::SHELL_INTEGRATIONS).await {
-                println!("Could not install files needed for Fig:");
+                println!("Could not install files needed for CodeWhisperer:");
                 println!("{err}");
             }
         }
@@ -87,7 +87,7 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
                 }
 
                 println!();
-                println!("For Fig to support some terminals like Kitty, Alacritty, and Wezterm");
+                println!("For CodeWhisperer to support some terminals like Kitty, Alacritty, and Wezterm");
                 println!("you must enable our Input Method integration.");
                 println!();
                 println!("To enable the integration, select \"yes\" below and then click Ok in the popup.");

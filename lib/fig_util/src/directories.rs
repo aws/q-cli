@@ -171,26 +171,6 @@ pub fn host_sockets_dir() -> Result<PathBuf> {
     sockets_dir()
 }
 
-// Path to the managed binaries directory
-//
-// - Linux: UNIMPLEMENTED
-// - MacOS: UNIMPLEMENTED
-// - Windows: %LOCALAPPDATA%\Fig\bin
-// pub fn _managed_binaries_dir() -> Result<PathBuf> {
-//     cfg_if::cfg_if! {
-//         if #[cfg(target_os = "macos")] {
-//             // TODO: use fig_app_bundle() here!
-//             todo!();
-//         } else if #[cfg(target_os = "linux")] {
-//             todo!();
-//         } else if #[cfg(target_os = "windows")] {
-//             Ok(fig_dir()?.join("bin"))
-//         } else {
-//             todo!();
-//         }
-//     }
-// }
-
 /// The path to all of the themes
 pub fn themes_dir() -> Result<PathBuf> {
     Ok(resources_path()?.join("themes"))
@@ -274,14 +254,6 @@ pub fn remote_socket_path() -> Result<PathBuf> {
     local_remote_socket_path()
 }
 
-// The path to fig parent socket
-//
-// - Linux/MacOS: `/var/tmp/fig-parent-$CW_PARENT.sock`
-// - Windows: unused
-// pub fn parent_socket_path(parent_id: &str) -> Result<PathBuf> {
-//     Ok(Path::new(&format!("/var/tmp/fig-parent-{parent_id}.sock")).to_path_buf())
-// }
-
 /// The path to local remote socket
 ///
 /// - MacOS: `$TMPDIR/cwrun/desktop.sock`
@@ -328,19 +300,6 @@ pub fn manifest_path() -> Result<PathBuf> {
         }
     }
 }
-
-// The path to the managed fig cli binary
-//
-// Note this is not implemented on Linux or MacOS
-// pub fn managed_cw_cli_path() -> Result<PathBuf> {
-//     cfg_if::cfg_if! {
-//         if #[cfg(unix)] {
-//             todo!();
-//         } else if #[cfg(windows)] {
-//             Ok(managed_binaries_dir()?.join("fig.exe"))
-//         }
-//     }
-// }
 
 /// The path to the fig settings file
 pub fn settings_path() -> Result<PathBuf> {

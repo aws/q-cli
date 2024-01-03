@@ -580,7 +580,7 @@ impl DoctorCheck for FigIntegrationsCheck {
         match std::env::var("CW_TERM").as_deref() {
             Ok(env!("CARGO_PKG_VERSION")) => Ok(()),
             Ok(ver) if env!("CARGO_PKG_VERSION").ends_with("-dev") || ver.ends_with("-dev") => Err(doctor_warning!(
-                "Figterm is running with a different version than CodeWhisperer CLI, it looks like you are running a development version of CodeWhisperer however"
+                "cwterm is running with a different version than CodeWhisperer CLI, it looks like you are running a development version of CodeWhisperer however"
             )),
             Ok(_) => Err(DoctorError::Error {
                 reason: "This terminal is not running with the latest CodeWhisperer integration, please restart your terminal"
@@ -590,7 +590,7 @@ impl DoctorCheck for FigIntegrationsCheck {
                 error: None,
             }),
             Err(_) => Err(DoctorError::Error {
-                reason: "Figterm is not running in this terminal, please try restarting your terminal".into(),
+                reason: "cwterm is not running in this terminal, please try restarting your terminal".into(),
                 info: vec![format!("CW_TERM={}", std::env::var("CW_TERM").unwrap_or_default()).into()],
                 fix: None,
                 error: None,
@@ -678,14 +678,14 @@ impl DoctorCheck for CwtermSocketCheck {
                 } else {
                     Err(DoctorError::Warning(
                         format!(
-                            "Figterm socket did not read buffer correctly, don't press any keys while the checks are running: {buffer:?}"
+                            "cwterm socket did not read buffer correctly, don't press any keys while the checks are running: {buffer:?}"
                         )
                         .into(),
                     ))
                 }
             },
-            Ok(Err(err)) => Err(doctor_error!("Figterm socket err: {}", err)),
-            Err(_) => Err(doctor_error!("Figterm socket write timed out after 1s")),
+            Ok(Err(err)) => Err(doctor_error!("cwterm socket err: {}", err)),
+            Err(_) => Err(doctor_error!("cwterm socket write timed out after 1s")),
         };
 
         disable_raw_mode().context("Failed to disable raw mode")?;

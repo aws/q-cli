@@ -137,7 +137,7 @@ impl HookSubcommand {
                         println!(
                             "{bar}\n  To install SSH support for {}, run the following on your remote machine\n\n    {} {} \n     \
                             source <(curl -Ls fig.io/install)\n\n    🐟 {} \n     curl -Ls fig.io/install | bash; and exec fish\n{bar}",
-                            "Fig".magenta(),
+                            "CodeWhisperer".magenta(),
                             *BASH_UNICODE,
                             "Bash/zsh:".bold().underlined(),
                             "Fish:".bold().underlined(),

@@ -1,19 +1,23 @@
 # TS API Bindings
-The Typescript definitions for the Fig API.
 
-Note: The protobuf definitions are updated automatically whenever withfig/proto-api is changed. 
+The Typescript definitions for the CodeWhisperer API.
+
+Note: The protobuf definitions are updated automatically whenever withfig/proto-api is changed.
 
 ## Documenting the API
+
 We use [TSDocs](https://tsdoc.org) to comment the exported namespaces of the API.
+
 > See `docs-generators/fig-api` folder in `public-site-nextjs` repo for reference.
 
 ### Supported TSDoc tags and custom TSDoc tags
+
 - @param: The params of an exported function, the format MUST be `@param <name of the param> <some description>`. It can be provided multiple times for different params.
   ```ts
   /**
    * @param notification some description for the notification param
    */
-  export function subscribe(notification) { }
+  export function subscribe(notification) {}
   ```
 - @returns: An explanation of what is returned by an exported function.
 - @remarks: Further details about the implementation of the method, use cases...etc. This data will appear in the `Discussion` section.
@@ -25,9 +29,9 @@ We use [TSDocs](https://tsdoc.org) to comment the exported namespaces of the API
    * @prop unsubscribe - a description
    */
   export const didChange = {
-    subscribe: (notification) => { },
-    unsubscribe: (notification) => { }
-  } 
+    subscribe: (notification) => {},
+    unsubscribe: (notification) => {},
+  };
   ```
 - @excluded: To exclude some symbol from the docs. It should not be used.
 - @deprecated: Mark an API as deprecated providing an optional message about the deprecation.
@@ -36,14 +40,14 @@ We use [TSDocs](https://tsdoc.org) to comment the exported namespaces of the API
    * @deprecated This message is optional
    */
   export const didChange = {
-    subscribe: (notification) => { },
-  } 
+    subscribe: (notification) => {},
+  };
   ```
 
 ### What will appear in the documentation?
+
 Our API bindings export a list of named namespace objects each one exporting a group of Symbols.
 In our docs file we document each of the exported symbols grouped according to their namespace.
-
 
 ### Publishing
 

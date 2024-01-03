@@ -126,7 +126,7 @@ pub fn is_codewhisperer_desktop_running() -> bool {
 pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
     if manifest::is_headless() {
         return Err(Error::LaunchError(
-            "launching Fig from headless installs is not yet supported".to_owned(),
+            "launching CodeWhisperer from headless installs is not yet supported".to_owned(),
         ));
     }
 
@@ -197,7 +197,9 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
     }
 
     if !is_codewhisperer_desktop_running() {
-        return Err(Error::LaunchError("fig was unable launch successfully".to_owned()));
+        return Err(Error::LaunchError(
+            "CodeWhisperer was unable launch successfully".to_owned(),
+        ));
     }
 
     // Wait for socket to exist

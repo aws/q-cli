@@ -21,7 +21,7 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
         //     "https://fig.io/l/configuring-autocomplete".bold()
         // );
         // println!(
-        //     "* Keep Fig but disable Autocomplete? Run {}\n",
+        //     "* Keep CodeWhisperer but disable Autocomplete? Run {}\n",
         //     "fig settings autocomplete.disable true".bold().magenta()
         // );
 
@@ -113,7 +113,7 @@ async fn uninstall() -> Result<()> {
 
 #[cfg(all(unix, not(any(target_os = "macos", target_os = "linux"))))]
 async fn uninstall() -> Result<()> {
-    eyre::bail!("Uninstalling Fig is not supported on this platform");
+    eyre::bail!("Uninstalling CodeWhisperer is not supported on this platform");
 }
 
 #[cfg(target_os = "linux")]

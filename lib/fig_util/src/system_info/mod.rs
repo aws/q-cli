@@ -280,14 +280,14 @@ pub fn in_wsl() -> bool {
     }
 }
 
-/// Is Fig running on a remote instance
+/// Is CodeWhisperer running on a remote instance
 pub fn is_remote() -> bool {
     // TODO(chay): Add detection for inside docker container
     in_ssh() || in_wsl() || std::env::var_os("CW_FAKE_IS_REMOTE").is_some()
 }
 
-/// Whether Fig has a parent. Determines if we have an IPC path to a Desktop app from a remote
-/// environment
+/// Whether CodeWhisperer has a parent. Determines if we have an IPC path to a Desktop app from a
+/// remote environment
 pub fn has_parent() -> bool {
     *HAS_PARENT
 }

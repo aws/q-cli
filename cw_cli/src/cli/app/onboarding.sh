@@ -76,7 +76,7 @@ exit_script_nice() {
 clear 
 cat <<EOF
 
-  ${BOLD}${UNDERLINE}Fig's onboarding was quit${NORMAL}
+  ${BOLD}${UNDERLINE}CodeWhisperer's onboarding was quit${NORMAL}
   
   You can redo this onboarding any time. Just run ${BOLD}${MAGENTA}fig onboarding${NORMAL}
    
@@ -118,9 +118,9 @@ EOF
 
 ## you can also use <<-'EOF' to strip tab character from start of each line
 cat <<EOF 
-   Hey! Welcome to ${MAGENTA}${BOLD}Fig${NORMAL}.
+   Hey! Welcome to ${MAGENTA}${BOLD}CodeWhisperer${NORMAL}.
 
-   This quick walkthrough will show you how Fig works.
+   This quick walkthrough will show you how CodeWhisperer works.
 
 
 
@@ -134,7 +134,7 @@ clear
 
 cat <<EOF
    
-   ${BOLD}${MAGENTA}Fig${NORMAL} suggests commands, options, and arguments as you type.
+   ${BOLD}${MAGENTA}CodeWhisperer${NORMAL} suggests commands, options, and arguments as you type.
 
    ${BOLD}Autocomplete Basics${NORMAL}
 
@@ -194,7 +194,7 @@ clear
 cat <<EOF
 
    ${BOLD}Another Example${NORMAL}
-   Fig can insert text and move your cursor around.
+   CodeWhisperer can insert text and move your cursor around.
 
    ${BOLD}To Continue...${NORMAL}
 

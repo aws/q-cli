@@ -46,7 +46,7 @@ export function sendMessage(
   } else if (window.webkit) {
     if (!window.webkit?.messageHandlers?.proto) {
       console.error(
-        "This version of Fig does not support using protocol buffers. Please update."
+        "This version of CodeWhisperer does not support using protocol buffers. Please update."
       );
       return;
     }
@@ -92,6 +92,6 @@ const setupEventListeners = (): void => {
 
 // We want this to be run automatically
 if (!window?.fig?.quiet) {
-  console.log("[fig] setting up event listeners...");
+  console.log("[cw] setting up event listeners...");
 }
 setupEventListeners();

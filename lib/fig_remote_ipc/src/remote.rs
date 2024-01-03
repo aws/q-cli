@@ -333,7 +333,7 @@ async fn handle_remote_ipc(
                     }
                 }
                 Ok(None) => {
-                    debug!("Figterm connection closed");
+                    debug!("cwterm connection closed");
                     break;
                 }
                 Err(err) => {
