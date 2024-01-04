@@ -18,7 +18,6 @@ mod settings;
 mod telemetry;
 mod theme;
 mod tips;
-// mod tweet;
 mod uninstall;
 mod update;
 mod user;

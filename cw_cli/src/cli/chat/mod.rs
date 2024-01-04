@@ -19,6 +19,11 @@ use amzn_codewhisperer_streaming_client::types::{
     UserInputMessageContext,
 };
 use amzn_codewhisperer_streaming_client::Client;
+use crossterm::cursor::{
+    DisableBlinking,
+    EnableBlinking,
+    SetCursorStyle,
+};
 use crossterm::event::{
     self,
     DisableMouseCapture,
@@ -191,14 +196,26 @@ impl App {
 fn setup_terminal() -> std::io::Result<Terminal<CrosstermBackend<Stdout>>> {
     let mut stdout = io::stdout();
     crossterm::terminal::enable_raw_mode()?;
-    crossterm::execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    crossterm::execute!(
+        stdout,
+        EnterAlternateScreen,
+        EnableMouseCapture,
+        EnableBlinking,
+        SetCursorStyle::BlinkingBar
+    )?;
     Terminal::new(CrosstermBackend::new(stdout))
 }
 
 fn teardown_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> std::io::Result<()> {
     let mut stdout = io::stdout();
     crossterm::terminal::disable_raw_mode()?;
-    crossterm::execute!(stdout, LeaveAlternateScreen, DisableMouseCapture)?;
+    crossterm::execute!(
+        stdout,
+        LeaveAlternateScreen,
+        DisableMouseCapture,
+        DisableBlinking,
+        SetCursorStyle::DefaultUserShape
+    )?;
     Ok(())
 }
 
@@ -284,52 +301,6 @@ pub async fn chat() -> Result<()> {
 
     let app = App::default();
     let res = run_app(&mut terminal, app).await;
-
-    println!(
-        "{} Hi, I'm Amazon Q. I can answer your software development questions.",
-        "Q >".magenta().bold()
-    );
-    println!();
-
-    // 'chat_loop: loop {
-    //     print!("{} ", "User >".bold());
-
-    //     let mut user_input = String::new();
-    //     loop {
-    //         match event::read()? {
-    //             Event::Key(KeyEvent {
-    //                 code: KeyCode::Char('c' | 'd'),
-    //                 kind: KeyEventKind::Press,
-    //                 modifiers: event::KeyModifiers::CONTROL,
-    //                 ..
-    //             }) => {
-    //                 break 'chat_loop;
-    //             },
-    //             Event::Key(KeyEvent {
-    //                 code: KeyCode::Enter,
-    //                 kind: KeyEventKind::Press,
-    //                 ..
-    //             }) => {
-    //                 println!();
-    //                 break;
-    //             },
-    //             Event::Key(KeyEvent {
-    //                 code: KeyCode::Char(c),
-    //                 kind: KeyEventKind::Press,
-    //                 ..
-    //             }) => {
-    //                 user_input.push(c);
-    //             },
-    //             Event::Paste(s) => user_input.push_str(&s),
-    //             _ => {},
-    //         }
-    //     }
-
-    //     println!();
-
-    //     println!();
-    //     println!();
-    // }
 
     teardown_terminal(&mut terminal)?;
 
@@ -417,15 +388,31 @@ fn ui(f: &mut Frame<'_>, app: &mut App) {
         .constraints([Constraint::Min(1), Constraint::Length(3), Constraint::Length(1)])
         .split(f.size());
 
-    let msg = vec!["Press ".into(), "ctrl+c".bold(), " to exit".into()];
-    let style = Style::default().add_modifier(Modifier::RAPID_BLINK);
+    let mut text = Text::from(Line::from(
+        ["Press ".into(), "ctrl+c".bold(), " to exit".into()].to_vec(),
+    ));
+    text.patch_style(Style::default().add_modifier(Modifier::RAPID_BLINK));
 
-    let mut text = Text::from(Line::from(msg));
-    text.patch_style(style);
     let help_message = Paragraph::new(text);
     f.render_widget(help_message, chunks[2]);
 
-    let input = Paragraph::new(app.input.as_str()).block(Block::default().borders(Borders::ALL).title("Input"));
+    let mut input_text_style = Style::new();
+    if app.input.is_empty() {
+        input_text_style = input_text_style.dim();
+    }
+
+    let mut input_text = Text::styled(
+        if app.input.is_empty() {
+            "Message Q..."
+        } else {
+            app.input.as_str()
+        },
+        input_text_style,
+    );
+
+    let input = Paragraph::new(input_text)
+        .style(Style::default().fg(Color::Gray))
+        .block(Block::default().borders(Borders::ALL));
     f.render_widget(input, chunks[1]);
     // Make the cursor visible and ask ratatui to put it at the specified coordinates after
     // rendering
@@ -444,12 +431,12 @@ fn ui(f: &mut Frame<'_>, app: &mut App) {
     let items = app.messages.iter().rev().fold(Text::from(""), |mut acc, message| {
         match message {
             Message::User(s) => {
-                acc.extend(["> User".bold()]);
+                acc.extend(["❯ You".bold()]);
                 acc.extend(Text::from(s.trim().to_owned()));
                 acc.extend([""]);
             },
             Message::Assistant(s) => {
-                acc.extend(["> Q".bold().magenta()]);
+                acc.extend(["❯ Q".bold().magenta()]);
                 acc.extend(Text::from(s.trim_start().to_owned()));
                 acc.extend([""]);
             },
