@@ -22,18 +22,15 @@ pub(crate) mod local {
 
 /// Figterm Protocol Buffers
 pub(crate) mod figterm {
-    pub use crate::fig_common::*;
     include!(concat!(env!("OUT_DIR"), "/figterm.rs"));
 }
 
 /// remote Socket Protocol Buffers
 pub(crate) mod remote {
-    pub use crate::fig_common::*;
     include!(concat!(env!("OUT_DIR"), "/remote.rs"));
 }
 
 /// Stress Testing Protocol Buffers
 pub(crate) mod stress {
-    pub use crate::fig_common::*;
     include!(concat!(env!("OUT_DIR"), "/stress.rs"));
 }

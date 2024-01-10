@@ -23,11 +23,7 @@ pub struct HardwareInfo {
 
 impl HardwareInfo {
     fn new() -> HardwareInfo {
-        use sysinfo::{
-            CpuExt,
-            System,
-            SystemExt,
-        };
+        use sysinfo::System;
 
         let mut sys = System::new();
         sys.refresh_cpu();

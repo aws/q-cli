@@ -50,7 +50,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 shell-color = { path = "../lib/shell-color" }
 shell-words = "1.1"
-sysinfo = { version = "0.29.8", default-features = false }
+sysinfo = { version = "0.30.5", default-features = false }
 time = "0.3"
 tokio = { version = "1", features = ["full"] }
 tracing = { version = "0.1.36", features = ["log"] }
@@ -74,7 +74,7 @@ nix = { version = "0.27.1", features = [
 [target.'cfg(windows)'.dependencies]
 lazy_static = "1.4"
 shared_library = "0.1"
-windows = { version = "0.51.1", features = ["Win32_System_Threading"] }
+windows = { version = "0.52.0", features = ["Win32_System_Threading"] }
 winapi = { version = "0.3", features = [
     "winuser",
     "winnls",
@@ -84,7 +84,7 @@ winapi = { version = "0.3", features = [
     "namedpipeapi",
     "synchapi",
 ] }
-winreg = "0.51.0"
+winreg = "0.52.0"
 
 [dev-dependencies]
 assert_cmd = "2.0.8"

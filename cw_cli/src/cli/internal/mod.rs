@@ -66,10 +66,7 @@ use rand::distributions::{
     Alphanumeric,
     DistString,
 };
-use sysinfo::{
-    System,
-    SystemExt,
-};
+use sysinfo::System;
 use tokio::io::{
     AsyncReadExt,
     AsyncWriteExt,
@@ -418,7 +415,7 @@ impl InternalSubcommand {
             },
             InternalSubcommand::GetShell => {},
             InternalSubcommand::Hostname => {
-                if let Some(hostname) = System::new().host_name() {
+                if let Some(hostname) = System::host_name() {
                     if write!(stdout(), "{hostname}").is_ok() {
                         return Ok(());
                     }

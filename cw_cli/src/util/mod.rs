@@ -413,7 +413,6 @@ mod tests {
             ProcessRefreshKind,
             RefreshKind,
             System,
-            SystemExt,
         };
 
         let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));

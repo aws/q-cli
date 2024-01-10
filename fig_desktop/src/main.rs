@@ -14,6 +14,7 @@ mod update;
 mod utils;
 mod webview;
 
+use std::path::Path;
 use std::process::exit;
 
 use clap::Parser;
@@ -25,11 +26,9 @@ use parking_lot::RwLock;
 use platform::PlatformState;
 use sysinfo::{
     get_current_pid,
-    ProcessExt,
     ProcessRefreshKind,
     RefreshKind,
     System,
-    SystemExt,
 };
 use tracing::{
     error,
@@ -149,12 +148,12 @@ async fn main() {
                     if current_pid != pid {
                         if cli.kill_old {
                             process.kill();
-                            let exe = process.exe().display();
+                            let exe = process.exe().unwrap_or(Path::new("")).display();
                             eprintln!("Killing instance: {exe} ({pid})");
                         } else {
                             let page = page.clone();
                             let on_match = async {
-                                let exe = process.exe().display();
+                                let exe = process.exe().unwrap_or(Path::new("")).display();
 
                                 let mut extra = vec![format!("pid={pid}")];
 

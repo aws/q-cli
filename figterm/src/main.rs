@@ -76,7 +76,6 @@ use parking_lot::{
     RwLock,
 };
 use portable_pty::PtySize;
-use sysinfo::SystemExt;
 use tokio::io::{
     self,
     AsyncWriteExt,
@@ -148,7 +147,7 @@ pub fn dialoguer_theme() -> ColorfulTheme {
     }
 }
 
-static HOSTNAME: Lazy<Option<String>> = Lazy::new(|| sysinfo::System::new().host_name());
+static HOSTNAME: Lazy<Option<String>> = Lazy::new(sysinfo::System::host_name);
 
 pub enum MainLoopEvent {
     Insert {

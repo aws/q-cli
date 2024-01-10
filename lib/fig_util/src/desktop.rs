@@ -49,7 +49,6 @@ pub fn is_codewhisperer_desktop_running() -> bool {
                 ProcessRefreshKind,
                 RefreshKind,
                 System,
-                SystemExt,
             };
 
             use crate::consts::{
