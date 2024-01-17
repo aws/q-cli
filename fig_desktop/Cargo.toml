@@ -56,6 +56,7 @@ fig_telemetry = { path = "../lib/fig_telemetry" }
 fig_util = { path = "../lib/fig_util" }
 flume = "0.11.0"
 fnv = "1.0.7"
+futures = "0.3.30"
 http = "0.2.11"
 image = "0.24.7"
 infer = "0.15.0"

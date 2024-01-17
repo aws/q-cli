@@ -1,5 +1,8 @@
 use reqwest::StatusCode;
 
+#[cfg(feature = "midway")]
+use crate::midway;
+
 #[derive(Debug)]
 pub enum Error {
     Fig {
@@ -10,6 +13,7 @@ pub enum Error {
     Graphql(Vec<graphql_client::Error>),
     GraphqlNoData,
     Reqwest(reqwest::Error),
+    Http(http::Error),
     Status(StatusCode),
     Serde(serde_json::Error),
     Io(std::io::Error),
@@ -17,6 +21,8 @@ pub enum Error {
     Settings(fig_settings::Error),
     NoClient,
     NoToken,
+    #[cfg(feature = "midway")]
+    Midway(midway::MidwayError),
 }
 
 impl Error {
@@ -48,6 +54,7 @@ impl std::fmt::Display for Error {
             },
             Error::GraphqlNoData => write!(f, "Graphql error: No data"),
             Error::Reqwest(err) => write!(f, "Reqwest error: {err}"),
+            Error::Http(err) => write!(f, "Http error: {err}"),
             Error::Status(err) => write!(f, "Status error: {err}"),
             Error::Serde(err) => write!(f, "Serde error: {err}"),
             Error::Io(err) => write!(f, "Io error: {err}"),
@@ -55,6 +62,8 @@ impl std::fmt::Display for Error {
             Error::Settings(err) => write!(f, "Settings error: {err}"),
             Error::NoClient => write!(f, "No client"),
             Error::NoToken => write!(f, "No token"),
+            #[cfg(feature = "midway")]
+            Error::Midway(err) => write!(f, "Midway error: {err}"),
         }
     }
 }
@@ -70,6 +79,12 @@ impl From<Vec<graphql_client::Error>> for Error {
 impl From<reqwest::Error> for Error {
     fn from(e: reqwest::Error) -> Self {
         Error::Reqwest(e)
+    }
+}
+
+impl From<http::Error> for Error {
+    fn from(e: http::Error) -> Self {
+        Error::Http(e)
     }
 }
 
@@ -100,5 +115,12 @@ impl From<fig_util::directories::DirectoryError> for Error {
 impl From<fig_settings::Error> for Error {
     fn from(e: fig_settings::Error) -> Self {
         Error::Settings(e)
+    }
+}
+
+#[cfg(feature = "midway")]
+impl From<midway::MidwayError> for Error {
+    fn from(e: midway::MidwayError) -> Self {
+        Error::Midway(e)
     }
 }

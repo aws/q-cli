@@ -492,7 +492,7 @@ if stage_name == "prod" or stage_name is None:
     info("Building for prod")
 elif stage_name == "gamma":
     info("Building for gamma")
-    cargo_features = {"cw_cli": ["cw_cli/gamma"]}
+    cargo_features = {"cw_cli": ["cw_cli/gamma"], "fig_desktop": ["fig_desktop/gamma"]}
 else:
     raise ValueError(f"Unknown stage name: {stage_name}")
 

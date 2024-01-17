@@ -12,6 +12,7 @@ import {
   isInDevMode,
 } from "@amzn/fig-io-api-bindings-wrappers";
 import { AuthClient, CDN, Routes } from "@amzn/fig-io-api-client";
+import z from "zod";
 import { MOST_USED_SPECS } from "./constants.js";
 import { mixinCache } from "./caches.js";
 import {
@@ -22,21 +23,21 @@ import {
 
 export type SpecFileImport =
   | {
-    default: Fig.Spec;
-    getVersionCommand?: Fig.GetVersionCommand;
-  }
+      default: Fig.Spec;
+      getVersionCommand?: Fig.GetVersionCommand;
+    }
   | {
-    default: Fig.Subcommand;
-    versions: Fig.VersionDiffMap;
-  };
+      default: Fig.Subcommand;
+      versions: Fig.VersionDiffMap;
+    };
 
 // All private specs a users has access to
 let privateSpecs: CDN.PrivateSpecInfo[] = [];
 
 const makeCdnUrlFactory =
   (baseUrl: string) =>
-    (specName: string, _forceReload = false) =>
-      `${baseUrl}${specName}.js`;
+  (specName: string, ext: string = "js") =>
+    `${baseUrl}${specName}.${ext}`;
 
 const cdnUrlFactory = makeCdnUrlFactory(
   "https://specs.codewhisperer.us-east-1.amazonaws.com/"
@@ -146,8 +147,7 @@ export const canLoadSpecProtocol = () => window.location.protocol !== "https:";
 
 // TODO: fedeci this is a problem for diff-versioned specs
 export async function importFromPublicCDN<T = SpecFileImport>(
-  name: string,
-  forceReload = false
+  name: string
 ): Promise<T> {
   if (canLoadSpecProtocol()) {
     return withTimeout(
@@ -169,13 +169,29 @@ export async function importFromPublicCDN<T = SpecFileImport>(
         maxRetries: 5,
         jitter: 100,
       },
-      () => import(cdnUrlFactory(name, forceReload))
+      () => import(cdnUrlFactory(name))
     );
   } catch {
     /**/
   }
 
   throw new SpecCDNError("Unable to load from a CDN");
+}
+
+async function jsonFromPublicCDN(path: string): Promise<unknown> {
+  if (canLoadSpecProtocol()) {
+    return fetch(`spec://localhost/${path}.json`).then((res) => res.json());
+  }
+
+  return exponentialBackoff(
+    {
+      attemptTimeout: 1000,
+      baseDelay: 500,
+      maxRetries: 5,
+      jitter: 100,
+    },
+    () => fetch(cdnUrlFactory(path, "json")).then((res) => res.json())
+  );
 }
 
 // TODO: fedeci this is a problem for diff-versioned specs
@@ -235,37 +251,38 @@ export async function getVersionFromFullFile(
   return undefined;
 }
 
-interface PublicSpecsModule {
-  default: string[];
-  diffVersionedCompletions: string[];
-}
-
 // TODO(fedeci): cache this request using SWR strategy
 let publicSpecsRequest:
   | Promise<{
-    specs: Set<string>;
-    diffVersionedSpecs: Set<string>;
-  }>
+      completions: Set<string>;
+      diffVersionedSpecs: Set<string>;
+    }>
   | undefined;
+
+const INDEX_ZOD = z.object({
+  completions: z.array(z.string()),
+  diffVersionedCompletions: z.array(z.string()),
+});
 
 const createPublicSpecsRequest = async () => {
   if (publicSpecsRequest === undefined) {
-    publicSpecsRequest = importFromPublicCDN<PublicSpecsModule>("index", true)
-      .then((module) => ({
-        specs: new Set(module.default),
-        diffVersionedSpecs: new Set(module.diffVersionedCompletions),
+    publicSpecsRequest = jsonFromPublicCDN("index")
+      .then(INDEX_ZOD.parse)
+      .then((index) => ({
+        completions: new Set(index.completions),
+        diffVersionedSpecs: new Set(index.diffVersionedCompletions),
       }))
       .catch(() => {
         publicSpecsRequest = undefined;
-        return { specs: new Set(), diffVersionedSpecs: new Set() };
+        return { completions: new Set(), diffVersionedSpecs: new Set() };
       });
   }
   return publicSpecsRequest;
 };
 
 export async function publicSpecExists(name: string): Promise<boolean> {
-  const { specs } = await createPublicSpecsRequest();
-  return specs.has(name);
+  const { completions } = await createPublicSpecsRequest();
+  return completions.has(name);
 }
 
 export async function isDiffVersionedSpec(name: string): Promise<boolean> {
