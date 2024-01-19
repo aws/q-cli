@@ -1295,7 +1295,7 @@ impl DoctorCheck<Option<Terminal>> for ItermIntegrationCheck {
 
     fn get_type(&self, current_terminal: &Option<Terminal>, platform: Platform) -> DoctorCheckType {
         if platform == Platform::MacOs {
-            if !is_installed(Terminal::Iterm.to_bundle_id()) {
+            if !is_installed(Terminal::Iterm.to_bundle_id().as_deref()) {
                 DoctorCheckType::NoCheck
             } else if matches!(current_terminal.to_owned(), Some(Terminal::Iterm)) {
                 DoctorCheckType::NormalCheck
@@ -1382,7 +1382,7 @@ impl DoctorCheck<Option<Terminal>> for HyperIntegrationCheck {
     }
 
     fn get_type(&self, current_terminal: &Option<Terminal>, _platform: Platform) -> DoctorCheckType {
-        if !is_installed(Terminal::Hyper.to_bundle_id()) {
+        if !is_installed(Terminal::Hyper.to_bundle_id().as_deref()) {
             return DoctorCheckType::NoCheck;
         }
 
@@ -1461,7 +1461,9 @@ impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
     }
 
     fn get_type(&self, current_terminal: &Option<Terminal>, _platform: Platform) -> DoctorCheckType {
-        if !is_installed(Terminal::VSCode.to_bundle_id()) && !is_installed(Terminal::VSCodeInsiders.to_bundle_id()) {
+        if !is_installed(Terminal::VSCode.to_bundle_id().as_deref())
+            && !is_installed(Terminal::VSCodeInsiders.to_bundle_id().as_deref())
+        {
             return DoctorCheckType::NoCheck;
         }
 
@@ -1569,7 +1571,7 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
             Some(terminal) if terminal.supports_macos_input_method() => {
                 let app = running_applications()
                     .into_iter()
-                    .find(|app| app.bundle_identifier == terminal.to_bundle_id());
+                    .find(|app| app.bundle_identifier.as_deref() == terminal.to_bundle_id().as_deref());
 
                 if let Some(app) = app {
                     if !input_method.enabled_for_terminal_instance(terminal, app.process_identifier) {

@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fmt;
 
 use once_cell::sync::Lazy;
@@ -179,7 +180,7 @@ impl Terminal {
         // TODO(grant): Improve this for Linux, it currently is not very accurate
     }
 
-    pub fn internal_id(&self) -> String {
+    pub fn internal_id(&self) -> Cow<'static, str> {
         match self {
             Terminal::Iterm => "iterm".into(),
             Terminal::TerminalApp => "terminal".into(),
@@ -206,7 +207,7 @@ impl Terminal {
             Terminal::Zellij => "zellij".into(),
             Terminal::Zed => "zed".into(),
             Terminal::IntelliJ(ide) => match ide {
-                Some(variant) => format!("intellij-{}", variant.internal_id()),
+                Some(variant) => format!("intellij-{}", variant.internal_id()).into(),
                 None => "intellij".into(),
             },
             Terminal::Cursor => "cursor".into(),
@@ -218,7 +219,7 @@ impl Terminal {
     /// Get the bundle identifier for the terminal
     /// Note: this does not gracefully handle terminals that have changed bundle identifiers
     /// recently such as VSCodium & Alacritty. We default to the current identifier.
-    pub fn to_bundle_id(&self) -> Option<String> {
+    pub fn to_bundle_id(&self) -> Option<Cow<'static, str>> {
         match self {
             Terminal::Iterm => Some("com.googlecode.iterm2".into()),
             Terminal::TerminalApp => Some("com.apple.Terminal".into()),
