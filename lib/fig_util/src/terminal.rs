@@ -20,6 +20,7 @@ pub const MACOS_TERMINALS: &[Terminal] = &[
     Terminal::Zed,
     Terminal::Cursor,
     Terminal::CursorNightly,
+    Terminal::Rio,
 ];
 
 /// Terminals that Linux supports
@@ -99,6 +100,8 @@ pub enum Terminal {
     Cursor,
     /// Cursor Nightly
     CursorNightly,
+    /// Rio <https://github.com/raphamorim/rio>
+    Rio,
 
     // Other pseudoterminal that we want to launch within
     /// SSH
@@ -144,6 +147,7 @@ impl fmt::Display for Terminal {
             Terminal::Zed => write!(f, "Zed"),
             Terminal::Cursor => write!(f, "Cursor"),
             Terminal::CursorNightly => write!(f, "Cursor Nightly"),
+            Terminal::Rio => write!(f, "Rio"),
         }
     }
 }
@@ -207,6 +211,7 @@ impl Terminal {
             },
             Terminal::Cursor => "cursor".into(),
             Terminal::CursorNightly => "cursor-nightly".into(),
+            Terminal::Rio => "rio".into(),
         }
     }
 
@@ -215,21 +220,22 @@ impl Terminal {
     /// recently such as VSCodium & Alacritty. We default to the current identifier.
     pub fn to_bundle_id(&self) -> Option<String> {
         match self {
-            Terminal::Iterm => Some(String::from("com.googlecode.iterm2")),
-            Terminal::TerminalApp => Some(String::from("com.apple.Terminal")),
-            Terminal::Hyper => Some(String::from("co.zeit.hyper")),
-            Terminal::Alacritty => Some(String::from("org.alacritty")),
-            Terminal::Kitty => Some(String::from("net.kovidgoyal.kitty")),
-            Terminal::VSCode => Some(String::from("com.microsoft.VSCode")),
-            Terminal::VSCodeInsiders => Some(String::from("com.microsoft.VSCodeInsiders")),
-            Terminal::VSCodium => Some(String::from("com.vscodium")),
-            Terminal::Tabby => Some(String::from("org.tabby")),
-            Terminal::Nova => Some(String::from("com.panic.Nova")),
-            Terminal::WezTerm => Some(String::from("com.github.wez.wezterm")),
+            Terminal::Iterm => Some("com.googlecode.iterm2".into()),
+            Terminal::TerminalApp => Some("com.apple.Terminal".into()),
+            Terminal::Hyper => Some("co.zeit.hyper".into()),
+            Terminal::Alacritty => Some("org.alacritty".into()),
+            Terminal::Kitty => Some("net.kovidgoyal.kitty".into()),
+            Terminal::VSCode => Some("com.microsoft.VSCode".into()),
+            Terminal::VSCodeInsiders => Some("com.microsoft.VSCodeInsiders".into()),
+            Terminal::VSCodium => Some("com.vscodium".into()),
+            Terminal::Tabby => Some("org.tabby".into()),
+            Terminal::Nova => Some("com.panic.Nova".into()),
+            Terminal::WezTerm => Some("com.github.wez.wezterm".into()),
             Terminal::IntelliJ(Some(variant)) => Some(variant.bundle_identifier().into()),
-            Terminal::Zed => Some(String::from("dev.zed.Zed")),
-            Terminal::Cursor => Some(String::from("com.todesktop.230313mzl4w4u92")),
-            Terminal::CursorNightly => Some(String::from("com.todesktop.23052492jqa5xjo")),
+            Terminal::Zed => Some("dev.zed.Zed".into()),
+            Terminal::Cursor => Some("com.todesktop.230313mzl4w4u92".into()),
+            Terminal::CursorNightly => Some("com.todesktop.23052492jqa5xjo".into()),
+            Terminal::Rio => Some("com.raphaelamorim.rio".into()),
             _ => None,
         }
     }
@@ -251,6 +257,7 @@ impl Terminal {
             "dev.zed.Zed" => Terminal::Zed,
             "com.todesktop.230313mzl4w4u92" => Terminal::Cursor,
             "com.todesktop.23052492jqa5xjo" => Terminal::CursorNightly,
+            "com.raphaelamorim.rio" => Terminal::Rio,
             // todo(mschrage): the following line does not account for Android Studio
             _ if bundle.starts_with("com.jetbrains.") | bundle.starts_with("com.google.") => {
                 Terminal::IntelliJ(IntelliJVariant::from_bundle_id(bundle))
@@ -270,6 +277,7 @@ impl Terminal {
                 | Terminal::WezTerm
                 | Terminal::IntelliJ(_)
                 | Terminal::Zed
+                | Terminal::Rio
         )
     }
 
@@ -291,6 +299,7 @@ impl Terminal {
             self,
             Terminal::VSCode
                 | Terminal::VSCodeInsiders
+                | Terminal::VSCodium
                 | Terminal::Hyper
                 | Terminal::Tabby
                 | Terminal::Cursor
@@ -317,6 +326,7 @@ impl Terminal {
             Terminal::Zed => &["zed"],
             Terminal::Cursor => &["Cursor", "cursor"],
             Terminal::CursorNightly => &["Cursor Nightly", "cursor-nightly"],
+            Terminal::Rio => &["rio"],
 
             Terminal::Ssh => &["sshd"],
             Terminal::Tmux => &["tmux"],
