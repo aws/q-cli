@@ -10,7 +10,6 @@ import LoginModal from "./login";
 import InstallModal from "./install";
 import { useLocalState } from "@/hooks/store/useState";
 import migrate_dark from "@assets/images/fig-migration/dark.png?url"
-import migrate_light from "@assets/images/fig-migration/light.png?url"
 
 
 export function WelcomeModal({ next }: { next: () => void }) {
@@ -37,8 +36,8 @@ export function WelcomeModal({ next }: { next: () => void }) {
 export default function OnboardingModal() {
   const [step, setStep] = useState(0);
   const check = onboarding[step] as InstallCheck;
-  const [migrationStarted] = useLocalState("user.fig-migrated")
-  const [migrationEnded] = useLocalState("user.fig-migration-complete")
+  const [migrationStarted] = useLocalState("user.fig-migration-started")
+  const [migrationEnded, setMigrationEnded] = useLocalState("user.fig-migration-complete")
   const { setModal } = useContext(ModalContext);
   const [dotfilesCheck, refreshDotfiles] = useStatusCheck("dotfiles");
   const [accessibilityCheck, refreshAccessibility] =
@@ -58,6 +57,11 @@ export default function OnboardingModal() {
   }, [refreshAccessibility, refreshDotfiles]);
 
   function nextStep() {
+
+    if (migrationStarted && !migrationEnded) {
+      setMigrationEnded(true)
+    }
+
     setStep(step + 1);
   }
 
