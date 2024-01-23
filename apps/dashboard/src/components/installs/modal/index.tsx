@@ -8,6 +8,10 @@ import onboarding from "@/data/onboarding";
 import { useStatusCheck } from "@/hooks/store/useStatusCheck";
 import LoginModal from "./login";
 import InstallModal from "./install";
+import { useLocalState } from "@/hooks/store/useState";
+import migrate_dark from "@assets/images/fig-migration/dark.png?url"
+import migrate_light from "@assets/images/fig-migration/light.png?url"
+
 
 export function WelcomeModal({ next }: { next: () => void }) {
   return (
@@ -33,6 +37,8 @@ export function WelcomeModal({ next }: { next: () => void }) {
 export default function OnboardingModal() {
   const [step, setStep] = useState(0);
   const check = onboarding[step] as InstallCheck;
+  const [migrationStarted] = useLocalState("user.fig-migrated")
+  const [migrationEnded] = useLocalState("user.fig-migration-complete")
   const { setModal } = useContext(ModalContext);
   const [dotfilesCheck, refreshDotfiles] = useStatusCheck("dotfiles");
   const [accessibilityCheck, refreshAccessibility] =
@@ -43,7 +49,8 @@ export default function OnboardingModal() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_accessibility, setAccessibility] = useState(accessibilityCheck);
 
-  // console.log({ id: check.id, checksComplete, dotfiles, accessibility })
+  //TODO @grant, I'm not really sure how migrationEnded should be handled. Would appreciate your input here. - @bryn
+  const isMigrating = migrationStarted === true && migrationEnded === false;
 
   useEffect(() => {
     refreshAccessibility();
@@ -77,6 +84,10 @@ export default function OnboardingModal() {
     }
   }
 
+  if (check.id === "welcome" && isMigrating) {
+    return <FigMigrationModal next={nextStep} />;
+  }
+
   if (check.id === "welcome") {
     return <WelcomeModal next={nextStep} />;
   }
@@ -90,4 +101,25 @@ export default function OnboardingModal() {
   }
 
   return null;
+}
+
+export function FigMigrationModal({ next }: { next: () => void }) {
+  return (
+    <div className="flex flex-col items-center gap-8 gradient-cw-secondary-light -m-10 p-4 pt-10 rounded-lg text-white">
+      <div className="flex flex-col items-center gap-8">
+        <img src={migrate_dark} className="w-40" />
+        <div className="flex flex-col gap-2 items-center text-center">
+          <h2 className="text-2xl text-white font-semibold select-none leading-none font-ember tracking-tight">
+            Almost done migrating!
+          </h2>
+          <p className="text-sm">Let's get you set up...</p>
+        </div>
+      </div>
+      <div className="flex flex-col items-center gap-2 text-white text-sm font-bold">
+        <Button variant="glass" onClick={() => next()} className="flex gap-4">
+          Get started
+        </Button>
+      </div>
+    </div>
+  );
 }
