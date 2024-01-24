@@ -37,7 +37,7 @@ pub async fn run_install(_ignore_immediate_update: bool) {
             && !fig_settings::state::get_bool_or(MIGRATED_KEY, false)
             && fig_settings::state::set_value(MIGRATED_KEY, true).is_ok()
         {
-            fig_telemetry::send_user_migrated().await;
+            fig_telemetry::send_fig_user_migrated().await;
         }
     }
 
