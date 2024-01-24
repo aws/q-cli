@@ -275,7 +275,7 @@ pub async fn send_menu_bar_actioned(menu_bar_item: Option<impl Into<String>>) {
         .await;
 }
 
-pub async fn send_user_migrated() {
+pub async fn send_fig_user_migrated() {
     CLIENT
         .post_metric(CodewhispererterminalFigUserMigrated {
             create_time: None,
