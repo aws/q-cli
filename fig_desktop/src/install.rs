@@ -26,18 +26,14 @@ pub async fn run_install(_ignore_immediate_update: bool) {
         initialize_fig_dir().await.ok();
 
         if fig_util::directories::home_dir()
-            .map(|mut home| {
-                home.push("Library");
-                home.push("Application Support");
-                home.push("fig");
-                home.push("credentials.json");
-                home
-            })
+            .map(|home| home.join("Library/Application Support/fig/credentials.json"))
             .is_ok_and(|path| path.exists())
             && !fig_settings::state::get_bool_or(MIGRATED_KEY, false)
-            && fig_settings::state::set_value(MIGRATED_KEY, true).is_ok()
         {
-            fig_telemetry::send_fig_user_migrated().await;
+            let set = fig_settings::state::set_value(MIGRATED_KEY, true);
+            if set.is_ok() {
+                fig_telemetry::send_fig_user_migrated().await;
+            }
         }
     }
 
