@@ -14,6 +14,7 @@ use tracing::{
 use crate::utils::is_cargo_debug_build;
 
 const PREVIOUS_VERSION_KEY: &str = "desktop.versionAtPreviousLaunch";
+const MIGRATED_KEY: &str = "desktop.migratedFromFig";
 
 /// Run items at launch
 pub async fn run_install(_ignore_immediate_update: bool) {
@@ -21,7 +22,24 @@ pub async fn run_install(_ignore_immediate_update: bool) {
     let ignore_immediate_update = _ignore_immediate_update;
 
     #[cfg(target_os = "macos")]
-    initialize_fig_dir().await.ok();
+    {
+        initialize_fig_dir().await.ok();
+
+        if fig_util::directories::home_dir()
+            .map(|mut home| {
+                home.push("Library");
+                home.push("Application Support");
+                home.push("fig");
+                home.push("credentials.json");
+                home
+            })
+            .is_ok_and(|path| path.exists())
+            && !fig_settings::state::get_bool_or(MIGRATED_KEY, false)
+            && fig_settings::state::set_value(MIGRATED_KEY, true).is_ok()
+        {
+            fig_telemetry::send_user_migrated().await;
+        }
+    }
 
     // Add any items that are only once per version
     if should_run_install_script() {

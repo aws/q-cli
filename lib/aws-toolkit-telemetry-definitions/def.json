@@ -4660,6 +4660,12 @@
                     "type": "codewhispererterminal_menuBarItem"
                 }
             ]
+        },
+        {
+            "name": "codewhispererterminal_userMigrated",
+            "description": "Emitted when a user migrates from fig",
+            "passive": false,
+            "metadata": []
         }
     ]
 }

@@ -25,6 +25,7 @@ use aws_toolkit_telemetry_definitions::metrics::{
     CodewhispererterminalDoctorCheckFailed,
     CodewhispererterminalMenuBarActioned,
     CodewhispererterminalTranslationActioned,
+    CodewhispererterminalUserMigrated,
 };
 use aws_toolkit_telemetry_definitions::types::{
     CodewhispererterminalAccepted,
@@ -270,6 +271,15 @@ pub async fn send_menu_bar_actioned(menu_bar_item: Option<impl Into<String>>) {
             value: None,
             codewhispererterminal_menu_bar_item: menu_bar_item
                 .map(|item| CodewhispererterminalMenuBarItem(item.into())),
+        })
+        .await;
+}
+
+pub async fn send_user_migrated() {
+    CLIENT
+        .post_metric(CodewhispererterminalUserMigrated {
+            create_time: None,
+            value: None,
         })
         .await;
 }
