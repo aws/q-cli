@@ -23,9 +23,9 @@ use aws_toolkit_telemetry_definitions::metrics::{
     CodewhispererterminalCliSubcommandExecuted,
     CodewhispererterminalDashboardPageViewed,
     CodewhispererterminalDoctorCheckFailed,
+    CodewhispererterminalFigUserMigrated,
     CodewhispererterminalMenuBarActioned,
     CodewhispererterminalTranslationActioned,
-    CodewhispererterminalUserMigrated,
 };
 use aws_toolkit_telemetry_definitions::types::{
     CodewhispererterminalAccepted,
@@ -277,7 +277,7 @@ pub async fn send_menu_bar_actioned(menu_bar_item: Option<impl Into<String>>) {
 
 pub async fn send_user_migrated() {
     CLIENT
-        .post_metric(CodewhispererterminalUserMigrated {
+        .post_metric(CodewhispererterminalFigUserMigrated {
             create_time: None,
             value: None,
         })
