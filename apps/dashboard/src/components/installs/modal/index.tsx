@@ -9,8 +9,7 @@ import { useStatusCheck } from "@/hooks/store/useStatusCheck";
 import LoginModal from "./login";
 import InstallModal from "./install";
 import { useLocalState } from "@/hooks/store/useState";
-import migrate_dark from "@assets/images/fig-migration/dark.png?url"
-
+import migrate_dark from "@assets/images/fig-migration/dark.png?url";
 
 export function WelcomeModal({ next }: { next: () => void }) {
   return (
@@ -36,8 +35,10 @@ export function WelcomeModal({ next }: { next: () => void }) {
 export default function OnboardingModal() {
   const [step, setStep] = useState(0);
   const check = onboarding[step] as InstallCheck;
-  const [migrationStarted] = useLocalState("user.fig-migration-started")
-  const [migrationEnded, setMigrationEnded] = useLocalState("user.fig-migration-complete")
+  const [migrationStarted] = useLocalState("desktop.migratedFromFig");
+  const [migrationEnded, setMigrationEnded] = useLocalState(
+    "desktop.migratedFromFig.UiComplete"
+  );
   const { setModal } = useContext(ModalContext);
   const [dotfilesCheck, refreshDotfiles] = useStatusCheck("dotfiles");
   const [accessibilityCheck, refreshAccessibility] =
@@ -48,7 +49,6 @@ export default function OnboardingModal() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_accessibility, setAccessibility] = useState(accessibilityCheck);
 
-  //TODO @grant, I'm not really sure how migrationEnded should be handled. Would appreciate your input here. - @bryn
   const isMigrating = migrationStarted === true && migrationEnded === false;
 
   useEffect(() => {
@@ -57,9 +57,8 @@ export default function OnboardingModal() {
   }, [refreshAccessibility, refreshDotfiles]);
 
   function nextStep() {
-
     if (migrationStarted && !migrationEnded) {
-      setMigrationEnded(true)
+      setMigrationEnded(true);
     }
 
     setStep(step + 1);
