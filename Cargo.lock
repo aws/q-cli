@@ -314,12 +314,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "96d30a06541fbafbc7f82ed10c06164cfbd2c401138f6addd8404629c4b16711"
 
 [[package]]
-name = "ascii"
-version = "0.9.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eab1c04a571841102f5345a8fc0f6bb3d31c315dec879b5c6e42e40ce7ffa34e"
-
-[[package]]
 name = "assert-json-diff"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1312,12 +1306,6 @@ dependencies = [
 
 [[package]]
 name = "base64"
-version = "0.13.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e1b586273c5702936fe7b7d6896644d8be71e6314cfe09d3167c95f712589e8"
-
-[[package]]
-name = "base64"
 version = "0.21.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "35636a1494ede3b646cc98f74f8e62c773a38a659ebc777a2cf26b9b74171df9"
@@ -1878,19 +1866,6 @@ checksum = "acbf1af155f9b9ef647e42cdc158db4b64a1b61f743629225fde6f3e0be2a7c7"
 
 [[package]]
 name = "combine"
-version = "3.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da3da6baa321ec19e1cc41d31bf599f00c783d0517095cdaf0332e3fe8d20680"
-dependencies = [
- "ascii",
- "byteorder",
- "either",
- "memchr",
- "unreachable",
-]
-
-[[package]]
-name = "combine"
 version = "4.6.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "35ed6e9d84f0b51a7f52daf1c7d71dd136fd7a3f41a8462b8cdb8c78d920fad4"
@@ -1993,6 +1968,17 @@ dependencies = [
 
 [[package]]
 name = "cookie"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7efb37c3e1ccb1ff97164ad95ac1606e8ccd35b3fa0a7d99a304c7f4a428cc24"
+dependencies = [
+ "percent-encoding",
+ "time",
+ "version_check",
+]
+
+[[package]]
+name = "cookie"
 version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3cd91cf61412820176e137621345ee43b3f4423e589e7ae4e50d601d93e35ef8"
@@ -2009,6 +1995,23 @@ checksum = "d606d0fba62e13cf04db20536c05cb7f13673c161cb47a47a82b9b9e7d3f1daa"
 dependencies = [
  "cookie 0.16.2",
  "idna 0.2.3",
+ "log",
+ "publicsuffix",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "time",
+ "url",
+]
+
+[[package]]
+name = "cookie_store"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "387461abbc748185c3a6e1673d826918b450b87ff22639429c694619a83b6cf6"
+dependencies = [
+ "cookie 0.17.0",
+ "idna 0.3.0",
  "log",
  "publicsuffix",
  "serde",
@@ -2329,7 +2332,6 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
- "shlex",
  "skim",
  "spinners",
  "supports-color",
@@ -2968,7 +2970,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "auth",
- "base64 0.21.5",
+ "base64",
  "bytes",
  "camino",
  "cfg-if",
@@ -3041,7 +3043,7 @@ version = "0.13.0"
 dependencies = [
  "async-trait",
  "auth",
- "base64 0.21.5",
+ "base64",
  "bincode",
  "camino",
  "cfg-if",
@@ -3236,17 +3238,14 @@ dependencies = [
 name = "fig_request"
 version = "0.13.0"
 dependencies = [
- "base64 0.21.5",
  "bytes",
  "cfg-if",
- "cookie 0.18.0",
+ "cookie 0.17.0",
  "fig_settings",
  "fig_util",
- "graphql_client",
- "http 0.2.11",
- "jwt",
  "once_cell",
  "reqwest",
+ "reqwest_cookie_store",
  "rustls 0.21.10",
  "rustls-native-certs 0.7.0",
  "rustls-pemfile 2.0.0",
@@ -3973,64 +3972,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "graphql-introspection-query"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f2a4732cf5140bd6c082434494f785a19cfb566ab07d1382c3671f5812fed6d"
-dependencies = [
- "serde",
-]
-
-[[package]]
-name = "graphql-parser"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2ebc8013b4426d5b81a4364c419a95ed0b404af2b82e2457de52d9348f0e474"
-dependencies = [
- "combine 3.8.1",
- "thiserror",
-]
-
-[[package]]
-name = "graphql_client"
-version = "0.13.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09cdf7b487d864c2939b23902291a5041bc4a84418268f25fda1c8d4e15ad8fa"
-dependencies = [
- "graphql_query_derive",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "graphql_client_codegen"
-version = "0.13.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a40f793251171991c4eb75bd84bc640afa8b68ff6907bc89d3b712a22f700506"
-dependencies = [
- "graphql-introspection-query",
- "graphql-parser",
- "heck",
- "lazy_static",
- "proc-macro2",
- "quote",
- "serde",
- "serde_json",
- "syn 1.0.109",
-]
-
-[[package]]
-name = "graphql_query_derive"
-version = "0.13.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "00bda454f3d313f909298f626115092d348bc231025699f557b27e248475f48c"
-dependencies = [
- "graphql_client_codegen",
- "proc-macro2",
- "syn 1.0.109",
-]
-
-[[package]]
 name = "gtk"
 version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4150,7 +4091,7 @@ version = "7.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "765c9198f173dd59ce26ff9f95ef0aafd0a0fe01fb9d72841bc5066a4c06511d"
 dependencies = [
- "base64 0.21.5",
+ "base64",
  "byteorder",
  "flate2",
  "nom",
@@ -4623,7 +4564,7 @@ checksum = "1a87aa2bb7d2af34197c04845522473242e1aa17c12f4935d5856491a7fb8c97"
 dependencies = [
  "cesu8",
  "cfg-if",
- "combine 4.6.6",
+ "combine",
  "jni-sys",
  "log",
  "thiserror",
@@ -4662,21 +4603,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cee9c64da59eae3b50095c18d3e74f8b73c0b86d2792824ff01bbce68ba229ca"
 dependencies = [
  "wasm-bindgen",
-]
-
-[[package]]
-name = "jwt"
-version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6204285f77fe7d9784db3fdc449ecce1a0114927a51d5a41c4c7a292011c015f"
-dependencies = [
- "base64 0.13.1",
- "crypto-common",
- "digest",
- "hmac",
- "serde",
- "serde_json",
- "sha2",
 ]
 
 [[package]]
@@ -5904,7 +5830,7 @@ version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e5699cc8a63d1aa2b1ee8e12b9ad70ac790d65788cd36101fa37f87ea46c4cef"
 dependencies = [
- "base64 0.21.5",
+ "base64",
  "indexmap 2.1.0",
  "line-wrap",
  "quick-xml 0.31.0",
@@ -6188,7 +6114,7 @@ version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "057237efdb71cf4b3f9396302a3d6599a92fa94063ba537b66130980ea9909f3"
 dependencies = [
- "base64 0.21.5",
+ "base64",
  "once_cell",
  "prost",
  "prost-reflect-derive",
@@ -6575,10 +6501,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37b1ae8d9ac08420c66222fb9096fc5de435c3c48542bc5336c51892cffafb41"
 dependencies = [
  "async-compression",
- "base64 0.21.5",
+ "base64",
  "bytes",
  "cookie 0.16.2",
- "cookie_store",
+ "cookie_store 0.16.2",
  "encoding_rs",
  "futures-core",
  "futures-util",
@@ -6611,6 +6537,18 @@ dependencies = [
  "web-sys",
  "webpki-roots 0.25.3",
  "winreg 0.50.0",
+]
+
+[[package]]
+name = "reqwest_cookie_store"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ba529055ea150e42e4eb9c11dcd380a41025ad4d594b0cb4904ef28b037e1061"
+dependencies = [
+ "bytes",
+ "cookie_store 0.20.0",
+ "reqwest",
+ "url",
 ]
 
 [[package]]
@@ -6811,7 +6749,7 @@ version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c74cae0a4cf6ccbbf5f359f08efdf8ee7e1dc532573bf0db71968cb56b1448c"
 dependencies = [
- "base64 0.21.5",
+ "base64",
 ]
 
 [[package]]
@@ -6820,7 +6758,7 @@ version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "35e4980fa29e4c4b212ffb3db068a564cbf560e51d3944b7c88bd8bf5bec64f4"
 dependencies = [
- "base64 0.21.5",
+ "base64",
  "rustls-pki-types",
 ]
 
@@ -8127,7 +8065,7 @@ dependencies = [
  "async-stream",
  "async-trait",
  "axum",
- "base64 0.21.5",
+ "base64",
  "bytes",
  "h2",
  "http 0.2.11",
@@ -8475,15 +8413,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e51733f11c9c4f72aa0c160008246859e340b00807569a0da0e7a1079b27ba85"
 
 [[package]]
-name = "unreachable"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "382810877fe448991dfc7f0dd6e3ae5d58088fd0ea5e35189655f84e6814fa56"
-dependencies = [
- "void",
-]
-
-[[package]]
 name = "unsafe-libyaml"
 version = "0.2.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8580,12 +8509,6 @@ name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
-
-[[package]]
-name = "void"
-version = "1.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a02e4885ed3bc0f2de90ea6dd45ebcbb66dacffe03547fadbb0eeae2770887d"
 
 [[package]]
 name = "vsimd"
@@ -9354,7 +9277,7 @@ version = "0.34.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f1e29660f22d8eec141f41f59b7fef231e4113c370c89b90ae3a0db8dec1927"
 dependencies = [
- "base64 0.21.5",
+ "base64",
  "block",
  "cocoa 0.25.0",
  "core-graphics 0.23.1",

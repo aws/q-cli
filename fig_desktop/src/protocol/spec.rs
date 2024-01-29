@@ -1,13 +1,9 @@
 use std::borrow::Cow;
-use std::str::FromStr;
 
 use anyhow::Result;
-use bytes::Bytes;
-use fig_request::reqwest::{
-    Client,
-    Request as ReqwestRequest,
-};
-use fig_request::utils::reqwest_response_to_http_response;
+use auth::builder_id::BuilderIdToken;
+use auth::secret_store::SecretStore;
+use fig_request::reqwest::Client;
 use fnv::FnvHashSet;
 use futures::prelude::*;
 use http::header::{
@@ -16,7 +12,6 @@ use http::header::{
 };
 use http::{
     HeaderValue,
-    Method,
     Request,
     Response,
     StatusCode,
@@ -26,6 +21,7 @@ use serde::{
     Deserialize,
     Serialize,
 };
+use tracing::error;
 use url::Url;
 
 #[non_exhaustive]
@@ -36,21 +32,17 @@ enum AuthType {
 }
 
 impl AuthType {
-    pub async fn get(&self, default_client: &Client, request: ReqwestRequest) -> Result<http::Response<Bytes>> {
+    pub async fn get(&self, default_client: &Client, url: Url) -> Result<fig_request::reqwest::Response> {
         match self {
-            AuthType::Midway => fig_request::midway::midway_request(request)
-                .await
-                .map_err(anyhow::Error::from),
-            _ => Ok(
-                reqwest_response_to_http_response(default_client.execute(request).await?.error_for_status()?).await?,
-            ),
+            AuthType::Midway => Ok(fig_request::midway::midway_request(url).await?.error_for_status()?),
+            _ => Ok(default_client.get(url).send().await?.error_for_status()?),
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct CdnSource {
-    url: String,
+    url: Url,
     auth_type: AuthType,
 }
 
@@ -58,17 +50,18 @@ static CDNS: Lazy<Vec<CdnSource>> = Lazy::new(|| {
     vec![
         // Public cdn
         CdnSource {
-            url: option_env!("CW_BUILD_SPECS_URL")
-                .unwrap_or("https://specs.codewhisperer.us-east-1.amazonaws.com")
-                .into(),
+            url: "https://specs.codewhisperer.us-east-1.amazonaws.com"
+                .try_into()
+                .unwrap(),
             auth_type: AuthType::None,
         },
-        // TODO: enable this only for internal users
         // Internal Amazon spec cdn
-        // CdnSource {
-        //     url: "https://gamma.us-east-1.shellspecs.jupiter.ai.aws.dev".into(),
-        //     auth_type: AuthType::Midway,
-        // },
+        CdnSource {
+            url: "https://gamma.us-east-1.shellspecs.jupiter.ai.aws.dev"
+                .try_into()
+                .unwrap(),
+            auth_type: AuthType::Midway,
+        },
     ]
 });
 
@@ -108,16 +101,62 @@ async fn remote_index_json(client: &Client) -> &Vec<Result<SpecIndexMeta>> {
     INDEX_CACHE
         .get_or_init(|| async {
             future::join_all(CDNS.iter().map(|cdn_source| async move {
-                let url = Url::from_str(&format!("{}/index.json", cdn_source.url)).unwrap();
-                let request = ReqwestRequest::new(Method::GET, url);
-                let response = cdn_source.auth_type.get(client, request).await?;
+                if AuthType::Midway == cdn_source.auth_type {
+                    let secret_store = match SecretStore::new().await {
+                        Ok(secret_store) => secret_store,
+                        Err(err) => {
+                            error!(%err, "Failed to create secret store");
+                            return None;
+                        },
+                    };
 
-                Ok(SpecIndexMeta {
+                    let auth_token = match BuilderIdToken::load(&secret_store).await {
+                        Ok(auth_token) => match auth_token {
+                            Some(auth_token) => auth_token,
+                            None => return None,
+                        },
+                        Err(err) => {
+                            error!(%err, "Failed to load auth");
+                            return None;
+                        },
+                    };
+
+                    if !auth_token
+                        .start_url
+                        .is_some_and(|t| t == "https://amzn.awsapps.com/start")
+                    {
+                        return None;
+                    }
+                }
+
+                let mut url = cdn_source.url.clone();
+                url.set_path("index.json");
+
+                let response = match cdn_source.auth_type.get(client, url).await {
+                    Ok(response) => response,
+                    Err(err) => {
+                        error!(%err, "Failed to fetch spec index");
+                        return Some(Err(err));
+                    },
+                };
+
+                let spec_index = match response.json().await {
+                    Ok(s) => s,
+                    Err(s) => {
+                        error!(%s, "Failed to parse spec index");
+                        return Some(Err(s.into()));
+                    },
+                };
+
+                Some(Ok(SpecIndexMeta {
                     cdn_source: cdn_source.clone(),
-                    spec_index: serde_json::from_slice(response.body())?,
-                })
+                    spec_index,
+                }))
             }))
             .await
+            .into_iter()
+            .flatten()
+            .collect::<Vec<_>>()
         })
         .await
 }
@@ -183,22 +222,28 @@ pub async fn handle(request: Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'s
             }
         }
 
-        let url = Url::from_str(&format!("{}{path}", cdn_source.url))?;
-        let request = ReqwestRequest::new(Method::GET, url);
-        let response = cdn_source.auth_type.get(client, request).await?;
+        let mut url = cdn_source.url.clone();
+        url.set_path(path);
+
+        let response = cdn_source.auth_type.get(client, url).await?;
 
         let content_type = response
             .headers()
             .get(CONTENT_TYPE)
             .map_or_else(|| "application/javascript".try_into().unwrap(), |v| v.to_owned());
 
-        Ok(res_ok(response.body().to_vec(), content_type))
+        Ok(res_ok(response.bytes().await?.to_vec(), content_type))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cdns() {
+        println!("{:?}", *CDNS);
+    }
 
     #[tokio::test]
     async fn test_index_json() {

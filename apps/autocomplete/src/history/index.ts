@@ -34,7 +34,7 @@ import {
   HistoryContext,
 } from "./helpers";
 import { MissingSpecError } from "./errors";
-import { FIG_DIR } from "../utils";
+import { DATA_DIR } from "../utils";
 
 const historyLogger = getLogger("history");
 historyLogger.setDefaultLevel("warn");
@@ -237,7 +237,7 @@ export const loadHistorySource = async (
 };
 
 const loadFigHistory = async (): Promise<HistoryEntry[]> => {
-  const hist = await fread(`${FIG_DIR}/history`);
+  const hist = await fread(`${DATA_DIR}/history`);
   return hist.split("\n").reduce(
     (acc, line) => {
       if (line.startsWith("- command: ")) {

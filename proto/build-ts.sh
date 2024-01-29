@@ -10,7 +10,7 @@ TS_FLAGS="--plugin=${TS_PROTO} \
             --ts_proto_opt=oneof=unions \
             --ts_proto_opt=fileSuffix=.pb \
             --ts_proto_opt=removeEnumPrefix=true \
-            --ts_proto_opt=useExactTypes=false
+            --ts_proto_opt=useExactTypes=false \
             --ts_proto_opt=globalThisPolyfill=true"
 
 API="./fig.proto ./fig_common.proto"

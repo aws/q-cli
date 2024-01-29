@@ -169,7 +169,8 @@ export async function importFromPublicCDN<T = SpecFileImport>(
         maxRetries: 5,
         jitter: 100,
       },
-      () => import(cdnUrlFactory(name))
+
+      () => import(/* @vite-ignore */ cdnUrlFactory(name))
     );
   } catch {
     /**/

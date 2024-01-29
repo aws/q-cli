@@ -1,7 +1,6 @@
 mod error;
 pub mod midway;
 pub mod reqwest_client;
-pub mod utils;
 
 pub use error::Error;
 pub use reqwest;

@@ -625,7 +625,7 @@ pub fn build_dashboard(
         .with_devtools(true)
         .with_asynchronous_custom_protocol(
             "resource".into(),
-            utils::wrap_custom_protocol(resource::handle::<resource::Dashboard>),
+            utils::wrap_custom_protocol("resource::Dashboard", resource::handle::<resource::Dashboard>),
         )
         .with_navigation_handler(navigation_handler(DASHBOARD_ID, &[
             // Main domain
@@ -711,14 +711,13 @@ pub fn build_autocomplete(
                 })
                 .unwrap();
         })
-        .with_asynchronous_custom_protocol("fig".into(), utils::wrap_custom_protocol(icons::handle))
-        .with_asynchronous_custom_protocol("icon".into(), utils::wrap_custom_protocol(icons::handle))
-        .with_asynchronous_custom_protocol("spec".into(), utils::wrap_custom_protocol(spec::handle))
+        .with_asynchronous_custom_protocol("fig".into(), utils::wrap_custom_protocol("fig", icons::handle))
+        .with_asynchronous_custom_protocol("icon".into(), utils::wrap_custom_protocol("icon", icons::handle))
+        .with_asynchronous_custom_protocol("spec".into(), utils::wrap_custom_protocol("spec", spec::handle))
         .with_asynchronous_custom_protocol(
             "resource".into(),
-            utils::wrap_custom_protocol(resource::handle::<resource::Autocomplete>),
+            utils::wrap_custom_protocol("resource::Autocomplete", resource::handle::<resource::Autocomplete>),
         )
-        // .with_custom_protocol("resource".into(), utils::wrap_custom_protocol(resource::handle))
         .with_devtools(true)
         .with_transparent(true)
         .with_initialization_script(&javascript_init())

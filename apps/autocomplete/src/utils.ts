@@ -9,11 +9,12 @@ const DEFAULT_CONSOLE = {
   error: console.error,
 };
 
-export const FIG_DIR = window.fig.constants?.figDotDir ?? "~/.fig";
+export const LOG_DIR = window.fig.constants?.logsDir;
+export const DATA_DIR = window.fig.constants?.figDataDir;
 
 const NEW_LOG_FN = (...content: unknown[]) => {
   fs.append(
-    `${FIG_DIR}/logs/specs.log`,
+    `${LOG_DIR}/logs/specs.log`,
     `\n${util.format(...content)}`,
   ).finally(() => DEFAULT_CONSOLE.warn("SPEC LOG:", util.format(...content)));
 };

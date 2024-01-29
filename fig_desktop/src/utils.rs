@@ -1,5 +1,9 @@
 use std::borrow::Cow;
 use std::future::Future;
+use std::sync::atomic::{
+    AtomicU64,
+    Ordering,
+};
 
 use http::header::{
     ACCESS_CONTROL_ALLOW_ORIGIN,
@@ -7,8 +11,7 @@ use http::header::{
 };
 use http::status::StatusCode;
 use http::{
-    Request as HttpRequest,
-    Response as HttpResponse,
+    HeaderValue, Request as HttpRequest, Response as HttpResponse
 };
 use once_cell::sync::Lazy;
 use serde::{
@@ -16,6 +19,12 @@ use serde::{
     Serialize,
 };
 use serde_json::json;
+use tracing::{
+    debug,
+    debug_span,
+    error,
+    Instrument,
+};
 use wry::application::dpi::{
     Position,
     Size,
@@ -28,42 +37,67 @@ pub fn is_cargo_debug_build() -> bool {
     cfg!(debug_assertions) && !fig_settings::state::get_bool_or("developer.override-cargo-debug", false)
 }
 
-pub fn wrap_custom_protocol<F, Fut>(f: F) -> impl Fn(HttpRequest<Vec<u8>>, RequestAsyncResponder) + 'static
+pub fn wrap_custom_protocol<F, Fut>(
+    proto_name: &'static str,
+    f: F,
+) -> impl Fn(HttpRequest<Vec<u8>>, RequestAsyncResponder) + 'static
 where
-    F: Fn(HttpRequest<Vec<u8>>) -> Fut + Send + Sync + Copy + 'static,
-    Fut: Future<Output = anyhow::Result<HttpResponse<Cow<'static, [u8]>>>> + Send + Sync + 'static,
+    F: Fn(HttpRequest<Vec<u8>>) -> Fut + Send + Copy + 'static,
+    Fut: Future<Output = anyhow::Result<HttpResponse<Cow<'static, [u8]>>>> + Send + 'static,
 {
     move |req: HttpRequest<Vec<u8>>, responder: RequestAsyncResponder| {
-        tokio::spawn(async move {
-            let accept_json = req
-                .headers()
-                .get("Accept")
-                .and_then(|accept| accept.to_str().ok())
-                .and_then(|accept| accept.split('/').last())
-                .map_or(false, |accept| accept == "json");
+        let proto = proto_name;
 
-            let response = match f(req).await {
-                Ok(res) => res,
-                Err(err) => {
-                    let response = HttpResponse::builder()
-                        .status(StatusCode::BAD_REQUEST)
-                        .header(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-                    if accept_json {
-                        response.header(CONTENT_TYPE, "application/json").body(
-                            serde_json::to_vec(&json!({ "error": err.to_string() }))
-                                .map_or_else(|_| b"{}".as_ref().into(), Into::into),
-                        )
-                    } else {
-                        response
-                            .header(CONTENT_TYPE, "text/plain")
-                            .body(err.to_string().into_bytes().into())
-                    }
-                    .unwrap()
-                },
-            };
+        static ID_CTR: AtomicU64 = AtomicU64::new(0);
+        let id = ID_CTR.fetch_add(1, Ordering::Relaxed);
 
-            responder.respond(response);
-        });
+        let span = debug_span!("custom-proto", %proto, %id);
+        let _enter = span.enter();
+
+        tokio::spawn(
+            async move {
+                debug!(uri =% req.uri(), "{proto_name} proto request");
+
+                let accept_json = req
+                    .headers()
+                    .get("Accept")
+                    .and_then(|accept| accept.to_str().ok())
+                    .and_then(|accept| accept.split('/').last())
+                    .map_or(false, |accept| accept == "json");
+
+                let mut response = match f(req).await {
+                    Ok(res) => res,
+                    Err(err) => {
+                        error!(%err, "Custom protocol failed");
+
+                        let response = HttpResponse::builder()
+                            .status(StatusCode::INTERNAL_SERVER_ERROR)
+                            .header(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+                        if accept_json {
+                            response.header(CONTENT_TYPE, "application/json").body(
+                                serde_json::to_vec(&json!({ "error": err.to_string() }))
+                                    .map_or_else(|_| b"{}".as_ref().into(), Into::into),
+                            )
+                        } else {
+                            response
+                                .header(CONTENT_TYPE, "text/plain")
+                                .body(err.to_string().into_bytes().into())
+                        }
+                        .unwrap()
+                    },
+                };
+
+                response.headers_mut().insert(
+                    "X-Request-Id",
+                    HeaderValue::from_str(&id.to_string()).unwrap(),
+                );
+
+                debug!(status = %response.status(), "Custom proto response");
+
+                responder.respond(response);
+            }
+            .in_current_span(),
+        );
     }
 }
 

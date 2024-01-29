@@ -1,67 +1,34 @@
-use reqwest::StatusCode;
+use url::ParseError;
 
 #[cfg(feature = "midway")]
 use crate::midway;
 
 #[derive(Debug)]
 pub enum Error {
-    Fig {
-        error: String,
-        status: StatusCode,
-        sentry_id: Option<String>,
-    },
-    Graphql(Vec<graphql_client::Error>),
-    GraphqlNoData,
     Reqwest(reqwest::Error),
-    Http(http::Error),
-    Status(StatusCode),
     Serde(serde_json::Error),
     Io(std::io::Error),
     Dir(fig_util::directories::DirectoryError),
     Settings(fig_settings::Error),
     NoClient,
     NoToken,
+    UrlParseError(ParseError),
     #[cfg(feature = "midway")]
     Midway(midway::MidwayError),
-}
-
-impl Error {
-    pub fn is_status(&self, status: StatusCode) -> bool {
-        match self {
-            Error::Fig { status: s, .. } | Error::Status(s) => *s == status,
-            _ => false,
-        }
-    }
 }
 
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Error::Fig {
-                error,
-                status,
-                sentry_id,
-            } => match sentry_id {
-                Some(sentry_id) => {
-                    write!(f, "{error} (status: {status}, error_id: {sentry_id})",)
-                },
-                None => write!(f, "{error} (status: {status})"),
-            },
-            Error::Graphql(err) => match err.len() {
-                0 => write!(f, "Empty graphql error"),
-                1 => write!(f, "Graphql error: {}", err[0]),
-                _ => write!(f, "Graphql errors: {err:?}"),
-            },
-            Error::GraphqlNoData => write!(f, "Graphql error: No data"),
             Error::Reqwest(err) => write!(f, "Reqwest error: {err}"),
-            Error::Http(err) => write!(f, "Http error: {err}"),
-            Error::Status(err) => write!(f, "Status error: {err}"),
+            // Error::Status(err) => write!(f, "Status error: {err}"),
             Error::Serde(err) => write!(f, "Serde error: {err}"),
             Error::Io(err) => write!(f, "Io error: {err}"),
             Error::Dir(err) => write!(f, "Dir error: {err}"),
             Error::Settings(err) => write!(f, "Settings error: {err}"),
             Error::NoClient => write!(f, "No client"),
             Error::NoToken => write!(f, "No token"),
+            Error::UrlParseError(err) => write!(f, "Url parse error: {err}"),
             #[cfg(feature = "midway")]
             Error::Midway(err) => write!(f, "Midway error: {err}"),
         }
@@ -70,27 +37,9 @@ impl std::fmt::Display for Error {
 
 impl std::error::Error for Error {}
 
-impl From<Vec<graphql_client::Error>> for Error {
-    fn from(e: Vec<graphql_client::Error>) -> Self {
-        Error::Graphql(e)
-    }
-}
-
 impl From<reqwest::Error> for Error {
     fn from(e: reqwest::Error) -> Self {
         Error::Reqwest(e)
-    }
-}
-
-impl From<http::Error> for Error {
-    fn from(e: http::Error) -> Self {
-        Error::Http(e)
-    }
-}
-
-impl From<StatusCode> for Error {
-    fn from(e: StatusCode) -> Self {
-        Error::Status(e)
     }
 }
 
@@ -115,6 +64,12 @@ impl From<fig_util::directories::DirectoryError> for Error {
 impl From<fig_settings::Error> for Error {
     fn from(e: fig_settings::Error) -> Self {
         Error::Settings(e)
+    }
+}
+
+impl From<ParseError> for Error {
+    fn from(e: ParseError) -> Self {
+        Error::UrlParseError(e)
     }
 }
 
