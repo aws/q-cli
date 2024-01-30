@@ -13,7 +13,7 @@ const csp: Record<string, string> = {
   "script-src": "'self' spec: blob:",
   "style-src": "'self' spec:",
   "img-src": "'self' data: fig: icon: https:",
-  "connect-src": "'self'",
+  "connect-src": "'self' spec:",
   "object-src": "'none'",
   "frame-src": "'none'",
 };
