@@ -80,6 +80,15 @@ pub fn menu_bar() -> Menu {
 
     menu_bar.append(&edit_submenu).unwrap();
 
+    let window_submenu = Submenu::new("Window", true);
+    window_submenu
+        .append_items(&[&PredefinedMenuItem::minimize(Some("Minimize"))])
+        .unwrap();
+    menu_bar.append(&window_submenu).unwrap();
+
+    let help_submenu = Submenu::new("Help", true);
+    menu_bar.append(&help_submenu).unwrap();
+
     menu_bar
 }
 
