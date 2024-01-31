@@ -169,7 +169,7 @@ impl IssueArgs {
         let url = url::Url::parse_with_params(
             "https://github.com/aws/codewhisperer-command-line-discussions/discussions/new",
             &[
-                ("category", "bug-report"),
+                ("category", "support-ticket"),
                 ("title", &issue_title),
                 ("labels", &labels.join(",")),
                 ("assignees", &assignees.join(",")),
