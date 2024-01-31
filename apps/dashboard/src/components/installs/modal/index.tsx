@@ -49,7 +49,8 @@ export default function OnboardingModal() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_accessibility, setAccessibility] = useState(accessibilityCheck);
 
-  const isMigrating = migrationStarted === true && migrationEnded === false;
+  const isMigrating =
+    Boolean(migrationStarted) === true && Boolean(migrationEnded) === false;
 
   useEffect(() => {
     refreshAccessibility();
@@ -113,7 +114,7 @@ export function FigMigrationModal({ next }: { next: () => void }) {
         <img src={migrate_dark} className="w-40" />
         <div className="flex flex-col gap-2 items-center text-center">
           <h2 className="text-2xl text-white font-semibold select-none leading-none font-ember tracking-tight">
-            Almost done migrating!
+            Almost done upgrading!
           </h2>
           <p className="text-sm">Let's get you set up...</p>
         </div>
