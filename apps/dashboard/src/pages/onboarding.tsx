@@ -6,6 +6,50 @@ import aiDemo from "@assets/images/ai_demo.gif";
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState(0);
+  const [demoClosed, setDemoClosed] = useState(false);
+
+  const demo = (
+    <div className="place-self-center border rounded-lg border-zinc-800 w-full max-w-2xl scale-75 relative -top-16">
+      <div className="w-full h-auto rounded-lg flex flex-col bg-[#161A1D]">
+        <div className="flex flex-row gap-1.5 p-2 bg-zinc-700 rounded-t">
+          <div
+            className="flex items-center justify-center w-3 h-3 rounded-full bg-red-500"
+            onClick={() => setDemoClosed(true)}
+          ></div>
+          <div className="flex items-center justify-center w-3 h-3 rounded-full bg-yellow-500"></div>
+          <div className="flex items-center justify-center w-3 h-3 rounded-full bg-green-500"></div>
+        </div>
+        <div className="grid grid-cols-2 border-b-zinc-900 border-b-2 gap-0.5">
+          <div
+            className={cn(
+              "text-zinc-400 text-center p-1.5 hover:bg-zinc-800 hover:border-transparent transition-colors font-mono border-t border-zinc-950 select-none cursor-pointer",
+              activeTab == 0 &&
+                "bg-zinc-700 hover:bg-zinc-700 border-transparent text-zinc-100"
+            )}
+            onClick={() => setActiveTab(0)}
+          >
+            Autocomplete
+          </div>
+          <div
+            className={cn(
+              "text-zinc-400 text-center p-1.5 hover:bg-zinc-800 hover:border-transparent transition-colors font-mono border-t border-zinc-950 select-none  cursor-pointer",
+              activeTab == 1 &&
+                "bg-zinc-700 hover:bg-zinc-700 border-transparent text-zinc-100"
+            )}
+            onClick={() => setActiveTab(1)}
+          >
+            AI Translation
+          </div>
+        </div>
+        <div className="p-2">
+          {activeTab == 0 && (
+            <img src={autocompleteDemo} alt="autocomplete demo" />
+          )}
+          {activeTab == 1 && <img src={aiDemo} alt="ai demo" />}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex flex-col items-start gap-4">
@@ -40,43 +84,7 @@ export default function Page() {
           </li>
         </ol>
       </div>
-      <div className="place-self-center border rounded-lg border-zinc-800 w-full max-w-2xl scale-75 relative -top-16">
-        <div className="w-full h-auto rounded-lg flex flex-col bg-[#161A1D]">
-          <div className="flex flex-row gap-1.5 p-2 bg-zinc-700 rounded-t">
-            <div className="flex items-center justify-center w-3 h-3 rounded-full bg-red-500"></div>
-            <div className="flex items-center justify-center w-3 h-3 rounded-full bg-yellow-500"></div>
-            <div className="flex items-center justify-center w-3 h-3 rounded-full bg-green-500"></div>
-          </div>
-          <div className="grid grid-cols-2 border-b-zinc-900 border-b-2 gap-0.5">
-            <div
-              className={cn(
-                "text-zinc-400 text-center p-1.5 hover:bg-zinc-800 hover:border-transparent transition-colors font-mono border-t border-zinc-950 select-none cursor-pointer",
-                activeTab == 0 &&
-                  "bg-zinc-700 hover:bg-zinc-700 border-transparent text-zinc-100"
-              )}
-              onClick={() => setActiveTab(0)}
-            >
-              Autocomplete
-            </div>
-            <div
-              className={cn(
-                "text-zinc-400 text-center p-1.5 hover:bg-zinc-800 hover:border-transparent transition-colors font-mono border-t border-zinc-950 select-none  cursor-pointer",
-                activeTab == 1 &&
-                  "bg-zinc-700 hover:bg-zinc-700 border-transparent text-zinc-100"
-              )}
-              onClick={() => setActiveTab(1)}
-            >
-              AI Translation
-            </div>
-          </div>
-          <div className="p-2">
-            {activeTab == 0 && (
-              <img src={autocompleteDemo} alt="autocomplete demo" />
-            )}
-            {activeTab == 1 && <img src={aiDemo} alt="ai demo" />}
-          </div>
-        </div>
-      </div>
+      {demoClosed ? <></> : demo}
     </div>
   );
 }
