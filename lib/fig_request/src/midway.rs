@@ -357,7 +357,7 @@ mod tests {
     #[ignore = "no auth"]
     async fn test_midway() {
         let res = midway_request(
-            "https://gamma.us-east-1.shellspecs.jupiter.ai.aws.dev/index.json"
+            "https://prod.us-east-1.shellspecs.jupiter.ai.aws.dev/index.json"
                 .try_into()
                 .unwrap(),
         )

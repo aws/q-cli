@@ -56,12 +56,12 @@ static CDNS: Lazy<Vec<CdnSource>> = Lazy::new(|| {
             auth_type: AuthType::None,
         },
         // Internal Amazon spec cdn
-        // CdnSource {
-        //     url: "https://prod.us-east-1.shellspecs.jupiter.ai.aws.dev"
-        //         .try_into()
-        //         .unwrap(),
-        //     auth_type: AuthType::Midway,
-        // },
+        CdnSource {
+            url: "https://prod.us-east-1.shellspecs.jupiter.ai.aws.dev"
+                .try_into()
+                .unwrap(),
+            auth_type: AuthType::Midway,
+        },
     ]
 });
 
