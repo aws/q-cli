@@ -7,7 +7,7 @@
   "packageManager": "pnpm@8.11.0",
   "devDependencies": {
     "husky": "^8.0.3",
-    "lint-staged": "^15.2.0"
+    "lint-staged": "^15.2.2"
   },
   "optionalDependencies": {
     "appdmg": "^0.6.6"
