@@ -76,6 +76,7 @@ spinners = "4.1.0"
 supports-color = "2.0.0"
 sysinfo = "0.30.5"
 tempfile = "3.4.0"
+textwrap = "0.16.0"
 thiserror = "1.0"
 time = { version = "0.3", features = [
     "serde-human-readable",

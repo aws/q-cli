@@ -3,8 +3,8 @@ mod parse;
 use std::io::{
     self,
     Stdout,
-    Write as _,
 };
+use std::marker::PhantomData;
 
 use amzn_codewhisperer_streaming_client::types::{
     ChatMessage,
@@ -25,23 +25,10 @@ use crossterm::cursor::{
     SetCursorStyle,
 };
 use crossterm::event::{
-    self,
-    DisableMouseCapture,
-    EnableMouseCapture,
     Event,
     KeyCode,
-    KeyEvent,
     KeyEventKind,
     KeyModifiers,
-    MouseEvent,
-    MouseEventKind,
-};
-use crossterm::execute;
-use crossterm::terminal::{
-    disable_raw_mode,
-    enable_raw_mode,
-    EnterAlternateScreen,
-    LeaveAlternateScreen,
 };
 use eyre::Result;
 use fig_api_client::ai::cw_streaming_client;
@@ -58,7 +45,6 @@ use ratatui::layout::{
     Constraint,
     Direction,
     Layout,
-    Margin,
     Rect,
 };
 use ratatui::style::{
@@ -74,14 +60,8 @@ use ratatui::text::{
 use ratatui::widgets::{
     Block,
     Borders,
-    List,
-    ListDirection,
-    ListItem,
     Paragraph,
-    Scrollbar,
-    ScrollbarOrientation,
-    ScrollbarState,
-    Wrap,
+    Widget as _,
 };
 use ratatui::{
     Frame,
@@ -89,40 +69,58 @@ use ratatui::{
     TerminalOptions,
 };
 use tokio::sync::mpsc::Receiver;
-use winnow::Parser;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ControlFlow {
+    Continue,
+    Exit,
+}
 
 enum Message {
     User(String),
     Assistant(String),
 }
 
-/// App holds the state of the application
-struct App {
-    /// Current value of the input box
-    input: String,
-    /// Position of cursor in the editor area.
-    cursor_position: usize,
-    /// History of recorded messages
-    messages: Vec<Message>,
-    rx: Option<Receiver<String>>,
-    scroll_pos: usize,
-}
-
-impl Default for App {
-    fn default() -> App {
-        App {
-            input: String::new(),
-            messages: vec![Message::Assistant(
-                "Hi, I'm Amazon Q. I can answer your software development questions".into(),
-            )],
-            cursor_position: 0,
-            rx: None,
-            scroll_pos: 0,
+impl Message {
+    fn text(&self) -> &str {
+        match self {
+            Message::User(text) => text,
+            Message::Assistant(text) => text,
         }
     }
 }
 
-impl App {
+enum ApiResponse {
+    Text { idx: usize, content: String },
+    End,
+}
+
+/// App holds the state of the application
+struct App<B: Backend> {
+    /// Current value of the input box
+    input: String,
+    /// Position of cursor in the editor area.
+    cursor_position: usize,
+    rx: Option<Receiver<ApiResponse>>,
+    client: &'static Client,
+    _backend: PhantomData<B>,
+}
+
+impl<B> App<B>
+where
+    B: Backend,
+{
+    async fn new() -> App<B> {
+        let client = cw_streaming_client().await;
+        App {
+            input: String::new(),
+            cursor_position: 0,
+            rx: None,
+            client,
+            _backend: PhantomData::default(),
+        }
+    }
+
     fn move_cursor_left(&mut self) {
         let cursor_moved_left = self.cursor_position.saturating_sub(1);
         self.cursor_position = self.clamp_cursor(cursor_moved_left);
@@ -169,14 +167,81 @@ impl App {
         self.cursor_position = 0;
     }
 
-    fn submit_message(&mut self) -> String {
-        self.messages.insert(0, Message::User(self.input.clone()));
-        let input = std::mem::replace(&mut self.input, String::new());
-        self.reset_cursor();
-        input
+    fn insert_paragraph_before(
+        &self,
+        terminal: &mut Terminal<B>,
+        height: u16,
+        paragraph: Paragraph<'_>,
+    ) -> io::Result<()> {
+        terminal.insert_before(height, |buf| {
+            paragraph.render(
+                Rect {
+                    x: buf.area.x + 1,
+                    width: buf.area.width - 1,
+                    ..buf.area
+                },
+                buf,
+            );
+        })
     }
 
-    async fn next_assistant_message(&mut self) -> Option<String> {
+    fn insert_whole_message_before(&mut self, terminal: &mut Terminal<B>, message: Message) -> io::Result<()> {
+        let size = terminal.size()?;
+
+        let wrapped_text = textwrap::wrap(message.text(), size.width as usize - 1);
+        let height = 3 + wrapped_text.len() as u16;
+
+        let mut lines = Vec::with_capacity(height as usize);
+        lines.extend([
+            Line::from(""),
+            Line::from(vec![Span::styled(
+                match message {
+                    Message::User(_) => "❯ You",
+                    Message::Assistant(_) => "❯ Q",
+                },
+                Style::new().fg(Color::Magenta).add_modifier(Modifier::BOLD),
+            )]),
+        ]);
+        lines.extend(wrapped_text.iter().map(|text| Line::from(text.to_string())));
+
+        self.insert_paragraph_before(terminal, height, Paragraph::new(lines))?;
+
+        Ok(())
+    }
+
+    fn insert_message_text_before(&mut self, terminal: &mut Terminal<B>, message: &str) -> io::Result<()> {
+        let size = terminal.size()?;
+
+        let wrapped_text = textwrap::wrap(message, size.width as usize - 1);
+        let height = wrapped_text.len() as u16;
+
+        let mut lines = Vec::with_capacity(height as usize);
+        lines.extend(wrapped_text.iter().map(|text| Line::from(text.to_string())));
+
+        self.insert_paragraph_before(terminal, height, Paragraph::new(lines))?;
+
+        Ok(())
+    }
+
+    fn insert_assistant_message_start(&mut self, terminal: &mut Terminal<B>) -> io::Result<()> {
+        let lines = vec![
+            Line::from(""),
+            Line::styled("❯ Q", Style::new().fg(Color::Magenta).add_modifier(Modifier::BOLD)),
+        ];
+
+        self.insert_paragraph_before(terminal, lines.len() as u16, Paragraph::new(lines))?;
+        Ok(())
+    }
+
+    fn submit_message(&mut self, terminal: &mut Terminal<B>) -> io::Result<String> {
+        let input = std::mem::take(&mut self.input);
+        self.insert_whole_message_before(terminal, Message::User(input.clone()))?;
+        self.insert_assistant_message_start(terminal)?;
+        self.reset_cursor();
+        Ok(input)
+    }
+
+    async fn next_assistant_message(&mut self) -> Option<ApiResponse> {
         let res = match self.rx {
             Some(ref mut rx) => rx.recv().await,
             None => {
@@ -191,35 +256,168 @@ impl App {
 
         res
     }
+
+    fn init(&mut self, terminal: &mut Terminal<B>) -> io::Result<()> {
+        self.insert_whole_message_before(
+            terminal,
+            Message::Assistant("Hi, I'm Amazon Q. I can answer your software development questions".into()),
+        )?;
+        Ok(())
+    }
+
+    fn on_event(&mut self, event: Event, terminal: &mut Terminal<B>) -> io::Result<ControlFlow> {
+        match event {
+            Event::Key(key) => {
+                if key.kind == KeyEventKind::Press {
+                    match key.code {
+                        KeyCode::Enter => {
+                            if self.rx.is_none() {
+                                let message = self.submit_message(terminal)?;
+                                self.rx = Some(send_message(self.client.clone(), message));
+                            }
+                        },
+                        KeyCode::Char('c' | 'd') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                            return Ok(ControlFlow::Exit);
+                        },
+                        KeyCode::Char(to_insert) => {
+                            self.enter_char(to_insert);
+                        },
+                        KeyCode::Backspace => {
+                            self.delete_char();
+                        },
+                        KeyCode::Left => {
+                            self.move_cursor_left();
+                        },
+                        KeyCode::Right => {
+                            self.move_cursor_right();
+                        },
+                        _ => {},
+                    }
+                }
+            },
+            Event::Paste(s) => {
+                self.input.push_str(&s);
+            },
+            // Event::Resize(width, height) => {
+            //     terminal.resize(Rect::new(0, 0, width, height))?;
+            // },
+            _ => {},
+        };
+
+        Ok(ControlFlow::Continue)
+    }
+
+    fn draw(&self, f: &mut Frame<'_>) {
+        use ratatui::style::Stylize;
+
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Length(1), Constraint::Length(3), Constraint::Length(1)])
+            .split(f.size());
+
+        let mut text = Text::from(Line::from(
+            ["Press ".into(), "ctrl+c".bold(), " to exit".into()].to_vec(),
+        ));
+        text.patch_style(Style::default().add_modifier(Modifier::RAPID_BLINK));
+
+        let help_message = Paragraph::new(text);
+        f.render_widget(help_message, chunks[2]);
+
+        let mut input_text_style = Style::new();
+        if self.input.is_empty() {
+            input_text_style = input_text_style.dim();
+        }
+
+        let input_text = Text::styled(
+            if self.input.is_empty() {
+                "Message Q..."
+            } else {
+                self.input.as_str()
+            },
+            input_text_style,
+        );
+
+        let input = Paragraph::new(input_text)
+            .style(Style::default().fg(Color::Gray))
+            .block(Block::default().borders(Borders::ALL));
+        f.render_widget(input, chunks[1]);
+
+        // // Make the cursor visible and ask ratatui to put it at the specified coordinates
+        // after // rendering
+        // f.set_cursor(
+        //     // Draw the cursor at the current position in the input field.
+        //     // This position is can be controlled via the left and right arrow key
+        //     chunks[1].x + app.cursor_position as u16 + 1,
+        //     // Move one line down, from the border to the input line
+        //     chunks[1].y + 1,
+        // );
+
+        // // let messages =
+        // // List::new(messages).block(Block::default().borders(Borders::ALL).title("Messages"
+        // )); // f.render_widget(messages, chunks[2]);
+
+        // let items = app.messages.iter().rev().fold(Text::from(""), |mut acc, message| {
+        //     match message {
+        //         Message::User(s) => {
+        //             acc.extend(["❯ You".bold()]);
+        //             acc.extend(Text::from(s.trim().to_owned()));
+        //             acc.extend([""]);
+        //         },
+        //         Message::Assistant(s) => {
+        //             acc.extend(["❯ Q".bold().magenta()]);
+        //             acc.extend(Text::from(s.trim_start().to_owned()));
+        //             acc.extend([""]);
+        //         },
+        //     };
+        //     acc
+        // });
+
+        // let mut paragraph = Paragraph::new(items.clone())
+        //     .wrap(Wrap { trim: false })
+        //     .block(Block::new().borders(Borders::RIGHT));
+
+        // let paragraph_height = paragraph.line_count(chunks[0].width);
+        // app.scroll_pos = paragraph_height.saturating_sub(chunks[0].height as usize);
+
+        // paragraph = paragraph.scroll((app.scroll_pos as u16, 0));
+
+        // let scrollbar = Scrollbar::default()
+        //     .orientation(ScrollbarOrientation::VerticalRight)
+        //     .begin_symbol(Some("↑"))
+        //     .end_symbol(Some("↓"));
+
+        // // let mut scrollbar_state =
+        // ScrollbarState::new(paragraph_height).position(app.scroll_pos);
+
+        // f.render_widget(paragraph, chunks[0]);
+        // // f.render_stateful_widget(
+        // //     scrollbar,
+        // //     chunks[0].inner(&Margin {
+        // //         vertical: 1,
+        // //         horizontal: 0,
+        // //     }),
+        // //     &mut scrollbar_state,
+        // // );
+    }
 }
 
 fn setup_terminal() -> std::io::Result<Terminal<CrosstermBackend<Stdout>>> {
-    let mut stdout = io::stdout();
+    let mut backend = CrosstermBackend::new(io::stdout());
     crossterm::terminal::enable_raw_mode()?;
-    crossterm::execute!(
-        stdout,
-        EnterAlternateScreen,
-        EnableMouseCapture,
-        EnableBlinking,
-        SetCursorStyle::BlinkingBar
-    )?;
-    Terminal::new(CrosstermBackend::new(stdout))
+    crossterm::execute!(backend, EnableBlinking, SetCursorStyle::BlinkingBar)?;
+    Terminal::with_options(backend, TerminalOptions {
+        viewport: ratatui::Viewport::Inline(5),
+    })
 }
 
-fn teardown_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> std::io::Result<()> {
-    let mut stdout = io::stdout();
+fn teardown_terminal(mut terminal: Terminal<CrosstermBackend<Stdout>>) -> std::io::Result<()> {
+    let backend = terminal.backend_mut();
     crossterm::terminal::disable_raw_mode()?;
-    crossterm::execute!(
-        stdout,
-        LeaveAlternateScreen,
-        DisableMouseCapture,
-        DisableBlinking,
-        SetCursorStyle::DefaultUserShape
-    )?;
+    crossterm::execute!(backend, DisableBlinking, SetCursorStyle::DefaultUserShape)?;
     Ok(())
 }
 
-fn send_message(client: Client, input: String) -> Receiver<String> {
+fn send_message(client: Client, input: String) -> Receiver<ApiResponse> {
     let (tx, rx) = tokio::sync::mpsc::channel(8);
 
     tokio::spawn(async move {
@@ -268,18 +466,20 @@ fn send_message(client: Client, input: String) -> Receiver<String> {
             .await
             .unwrap();
 
+        let mut idx = 0;
+
         while let Ok(Some(a)) = res.generate_assistant_response_response.recv().await {
             match a {
-                ChatResponseStream::MessageMetadataEvent(response) => {
-                    // println!("{:?}", response.conversation_id());
-                    // print!("{} ", "Q >".magenta().bold());
-                    // std::io::stdout().flush().unwrap();
-                },
+                ChatResponseStream::MessageMetadataEvent(_response) => {},
                 ChatResponseStream::AssistantResponseEvent(response) => {
-                    // print!("{}", response.content());
-                    tx.send(response.content).await.unwrap();
+                    tx.send(ApiResponse::Text {
+                        idx,
+                        content: response.content,
+                    })
+                    .await
+                    .unwrap();
                 },
-                ChatResponseStream::FollowupPromptEvent(response) => {
+                ChatResponseStream::FollowupPromptEvent(_response) => {
                     // let followup = response.followup_prompt().unwrap();
                     // println!("content: {}", followup.content());
                     // println!("intent: {:?}", followup.user_intent());
@@ -288,185 +488,68 @@ fn send_message(client: Client, input: String) -> Receiver<String> {
                 ChatResponseStream::SupplementaryWebLinksEvent(_) => {},
                 _ => {},
             }
+
+            idx += 1;
         }
+
+        tx.send(ApiResponse::End).await.unwrap();
     });
 
     rx
 }
 
 pub async fn chat() -> Result<()> {
-    use crossterm::style::Stylize;
-
     let mut terminal = setup_terminal()?;
 
-    let app = App::default();
+    let app = App::new().await;
     let res = run_app(&mut terminal, app).await;
 
-    teardown_terminal(&mut terminal)?;
+    teardown_terminal(terminal)?;
 
     res.map_err(Into::into)
 }
 
-async fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
-    let client = cw_streaming_client().await;
+async fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App<B>) -> io::Result<()> {
     let mut stream = crossterm::event::EventStream::new();
 
-    loop {
-        terminal.draw(|f| ui(f, &mut app))?;
+    app.init(terminal)?;
 
-        let mut event = stream.next().fuse();
+    loop {
+        terminal.draw(|f| app.draw(f))?;
+        let event = stream.next().fuse();
 
         tokio::select! {
             maybe_event = event => {
                 match maybe_event {
-                    Some(Ok(Event::Key(key))) => {
-                        if key.kind == KeyEventKind::Press {
-                            match key.code {
-                                KeyCode::Enter => {
-                                    if app.rx.is_none() {
-                                        let message = app.submit_message();
-                                        app.rx = Some(send_message(client.clone(), message));
-                                    }
-                                },
-                                KeyCode::Char('c' | 'd') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                                    return Ok(());
-                                },
-                                KeyCode::Char(to_insert) => {
-                                    app.enter_char(to_insert);
-                                },
-                                KeyCode::Backspace => {
-                                    app.delete_char();
-                                },
-                                KeyCode::Left => {
-                                    app.move_cursor_left();
-                                },
-                                KeyCode::Right => {
-                                    app.move_cursor_right();
-                                },
-                                _ => {},
-                            }
-                        }
+                    Some(Ok(event)) => {
+                        if app.on_event(event, terminal)? == ControlFlow::Exit {
+                            return Ok(());
+                        };
                     }
-                    Some(Ok(Event::Paste(s))) => {
-                        app.input.push_str(&s);
-                    }
-                    Some(Ok(Event::Mouse(MouseEvent {
-                        kind: MouseEventKind::ScrollDown,
-                        column,
-                        ..
-                    }))) => {
-                        app.scroll_pos = app.scroll_pos.saturating_sub(1);
-                    }
-                    Some(Ok(Event::Mouse(MouseEvent {
-                        kind: MouseEventKind::ScrollUp,
-                        column,
-                        ..
-                    }))) => {
-                        app.scroll_pos += 1;
-                    }
-                    Some(Ok(_)) => {}
                     Some(Err(e)) => println!("Error: {:?}\r", e),
                     None => return Ok(()),
                 }
             }
             Some(response) = app.next_assistant_message() => {
-                if let Message::Assistant(message) = &mut app.messages[0] {
-                    message.push_str(&response);
-                } else {
-                    app.messages.insert(0, Message::Assistant(response));
+                // if let Message::Assistant(message) = &mut app.messages[0] {
+                //     message.push_str(&response);
+                // } else {
+                //     app.messages.insert(0, Message::Assistant(response));
+                // }
+
+                match response {
+                    ApiResponse::Text{content, idx} => {
+                        app.insert_message_text_before(terminal,if idx == 0 {
+                            content.trim_start()
+                        } else {
+                             &*content
+                        })?;
+                    }
+                    ApiResponse::End => {
+                        app.insert_message_text_before(terminal, "")?;
+                    }
                 }
             }
         }
     }
-}
-
-fn ui(f: &mut Frame<'_>, app: &mut App) {
-    use ratatui::style::Stylize;
-
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Min(1), Constraint::Length(3), Constraint::Length(1)])
-        .split(f.size());
-
-    let mut text = Text::from(Line::from(
-        ["Press ".into(), "ctrl+c".bold(), " to exit".into()].to_vec(),
-    ));
-    text.patch_style(Style::default().add_modifier(Modifier::RAPID_BLINK));
-
-    let help_message = Paragraph::new(text);
-    f.render_widget(help_message, chunks[2]);
-
-    let mut input_text_style = Style::new();
-    if app.input.is_empty() {
-        input_text_style = input_text_style.dim();
-    }
-
-    let mut input_text = Text::styled(
-        if app.input.is_empty() {
-            "Message Q..."
-        } else {
-            app.input.as_str()
-        },
-        input_text_style,
-    );
-
-    let input = Paragraph::new(input_text)
-        .style(Style::default().fg(Color::Gray))
-        .block(Block::default().borders(Borders::ALL));
-    f.render_widget(input, chunks[1]);
-    // Make the cursor visible and ask ratatui to put it at the specified coordinates after
-    // rendering
-    f.set_cursor(
-        // Draw the cursor at the current position in the input field.
-        // This position is can be controlled via the left and right arrow key
-        chunks[1].x + app.cursor_position as u16 + 1,
-        // Move one line down, from the border to the input line
-        chunks[1].y + 1,
-    );
-
-    // let messages =
-    // List::new(messages).block(Block::default().borders(Borders::ALL).title("Messages"));
-    // f.render_widget(messages, chunks[2]);
-
-    let items = app.messages.iter().rev().fold(Text::from(""), |mut acc, message| {
-        match message {
-            Message::User(s) => {
-                acc.extend(["❯ You".bold()]);
-                acc.extend(Text::from(s.trim().to_owned()));
-                acc.extend([""]);
-            },
-            Message::Assistant(s) => {
-                acc.extend(["❯ Q".bold().magenta()]);
-                acc.extend(Text::from(s.trim_start().to_owned()));
-                acc.extend([""]);
-            },
-        };
-        acc
-    });
-
-    let mut paragraph = Paragraph::new(items.clone())
-        .wrap(Wrap { trim: false })
-        .block(Block::new().borders(Borders::RIGHT));
-
-    let paragraph_height = paragraph.line_count(chunks[0].width);
-    app.scroll_pos = paragraph_height.saturating_sub(chunks[0].height as usize);
-
-    paragraph = paragraph.scroll((app.scroll_pos as u16, 0));
-
-    let scrollbar = Scrollbar::default()
-        .orientation(ScrollbarOrientation::VerticalRight)
-        .begin_symbol(Some("↑"))
-        .end_symbol(Some("↓"));
-
-    // let mut scrollbar_state = ScrollbarState::new(paragraph_height).position(app.scroll_pos);
-
-    f.render_widget(paragraph, chunks[0]);
-    // f.render_stateful_widget(
-    //     scrollbar,
-    //     chunks[0].inner(&Margin {
-    //         vertical: 1,
-    //         horizontal: 0,
-    //     }),
-    //     &mut scrollbar_state,
-    // );
 }
