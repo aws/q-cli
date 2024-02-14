@@ -52,6 +52,7 @@ pub const SPECIAL_TERMINALS: &[Terminal] = &[
 ];
 
 pub static CURRENT_TERMINAL: Lazy<Option<Terminal>> = Lazy::new(Terminal::parent_terminal);
+pub static CURRENT_TERMINAL_VERSION: Lazy<Option<String>> = Lazy::new(Terminal::version);
 
 /// Terminals supported by CodeWhisperer
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -178,6 +179,10 @@ impl Terminal {
             _ => None,
         }
         // TODO(grant): Improve this for Linux, it currently is not very accurate
+    }
+
+    pub fn version() -> Option<String> {
+        std::env::var("TERM_PROGRAM_VERSION").ok().clone()
     }
 
     pub fn internal_id(&self) -> Cow<'static, str> {

@@ -525,7 +525,7 @@ mod tests {
         const MAX_SOCKET_LEN: usize = 100;
 
         let uuid = uuid::Uuid::new_v4().simple().to_string();
-        let cwterm_socket = figterm_socket_path(uuid.to_string()).unwrap();
+        let cwterm_socket = figterm_socket_path(uuid.clone()).unwrap();
         let cwterm_socket_bytes = cwterm_socket.as_os_str().as_bytes().len();
         assert!(cwterm_socket_bytes <= MAX_SOCKET_LEN);
 

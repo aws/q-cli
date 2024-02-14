@@ -33,12 +33,21 @@ use aws_toolkit_telemetry_definitions::types::{
     CodewhispererterminalDoctorCheck,
     CodewhispererterminalMenuBarItem,
     CodewhispererterminalRoute,
+    CodewhispererterminalShell,
+    CodewhispererterminalShellVersion,
     CodewhispererterminalSubcommand,
     CodewhispererterminalSuggestedCount,
+    CodewhispererterminalTerminal,
+    CodewhispererterminalTerminalVersion,
     CodewhispererterminalTypedCount,
 };
 use cognito::CognitoProvider;
 use fig_util::system_info::os_version;
+use fig_util::terminal::{
+    CURRENT_TERMINAL,
+    CURRENT_TERMINAL_VERSION,
+};
+use fig_util::Shell;
 pub use install_method::{
     get_install_method,
     InstallMethod,
@@ -193,17 +202,35 @@ pub async fn send_user_logged_in() {
 }
 
 pub async fn send_completion_inserted(command: impl Into<String>) {
+    let (shell, shell_version) = Shell::current_shell_version()
+        .await
+        .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
+        .unwrap_or((None, None));
+
     CLIENT
         .post_metric(metrics::CodewhispererterminalCompletionInserted {
             create_time: None,
             value: None,
             codewhispererterminal_command: Some(CodewhispererterminalCommand(command.into())),
             codewhispererterminal_duration: None,
+            codewhispererterminal_terminal: CURRENT_TERMINAL
+                .clone()
+                .map(|terminal| CodewhispererterminalTerminal(terminal.internal_id().to_string())),
+            codewhispererterminal_terminal_version: CURRENT_TERMINAL_VERSION
+                .clone()
+                .map(CodewhispererterminalTerminalVersion),
+            codewhispererterminal_shell: shell.map(|shell| CodewhispererterminalShell(shell.to_string())),
+            codewhispererterminal_shell_version: shell_version.map(CodewhispererterminalShellVersion),
         })
         .await;
 }
 
 pub async fn send_ghost_text_actioned(accepted: bool, edit_buffer_len: usize, suggested_chars_len: usize) {
+    let (shell, shell_version) = Shell::current_shell_version()
+        .await
+        .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
+        .unwrap_or((None, None));
+
     CLIENT
         .post_metric(metrics::CodewhispererterminalGhostTextActioned {
             create_time: None,
@@ -214,6 +241,14 @@ pub async fn send_ghost_text_actioned(accepted: bool, edit_buffer_len: usize, su
             codewhispererterminal_suggested_count: Some(CodewhispererterminalSuggestedCount(
                 suggested_chars_len as i64,
             )),
+            codewhispererterminal_terminal: CURRENT_TERMINAL
+                .clone()
+                .map(|terminal| CodewhispererterminalTerminal(terminal.internal_id().to_string())),
+            codewhispererterminal_terminal_version: CURRENT_TERMINAL_VERSION
+                .clone()
+                .map(CodewhispererterminalTerminalVersion),
+            codewhispererterminal_shell: shell.map(|shell| CodewhispererterminalShell(shell.to_string())),
+            codewhispererterminal_shell_version: shell_version.map(CodewhispererterminalShellVersion),
         })
         .await;
 }
@@ -223,6 +258,11 @@ pub async fn send_translation_actioned(
     // time_waited: i64,
     accepted: bool,
 ) {
+    let (shell, shell_version) = Shell::current_shell_version()
+        .await
+        .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
+        .unwrap_or((None, None));
+
     CLIENT
         .post_metric(CodewhispererterminalTranslationActioned {
             create_time: None,
@@ -230,26 +270,60 @@ pub async fn send_translation_actioned(
             codewhispererterminal_duration: None,
             codewhispererterminal_time_to_suggestion: None,
             codewhispererterminal_accepted: Some(CodewhispererterminalAccepted(accepted)),
+            codewhispererterminal_terminal: CURRENT_TERMINAL
+                .clone()
+                .map(|terminal| CodewhispererterminalTerminal(terminal.internal_id().to_string())),
+            codewhispererterminal_terminal_version: CURRENT_TERMINAL_VERSION
+                .clone()
+                .map(CodewhispererterminalTerminalVersion),
+            codewhispererterminal_shell: shell.map(|shell| CodewhispererterminalShell(shell.to_string())),
+            codewhispererterminal_shell_version: shell_version.map(CodewhispererterminalShellVersion),
         })
         .await;
 }
 
 pub async fn send_cli_subcommand_executed(command_name: impl Into<String>) {
+    let (shell, shell_version) = Shell::current_shell_version()
+        .await
+        .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
+        .unwrap_or((None, None));
+
     CLIENT
         .post_metric(CodewhispererterminalCliSubcommandExecuted {
             create_time: None,
             value: None,
             codewhispererterminal_subcommand: Some(CodewhispererterminalSubcommand(command_name.into())),
+            codewhispererterminal_terminal: CURRENT_TERMINAL
+                .clone()
+                .map(|terminal| CodewhispererterminalTerminal(terminal.internal_id().to_string())),
+            codewhispererterminal_terminal_version: CURRENT_TERMINAL_VERSION
+                .clone()
+                .map(CodewhispererterminalTerminalVersion),
+            codewhispererterminal_shell: shell.map(|shell| CodewhispererterminalShell(shell.to_string())),
+            codewhispererterminal_shell_version: shell_version.map(CodewhispererterminalShellVersion),
         })
         .await;
 }
 
 pub async fn send_doctor_check_failed(failed_check: impl Into<String>) {
+    let (shell, shell_version) = Shell::current_shell_version()
+        .await
+        .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
+        .unwrap_or((None, None));
+
     CLIENT
         .post_metric(CodewhispererterminalDoctorCheckFailed {
             create_time: None,
             value: None,
             codewhispererterminal_doctor_check: Some(CodewhispererterminalDoctorCheck(failed_check.into())),
+            codewhispererterminal_terminal: CURRENT_TERMINAL
+                .clone()
+                .map(|terminal| CodewhispererterminalTerminal(terminal.internal_id().to_string())),
+            codewhispererterminal_terminal_version: CURRENT_TERMINAL_VERSION
+                .clone()
+                .map(CodewhispererterminalTerminalVersion),
+            codewhispererterminal_shell: shell.map(|shell| CodewhispererterminalShell(shell.to_string())),
+            codewhispererterminal_shell_version: shell_version.map(CodewhispererterminalShellVersion),
         })
         .await;
 }
@@ -291,12 +365,25 @@ mod test {
     #[tracing_test::traced_test]
     #[tokio::test]
     async fn test_send() {
+        let (shell, shell_version) = Shell::current_shell_version()
+            .await
+            .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
+            .unwrap_or((None, None));
+
         let client = TelemetryClient::new(TelemetryStage::BETA);
         client
             .post_metric(metrics::CodewhispererterminalCliSubcommandExecuted {
                 create_time: None,
                 value: None,
                 codewhispererterminal_subcommand: Some(CodewhispererterminalSubcommand("doctor".into())),
+                codewhispererterminal_terminal: CURRENT_TERMINAL
+                    .clone()
+                    .map(|terminal| CodewhispererterminalTerminal(terminal.internal_id().to_string())),
+                codewhispererterminal_terminal_version: CURRENT_TERMINAL_VERSION
+                    .clone()
+                    .map(CodewhispererterminalTerminalVersion),
+                codewhispererterminal_shell: shell.map(|shell| CodewhispererterminalShell(shell.to_string())),
+                codewhispererterminal_shell_version: shell_version.map(CodewhispererterminalShellVersion),
             })
             .await;
         finish_telemetry_unwrap().await;
@@ -327,7 +414,7 @@ mod test {
         assert!(!logs_contain("error"));
         assert!(!logs_contain("WARN"));
         assert!(!logs_contain("warn"));
-        assert!(!logs_contain("Failed to post metric"))
+        assert!(!logs_contain("Failed to post metric"));
     }
 }
 
