@@ -25,7 +25,7 @@ const sendTextToTerminal = (
   item: Suggestion,
   text: string,
   isFullCompletion: boolean,
-  rootCommand: string,
+  rootCommand: string
 ) => {
   const {
     parserResult: { searchTerm },
@@ -79,7 +79,7 @@ const sendTextToTerminal = (
   Shell.insert(
     finalStringToInsert,
     { insertionBuffer: buffer },
-    state.figState.shellContext?.sessionId,
+    state.figState.shellContext?.sessionId
   );
   return {
     insertedChars: valToInsert.length,
@@ -91,7 +91,7 @@ const insertString = (
   state: AutocompleteState,
   item: Suggestion,
   text: string,
-  isFullCompletion: boolean,
+  isFullCompletion: boolean
 ) => {
   const { command, updateVisibilityPostInsert, parserResult } = state;
   const { commandIndex, annotations } = parserResult;
@@ -102,7 +102,7 @@ const insertString = (
     item,
     text,
     isFullCompletion,
-    rootCommand,
+    rootCommand
   );
 
   let specLocation: { location: SpecLocation; name: string } | undefined;
@@ -148,6 +148,8 @@ const insertString = (
     // Includes backspaces and cursor adjustments.
     insertionLengthFull: `${inserted.insertedCharsFull}`,
     app: fig.constants?.version || "",
+    terminal: state.figState.shellContext?.terminal ?? null,
+    shell: state.figState.shellContext?.shellPath?.split("/")?.at(-1) ?? null,
   });
 
   logger.info("Inserted string, updating visibility");
@@ -172,7 +174,7 @@ const getFullInsertion = (
   item: Suggestion,
   searchTerm: string,
   fuzzySearch: boolean,
-  preferVerboseSuggestions: boolean,
+  preferVerboseSuggestions: boolean
 ): string => {
   const queryTerm = getQueryTermForSuggestion(item, searchTerm);
 
@@ -187,12 +189,12 @@ const getFullInsertion = (
     item,
     queryTerm,
     fuzzySearch,
-    preferVerboseSuggestions,
+    preferVerboseSuggestions
   );
   if (!match) return escapeInsertion("", isFolder);
   return escapeInsertion(
     item.separatorToAdd ? `${match}${item.separatorToAdd}{cursor}` : match,
-    isFolder,
+    isFolder
   );
 };
 
@@ -209,7 +211,7 @@ const makeInsertTextForItem =
       item,
       searchTerm,
       fuzzySearchEnabled,
-      settings[SETTINGS.PREFER_VERBOSE_SUGGESTIONS] as boolean,
+      settings[SETTINGS.PREFER_VERBOSE_SUGGESTIONS] as boolean
     );
 
     if (execute && item.type !== "auto-execute") {
@@ -255,7 +257,7 @@ const makeInsertCommonPrefix =
 
     if (itemType && ["special", "auto-execute"].includes(itemType)) {
       throw new InsertPrefixError(
-        `Cannot insert common prefix for type ${itemType}`,
+        `Cannot insert common prefix for type ${itemType}`
       );
     }
 
@@ -272,7 +274,7 @@ const makeInsertCommonPrefix =
     const sameTypeSuggestionNames = suggestions
       .filter((suggestion) => isMatchingType(suggestion, typeFilterItem))
       .map((suggestion) =>
-        (makeArray(suggestion.name || [])[0] ?? "").toLowerCase(),
+        (makeArray(suggestion.name || [])[0] ?? "").toLowerCase()
       )
       .filter((name) => name.startsWith(queryTerm.toLowerCase()));
 
@@ -286,7 +288,7 @@ const makeInsertCommonPrefix =
     const uncasedSharedPrefix = longestCommonPrefix(sameTypeSuggestionNames);
     const sharedPrefix = makeArray(selectedItem.name || [])[0].slice(
       0,
-      uncasedSharedPrefix.length,
+      uncasedSharedPrefix.length
     );
     if (!sharedPrefix || sharedPrefix === queryTerm) {
       throw new InsertPrefixError("No remaining prefix to insert");
@@ -298,7 +300,7 @@ const makeInsertCommonPrefix =
         selectedItem,
         searchTerm,
         fuzzySearchEnabled,
-        settings[SETTINGS.PREFER_VERBOSE_SUGGESTIONS] as boolean,
+        settings[SETTINGS.PREFER_VERBOSE_SUGGESTIONS] as boolean
       )
     ) {
       if (selectedItem.type === "auto-execute") {
@@ -311,13 +313,13 @@ const makeInsertCommonPrefix =
 
 export const createInsertionState = (
   setNamed: NamedSetState<AutocompleteState>,
-  get: StoreApi<AutocompleteState>["getState"],
+  get: StoreApi<AutocompleteState>["getState"]
 ) => ({
   insertCommonPrefix: makeInsertCommonPrefix(get),
   insertTextForItem: makeInsertTextForItem(get),
   updateVisibilityPostInsert: (
     suggestion: Suggestion,
-    isFullCompletion: boolean,
+    isFullCompletion: boolean
   ) => {
     if (isFullCompletion) {
       setNamed("updateVisibilityPostInsert", {

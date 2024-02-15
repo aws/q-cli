@@ -106,15 +106,17 @@ impl ListCustomizationPermissionsOutputBuilder {
         crate::operation::list_customization_permissions::ListCustomizationPermissionsOutput,
         ::aws_smithy_types::error::operation::BuildError,
     > {
-        ::std::result::Result::Ok(crate::operation::list_customization_permissions::ListCustomizationPermissionsOutput {
-            permissions: self.permissions.ok_or_else(|| {
-                ::aws_smithy_types::error::operation::BuildError::missing_field(
+        ::std::result::Result::Ok(
+            crate::operation::list_customization_permissions::ListCustomizationPermissionsOutput {
+                permissions: self.permissions.ok_or_else(|| {
+                    ::aws_smithy_types::error::operation::BuildError::missing_field(
                     "permissions",
                     "permissions was not specified but it is required when building ListCustomizationPermissionsOutput",
                 )
-            })?,
-            next_token: self.next_token,
-            _request_id: self._request_id,
-        })
+                })?,
+                next_token: self.next_token,
+                _request_id: self._request_id,
+            },
+        )
     }
 }

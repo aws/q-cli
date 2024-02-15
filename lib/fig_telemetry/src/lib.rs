@@ -201,26 +201,17 @@ pub async fn send_user_logged_in() {
         .await;
 }
 
-pub async fn send_completion_inserted(command: impl Into<String>) {
-    let (shell, shell_version) = Shell::current_shell_version()
-        .await
-        .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
-        .unwrap_or((None, None));
-
+pub async fn send_completion_inserted(command: String, terminal: Option<String>, shell: Option<String>) {
     CLIENT
         .post_metric(metrics::CodewhispererterminalCompletionInserted {
             create_time: None,
             value: None,
-            codewhispererterminal_command: Some(CodewhispererterminalCommand(command.into())),
+            codewhispererterminal_command: Some(CodewhispererterminalCommand(command)),
             codewhispererterminal_duration: None,
-            codewhispererterminal_terminal: CURRENT_TERMINAL
-                .clone()
-                .map(|terminal| CodewhispererterminalTerminal(terminal.internal_id().to_string())),
-            codewhispererterminal_terminal_version: CURRENT_TERMINAL_VERSION
-                .clone()
-                .map(CodewhispererterminalTerminalVersion),
-            codewhispererterminal_shell: shell.map(|shell| CodewhispererterminalShell(shell.to_string())),
-            codewhispererterminal_shell_version: shell_version.map(CodewhispererterminalShellVersion),
+            codewhispererterminal_terminal: terminal.map(CodewhispererterminalTerminal),
+            codewhispererterminal_terminal_version: None,
+            codewhispererterminal_shell: shell.map(CodewhispererterminalShell),
+            codewhispererterminal_shell_version: None,
         })
         .await;
 }
@@ -395,7 +386,7 @@ mod test {
     async fn test_all_telemetry() {
         send_user_logged_in().await;
 
-        send_completion_inserted("cw").await;
+        send_completion_inserted("cw".to_owned(), None, None).await;
 
         send_ghost_text_actioned(true, 1, 2).await;
 

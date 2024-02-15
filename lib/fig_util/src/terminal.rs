@@ -182,7 +182,11 @@ impl Terminal {
     }
 
     pub fn version() -> Option<String> {
-        std::env::var("TERM_PROGRAM_VERSION").ok().clone()
+        let version = std::env::var("TERM_PROGRAM_VERSION").ok()?;
+        match regex::Regex::new("[0-9\\-\\._]+").ok()?.captures(&version).is_some() {
+            true => Some(version),
+            false => None,
+        }
     }
 
     pub fn internal_id(&self) -> Cow<'static, str> {

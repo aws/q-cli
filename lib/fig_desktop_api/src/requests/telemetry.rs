@@ -62,22 +62,16 @@ pub async fn handle_track_request(request: TelemetryTrackRequest) -> RequestResu
     // TODO(chay): send directly from autocomplete
     if event == "autocomplete-insert" {
         if let Some(root_command) = properties.get("rootCommand").and_then(|r| r.as_str()) {
-            fig_telemetry::send_completion_inserted(root_command).await;
+            let terminal = properties
+                .get("terminal")
+                .and_then(|t| t.as_str().map(ToString::to_string));
+            let shell = properties
+                .get("shell")
+                .and_then(|t| t.as_str().map(ToString::to_string));
+
+            fig_telemetry::send_completion_inserted(root_command.to_owned(), terminal, shell).await;
         }
     }
-
-    // let event = TrackEvent::new(
-    //     TrackEventType::Other(event),
-    //     TrackSource::Desktop,
-    //     env!("CARGO_PKG_VERSION").into(),
-    //     properties,
-    // )
-    // .with_namespace(request.namespace)
-    // .with_namespace_id(request.namespace_id);
-
-    // emit_track(event)
-    //     .await
-    //     .map_err(|err| format!("Failed to emit track: {err}"))?;
 
     RequestResult::success()
 }
