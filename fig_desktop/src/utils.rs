@@ -11,7 +11,9 @@ use http::header::{
 };
 use http::status::StatusCode;
 use http::{
-    HeaderValue, Request as HttpRequest, Response as HttpResponse
+    HeaderValue,
+    Request as HttpRequest,
+    Response as HttpResponse,
 };
 use once_cell::sync::Lazy;
 use serde::{
@@ -87,10 +89,9 @@ where
                     },
                 };
 
-                response.headers_mut().insert(
-                    "X-Request-Id",
-                    HeaderValue::from_str(&id.to_string()).unwrap(),
-                );
+                response
+                    .headers_mut()
+                    .insert("X-Request-Id", HeaderValue::from_str(&id.to_string()).unwrap());
 
                 debug!(status = %response.status(), "Custom proto response");
 
