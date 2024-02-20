@@ -409,6 +409,9 @@ def build_desktop_app(
         info(f"Copying {package} into bundle")
         shutil.copytree(path, bundle_path / "Contents/Resources" / package)
 
+    dmg_path = BUILD_DIR / "CodeWhisperer.dmg"
+    dmg_path.unlink(missing_ok=True)
+
     create_dmg(
         dmg_path=dmg_path,
         bundle_path=bundle_path,
