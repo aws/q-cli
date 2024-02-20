@@ -252,6 +252,48 @@ def tauri_config(
     return json.dumps(config)
 
 
+def create_dmg(
+    dmg_path: pathlib.Path,
+    bundle_path: pathlib.Path,
+):
+    volname = "CodeWhisperer"
+    app_name = "CodeWhisperer.app"
+    volicon = pathlib.Path("bundle/dmg/VolumeIcon.icns")
+    background = pathlib.Path("bundle/dmg/background.png")
+
+    run_cmd(
+        [
+            "create-dmg",
+            "--volname",
+            volname,
+            "--volicon",
+            volicon,
+            "--background",
+            background,
+            "--text-size",
+            "12",
+            "--icon-size",
+            "160",
+            "--format",
+            "ULFO",
+            "--window-size",
+            "660",
+            "400",
+            "--icon",
+            app_name,
+            "180",
+            "170",
+            "--hide-extension",
+            app_name,
+            "--app-drop-link",
+            "480",
+            "170",
+            dmg_path,
+            bundle_path,
+        ]
+    )
+
+
 def build_desktop_app(
     cwterm_path: pathlib.Path,
     cw_cli_path: pathlib.Path,
@@ -367,27 +409,10 @@ def build_desktop_app(
         info(f"Copying {package} into bundle")
         shutil.copytree(path, bundle_path / "Contents/Resources" / package)
 
-    dmg_spec = {
-        "title": "CodeWhisperer",
-        "icon": "VolumeIcon.icns",
-        "background": "background.png",
-        "icon-size": 160,
-        "format": "ULFO",
-        "window": {"size": {"width": 660, "height": 400}},
-        "contents": [
-            {"x": 180, "y": 170, "type": "file", "path": str(bundle_path)},
-            {"x": 480, "y": 170, "type": "link", "path": "/Applications"},
-        ],
-    }
-    dmg_spec_path = pathlib.Path("bundle/dmg/spec.json")
-    dmg_spec_path.write_text(json.dumps(dmg_spec))
-
-    dmg_path = BUILD_DIR.joinpath("CodeWhisperer.dmg")
-    dmg_path.unlink(missing_ok=True)
-
-    run_cmd(["pnpm", "appdmg", dmg_spec_path, dmg_path])
-
-    dmg_spec_path.unlink(missing_ok=True)
+    create_dmg(
+        dmg_path=dmg_path,
+        bundle_path=bundle_path,
+    )
 
     if signing_data:
         sign_and_rebundle_macos(

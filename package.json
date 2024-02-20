@@ -5,13 +5,6 @@
   "author": "Fig Team",
   "license": "MIT",
   "packageManager": "pnpm@8.11.0",
-  "devDependencies": {
-    "husky": "^8.0.3",
-    "lint-staged": "^15.2.2"
-  },
-  "optionalDependencies": {
-    "appdmg": "^0.6.6"
-  },
   "scripts": {
     "build": "pnpm -r build",
     "b": "pnpm build",
@@ -21,5 +14,9 @@
     "clean": "pnpm -r clean",
     "prepare": "husky install",
     "precommit": "lint-staged --config .lintstagedrc.mjs"
+  },
+  "devDependencies": {
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.2"
   }
 }
