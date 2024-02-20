@@ -410,8 +410,6 @@ pub async fn poll_create_token(
                 error!(?err, "Failed to store builder id token");
             };
 
-            fig_telemetry::send_user_logged_in().await;
-
             PollCreateToken::Complete(token)
         },
         Err(SdkError::ServiceError(service_error)) if service_error.err().is_authorization_pending_exception() => {

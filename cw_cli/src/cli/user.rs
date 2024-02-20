@@ -116,6 +116,7 @@ impl RootUserSubcommand {
                             {
                                 PollCreateToken::Pending => {},
                                 PollCreateToken::Complete(_) => {
+                                    fig_telemetry::send_user_logged_in().await;
                                     spinner.stop_with_message("Logged in successfully".into());
                                     break;
                                 },

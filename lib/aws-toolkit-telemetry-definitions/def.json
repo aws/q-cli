@@ -69,6 +69,11 @@
       "name": "codewhispererterminal_shellVersion",
       "type": "string",
       "description": "The user shell version"
+    },
+    {
+      "name": "codewhispererterminal_credential_start_url",
+      "type": "string",
+      "description": "the login start url"
     }
   ],
   "metrics": [
@@ -76,31 +81,20 @@
       "name": "codewhispererterminal_userLoggedIn",
       "description": "Emitted when users log in",
       "passive": false,
-      "metadata": []
+      "metadata": [{ "type": "codewhispererterminal_credential_start_url" }]
     },
     {
       "name": "codewhispererterminal_completionInserted",
       "description": "Emitted on Autocomplete user decisions",
       "passive": false,
       "metadata": [
-        {
-          "type": "codewhispererterminal_terminal"
-        },
-        {
-          "type": "codewhispererterminal_terminalVersion"
-        },
-        {
-          "type": "codewhispererterminal_shell"
-        },
-        {
-          "type": "codewhispererterminal_shellVersion"
-        },
-        {
-          "type": "codewhispererterminal_command"
-        },
-        {
-          "type": "codewhispererterminal_duration"
-        }
+        { "type": "codewhispererterminal_credential_start_url" },
+        { "type": "codewhispererterminal_terminal" },
+        { "type": "codewhispererterminal_terminalVersion" },
+        { "type": "codewhispererterminal_shell" },
+        { "type": "codewhispererterminal_shellVersion" },
+        { "type": "codewhispererterminal_command" },
+        { "type": "codewhispererterminal_duration" }
       ]
     },
     {
@@ -108,30 +102,15 @@
       "description": "Emitted on GhostText user decisions",
       "passive": false,
       "metadata": [
-        {
-          "type": "codewhispererterminal_terminal"
-        },
-        {
-          "type": "codewhispererterminal_terminalVersion"
-        },
-        {
-          "type": "codewhispererterminal_shell"
-        },
-        {
-          "type": "codewhispererterminal_shellVersion"
-        },
-        {
-          "type": "codewhispererterminal_duration"
-        },
-        {
-          "type": "codewhispererterminal_accepted"
-        },
-        {
-          "type": "codewhispererterminal_typedCount"
-        },
-        {
-          "type": "codewhispererterminal_suggestedCount"
-        }
+        { "type": "codewhispererterminal_credential_start_url" },
+        { "type": "codewhispererterminal_terminal" },
+        { "type": "codewhispererterminal_terminalVersion" },
+        { "type": "codewhispererterminal_shell" },
+        { "type": "codewhispererterminal_shellVersion" },
+        { "type": "codewhispererterminal_duration" },
+        { "type": "codewhispererterminal_accepted" },
+        { "type": "codewhispererterminal_typedCount" },
+        { "type": "codewhispererterminal_suggestedCount" }
       ]
     },
     {
@@ -139,27 +118,14 @@
       "description": "Emitted on Translation user decisions",
       "passive": false,
       "metadata": [
-        {
-          "type": "codewhispererterminal_terminal"
-        },
-        {
-          "type": "codewhispererterminal_terminalVersion"
-        },
-        {
-          "type": "codewhispererterminal_shell"
-        },
-        {
-          "type": "codewhispererterminal_shellVersion"
-        },
-        {
-          "type": "codewhispererterminal_duration"
-        },
-        {
-          "type": "codewhispererterminal_timeToSuggestion"
-        },
-        {
-          "type": "codewhispererterminal_accepted"
-        }
+        { "type": "codewhispererterminal_credential_start_url" },
+        { "type": "codewhispererterminal_terminal" },
+        { "type": "codewhispererterminal_terminalVersion" },
+        { "type": "codewhispererterminal_shell" },
+        { "type": "codewhispererterminal_shellVersion" },
+        { "type": "codewhispererterminal_duration" },
+        { "type": "codewhispererterminal_timeToSuggestion" },
+        { "type": "codewhispererterminal_accepted" }
       ]
     },
     {
@@ -167,21 +133,12 @@
       "description": "Emitted on CW CLI subcommand executed",
       "passive": false,
       "metadata": [
-        {
-          "type": "codewhispererterminal_terminal"
-        },
-        {
-          "type": "codewhispererterminal_terminalVersion"
-        },
-        {
-          "type": "codewhispererterminal_shell"
-        },
-        {
-          "type": "codewhispererterminal_shellVersion"
-        },
-        {
-          "type": "codewhispererterminal_subcommand"
-        }
+        { "type": "codewhispererterminal_credential_start_url" },
+        { "type": "codewhispererterminal_terminal" },
+        { "type": "codewhispererterminal_terminalVersion" },
+        { "type": "codewhispererterminal_shell" },
+        { "type": "codewhispererterminal_shellVersion" },
+        { "type": "codewhispererterminal_subcommand" }
       ]
     },
     {
@@ -189,21 +146,12 @@
       "description": "Emitted when CW CLI user fails a doctor check",
       "passive": false,
       "metadata": [
-        {
-          "type": "codewhispererterminal_terminal"
-        },
-        {
-          "type": "codewhispererterminal_terminalVersion"
-        },
-        {
-          "type": "codewhispererterminal_shell"
-        },
-        {
-          "type": "codewhispererterminal_shellVersion"
-        },
-        {
-          "type": "codewhispererterminal_doctorCheck"
-        }
+        { "type": "codewhispererterminal_credential_start_url" },
+        { "type": "codewhispererterminal_terminal" },
+        { "type": "codewhispererterminal_terminalVersion" },
+        { "type": "codewhispererterminal_shell" },
+        { "type": "codewhispererterminal_shellVersion" },
+        { "type": "codewhispererterminal_doctorCheck" }
       ]
     },
     {
@@ -211,9 +159,8 @@
       "description": "Emitted when a user views a dashboard page",
       "passive": false,
       "metadata": [
-        {
-          "type": "codewhispererterminal_route"
-        }
+        { "type": "codewhispererterminal_credential_start_url" },
+        { "type": "codewhispererterminal_route" }
       ]
     },
     {
@@ -221,16 +168,15 @@
       "description": "Emitted when a user clicks the menu bar",
       "passive": false,
       "metadata": [
-        {
-          "type": "codewhispererterminal_menuBarItem"
-        }
+        { "type": "codewhispererterminal_credential_start_url" },
+        { "type": "codewhispererterminal_menuBarItem" }
       ]
     },
     {
       "name": "codewhispererterminal_figUserMigrated",
       "description": "Emitted when a user migrates from fig",
       "passive": false,
-      "metadata": []
+      "metadata": [{ "type": "codewhispererterminal_credential_start_url" }]
     }
   ]
 }

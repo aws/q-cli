@@ -10,15 +10,13 @@ use amzn_toolkit_telemetry::config::{
     Region,
 };
 use amzn_toolkit_telemetry::error::DisplayErrorContext;
-use amzn_toolkit_telemetry::types::{
-    AwsProduct,
-    MetricDatum,
-};
+use amzn_toolkit_telemetry::types::AwsProduct;
 use amzn_toolkit_telemetry::{
     Client,
     Config,
 };
-use aws_toolkit_telemetry_definitions::metrics;
+use auth::builder_id::BuilderIdToken;
+use auth::secret_store::SecretStore;
 use aws_toolkit_telemetry_definitions::metrics::{
     CodewhispererterminalCliSubcommandExecuted,
     CodewhispererterminalDashboardPageViewed,
@@ -40,6 +38,10 @@ use aws_toolkit_telemetry_definitions::types::{
     CodewhispererterminalTerminal,
     CodewhispererterminalTerminalVersion,
     CodewhispererterminalTypedCount,
+};
+use aws_toolkit_telemetry_definitions::{
+    metrics,
+    IntoMetricDatum,
 };
 use cognito::CognitoProvider;
 use fig_util::system_info::os_version;
@@ -155,17 +157,27 @@ impl TelemetryClient {
         Self { client_id, aws_client }
     }
 
-    pub async fn post_metric(&self, inner: impl Into<MetricDatum>) {
+    pub async fn post_metric(&self, inner: impl IntoMetricDatum + 'static) {
         if telemetry_is_disabled() {
             return;
         }
 
         let aws_client = self.aws_client.clone();
         let client_id = self.client_id.clone();
-        let inner = inner.into();
 
         let mut set = JOIN_SET.lock().await;
         set.spawn(async move {
+            let start_url = if let Ok(secret_store) = SecretStore::new().await {
+                BuilderIdToken::load(&secret_store)
+                    .await
+                    .ok()
+                    .flatten()
+                    .and_then(|token| token.start_url)
+            } else {
+                None
+            };
+
+            let inner = inner.into_metric_datum(start_url);
             let product = AwsProduct::CodewhispererTerminal;
             let product_version = env!("CARGO_PKG_VERSION");
             let os = std::env::consts::OS;
@@ -408,22 +420,3 @@ mod test {
         assert!(!logs_contain("Failed to post metric"));
     }
 }
-
-// #[derive(Debug)]
-// struct RequestLogger;
-//
-// impl Interceptor for RequestLogger {
-//     fn name(&self) -> &'static str {
-//         todo!()
-//     }
-//
-//     fn read_before_transmit(
-//         &self,
-//         context:
-// &amzn_toolkit_telemetry::config::interceptors::BeforeTransmitInterceptorContextRef<'_>,
-//         _: &amzn_toolkit_telemetry::config::RuntimeComponents,
-//         _: &mut amzn_toolkit_telemetry::config::ConfigBag,
-//     ) -> Result<(), amzn_toolkit_telemetry::error::BoxError> { info!("{:#?}, {:#?}",
-//       context.request().headers(), context.request().body()); Ok(())
-//     }
-// }

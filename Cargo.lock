@@ -572,7 +572,6 @@ dependencies = [
  "aws-smithy-async 1.1.5",
  "aws-smithy-runtime-api 1.1.5",
  "aws-types 1.1.5",
- "fig_telemetry",
  "fig_util",
  "insta",
  "once_cell",
@@ -3255,6 +3254,7 @@ version = "0.14.0"
 dependencies = [
  "amzn-toolkit-telemetry",
  "anyhow",
+ "auth",
  "aws-credential-types 0.56.1",
  "aws-sdk-cognitoidentity",
  "aws-sdk-cognitoidentityprovider",

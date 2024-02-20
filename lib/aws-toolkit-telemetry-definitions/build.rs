@@ -53,6 +53,10 @@ fn main() {
     "
     .to_string();
 
+    out.push_str(
+        "pub trait IntoMetricDatum: Send { fn into_metric_datum(self, credential_start_url: Option<String>) -> ::amzn_toolkit_telemetry::types::MetricDatum; }",
+    );
+
     out.push_str("pub mod types {");
     for t in data.types {
         let name = format_ident!("{}", t.name.to_case(Case::Pascal));
@@ -169,7 +173,13 @@ fn main() {
             },
         };
 
-        let metadata = m.metadata.unwrap_or_default();
+        let mut metadata = m.metadata.unwrap_or_default();
+        metadata.remove(
+            metadata
+                .iter()
+                .position(|metadata| metadata.r#type == "codewhispererterminal_credential_start_url")
+                .expect("each event must contain credential_start_url"),
+        );
 
         let mut fields = Vec::new();
         for field in &metadata {
@@ -191,9 +201,9 @@ fn main() {
             let key = format_ident!("{}", m.r#type.to_case(Case::Snake));
 
             let value = if m.required.unwrap_or_default() {
-                quote!(.value(m.#key.to_string()))
+                quote!(.value(self.#key.to_string()))
             } else {
-                quote!(.value(m.#key.map(|v| v.to_string()).unwrap_or_default()))
+                quote!(.value(self.#key.map(|v| v.to_string()).unwrap_or_default()))
             };
 
             quote!(
@@ -206,6 +216,7 @@ fn main() {
 
         let rust_type = quote::quote!(
             #[doc = #description]
+            #[derive(Debug, Clone, PartialEq)]
             pub struct #name {
                 /// The time that the event took place,
                 pub create_time: ::std::option::Option<::std::time::SystemTime>,
@@ -220,15 +231,19 @@ fn main() {
                 const UNIT: ::amzn_toolkit_telemetry::types::Unit = #unit;
             }
 
-            impl From<#name> for ::amzn_toolkit_telemetry::types::MetricDatum {
-                fn from(m: #name) -> Self {
+            impl crate::IntoMetricDatum for #name {
+                fn into_metric_datum(self, credential_start_url: Option<String>) -> ::amzn_toolkit_telemetry::types::MetricDatum {
                     let metadata_entries = vec![
+                        ::amzn_toolkit_telemetry::types::MetadataEntry::builder()
+                            .key("codewhispererterminal_credential_start_url")
+                            .value(credential_start_url.unwrap_or_default())
+                            .build(),
                         #(
                             #metadata_entries,
                         )*
                     ];
 
-                    let epoch_timestamp = m.create_time
+                    let epoch_timestamp = self.create_time
                         .map_or_else(
                             || ::std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as ::std::primitive::i64,
                             |t| t.duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as ::std::primitive::i64
@@ -239,7 +254,7 @@ fn main() {
                         .passive(#name::PASSIVE)
                         .unit(#name::UNIT)
                         .epoch_timestamp(epoch_timestamp)
-                        .value(m.value.unwrap_or(1.0))
+                        .value(self.value.unwrap_or(1.0))
                         .set_metadata(Some(metadata_entries))
                         .build()
                }

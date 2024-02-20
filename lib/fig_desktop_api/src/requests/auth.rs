@@ -100,10 +100,13 @@ pub async fn builder_id_poll_create_token(
             error: None,
             error_verbose: None,
         },
-        PollCreateToken::Complete(_) => AuthBuilderIdPollCreateTokenResponse {
-            status: PollStatus::Complete.into(),
-            error: None,
-            error_verbose: None,
+        PollCreateToken::Complete(_) => {
+            fig_telemetry::send_user_logged_in().await;
+            AuthBuilderIdPollCreateTokenResponse {
+                status: PollStatus::Complete.into(),
+                error: None,
+                error_verbose: None,
+            }
         },
         PollCreateToken::Error(err) => AuthBuilderIdPollCreateTokenResponse {
             status: PollStatus::Error.into(),
