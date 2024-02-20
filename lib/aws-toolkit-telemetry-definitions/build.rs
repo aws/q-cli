@@ -53,10 +53,6 @@ fn main() {
     "
     .to_string();
 
-    out.push_str(
-        "pub trait IntoMetricDatum: Send { fn into_metric_datum(self, credential_start_url: Option<String>) -> ::amzn_toolkit_telemetry::types::MetricDatum; }",
-    );
-
     out.push_str("pub mod types {");
     for t in data.types {
         let name = format_ident!("{}", t.name.to_case(Case::Pascal));
@@ -177,8 +173,8 @@ fn main() {
         metadata.remove(
             metadata
                 .iter()
-                .position(|metadata| metadata.r#type == "codewhispererterminal_credential_start_url")
-                .expect("each event must contain credential_start_url"),
+                .position(|metadata| metadata.r#type == "credentialStartUrl")
+                .expect("each event must contain credentialStartUrl"),
         );
 
         let mut fields = Vec::new();
@@ -235,7 +231,7 @@ fn main() {
                 fn into_metric_datum(self, credential_start_url: Option<String>) -> ::amzn_toolkit_telemetry::types::MetricDatum {
                     let metadata_entries = vec![
                         ::amzn_toolkit_telemetry::types::MetadataEntry::builder()
-                            .key("codewhispererterminal_credential_start_url")
+                            .key("credentialStartUrl")
                             .value(credential_start_url.unwrap_or_default())
                             .build(),
                         #(
