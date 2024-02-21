@@ -46,6 +46,9 @@ done
 export CARGO_HOME="$PWD/../.cargo"
 RUSTUP_HOME="$PWD/../.rustup"
 
+mise install
+eval "$(mise activate bash --shims)"
+
 # clean up old install
 rm -rf "$CARGO_HOME"
 rm -rf "$RUSTUP_HOME"
