@@ -9,8 +9,9 @@ import itertools
 from typing import Dict, List, Mapping, Sequence
 from util import isDarwin, isLinux, run_cmd, run_cmd_output, info
 from signing import SigningData, SigningType, rebundle_dmg, sign_file, notarize_file
+from dmgbuild import build_dmg
 
-
+APP_NAME = "CodeWhisperer"
 BUILD_DIR = pathlib.Path(os.environ.get("BUILD_DIR") or "build").absolute()
 
 
@@ -252,48 +253,6 @@ def tauri_config(
     return json.dumps(config)
 
 
-def create_dmg(
-    dmg_path: pathlib.Path,
-    bundle_path: pathlib.Path,
-):
-    volname = "CodeWhisperer"
-    app_name = "CodeWhisperer.app"
-    volicon = pathlib.Path("bundle/dmg/VolumeIcon.icns")
-    background = pathlib.Path("bundle/dmg/background.png")
-
-    run_cmd(
-        [
-            "create-dmg",
-            "--volname",
-            volname,
-            "--volicon",
-            volicon,
-            "--background",
-            background,
-            "--text-size",
-            "12",
-            "--icon-size",
-            "160",
-            "--format",
-            "ULFO",
-            "--window-size",
-            "660",
-            "400",
-            "--icon",
-            app_name,
-            "180",
-            "170",
-            "--hide-extension",
-            app_name,
-            "--app-drop-link",
-            "480",
-            "170",
-            dmg_path,
-            bundle_path,
-        ]
-    )
-
-
 def build_desktop_app(
     cwterm_path: pathlib.Path,
     cw_cli_path: pathlib.Path,
@@ -343,11 +302,11 @@ def build_desktop_app(
     target_bundle = pathlib.Path(
         f"target/{target}/release/bundle/macos/codewhisperer_desktop.app"
     )
-    bundle_path = BUILD_DIR / "CodeWhisperer.app"
-    shutil.rmtree(bundle_path, ignore_errors=True)
-    shutil.copytree(target_bundle, bundle_path)
+    app_path = BUILD_DIR / "CodeWhisperer.app"
+    shutil.rmtree(app_path, ignore_errors=True)
+    shutil.copytree(target_bundle, app_path)
 
-    info_plist_path = bundle_path / "Contents/Info.plist"
+    info_plist_path = app_path / "Contents/Info.plist"
 
     # Change the display name of the app
     run_cmd(
@@ -356,7 +315,7 @@ def build_desktop_app(
             "write",
             info_plist_path,
             "CFBundleDisplayName",
-            "CodeWhisperer",
+            APP_NAME,
         ]
     )
     run_cmd(
@@ -365,7 +324,7 @@ def build_desktop_app(
             "write",
             info_plist_path,
             "CFBundleName",
-            "CodeWhisperer",
+            APP_NAME,
         ]
     )
 
@@ -395,7 +354,7 @@ def build_desktop_app(
     )
 
     info("Copying CodeWhispererInputMethod.app into bundle")
-    helpers_dir = bundle_path / "Contents/Helpers"
+    helpers_dir = app_path / "Contents/Helpers"
     helpers_dir.mkdir(parents=True, exist_ok=True)
     shutil.copytree(ime_app, helpers_dir.joinpath("CodeWhispererInputMethod.app"))
 
@@ -403,23 +362,43 @@ def build_desktop_app(
     theme_repo = BUILD_DIR / "themes"
     shutil.rmtree(theme_repo, ignore_errors=True)
     run_cmd(["git", "clone", "https://github.com/withfig/themes.git", theme_repo])
-    shutil.copytree(theme_repo / "themes", bundle_path / "Contents/Resources/themes")
+    shutil.copytree(theme_repo / "themes", app_path / "Contents/Resources/themes")
 
     for package, path in npm_packages.items():
         info(f"Copying {package} into bundle")
-        shutil.copytree(path, bundle_path / "Contents/Resources" / package)
+        shutil.copytree(path, app_path / "Contents/Resources" / package)
 
     dmg_path = BUILD_DIR / "CodeWhisperer.dmg"
     dmg_path.unlink(missing_ok=True)
 
-    create_dmg(
-        dmg_path=dmg_path,
-        bundle_path=bundle_path,
+    dmg_resources_dir = pathlib.Path("bundle/dmg")
+    background_path = dmg_resources_dir / "background.png"
+    icon_path = dmg_resources_dir / "VolumeIcon.icns"
+
+    build_dmg(
+        volume_name=APP_NAME,
+        filename=dmg_path,
+        settings={
+            "format": "ULFO",
+            "background": str(background_path),
+            "icon": str(icon_path),
+            "text_size": 12,
+            "icon_size": 160,
+            "window_rect": ((100, 100), (660, 400)),
+            "files": [str(app_path)],
+            "symlinks": {"Applications": "/Applications"},
+            "icon_locations": {
+                app_path.name: (180, 170),
+                "Applications": (480, 170),
+            },
+        },
     )
+
+    info(f"Created dmg at {dmg_path}")
 
     if signing_data:
         sign_and_rebundle_macos(
-            app_path=bundle_path, dmg_path=dmg_path, signing_data=signing_data
+            app_path=app_path, dmg_path=dmg_path, signing_data=signing_data
         )
 
     return dmg_path

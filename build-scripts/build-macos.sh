@@ -57,6 +57,8 @@ rustup target add aarch64-apple-darwin
 
 cargo install tauri-cli@1.5.2 --locked
 
+pip install dmgbuild==1.6.1
+
 build_params_json="$(
     jq -n \
         --arg output_bucket "${output_bucket:-}" \
