@@ -40,6 +40,7 @@ pub enum IntegrationsSubcommands {
 }
 
 #[derive(Debug, Subcommand, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum Integration {
     Dotfiles {
         /// Only install the integrations for a single shell

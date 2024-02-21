@@ -62,7 +62,7 @@ fn tray_update(proxy: &EventLoopProxy) {
     let proxy_a = proxy.clone();
     let proxy_b = proxy.clone();
     tokio::runtime::Handle::current().spawn(async move {
-        match fig_install::update(
+        let res = fig_install::update(
             Some(Box::new(move |_| {
                 proxy_a
                     .send_event(Event::ShowMessageNotification {
@@ -78,8 +78,8 @@ fn tray_update(proxy: &EventLoopProxy) {
                 relaunch_dashboard: true,
             },
         )
-        .await
-        {
+        .await;
+        match res {
             Ok(true) => {},
             Ok(false) => {
                 // Didn't update, show a notification

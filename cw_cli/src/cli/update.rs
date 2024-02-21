@@ -5,7 +5,7 @@ use fig_install::{
 };
 
 pub async fn update(non_interactive: bool, relaunch_dashboard: bool, rollout: bool) -> Result<()> {
-    match fig_install::update(
+    let res = fig_install::update(
         Some(Box::new(|mut recv| {
             tokio::runtime::Handle::current().spawn(async move {
                 let progress_bar = indicatif::ProgressBar::new(100);
@@ -36,8 +36,9 @@ pub async fn update(non_interactive: bool, relaunch_dashboard: bool, rollout: bo
             relaunch_dashboard,
         },
     )
-    .await
-    {
+    .await;
+
+    match res {
         Err(e) => Err(eyre::eyre!(
             "{e}. If this is unexpected, try running `cw doctor` and then try again."
         )),
