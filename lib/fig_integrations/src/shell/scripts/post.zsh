@@ -5,7 +5,7 @@ if [[ -d "${HOME}/.local/bin" ]] && [[ ":$PATH:" != *":${HOME}/.local/bin:"* ]];
   PATH="${PATH:+"$PATH:"}${HOME}/.local/bin"
 fi
 
-alias q='cw chat'
+alias q='cw q'
 
 if [[ -z "${TTY}" ]]; then
   TTY=$(tty)
