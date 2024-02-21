@@ -46,8 +46,9 @@ done
 export CARGO_HOME="$PWD/../.cargo"
 RUSTUP_HOME="$PWD/../.rustup"
 
-mise install --verbose
-eval "$(mise activate bash --shims)"
+# TODO: reenable once mise fixes http issues
+# mise install --verbose
+# eval "$(mise activate bash --shims)"
 
 # clean up old install
 rm -rf "$CARGO_HOME"
@@ -60,7 +61,7 @@ rustup target add aarch64-apple-darwin
 
 cargo install tauri-cli@1.5.2 --locked
 
-pip install dmgbuild==1.6.1
+pip3 install dmgbuild==1.6.1
 
 build_params_json="$(
     jq -n \
