@@ -62,6 +62,7 @@ message Hook {
     FocusChangeHook focus_change = 114;
     InterceptedKeyHook intercepted_key = 115;
     FocusedWindowDataHook focused_window_data = 116;
+    ClearAutocompleteCacheHook clear_autocomplete_cache = 117;
   }
 }
 
@@ -296,6 +297,10 @@ message FocusedWindowDataHook {
   BoundingBox outer = 4;
   optional bool hide = 5;
   float scale = 6;
+}
+
+message ClearAutocompleteCacheHook {
+  repeated string clis = 1;
 }
 
 // == Responses ==

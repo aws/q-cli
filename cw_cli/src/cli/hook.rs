@@ -54,6 +54,10 @@ pub enum HookSubcommand {
         #[arg(long)]
         prompt: bool,
     },
+    ClearAutocompleteCache {
+        #[arg(long)]
+        cli: Vec<String>,
+    },
 }
 
 static BASH_UNICODE: Lazy<String> = Lazy::new(|| {
@@ -149,6 +153,7 @@ impl HookSubcommand {
                 let context = hooks::generate_shell_context(*pid, tty, session_id)?;
                 hooks::new_ssh_hook(context, control_path, remote_dest)
             },
+            HookSubcommand::ClearAutocompleteCache { cli } => Ok(hooks::new_clear_autocomplete_cache(cli.clone())),
         };
 
         let hook = hook.context("Invalid input for hook")?;

@@ -24,6 +24,7 @@ import {
   useFigKeypress,
   useFigAutocomplete,
   useFigSettings,
+  useFigClearCache,
 } from "./fig/hooks";
 
 import { getCommonSuggestionPrefix } from "./suggestions/helpers";
@@ -206,6 +207,7 @@ function App() {
   useParseArgumentsEffect(setIsLoadingSuggestions);
   useFigSettings(setSettings);
   useFigKeypress(keypressCallback);
+  useFigClearCache();
 
   useEffect(() => {
     // Dont preload if we can load the locally cached figspec

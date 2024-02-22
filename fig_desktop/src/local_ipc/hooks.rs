@@ -1,6 +1,7 @@
 use anyhow::Result;
 use fig_proto::local::{
     CaretPositionHook,
+    ClearAutocompleteCacheHook,
     EventHook,
     FileChangedHook,
     FocusedWindowDataHook,
@@ -95,6 +96,18 @@ pub async fn event(hook: EventHook, proxy: &EventLoopProxy) -> Result<()> {
                 .unwrap();
         }
     }
+
+    Ok(())
+}
+
+pub async fn clear_autocomplete_cache(hook: ClearAutocompleteCacheHook, proxy: &EventLoopProxy) -> Result<()> {
+    proxy.send_event(Event::WindowEvent {
+        window_id: AUTOCOMPLETE_ID,
+        window_event: WindowEvent::Event {
+            event_name: "clear-cache".into(),
+            payload: Some(serde_json::to_string(&hook.clis)?.into()),
+        },
+    })?;
 
     Ok(())
 }

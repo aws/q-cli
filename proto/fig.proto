@@ -646,8 +646,8 @@ message AuthStatusRequest {}
 
 message AuthStatusResponse {
   enum AuthKind {
-    BUILDER_ID = 0;
-    IAM_IDENTITY_CENTER = 1;
+    AUTH_KIND_BUILDER_ID = 0;
+    AUTH_KIND_IAM_IDENTITY_CENTER = 1;
   }
 
   bool authed = 1;

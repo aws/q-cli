@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import {
   EditBufferNotifications,
+  Event,
   Keybindings,
   Settings,
   Shell,
@@ -12,6 +13,7 @@ import {
   updateSettings,
 } from "@amzn/fig-io-api-bindings-wrappers";
 import { updateSelectSuggestionKeybindings } from "../actions";
+import { generatorCache } from "@/generators/helpers";
 
 // TODO(sean) expose Subscription type from API binding library
 type Unwrap<T> = T extends Promise<infer U> ? U : T;
@@ -129,5 +131,15 @@ export const useFigAutocomplete = (
         return { unsubscribe: false };
       }),
     []
+  );
+};
+
+export const useFigClearCache = () => {
+  useFigSubscriptionEffect(() =>
+    Event.subscribe("clear-cache", () => {
+      window.resetCaches?.();
+      generatorCache.clear();
+      return { unsubscribe: false };
+    })
   );
 };

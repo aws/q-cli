@@ -171,6 +171,10 @@ pub fn new_caret_position_hook(x: f64, y: f64, width: f64, height: f64, origin: 
     }))
 }
 
+pub fn new_clear_autocomplete_cache(clis: Vec<String>) -> Hook {
+    hook_enum_to_hook(hook::Hook::ClearAutocompleteCache(ClearAutocompleteCacheHook { clis }))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

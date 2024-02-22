@@ -219,6 +219,7 @@ async fn handle_local_ipc(
                 use fig_proto::local::hook::Hook::{
                     Callback,
                     CaretPosition,
+                    ClearAutocompleteCache,
                     EditBuffer,
                     Event,
                     FileChanged,
@@ -246,6 +247,7 @@ async fn handle_local_ipc(
                     },
                     Some(KeyboardFocusChanged(_)) => hooks::focus_change(&proxy).await,
                     Some(Event(event)) => hooks::event(event, &proxy).await,
+                    Some(ClearAutocompleteCache(event)) => hooks::clear_autocomplete_cache(event, &proxy).await,
                     Some(
                         Init(_)
                         | PostExec(_)

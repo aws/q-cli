@@ -140,6 +140,10 @@ impl FigMessage {
         Ok(inner.freeze())
     }
 
+    pub fn to_encoded(&self) -> Result<Bytes, FigMessageEncodeError> {
+        FigMessage::encode(self.message_type, &self.inner)
+    }
+
     pub fn parse(src: &mut impl bytes::Buf) -> Result<(usize, FigMessage), FigMessageParseError> {
         if src.remaining() < 10 {
             return Err(FigMessageParseError::Incomplete(FigMessageComponent::Header));
@@ -228,6 +232,8 @@ impl<T: Message> FigProtobufEncodable for T {
 
 #[cfg(test)]
 mod tests {
+    use serde_json::json;
+
     use super::*;
 
     fn test_message() -> local::LocalMessage {
@@ -254,7 +260,7 @@ mod tests {
     #[test]
     fn test_to_fig_pbuf() {
         let message = test_message();
-        assert!(message.encode_fig_protobuf().unwrap().starts_with(b"\x1b@fig-pbuf"));
+        assert_eq!(&message.encode_fig_protobuf().unwrap()[..10], b"\x1b@fig-pbuf");
     }
 
     #[test]
@@ -266,6 +272,9 @@ mod tests {
             inner: Bytes::from(json),
             message_type: FigMessageType::Json,
         };
+
+        assert_eq!(&msg.to_encoded().unwrap()[..10], b"\x1b@fig-json");
+
         let decoded_message: local::LocalMessage = msg.decode().unwrap();
 
         assert_eq!(message, decoded_message);
@@ -275,16 +284,17 @@ mod tests {
     fn json_decode() {
         let msg = FigMessage {
             inner: Bytes::from(
-                r#"{
-  "hook": {
-    "caretPosition": {
-      "x": 123,
-      "y": 456,
-      "width": 34,
-      "height": 61
-    }
-  }
-}"#,
+                serde_json::to_vec(&json!({
+                    "hook": {
+                        "caretPosition": {
+                          "x": 123.0,
+                          "y": 456,
+                          "width": 34.0,
+                          "height": 61
+                        }
+                    }
+                }))
+                .unwrap(),
             ),
             message_type: FigMessageType::Json,
         };
@@ -316,6 +326,9 @@ mod tests {
             inner: Bytes::from(mpack),
             message_type: FigMessageType::MessagePack,
         };
+
+        assert_eq!(&msg.to_encoded().unwrap()[..10], b"\x1b@fig-mpak");
+
         let decoded_message: local::LocalMessage = msg.decode().unwrap();
 
         assert_eq!(message, decoded_message);
