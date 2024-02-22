@@ -66,7 +66,12 @@ const SCOPES: &[&str] = &[
     // "codewhisperer:transformations",
 ];
 const CLIENT_TYPE: &str = "public";
+
+// The start URL for public builder ID users
 const START_URL: &str = "https://view.awsapps.com/start";
+
+// The start URL for internal amzn users
+const AMZN_START_URL: &str = "https://amzn.awsapps.com/start";
 
 const DEVICE_GRANT_TYPE: &str = "urn:ietf:params:oauth:grant-type:device_code";
 const REFRESH_GRANT_TYPE: &str = "refresh_token";
@@ -365,6 +370,12 @@ impl BuilderIdToken {
             Some(_) => TokenType::IamIdentityCenter,
         }
     }
+
+    /// Check if the token is for the internal amzn start URL (`https://amzn.awsapps.com/start`),
+    /// this implies the user will use midway for private specs
+    pub fn is_amzn_user(&self) -> bool {
+        matches!(&self.start_url, Some(url) if url == AMZN_START_URL)
+    }
 }
 
 pub enum PollCreateToken {
@@ -422,12 +433,13 @@ pub async fn poll_create_token(
     }
 }
 
-pub async fn is_logged_in() -> bool {
-    let Ok(secret_store) = SecretStore::new().await else {
-        return false;
-    };
+pub async fn builder_id_token() -> Result<Option<BuilderIdToken>> {
+    let secret_store = SecretStore::new().await?;
+    BuilderIdToken::load(&secret_store).await
+}
 
-    matches!(BuilderIdToken::load(&secret_store).await, Ok(Some(_)))
+pub async fn is_logged_in() -> bool {
+    matches!(builder_id_token().await, Ok(Some(_)))
 }
 
 pub async fn logout() -> Result<()> {
@@ -502,7 +514,7 @@ mod tests {
     #[ignore = "login flow"]
     #[tokio::test]
     async fn test_login() {
-        let start_url = Some("https://amzn.awsapps.com/start".into());
+        let start_url = Some(AMZN_START_URL.into());
         let region = Some("us-east-1".into());
 
         // let start_url = None;

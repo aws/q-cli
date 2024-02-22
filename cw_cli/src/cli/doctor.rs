@@ -336,7 +336,7 @@ where
         Regex::new(r"[^a-zA-Z0-9]+").unwrap().replace_all(&name, "_").into()
     }
 
-    fn get_type(&self, _: &T, _platform: Platform) -> DoctorCheckType {
+    async fn get_type(&self, _: &T, _platform: Platform) -> DoctorCheckType {
         DoctorCheckType::NormalCheck
     }
 
@@ -402,7 +402,7 @@ impl DoctorCheck for AppRunningCheck {
         }
     }
 
-    fn get_type(&self, _: &(), platform: Platform) -> DoctorCheckType {
+    async fn get_type(&self, _: &(), platform: Platform) -> DoctorCheckType {
         if platform == Platform::MacOs {
             DoctorCheckType::NormalCheck
         } else {
@@ -445,7 +445,7 @@ impl DoctorCheck for FigSocketCheck {
         })
     }
 
-    fn get_type(&self, _: &(), platform: Platform) -> DoctorCheckType {
+    async fn get_type(&self, _: &(), platform: Platform) -> DoctorCheckType {
         if platform == Platform::MacOs {
             DoctorCheckType::NormalCheck
         } else {
@@ -596,6 +596,37 @@ impl DoctorCheck for FigIntegrationsCheck {
                 error: None,
             }),
         }
+    }
+}
+
+struct MidwayCheck;
+
+#[async_trait]
+impl DoctorCheck for MidwayCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Midway Auth".into()
+    }
+
+    async fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
+        match auth::builder_id_token().await {
+            Ok(Some(id)) if id.is_amzn_user() => DoctorCheckType::NormalCheck,
+            _ => DoctorCheckType::NoCheck,
+        }
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        fig_request::midway::midway_request(
+            url::Url::parse("https://prod.us-east-1.shellspecs.jupiter.ai.aws.dev/index.json").unwrap(),
+        )
+        .await
+        .map_err(|err| DoctorError::Error {
+            reason: "Failed to make midway request".into(),
+            info: vec!["Try running `mwinit` and restarting the app with `cw restart`.".into()],
+            fix: None,
+            error: Some(err.into()),
+        })?;
+
+        Ok(())
     }
 }
 
@@ -778,7 +809,7 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
         format!("dotfile_check_{}", self.integration.file_name())
     }
 
-    fn get_type(&self, current_shell: &Option<Shell>, _platform: Platform) -> DoctorCheckType {
+    async fn get_type(&self, current_shell: &Option<Shell>, _platform: Platform) -> DoctorCheckType {
         if let Some(shell) = current_shell {
             if *shell == self.integration.get_shell() {
                 return DoctorCheckType::NormalCheck;
@@ -1030,7 +1061,7 @@ impl DoctorCheck<()> for SshdConfigCheck {
         }
     }
 
-    fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
+    async fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
         if fig_util::system_info::in_ssh() {
             DoctorCheckType::NormalCheck
         } else {
@@ -1199,7 +1230,7 @@ impl DoctorCheck<DiagnosticsResponse> for DotfilesSymlinkedCheck {
         "Dotfiles symlinked".into()
     }
 
-    fn get_type(&self, diagnostics: &DiagnosticsResponse, _platform: Platform) -> DoctorCheckType {
+    async fn get_type(&self, diagnostics: &DiagnosticsResponse, _platform: Platform) -> DoctorCheckType {
         if diagnostics.symlinked == "true" {
             DoctorCheckType::NormalCheck
         } else {
@@ -1224,7 +1255,7 @@ impl DoctorCheck<DiagnosticsResponse> for AutocompleteActiveCheck {
         "Autocomplete is active".into()
     }
 
-    fn get_type(&self, diagnostics: &DiagnosticsResponse, _platform: Platform) -> DoctorCheckType {
+    async fn get_type(&self, diagnostics: &DiagnosticsResponse, _platform: Platform) -> DoctorCheckType {
         if diagnostics.autocomplete_active.is_some() {
             DoctorCheckType::NormalCheck
         } else {
@@ -1251,7 +1282,7 @@ impl DoctorCheck<Option<Terminal>> for SupportedTerminalCheck {
         "Terminal support".into()
     }
 
-    fn get_type(&self, _: &Option<Terminal>, platform: Platform) -> DoctorCheckType {
+    async fn get_type(&self, _: &Option<Terminal>, platform: Platform) -> DoctorCheckType {
         if fig_util::system_info::is_remote() {
             DoctorCheckType::NoCheck
         } else {
@@ -1293,7 +1324,7 @@ impl DoctorCheck<Option<Terminal>> for ItermIntegrationCheck {
         "iTerm integration is enabled".into()
     }
 
-    fn get_type(&self, current_terminal: &Option<Terminal>, platform: Platform) -> DoctorCheckType {
+    async fn get_type(&self, current_terminal: &Option<Terminal>, platform: Platform) -> DoctorCheckType {
         if platform == Platform::MacOs {
             if !is_installed(Terminal::Iterm.to_bundle_id().as_deref()) {
                 DoctorCheckType::NoCheck
@@ -1327,7 +1358,7 @@ impl DoctorCheck<Option<Terminal>> for ItermBashIntegrationCheck {
         "iTerm bash integration configured".into()
     }
 
-    fn get_type(&self, current_terminal: &Option<Terminal>, platform: Platform) -> DoctorCheckType {
+    async fn get_type(&self, current_terminal: &Option<Terminal>, platform: Platform) -> DoctorCheckType {
         if platform == Platform::MacOs {
             if Shell::current_shell() != Some(Shell::Bash) {
                 return DoctorCheckType::NoCheck;
@@ -1381,7 +1412,7 @@ impl DoctorCheck<Option<Terminal>> for HyperIntegrationCheck {
         "Hyper integration is enabled".into()
     }
 
-    fn get_type(&self, current_terminal: &Option<Terminal>, _platform: Platform) -> DoctorCheckType {
+    async fn get_type(&self, current_terminal: &Option<Terminal>, _platform: Platform) -> DoctorCheckType {
         if !is_installed(Terminal::Hyper.to_bundle_id().as_deref()) {
             return DoctorCheckType::NoCheck;
         }
@@ -1460,7 +1491,7 @@ impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
         "VSCode integration is enabled".into()
     }
 
-    fn get_type(&self, current_terminal: &Option<Terminal>, _platform: Platform) -> DoctorCheckType {
+    async fn get_type(&self, current_terminal: &Option<Terminal>, _platform: Platform) -> DoctorCheckType {
         if !is_installed(Terminal::VSCode.to_bundle_id().as_deref())
             && !is_installed(Terminal::VSCodeInsiders.to_bundle_id().as_deref())
         {
@@ -1522,7 +1553,7 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
         "Input Method".into()
     }
 
-    fn get_type(&self, current_terminal: &Option<Terminal>, _platform: Platform) -> DoctorCheckType {
+    async fn get_type(&self, current_terminal: &Option<Terminal>, _platform: Platform) -> DoctorCheckType {
         match current_terminal {
             Some(current_terminal) if current_terminal.supports_macos_input_method() => DoctorCheckType::NormalCheck,
             _ => DoctorCheckType::NoCheck,
@@ -1607,7 +1638,7 @@ impl DoctorCheck for IBusEnvCheck {
         "IBus Env Check".into()
     }
 
-    fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
+    async fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
         DoctorCheckType::NormalCheck
     }
 
@@ -1655,7 +1686,7 @@ impl DoctorCheck for IBusCheck {
         "IBus Check".into()
     }
 
-    fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
+    async fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
         DoctorCheckType::NormalCheck
     }
 
@@ -1694,7 +1725,7 @@ impl DoctorCheck for DesktopCompatibilityCheck {
         "Desktop Compatibility Check".into()
     }
 
-    fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
+    async fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
         DoctorCheckType::NormalCheck
     }
 
@@ -1736,7 +1767,7 @@ impl DoctorCheck for WindowsConsoleCheck {
         "Windows Console Check".into()
     }
 
-    fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
+    async fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
         DoctorCheckType::NormalCheck
     }
 
@@ -1891,7 +1922,7 @@ impl DoctorCheck for BashVersionCheck {
         "Bash is up to date".into()
     }
 
-    fn get_type(&self, _: &(), _platform: Platform) -> DoctorCheckType {
+    async fn get_type(&self, _: &(), _platform: Platform) -> DoctorCheckType {
         if Shell::current_shell() == Some(Shell::Bash) {
             DoctorCheckType::SoftCheck
         } else {
@@ -1999,8 +2030,8 @@ where
         },
     };
     for check in checks {
-        let name: String = check.name().into();
-        let check_type: DoctorCheckType = check.get_type(&context, get_platform());
+        let name = check.name();
+        let check_type: DoctorCheckType = check.get_type(&context, get_platform()).await;
 
         if check_type == DoctorCheckType::NoCheck {
             continue;
@@ -2222,6 +2253,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 &PluginDevModeCheck,
                 &DashboardHostCheck,
                 &AutocompleteHostCheck,
+                &MidwayCheck,
             ],
             config,
             &mut spinner,

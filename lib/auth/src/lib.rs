@@ -4,6 +4,7 @@ pub mod iam;
 pub mod secret_store;
 
 pub use builder_id::{
+    builder_id_token,
     is_logged_in,
     logout,
 };

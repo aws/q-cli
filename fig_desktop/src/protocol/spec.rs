@@ -121,10 +121,7 @@ async fn remote_index_json(client: &Client) -> &Vec<Result<SpecIndexMeta>> {
                         },
                     };
 
-                    if !auth_token
-                        .start_url
-                        .is_some_and(|t| t == "https://amzn.awsapps.com/start")
-                    {
+                    if !auth_token.is_amzn_user() {
                         return None;
                     }
                 }
