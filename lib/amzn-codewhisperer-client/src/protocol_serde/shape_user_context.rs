@@ -15,5 +15,8 @@ pub fn ser_user_context(
     if let Some(var_1) = &input.client_id {
         object.key("clientId").string(var_1.as_str());
     }
+    if let Some(var_2) = &input.ide_version {
+        object.key("ideVersion").string(var_2.as_str());
+    }
     Ok(())
 }

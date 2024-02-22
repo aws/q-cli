@@ -13,6 +13,8 @@ pub struct CodeCoverageEvent {
     pub total_character_count: i32,
     #[allow(missing_docs)] // documentation missing in model
     pub timestamp: ::aws_smithy_types::DateTime,
+    #[allow(missing_docs)] // documentation missing in model
+    pub unmodified_accepted_character_count: i32,
 }
 impl CodeCoverageEvent {
     #[allow(missing_docs)] // documentation missing in model
@@ -39,6 +41,11 @@ impl CodeCoverageEvent {
     pub fn timestamp(&self) -> &::aws_smithy_types::DateTime {
         &self.timestamp
     }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn unmodified_accepted_character_count(&self) -> i32 {
+        self.unmodified_accepted_character_count
+    }
 }
 impl CodeCoverageEvent {
     /// Creates a new builder-style object to manufacture
@@ -57,6 +64,7 @@ pub struct CodeCoverageEventBuilder {
     pub(crate) accepted_character_count: ::std::option::Option<i32>,
     pub(crate) total_character_count: ::std::option::Option<i32>,
     pub(crate) timestamp: ::std::option::Option<::aws_smithy_types::DateTime>,
+    pub(crate) unmodified_accepted_character_count: ::std::option::Option<i32>,
 }
 impl CodeCoverageEventBuilder {
     #[allow(missing_docs)] // documentation missing in model
@@ -148,6 +156,23 @@ impl CodeCoverageEventBuilder {
         &self.timestamp
     }
 
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn unmodified_accepted_character_count(mut self, input: i32) -> Self {
+        self.unmodified_accepted_character_count = ::std::option::Option::Some(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_unmodified_accepted_character_count(mut self, input: ::std::option::Option<i32>) -> Self {
+        self.unmodified_accepted_character_count = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_unmodified_accepted_character_count(&self) -> &::std::option::Option<i32> {
+        &self.unmodified_accepted_character_count
+    }
+
     /// Consumes the builder and constructs a
     /// [`CodeCoverageEvent`](crate::types::CodeCoverageEvent). This method will fail if any of
     /// the following fields are not set:
@@ -172,6 +197,7 @@ impl CodeCoverageEventBuilder {
                     "timestamp was not specified but it is required when building CodeCoverageEvent",
                 )
             })?,
+            unmodified_accepted_character_count: self.unmodified_accepted_character_count.unwrap_or_default(),
         })
     }
 }

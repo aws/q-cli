@@ -18,8 +18,17 @@ pub fn ser_update_profile_input_input(
         )?;
         object_4.finish();
     }
-    if let Some(var_5) = &input.kms_key_arn {
-        object.key("kmsKeyArn").string(var_5.as_str());
+    if let Some(var_5) = &input.active_functionalities {
+        let mut array_6 = object.key("activeFunctionalities").start_array();
+        for item_7 in var_5 {
+            {
+                array_6.value().string(item_7.as_str());
+            }
+        }
+        array_6.finish();
+    }
+    if let Some(var_8) = &input.kms_key_arn {
+        object.key("kmsKeyArn").string(var_8.as_str());
     }
     Ok(())
 }

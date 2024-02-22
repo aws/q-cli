@@ -27,6 +27,13 @@ where
                                         .transpose()?,
                                 );
                             },
+                            "baseVersion" => {
+                                builder = builder.set_base_version(
+                                    ::aws_smithy_json::deserialize::token::expect_number_or_null(tokens.next())?
+                                        .map(i64::try_from)
+                                        .transpose()?,
+                                );
+                            },
                             "status" => {
                                 builder = builder.set_status(
                                     ::aws_smithy_json::deserialize::token::expect_string_or_null(tokens.next())?

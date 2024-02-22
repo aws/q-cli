@@ -91,7 +91,7 @@ checksum = "0942ffc6dcaadf03badf6e6a2d0228460359d5e34b57ccdc720b7382dfbd5ec5"
 
 [[package]]
 name = "amzn-codewhisperer-client"
-version = "0.1.0"
+version = "0.1.5"
 dependencies = [
  "aws-credential-types 1.1.5",
  "aws-http 0.60.5",
@@ -111,7 +111,7 @@ dependencies = [
 
 [[package]]
 name = "amzn-codewhisperer-streaming-client"
-version = "0.1.0"
+version = "0.1.5"
 dependencies = [
  "aws-credential-types 1.1.5",
  "aws-http 0.60.5",
@@ -131,7 +131,7 @@ dependencies = [
 
 [[package]]
 name = "amzn-consolas-client"
-version = "0.1.0"
+version = "0.1.5"
 dependencies = [
  "aws-credential-types 1.1.5",
  "aws-http 0.60.5",

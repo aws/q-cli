@@ -20,6 +20,8 @@ pub struct UserTriggerDecisionEvent {
     #[allow(missing_docs)] // documentation missing in model
     pub timestamp: ::aws_smithy_types::DateTime,
     #[allow(missing_docs)] // documentation missing in model
+    pub trigger_to_response_latency_milliseconds: ::std::option::Option<f64>,
+    #[allow(missing_docs)] // documentation missing in model
     pub suggestion_reference_count: i32,
     #[allow(missing_docs)] // documentation missing in model
     pub generated_line: i32,
@@ -70,6 +72,11 @@ impl UserTriggerDecisionEvent {
     }
 
     #[allow(missing_docs)] // documentation missing in model
+    pub fn trigger_to_response_latency_milliseconds(&self) -> ::std::option::Option<f64> {
+        self.trigger_to_response_latency_milliseconds
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
     pub fn suggestion_reference_count(&self) -> i32 {
         self.suggestion_reference_count
     }
@@ -104,6 +111,7 @@ pub struct UserTriggerDecisionEventBuilder {
     pub(crate) suggestion_state: ::std::option::Option<crate::types::SuggestionState>,
     pub(crate) recommendation_latency_milliseconds: ::std::option::Option<f64>,
     pub(crate) timestamp: ::std::option::Option<::aws_smithy_types::DateTime>,
+    pub(crate) trigger_to_response_latency_milliseconds: ::std::option::Option<f64>,
     pub(crate) suggestion_reference_count: ::std::option::Option<i32>,
     pub(crate) generated_line: ::std::option::Option<i32>,
     pub(crate) number_of_recommendations: ::std::option::Option<i32>,
@@ -253,6 +261,23 @@ impl UserTriggerDecisionEventBuilder {
     }
 
     #[allow(missing_docs)] // documentation missing in model
+    pub fn trigger_to_response_latency_milliseconds(mut self, input: f64) -> Self {
+        self.trigger_to_response_latency_milliseconds = ::std::option::Option::Some(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_trigger_to_response_latency_milliseconds(mut self, input: ::std::option::Option<f64>) -> Self {
+        self.trigger_to_response_latency_milliseconds = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_trigger_to_response_latency_milliseconds(&self) -> &::std::option::Option<f64> {
+        &self.trigger_to_response_latency_milliseconds
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
     pub fn suggestion_reference_count(mut self, input: i32) -> Self {
         self.suggestion_reference_count = ::std::option::Option::Some(input);
         self
@@ -361,6 +386,7 @@ impl UserTriggerDecisionEventBuilder {
                     "timestamp was not specified but it is required when building UserTriggerDecisionEvent",
                 )
             })?,
+            trigger_to_response_latency_milliseconds: self.trigger_to_response_latency_milliseconds,
             suggestion_reference_count: self.suggestion_reference_count.unwrap_or_default(),
             generated_line: self.generated_line.unwrap_or_default(),
             number_of_recommendations: self.number_of_recommendations.unwrap_or_default(),

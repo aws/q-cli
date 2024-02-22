@@ -438,6 +438,9 @@ impl From<crate::operation::get_transformation::GetTransformationError> for Erro
             crate::operation::get_transformation::GetTransformationError::ValidationError(inner) => {
                 Error::ValidationError(inner)
             },
+            crate::operation::get_transformation::GetTransformationError::ResourceNotFoundError(inner) => {
+                Error::ResourceNotFoundError(inner)
+            },
             crate::operation::get_transformation::GetTransformationError::AccessDeniedError(inner) => {
                 Error::AccessDeniedError(inner)
             },
@@ -481,6 +484,9 @@ impl From<crate::operation::get_transformation_plan::GetTransformationPlanError>
             },
             crate::operation::get_transformation_plan::GetTransformationPlanError::ValidationError(inner) => {
                 Error::ValidationError(inner)
+            },
+            crate::operation::get_transformation_plan::GetTransformationPlanError::ResourceNotFoundError(inner) => {
+                Error::ResourceNotFoundError(inner)
             },
             crate::operation::get_transformation_plan::GetTransformationPlanError::AccessDeniedError(inner) => {
                 Error::AccessDeniedError(inner)
@@ -860,6 +866,9 @@ impl From<crate::operation::stop_transformation::StopTransformationError> for Er
             },
             crate::operation::stop_transformation::StopTransformationError::ValidationError(inner) => {
                 Error::ValidationError(inner)
+            },
+            crate::operation::stop_transformation::StopTransformationError::ResourceNotFoundError(inner) => {
+                Error::ResourceNotFoundError(inner)
             },
             crate::operation::stop_transformation::StopTransformationError::AccessDeniedError(inner) => {
                 Error::AccessDeniedError(inner)

@@ -11,6 +11,8 @@ pub struct UserContext {
     pub product: ::std::string::String,
     #[allow(missing_docs)] // documentation missing in model
     pub client_id: ::std::option::Option<::std::string::String>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub ide_version: ::std::option::Option<::std::string::String>,
 }
 impl UserContext {
     #[allow(missing_docs)] // documentation missing in model
@@ -33,6 +35,11 @@ impl UserContext {
     pub fn client_id(&self) -> ::std::option::Option<&str> {
         self.client_id.as_deref()
     }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn ide_version(&self) -> ::std::option::Option<&str> {
+        self.ide_version.as_deref()
+    }
 }
 impl UserContext {
     /// Creates a new builder-style object to manufacture
@@ -50,6 +57,7 @@ pub struct UserContextBuilder {
     pub(crate) operating_system: ::std::option::Option<crate::types::OperatingSystem>,
     pub(crate) product: ::std::option::Option<::std::string::String>,
     pub(crate) client_id: ::std::option::Option<::std::string::String>,
+    pub(crate) ide_version: ::std::option::Option<::std::string::String>,
 }
 impl UserContextBuilder {
     #[allow(missing_docs)] // documentation missing in model
@@ -123,6 +131,23 @@ impl UserContextBuilder {
         &self.client_id
     }
 
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn ide_version(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
+        self.ide_version = ::std::option::Option::Some(input.into());
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_ide_version(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
+        self.ide_version = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_ide_version(&self) -> &::std::option::Option<::std::string::String> {
+        &self.ide_version
+    }
+
     /// Consumes the builder and constructs a [`UserContext`](crate::types::UserContext).
     /// This method will fail if any of the following fields are not set:
     /// - [`ide_category`](crate::types::builders::UserContextBuilder::ide_category)
@@ -151,6 +176,7 @@ impl UserContextBuilder {
                 )
             })?,
             client_id: self.client_id,
+            ide_version: self.ide_version,
         })
     }
 }

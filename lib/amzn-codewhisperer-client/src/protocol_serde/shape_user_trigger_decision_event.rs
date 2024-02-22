@@ -38,6 +38,12 @@ pub fn ser_user_trigger_decision_event(
             .key("timestamp")
             .date_time(&input.timestamp, ::aws_smithy_types::date_time::Format::EpochSeconds)?;
     }
+    if let Some(var_3) = &input.trigger_to_response_latency_milliseconds {
+        object.key("triggerToResponseLatencyMilliseconds").number(
+            #[allow(clippy::useless_conversion)]
+            ::aws_smithy_types::Number::Float((*var_3).into()),
+        );
+    }
     if input.suggestion_reference_count != 0 {
         object.key("suggestionReferenceCount").number(
             #[allow(clippy::useless_conversion)]

@@ -168,6 +168,32 @@ impl UpdateProfileFluentBuilder {
         self.inner.get_reference_tracker_configuration()
     }
 
+    /// Appends an item to `activeFunctionalities`.
+    ///
+    /// To override the contents of this collection use
+    /// [`set_active_functionalities`](Self::set_active_functionalities).
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn active_functionalities(mut self, input: crate::types::FunctionalityName) -> Self {
+        self.inner = self.inner.active_functionalities(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_active_functionalities(
+        mut self,
+        input: ::std::option::Option<::std::vec::Vec<crate::types::FunctionalityName>>,
+    ) -> Self {
+        self.inner = self.inner.set_active_functionalities(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_active_functionalities(
+        &self,
+    ) -> &::std::option::Option<::std::vec::Vec<crate::types::FunctionalityName>> {
+        self.inner.get_active_functionalities()
+    }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn kms_key_arn(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.inner = self.inner.kms_key_arn(input.into());

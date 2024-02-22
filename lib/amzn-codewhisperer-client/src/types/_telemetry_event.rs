@@ -4,6 +4,12 @@
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::fmt::Debug)]
 pub enum TelemetryEvent {
     #[allow(missing_docs)] // documentation missing in model
+    ChatAddMessageEvent(crate::types::ChatAddMessageEvent),
+    #[allow(missing_docs)] // documentation missing in model
+    ChatInteractWithMessageEvent(crate::types::ChatInteractWithMessageEvent),
+    #[allow(missing_docs)] // documentation missing in model
+    ChatUserModificationEvent(crate::types::ChatUserModificationEvent),
+    #[allow(missing_docs)] // documentation missing in model
     CodeCoverageEvent(crate::types::CodeCoverageEvent),
     #[allow(missing_docs)] // documentation missing in model
     CodeScanEvent(crate::types::CodeScanEvent),
@@ -25,6 +31,65 @@ pub enum TelemetryEvent {
     Unknown,
 }
 impl TelemetryEvent {
+    /// Tries to convert the enum instance into
+    /// [`ChatAddMessageEvent`](crate::types::TelemetryEvent::ChatAddMessageEvent), extracting the
+    /// inner [`ChatAddMessageEvent`](crate::types::ChatAddMessageEvent). Returns `Err(&Self)`
+    /// if it can't be converted.
+    pub fn as_chat_add_message_event(&self) -> ::std::result::Result<&crate::types::ChatAddMessageEvent, &Self> {
+        if let TelemetryEvent::ChatAddMessageEvent(val) = &self {
+            ::std::result::Result::Ok(val)
+        } else {
+            ::std::result::Result::Err(self)
+        }
+    }
+
+    /// Returns true if this is a
+    /// [`ChatAddMessageEvent`](crate::types::TelemetryEvent::ChatAddMessageEvent).
+    pub fn is_chat_add_message_event(&self) -> bool {
+        self.as_chat_add_message_event().is_ok()
+    }
+
+    /// Tries to convert the enum instance into
+    /// [`ChatInteractWithMessageEvent`](crate::types::TelemetryEvent::ChatInteractWithMessageEvent),
+    /// extracting the inner
+    /// [`ChatInteractWithMessageEvent`](crate::types::ChatInteractWithMessageEvent).
+    /// Returns `Err(&Self)` if it can't be converted.
+    pub fn as_chat_interact_with_message_event(
+        &self,
+    ) -> ::std::result::Result<&crate::types::ChatInteractWithMessageEvent, &Self> {
+        if let TelemetryEvent::ChatInteractWithMessageEvent(val) = &self {
+            ::std::result::Result::Ok(val)
+        } else {
+            ::std::result::Result::Err(self)
+        }
+    }
+
+    /// Returns true if this is a
+    /// [`ChatInteractWithMessageEvent`](crate::types::TelemetryEvent::ChatInteractWithMessageEvent).
+    pub fn is_chat_interact_with_message_event(&self) -> bool {
+        self.as_chat_interact_with_message_event().is_ok()
+    }
+
+    /// Tries to convert the enum instance into
+    /// [`ChatUserModificationEvent`](crate::types::TelemetryEvent::ChatUserModificationEvent),
+    /// extracting the inner [`ChatUserModificationEvent`](crate::types::ChatUserModificationEvent).
+    /// Returns `Err(&Self)` if it can't be converted.
+    pub fn as_chat_user_modification_event(
+        &self,
+    ) -> ::std::result::Result<&crate::types::ChatUserModificationEvent, &Self> {
+        if let TelemetryEvent::ChatUserModificationEvent(val) = &self {
+            ::std::result::Result::Ok(val)
+        } else {
+            ::std::result::Result::Err(self)
+        }
+    }
+
+    /// Returns true if this is a
+    /// [`ChatUserModificationEvent`](crate::types::TelemetryEvent::ChatUserModificationEvent).
+    pub fn is_chat_user_modification_event(&self) -> bool {
+        self.as_chat_user_modification_event().is_ok()
+    }
+
     /// Tries to convert the enum instance into
     /// [`CodeCoverageEvent`](crate::types::TelemetryEvent::CodeCoverageEvent), extracting the inner
     /// [`CodeCoverageEvent`](crate::types::CodeCoverageEvent). Returns `Err(&Self)` if it can't

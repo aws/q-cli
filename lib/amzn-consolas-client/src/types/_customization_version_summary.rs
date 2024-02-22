@@ -6,6 +6,8 @@ pub struct CustomizationVersionSummary {
     #[allow(missing_docs)] // documentation missing in model
     pub version: i64,
     #[allow(missing_docs)] // documentation missing in model
+    pub base_version: ::std::option::Option<i64>,
+    #[allow(missing_docs)] // documentation missing in model
     pub status: crate::types::CustomizationStatus,
     #[allow(missing_docs)] // documentation missing in model
     pub data_reference: crate::types::DataReference,
@@ -18,6 +20,11 @@ impl CustomizationVersionSummary {
     #[allow(missing_docs)] // documentation missing in model
     pub fn version(&self) -> i64 {
         self.version
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn base_version(&self) -> ::std::option::Option<i64> {
+        self.base_version
     }
 
     #[allow(missing_docs)] // documentation missing in model
@@ -53,6 +60,7 @@ impl CustomizationVersionSummary {
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
 pub struct CustomizationVersionSummaryBuilder {
     pub(crate) version: ::std::option::Option<i64>,
+    pub(crate) base_version: ::std::option::Option<i64>,
     pub(crate) status: ::std::option::Option<crate::types::CustomizationStatus>,
     pub(crate) data_reference: ::std::option::Option<crate::types::DataReference>,
     pub(crate) updated_at: ::std::option::Option<::aws_smithy_types::DateTime>,
@@ -75,6 +83,23 @@ impl CustomizationVersionSummaryBuilder {
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_version(&self) -> &::std::option::Option<i64> {
         &self.version
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn base_version(mut self, input: i64) -> Self {
+        self.base_version = ::std::option::Option::Some(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_base_version(mut self, input: ::std::option::Option<i64>) -> Self {
+        self.base_version = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_base_version(&self) -> &::std::option::Option<i64> {
+        &self.base_version
     }
 
     #[allow(missing_docs)] // documentation missing in model
@@ -168,6 +193,7 @@ impl CustomizationVersionSummaryBuilder {
                     "version was not specified but it is required when building CustomizationVersionSummary",
                 )
             })?,
+            base_version: self.base_version,
             status: self.status.ok_or_else(|| {
                 ::aws_smithy_types::error::operation::BuildError::missing_field(
                     "status",

@@ -139,7 +139,13 @@ pub(crate) mod shape_user_context;
 
 pub(crate) mod shape_workspace_state;
 
+pub(crate) mod shape_chat_add_message_event;
+
+pub(crate) mod shape_chat_interact_with_message_event;
+
 pub(crate) mod shape_chat_message;
+
+pub(crate) mod shape_chat_user_modification_event;
 
 pub(crate) mod shape_code_coverage_event;
 
@@ -153,6 +159,8 @@ pub(crate) mod shape_feature_evaluation;
 
 pub(crate) mod shape_metric_data;
 
+pub(crate) mod shape_task_assist_planning_upload_context;
+
 pub(crate) mod shape_transformation_project_state;
 
 pub(crate) mod shape_transformation_steps;
@@ -160,8 +168,6 @@ pub(crate) mod shape_transformation_steps;
 pub(crate) mod shape_user_modification_event;
 
 pub(crate) mod shape_user_trigger_decision_event;
-
-pub(crate) mod shape_weaver_bird_planning_upload_context;
 
 pub(crate) mod shape_assistant_response_message;
 
@@ -173,6 +179,8 @@ pub(crate) mod shape_imports;
 
 pub(crate) mod shape_references;
 
+pub(crate) mod shape_transformation_platform_config;
+
 pub(crate) mod shape_transformation_step;
 
 pub(crate) mod shape_user_input_message;
@@ -180,6 +188,8 @@ pub(crate) mod shape_user_input_message;
 pub(crate) mod shape_followup_prompt;
 
 pub(crate) mod shape_import;
+
+pub(crate) mod shape_progress_updates;
 
 pub(crate) mod shape_reference;
 
@@ -191,11 +201,23 @@ pub(crate) mod shape_diagnostic;
 
 pub(crate) mod shape_editor_state;
 
+pub(crate) mod shape_env_state;
+
+pub(crate) mod shape_git_state;
+
+pub(crate) mod shape_shell_state;
+
 pub(crate) mod shape_span;
+
+pub(crate) mod shape_transformation_progress_update;
 
 pub(crate) mod shape_cursor_state;
 
+pub(crate) mod shape_environment_variable;
+
 pub(crate) mod shape_runtime_diagnostic;
+
+pub(crate) mod shape_shell_history_entry;
 
 pub(crate) mod shape_text_document;
 

@@ -6,6 +6,12 @@
 pub struct UserInputMessageContext {
     /// Editor state chat message context.
     pub editor_state: ::std::option::Option<crate::types::EditorState>,
+    /// Shell state chat message context.
+    pub shell_state: ::std::option::Option<crate::types::ShellState>,
+    /// Git state chat message context.
+    pub git_state: ::std::option::Option<crate::types::GitState>,
+    /// Environment state chat messaage context.
+    pub env_state: ::std::option::Option<crate::types::EnvState>,
     /// Diagnostic chat message context.
     pub diagnostic: ::std::option::Option<crate::types::Diagnostic>,
 }
@@ -13,6 +19,21 @@ impl UserInputMessageContext {
     /// Editor state chat message context.
     pub fn editor_state(&self) -> ::std::option::Option<&crate::types::EditorState> {
         self.editor_state.as_ref()
+    }
+
+    /// Shell state chat message context.
+    pub fn shell_state(&self) -> ::std::option::Option<&crate::types::ShellState> {
+        self.shell_state.as_ref()
+    }
+
+    /// Git state chat message context.
+    pub fn git_state(&self) -> ::std::option::Option<&crate::types::GitState> {
+        self.git_state.as_ref()
+    }
+
+    /// Environment state chat messaage context.
+    pub fn env_state(&self) -> ::std::option::Option<&crate::types::EnvState> {
+        self.env_state.as_ref()
     }
 
     /// Diagnostic chat message context.
@@ -33,6 +54,9 @@ impl UserInputMessageContext {
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
 pub struct UserInputMessageContextBuilder {
     pub(crate) editor_state: ::std::option::Option<crate::types::EditorState>,
+    pub(crate) shell_state: ::std::option::Option<crate::types::ShellState>,
+    pub(crate) git_state: ::std::option::Option<crate::types::GitState>,
+    pub(crate) env_state: ::std::option::Option<crate::types::EnvState>,
     pub(crate) diagnostic: ::std::option::Option<crate::types::Diagnostic>,
 }
 impl UserInputMessageContextBuilder {
@@ -51,6 +75,57 @@ impl UserInputMessageContextBuilder {
     /// Editor state chat message context.
     pub fn get_editor_state(&self) -> &::std::option::Option<crate::types::EditorState> {
         &self.editor_state
+    }
+
+    /// Shell state chat message context.
+    pub fn shell_state(mut self, input: crate::types::ShellState) -> Self {
+        self.shell_state = ::std::option::Option::Some(input);
+        self
+    }
+
+    /// Shell state chat message context.
+    pub fn set_shell_state(mut self, input: ::std::option::Option<crate::types::ShellState>) -> Self {
+        self.shell_state = input;
+        self
+    }
+
+    /// Shell state chat message context.
+    pub fn get_shell_state(&self) -> &::std::option::Option<crate::types::ShellState> {
+        &self.shell_state
+    }
+
+    /// Git state chat message context.
+    pub fn git_state(mut self, input: crate::types::GitState) -> Self {
+        self.git_state = ::std::option::Option::Some(input);
+        self
+    }
+
+    /// Git state chat message context.
+    pub fn set_git_state(mut self, input: ::std::option::Option<crate::types::GitState>) -> Self {
+        self.git_state = input;
+        self
+    }
+
+    /// Git state chat message context.
+    pub fn get_git_state(&self) -> &::std::option::Option<crate::types::GitState> {
+        &self.git_state
+    }
+
+    /// Environment state chat messaage context.
+    pub fn env_state(mut self, input: crate::types::EnvState) -> Self {
+        self.env_state = ::std::option::Option::Some(input);
+        self
+    }
+
+    /// Environment state chat messaage context.
+    pub fn set_env_state(mut self, input: ::std::option::Option<crate::types::EnvState>) -> Self {
+        self.env_state = input;
+        self
+    }
+
+    /// Environment state chat messaage context.
+    pub fn get_env_state(&self) -> &::std::option::Option<crate::types::EnvState> {
+        &self.env_state
     }
 
     /// Diagnostic chat message context.
@@ -75,6 +150,9 @@ impl UserInputMessageContextBuilder {
     pub fn build(self) -> crate::types::UserInputMessageContext {
         crate::types::UserInputMessageContext {
             editor_state: self.editor_state,
+            shell_state: self.shell_state,
+            git_state: self.git_state,
+            env_state: self.env_state,
             diagnostic: self.diagnostic,
         }
     }

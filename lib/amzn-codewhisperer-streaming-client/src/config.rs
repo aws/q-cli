@@ -317,9 +317,7 @@ impl Builder {
     ///
     /// # Examples
     /// Create a custom endpoint resolver that resolves a different endpoing per-stage, e.g. staging
-    /// vs. production.
-    ///
-    /// ```no_run
+    /// vs. production. ```no_run
     /// use amzn_codewhisperer_streaming_client::config::endpoint::{
     ///     Endpoint,
     ///     EndpointFuture,
@@ -1064,9 +1062,7 @@ impl Builder {
     /// # Examples
     ///
     /// Set the behavior major version to `latest`. This is equivalent to enabling the
-    /// `behavior-version-latest` cargo feature.
-    ///
-    /// ```no_run
+    /// `behavior-version-latest` cargo feature. ```no_run
     /// use amzn_codewhisperer_streaming_client::config::BehaviorVersion;
     ///
     /// let config = amzn_codewhisperer_streaming_client::Config::builder()
@@ -1075,7 +1071,7 @@ impl Builder {
     ///     .build();
     /// let client = amzn_codewhisperer_streaming_client::Client::from_conf(config);
     /// ```
-    ///
+    /// 
     /// Customizing behavior major version:
     /// ```no_run
     /// use amzn_codewhisperer_streaming_client::config::BehaviorVersion;
@@ -1102,9 +1098,7 @@ impl Builder {
     /// # Examples
     ///
     /// Set the behavior major version to `latest`. This is equivalent to enabling the
-    /// `behavior-version-latest` cargo feature.
-    ///
-    /// ```no_run
+    /// `behavior-version-latest` cargo feature. ```no_run
     /// use amzn_codewhisperer_streaming_client::config::BehaviorVersion;
     ///
     /// let config = amzn_codewhisperer_streaming_client::Config::builder()
@@ -1113,7 +1107,7 @@ impl Builder {
     ///     .build();
     /// let client = amzn_codewhisperer_streaming_client::Client::from_conf(config);
     /// ```
-    ///
+    /// 
     /// Customizing behavior major version:
     /// ```no_run
     /// use amzn_codewhisperer_streaming_client::config::BehaviorVersion;
@@ -1354,21 +1348,21 @@ pub(crate) fn base_client_runtime_plugins(
     }
 
     let mut plugins = ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugins::new()
-                    // defaults
-                    .with_client_plugins(::aws_smithy_runtime::client::defaults::default_plugins(
-                        ::aws_smithy_runtime::client::defaults::DefaultPluginParams::new()
-                            .with_retry_partition_name("codewhispererstreaming")
-                            .with_behavior_version(behavior_version.expect("Invalid client configuration: A behavior major version must be set when sending a request or constructing a client. You must set it during client construction or by enabling the `behavior-version-latest` cargo feature."))
-                    ))
-                    // user config
-                    .with_client_plugin(
-                        ::aws_smithy_runtime_api::client::runtime_plugin::StaticRuntimePlugin::new()
-                            .with_config(config.config.clone())
-                            .with_runtime_components(config.runtime_components.clone())
-                    )
-                    // codegen config
-                    .with_client_plugin(crate::config::ServiceRuntimePlugin::new(config))
-                    .with_client_plugin(::aws_smithy_runtime::client::auth::no_auth::NoAuthRuntimePlugin::new());
+                        // defaults
+                        .with_client_plugins(::aws_smithy_runtime::client::defaults::default_plugins(
+                            ::aws_smithy_runtime::client::defaults::DefaultPluginParams::new()
+                                .with_retry_partition_name("codewhispererstreaming")
+                                .with_behavior_version(behavior_version.expect("Invalid client configuration: A behavior major version must be set when sending a request or constructing a client. You must set it during client construction or by enabling the `behavior-version-latest` cargo feature."))
+                        ))
+                        // user config
+                        .with_client_plugin(
+                            ::aws_smithy_runtime_api::client::runtime_plugin::StaticRuntimePlugin::new()
+                                .with_config(config.config.clone())
+                                .with_runtime_components(config.runtime_components.clone())
+                        )
+                        // codegen config
+                        .with_client_plugin(crate::config::ServiceRuntimePlugin::new(config))
+                        .with_client_plugin(::aws_smithy_runtime::client::auth::no_auth::NoAuthRuntimePlugin::new());
 
     for plugin in configured_plugins {
         plugins = plugins.with_client_plugin(plugin);

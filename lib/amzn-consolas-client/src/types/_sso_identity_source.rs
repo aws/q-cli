@@ -5,12 +5,19 @@
 pub struct SsoIdentitySource {
     #[allow(missing_docs)] // documentation missing in model
     pub instance_arn: ::std::string::String,
+    #[allow(missing_docs)] // documentation missing in model
+    pub sso_region: ::std::option::Option<::std::string::String>,
 }
 impl SsoIdentitySource {
     #[allow(missing_docs)] // documentation missing in model
     pub fn instance_arn(&self) -> &str {
         use std::ops::Deref;
         self.instance_arn.deref()
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn sso_region(&self) -> ::std::option::Option<&str> {
+        self.sso_region.as_deref()
     }
 }
 impl SsoIdentitySource {
@@ -26,6 +33,7 @@ impl SsoIdentitySource {
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
 pub struct SsoIdentitySourceBuilder {
     pub(crate) instance_arn: ::std::option::Option<::std::string::String>,
+    pub(crate) sso_region: ::std::option::Option<::std::string::String>,
 }
 impl SsoIdentitySourceBuilder {
     #[allow(missing_docs)] // documentation missing in model
@@ -46,6 +54,23 @@ impl SsoIdentitySourceBuilder {
         &self.instance_arn
     }
 
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn sso_region(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
+        self.sso_region = ::std::option::Option::Some(input.into());
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_sso_region(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
+        self.sso_region = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_sso_region(&self) -> &::std::option::Option<::std::string::String> {
+        &self.sso_region
+    }
+
     /// Consumes the builder and constructs a
     /// [`SsoIdentitySource`](crate::types::SsoIdentitySource). This method will fail if any of
     /// the following fields are not set:
@@ -60,6 +85,7 @@ impl SsoIdentitySourceBuilder {
                     "instance_arn was not specified but it is required when building SsoIdentitySource",
                 )
             })?,
+            sso_region: self.sso_region,
         })
     }
 }

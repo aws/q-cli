@@ -37,6 +37,30 @@ pub fn ser_telemetry_event(
             crate::protocol_serde::shape_metric_data::ser_metric_data(&mut object_5, inner)?;
             object_5.finish();
         },
+        crate::types::TelemetryEvent::ChatAddMessageEvent(inner) => {
+            #[allow(unused_mut)]
+            let mut object_6 = object_3.key("chatAddMessageEvent").start_object();
+            crate::protocol_serde::shape_chat_add_message_event::ser_chat_add_message_event(&mut object_6, inner)?;
+            object_6.finish();
+        },
+        crate::types::TelemetryEvent::ChatInteractWithMessageEvent(inner) => {
+            #[allow(unused_mut)]
+            let mut object_7 = object_3.key("chatInteractWithMessageEvent").start_object();
+            crate::protocol_serde::shape_chat_interact_with_message_event::ser_chat_interact_with_message_event(
+                &mut object_7,
+                inner,
+            )?;
+            object_7.finish();
+        },
+        crate::types::TelemetryEvent::ChatUserModificationEvent(inner) => {
+            #[allow(unused_mut)]
+            let mut object_8 = object_3.key("chatUserModificationEvent").start_object();
+            crate::protocol_serde::shape_chat_user_modification_event::ser_chat_user_modification_event(
+                &mut object_8,
+                inner,
+            )?;
+            object_8.finish();
+        },
         crate::types::TelemetryEvent::Unknown => {
             return Err(::aws_smithy_types::error::operation::SerializationError::unknown_variant("TelemetryEvent"));
         },

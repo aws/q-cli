@@ -82,6 +82,8 @@ pub(crate) mod shape_code_reference_event;
 
 pub(crate) mod shape_followup_prompt_event;
 
+pub(crate) mod shape_invalid_state_event;
+
 pub(crate) mod shape_message_metadata_event;
 
 pub(crate) mod shape_programming_language;
@@ -108,11 +110,21 @@ pub(crate) mod shape_diagnostic;
 
 pub(crate) mod shape_editor_state;
 
+pub(crate) mod shape_env_state;
+
+pub(crate) mod shape_git_state;
+
+pub(crate) mod shape_shell_state;
+
 pub(crate) mod shape_span;
 
 pub(crate) mod shape_cursor_state;
 
+pub(crate) mod shape_environment_variable;
+
 pub(crate) mod shape_runtime_diagnostic;
+
+pub(crate) mod shape_shell_history_entry;
 
 pub(crate) mod shape_text_document;
 

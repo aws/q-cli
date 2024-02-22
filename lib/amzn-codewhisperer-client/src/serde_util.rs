@@ -286,5 +286,24 @@ pub(crate) fn transformation_step_correct_errors(
     if builder.description.is_none() {
         builder.description = Some(Default::default())
     }
+    if builder.status.is_none() {
+        builder.status = "no value was set"
+            .parse::<crate::types::TransformationStepStatus>()
+            .ok()
+    }
+    builder
+}
+
+pub(crate) fn transformation_progress_update_correct_errors(
+    mut builder: crate::types::builders::TransformationProgressUpdateBuilder,
+) -> crate::types::builders::TransformationProgressUpdateBuilder {
+    if builder.name.is_none() {
+        builder.name = Some(Default::default())
+    }
+    if builder.status.is_none() {
+        builder.status = "no value was set"
+            .parse::<crate::types::TransformationProgressUpdateStatus>()
+            .ok()
+    }
     builder
 }

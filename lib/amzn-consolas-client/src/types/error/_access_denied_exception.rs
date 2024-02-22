@@ -6,7 +6,15 @@
 pub struct AccessDeniedError {
     #[allow(missing_docs)] // documentation missing in model
     pub message: ::std::string::String,
+    /// Reason for AccessDeniedException
+    pub reason: ::std::option::Option<crate::types::AccessDeniedExceptionReason>,
     pub(crate) meta: ::aws_smithy_types::error::ErrorMetadata,
+}
+impl AccessDeniedError {
+    /// Reason for AccessDeniedException
+    pub fn reason(&self) -> ::std::option::Option<&crate::types::AccessDeniedExceptionReason> {
+        self.reason.as_ref()
+    }
 }
 impl AccessDeniedError {
     /// Returns the error message.
@@ -48,6 +56,7 @@ impl AccessDeniedError {
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
 pub struct AccessDeniedErrorBuilder {
     pub(crate) message: ::std::option::Option<::std::string::String>,
+    pub(crate) reason: ::std::option::Option<crate::types::AccessDeniedExceptionReason>,
     meta: std::option::Option<::aws_smithy_types::error::ErrorMetadata>,
 }
 impl AccessDeniedErrorBuilder {
@@ -67,6 +76,23 @@ impl AccessDeniedErrorBuilder {
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_message(&self) -> &::std::option::Option<::std::string::String> {
         &self.message
+    }
+
+    /// Reason for AccessDeniedException
+    pub fn reason(mut self, input: crate::types::AccessDeniedExceptionReason) -> Self {
+        self.reason = ::std::option::Option::Some(input);
+        self
+    }
+
+    /// Reason for AccessDeniedException
+    pub fn set_reason(mut self, input: ::std::option::Option<crate::types::AccessDeniedExceptionReason>) -> Self {
+        self.reason = input;
+        self
+    }
+
+    /// Reason for AccessDeniedException
+    pub fn get_reason(&self) -> &::std::option::Option<crate::types::AccessDeniedExceptionReason> {
+        &self.reason
     }
 
     /// Sets error metadata
@@ -96,6 +122,7 @@ impl AccessDeniedErrorBuilder {
                     "message was not specified but it is required when building AccessDeniedError",
                 )
             })?,
+            reason: self.reason,
             meta: self.meta.unwrap_or_default(),
         })
     }

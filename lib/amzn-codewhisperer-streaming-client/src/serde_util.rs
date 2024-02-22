@@ -62,6 +62,18 @@ pub(crate) fn assistant_response_event_correct_errors(
     builder
 }
 
+pub(crate) fn invalid_state_event_correct_errors(
+    mut builder: crate::types::builders::InvalidStateEventBuilder,
+) -> crate::types::builders::InvalidStateEventBuilder {
+    if builder.reason.is_none() {
+        builder.reason = "no value was set".parse::<crate::types::InvalidStateReason>().ok()
+    }
+    if builder.message.is_none() {
+        builder.message = Some(Default::default())
+    }
+    builder
+}
+
 pub(crate) fn followup_prompt_correct_errors(
     mut builder: crate::types::builders::FollowupPromptBuilder,
 ) -> crate::types::builders::FollowupPromptBuilder {

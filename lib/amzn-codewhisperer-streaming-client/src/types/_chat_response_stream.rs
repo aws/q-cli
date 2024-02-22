@@ -10,6 +10,8 @@ pub enum ChatResponseStream {
     CodeReferenceEvent(crate::types::CodeReferenceEvent),
     /// Followup prompt event
     FollowupPromptEvent(crate::types::FollowupPromptEvent),
+    /// Invalid State event
+    InvalidStateEvent(crate::types::InvalidStateEvent),
     /// Message Metadata event
     MessageMetadataEvent(crate::types::MessageMetadataEvent),
     /// Web Reference links event
@@ -78,6 +80,24 @@ impl ChatResponseStream {
     /// [`FollowupPromptEvent`](crate::types::ChatResponseStream::FollowupPromptEvent).
     pub fn is_followup_prompt_event(&self) -> bool {
         self.as_followup_prompt_event().is_ok()
+    }
+
+    /// Tries to convert the enum instance into
+    /// [`InvalidStateEvent`](crate::types::ChatResponseStream::InvalidStateEvent), extracting the
+    /// inner [`InvalidStateEvent`](crate::types::InvalidStateEvent). Returns `Err(&Self)` if it
+    /// can't be converted.
+    pub fn as_invalid_state_event(&self) -> ::std::result::Result<&crate::types::InvalidStateEvent, &Self> {
+        if let ChatResponseStream::InvalidStateEvent(val) = &self {
+            ::std::result::Result::Ok(val)
+        } else {
+            ::std::result::Result::Err(self)
+        }
+    }
+
+    /// Returns true if this is a
+    /// [`InvalidStateEvent`](crate::types::ChatResponseStream::InvalidStateEvent).
+    pub fn is_invalid_state_event(&self) -> bool {
+        self.as_invalid_state_event().is_ok()
     }
 
     /// Tries to convert the enum instance into

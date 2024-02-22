@@ -21,23 +21,32 @@ pub fn ser_create_profile_input_input(
         )?;
         object_5.finish();
     }
-    if let Some(var_6) = &input.client_token {
-        object.key("clientToken").string(var_6.as_str());
-    }
-    if let Some(var_7) = &input.kms_key_arn {
-        object.key("kmsKeyArn").string(var_7.as_str());
-    }
-    if let Some(var_8) = &input.tags {
-        let mut array_9 = object.key("tags").start_array();
-        for item_10 in var_8 {
+    if let Some(var_6) = &input.active_functionalities {
+        let mut array_7 = object.key("activeFunctionalities").start_array();
+        for item_8 in var_6 {
             {
-                #[allow(unused_mut)]
-                let mut object_11 = array_9.value().start_object();
-                crate::protocol_serde::shape_tag::ser_tag(&mut object_11, item_10)?;
-                object_11.finish();
+                array_7.value().string(item_8.as_str());
             }
         }
-        array_9.finish();
+        array_7.finish();
+    }
+    if let Some(var_9) = &input.client_token {
+        object.key("clientToken").string(var_9.as_str());
+    }
+    if let Some(var_10) = &input.kms_key_arn {
+        object.key("kmsKeyArn").string(var_10.as_str());
+    }
+    if let Some(var_11) = &input.tags {
+        let mut array_12 = object.key("tags").start_array();
+        for item_13 in var_11 {
+            {
+                #[allow(unused_mut)]
+                let mut object_14 = array_12.value().start_object();
+                crate::protocol_serde::shape_tag::ser_tag(&mut object_14, item_13)?;
+                object_14.finish();
+            }
+        }
+        array_12.finish();
     }
     Ok(())
 }

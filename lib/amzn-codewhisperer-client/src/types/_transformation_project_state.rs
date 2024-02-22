@@ -5,11 +5,18 @@
 pub struct TransformationProjectState {
     #[allow(missing_docs)] // documentation missing in model
     pub language: ::std::option::Option<crate::types::TransformationLanguage>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub platform_config: ::std::option::Option<crate::types::TransformationPlatformConfig>,
 }
 impl TransformationProjectState {
     #[allow(missing_docs)] // documentation missing in model
     pub fn language(&self) -> ::std::option::Option<&crate::types::TransformationLanguage> {
         self.language.as_ref()
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn platform_config(&self) -> ::std::option::Option<&crate::types::TransformationPlatformConfig> {
+        self.platform_config.as_ref()
     }
 }
 impl TransformationProjectState {
@@ -25,6 +32,7 @@ impl TransformationProjectState {
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
 pub struct TransformationProjectStateBuilder {
     pub(crate) language: ::std::option::Option<crate::types::TransformationLanguage>,
+    pub(crate) platform_config: ::std::option::Option<crate::types::TransformationPlatformConfig>,
 }
 impl TransformationProjectStateBuilder {
     #[allow(missing_docs)] // documentation missing in model
@@ -44,11 +52,32 @@ impl TransformationProjectStateBuilder {
         &self.language
     }
 
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn platform_config(mut self, input: crate::types::TransformationPlatformConfig) -> Self {
+        self.platform_config = ::std::option::Option::Some(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_platform_config(
+        mut self,
+        input: ::std::option::Option<crate::types::TransformationPlatformConfig>,
+    ) -> Self {
+        self.platform_config = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_platform_config(&self) -> &::std::option::Option<crate::types::TransformationPlatformConfig> {
+        &self.platform_config
+    }
+
     /// Consumes the builder and constructs a
     /// [`TransformationProjectState`](crate::types::TransformationProjectState).
     pub fn build(self) -> crate::types::TransformationProjectState {
         crate::types::TransformationProjectState {
             language: self.language,
+            platform_config: self.platform_config,
         }
     }
 }

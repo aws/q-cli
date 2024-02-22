@@ -16,6 +16,7 @@
 ///     TransformationStatus::Completed => { /* ... */ },
 ///     TransformationStatus::Created => { /* ... */ },
 ///     TransformationStatus::Failed => { /* ... */ },
+///     TransformationStatus::PartiallyCompleted => { /* ... */ },
 ///     TransformationStatus::Planned => { /* ... */ },
 ///     TransformationStatus::Planning => { /* ... */ },
 ///     TransformationStatus::Prepared => { /* ... */ },
@@ -68,6 +69,8 @@ pub enum TransformationStatus {
     #[allow(missing_docs)] // documentation missing in model
     Failed,
     #[allow(missing_docs)] // documentation missing in model
+    PartiallyCompleted,
+    #[allow(missing_docs)] // documentation missing in model
     Planned,
     #[allow(missing_docs)] // documentation missing in model
     Planning,
@@ -100,6 +103,7 @@ impl ::std::convert::From<&str> for TransformationStatus {
             "COMPLETED" => TransformationStatus::Completed,
             "CREATED" => TransformationStatus::Created,
             "FAILED" => TransformationStatus::Failed,
+            "PARTIALLY_COMPLETED" => TransformationStatus::PartiallyCompleted,
             "PLANNED" => TransformationStatus::Planned,
             "PLANNING" => TransformationStatus::Planning,
             "PREPARED" => TransformationStatus::Prepared,
@@ -131,6 +135,7 @@ impl TransformationStatus {
             TransformationStatus::Completed => "COMPLETED",
             TransformationStatus::Created => "CREATED",
             TransformationStatus::Failed => "FAILED",
+            TransformationStatus::PartiallyCompleted => "PARTIALLY_COMPLETED",
             TransformationStatus::Planned => "PLANNED",
             TransformationStatus::Planning => "PLANNING",
             TransformationStatus::Prepared => "PREPARED",
@@ -152,6 +157,7 @@ impl TransformationStatus {
             "COMPLETED",
             "CREATED",
             "FAILED",
+            "PARTIALLY_COMPLETED",
             "PLANNED",
             "PLANNING",
             "PREPARED",

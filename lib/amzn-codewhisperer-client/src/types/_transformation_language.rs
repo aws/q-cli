@@ -15,6 +15,29 @@
 ///     TransformationLanguage::Java11 => { /* ... */ },
 ///     TransformationLanguage::Java17 => { /* ... */ },
 ///     TransformationLanguage::Java8 => { /* ... */ },
+///     TransformationLanguage::Net50 => { /* ... */ },
+///     TransformationLanguage::Net60 => { /* ... */ },
+///     TransformationLanguage::Net70 => { /* ... */ },
+///     TransformationLanguage::Net80 => { /* ... */ },
+///     TransformationLanguage::NetCoreApp10 => { /* ... */ },
+///     TransformationLanguage::NetCoreApp11 => { /* ... */ },
+///     TransformationLanguage::NetCoreApp20 => { /* ... */ },
+///     TransformationLanguage::NetCoreApp21 => { /* ... */ },
+///     TransformationLanguage::NetCoreApp22 => { /* ... */ },
+///     TransformationLanguage::NetCoreApp30 => { /* ... */ },
+///     TransformationLanguage::NetCoreApp31 => { /* ... */ },
+///     TransformationLanguage::NetFrameworkV35 => { /* ... */ },
+///     TransformationLanguage::NetFrameworkV40 => { /* ... */ },
+///     TransformationLanguage::NetFrameworkV45 => { /* ... */ },
+///     TransformationLanguage::NetFrameworkV451 => { /* ... */ },
+///     TransformationLanguage::NetFrameworkV452 => { /* ... */ },
+///     TransformationLanguage::NetFrameworkV46 => { /* ... */ },
+///     TransformationLanguage::NetFrameworkV461 => { /* ... */ },
+///     TransformationLanguage::NetFrameworkV462 => { /* ... */ },
+///     TransformationLanguage::NetFrameworkV47 => { /* ... */ },
+///     TransformationLanguage::NetFrameworkV471 => { /* ... */ },
+///     TransformationLanguage::NetFrameworkV472 => { /* ... */ },
+///     TransformationLanguage::NetFrameworkV48 => { /* ... */ },
 ///     other @ _ if other.as_str() == "NewFeature" => { /* handles a case for `NewFeature` */ },
 ///     _ => { /* ... */ },
 /// }
@@ -54,6 +77,52 @@ pub enum TransformationLanguage {
     Java17,
     #[allow(missing_docs)] // documentation missing in model
     Java8,
+    #[allow(missing_docs)] // documentation missing in model
+    Net50,
+    #[allow(missing_docs)] // documentation missing in model
+    Net60,
+    #[allow(missing_docs)] // documentation missing in model
+    Net70,
+    #[allow(missing_docs)] // documentation missing in model
+    Net80,
+    #[allow(missing_docs)] // documentation missing in model
+    NetCoreApp10,
+    #[allow(missing_docs)] // documentation missing in model
+    NetCoreApp11,
+    #[allow(missing_docs)] // documentation missing in model
+    NetCoreApp20,
+    #[allow(missing_docs)] // documentation missing in model
+    NetCoreApp21,
+    #[allow(missing_docs)] // documentation missing in model
+    NetCoreApp22,
+    #[allow(missing_docs)] // documentation missing in model
+    NetCoreApp30,
+    #[allow(missing_docs)] // documentation missing in model
+    NetCoreApp31,
+    #[allow(missing_docs)] // documentation missing in model
+    NetFrameworkV35,
+    #[allow(missing_docs)] // documentation missing in model
+    NetFrameworkV40,
+    #[allow(missing_docs)] // documentation missing in model
+    NetFrameworkV45,
+    #[allow(missing_docs)] // documentation missing in model
+    NetFrameworkV451,
+    #[allow(missing_docs)] // documentation missing in model
+    NetFrameworkV452,
+    #[allow(missing_docs)] // documentation missing in model
+    NetFrameworkV46,
+    #[allow(missing_docs)] // documentation missing in model
+    NetFrameworkV461,
+    #[allow(missing_docs)] // documentation missing in model
+    NetFrameworkV462,
+    #[allow(missing_docs)] // documentation missing in model
+    NetFrameworkV47,
+    #[allow(missing_docs)] // documentation missing in model
+    NetFrameworkV471,
+    #[allow(missing_docs)] // documentation missing in model
+    NetFrameworkV472,
+    #[allow(missing_docs)] // documentation missing in model
+    NetFrameworkV48,
     /// `Unknown` contains new variants that have been added since this code was generated.
     #[deprecated(
         note = "Don't directly match on `Unknown`. See the docs on this enum for the correct way to handle unknown variants."
@@ -66,6 +135,29 @@ impl ::std::convert::From<&str> for TransformationLanguage {
             "JAVA_11" => TransformationLanguage::Java11,
             "JAVA_17" => TransformationLanguage::Java17,
             "JAVA_8" => TransformationLanguage::Java8,
+            "NET_5_0" => TransformationLanguage::Net50,
+            "NET_6_0" => TransformationLanguage::Net60,
+            "NET_7_0" => TransformationLanguage::Net70,
+            "NET_8_0" => TransformationLanguage::Net80,
+            "NET_CORE_APP_1_0" => TransformationLanguage::NetCoreApp10,
+            "NET_CORE_APP_1_1" => TransformationLanguage::NetCoreApp11,
+            "NET_CORE_APP_2_0" => TransformationLanguage::NetCoreApp20,
+            "NET_CORE_APP_2_1" => TransformationLanguage::NetCoreApp21,
+            "NET_CORE_APP_2_2" => TransformationLanguage::NetCoreApp22,
+            "NET_CORE_APP_3_0" => TransformationLanguage::NetCoreApp30,
+            "NET_CORE_APP_3_1" => TransformationLanguage::NetCoreApp31,
+            "NET_FRAMEWORK_V_3_5" => TransformationLanguage::NetFrameworkV35,
+            "NET_FRAMEWORK_V_4_0" => TransformationLanguage::NetFrameworkV40,
+            "NET_FRAMEWORK_V_4_5" => TransformationLanguage::NetFrameworkV45,
+            "NET_FRAMEWORK_V_4_5_1" => TransformationLanguage::NetFrameworkV451,
+            "NET_FRAMEWORK_V_4_5_2" => TransformationLanguage::NetFrameworkV452,
+            "NET_FRAMEWORK_V_4_6" => TransformationLanguage::NetFrameworkV46,
+            "NET_FRAMEWORK_V_4_6_1" => TransformationLanguage::NetFrameworkV461,
+            "NET_FRAMEWORK_V_4_6_2" => TransformationLanguage::NetFrameworkV462,
+            "NET_FRAMEWORK_V_4_7" => TransformationLanguage::NetFrameworkV47,
+            "NET_FRAMEWORK_V_4_7_1" => TransformationLanguage::NetFrameworkV471,
+            "NET_FRAMEWORK_V_4_7_2" => TransformationLanguage::NetFrameworkV472,
+            "NET_FRAMEWORK_V_4_8" => TransformationLanguage::NetFrameworkV48,
             other => TransformationLanguage::Unknown(crate::primitives::sealed_enum_unknown::UnknownVariantValue(
                 other.to_owned(),
             )),
@@ -86,13 +178,63 @@ impl TransformationLanguage {
             TransformationLanguage::Java11 => "JAVA_11",
             TransformationLanguage::Java17 => "JAVA_17",
             TransformationLanguage::Java8 => "JAVA_8",
+            TransformationLanguage::Net50 => "NET_5_0",
+            TransformationLanguage::Net60 => "NET_6_0",
+            TransformationLanguage::Net70 => "NET_7_0",
+            TransformationLanguage::Net80 => "NET_8_0",
+            TransformationLanguage::NetCoreApp10 => "NET_CORE_APP_1_0",
+            TransformationLanguage::NetCoreApp11 => "NET_CORE_APP_1_1",
+            TransformationLanguage::NetCoreApp20 => "NET_CORE_APP_2_0",
+            TransformationLanguage::NetCoreApp21 => "NET_CORE_APP_2_1",
+            TransformationLanguage::NetCoreApp22 => "NET_CORE_APP_2_2",
+            TransformationLanguage::NetCoreApp30 => "NET_CORE_APP_3_0",
+            TransformationLanguage::NetCoreApp31 => "NET_CORE_APP_3_1",
+            TransformationLanguage::NetFrameworkV35 => "NET_FRAMEWORK_V_3_5",
+            TransformationLanguage::NetFrameworkV40 => "NET_FRAMEWORK_V_4_0",
+            TransformationLanguage::NetFrameworkV45 => "NET_FRAMEWORK_V_4_5",
+            TransformationLanguage::NetFrameworkV451 => "NET_FRAMEWORK_V_4_5_1",
+            TransformationLanguage::NetFrameworkV452 => "NET_FRAMEWORK_V_4_5_2",
+            TransformationLanguage::NetFrameworkV46 => "NET_FRAMEWORK_V_4_6",
+            TransformationLanguage::NetFrameworkV461 => "NET_FRAMEWORK_V_4_6_1",
+            TransformationLanguage::NetFrameworkV462 => "NET_FRAMEWORK_V_4_6_2",
+            TransformationLanguage::NetFrameworkV47 => "NET_FRAMEWORK_V_4_7",
+            TransformationLanguage::NetFrameworkV471 => "NET_FRAMEWORK_V_4_7_1",
+            TransformationLanguage::NetFrameworkV472 => "NET_FRAMEWORK_V_4_7_2",
+            TransformationLanguage::NetFrameworkV48 => "NET_FRAMEWORK_V_4_8",
             TransformationLanguage::Unknown(value) => value.as_str(),
         }
     }
 
     /// Returns all the `&str` representations of the enum members.
     pub const fn values() -> &'static [&'static str] {
-        &["JAVA_11", "JAVA_17", "JAVA_8"]
+        &[
+            "JAVA_11",
+            "JAVA_17",
+            "JAVA_8",
+            "NET_5_0",
+            "NET_6_0",
+            "NET_7_0",
+            "NET_8_0",
+            "NET_CORE_APP_1_0",
+            "NET_CORE_APP_1_1",
+            "NET_CORE_APP_2_0",
+            "NET_CORE_APP_2_1",
+            "NET_CORE_APP_2_2",
+            "NET_CORE_APP_3_0",
+            "NET_CORE_APP_3_1",
+            "NET_FRAMEWORK_V_3_5",
+            "NET_FRAMEWORK_V_4_0",
+            "NET_FRAMEWORK_V_4_5",
+            "NET_FRAMEWORK_V_4_5_1",
+            "NET_FRAMEWORK_V_4_5_2",
+            "NET_FRAMEWORK_V_4_6",
+            "NET_FRAMEWORK_V_4_6_1",
+            "NET_FRAMEWORK_V_4_6_2",
+            "NET_FRAMEWORK_V_4_7",
+            "NET_FRAMEWORK_V_4_7_1",
+            "NET_FRAMEWORK_V_4_7_2",
+            "NET_FRAMEWORK_V_4_8",
+        ]
     }
 }
 impl ::std::convert::AsRef<str> for TransformationLanguage {

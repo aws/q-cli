@@ -104,7 +104,7 @@ impl ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugin for ListPro
             ),
         );
 
-        cfg.store_put(::aws_smithy_http::operation::Metadata::new(
+        cfg.store_put(::aws_smithy_runtime_api::client::orchestrator::Metadata::new(
             "ListProfiles",
             "codewhisperer",
         ));

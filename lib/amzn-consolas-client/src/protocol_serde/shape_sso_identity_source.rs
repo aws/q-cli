@@ -6,5 +6,8 @@ pub fn ser_sso_identity_source(
     {
         object.key("instanceArn").string(input.instance_arn.as_str());
     }
+    if let Some(var_1) = &input.sso_region {
+        object.key("ssoRegion").string(var_1.as_str());
+    }
     Ok(())
 }

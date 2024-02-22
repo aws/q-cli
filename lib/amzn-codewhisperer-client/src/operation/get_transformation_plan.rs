@@ -106,7 +106,7 @@ impl ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugin for GetTran
             ),
         );
 
-        cfg.store_put(::aws_smithy_http::operation::Metadata::new(
+        cfg.store_put(::aws_smithy_runtime_api::client::orchestrator::Metadata::new(
             "GetTransformationPlan",
             "codewhispererruntime",
         ));
@@ -284,6 +284,8 @@ pub enum GetTransformationPlanError {
     /// This exception is thrown when the input fails to satisfy the constraints specified by the
     /// service.
     ValidationError(crate::types::error::ValidationError),
+    /// This exception is thrown when describing a resource that does not exist.
+    ResourceNotFoundError(crate::types::error::ResourceNotFoundError),
     /// This exception is thrown when the user does not have sufficient access to perform this
     /// action.
     AccessDeniedError(crate::types::error::AccessDeniedError),
@@ -328,6 +330,7 @@ impl GetTransformationPlanError {
             Self::InternalServerError(e) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(e),
             Self::ThrottlingError(e) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(e),
             Self::ValidationError(e) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(e),
+            Self::ResourceNotFoundError(e) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(e),
             Self::AccessDeniedError(e) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(e),
             Self::Unhandled(e) => &e.meta,
         }
@@ -348,6 +351,11 @@ impl GetTransformationPlanError {
         matches!(self, Self::ValidationError(_))
     }
 
+    /// Returns `true` if the error kind is `GetTransformationPlanError::ResourceNotFoundError`.
+    pub fn is_resource_not_found_error(&self) -> bool {
+        matches!(self, Self::ResourceNotFoundError(_))
+    }
+
     /// Returns `true` if the error kind is `GetTransformationPlanError::AccessDeniedError`.
     pub fn is_access_denied_error(&self) -> bool {
         matches!(self, Self::AccessDeniedError(_))
@@ -359,6 +367,7 @@ impl ::std::error::Error for GetTransformationPlanError {
             Self::InternalServerError(_inner) => ::std::option::Option::Some(_inner),
             Self::ThrottlingError(_inner) => ::std::option::Option::Some(_inner),
             Self::ValidationError(_inner) => ::std::option::Option::Some(_inner),
+            Self::ResourceNotFoundError(_inner) => ::std::option::Option::Some(_inner),
             Self::AccessDeniedError(_inner) => ::std::option::Option::Some(_inner),
             Self::Unhandled(_inner) => ::std::option::Option::Some(&*_inner.source),
         }
@@ -370,6 +379,7 @@ impl ::std::fmt::Display for GetTransformationPlanError {
             Self::InternalServerError(_inner) => _inner.fmt(f),
             Self::ThrottlingError(_inner) => _inner.fmt(f),
             Self::ValidationError(_inner) => _inner.fmt(f),
+            Self::ResourceNotFoundError(_inner) => _inner.fmt(f),
             Self::AccessDeniedError(_inner) => _inner.fmt(f),
             Self::Unhandled(_inner) => {
                 if let ::std::option::Option::Some(code) =
@@ -404,6 +414,9 @@ impl ::aws_smithy_types::error::metadata::ProvideErrorMetadata for GetTransforma
             },
             Self::ThrottlingError(_inner) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner),
             Self::ValidationError(_inner) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner),
+            Self::ResourceNotFoundError(_inner) => {
+                ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner)
+            },
             Self::AccessDeniedError(_inner) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner),
             Self::Unhandled(_inner) => &_inner.meta,
         }

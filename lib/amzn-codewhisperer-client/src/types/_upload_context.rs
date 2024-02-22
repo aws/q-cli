@@ -4,7 +4,7 @@
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::fmt::Debug)]
 pub enum UploadContext {
     #[allow(missing_docs)] // documentation missing in model
-    WeaverBirdPlanningUploadContext(crate::types::WeaverBirdPlanningUploadContext),
+    TaskAssistPlanningUploadContext(crate::types::TaskAssistPlanningUploadContext),
     /// The `Unknown` variant represents cases where new union variant was received. Consider
     /// upgrading the SDK to the latest available version. An unknown enum variant
     ///
@@ -19,14 +19,14 @@ pub enum UploadContext {
 impl UploadContext {
     #[allow(irrefutable_let_patterns)]
     /// Tries to convert the enum instance into
-    /// [`WeaverBirdPlanningUploadContext`](crate::types::UploadContext::WeaverBirdPlanningUploadContext),
+    /// [`TaskAssistPlanningUploadContext`](crate::types::UploadContext::TaskAssistPlanningUploadContext),
     /// extracting the inner
-    /// [`WeaverBirdPlanningUploadContext`](crate::types::WeaverBirdPlanningUploadContext).
+    /// [`TaskAssistPlanningUploadContext`](crate::types::TaskAssistPlanningUploadContext).
     /// Returns `Err(&Self)` if it can't be converted.
-    pub fn as_weaver_bird_planning_upload_context(
+    pub fn as_task_assist_planning_upload_context(
         &self,
-    ) -> ::std::result::Result<&crate::types::WeaverBirdPlanningUploadContext, &Self> {
-        if let UploadContext::WeaverBirdPlanningUploadContext(val) = &self {
+    ) -> ::std::result::Result<&crate::types::TaskAssistPlanningUploadContext, &Self> {
+        if let UploadContext::TaskAssistPlanningUploadContext(val) = &self {
             ::std::result::Result::Ok(val)
         } else {
             ::std::result::Result::Err(self)
@@ -34,9 +34,9 @@ impl UploadContext {
     }
 
     /// Returns true if this is a
-    /// [`WeaverBirdPlanningUploadContext`](crate::types::UploadContext::WeaverBirdPlanningUploadContext).
-    pub fn is_weaver_bird_planning_upload_context(&self) -> bool {
-        self.as_weaver_bird_planning_upload_context().is_ok()
+    /// [`TaskAssistPlanningUploadContext`](crate::types::UploadContext::TaskAssistPlanningUploadContext).
+    pub fn is_task_assist_planning_upload_context(&self) -> bool {
+        self.as_task_assist_planning_upload_context().is_ok()
     }
 
     /// Returns true if the enum instance is the `Unknown` variant.

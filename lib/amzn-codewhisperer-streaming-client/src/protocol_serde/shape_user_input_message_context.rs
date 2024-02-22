@@ -9,11 +9,29 @@ pub fn ser_user_input_message_context(
         crate::protocol_serde::shape_editor_state::ser_editor_state(&mut object_2, var_1)?;
         object_2.finish();
     }
-    if let Some(var_3) = &input.diagnostic {
+    if let Some(var_3) = &input.shell_state {
         #[allow(unused_mut)]
-        let mut object_4 = object.key("diagnostic").start_object();
-        crate::protocol_serde::shape_diagnostic::ser_diagnostic(&mut object_4, var_3)?;
+        let mut object_4 = object.key("shellState").start_object();
+        crate::protocol_serde::shape_shell_state::ser_shell_state(&mut object_4, var_3)?;
         object_4.finish();
+    }
+    if let Some(var_5) = &input.git_state {
+        #[allow(unused_mut)]
+        let mut object_6 = object.key("gitState").start_object();
+        crate::protocol_serde::shape_git_state::ser_git_state(&mut object_6, var_5)?;
+        object_6.finish();
+    }
+    if let Some(var_7) = &input.env_state {
+        #[allow(unused_mut)]
+        let mut object_8 = object.key("envState").start_object();
+        crate::protocol_serde::shape_env_state::ser_env_state(&mut object_8, var_7)?;
+        object_8.finish();
+    }
+    if let Some(var_9) = &input.diagnostic {
+        #[allow(unused_mut)]
+        let mut object_10 = object.key("diagnostic").start_object();
+        crate::protocol_serde::shape_diagnostic::ser_diagnostic(&mut object_10, var_9)?;
+        object_10.finish();
     }
     Ok(())
 }
