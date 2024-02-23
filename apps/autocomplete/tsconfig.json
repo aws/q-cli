@@ -20,12 +20,6 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
 
-    /* imports */
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    },
-
     "types": ["@withfig/autocomplete-types", "@internal/types", "node", "jest"]
   },
   "include": ["src"],

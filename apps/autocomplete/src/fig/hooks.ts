@@ -13,7 +13,7 @@ import {
   updateSettings,
 } from "@amzn/fig-io-api-bindings-wrappers";
 import { updateSelectSuggestionKeybindings } from "../actions";
-import { generatorCache } from "@/generators/helpers";
+import { generatorCache } from "../generators/helpers";
 
 // TODO(sean) expose Subscription type from API binding library
 type Unwrap<T> = T extends Promise<infer U> ? U : T;
