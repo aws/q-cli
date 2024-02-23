@@ -64,8 +64,10 @@ impl PostMetricsInput {
     }
 
     #[allow(missing_docs)] // documentation missing in model
-    pub fn metric_data(&self) -> ::std::option::Option<&[crate::types::MetricDatum]> {
-        self.metric_data.as_deref()
+    /// If no value was sent for this field, a default will be set. If you want to determine if no
+    /// value was sent, use `.metric_data.is_none()`.
+    pub fn metric_data(&self) -> &[crate::types::MetricDatum] {
+        self.metric_data.as_deref().unwrap_or_default()
     }
 }
 impl PostMetricsInput {
@@ -92,6 +94,7 @@ pub struct PostMetricsInputBuilder {
 }
 impl PostMetricsInputBuilder {
     #[allow(missing_docs)] // documentation missing in model
+    /// This field is required.
     pub fn aws_product(mut self, input: crate::types::AwsProduct) -> Self {
         self.aws_product = ::std::option::Option::Some(input);
         self
@@ -109,6 +112,7 @@ impl PostMetricsInputBuilder {
     }
 
     #[allow(missing_docs)] // documentation missing in model
+    /// This field is required.
     pub fn aws_product_version(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.aws_product_version = ::std::option::Option::Some(input.into());
         self
@@ -126,6 +130,7 @@ impl PostMetricsInputBuilder {
     }
 
     /// A valid UUID is expected, and this should be unique per-client and reused across API calls.
+    /// This field is required.
     pub fn client_id(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.client_id = ::std::option::Option::Some(input.into());
         self
@@ -254,7 +259,7 @@ impl PostMetricsInputBuilder {
         self,
     ) -> ::std::result::Result<
         crate::operation::post_metrics::PostMetricsInput,
-        ::aws_smithy_http::operation::error::BuildError,
+        ::aws_smithy_types::error::operation::BuildError,
     > {
         ::std::result::Result::Ok(crate::operation::post_metrics::PostMetricsInput {
             aws_product: self.aws_product,

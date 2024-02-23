@@ -5,19 +5,19 @@ impl super::Client {
     /// operation.
     ///
     /// - The fluent builder is configurable:
-    ///   - [`aws_product(AwsProduct)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::aws_product) / [`set_aws_product(Option<AwsProduct>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::set_aws_product): (undocumented)
-    ///   - [`aws_product_version(impl Into<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::aws_product_version) / [`set_aws_product_version(Option<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::set_aws_product_version): (undocumented)
+    ///   - [`aws_product(AwsProduct)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::aws_product) / [`set_aws_product(Option<AwsProduct>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::set_aws_product):<br>required: **true**<br>(undocumented)<br>
+    ///   - [`aws_product_version(impl Into<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::aws_product_version) / [`set_aws_product_version(Option<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::set_aws_product_version):<br>required: **true**<br>(undocumented)<br>
     ///   - [`client_id(impl
     ///     Into<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::client_id)
     ///     / [`set_client_id(Option<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::set_client_id):
-    ///     A valid UUID is expected, and this should be unique per-client and reused across API
-    ///     calls.
-    ///   - [`os(impl Into<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::os) / [`set_os(Option<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::set_os): (undocumented)
-    ///   - [`os_architecture(impl Into<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::os_architecture) / [`set_os_architecture(Option<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::set_os_architecture): (undocumented)
-    ///   - [`os_version(impl Into<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::os_version) / [`set_os_version(Option<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::set_os_version): (undocumented)
-    ///   - [`parent_product(impl Into<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::parent_product) / [`set_parent_product(Option<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::set_parent_product): (undocumented)
-    ///   - [`parent_product_version(impl Into<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::parent_product_version) / [`set_parent_product_version(Option<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::set_parent_product_version): (undocumented)
-    ///   - [`metric_data(MetricDatum)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::metric_data) / [`set_metric_data(Option<Vec<MetricDatum>>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::set_metric_data): (undocumented)
+    ///     <br>required: **true**<br>A valid UUID is expected, and this should be unique per-client
+    ///     and reused across API calls.<br>
+    ///   - [`os(impl Into<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::os) / [`set_os(Option<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::set_os):<br>required: **false**<br>(undocumented)<br>
+    ///   - [`os_architecture(impl Into<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::os_architecture) / [`set_os_architecture(Option<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::set_os_architecture):<br>required: **false**<br>(undocumented)<br>
+    ///   - [`os_version(impl Into<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::os_version) / [`set_os_version(Option<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::set_os_version):<br>required: **false**<br>(undocumented)<br>
+    ///   - [`parent_product(impl Into<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::parent_product) / [`set_parent_product(Option<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::set_parent_product):<br>required: **false**<br>(undocumented)<br>
+    ///   - [`parent_product_version(impl Into<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::parent_product_version) / [`set_parent_product_version(Option<String>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::set_parent_product_version):<br>required: **false**<br>(undocumented)<br>
+    ///   - [`metric_data(MetricDatum)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::metric_data) / [`set_metric_data(Option<Vec::<MetricDatum>>)`](crate::operation::post_metrics::builders::PostMetricsFluentBuilder::set_metric_data):<br>required: **true**<br>(undocumented)<br>
     /// - On success, responds with
     ///   [`PostMetricsOutput`](crate::operation::post_metrics::PostMetricsOutput)
     /// - On failure, responds with

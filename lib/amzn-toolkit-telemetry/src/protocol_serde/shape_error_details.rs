@@ -2,9 +2,9 @@
 pub fn ser_error_details(
     object: &mut ::aws_smithy_json::serialize::JsonObjectWriter,
     input: &crate::types::ErrorDetails,
-) -> Result<(), ::aws_smithy_http::operation::error::SerializationError> {
-    if let Some(var_1) = &input.command {
-        object.key("Command").string(var_1.as_str());
+) -> Result<(), ::aws_smithy_types::error::operation::SerializationError> {
+    {
+        object.key("Command").string(input.command.as_str());
     }
     {
         object.key("EpochTimestamp").number(
@@ -12,14 +12,14 @@ pub fn ser_error_details(
             ::aws_smithy_types::Number::NegInt((input.epoch_timestamp).into()),
         );
     }
-    if let Some(var_2) = &input.r#type {
-        object.key("Type").string(var_2.as_str());
+    {
+        object.key("Type").string(input.r#type.as_str());
     }
-    if let Some(var_3) = &input.message {
-        object.key("Message").string(var_3.as_str());
+    if let Some(var_1) = &input.message {
+        object.key("Message").string(var_1.as_str());
     }
-    if let Some(var_4) = &input.stack_trace {
-        object.key("StackTrace").string(var_4.as_str());
+    {
+        object.key("StackTrace").string(input.stack_trace.as_str());
     }
     Ok(())
 }

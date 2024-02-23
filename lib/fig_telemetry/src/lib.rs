@@ -1,4 +1,5 @@
 pub mod cognito;
+pub mod endpoint;
 mod install_method;
 mod util;
 
@@ -7,6 +8,7 @@ use std::time::SystemTime;
 
 use amzn_toolkit_telemetry::config::{
     AppName,
+    BehaviorVersion,
     Region,
 };
 use amzn_toolkit_telemetry::error::DisplayErrorContext;
@@ -17,6 +19,7 @@ use amzn_toolkit_telemetry::{
 };
 use auth::builder_id::BuilderIdToken;
 use auth::secret_store::SecretStore;
+use aws_credential_types::provider::SharedCredentialsProvider;
 use aws_toolkit_telemetry_definitions::metrics::{
     CodewhispererterminalCliSubcommandExecuted,
     CodewhispererterminalDashboardPageViewed,
@@ -44,6 +47,7 @@ use aws_toolkit_telemetry_definitions::{
     IntoMetricDatum,
 };
 use cognito::CognitoProvider;
+use endpoint::StaticEndpoint;
 use fig_util::system_info::os_version;
 use fig_util::terminal::{
     CURRENT_TERMINAL,
@@ -148,10 +152,11 @@ impl TelemetryClient {
         let client_id = util::get_client_id();
         let aws_client = Client::from_conf(
             Config::builder()
-                .endpoint_url(telemetry_stage.endpoint)
+                .behavior_version(BehaviorVersion::v2023_11_09())
+                .endpoint_resolver(StaticEndpoint(telemetry_stage.endpoint))
                 .app_name(AppName::new(APP_NAME).unwrap())
                 .region(telemetry_stage.region.clone())
-                .credentials_provider(CognitoProvider::new(telemetry_stage))
+                .credentials_provider(SharedCredentialsProvider::new(CognitoProvider::new(telemetry_stage)))
                 .build(),
         );
         Self { client_id, aws_client }
@@ -183,7 +188,7 @@ impl TelemetryClient {
             let os = std::env::consts::OS;
             let os_architecture = std::env::consts::ARCH;
             let os_version = os_version().map(|v| v.to_string()).unwrap_or_default();
-            let metric_name = inner.metric_name().unwrap_or_default().to_owned();
+            let metric_name = inner.metric_name().to_owned();
 
             if let Err(err) = aws_client
                 .post_metrics()
@@ -374,6 +379,7 @@ mod test {
             .unwrap_or((None, None));
 
         let client = TelemetryClient::new(TelemetryStage::BETA);
+
         client
             .post_metric(metrics::CodewhispererterminalCliSubcommandExecuted {
                 create_time: None,

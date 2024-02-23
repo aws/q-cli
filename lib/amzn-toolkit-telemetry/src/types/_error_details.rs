@@ -4,20 +4,21 @@
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::fmt::Debug)]
 pub struct ErrorDetails {
     #[allow(missing_docs)] // documentation missing in model
-    pub command: ::std::option::Option<::std::string::String>,
+    pub command: ::std::string::String,
     #[allow(missing_docs)] // documentation missing in model
     pub epoch_timestamp: i64,
     #[allow(missing_docs)] // documentation missing in model
-    pub r#type: ::std::option::Option<::std::string::String>,
+    pub r#type: ::std::string::String,
     #[allow(missing_docs)] // documentation missing in model
     pub message: ::std::option::Option<::std::string::String>,
     #[allow(missing_docs)] // documentation missing in model
-    pub stack_trace: ::std::option::Option<::std::string::String>,
+    pub stack_trace: ::std::string::String,
 }
 impl ErrorDetails {
     #[allow(missing_docs)] // documentation missing in model
-    pub fn command(&self) -> ::std::option::Option<&str> {
-        self.command.as_deref()
+    pub fn command(&self) -> &str {
+        use std::ops::Deref;
+        self.command.deref()
     }
 
     #[allow(missing_docs)] // documentation missing in model
@@ -26,8 +27,9 @@ impl ErrorDetails {
     }
 
     #[allow(missing_docs)] // documentation missing in model
-    pub fn r#type(&self) -> ::std::option::Option<&str> {
-        self.r#type.as_deref()
+    pub fn r#type(&self) -> &str {
+        use std::ops::Deref;
+        self.r#type.deref()
     }
 
     #[allow(missing_docs)] // documentation missing in model
@@ -36,8 +38,9 @@ impl ErrorDetails {
     }
 
     #[allow(missing_docs)] // documentation missing in model
-    pub fn stack_trace(&self) -> ::std::option::Option<&str> {
-        self.stack_trace.as_deref()
+    pub fn stack_trace(&self) -> &str {
+        use std::ops::Deref;
+        self.stack_trace.deref()
     }
 }
 impl ErrorDetails {
@@ -60,6 +63,7 @@ pub struct ErrorDetailsBuilder {
 }
 impl ErrorDetailsBuilder {
     #[allow(missing_docs)] // documentation missing in model
+    /// This field is required.
     pub fn command(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.command = ::std::option::Option::Some(input.into());
         self
@@ -77,6 +81,7 @@ impl ErrorDetailsBuilder {
     }
 
     #[allow(missing_docs)] // documentation missing in model
+    /// This field is required.
     pub fn epoch_timestamp(mut self, input: i64) -> Self {
         self.epoch_timestamp = ::std::option::Option::Some(input);
         self
@@ -94,6 +99,7 @@ impl ErrorDetailsBuilder {
     }
 
     #[allow(missing_docs)] // documentation missing in model
+    /// This field is required.
     pub fn r#type(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.r#type = ::std::option::Option::Some(input.into());
         self
@@ -128,6 +134,7 @@ impl ErrorDetailsBuilder {
     }
 
     #[allow(missing_docs)] // documentation missing in model
+    /// This field is required.
     pub fn stack_trace(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.stack_trace = ::std::option::Option::Some(input.into());
         self
@@ -145,13 +152,34 @@ impl ErrorDetailsBuilder {
     }
 
     /// Consumes the builder and constructs a [`ErrorDetails`](crate::types::ErrorDetails).
-    pub fn build(self) -> crate::types::ErrorDetails {
-        crate::types::ErrorDetails {
-            command: self.command,
+    /// This method will fail if any of the following fields are not set:
+    /// - [`command`](crate::types::builders::ErrorDetailsBuilder::command)
+    /// - [`r#type`](crate::types::builders::ErrorDetailsBuilder::r#type)
+    /// - [`stack_trace`](crate::types::builders::ErrorDetailsBuilder::stack_trace)
+    pub fn build(
+        self,
+    ) -> ::std::result::Result<crate::types::ErrorDetails, ::aws_smithy_types::error::operation::BuildError> {
+        ::std::result::Result::Ok(crate::types::ErrorDetails {
+            command: self.command.ok_or_else(|| {
+                ::aws_smithy_types::error::operation::BuildError::missing_field(
+                    "command",
+                    "command was not specified but it is required when building ErrorDetails",
+                )
+            })?,
             epoch_timestamp: self.epoch_timestamp.unwrap_or_default(),
-            r#type: self.r#type,
+            r#type: self.r#type.ok_or_else(|| {
+                ::aws_smithy_types::error::operation::BuildError::missing_field(
+                    "r#type",
+                    "r#type was not specified but it is required when building ErrorDetails",
+                )
+            })?,
             message: self.message,
-            stack_trace: self.stack_trace,
-        }
+            stack_trace: self.stack_trace.ok_or_else(|| {
+                ::aws_smithy_types::error::operation::BuildError::missing_field(
+                    "stack_trace",
+                    "stack_trace was not specified but it is required when building ErrorDetails",
+                )
+            })?,
+        })
     }
 }

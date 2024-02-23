@@ -5,11 +5,11 @@ impl super::Client {
     /// operation.
     ///
     /// - The fluent builder is configurable:
-    ///   - [`aws_product(AwsProduct)`](crate::operation::post_error_report::builders::PostErrorReportFluentBuilder::aws_product) / [`set_aws_product(Option<AwsProduct>)`](crate::operation::post_error_report::builders::PostErrorReportFluentBuilder::set_aws_product): (undocumented)
-    ///   - [`aws_product_version(impl Into<String>)`](crate::operation::post_error_report::builders::PostErrorReportFluentBuilder::aws_product_version) / [`set_aws_product_version(Option<String>)`](crate::operation::post_error_report::builders::PostErrorReportFluentBuilder::set_aws_product_version): (undocumented)
-    ///   - [`metadata(MetadataEntry)`](crate::operation::post_error_report::builders::PostErrorReportFluentBuilder::metadata) / [`set_metadata(Option<Vec<MetadataEntry>>)`](crate::operation::post_error_report::builders::PostErrorReportFluentBuilder::set_metadata): (undocumented)
-    ///   - [`userdata(Userdata)`](crate::operation::post_error_report::builders::PostErrorReportFluentBuilder::userdata) / [`set_userdata(Option<Userdata>)`](crate::operation::post_error_report::builders::PostErrorReportFluentBuilder::set_userdata): (undocumented)
-    ///   - [`error_details(ErrorDetails)`](crate::operation::post_error_report::builders::PostErrorReportFluentBuilder::error_details) / [`set_error_details(Option<ErrorDetails>)`](crate::operation::post_error_report::builders::PostErrorReportFluentBuilder::set_error_details): (undocumented)
+    ///   - [`aws_product(AwsProduct)`](crate::operation::post_error_report::builders::PostErrorReportFluentBuilder::aws_product) / [`set_aws_product(Option<AwsProduct>)`](crate::operation::post_error_report::builders::PostErrorReportFluentBuilder::set_aws_product):<br>required: **true**<br>(undocumented)<br>
+    ///   - [`aws_product_version(impl Into<String>)`](crate::operation::post_error_report::builders::PostErrorReportFluentBuilder::aws_product_version) / [`set_aws_product_version(Option<String>)`](crate::operation::post_error_report::builders::PostErrorReportFluentBuilder::set_aws_product_version):<br>required: **true**<br>(undocumented)<br>
+    ///   - [`metadata(MetadataEntry)`](crate::operation::post_error_report::builders::PostErrorReportFluentBuilder::metadata) / [`set_metadata(Option<Vec::<MetadataEntry>>)`](crate::operation::post_error_report::builders::PostErrorReportFluentBuilder::set_metadata):<br>required: **false**<br>(undocumented)<br>
+    ///   - [`userdata(Userdata)`](crate::operation::post_error_report::builders::PostErrorReportFluentBuilder::userdata) / [`set_userdata(Option<Userdata>)`](crate::operation::post_error_report::builders::PostErrorReportFluentBuilder::set_userdata):<br>required: **false**<br>(undocumented)<br>
+    ///   - [`error_details(ErrorDetails)`](crate::operation::post_error_report::builders::PostErrorReportFluentBuilder::error_details) / [`set_error_details(Option<ErrorDetails>)`](crate::operation::post_error_report::builders::PostErrorReportFluentBuilder::set_error_details):<br>required: **true**<br>(undocumented)<br>
     /// - On success, responds with
     ///   [`PostErrorReportOutput`](crate::operation::post_error_report::PostErrorReportOutput)
     /// - On failure, responds with

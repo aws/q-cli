@@ -54,8 +54,10 @@ impl PostFeedbackInput {
     }
 
     #[allow(missing_docs)] // documentation missing in model
-    pub fn metadata(&self) -> ::std::option::Option<&[crate::types::MetadataEntry]> {
-        self.metadata.as_deref()
+    /// If no value was sent for this field, a default will be set. If you want to determine if no
+    /// value was sent, use `.metadata.is_none()`.
+    pub fn metadata(&self) -> &[crate::types::MetadataEntry] {
+        self.metadata.as_deref().unwrap_or_default()
     }
 
     #[allow(missing_docs)] // documentation missing in model
@@ -92,6 +94,7 @@ pub struct PostFeedbackInputBuilder {
 }
 impl PostFeedbackInputBuilder {
     #[allow(missing_docs)] // documentation missing in model
+    /// This field is required.
     pub fn aws_product(mut self, input: crate::types::AwsProduct) -> Self {
         self.aws_product = ::std::option::Option::Some(input);
         self
@@ -109,6 +112,7 @@ impl PostFeedbackInputBuilder {
     }
 
     #[allow(missing_docs)] // documentation missing in model
+    /// This field is required.
     pub fn aws_product_version(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.aws_product_version = ::std::option::Option::Some(input.into());
         self
@@ -160,6 +164,7 @@ impl PostFeedbackInputBuilder {
     }
 
     #[allow(missing_docs)] // documentation missing in model
+    /// This field is required.
     pub fn parent_product(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.parent_product = ::std::option::Option::Some(input.into());
         self
@@ -177,6 +182,7 @@ impl PostFeedbackInputBuilder {
     }
 
     #[allow(missing_docs)] // documentation missing in model
+    /// This field is required.
     pub fn parent_product_version(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.parent_product_version = ::std::option::Option::Some(input.into());
         self
@@ -215,6 +221,7 @@ impl PostFeedbackInputBuilder {
     }
 
     #[allow(missing_docs)] // documentation missing in model
+    /// This field is required.
     pub fn sentiment(mut self, input: crate::types::Sentiment) -> Self {
         self.sentiment = ::std::option::Option::Some(input);
         self
@@ -232,6 +239,7 @@ impl PostFeedbackInputBuilder {
     }
 
     #[allow(missing_docs)] // documentation missing in model
+    /// This field is required.
     pub fn comment(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.comment = ::std::option::Option::Some(input.into());
         self
@@ -254,7 +262,7 @@ impl PostFeedbackInputBuilder {
         self,
     ) -> ::std::result::Result<
         crate::operation::post_feedback::PostFeedbackInput,
-        ::aws_smithy_http::operation::error::BuildError,
+        ::aws_smithy_types::error::operation::BuildError,
     > {
         ::std::result::Result::Ok(crate::operation::post_feedback::PostFeedbackInput {
             aws_product: self.aws_product,

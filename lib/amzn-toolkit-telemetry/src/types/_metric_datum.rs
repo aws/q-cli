@@ -4,11 +4,11 @@
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::fmt::Debug)]
 pub struct MetricDatum {
     #[allow(missing_docs)] // documentation missing in model
-    pub metric_name: ::std::option::Option<::std::string::String>,
+    pub metric_name: ::std::string::String,
     #[allow(missing_docs)] // documentation missing in model
     pub epoch_timestamp: i64,
     #[allow(missing_docs)] // documentation missing in model
-    pub unit: ::std::option::Option<crate::types::Unit>,
+    pub unit: crate::types::Unit,
     #[allow(missing_docs)] // documentation missing in model
     pub value: f64,
     #[allow(missing_docs)] // documentation missing in model
@@ -18,8 +18,9 @@ pub struct MetricDatum {
 }
 impl MetricDatum {
     #[allow(missing_docs)] // documentation missing in model
-    pub fn metric_name(&self) -> ::std::option::Option<&str> {
-        self.metric_name.as_deref()
+    pub fn metric_name(&self) -> &str {
+        use std::ops::Deref;
+        self.metric_name.deref()
     }
 
     #[allow(missing_docs)] // documentation missing in model
@@ -28,8 +29,8 @@ impl MetricDatum {
     }
 
     #[allow(missing_docs)] // documentation missing in model
-    pub fn unit(&self) -> ::std::option::Option<&crate::types::Unit> {
-        self.unit.as_ref()
+    pub fn unit(&self) -> &crate::types::Unit {
+        &self.unit
     }
 
     #[allow(missing_docs)] // documentation missing in model
@@ -38,8 +39,10 @@ impl MetricDatum {
     }
 
     #[allow(missing_docs)] // documentation missing in model
-    pub fn metadata(&self) -> ::std::option::Option<&[crate::types::MetadataEntry]> {
-        self.metadata.as_deref()
+    /// If no value was sent for this field, a default will be set. If you want to determine if no
+    /// value was sent, use `.metadata.is_none()`.
+    pub fn metadata(&self) -> &[crate::types::MetadataEntry] {
+        self.metadata.as_deref().unwrap_or_default()
     }
 
     #[allow(missing_docs)] // documentation missing in model
@@ -68,6 +71,7 @@ pub struct MetricDatumBuilder {
 }
 impl MetricDatumBuilder {
     #[allow(missing_docs)] // documentation missing in model
+    /// This field is required.
     pub fn metric_name(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.metric_name = ::std::option::Option::Some(input.into());
         self
@@ -85,6 +89,7 @@ impl MetricDatumBuilder {
     }
 
     #[allow(missing_docs)] // documentation missing in model
+    /// This field is required.
     pub fn epoch_timestamp(mut self, input: i64) -> Self {
         self.epoch_timestamp = ::std::option::Option::Some(input);
         self
@@ -102,6 +107,7 @@ impl MetricDatumBuilder {
     }
 
     #[allow(missing_docs)] // documentation missing in model
+    /// This field is required.
     pub fn unit(mut self, input: crate::types::Unit) -> Self {
         self.unit = ::std::option::Option::Some(input);
         self
@@ -119,6 +125,7 @@ impl MetricDatumBuilder {
     }
 
     #[allow(missing_docs)] // documentation missing in model
+    /// This field is required.
     pub fn value(mut self, input: f64) -> Self {
         self.value = ::std::option::Option::Some(input);
         self
@@ -174,14 +181,29 @@ impl MetricDatumBuilder {
     }
 
     /// Consumes the builder and constructs a [`MetricDatum`](crate::types::MetricDatum).
-    pub fn build(self) -> crate::types::MetricDatum {
-        crate::types::MetricDatum {
-            metric_name: self.metric_name,
+    /// This method will fail if any of the following fields are not set:
+    /// - [`metric_name`](crate::types::builders::MetricDatumBuilder::metric_name)
+    /// - [`unit`](crate::types::builders::MetricDatumBuilder::unit)
+    pub fn build(
+        self,
+    ) -> ::std::result::Result<crate::types::MetricDatum, ::aws_smithy_types::error::operation::BuildError> {
+        ::std::result::Result::Ok(crate::types::MetricDatum {
+            metric_name: self.metric_name.ok_or_else(|| {
+                ::aws_smithy_types::error::operation::BuildError::missing_field(
+                    "metric_name",
+                    "metric_name was not specified but it is required when building MetricDatum",
+                )
+            })?,
             epoch_timestamp: self.epoch_timestamp.unwrap_or_default(),
-            unit: self.unit,
+            unit: self.unit.ok_or_else(|| {
+                ::aws_smithy_types::error::operation::BuildError::missing_field(
+                    "unit",
+                    "unit was not specified but it is required when building MetricDatum",
+                )
+            })?,
             value: self.value.unwrap_or_default(),
             metadata: self.metadata,
             passive: self.passive.unwrap_or_default(),
-        }
+        })
     }
 }

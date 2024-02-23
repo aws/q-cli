@@ -2,7 +2,7 @@
 #[allow(clippy::unnecessary_wraps)]
 pub fn de_post_error_report_http_error(
     _response_status: u16,
-    _response_headers: &::http::header::HeaderMap,
+    _response_headers: &::aws_smithy_runtime_api::http::Headers,
     _response_body: &[u8],
 ) -> std::result::Result<
     crate::operation::post_error_report::PostErrorReportOutput,
@@ -12,7 +12,7 @@ pub fn de_post_error_report_http_error(
     let mut generic_builder =
         crate::protocol_serde::parse_http_error_metadata(_response_status, _response_headers, _response_body)
             .map_err(crate::operation::post_error_report::PostErrorReportError::unhandled)?;
-    generic_builder = ::aws_http::request_id::apply_request_id(generic_builder, _response_headers);
+    generic_builder = ::aws_types::request_id::apply_request_id(generic_builder, _response_headers);
     let generic = generic_builder.build();
     Err(crate::operation::post_error_report::PostErrorReportError::generic(
         generic,
@@ -22,7 +22,7 @@ pub fn de_post_error_report_http_error(
 #[allow(clippy::unnecessary_wraps)]
 pub fn de_post_error_report_http_response(
     _response_status: u16,
-    _response_headers: &::http::header::HeaderMap,
+    _response_headers: &::aws_smithy_runtime_api::http::Headers,
     _response_body: &[u8],
 ) -> std::result::Result<
     crate::operation::post_error_report::PostErrorReportOutput,
@@ -31,17 +31,17 @@ pub fn de_post_error_report_http_response(
     Ok({
         #[allow(unused_mut)]
         let mut output = crate::operation::post_error_report::builders::PostErrorReportOutputBuilder::default();
-        output._set_request_id(::aws_http::request_id::RequestId::request_id(_response_headers).map(str::to_string));
+        output._set_request_id(::aws_types::request_id::RequestId::request_id(_response_headers).map(str::to_string));
         output.build()
     })
 }
 
 pub fn ser_post_error_report_input(
     input: &crate::operation::post_error_report::PostErrorReportInput,
-) -> Result<::aws_smithy_http::body::SdkBody, ::aws_smithy_http::operation::error::SerializationError> {
+) -> Result<::aws_smithy_types::body::SdkBody, ::aws_smithy_types::error::operation::SerializationError> {
     let mut out = String::new();
     let mut object = ::aws_smithy_json::serialize::JsonObjectWriter::new(&mut out);
-    crate::protocol_serde::shape_post_error_report_input::ser_post_error_report_input(&mut object, input)?;
+    crate::protocol_serde::shape_post_error_report_input::ser_post_error_report_input_input(&mut object, input)?;
     object.finish();
-    Ok(::aws_smithy_http::body::SdkBody::from(out))
+    Ok(::aws_smithy_types::body::SdkBody::from(out))
 }

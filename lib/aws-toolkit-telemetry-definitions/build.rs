@@ -253,6 +253,7 @@ fn main() {
                         .value(self.value.unwrap_or(1.0))
                         .set_metadata(Some(metadata_entries))
                         .build()
+                        .unwrap()
                }
             }
         );

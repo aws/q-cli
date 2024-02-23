@@ -2,9 +2,9 @@
 pub fn ser_metric_datum(
     object: &mut ::aws_smithy_json::serialize::JsonObjectWriter,
     input: &crate::types::MetricDatum,
-) -> Result<(), ::aws_smithy_http::operation::error::SerializationError> {
-    if let Some(var_1) = &input.metric_name {
-        object.key("MetricName").string(var_1.as_str());
+) -> Result<(), ::aws_smithy_types::error::operation::SerializationError> {
+    {
+        object.key("MetricName").string(input.metric_name.as_str());
     }
     {
         object.key("EpochTimestamp").number(
@@ -12,8 +12,8 @@ pub fn ser_metric_datum(
             ::aws_smithy_types::Number::NegInt((input.epoch_timestamp).into()),
         );
     }
-    if let Some(var_2) = &input.unit {
-        object.key("Unit").string(var_2.as_str());
+    {
+        object.key("Unit").string(input.unit.as_str());
     }
     {
         object.key("Value").number(
@@ -21,17 +21,17 @@ pub fn ser_metric_datum(
             ::aws_smithy_types::Number::Float((input.value).into()),
         );
     }
-    if let Some(var_3) = &input.metadata {
-        let mut array_4 = object.key("Metadata").start_array();
-        for item_5 in var_3 {
+    if let Some(var_1) = &input.metadata {
+        let mut array_2 = object.key("Metadata").start_array();
+        for item_3 in var_1 {
             {
                 #[allow(unused_mut)]
-                let mut object_6 = array_4.value().start_object();
-                crate::protocol_serde::shape_metadata_entry::ser_metadata_entry(&mut object_6, item_5)?;
-                object_6.finish();
+                let mut object_4 = array_2.value().start_object();
+                crate::protocol_serde::shape_metadata_entry::ser_metadata_entry(&mut object_4, item_3)?;
+                object_4.finish();
             }
         }
-        array_4.finish();
+        array_2.finish();
     }
     if input.passive {
         object.key("Passive").boolean(input.passive);
