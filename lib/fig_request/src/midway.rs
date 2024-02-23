@@ -240,7 +240,7 @@ impl MidwayCookies {
                     );
                 },
             }
-            let cookie = cookie.finish().into_owned();
+            let cookie = cookie.build().into_owned();
 
             let url = url::Url::parse(&format!("https://{}{}", domain, cookie.path().unwrap()))
                 .map_err(|err| ErrorKind::parse(format!("failed to construct URL for cookie domain: {err}")))?;
@@ -313,7 +313,7 @@ pub async fn midway_request(dest_url: Url) -> Result<reqwest::Response, crate::E
     if let Some(policy) = pairs.get("policy") {
         JAR.add_cookie_str(
             &CookieBuilder::new("CloudFront-Policy", policy.to_string())
-                .finish()
+                .build()
                 .to_string(),
             &redirect_url_no_params,
         );
@@ -322,7 +322,7 @@ pub async fn midway_request(dest_url: Url) -> Result<reqwest::Response, crate::E
     if let Some(kpid) = pairs.get("kpid") {
         JAR.add_cookie_str(
             &CookieBuilder::new("CloudFront-Key-Pair-Id", kpid.to_string())
-                .finish()
+                .build()
                 .to_string(),
             &redirect_url_no_params,
         );
@@ -331,7 +331,7 @@ pub async fn midway_request(dest_url: Url) -> Result<reqwest::Response, crate::E
     if let Some(exp) = pairs.get("exp") {
         JAR.add_cookie_str(
             &CookieBuilder::new("CloudFront-Expiration", exp.to_string())
-                .finish()
+                .build()
                 .to_string(),
             &redirect_url_no_params,
         );
@@ -340,7 +340,7 @@ pub async fn midway_request(dest_url: Url) -> Result<reqwest::Response, crate::E
     if let Some(sig) = pairs.get("sig") {
         JAR.add_cookie_str(
             &CookieBuilder::new("CloudFront-Signature", sig.to_string())
-                .finish()
+                .build()
                 .to_string(),
             &redirect_url_no_params,
         );

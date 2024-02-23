@@ -16,6 +16,7 @@ use muda::{
     PredefinedMenuItem,
     Submenu,
 };
+use tao::event_loop::ControlFlow;
 use tracing::{
     error,
     trace,
@@ -25,7 +26,6 @@ use tray_icon::{
     TrayIcon,
     TrayIconBuilder,
 };
-use wry::application::event_loop::ControlFlow;
 
 use crate::event::{
     Event,
@@ -278,7 +278,7 @@ enum MenuElement {
     Info(Cow<'static, str>),
     Entry {
         emoji_icon: Option<Cow<'static, str>>,
-        // image_icon: Option<wry::application::window::Icon>,
+        // image_icon: Option<tao::window::Icon>,
         text: Cow<'static, str>,
         id: Cow<'static, str>,
     },
@@ -306,7 +306,7 @@ impl MenuElement {
 
         //                 let (width, height) = image.dimensions();
 
-        //                 wry::application::window::Icon::from_rgba(image.into_raw(), width, height).ok()
+        //                 tao::window::Icon::from_rgba(image.into_raw(), width, height).ok()
         //             },
         //             None => None,
         //         };

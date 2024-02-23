@@ -6,8 +6,8 @@ use fig_proto::fig::{
     WindowFocusRequest,
 };
 use fig_remote_ipc::figterm::FigtermState;
+use tao::dpi::LogicalSize;
 use tracing::debug;
-use wry::application::dpi::LogicalSize;
 
 use super::{
     RequestResult,

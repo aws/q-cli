@@ -6,7 +6,7 @@ use fig_proto::local::{
     FileChangedHook,
     FocusedWindowDataHook,
 };
-use wry::application::dpi::{
+use tao::dpi::{
     LogicalPosition,
     LogicalSize,
 };

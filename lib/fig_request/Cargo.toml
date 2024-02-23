@@ -16,7 +16,7 @@ workspace = true
 [dependencies]
 bytes = "1.4.0"
 cfg-if = "1.0.0"
-cookie = "0.17.0"
+cookie = "0.18.0"
 fig_settings = { path = "../fig_settings" }
 fig_util = { path = "../fig_util" }
 once_cell = { version = "1.17.1", features = ["parking_lot"] }
@@ -30,7 +30,7 @@ reqwest = { version = "0.11.22", default-features = false, features = [
 reqwest_cookie_store = "0.6.0"
 rustls = { version = "0.21.10", features = ["dangerous_configuration"] }
 rustls-native-certs = "0.7.0"
-rustls-pemfile = "2.0.0"
+rustls-pemfile = "2.1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "1.0"

@@ -22,6 +22,22 @@ use muda::MenuEvent;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use regex::RegexSet;
+use tao::dpi::LogicalSize;
+use tao::event::{
+    Event as WryEvent,
+    StartCause,
+    WindowEvent as WryWindowEvent,
+};
+use tao::event_loop::{
+    ControlFlow,
+    EventLoopBuilder,
+};
+use tao::window::{
+    Theme as TaoTheme,
+    Window,
+    WindowBuilder,
+    WindowId as WryWindowId,
+};
 use tracing::{
     debug,
     error,
@@ -34,23 +50,8 @@ use window::{
     WindowId,
     WindowState,
 };
-use wry::application::dpi::LogicalSize;
-use wry::application::event::{
-    Event as WryEvent,
-    StartCause,
-    WindowEvent as WryWindowEvent,
-};
-use wry::application::event_loop::{
-    ControlFlow,
-    EventLoopBuilder,
-};
-// use wry::application::menu::MenuType;
-use wry::application::window::{
-    Theme,
-    WindowBuilder,
-    WindowId as WryWindowId,
-};
-use wry::webview::{
+use wry::{
+    Theme as WryTheme,
     WebContext,
     WebView,
     WebViewBuilder,
@@ -101,15 +102,23 @@ pub const AUTOCOMPLETE_WINDOW_TITLE: &str = "Fig Autocomplete";
 
 pub const LOGIN_PATH: &str = "/";
 
-fn map_theme(theme: &str) -> Option<Theme> {
+fn map_theme(theme: &str) -> Option<WryTheme> {
     match theme {
-        "dark" => Some(Theme::Dark),
-        "light" => Some(Theme::Light),
+        "dark" => Some(WryTheme::Dark),
+        "light" => Some(WryTheme::Light),
         _ => None,
     }
 }
 
-pub static THEME: Lazy<Option<Theme>> = Lazy::new(|| {
+fn to_tao_theme(theme: WryTheme) -> Option<TaoTheme> {
+    match theme {
+        WryTheme::Dark => Some(TaoTheme::Dark),
+        WryTheme::Light => Some(TaoTheme::Light),
+        WryTheme::Auto => None,
+    }
+}
+
+pub static THEME: Lazy<Option<WryTheme>> = Lazy::new(|| {
     fig_settings::settings::get_string("app.theme")
         .ok()
         .flatten()
@@ -143,7 +152,7 @@ impl WebviewManager {
 
         #[cfg(target_os = "macos")]
         if !visible {
-            use wry::application::platform::macos::{
+            use tao::platform::macos::{
                 ActivationPolicy,
                 EventLoopExtMacOS,
             };
@@ -169,17 +178,31 @@ impl WebviewManager {
         }
     }
 
-    fn insert_webview(&mut self, window_id: WindowId, webview: WebView, context: WebContext, enabled: bool, url: Url) {
-        let webview_arc = Rc::new(WindowState::new(window_id.clone(), webview, context, enabled, url));
+    fn insert_webview(
+        &mut self,
+        window: Window,
+        window_id: WindowId,
+        webview: WebView,
+        context: WebContext,
+        enabled: bool,
+        url: Url,
+    ) {
+        let webview_arc = Rc::new(WindowState::new(
+            window,
+            window_id.clone(),
+            webview,
+            context,
+            enabled,
+            url,
+        ));
         self.fig_id_map.insert(window_id, webview_arc.clone());
-        self.window_id_map
-            .insert(webview_arc.webview.window().id(), webview_arc);
+        self.window_id_map.insert(webview_arc.window.id(), webview_arc);
     }
 
     pub fn build_webview<T>(
         &mut self,
         window_id: WindowId,
-        builder: impl Fn(&mut WebContext, &EventLoop, T) -> wry::Result<WebView>,
+        builder: impl Fn(&mut WebContext, &EventLoop, T) -> anyhow::Result<(Window, WebView)>,
         options: T,
         enabled: bool,
         url_fn: impl Fn() -> Url,
@@ -188,8 +211,8 @@ impl WebviewManager {
             .join("webcontexts")
             .join(window_id.0.as_ref());
         let mut context = WebContext::new(Some(context_path));
-        let webview = builder(&mut context, &self.event_loop, options)?;
-        self.insert_webview(window_id, webview, context, enabled, url_fn());
+        let (window, webview) = builder(&mut context, &self.event_loop, options)?;
+        self.insert_webview(window, window_id, webview, context, enabled, url_fn());
         Ok(())
     }
 
@@ -331,10 +354,9 @@ impl WebviewManager {
             trace!(?event, "Main loop event");
 
             if let Ok(menu_event) = MenuEvent::receiver().try_recv() {
-                println!("{:?}", menu_event);
+                info!(?menu_event, "Menu Event");
                 menu::handle_event(&menu_event, &proxy);
                 tray::handle_event(&menu_event, &proxy);
-                // tray.set_menu(Some(Box::new(get_context_menu())));
             }
 
             match event {
@@ -344,7 +366,7 @@ impl WebviewManager {
                         match event {
                             WryWindowEvent::CloseRequested => {
                                 // This is async so we need to pass 'visible' explicitly
-                                window_state.webview.window().set_visible(false);
+                                window_state.window.set_visible(false);
 
                                 if window_state.window_id == DASHBOARD_ID {
                                     proxy
@@ -360,7 +382,11 @@ impl WebviewManager {
                                         .ok();
                                 }
                             },
-                            WryWindowEvent::ThemeChanged(theme) => window_state.set_theme(Some(theme)),
+                            WryWindowEvent::ThemeChanged(theme) => window_state.set_theme(match theme {
+                                TaoTheme::Light => Some(WryTheme::Light),
+                                TaoTheme::Dark => Some(WryTheme::Dark),
+                                _ => None,
+                            }),
                             WryWindowEvent::Focused(focused) => {
                                 if focused && window_state.window_id != AUTOCOMPLETE_ID {
                                     proxy
@@ -375,8 +401,8 @@ impl WebviewManager {
                                     .send_event(Event::PlatformBoundEvent(PlatformBoundEvent::AppWindowFocusChanged {
                                         window_id: window_state.window_id.clone(),
                                         focused,
-                                        fullscreen: window_state.webview.window().fullscreen().is_some(),
-                                        visible: window_state.webview.window().is_visible(),
+                                        fullscreen: window_state.window.fullscreen().is_some(),
+                                        visible: window_state.window.is_visible(),
                                     }))
                                     .unwrap();
                             },
@@ -490,7 +516,7 @@ impl WebviewManager {
 
                             if let Some(parent) = parent {
                                 if let Some(parent_window) = self.fig_id_map.get(&parent) {
-                                    dialog = dialog.set_parent(parent_window.webview.window());
+                                    dialog = dialog.set_parent(&parent_window.window);
                                 }
                             }
 
@@ -572,7 +598,7 @@ pub fn build_dashboard(
         visible,
         page,
     }: DashboardOptions,
-) -> wry::Result<WebView> {
+) -> anyhow::Result<(Window, WebView)> {
     let window = WindowBuilder::new()
         .with_title("CodeWhisperer")
         .with_inner_size(DASHBOARD_SIZE)
@@ -583,7 +609,7 @@ pub fn build_dashboard(
         .with_focused(visible)
         .with_always_on_top(false)
         .with_window_icon(Some(utils::ICON.clone()))
-        .with_theme(*THEME)
+        .with_theme(THEME.and_then(to_tao_theme))
         .build(event_loop)?;
 
     // #[cfg(not(target_os = "linux"))]
@@ -594,7 +620,7 @@ pub fn build_dashboard(
     #[cfg(target_os = "linux")]
     {
         use gtk::traits::GtkWindowExt;
-        use wry::application::platform::unix::WindowExtUnix;
+        use tao::platform::unix::WindowExtUnix;
 
         window.gtk_window().set_role("dashboard");
     }
@@ -609,10 +635,10 @@ pub fn build_dashboard(
         url.set_path(&page);
     }
 
-    let webview = WebViewBuilder::new(window)?
+    let webview = WebViewBuilder::new(&window)
         .with_web_context(web_context)
-        .with_url(url.as_str())?
-        .with_ipc_handler(move |_window, payload| {
+        .with_url(url.as_str())
+        .with_ipc_handler(move |payload| {
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: DASHBOARD_ID.clone(),
@@ -641,7 +667,7 @@ pub fn build_dashboard(
         .with_hotkeys_zoom(true)
         .build()?;
 
-    Ok(webview)
+    Ok((window, webview))
 }
 
 pub struct AutocompleteOptions;
@@ -650,7 +676,7 @@ pub fn build_autocomplete(
     web_context: &mut WebContext,
     event_loop: &EventLoop,
     _autocomplete_options: AutocompleteOptions,
-) -> wry::Result<WebView> {
+) -> anyhow::Result<(Window, WebView)> {
     let mut window_builder = WindowBuilder::new()
         .with_title(AUTOCOMPLETE_WINDOW_TITLE)
         .with_transparent(true)
@@ -660,17 +686,17 @@ pub fn build_autocomplete(
         .with_focused(false)
         .with_window_icon(Some(utils::ICON.clone()))
         .with_inner_size(LogicalSize::new(1.0, 1.0))
-        .with_theme(*THEME);
+        .with_theme(THEME.and_then(to_tao_theme));
 
     cfg_if!(
         if #[cfg(target_os = "linux")] {
-            use wry::application::platform::unix::WindowBuilderExtUnix;
+            use tao::platform::unix::WindowBuilderExtUnix;
             window_builder = window_builder.with_resizable(true).with_skip_taskbar(true);
         } else if #[cfg(target_os = "macos")] {
-            use wry::application::platform::macos::WindowBuilderExtMacOS;
+            use tao::platform::macos::WindowBuilderExtMacOS;
             window_builder = window_builder.with_resizable(false).with_has_shadow(false);
         } else if #[cfg(target_os = "windows")] {
-            use wry::application::platform::windows::WindowBuilderExtWindows;
+            use tao::platform::windows::WindowBuilderExtWindows;
             window_builder = window_builder.with_resizable(false).with_skip_taskbar(true);
         }
     );
@@ -684,7 +710,7 @@ pub fn build_autocomplete(
             GtkWindowExt,
             WidgetExt,
         };
-        use wry::application::platform::unix::WindowExtUnix;
+        use tao::platform::unix::WindowExtUnix;
 
         let gtk_window = window.gtk_window();
         gtk_window.set_role("autocomplete");
@@ -698,10 +724,10 @@ pub fn build_autocomplete(
 
     let proxy = event_loop.create_proxy();
 
-    let webview = WebViewBuilder::new(window)?
-        .with_url(autocomplete::url().as_str())?
+    let webview = WebViewBuilder::new(&window)
+        .with_url(autocomplete::url().as_str())
         .with_web_context(web_context)
-        .with_ipc_handler(move |_window, payload| {
+        .with_ipc_handler(move |payload| {
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: AUTOCOMPLETE_ID.clone(),
@@ -733,7 +759,7 @@ pub fn build_autocomplete(
         .with_accept_first_mouse(true)
         .build()?;
 
-    Ok(webview)
+    Ok((window, webview))
 }
 
 pub trait WebviewBuilder {

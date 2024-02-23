@@ -19,6 +19,10 @@ use serde_json::{
     json,
     Value,
 };
+use tao::dpi::{
+    LogicalPosition,
+    LogicalSize,
+};
 use tokio::io::AsyncWriteExt;
 use tokio::net::UnixStream;
 use tracing::{
@@ -26,10 +30,6 @@ use tracing::{
     info,
     trace,
     warn,
-};
-use wry::application::dpi::{
-    LogicalPosition,
-    LogicalSize,
 };
 
 use super::integrations::GSE_ALLOWLIST;

@@ -20,7 +20,7 @@ time = { version = "0.3", features = ["serde"] }
 url = { version = "2.3.1", features = ["serde"] }
 tokio = { version = "1", features = ["process"] }
 tracing = "0.1"
-which = "5.0.0"
+which = "6.0.0"
 aws-smithy-types = "1.0.3"
 # aws-smithy-http = "0.60.0"
 aws-smithy-async = "1.0.3"
@@ -37,7 +37,7 @@ aws-credential-types = "1.0.3"
 bytes = "1.5.0"
 amzn-codewhisperer-client = { path = "../amzn-codewhisperer-client" }
 once_cell = "1.18"
-strum = { version = "0.25.0", features = ["derive"] }
+strum = { version = "0.26.1", features = ["derive"] }
 auth = { path = "../auth" }
 amzn-codewhisperer-streaming-client = { path = "../amzn-codewhisperer-streaming-client" }
 

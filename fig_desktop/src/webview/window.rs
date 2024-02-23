@@ -22,6 +22,12 @@ use fig_remote_ipc::figterm::{
     FigtermState,
 };
 use parking_lot::Mutex;
+use tao::dpi::{
+    LogicalPosition,
+    LogicalSize,
+    Position,
+};
+use tao::window::Window;
 use tokio::sync::mpsc::UnboundedSender;
 use tracing::{
     debug,
@@ -30,13 +36,8 @@ use tracing::{
     warn,
 };
 use url::Url;
-use wry::application::dpi::{
-    LogicalPosition,
-    LogicalSize,
-    Position,
-};
-use wry::application::window::Theme;
-use wry::webview::{
+use wry::{
+    Theme,
     WebContext,
     WebView,
 };
@@ -86,6 +87,7 @@ pub struct WindowGeometryState {
 
 // TODO: Add state for the active terminal window
 pub struct WindowState {
+    pub window: Window,
     pub webview: WebView,
     pub context: WebContext,
     pub window_id: WindowId,
@@ -95,13 +97,17 @@ pub struct WindowState {
 }
 
 impl WindowState {
-    pub fn new(window_id: WindowId, webview: WebView, context: WebContext, enabled: bool, url: Url) -> Self {
-        let window = webview.window();
-
+    pub fn new(
+        window: Window,
+        window_id: WindowId,
+        webview: WebView,
+        context: WebContext,
+        enabled: bool,
+        url: Url,
+    ) -> Self {
         let scale_factor = window.scale_factor();
 
-        let position = webview
-            .window()
+        let position = window
             .outer_position()
             .expect("Failed to acquire window position")
             .to_logical(scale_factor);
@@ -109,6 +115,7 @@ impl WindowState {
         let size = window.inner_size().to_logical(scale_factor);
 
         Self {
+            window,
             webview,
             context,
             window_id,
@@ -159,7 +166,7 @@ impl WindowState {
             _ => state.anchor,
         };
 
-        let window = self.webview.window();
+        let window = &self.window;
 
         let (position, is_above, is_clipped) = match position {
             WindowPosition::Absolute(position) => (position, false, false),
@@ -294,7 +301,7 @@ impl WindowState {
         };
 
         if !dry_run {
-            match platform_state.position_window(self.webview.window(), &self.window_id, position) {
+            match platform_state.position_window(&self.window, &self.window_id, position) {
                 Ok(_) => {
                     tracing::trace!(window_id =% self.window_id, ?position, ?size, ?anchor, "updated window geometry");
                 },
@@ -302,9 +309,9 @@ impl WindowState {
             }
 
             // Apply the diff to atomic state
-            self.webview.window().set_inner_size(size);
+            self.window.set_inner_size(size);
 
-            match platform_state.position_window(self.webview.window(), &self.window_id, position) {
+            match platform_state.position_window(&self.window, &self.window_id, position) {
                 Ok(_) => {
                     tracing::trace!(window_id =% self.window_id, ?position, ?size, ?anchor, "updated window geometry");
                 },
@@ -341,10 +348,10 @@ impl WindowState {
                 }
             },
             WindowEvent::Hide => {
-                if !self.webview.window().is_visible() {
+                if !self.window.is_visible() {
                     return;
                 }
-                self.webview.window().set_visible(false);
+                self.window.set_visible(false);
 
                 if self.window_id == AUTOCOMPLETE_ID {
                     for session in figterm_state.inner.lock().linked_sessions.values_mut() {
@@ -355,15 +362,15 @@ impl WindowState {
 
                     // TODO: why are we setting then unsetting resizable?
                     #[cfg(not(target_os = "linux"))]
-                    self.webview.window().set_resizable(true);
+                    self.window.set_resizable(true);
 
                     #[cfg(not(target_os = "linux"))]
-                    self.webview.window().set_resizable(false);
+                    self.window.set_resizable(false);
                 }
 
                 #[cfg(target_os = "macos")]
                 if self.window_id == DASHBOARD_ID {
-                    use wry::application::platform::macos::{
+                    use tao::platform::macos::{
                         ActivationPolicy,
                         EventLoopWindowTargetExtMacOS,
                     };
@@ -384,22 +391,22 @@ impl WindowState {
                                 .send(FigtermCommand::InterceptFigJSVisible { visible: true });
                         }
 
-                        self.webview.window().set_visible(true);
+                        self.window.set_visible(true);
                         cfg_if::cfg_if!(
                             if #[cfg(target_os = "macos")] {
                                 // We handle setting window level on focus changed on MacOS
                                 // TODO(sean) pull this out into platform code.
                             } else if #[cfg(target_os = "windows")] {
-                                self.webview.window().set_always_on_top(false);
+                                self.window.set_always_on_top(false);
                             } else {
-                                self.webview.window().set_always_on_top(true);
+                                self.window.set_always_on_top(true);
                             }
                         );
                     }
                 } else {
                     #[cfg(target_os = "macos")]
                     if self.window_id == DASHBOARD_ID {
-                        use wry::application::platform::macos::{
+                        use tao::platform::macos::{
                             ActivationPolicy,
                             EventLoopWindowTargetExtMacOS,
                         };
@@ -411,8 +418,8 @@ impl WindowState {
                         }
                     }
 
-                    self.webview.window().set_visible(true);
-                    self.webview.window().set_focus();
+                    self.window.set_visible(true);
+                    self.window.set_focus();
                 }
             },
             WindowEvent::NavigateAbsolute { url } => {

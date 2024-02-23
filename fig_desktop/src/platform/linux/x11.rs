@@ -3,14 +3,14 @@ use std::sync::Arc;
 
 use dashmap::DashMap;
 use parking_lot::Mutex;
+use tao::dpi::{
+    PhysicalPosition,
+    PhysicalSize,
+};
 use tracing::{
     debug,
     error,
     trace,
-};
-use wry::application::dpi::{
-    PhysicalPosition,
-    PhysicalSize,
 };
 use x11rb::connection::Connection;
 use x11rb::properties::WmClass;

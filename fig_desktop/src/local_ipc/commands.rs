@@ -17,8 +17,8 @@ use fig_proto::local::{
 };
 use fig_remote_ipc::figterm::FigtermState;
 use parking_lot::Mutex;
+use tao::event_loop::ControlFlow;
 use tracing::error;
-use wry::application::event_loop::ControlFlow;
 
 use super::{
     LocalResponse,

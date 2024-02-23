@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 #[cfg(target_os = "macos")]
 use macos_utils::window_server::ApplicationSpecifier;
-use wry::application::dpi::Position;
+use tao::dpi::Position;
 
 use crate::protocol::icons::{
     AssetSpecifier,
@@ -65,7 +65,7 @@ impl PlatformState {
     /// Position the window at the given coordinates
     pub fn position_window(
         &self,
-        webview_window: &wry::application::window::Window,
+        webview_window: &tao::window::Window,
         window_id: &WindowId,
         position: Position,
     ) -> wry::Result<()> {

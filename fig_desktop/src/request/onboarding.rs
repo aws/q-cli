@@ -4,10 +4,10 @@ use fig_proto::fig::{
     OnboardingRequest,
 };
 use fig_util::Shell;
+use tao::event_loop::ControlFlow;
 #[cfg(target_os = "macos")]
 use tokio::process::Command;
 use tracing::error;
-use wry::application::event_loop::ControlFlow;
 
 use super::{
     RequestResult,

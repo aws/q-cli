@@ -6,6 +6,7 @@ use std::sync::Arc;
 use anyhow::anyhow;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
+use tao::dpi::Position;
 use tracing::{
     debug,
     trace,
@@ -58,7 +59,6 @@ use windows::Win32::UI::WindowsAndMessaging::{
     WINEVENT_OUTOFCONTEXT,
     WINEVENT_SKIPOWNPROCESS,
 };
-use wry::application::dpi::Position;
 
 use crate::event::{
     Event,
@@ -246,7 +246,7 @@ impl PlatformStateImpl {
 
     pub fn position_window(
         &self,
-        webview_window: &wry::application::window::Window,
+        webview_window: &tao::window::Window,
         _window_id: &WindowId,
         position: Position,
     ) -> wry::Result<()> {

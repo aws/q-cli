@@ -68,23 +68,21 @@ use parking_lot::{
     Mutex,
     RwLock,
 };
+use tao::dpi::{
+    LogicalPosition,
+    LogicalSize,
+    Position,
+};
+use tao::platform::macos::{
+    ActivationPolicy,
+    EventLoopWindowTargetExtMacOS,
+    WindowExtMacOS as _,
+};
 use tracing::{
     debug,
     error,
     trace,
     warn,
-};
-use wry::application::dpi::{
-    LogicalPosition,
-    LogicalSize,
-    Position,
-};
-use wry::application::platform::macos::{
-    ActivationPolicy,
-    EventLoopWindowTargetExtMacOS,
-    // ActivationPolicy,
-    // EventLoopWindowTargetExtMacOS,
-    WindowExtMacOS,
 };
 
 use super::{
@@ -524,7 +522,7 @@ impl PlatformStateImpl {
                 }
 
                 if let Some(window) = window_map.get(&AUTOCOMPLETE_ID) {
-                    let ns_window = window.webview.window().ns_window().cast::<Object>();
+                    let ns_window = window.window.ns_window().cast::<Object>();
                     // Handle iTerm Quake mode by explicitly setting window level. See
                     // https://github.com/gnachman/iTerm2/blob/1a5a09f02c62afcc70a647603245e98862e51911/sources/iTermProfileHotKey.m#L276-L310
                     // for more on window levels.
@@ -554,7 +552,7 @@ impl PlatformStateImpl {
                     let dashboard_visible = dashboard_visible.unwrap_or_else(|| {
                         window_map
                             .get(&DASHBOARD_ID)
-                            .map_or(false, |window| window.webview.window().is_visible())
+                            .map_or(false, |window| window.window.is_visible())
                     });
 
                     if dashboard_visible {
@@ -729,7 +727,7 @@ impl PlatformStateImpl {
     #[allow(clippy::unused_self)]
     pub(super) fn position_window(
         &self,
-        webview_window: &wry::application::window::Window,
+        webview_window: &tao::window::Window,
         _window_id: &WindowId,
         position: Position,
     ) -> wry::Result<()> {

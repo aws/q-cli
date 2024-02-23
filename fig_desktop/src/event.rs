@@ -1,13 +1,13 @@
 use std::borrow::Cow;
 
 use fig_proto::local::caret_position_hook::Origin;
-use wry::application::dpi::{
+use tao::dpi::{
     LogicalSize,
     Position,
     Size,
 };
-use wry::application::event_loop::ControlFlow;
-use wry::application::window::Theme;
+use tao::event_loop::ControlFlow;
+use wry::Theme;
 
 use crate::platform::PlatformBoundEvent;
 use crate::webview::window::WindowId;

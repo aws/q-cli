@@ -30,6 +30,11 @@ use sysinfo::{
     RefreshKind,
     System,
 };
+use tao::event_loop::{
+    EventLoop as WryEventLoop,
+    EventLoopProxy as WryEventLoopProxy,
+    EventLoopWindowTarget as WryEventLoopWindowTarget,
+};
 use tracing::{
     error,
     warn,
@@ -49,11 +54,6 @@ pub use webview::{
     AUTOCOMPLETE_ID,
     AUTOCOMPLETE_WINDOW_TITLE,
     DASHBOARD_ID,
-};
-use wry::application::event_loop::{
-    EventLoop as WryEventLoop,
-    EventLoopProxy as WryEventLoopProxy,
-    EventLoopWindowTarget as WryEventLoopWindowTarget,
 };
 
 // #[global_allocator]

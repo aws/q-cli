@@ -5,17 +5,17 @@ use anyhow::Result;
 use dbus::ibus_bus_new;
 use fig_proto::local::caret_position_hook::Origin;
 use fig_util::terminal::PositioningKind;
-use tracing::{
-    debug,
-    error,
-};
-use wry::application::dpi::{
+use tao::dpi::{
     LogicalPosition,
     LogicalSize,
     PhysicalPosition,
     PhysicalSize,
     Position,
     Size,
+};
+use tracing::{
+    debug,
+    error,
 };
 use zbus::export::futures_util::TryStreamExt;
 use zbus::fdo::DBusProxy;

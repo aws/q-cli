@@ -19,16 +19,16 @@ use fig_util::system_info::linux::{
 };
 use fig_util::Terminal;
 use parking_lot::Mutex;
+use tao::dpi::{
+    LogicalPosition,
+    PhysicalPosition,
+    Position,
+};
 use tracing::{
     error,
     info,
     trace,
     warn,
-};
-use wry::application::dpi::{
-    LogicalPosition,
-    PhysicalPosition,
-    Position,
 };
 
 use self::x11::X11State;
@@ -179,7 +179,7 @@ impl PlatformStateImpl {
 
     pub(super) fn position_window(
         &self,
-        webview_window: &wry::application::window::Window,
+        webview_window: &tao::window::Window,
         _window_id: &WindowId,
         position: Position,
     ) -> wry::Result<()> {

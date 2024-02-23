@@ -4,25 +4,25 @@ pub async fn check_for_update(show_webview: bool, relaunch_dashboard: bool) -> b
         UpdateOptions,
         UpdateStatus,
     };
+    use tao::dpi::LogicalSize;
+    use tao::event_loop::EventLoopBuilder;
+    use tao::platform::macos::WindowBuilderExtMacOS;
     use tokio::sync::mpsc::Receiver;
-    use wry::application::dpi::LogicalSize;
-    use wry::application::event_loop::EventLoopBuilder;
-    use wry::application::platform::macos::WindowBuilderExtMacOS;
+    use wry::WebViewBuilder;
 
     use crate::utils::is_cargo_debug_build;
 
     let updating_cb: Option<Box<dyn FnOnce(Receiver<UpdateStatus>) + Send>> = if show_webview {
         Some(Box::new(|mut recv: Receiver<UpdateStatus>| {
-            use wry::application::event::{
+            use tao::event::{
                 Event,
                 WindowEvent,
             };
-            use wry::application::event_loop::{
+            use tao::event_loop::{
                 ControlFlow,
                 EventLoop,
             };
-            use wry::application::window::WindowBuilder;
-            use wry::webview::WebViewBuilder;
+            use tao::window::WindowBuilder;
 
             // let mut menu_bar = MenuBar::new();
             // let mut sub_menu_bar = MenuBar::new();
@@ -39,10 +39,8 @@ pub async fn check_for_update(show_webview: bool, relaunch_dashboard: bool) -> b
                 .build(&event_loop)
                 .unwrap();
 
-            let webview = WebViewBuilder::new(window)
-                .unwrap()
+            let webview = WebViewBuilder::new(&window)
                 .with_html(include_str!("../html/updating.html"))
-                .unwrap()
                 .with_devtools(true)
                 .build()
                 .unwrap();

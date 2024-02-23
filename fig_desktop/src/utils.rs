@@ -21,18 +21,18 @@ use serde::{
     Serialize,
 };
 use serde_json::json;
+use tao::dpi::{
+    Position,
+    Size,
+};
+use tao::window::Icon;
 use tracing::{
     debug,
     debug_span,
     error,
     Instrument,
 };
-use wry::application::dpi::{
-    Position,
-    Size,
-};
-use wry::application::window::Icon;
-use wry::webview::RequestAsyncResponder;
+use wry::RequestAsyncResponder;
 
 /// Determines if the build is ran in debug mode
 pub fn is_cargo_debug_build() -> bool {
