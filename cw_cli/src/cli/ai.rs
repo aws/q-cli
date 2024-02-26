@@ -1,5 +1,8 @@
 use std::fmt::Display;
-use std::io::IsTerminal;
+use std::io::{
+    stdout,
+    IsTerminal,
+};
 
 use arboard::Clipboard;
 use clap::Args;
@@ -301,6 +304,13 @@ impl AiArgs {
                 },
             };
         }
+
+        // hack to show cursor which dialoguer eats
+        tokio::spawn(async {
+            tokio::signal::ctrl_c().await.unwrap();
+            crossterm::execute!(stdout(), crossterm::cursor::Show).unwrap();
+            std::process::exit(0);
+        });
 
         'ask_loop: loop {
             let question = match input {
