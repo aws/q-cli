@@ -17,8 +17,6 @@ use amzn_toolkit_telemetry::{
     Client,
     Config,
 };
-use auth::builder_id::BuilderIdToken;
-use auth::secret_store::SecretStore;
 use aws_credential_types::provider::SharedCredentialsProvider;
 use aws_toolkit_telemetry_definitions::metrics::{
     CodewhispererterminalCliSubcommandExecuted,
@@ -41,6 +39,7 @@ use aws_toolkit_telemetry_definitions::types::{
     CodewhispererterminalTerminal,
     CodewhispererterminalTerminalVersion,
     CodewhispererterminalTypedCount,
+    CredentialStartUrl,
 };
 use aws_toolkit_telemetry_definitions::{
     metrics,
@@ -172,17 +171,7 @@ impl TelemetryClient {
 
         let mut set = JOIN_SET.lock().await;
         set.spawn(async move {
-            let start_url = if let Ok(secret_store) = SecretStore::new().await {
-                BuilderIdToken::load(&secret_store)
-                    .await
-                    .ok()
-                    .flatten()
-                    .and_then(|token| token.start_url)
-            } else {
-                None
-            };
-
-            let inner = inner.into_metric_datum(start_url);
+            let inner = inner.into_metric_datum();
             let product = AwsProduct::CodewhispererTerminal;
             let product_version = env!("CARGO_PKG_VERSION");
             let os = std::env::consts::OS;
@@ -209,11 +198,21 @@ impl TelemetryClient {
     }
 }
 
+async fn start_url() -> Option<CredentialStartUrl> {
+    auth::builder_id_token()
+        .await
+        .ok()
+        .flatten()
+        .and_then(|t| t.start_url)
+        .map(CredentialStartUrl)
+}
+
 pub async fn send_user_logged_in() {
     CLIENT
         .post_metric(metrics::CodewhispererterminalUserLoggedIn {
             create_time: Some(SystemTime::now()),
             value: None,
+            credential_start_url: start_url().await,
         })
         .await;
 }
@@ -229,6 +228,7 @@ pub async fn send_completion_inserted(command: String, terminal: Option<String>,
             codewhispererterminal_terminal_version: None,
             codewhispererterminal_shell: shell.map(CodewhispererterminalShell),
             codewhispererterminal_shell_version: None,
+            credential_start_url: start_url().await,
         })
         .await;
 }
@@ -257,6 +257,7 @@ pub async fn send_ghost_text_actioned(accepted: bool, edit_buffer_len: usize, su
                 .map(CodewhispererterminalTerminalVersion),
             codewhispererterminal_shell: shell.map(|shell| CodewhispererterminalShell(shell.to_string())),
             codewhispererterminal_shell_version: shell_version.map(CodewhispererterminalShellVersion),
+            credential_start_url: start_url().await,
         })
         .await;
 }
@@ -286,6 +287,7 @@ pub async fn send_translation_actioned(
                 .map(CodewhispererterminalTerminalVersion),
             codewhispererterminal_shell: shell.map(|shell| CodewhispererterminalShell(shell.to_string())),
             codewhispererterminal_shell_version: shell_version.map(CodewhispererterminalShellVersion),
+            credential_start_url: start_url().await,
         })
         .await;
 }
@@ -309,6 +311,7 @@ pub async fn send_cli_subcommand_executed(command_name: impl Into<String>) {
                 .map(CodewhispererterminalTerminalVersion),
             codewhispererterminal_shell: shell.map(|shell| CodewhispererterminalShell(shell.to_string())),
             codewhispererterminal_shell_version: shell_version.map(CodewhispererterminalShellVersion),
+            credential_start_url: start_url().await,
         })
         .await;
 }
@@ -332,6 +335,7 @@ pub async fn send_doctor_check_failed(failed_check: impl Into<String>) {
                 .map(CodewhispererterminalTerminalVersion),
             codewhispererterminal_shell: shell.map(|shell| CodewhispererterminalShell(shell.to_string())),
             codewhispererterminal_shell_version: shell_version.map(CodewhispererterminalShellVersion),
+            credential_start_url: start_url().await,
         })
         .await;
 }
@@ -342,6 +346,7 @@ pub async fn send_dashboard_page_viewed(route: impl Into<String>) {
             create_time: None,
             value: None,
             codewhispererterminal_route: Some(CodewhispererterminalRoute(route.into())),
+            credential_start_url: start_url().await,
         })
         .await;
 }
@@ -353,6 +358,7 @@ pub async fn send_menu_bar_actioned(menu_bar_item: Option<impl Into<String>>) {
             value: None,
             codewhispererterminal_menu_bar_item: menu_bar_item
                 .map(|item| CodewhispererterminalMenuBarItem(item.into())),
+            credential_start_url: start_url().await,
         })
         .await;
 }
@@ -362,6 +368,7 @@ pub async fn send_fig_user_migrated() {
         .post_metric(CodewhispererterminalFigUserMigrated {
             create_time: None,
             value: None,
+            credential_start_url: start_url().await,
         })
         .await;
 }
@@ -393,6 +400,7 @@ mod test {
                     .map(CodewhispererterminalTerminalVersion),
                 codewhispererterminal_shell: shell.map(|shell| CodewhispererterminalShell(shell.to_string())),
                 codewhispererterminal_shell_version: shell_version.map(CodewhispererterminalShellVersion),
+                credential_start_url: start_url().await,
             })
             .await;
         finish_telemetry_unwrap().await;

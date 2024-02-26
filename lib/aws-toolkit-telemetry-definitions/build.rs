@@ -169,13 +169,7 @@ fn main() {
             },
         };
 
-        let mut metadata = m.metadata.unwrap_or_default();
-        metadata.remove(
-            metadata
-                .iter()
-                .position(|metadata| metadata.r#type == "credentialStartUrl")
-                .expect("each event must contain credentialStartUrl"),
-        );
+        let metadata = m.metadata.unwrap_or_default();
 
         let mut fields = Vec::new();
         for field in &metadata {
@@ -228,12 +222,8 @@ fn main() {
             }
 
             impl crate::IntoMetricDatum for #name {
-                fn into_metric_datum(self, credential_start_url: Option<String>) -> ::amzn_toolkit_telemetry::types::MetricDatum {
+                fn into_metric_datum(self) -> ::amzn_toolkit_telemetry::types::MetricDatum {
                     let metadata_entries = vec![
-                        ::amzn_toolkit_telemetry::types::MetadataEntry::builder()
-                            .key("credentialStartUrl")
-                            .value(credential_start_url.unwrap_or_default())
-                            .build(),
                         #(
                             #metadata_entries,
                         )*

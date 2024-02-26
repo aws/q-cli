@@ -71,7 +71,7 @@
       "description": "The user shell version"
     },
     {
-      "name": "codewhispererterminal_credentialStartUrl",
+      "name": "credentialStartUrl",
       "type": "string",
       "description": "The start URL of current SSO connection"
     }
