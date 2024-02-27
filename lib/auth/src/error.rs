@@ -31,6 +31,10 @@ pub enum Error {
     StringFromUtf8(#[from] std::string::FromUtf8Error),
     #[error(transparent)]
     StrFromUtf8(#[from] std::str::Utf8Error),
+    #[error(transparent)]
+    DbOpenError(#[from] fig_settings::error::DbOpenError),
+    #[error(transparent)]
+    Setting(#[from] fig_settings::Error),
     #[error("No token")]
     NoToken,
 }

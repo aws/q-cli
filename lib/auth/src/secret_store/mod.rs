@@ -2,6 +2,7 @@
 mod linux;
 #[cfg(target_os = "macos")]
 mod macos;
+mod sqlite;
 #[cfg(target_os = "linux")]
 use linux::SecretStoreImpl;
 #[cfg(target_os = "macos")]
@@ -29,24 +30,24 @@ where
 }
 
 pub struct SecretStore {
-    _inner: SecretStoreImpl,
+    inner: SecretStoreImpl,
 }
 
 impl SecretStore {
     pub async fn new() -> Result<Self> {
-        SecretStoreImpl::new().await.map(|_inner| Self { _inner })
+        SecretStoreImpl::new().await.map(|inner| Self { inner })
     }
 
     pub async fn set(&self, key: &str, password: &str) -> Result<()> {
-        SecretStoreImpl::set(key, password).await
+        self.inner.set(key, password).await
     }
 
     pub async fn get(&self, key: &str) -> Result<Option<Secret>> {
-        SecretStoreImpl::get(key).await
+        self.inner.get(key).await
     }
 
     pub async fn delete(&self, key: &str) -> Result<()> {
-        SecretStoreImpl::delete(key).await
+        self.inner.delete(key).await
     }
 }
 

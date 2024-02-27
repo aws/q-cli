@@ -3,7 +3,6 @@ pub mod endpoint;
 mod install_method;
 mod util;
 
-use std::borrow::Cow;
 use std::time::SystemTime;
 
 use amzn_toolkit_telemetry::config::{
@@ -62,6 +61,7 @@ use tokio::sync::Mutex;
 use tokio::task::JoinSet;
 use tracing::error;
 use util::telemetry_is_disabled;
+use uuid::Uuid;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -142,7 +142,7 @@ pub async fn finish_telemetry_unwrap() {
 
 #[derive(Debug, Clone)]
 pub struct TelemetryClient {
-    client_id: Cow<'static, str>,
+    client_id: Uuid,
     aws_client: Client,
 }
 
@@ -167,7 +167,7 @@ impl TelemetryClient {
         }
 
         let aws_client = self.aws_client.clone();
-        let client_id = self.client_id.clone();
+        let client_id = self.client_id;
 
         let mut set = JOIN_SET.lock().await;
         set.spawn(async move {
@@ -403,30 +403,30 @@ mod test {
                 credential_start_url: start_url().await,
             })
             .await;
+
         finish_telemetry_unwrap().await;
+
         assert!(!logs_contain("ERROR"));
+        assert!(!logs_contain("error"));
+        assert!(!logs_contain("WARN"));
+        assert!(!logs_contain("warn"));
+        assert!(!logs_contain("Failed to post metric"));
     }
 
     #[tracing_test::traced_test]
     #[tokio::test]
     async fn test_all_telemetry() {
         send_user_logged_in().await;
-
         send_completion_inserted("cw".to_owned(), None, None).await;
-
         send_ghost_text_actioned(true, 1, 2).await;
-
         send_translation_actioned(true).await;
-
         send_cli_subcommand_executed("doctor").await;
-
         send_doctor_check_failed("").await;
-
         send_dashboard_page_viewed("/").await;
-
         send_menu_bar_actioned(Some("Settings")).await;
 
         finish_telemetry_unwrap().await;
+
         assert!(!logs_contain("ERROR"));
         assert!(!logs_contain("error"));
         assert!(!logs_contain("WARN"));

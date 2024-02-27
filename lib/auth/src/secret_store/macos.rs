@@ -20,7 +20,7 @@ impl SecretStoreImpl {
     }
 
     /// Sets the `key` to `password` on the keychain, this will override any existing value
-    pub async fn set(key: &str, password: &str) -> Result<()> {
+    pub async fn set(&self, key: &str, password: &str) -> Result<()> {
         let output = tokio::process::Command::new(SECURITY_BIN)
             .args(["add-generic-password", "-U", "-s", key, "-a", ACCOUNT, "-w", password])
             .output()
@@ -37,7 +37,7 @@ impl SecretStoreImpl {
     /// Returns the password for the `key`
     ///
     /// If not found the result will be `Ok(None)`, other errors will be returned
-    pub async fn get(key: &str) -> Result<Option<Secret>> {
+    pub async fn get(&self, key: &str) -> Result<Option<Secret>> {
         let output = tokio::process::Command::new(SECURITY_BIN)
             .args(["find-generic-password", "-s", key, "-a", ACCOUNT, "-w"])
             .output()
@@ -64,7 +64,7 @@ impl SecretStoreImpl {
     }
 
     /// Deletes the `key` from the keychain
-    pub async fn delete(key: &str) -> Result<()> {
+    pub async fn delete(&self, key: &str) -> Result<()> {
         let output = tokio::process::Command::new(SECURITY_BIN)
             .args(["delete-generic-password", "-s", key, "-a", ACCOUNT])
             .output()

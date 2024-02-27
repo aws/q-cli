@@ -8,10 +8,12 @@ use fig_util::directories::fig_data_dir;
 use once_cell::sync::Lazy;
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
+use rusqlite::types::FromSql;
 use rusqlite::{
     params,
     Connection,
     Error,
+    ToSql,
 };
 use serde_json::Map;
 use tracing::{
@@ -21,6 +23,9 @@ use tracing::{
 
 use crate::error::DbOpenError;
 use crate::Result;
+
+const STATE_TABLE_NAME: &str = "state";
+const AUTH_TABLE_NAME: &str = "auth_kv";
 
 pub static DATABASE: Lazy<Result<Db, DbOpenError>> = Lazy::new(|| {
     let db = Db::new().map_err(|e| DbOpenError(e.to_string()))?;
@@ -59,7 +64,8 @@ const MIGRATIONS: &[Migration] = migrations![
     "001_history_table",
     "002_drop_history_in_ssh_docker",
     "003_improved_history_timing",
-    "004_state_table"
+    "004_state_table",
+    "005_auth_table"
 ];
 
 #[derive(Debug)]
@@ -142,9 +148,9 @@ impl Db {
         Ok(())
     }
 
-    pub fn get_state_value(&self, key: impl AsRef<str>) -> Result<Option<serde_json::Value>> {
+    fn get_value<T: FromSql>(&self, table: &'static str, key: impl AsRef<str>) -> Result<Option<T>> {
         let conn = self.pool.get()?;
-        let mut stmt = conn.prepare("SELECT value FROM state WHERE key = ?1")?;
+        let mut stmt = conn.prepare(&format!("SELECT value FROM {table} WHERE key = ?1"))?;
         match stmt.query_row([key.as_ref()], |row| row.get(0)) {
             Ok(data) => Ok(Some(data)),
             Err(Error::QueryReturnedNoRows) => Ok(None),
@@ -152,26 +158,48 @@ impl Db {
         }
     }
 
+    pub fn get_state_value(&self, key: impl AsRef<str>) -> Result<Option<serde_json::Value>> {
+        self.get_value(STATE_TABLE_NAME, key)
+    }
+
+    pub fn get_auth_value(&self, key: impl AsRef<str>) -> Result<Option<String>> {
+        self.get_value(AUTH_TABLE_NAME, key)
+    }
+
+    fn set_value<T: ToSql>(&self, table: &'static str, key: impl AsRef<str>, value: T) -> Result<()> {
+        self.pool.get()?.execute(
+            &format!("INSERT OR REPLACE INTO {table} (key, value) VALUES (?1, ?2)"),
+            params![key.as_ref(), value],
+        )?;
+        Ok(())
+    }
+
     pub fn set_state_value(&self, key: impl AsRef<str>, value: impl Into<serde_json::Value>) -> Result<()> {
+        self.set_value(STATE_TABLE_NAME, key, value.into())
+    }
+
+    pub fn set_auth_value(&self, key: impl AsRef<str>, value: impl Into<String>) -> Result<()> {
+        self.set_value(AUTH_TABLE_NAME, key, value.into())
+    }
+
+    fn unset_value(&self, table: &'static str, key: impl AsRef<str>) -> Result<()> {
         self.pool
             .get()?
-            .execute("INSERT OR REPLACE INTO state (key, value) VALUES (?1, ?2)", params![
-                key.as_ref(),
-                value.into(),
-            ])?;
+            .execute(&format!("DELETE FROM {table} WHERE key = ?1"), [key.as_ref()])?;
         Ok(())
     }
 
     pub fn unset_state_value(&self, key: impl AsRef<str>) -> Result<()> {
-        self.pool
-            .get()?
-            .execute("DELETE FROM state WHERE key = ?1", [key.as_ref()])?;
-        Ok(())
+        self.unset_value(STATE_TABLE_NAME, key)
     }
 
-    pub fn is_state_value_set(&self, key: impl AsRef<str>) -> Result<bool> {
+    pub fn unset_auth_value(&self, key: impl AsRef<str>) -> Result<()> {
+        self.unset_value(AUTH_TABLE_NAME, key)
+    }
+
+    fn is_value_set(&self, table: &'static str, key: impl AsRef<str>) -> Result<bool> {
         let conn = self.pool.get()?;
-        let mut stmt = conn.prepare("SELECT value FROM state WHERE key = ?1")?;
+        let mut stmt = conn.prepare(&format!("SELECT value FROM {table} WHERE key = ?1"))?;
         match stmt.query_row([key.as_ref()], |_| Ok(())) {
             Ok(()) => Ok(true),
             Err(Error::QueryReturnedNoRows) => Ok(false),
@@ -179,9 +207,17 @@ impl Db {
         }
     }
 
-    pub fn all_state_values(&self) -> Result<Map<String, serde_json::Value>> {
+    pub fn is_state_value_set(&self, key: impl AsRef<str>) -> Result<bool> {
+        self.is_value_set(STATE_TABLE_NAME, key)
+    }
+
+    pub fn is_auth_value_set(&self, key: impl AsRef<str>) -> Result<bool> {
+        self.is_value_set(AUTH_TABLE_NAME, key)
+    }
+
+    fn all_values(&self, table: &'static str) -> Result<Map<String, serde_json::Value>> {
         let conn = self.pool.get()?;
-        let mut stmt = conn.prepare("SELECT key, value FROM state")?;
+        let mut stmt = conn.prepare(&format!("SELECT key, value FROM {table}"))?;
         let rows = stmt.query_map([], |row| {
             let key = row.get(0)?;
             let value = row.get(1)?;
@@ -195,6 +231,10 @@ impl Db {
         }
 
         Ok(map)
+    }
+
+    pub fn all_state_values(&self) -> Result<Map<String, serde_json::Value>> {
+        self.all_values(STATE_TABLE_NAME)
     }
 }
 
@@ -242,7 +282,7 @@ mod tests {
     }
 
     #[test]
-    fn json() {
+    fn state_table_tests() {
         let db = mock();
 
         // set
@@ -284,6 +324,20 @@ mod tests {
         assert!(!db.is_state_value_set("int").unwrap());
         assert!(db.is_state_value_set("float").unwrap());
         assert!(db.is_state_value_set("bool").unwrap());
+    }
+
+    #[test]
+    fn auth_table_tests() {
+        let db = mock();
+
+        db.set_auth_value("test", "test").unwrap();
+        assert_eq!(db.get_auth_value("test").unwrap().unwrap(), "test");
+        assert!(db.is_auth_value_set("test").unwrap());
+        db.unset_auth_value("test").unwrap();
+        assert!(!db.is_auth_value_set("test").unwrap());
+
+        assert_eq!(db.get_auth_value("test2").unwrap(), None);
+        assert!(!db.is_auth_value_set("test2").unwrap());
     }
 
     #[test]

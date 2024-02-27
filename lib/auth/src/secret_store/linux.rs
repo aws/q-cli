@@ -1,32 +1,27 @@
+use super::sqlite::SqliteSecretStore;
 use super::Secret;
-use crate::{
-    Error,
-    Result,
-};
+use crate::Result;
 
 pub struct SecretStoreImpl {
-    _private: (),
+    inner: SqliteSecretStore,
 }
 
 impl SecretStoreImpl {
     pub async fn new() -> Result<Self> {
-        Ok(Self { _private: () })
+        Ok(Self {
+            inner: SqliteSecretStore::new().await?,
+        })
     }
 
-    /// Sets the `key` to `password` on the keychain, this will override any existing value
-    pub async fn set(key: &str, password: &str) -> Result<()> {
-        todo!()
+    pub async fn set(&self, key: &str, password: &str) -> Result<()> {
+        self.inner.set(key, password).await
     }
 
-    /// Returns the password for the `key`
-    ///
-    /// If not found the result will be `Ok(None)`, other errors will be returned
-    pub async fn get(key: &str) -> Result<Option<Secret>> {
-        todo!()
+    pub async fn get(&self, key: &str) -> Result<Option<Secret>> {
+        self.inner.get(key).await
     }
 
-    /// Deletes the `key` from the keychain
-    pub async fn delete(key: &str) -> Result<()> {
-        todo!()
+    pub async fn delete(&self, key: &str) -> Result<()> {
+        self.inner.delete(key).await
     }
 }

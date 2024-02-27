@@ -586,6 +586,7 @@ dependencies = [
  "aws-smithy-async",
  "aws-smithy-runtime-api",
  "aws-types",
+ "fig_settings",
  "fig_util",
  "insta",
  "once_cell",
