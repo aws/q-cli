@@ -1,5 +1,6 @@
 use std::io::Result;
 use std::path::PathBuf;
+use std::process::Command;
 
 enum Version {
     V1([u32; 3]),
@@ -27,6 +28,49 @@ fn protoc_version() -> Option<Version> {
     }
 }
 
+fn download_protoc() {
+    let protoc_version = "25.3";
+
+    let tmp_folder = tempfile::tempdir().unwrap();
+
+    let os = match std::env::consts::OS {
+        "linux" => "linux",
+        "macos" => "osx",
+        os => panic!("Unsupported os: {os}"),
+    };
+
+    let arch = match std::env::consts::ARCH {
+        "x86_64" => "x86_64",
+        "aarch64" => "aarch_64",
+        arch => panic!("Unsupported arch: {arch}"),
+    };
+
+    let mut download_command = Command::new("curl");
+    download_command
+        .arg("-Lf")
+        .arg(format!(
+            "https://github.com/protocolbuffers/protobuf/releases/download/v{protoc_version}/protoc-{protoc_version}-{os}-{arch}.zip"
+        ))
+        .arg("-o")
+        .arg(tmp_folder.path().join("protoc.zip"));
+    assert!(download_command.spawn().unwrap().wait().unwrap().success());
+
+    let mut unzip_comamnd = Command::new("unzip");
+    unzip_comamnd
+        .arg("-o")
+        .arg(tmp_folder.path().join("protoc.zip"))
+        .current_dir(tmp_folder.path());
+    assert!(unzip_comamnd.spawn().unwrap().wait().unwrap().success());
+
+    let out_bin = PathBuf::from(std::env::var("OUT_DIR").unwrap()).join("protoc");
+
+    let mut mv = Command::new("mv");
+    mv.arg(tmp_folder.path().join("bin/protoc")).arg(&out_bin);
+    assert!(mv.spawn().unwrap().wait().unwrap().success());
+
+    std::env::set_var("PROTOC", out_bin);
+}
+
 fn main() -> Result<()> {
     let proto_files = std::fs::read_dir("../../proto")?
         .filter_map(|entry| entry.ok())
@@ -42,15 +86,10 @@ fn main() -> Result<()> {
     // --experimental_allow_proto3_optional is supported only on version of protoc >= 3.12
     // if the version of the system protoc is too old, we must panic
     match protoc_version() {
-        Some(Version::V1(version @ ([0..=2, _, _] | [3, 0..=11, _]))) => {
-            let version_str = version.iter().map(|v| v.to_string()).collect::<Vec<_>>().join(".");
-            panic!("protoc version {version_str} is too old, please install version 3.12 or newer",)
-        },
-
-        Some(Version::V2(_)) => {},
-        None => panic!("protoc not found"),
-        _ => (),
-    }
+        Some(Version::V1([0..=2, _, _] | [3, 0..=11, _])) => download_protoc(),
+        Some(Version::V1(_) | Version::V2(_)) => {},
+        None => download_protoc(),
+    };
 
     let mut config = prost_build::Config::new();
 

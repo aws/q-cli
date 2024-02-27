@@ -326,16 +326,8 @@ fn raw_system_id() -> Result<String, Error> {
 #[cfg(target_os = "linux")]
 fn raw_system_id() -> Result<String, Error> {
     for path in ["/var/lib/dbus/machine-id", "/etc/machine-id"] {
-        use std::io::Read;
-
         if std::path::Path::new(path).exists() {
-            let content = {
-                let mut file = std::fs::File::open(path)?;
-                let mut content = String::new();
-                file.read_to_string(&mut content)?;
-                content
-            };
-            return Ok(content);
+            return Ok(std::fs::read_to_string(path)?);
         }
     }
     Err(Error::HwidNotFound)

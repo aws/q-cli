@@ -1,6 +1,4 @@
 use anyhow::Result;
-use fig_util::directories;
-use tracing::trace;
 
 pub fn cleanup() -> Result<()> {
     // TODO: renable with ssh

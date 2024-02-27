@@ -1694,7 +1694,6 @@ impl DoctorCheck for IBusCheck {
         use sysinfo::{
             ProcessRefreshKind,
             RefreshKind,
-            SystemExt,
         };
 
         let system = sysinfo::System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));

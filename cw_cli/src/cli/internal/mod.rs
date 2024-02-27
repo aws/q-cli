@@ -2,7 +2,6 @@ pub mod local_state;
 pub mod should_cwterm_launch;
 use std::fmt::Display;
 use std::io::{
-    stderr,
     stdout,
     Read,
     Write,
@@ -727,6 +726,7 @@ impl InternalSubcommand {
             },
             #[cfg(target_os = "macos")]
             InternalSubcommand::SwapFiles { from, to } => {
+                use std::io::stderr;
                 use std::os::unix::prelude::OsStrExt;
 
                 let from_cstr = match std::ffi::CString::new(from.as_os_str().as_bytes()).context("Invalid from path") {
