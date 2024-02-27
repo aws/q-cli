@@ -30,6 +30,7 @@ fn protoc_version() -> Option<Version> {
 
 fn download_protoc() {
     let protoc_version = "25.3";
+    let checksum = "f853e691868d0557425ea290bf7ba6384eef2fa9b04c323afab49a770ba9da80";
 
     let tmp_folder = tempfile::tempdir().unwrap();
 
@@ -55,6 +56,14 @@ fn download_protoc() {
         .arg(tmp_folder.path().join("protoc.zip"));
     assert!(download_command.spawn().unwrap().wait().unwrap().success());
 
+    let mut checksum_command = Command::new("sha256sum");
+    checksum_command.arg(tmp_folder.path().join("protoc.zip"));
+    let checksum_output = checksum_command.output().unwrap();
+    let checksum_output = String::from_utf8(checksum_output.stdout).unwrap();
+
+    eprintln!("checksum: {checksum_output:?}");
+    assert!(checksum_output.starts_with(checksum));
+
     let mut unzip_comamnd = Command::new("unzip");
     unzip_comamnd
         .arg("-o")
@@ -67,11 +76,13 @@ fn download_protoc() {
     let mut mv = Command::new("mv");
     mv.arg(tmp_folder.path().join("bin/protoc")).arg(&out_bin);
     assert!(mv.spawn().unwrap().wait().unwrap().success());
-
+    
     std::env::set_var("PROTOC", out_bin);
 }
 
 fn main() -> Result<()> {
+    println!("cargo:rerun-if-changed=build.rs");
+
     let proto_files = std::fs::read_dir("../../proto")?
         .filter_map(|entry| entry.ok())
         .filter(|entry| entry.file_type().is_ok_and(|t| t.is_file()))

@@ -28,4 +28,4 @@ nix = "0.27.1"
 [build-dependencies]
 prost-build = "0.12.1"
 prost-reflect-build = "0.13.0"
-tempfile = "3.10.1"
+tempfile = "3.9.0"

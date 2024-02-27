@@ -15,27 +15,27 @@ export CARGO_BRAZIL_ALLOW_NONSTANDARD_NAME=1
 # Kill the server that's running in the background when this process exits.
 #
 # https://code.amazon.com/packages/NpmPrettyMuch/blobs/mainline-1.1/--/advanced-readme.md#
-npm_registry() {
-    eval_me="$(npm-pretty-much-registry)"
-    eval "$eval_me"
-
-    if ! [ "$(command -v pnpm)" ]; then
-        PNPM_VERSION="$(sed -n '/"packageManager"/p' package.json | sed 's/^.*"\(.*\)".*$/\1/')"
-
-        # This line HAS to be invoked after the registry proxy starts in order to use CodeArtifact
-        # as the source repository for nodejs packages.
-        #
-        # Anyway, even if you tried to use npm, it won't work because Builder (build.amazon.com)
-        # doesn't have internet access so it can't reach the npm registry (registry.npmjs.org).
-        npm install -g "$PNPM_VERSION"
-    fi
-
-    # Now tell `pnpm` to use this registry
-    # https://code.amazon.com/packages/NpmPrettyMuch/blobs/mainline/--/src/bin/npm-pretty-much-registry.ts
-    # https://bytesafe.dev/posts/pnpm-package-manager/
-    pnpm config set npmRegistryServer "$NPM_CONFIG_REGISTRY"
-    trap 'kill $NPM_PRETTY_MUCH_REGISTRY_PID' EXIT
-}
+# npm_registry() {
+#     eval_me="$(npm-pretty-much-registry)"
+#     eval "$eval_me"
+#
+#     if ! [ "$(command -v pnpm)" ]; then
+#         PNPM_VERSION="$(sed -n '/"packageManager"/p' package.json | sed 's/^.*"\(.*\)".*$/\1/')"
+#
+#         # This line HAS to be invoked after the registry proxy starts in order to use CodeArtifact
+#         # as the source repository for nodejs packages.
+#         #
+#         # Anyway, even if you tried to use npm, it won't work because Builder (build.amazon.com)
+#         # doesn't have internet access so it can't reach the npm registry (registry.npmjs.org).
+#         npm install -g "$PNPM_VERSION"
+#     fi
+#
+#     # Now tell `pnpm` to use this registry
+#     # https://code.amazon.com/packages/NpmPrettyMuch/blobs/mainline/--/src/bin/npm-pretty-much-registry.ts
+#     # https://bytesafe.dev/posts/pnpm-package-manager/
+#     pnpm config set npmRegistryServer "$NPM_CONFIG_REGISTRY"
+#     trap 'kill $NPM_PRETTY_MUCH_REGISTRY_PID' EXIT
+# }
 
 # Ensure that development on macOS works
 PATH="$(path-allowing-local-dev)"
@@ -50,11 +50,11 @@ if [[ $# -gt 0 ]] && [[ "$1" = clean ]]; then
 fi
 
 # Interact directly with pnpm with the proxy
-if [[ $# -gt 0 ]] && [[ "$1" = pnpm ]]; then
-    npm_registry
-    pnpm "${@:2}"
-    exit 0
-fi
+# if [[ $# -gt 0 ]] && [[ "$1" = pnpm ]]; then
+#     npm_registry
+#     pnpm "${@:2}"
+#     exit 0
+# fi
 
 cargo brazil configure
 cargo brazil fetch
@@ -65,11 +65,12 @@ PACKAGE_DIR=$(brazil-path package-src-root)
 echo "BUILD_DIR: $BUILD_DIR"
 echo "PACKAGE_DIR: $PACKAGE_DIR"
 
-npm_registry
+# npm_registry
 
 # Fast-path for IDE integration
 if [[ $# -gt 0 ]] && [[ "$1" = sync* ]]; then
     exit 0
 fi
 
-python3.11 build-scripts/build.py
+# python3.11 build-scripts/build.py
+cargo clippy --workspace --locked --exclude fig_desktop -- -D warnings
