@@ -14,11 +14,7 @@ use std::time::Duration;
 use cfg_if::cfg_if;
 use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;
-use dialoguer::{
-    Confirm,
-    FuzzySelect,
-    Select,
-};
+use dialoguer::Select;
 use eyre::{
     bail,
     ContextCompat,
@@ -249,30 +245,6 @@ pub fn match_regex(regex: impl AsRef<str>, input: impl AsRef<str>) -> Option<Str
 
 static IS_TTY: Lazy<bool> = Lazy::new(|| std::env::var("TTY").is_ok());
 
-pub fn choose_fuzzy(prompt: &str, options: &[impl ToString]) -> Result<usize> {
-    tokio::spawn(async {
-        tokio::signal::ctrl_c().await.unwrap();
-        crossterm::execute!(stdout(), crossterm::cursor::Show).unwrap();
-        std::process::exit(0);
-    });
-
-    if options.is_empty() {
-        bail!("no options passed to choose")
-    }
-
-    if !*IS_TTY {
-        warn!("choose called without TTY, choosing first option");
-        return Ok(0);
-    }
-
-    FuzzySelect::with_theme(&dialoguer_theme())
-        .items(options)
-        .default(0)
-        .with_prompt(prompt)
-        .interact_opt()?
-        .ok_or_else(|| eyre::eyre!("Cancelled"))
-}
-
 pub fn choose(prompt: impl Display, options: &[impl ToString]) -> Result<usize> {
     tokio::spawn(async {
         tokio::signal::ctrl_c().await.unwrap();
@@ -295,31 +267,6 @@ pub fn choose(prompt: impl Display, options: &[impl ToString]) -> Result<usize> 
         .with_prompt(prompt.to_string())
         .interact_opt()?
         .ok_or_else(|| eyre::eyre!("Cancelled"))
-}
-
-pub fn confirm(prompt: &str) -> Result<()> {
-    tokio::spawn(async {
-        tokio::signal::ctrl_c().await.unwrap();
-        crossterm::execute!(stdout(), crossterm::cursor::Show).unwrap();
-        std::process::exit(0);
-    });
-
-    if !*IS_TTY {
-        warn!("called confirm without a tty");
-        return Ok(());
-    }
-
-    if !Confirm::with_theme(&dialoguer_theme())
-        .with_prompt(prompt)
-        .default(true)
-        .show_default(false)
-        .interact_opt()?
-        .unwrap_or_default()
-    {
-        bail!("User canceled");
-    }
-
-    Ok(())
 }
 
 pub fn input(prompt: &str) -> Result<String> {

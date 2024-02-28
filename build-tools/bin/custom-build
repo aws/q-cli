@@ -74,3 +74,4 @@ fi
 
 # python3.11 build-scripts/build.py
 cargo clippy --workspace --locked --exclude fig_desktop -- -D warnings
+cargo test --workspace --locked --exclude fig_desktop

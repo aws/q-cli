@@ -40,6 +40,11 @@ macro_rules! init_test {
                     return Ok(());
                 }
 
+                // Ignore all fish in brazil
+                if $exe == "fish" && std::env::var_os("BRAZIL_BUILD_HOME").is_some() {
+                    return Ok(());
+                }
+
                 let init = [<init_output_ $shell _ $stage _ $file>]()?;
 
                 let mut cmd = Command::new($exe);

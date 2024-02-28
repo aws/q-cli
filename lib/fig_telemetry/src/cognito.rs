@@ -143,6 +143,10 @@ mod test {
 
     #[tokio::test]
     async fn pools() {
+        if std::env::var("BRAZIL_BUILD_HOME").is_ok() {
+            return;
+        }
+
         for telemetry_stage in [
             TelemetryStage::BETA,
             TelemetryStage::INTERNAL_PROD,

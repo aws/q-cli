@@ -377,9 +377,18 @@ pub async fn send_fig_user_migrated() {
 mod test {
     use super::*;
 
+    /// Ignore if in brazil due to no networking
+    fn is_brazil_build() -> bool {
+        std::env::var("BRAZIL_BUILD_HOME").is_ok()
+    }
+
     #[tracing_test::traced_test]
     #[tokio::test]
     async fn test_send() {
+        if is_brazil_build() {
+            return;
+        }
+
         let (shell, shell_version) = Shell::current_shell_version()
             .await
             .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
@@ -416,6 +425,10 @@ mod test {
     #[tracing_test::traced_test]
     #[tokio::test]
     async fn test_all_telemetry() {
+        if is_brazil_build() {
+            return;
+        }
+
         send_user_logged_in().await;
         send_completion_inserted("cw".to_owned(), None, None).await;
         send_ghost_text_actioned(true, 1, 2).await;

@@ -17,6 +17,7 @@ package.FigIoDesktop = {
             BrazilPath = 1.1;
             CPython311 = default;
             GoogleProtoBuf = 3.21.x;
+            Shellcheck = 0.x;
         };
     };
 };
