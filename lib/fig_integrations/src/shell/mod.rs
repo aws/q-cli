@@ -26,8 +26,12 @@ use crate::{
     Integration,
 };
 
-pub mod ghost_text_plugin {
-    pub const ZSH_SCRIPT: &str = concat!("\n", include_str!(concat!(env!("OUT_DIR"), "/ghost_text.zsh")), "\n");
+pub mod inline_shell_completion_plugin {
+    pub const ZSH_SCRIPT: &str = concat!(
+        "\n",
+        include_str!(concat!(env!("OUT_DIR"), "/inline_shell_completion.zsh")),
+        "\n"
+    );
 
     #[cfg(test)]
     mod tests {
@@ -38,8 +42,8 @@ pub mod ghost_text_plugin {
             // Ensure script has license
             assert!(ZSH_SCRIPT.contains("Copyright"));
 
-            // Ensure script has _cw_autosuggest_strategy_ghost_text()
-            assert!(ZSH_SCRIPT.contains("_cw_autosuggest_strategy_ghost_text()"));
+            // Ensure script has _cw_autosuggest_strategy_inline_shell_completion()
+            assert!(ZSH_SCRIPT.contains("_cw_autosuggest_strategy_inline_shell_completion()"));
 
             // Ensure script adds precmd hook
             assert!(ZSH_SCRIPT.contains("add-zsh-hook precmd _cw_autosuggest_start"));

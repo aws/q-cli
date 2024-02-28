@@ -233,14 +233,14 @@ pub async fn send_completion_inserted(command: String, terminal: Option<String>,
         .await;
 }
 
-pub async fn send_ghost_text_actioned(accepted: bool, edit_buffer_len: usize, suggested_chars_len: usize) {
+pub async fn send_inline_shell_completion_actioned(accepted: bool, edit_buffer_len: usize, suggested_chars_len: usize) {
     let (shell, shell_version) = Shell::current_shell_version()
         .await
         .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
         .unwrap_or((None, None));
 
     CLIENT
-        .post_metric(metrics::CodewhispererterminalGhostTextActioned {
+        .post_metric(metrics::CodewhispererterminalInlineShellActioned {
             create_time: None,
             value: None,
             codewhispererterminal_duration: None,
@@ -431,7 +431,7 @@ mod test {
 
         send_user_logged_in().await;
         send_completion_inserted("cw".to_owned(), None, None).await;
-        send_ghost_text_actioned(true, 1, 2).await;
+        send_inline_shell_completion_actioned(true, 1, 2).await;
         send_translation_actioned(true).await;
         send_cli_subcommand_executed("doctor").await;
         send_doctor_check_failed("").await;

@@ -64,19 +64,19 @@ fn download_protoc() {
     eprintln!("checksum: {checksum_output:?}");
     assert!(checksum_output.starts_with(checksum));
 
-    let mut unzip_comamnd = Command::new("unzip");
-    unzip_comamnd
+    let mut unzip_command = Command::new("unzip");
+    unzip_command
         .arg("-o")
         .arg(tmp_folder.path().join("protoc.zip"))
         .current_dir(tmp_folder.path());
-    assert!(unzip_comamnd.spawn().unwrap().wait().unwrap().success());
+    assert!(unzip_command.spawn().unwrap().wait().unwrap().success());
 
     let out_bin = PathBuf::from(std::env::var("OUT_DIR").unwrap()).join("protoc");
 
     let mut mv = Command::new("mv");
     mv.arg(tmp_folder.path().join("bin/protoc")).arg(&out_bin);
     assert!(mv.spawn().unwrap().wait().unwrap().success());
-    
+
     std::env::set_var("PROTOC", out_bin);
 }
 

@@ -166,7 +166,7 @@ const NAV_DATA = [
   },
   // {
   //   type: "link",
-  //   name: "GhostText",
+  //   name: "InlineShell",
   //   link: "/predict",
   // },
   {

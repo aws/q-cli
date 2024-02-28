@@ -431,50 +431,61 @@ mod test {
     }
 
     #[test]
-    fn test_ghost_text() {
+    fn test_inline_shell_completion() {
         use internal::InternalSubcommand;
 
         assert_eq!(
-            Cli::parse_from(["cw", "_", "ghost-text", "--buffer", ""]).subcommand,
-            Some(CliRootCommands::Internal(InternalSubcommand::GhostText {
+            Cli::parse_from(["cw", "_", "inline-shell-completion", "--buffer", ""]).subcommand,
+            Some(CliRootCommands::Internal(InternalSubcommand::InlineShellCompletion {
                 buffer: "".to_string()
             }))
         );
 
         assert_eq!(
-            Cli::parse_from(["cw", "_", "ghost-text", "--buffer", "foo"]).subcommand,
-            Some(CliRootCommands::Internal(InternalSubcommand::GhostText {
+            Cli::parse_from(["cw", "_", "inline-shell-completion", "--buffer", "foo"]).subcommand,
+            Some(CliRootCommands::Internal(InternalSubcommand::InlineShellCompletion {
                 buffer: "foo".to_string()
             }))
         );
 
         assert_eq!(
-            Cli::parse_from(["cw", "_", "ghost-text", "--buffer", "-"]).subcommand,
-            Some(CliRootCommands::Internal(InternalSubcommand::GhostText {
+            Cli::parse_from(["cw", "_", "inline-shell-completion", "--buffer", "-"]).subcommand,
+            Some(CliRootCommands::Internal(InternalSubcommand::InlineShellCompletion {
                 buffer: "-".to_string()
             }))
         );
 
         assert_eq!(
-            Cli::parse_from(["cw", "_", "ghost-text", "--buffer", "--"]).subcommand,
-            Some(CliRootCommands::Internal(InternalSubcommand::GhostText {
+            Cli::parse_from(["cw", "_", "inline-shell-completion", "--buffer", "--"]).subcommand,
+            Some(CliRootCommands::Internal(InternalSubcommand::InlineShellCompletion {
                 buffer: "--".to_string()
             }))
         );
 
         assert_eq!(
-            Cli::parse_from(["cw", "_", "ghost-text", "--buffer", "--foo bar"]).subcommand,
-            Some(CliRootCommands::Internal(InternalSubcommand::GhostText {
+            Cli::parse_from(["cw", "_", "inline-shell-completion", "--buffer", "--foo bar"]).subcommand,
+            Some(CliRootCommands::Internal(InternalSubcommand::InlineShellCompletion {
                 buffer: "--foo bar".to_string()
             }))
         );
 
         assert_eq!(
-            Cli::parse_from(["cw", "_", "ghost-text-accept", "--buffer", "abc", "--suggestion", "def"]).subcommand,
-            Some(CliRootCommands::Internal(InternalSubcommand::GhostTextAccept {
-                buffer: "abc".to_string(),
-                suggestion: "def".to_string()
-            }))
+            Cli::parse_from([
+                "cw",
+                "_",
+                "inline-shell-completion-accept",
+                "--buffer",
+                "abc",
+                "--suggestion",
+                "def"
+            ])
+            .subcommand,
+            Some(CliRootCommands::Internal(
+                InternalSubcommand::InlineShellCompletionAccept {
+                    buffer: "abc".to_string(),
+                    suggestion: "def".to_string()
+                }
+            ))
         );
     }
 }

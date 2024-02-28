@@ -46,7 +46,7 @@ use crate::history::HistorySender;
 use crate::interceptor::KeyInterceptor;
 use crate::pty::AsyncMasterPty;
 use crate::{
-    ghost_text,
+    inline_shell_completion,
     shell_state_to_context,
     MainLoopEvent,
     EXPECTED_BUFFER,
@@ -303,7 +303,7 @@ pub async fn process_figterm_request(
                 .ok();
             Ok(None)
         },
-        FigtermRequest::GhostTextComplete(_) => anyhow::bail!("GhostTextComplete is not supported over remote"),
+        FigtermRequest::InlineShellCompletion(_) => anyhow::bail!("InlineShellCompletion is not supported over remote"),
     }
 }
 
@@ -320,11 +320,11 @@ pub async fn process_figterm_message(
     session_id: &str,
 ) -> Result<()> {
     match figterm_request_message.request {
-        Some(FigtermRequest::GhostTextComplete(request)) => {
+        Some(FigtermRequest::InlineShellCompletion(request)) => {
             let history_sender = history_sender.clone();
             let session_id = session_id.to_owned();
 
-            tokio::spawn(ghost_text::handle_request(
+            tokio::spawn(inline_shell_completion::handle_request(
                 request,
                 session_id,
                 response_tx,
@@ -363,7 +363,7 @@ async fn send_figterm_response_hostbound(
                 nonce,
                 response: Some(match response {
                     FigtermResponse::Diagnostics(diagnostics) => Response::Diagnostics(diagnostics),
-                    FigtermResponse::GhostTextComplete(_ghost_text_complete) => unreachable!(),
+                    FigtermResponse::InlineShellCompletion(_inline_shell_completion_complete) => unreachable!(),
                 }),
             })),
         };

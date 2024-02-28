@@ -98,8 +98,8 @@
       ]
     },
     {
-      "name": "codewhispererterminal_ghostTextActioned",
-      "description": "Emitted on GhostText user decisions",
+      "name": "codewhispererterminal_inlineShellActioned",
+      "description": "Emitted on InlineShell user decisions",
       "passive": false,
       "metadata": [
         { "type": "credentialStartUrl" },

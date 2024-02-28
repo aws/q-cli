@@ -17,7 +17,7 @@ typeset -g CW_AUTOSUGGEST_ORIGINAL_WIDGET_PREFIX=autosuggest-orig-
 # Will try each strategy in order until a suggestion is returned
 (( ! ${+CW_AUTOSUGGEST_STRATEGY} )) && {
 	typeset -ga CW_AUTOSUGGEST_STRATEGY
-	CW_AUTOSUGGEST_STRATEGY=(ghost_text)
+	CW_AUTOSUGGEST_STRATEGY=(inline_shell_completion)
 }
 
 # Widgets that clear the suggestion

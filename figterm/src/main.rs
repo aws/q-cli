@@ -2,8 +2,8 @@
 mod cleanup;
 pub mod cli;
 mod event_handler;
-pub mod ghost_text;
 pub mod history;
+pub mod inline_shell_completion;
 pub mod input;
 pub mod interceptor;
 pub mod ipc;

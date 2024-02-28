@@ -13,7 +13,7 @@ message FigtermRequestMessage {
     InsertOnNewCmdRequest insert_on_new_cmd = 5;
     UpdateShellContextRequest update_shell_context = 6;
     NotifySSHSessionStartedRequest notify_ssh_session_started = 7;
-    GhostTextCompleteRequest ghost_text_complete = 8;
+    InlineShellCompletionRequest inline_shell_completion = 8;
   }
 }
 
@@ -21,7 +21,7 @@ message FigtermRequestMessage {
 message FigtermResponseMessage {
   oneof response {
     DiagnosticsResponse diagnostics = 1;
-    GhostTextCompleteResponse ghost_text_complete = 2;
+    InlineShellCompletionResponse inline_shell_completion = 2;
   }
 }
 
@@ -150,12 +150,12 @@ message NotifySSHSessionStartedRequest {
   string remote_host = 2;
 }
 
-message GhostTextCompleteRequest {
+message InlineShellCompletionRequest {
   // The text to complete
   string buffer = 1;
 }
 
-message GhostTextCompleteResponse {
+message InlineShellCompletionResponse {
   // The text to insert
   optional string insert_text = 1;
 }

@@ -1,18 +1,18 @@
-const ghostTextSettings = [
+const inlineShellCompletionSettings = [
   {
     title: "Settings",
     properties: [],
   },
 ];
 
-export default ghostTextSettings;
+export default inlineShellCompletionSettings;
 
 export const intro = {
-  title: "GhostText",
+  title: "Inline shell completions",
   description: "AI-generated command suggestions.",
   link: "https://aws.amazon.com/codewhisperer/",
   enable: {
-    flag: "ghost-text.enabled",
+    flag: "inline-shell-completion.enabled",
     inverted: false,
     default: false,
   },

@@ -11,8 +11,8 @@ use fig_api_client::ai::{
 use fig_proto::figterm::figterm_response_message::Response as FigtermResponse;
 use fig_proto::figterm::{
     FigtermResponseMessage,
-    GhostTextCompleteRequest,
-    GhostTextCompleteResponse,
+    InlineShellCompletionRequest,
+    InlineShellCompletionResponse,
 };
 use flume::Sender;
 use once_cell::sync::Lazy;
@@ -32,12 +32,12 @@ use crate::history::{
 
 static LAST_RECEIVED: Lazy<Mutex<Option<SystemTime>>> = Lazy::new(|| Mutex::new(None));
 
-static CACHE_ENABLED: Lazy<bool> = Lazy::new(|| std::env::var_os("CW_GHOST_TEXT_CACHE_DISABLE").is_none());
+static CACHE_ENABLED: Lazy<bool> = Lazy::new(|| std::env::var_os("CW_INLINE_SHELL_COMPLETION_CACHE_DISABLE").is_none());
 pub static COMPLETION_CACHE: Lazy<Mutex<radix_trie::Trie<String, f64>>> =
     Lazy::new(|| Mutex::new(radix_trie::Trie::new()));
 
 pub async fn handle_request(
-    figterm_request: GhostTextCompleteRequest,
+    figterm_request: InlineShellCompletionRequest,
     _session_id: String,
     response_tx: Sender<FigtermResponseMessage>,
     history_sender: HistorySender,
@@ -59,13 +59,13 @@ pub async fn handle_request(
 
                 if let Err(err) = response_tx
                     .send_async(FigtermResponseMessage {
-                        response: Some(FigtermResponse::GhostTextComplete(GhostTextCompleteResponse {
+                        response: Some(FigtermResponse::InlineShellCompletion(InlineShellCompletionResponse {
                             insert_text: Some(trimmed_insert.to_owned()),
                         })),
                     })
                     .await
                 {
-                    error!(%err, "Failed to send ghost_text completion");
+                    error!(%err, "Failed to send inline_shell_completion completion");
                 }
                 return;
             }
@@ -74,7 +74,7 @@ pub async fn handle_request(
 
     // debounce requests
     let debounce_duration = Duration::from_millis(
-        std::env::var("CW_GHOST_TEXT_DEBOUNCE_MS")
+        std::env::var("CW_INLINE_SHELL_COMPLETION_DEBOUNCE_MS")
             .ok()
             .and_then(|s| s.parse().ok())
             .unwrap_or(300),
@@ -89,28 +89,28 @@ pub async fn handle_request(
             // TODO: determine behavior here, None or Some(unix timestamp)
             *LAST_RECEIVED.lock().await = Some(SystemTime::now());
         } else {
-            warn!("Received another ghost_text completion request, aborting");
+            warn!("Received another inline_shell_completion completion request, aborting");
             if let Err(err) = response_tx
                 .send_async(FigtermResponseMessage {
-                    response: Some(FigtermResponse::GhostTextComplete(GhostTextCompleteResponse {
+                    response: Some(FigtermResponse::InlineShellCompletion(InlineShellCompletionResponse {
                         insert_text: None,
                     })),
                 })
                 .await
             {
-                error!(%err, "Failed to send ghost_text completion");
+                error!(%err, "Failed to send inline_shell_completion completion");
             }
 
             return;
         }
 
-        info!("Sending ghost_text completion request");
+        info!("Sending inline_shell_completion completion request");
 
         let (history_query_tx, history_query_rx) = flume::bounded(1);
         if let Err(err) = history_sender
             .send_async(history::HistoryCommand::Query(
                 HistoryQueryParams {
-                    limit: std::env::var("CW_GHOST_TEXT_HISTORY_COUNT")
+                    limit: std::env::var("CW_INLINE_SHELL_COMPLETION_HISTORY_COUNT")
                         .ok()
                         .and_then(|s| s.parse().ok())
                         .unwrap_or(25),
@@ -183,16 +183,16 @@ pub async fn handle_request(
                     .map(|choice| choice.content.trim_end().to_owned())
             },
             Err(err) => {
-                error!(%err, "Failed to get ghost_text completion");
+                error!(%err, "Failed to get inline_shell_completion completion");
                 None
             },
         };
 
-        info!(?insert_text, "Got ghost_text completion");
+        info!(?insert_text, "Got inline_shell_completion completion");
 
         match response_tx
             .send_async(FigtermResponseMessage {
-                response: Some(FigtermResponse::GhostTextComplete(GhostTextCompleteResponse {
+                response: Some(FigtermResponse::InlineShellCompletion(InlineShellCompletionResponse {
                     insert_text,
                 })),
             })
@@ -203,7 +203,7 @@ pub async fn handle_request(
                 // This means the user typed something else before we got a response
                 // We want to bump the debounce timer
 
-                error!(%err, "Failed to send ghost_text completion");
+                error!(%err, "Failed to send inline_shell_completion completion");
             },
         }
 

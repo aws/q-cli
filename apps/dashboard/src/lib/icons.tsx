@@ -12,7 +12,7 @@ export function getIconFromName(name: string, size?: number) {
       return <Icon.Autocomplete size={size} />;
     case "predict":
     case "ghosttext":
-      return <Icon.GhostText size={size} />;
+      return <Icon.InlineShell size={size} />;
     case "translate":
     case "translation":
       return <Icon.Prompt size={size} />;

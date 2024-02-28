@@ -302,11 +302,11 @@ pub enum InternalSubcommand {
     GenerateSSH {
         remote_username: String,
     },
-    GhostText {
+    InlineShellCompletion {
         #[arg(long, allow_hyphen_values = true)]
         buffer: String,
     },
-    GhostTextAccept {
+    InlineShellCompletionAccept {
         #[arg(long, allow_hyphen_values = true)]
         buffer: String,
         #[arg(long, allow_hyphen_values = true)]
@@ -815,7 +815,7 @@ impl InternalSubcommand {
                 //     writeln!(stdout(), "cleared inner config").ok();
                 // }
             },
-            InternalSubcommand::GhostText { buffer } => {
+            InternalSubcommand::InlineShellCompletion { buffer } => {
                 let Ok(session_id) = std::env::var("CWTERM_SESSION_ID") else {
                     exit(1);
                 };
@@ -828,17 +828,19 @@ impl InternalSubcommand {
 
                 let Ok(Some(FigtermResponseMessage {
                     response:
-                        Some(fig_proto::figterm::figterm_response_message::Response::GhostTextComplete(
-                            fig_proto::figterm::GhostTextCompleteResponse {
+                        Some(fig_proto::figterm::figterm_response_message::Response::InlineShellCompletion(
+                            fig_proto::figterm::InlineShellCompletionResponse {
                                 insert_text: Some(insert_text),
                             },
                         )),
                 })) = conn
                     .send_recv_message_timeout(
                         fig_proto::figterm::FigtermRequestMessage {
-                            request: Some(fig_proto::figterm::figterm_request_message::Request::GhostTextComplete(
-                                fig_proto::figterm::GhostTextCompleteRequest { buffer: buffer.clone() },
-                            )),
+                            request: Some(
+                                fig_proto::figterm::figterm_request_message::Request::InlineShellCompletion(
+                                    fig_proto::figterm::InlineShellCompletionRequest { buffer: buffer.clone() },
+                                ),
+                            ),
                         },
                         Duration::from_secs(5),
                     )
@@ -849,8 +851,8 @@ impl InternalSubcommand {
 
                 writeln!(stdout(), "{buffer}{insert_text}").ok();
             },
-            InternalSubcommand::GhostTextAccept { buffer, suggestion } => {
-                fig_telemetry::send_ghost_text_actioned(true, buffer.len(), suggestion.len()).await;
+            InternalSubcommand::InlineShellCompletionAccept { buffer, suggestion } => {
+                fig_telemetry::send_inline_shell_completion_actioned(true, buffer.len(), suggestion.len()).await;
             },
         }
 

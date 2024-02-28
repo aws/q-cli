@@ -39,7 +39,7 @@ pub struct InitArgs {
 impl InitArgs {
     pub async fn execute(&self) -> Result<()> {
         let InitArgs { shell, when, rcfile } = self;
-        match shell_init(shell, when, rcfile) {
+        match shell_init(shell, when, rcfile).await {
             Ok(source) => writeln!(stdout(), "{source}"),
             Err(err) => writeln!(stdout(), "# Could not load source: {err}"),
         }
@@ -107,7 +107,7 @@ fn guard_source(
     output.join("\n")
 }
 
-fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<String> {
+async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<String> {
     // Do not print any shell integrations for `.profile` as it can cause issues on launch
     if std::env::consts::OS == "linux" && matches!(rcfile.as_deref(), Some("profile")) {
         return Ok("".into());
@@ -147,6 +147,12 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<Str
         to_source.push(assign_shell_variable(shell, "SHOULD_CWTERM_LAUNCH", status, false));
     }
 
+    let is_amzn_user = auth::builder_id_token()
+        .await
+        .ok()
+        .flatten()
+        .map_or(false, |t| t.is_amzn_user());
+
     if let When::Post = when {
         if !matches!(
             (shell, rcfile.as_deref()),
@@ -154,7 +160,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<Str
         ) && fig_settings::state::get_bool_or("dotfiles.enabled", true)
             && shell == &Shell::Zsh
             && when == &When::Post
-            && fig_settings::settings::get_bool_or("ghost-text.enabled", false)
+            && fig_settings::settings::get_bool_or("inline-shell-completion.enabled", is_amzn_user)
             && !*IS_SNAPSHOT_TEST
         {
             to_source.push(guard_source(
@@ -162,7 +168,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<Str
                 false,
                 "CW_DOTFILES_SOURCED",
                 GuardAssignment::AfterSourcing,
-                fig_integrations::shell::ghost_text_plugin::ZSH_SCRIPT,
+                fig_integrations::shell::inline_shell_completion_plugin::ZSH_SCRIPT,
             ));
         }
 

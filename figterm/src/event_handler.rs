@@ -18,11 +18,11 @@ use tracing::{
     error,
 };
 
-use crate::ghost_text::COMPLETION_CACHE;
 use crate::history::{
     HistoryCommand,
     HistorySender,
 };
+use crate::inline_shell_completion::COMPLETION_CACHE;
 use crate::{
     shell_state_to_context,
     MainLoopEvent,
