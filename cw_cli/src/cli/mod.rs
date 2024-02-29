@@ -179,10 +179,16 @@ pub enum CliRootCommands {
     /// Open the CodeWhisperer dashboard
     Dashboard,
     #[command(hide = true)]
-    /// Chat
-    Chat,
+    /// Q Chat
+    Chat {
+        /// What to ask Q
+        input: Option<String>,
+    },
     /// Q
-    Q,
+    Q {
+        /// What to ask Q
+        input: Option<String>,
+    },
 }
 
 impl CliRootCommands {
@@ -217,8 +223,8 @@ impl CliRootCommands {
             CliRootCommands::Version => "version",
             CliRootCommands::HelpAll => "help-all",
             CliRootCommands::Dashboard => "dashboard",
-            CliRootCommands::Chat => "chat",
-            CliRootCommands::Q => "q",
+            CliRootCommands::Chat { .. } => "chat",
+            CliRootCommands::Q { .. } => "q",
         }
     }
 }
@@ -326,10 +332,10 @@ impl Cli {
                     Ok(())
                 },
                 CliRootCommands::Dashboard => launch_dashboard().await,
-                CliRootCommands::Chat => chat::chat().await,
-                CliRootCommands::Q => {
+                CliRootCommands::Chat { input } => chat::chat(input.unwrap_or_default()).await,
+                CliRootCommands::Q { input } => {
                     if matches!(auth::is_amzn_user().await, Ok(true)) {
-                        chat::chat().await
+                        chat::chat(input.unwrap_or_default()).await
                     } else {
                         ai::AiArgs::default().execute().await
                     }

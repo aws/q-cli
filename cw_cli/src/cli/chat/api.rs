@@ -203,17 +203,21 @@ async fn try_send_message(
         .send()
         .await?;
 
-    while let Ok(Some(stream)) = res.generate_assistant_response_response.recv().await {
-        match stream {
-            ChatResponseStream::AssistantResponseEvent(response) => {
-                tx.send(ApiResponse::Text(response.content)).await?;
+    loop {
+        match res.generate_assistant_response_response.recv().await {
+            Ok(Some(stream)) => match stream {
+                ChatResponseStream::AssistantResponseEvent(response) => {
+                    tx.send(ApiResponse::Text(response.content)).await?;
+                },
+                ChatResponseStream::MessageMetadataEvent(_event) => {},
+                ChatResponseStream::FollowupPromptEvent(_event) => {},
+                ChatResponseStream::CodeReferenceEvent(_event) => {},
+                ChatResponseStream::SupplementaryWebLinksEvent(_event) => {},
+                ChatResponseStream::InvalidStateEvent(_event) => {},
+                _ => {},
             },
-            ChatResponseStream::MessageMetadataEvent(_event) => {},
-            ChatResponseStream::FollowupPromptEvent(_event) => {},
-            ChatResponseStream::CodeReferenceEvent(_event) => {},
-            ChatResponseStream::SupplementaryWebLinksEvent(_event) => {},
-            ChatResponseStream::InvalidStateEvent(_event) => {},
-            _ => {},
+            Ok(None) => break,
+            Err(err) => return Err(err.into()),
         }
     }
 
@@ -247,7 +251,9 @@ pub(super) async fn send_message(client: Client, input: String) -> Result<Receiv
 
     tokio::spawn(async move {
         if let Err(err) = try_send_message(client, &tx, conversation_state).await {
-            error!(%err);
+            error!("{err}");
+            tx.send(ApiResponse::Error).await.ok();
+            return;
         }
 
         // Try to end stream
@@ -291,6 +297,7 @@ mod tests {
                     stderr.flush().await.unwrap();
                 },
                 ApiResponse::End => break,
+                ApiResponse::Error => panic!(),
             }
         }
     }

@@ -60,7 +60,6 @@ once_cell = "1.18"
 owo-colors = "4.0.0"
 parking_lot = "0.12.1"
 rand = "0.8.5"
-ratatui = { version = "0.26.1", features = ["unstable-rendered-line-info"] }
 regex = "1.6.0"
 semver = "1.0.16"
 serde = { version = "1.0", features = ["derive"] }
@@ -69,7 +68,6 @@ spinners = "4.1.0"
 supports-color = "3.0.0"
 sysinfo = "0.30.5"
 tempfile = "3.4.0"
-textwrap = "0.16.0"
 thiserror = "1.0"
 time = { version = "0.3", features = [
     "serde-human-readable",
@@ -84,7 +82,6 @@ tracing-subscriber = { version = "0.3.16", features = [
     "time",
     "parking_lot",
 ] }
-unicode-segmentation = "1.11.0"
 unicode-width = "0.1.11"
 url = "2.3.1"
 uuid = { version = "1.3.0", features = ["v4", "fast-rng"] }
