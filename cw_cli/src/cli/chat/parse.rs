@@ -1,198 +1,349 @@
+use std::io::Stderr;
+
+use crossterm::style::{
+    Attribute,
+    Color,
+    Colors,
+};
+use crossterm::{
+    style,
+    Command,
+    QueueableCommand,
+};
 use winnow::ascii::{
-    line_ending,
-    multispace0,
-    not_line_ending,
+    self,
+    digit1,
+    multispace1,
+    till_line_ending,
 };
 use winnow::combinator::{
     alt,
     delimited,
-    rest,
+    preceded,
+    terminated,
 };
-use winnow::error::ParserError;
+use winnow::error::{
+    ErrMode,
+    ErrorKind,
+    ParserError,
+};
 use winnow::prelude::*;
+use winnow::stream::Stream;
 use winnow::token::{
+    any,
     take_till,
-    take_until1,
+    take_until,
     take_while,
 };
 use winnow::Partial;
 
-#[derive(Debug, Clone, PartialEq)]
-enum MarkdownElements {
-    Heading {
-        level: u8,
-        content: String,
-    },
-    Paragraph {
-        content: String,
-    },
-    List {
-        items: Vec<String>,
-        ordered: bool,
-    },
-    CodeBlock {
-        content: String,
-        language: Option<String>,
-    },
-    Image {
-        src: String,
-        alt: String,
-    },
-    Link {
-        href: String,
-        text: String,
-    },
-    Table {
-        headers: Vec<String>,
-        rows: Vec<Vec<String>>,
-    },
-    BlockQuote {
-        content: String,
-    },
-    HorizontalRule,
-    Bold {
-        content: String,
-    },
-    Italic {
-        content: String,
-    },
-    Strikethrough {
-        content: String,
-    },
-    InlineCode {
-        content: String,
-    },
-    /// Not a markdown element, just spacing
-    NewLine,
+#[derive(Debug, thiserror::Error)]
+pub enum Error<'a> {
+    #[error(transparent)]
+    Stdio(#[from] std::io::Error),
+    #[error("parse error {1}, input {0}")]
+    Winnow(Partial<&'a str>, ErrorKind),
 }
 
-type Stream<'i> = Partial<&'i str>;
+impl<'a> ParserError<Partial<&'a str>> for Error<'a> {
+    fn from_error_kind(input: &Partial<&'a str>, kind: ErrorKind) -> Self {
+        Self::Winnow(*input, kind)
+    }
 
-fn parse<'i>(input: &mut Stream<'i>) -> PResult<Vec<MarkdownElements>> {
-    let mut elements = Vec::new();
+    fn append(
+        self,
+        _input: &Partial<&'a str>,
+        _checkpoint: &winnow::stream::Checkpoint<
+            winnow::stream::Checkpoint<&'a str, &'a str>,
+            winnow::Partial<&'a str>,
+        >,
+        _kind: ErrorKind,
+    ) -> Self {
+        self
+    }
+}
 
-    loop {
-        match alt((heading, codeblock, paragraph)).parse_next(input) {
-            Ok(element) => {
-                elements.push(element);
-            },
-            Err(err) if err.is_incomplete() => {
-                break;
-            },
-            Err(err) => return Err(err),
+#[derive(Debug, Default)]
+pub struct ParseState {
+    pub in_quote: bool,
+}
+
+pub fn interpret_markdown<'a>(
+    mut i: Partial<&'a str>,
+    o: &Stderr,
+    state: &mut ParseState,
+) -> PResult<(Partial<&'a str>, ()), Error<'a>> {
+    let mut error: Option<Error<'_>> = None;
+    let start = i.checkpoint();
+
+    macro_rules! ex {
+        ($($fns:ident),*) => {
+            $({
+                i.reset(&start);
+                match $fns(o, state).parse_next(&mut i) {
+                    Err(ErrMode::Backtrack(e)) => {
+                        error = match error {
+                            Some(error) => Some(error.or(e)),
+                            None => Some(e),
+                        };
+                    },
+                    res => return res.map(|_| (i, ())),
+                }
+            })*
+        };
+    }
+
+    ex!(
+        // multiline patterns
+        blockquote,
+        // linted_codeblock,
+        codeblock,
+        // single line patterns
+        heading,
+        bulleted_item,
+        numbered_item,
+        // inline patterns
+        code,
+        url,
+        bold,
+        italic,
+        // symbols
+        less_than,
+        greater_than,
+        ampersand,
+        line_ending,
+        // fallback
+        text
+    );
+
+    match error {
+        Some(e) => Err(ErrMode::Backtrack(e.append(&i, &start, ErrorKind::Alt))),
+        None => Err(ErrMode::assert(&i, "no parsers")),
+    }
+}
+
+fn heading<'a, 'b>(
+    mut o: impl QueueableCommand,
+    _state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
+    move |i| {
+        let level = terminated(take_while(1.., |c| c == '#'), multispace1).parse_next(i)?;
+        queue(&mut o, style::SetForegroundColor(Color::Magenta))?;
+        queue(&mut o, style::SetAttribute(Attribute::Bold))?;
+        queue(&mut o, style::Print(format!("{} ", "#".repeat(level.len()))))
+    }
+}
+
+fn bulleted_item<'a, 'b>(
+    mut o: impl QueueableCommand,
+    _state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
+    move |i| {
+        ("-", multispace1).parse_next(i)?;
+        queue(&mut o, style::ResetColor)?;
+        queue(&mut o, style::SetAttribute(style::Attribute::Reset))?;
+        queue(&mut o, style::Print("• "))
+    }
+}
+
+fn numbered_item<'a, 'b>(
+    mut o: impl QueueableCommand,
+    _state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
+    move |i| {
+        let (digits, _, _) = (digit1, ".", multispace1).parse_next(i)?;
+        queue(&mut o, style::ResetColor)?;
+        queue(&mut o, style::SetAttribute(style::Attribute::Reset))?;
+        queue(&mut o, style::Print(format!("{digits}. ")))
+    }
+}
+
+fn blockquote<'a, 'b>(
+    mut o: impl QueueableCommand,
+    _state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
+    move |i| {
+        ("&gt;", multispace1).parse_next(i)?;
+        queue(&mut o, style::Print("│ "))
+    }
+}
+
+fn code<'a, 'b>(
+    mut o: impl QueueableCommand,
+    _state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
+    move |i| {
+        let content: &str = ("`", take_until(0.., '`'), "`").parse_next(i)?.1;
+        queue(&mut o, style::SetColors(Colors::new(Color::Green, Color::Reset)))?;
+        queue(&mut o, style::Print(content))?;
+        queue(&mut o, style::ResetColor)
+    }
+}
+
+fn codeblock<'a, 'b>(
+    mut o: impl QueueableCommand + 'b,
+    state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
+    move |i| {
+        "```".parse_next(i)?;
+
+        state.in_quote = !state.in_quote;
+        if state.in_quote {
+            queue(&mut o, style::Print("│ "))?;
+        }
+
+        Ok(())
+    }
+}
+
+fn bold<'a, 'b>(
+    mut o: impl QueueableCommand,
+    _state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
+    move |i| {
+        let content = alt((
+            delimited("**", take_until(0.., "**"), "**"),
+            preceded("**", till_line_ending),
+        ))
+        .parse_next(i)?;
+
+        queue(&mut o, style::SetAttribute(Attribute::Bold))?;
+        queue(&mut o, style::Print(content))
+    }
+}
+
+fn italic<'a, 'b>(
+    mut o: impl QueueableCommand,
+    _state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
+    move |i| {
+        let content = alt((
+            delimited("*", take_until(1.., "_"), "*"),
+            preceded("*", till_line_ending),
+            delimited("_", take_until(1.., "_"), "_"),
+            preceded("_", till_line_ending),
+        ))
+        .parse_next(i)?;
+        queue(&mut o, style::SetAttribute(Attribute::Italic))?;
+        queue(&mut o, style::Print(content))
+    }
+}
+
+fn url<'a, 'b>(
+    mut o: impl QueueableCommand,
+    _state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
+    move |i| {
+        let display = ("[", take_till(0.., ']'), "]").parse_next(i)?.1;
+        let link = ("(", take_till(0.., ')'), ")").parse_next(i)?.1;
+
+        queue(&mut o, style::SetForegroundColor(Color::Blue))?;
+        queue(&mut o, style::Print(format!("{display} ")))?;
+        queue(&mut o, style::SetForegroundColor(Color::DarkGrey))?;
+        queue(&mut o, style::Print(link))?;
+        queue(&mut o, style::SetForegroundColor(Color::Reset))
+    }
+}
+
+fn less_than<'a, 'b>(
+    mut o: impl QueueableCommand,
+    _state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
+    move |i| {
+        "&lt;".parse_next(i)?;
+        queue(&mut o, style::Print('<'))
+    }
+}
+
+fn greater_than<'a, 'b>(
+    mut o: impl QueueableCommand,
+    _state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
+    move |i| {
+        "&gt;".parse_next(i)?;
+        queue(&mut o, style::Print('>'))
+    }
+}
+
+fn ampersand<'a, 'b>(
+    mut o: impl QueueableCommand,
+    _state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
+    move |i| {
+        "&amp;".parse_next(i)?;
+        queue(&mut o, style::Print('&'))
+    }
+}
+
+fn line_ending<'a, 'b>(
+    mut o: impl QueueableCommand + 'b,
+    state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
+    move |i| {
+        ascii::line_ending.parse_next(i)?;
+
+        queue(&mut o, style::ResetColor)?;
+        queue(&mut o, style::SetAttribute(style::Attribute::Reset))?;
+        match state.in_quote {
+            true => queue(&mut o, style::Print("\n│ ")),
+            false => queue(&mut o, style::Print("\n")),
         }
     }
-
-    Ok(elements)
 }
 
-// Markdown heading (#, ##, ###, etc.)
-fn heading<'i, E: ParserError<Stream<'i>>>(input: &mut Stream<'i>) -> PResult<MarkdownElements, E> {
-    let (a, _, b) = (take_while(1.., |c| c == '#'), multispace0, not_line_ending).parse_next(input)?;
-    Ok(MarkdownElements::Heading {
-        level: a.len() as u8,
-        content: b.to_string(),
-    })
-}
-
-// Codeblock
-fn codeblock<'i, E: ParserError<Stream<'i>>>(input: &mut Stream<'i>) -> PResult<MarkdownElements, E> {
-    "```".parse_next(input)?;
-    let language = not_line_ending.parse_next(input)?;
-    line_ending.parse_next(input)?;
-    let content = take_until1("```").parse_next(input)?.into();
-    "```".parse_next(input)?;
-
-    Ok(MarkdownElements::CodeBlock {
-        content,
-        language: if language.is_empty() {
-            None
-        } else {
-            Some(language.into())
-        },
-    })
-}
-
-fn paragraph<'i, E: ParserError<Stream<'i>>>(input: &mut Stream<'i>) -> PResult<MarkdownElements, E> {
-    let content: String = take_till(0.., |c| c == '\n' || c == '\r').parse_next(input)?.into();
-    line_ending.parse_next(input)?;
-    if content.is_empty() {
-        Ok(MarkdownElements::NewLine)
-    } else {
-        Ok(MarkdownElements::Paragraph { content })
+fn text<'a, 'b>(
+    mut o: impl QueueableCommand,
+    _state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
+    move |i| {
+        let content = any.parse_next(i)?;
+        queue(&mut o, style::Print(content))
     }
+}
+
+fn queue<'a>(o: &mut impl QueueableCommand, command: impl Command) -> Result<(), ErrMode<Error<'a>>> {
+    o.queue(command).map_err(|err| ErrMode::Cut(Error::Stdio(err)))?;
+    Ok(())
 }
 
 #[cfg(test)]
 mod tests {
+    use std::io::{
+        stderr,
+        Write,
+    };
+    use std::time::Duration;
+
+    use unicode_segmentation::UnicodeSegmentation;
+    use winnow::stream::Offset;
+
     use super::*;
 
-    macro_rules! assert_stream {
-        ($input:expr, $expected:expr) => {
-            let mut input = Partial::new($input);
-            assert_eq!(parse(&mut input).unwrap(), $expected);
-        };
-    }
-
     #[test]
     #[ignore]
-    fn test_heading() {
-        assert_stream!("# Hello world\n", vec![MarkdownElements::Heading {
-            level: 1,
-            content: "Hello world".to_string(),
-        }]);
+    fn test_readme() -> eyre::Result<()> {
+        let readme = include_str!("../../../../README.md");
+        let stderr = stderr();
+        let mut buf = String::new();
+        let mut offset = 0;
+        let mut parse_state = ParseState::default();
+        for grapheme in readme.graphemes(true) {
+            buf.push_str(grapheme);
 
-        assert_stream!("## Hello world\n", vec![MarkdownElements::Heading {
-            level: 2,
-            content: "Hello world".to_string(),
-        }]);
-    }
-
-    #[test]
-    #[ignore]
-    fn test_codeblock() {
-        assert_stream!(
-            "```rust\nfn main() {\n    println!(\"Hello, world!\");\n}\n```\n",
-            vec![MarkdownElements::CodeBlock {
-                content: "fn main() {\n    println!(\"Hello, world!\");\n}\n".to_string(),
-                language: Some("rust".to_string()),
-            }]
-        );
-
-        assert_stream!("```\nfn main() {\n    println!(\"Hello, world!\");\n}\n```\n", vec![
-            MarkdownElements::CodeBlock {
-                content: "fn main() {\n    println!(\"Hello, world!\");\n}\n".to_string(),
-                language: None,
+            let input = Partial::new(&buf[offset..]);
+            match interpret_markdown(input, &stderr, &mut parse_state) {
+                Ok((parsed, _)) => {
+                    offset += parsed.offset_from(&input);
+                    stderr.lock().flush()?;
+                },
+                Err(ErrMode::Incomplete(_)) => {
+                    continue;
+                },
+                _ => panic!(),
             }
-        ]);
-    }
+            std::thread::sleep(Duration::from_millis(5));
+        }
 
-    #[test]
-    #[ignore]
-    fn doc() {
-        let md_doc = "## Hello world\n\nThis is a paragraph.\n\n## Another heading\n\nThis is another paragraph.";
-
-        assert_stream!(md_doc, vec![
-            MarkdownElements::Heading {
-                level: 2,
-                content: "Hello world".to_string(),
-            },
-            MarkdownElements::NewLine,
-            MarkdownElements::NewLine,
-            MarkdownElements::Paragraph {
-                content: "This is a paragraph.".to_string(),
-            },
-            MarkdownElements::NewLine,
-            MarkdownElements::NewLine,
-            MarkdownElements::Heading {
-                level: 2,
-                content: "Another heading".to_string(),
-            },
-            MarkdownElements::NewLine,
-            MarkdownElements::NewLine,
-            MarkdownElements::Paragraph {
-                content: "This is another paragraph.".to_string(),
-            }
-        ]);
+        Ok(())
     }
 }

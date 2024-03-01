@@ -2116,6 +2116,8 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "unicode-segmentation",
+ "unicode-width",
  "url",
  "uuid",
  "which 6.0.0",

@@ -84,6 +84,8 @@ tracing-subscriber = { version = "0.3.16", features = [
     "time",
     "parking_lot",
 ] }
+unicode-segmentation = "1.11.0"
+unicode-width = "0.1.11"
 url = "2.3.1"
 uuid = { version = "1.3.0", features = ["v4", "fast-rng"] }
 which = "6.0.0"
