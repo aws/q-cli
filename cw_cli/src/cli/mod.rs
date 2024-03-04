@@ -2,7 +2,6 @@
 
 mod ai;
 pub mod app;
-#[cfg(feature = "gamma")]
 mod chat;
 mod completion;
 mod debug;
@@ -180,8 +179,8 @@ pub enum CliRootCommands {
     HelpAll,
     /// Open the CodeWhisperer dashboard
     Dashboard,
-    #[cfg(feature = "gamma")]
-    /// Q Chat
+    #[command(hide = true)]
+    /// Chat
     Chat,
 }
 
@@ -217,7 +216,6 @@ impl CliRootCommands {
             CliRootCommands::Version => "version",
             CliRootCommands::HelpAll => "help-all",
             CliRootCommands::Dashboard => "dashboard",
-            #[cfg(feature = "gamma")]
             CliRootCommands::Chat => "chat",
         }
     }
@@ -326,7 +324,6 @@ impl Cli {
                     Ok(())
                 },
                 CliRootCommands::Dashboard => launch_dashboard().await,
-                #[cfg(feature = "gamma")]
                 CliRootCommands::Chat => chat::chat().await,
             },
             // Root command

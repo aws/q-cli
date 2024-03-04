@@ -59,20 +59,26 @@ impl Shell {
         &[Shell::Bash, Shell::Zsh, Shell::Fish, Shell::Nu]
     }
 
-    pub fn current_shell() -> Option<Self> {
-        let parent_exe = get_parent_process_exe()?;
-        let parent_exe_name = parent_exe.to_str()?;
-        if parent_exe_name.contains("bash") {
+    /// Try to find the name of common shells in the input
+    pub fn try_find_shell(input: &str) -> Option<Self> {
+        if input.contains("bash") {
             Some(Shell::Bash)
-        } else if parent_exe_name.contains("zsh") {
+        } else if input.contains("zsh") {
             Some(Shell::Zsh)
-        } else if parent_exe_name.contains("fish") {
+        } else if input.contains("fish") {
             Some(Shell::Fish)
-        } else if parent_exe_name == "nu" || parent_exe_name == "nushell" {
+        } else if input == "nu" || input == "nushell" {
             Some(Shell::Nu)
         } else {
             None
         }
+    }
+
+    /// Gets the current shell of the parent process
+    pub fn current_shell() -> Option<Self> {
+        let parent_exe = get_parent_process_exe()?;
+        let parent_exe_name = parent_exe.to_str()?;
+        Self::try_find_shell(parent_exe_name)
     }
 
     pub async fn current_shell_version() -> Result<(Self, String), Error> {

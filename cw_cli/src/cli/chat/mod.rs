@@ -1,3 +1,4 @@
+mod api;
 mod parse;
 
 use std::io::{
@@ -7,30 +8,21 @@ use std::io::{
 };
 use std::time::Duration;
 
-use amzn_codewhisperer_streaming_client::types::{
-    ChatMessage,
-    ChatResponseStream,
-    ChatTriggerType,
-    ConversationState,
-    EditorState,
-    Position,
-    ProgrammingLanguage,
-    TextDocument,
-    UserInputMessage,
-    UserInputMessageContext,
-};
-use amzn_codewhisperer_streaming_client::Client;
 use crossterm::event::{
     Event,
     KeyCode,
     KeyEvent,
     KeyModifiers,
 };
-use crossterm::style::Attribute;
+use crossterm::style::{
+    Attribute,
+    Print,
+};
 use crossterm::terminal::{
     self,
     disable_raw_mode,
     enable_raw_mode,
+    is_raw_mode_enabled,
     ClearType,
 };
 use crossterm::{
@@ -48,11 +40,6 @@ use futures::{
     FutureExt,
     StreamExt,
 };
-use tokio::sync::mpsc::{
-    Receiver,
-    Sender,
-};
-use tracing::error;
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::{
     UnicodeWidthChar,
@@ -64,24 +51,32 @@ use winnow::stream::{
 };
 use winnow::Partial;
 
+use self::api::send_message;
 use self::parse::{
     interpret_markdown,
     ParseState,
 };
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 enum ApiResponse {
     Text(String),
     End,
 }
 
 pub async fn chat() -> Result<()> {
+    // check the user is using the amzn IdC instance
+    if !auth::is_amzn_user().await? {
+        eyre::bail!("chat is not currently implemented");
+    }
+
     let mut stderr = stderr();
     stderr.execute(cursor::SetCursorStyle::BlinkingBar)?;
 
     let res = try_chat(&mut stderr).await;
 
-    // Try to disable even if not enabled
-    disable_raw_mode()?;
+    if is_raw_mode_enabled().unwrap_or(false) {
+        disable_raw_mode()?;
+    }
 
     // Restore terminal state
     stderr
@@ -101,11 +96,11 @@ async fn try_chat(stderr: &mut Stderr) -> Result<()> {
     loop {
         // Make request with input
         if !input.is_empty() {
-            rx = Some(send_message(client.clone(), input)?);
+            rx = Some(send_message(client.clone(), input).await?);
             input = String::new();
         } else {
-            stderr.execute(style::Print(
-                "\n\nHi, I'm Amazon Q. I can answer your software development questions!\n\n",
+            stderr.execute(Print(
+                "\nHi, I'm Amazon Q. I can answer your software development questions!\n\n",
             ))?;
         }
 
@@ -119,7 +114,6 @@ async fn try_chat(stderr: &mut Stderr) -> Result<()> {
                 if let Some(response) = rx.recv().await {
                     match response {
                         ApiResponse::Text(content) => {
-                            // dbg!(content.cyan());
                             buf.push_str(&content);
                         },
                         ApiResponse::End => ended = true,
@@ -129,7 +123,7 @@ async fn try_chat(stderr: &mut Stderr) -> Result<()> {
                 loop {
                     let input = Partial::new(&buf[offset..]);
                     match interpret_markdown(input, stderr, &mut state) {
-                        Ok((parsed, _)) => {
+                        Ok(parsed) => {
                             offset += parsed.offset_from(&input);
                             stderr.lock().flush()?;
                         },
@@ -139,14 +133,14 @@ async fn try_chat(stderr: &mut Stderr) -> Result<()> {
                         },
                     }
 
-                    std::thread::sleep(Duration::from_millis(5));
+                    tokio::time::sleep(Duration::from_millis(5)).await;
                 }
 
                 if ended {
                     stderr
                         .queue(style::ResetColor)?
                         .queue(style::SetAttribute(Attribute::Reset))?
-                        .queue(style::Print("\n\n"))?
+                        .queue(Print("\n\n"))?
                         .flush()?;
                     break;
                 }
@@ -155,7 +149,7 @@ async fn try_chat(stderr: &mut Stderr) -> Result<()> {
 
         // Prompt user for input
         let prompt = "> ";
-        stderr.queue(style::Print(prompt))?.flush()?;
+        stderr.queue(Print(prompt))?.flush()?;
         enable_raw_mode()?;
 
         let mut cursor: usize = 0; // the byte index of the cursor
@@ -177,7 +171,7 @@ async fn try_chat(stderr: &mut Stderr) -> Result<()> {
                                         stderr
                                             .queue(cursor::MoveLeft(grapheme.width().try_into()?))?
                                             .queue(cursor::SavePosition)?
-                                            .queue(style::Print(&input[cursor..]))?
+                                            .queue(Print(&input[cursor..]))?
                                             .queue(terminal::Clear(ClearType::FromCursorDown))?
                                             .queue(cursor::RestorePosition)?;
                                     }
@@ -206,9 +200,9 @@ async fn try_chat(stderr: &mut Stderr) -> Result<()> {
                                 cursor += tab.len();
                                 gcursor += 4;
                                 stderr
-                                    .queue(style::Print(tab))?
+                                    .queue(Print(tab))?
                                     .queue(cursor::SavePosition)?
-                                    .queue(style::Print(&input[cursor..]))?
+                                    .queue(Print(&input[cursor..]))?
                                     .queue(terminal::Clear(ClearType::FromCursorDown))?
                                     .queue(cursor::RestorePosition)?;
                             },
@@ -217,7 +211,7 @@ async fn try_chat(stderr: &mut Stderr) -> Result<()> {
                                     input.replace_range(cursor..cursor + grapheme.len(), "");
                                     stderr
                                         .queue(cursor::SavePosition)?
-                                        .queue(style::Print(&input[cursor..]))?
+                                        .queue(Print(&input[cursor..]))?
                                         .queue(terminal::Clear(ClearType::FromCursorDown))?
                                         .queue(cursor::RestorePosition)?;
                                 }
@@ -232,9 +226,9 @@ async fn try_chat(stderr: &mut Stderr) -> Result<()> {
                                     cursor += c.len();
                                     gcursor += 1;
                                     stderr
-                                        .queue(style::Print(c))?
+                                        .queue(Print(c))?
                                         .queue(cursor::SavePosition)?
-                                        .queue(style::Print(&input[cursor..]))?
+                                        .queue(Print(&input[cursor..]))?
                                         .queue(terminal::Clear(ClearType::FromCursorDown))?
                                         .queue(cursor::RestorePosition)?;
                                 }
@@ -244,87 +238,15 @@ async fn try_chat(stderr: &mut Stderr) -> Result<()> {
                         }
                     }
                 },
-                Err(e) => println!("Error: {:?}\r", e),
+                Err(err) => {
+                    writeln!(stderr, "Error: {err:?}")?;
+                },
             }
 
             stderr.flush()?;
         }
 
         disable_raw_mode()?;
-        stderr.execute(style::Print("\n\n"))?;
+        stderr.execute(Print("\n\n"))?;
     }
-}
-
-fn send_message(client: Client, input: String) -> Result<Receiver<ApiResponse>> {
-    let (tx, rx) = tokio::sync::mpsc::channel(8);
-
-    let programming_language = ProgrammingLanguage::builder().language_name("shell").build()?;
-
-    let text_document = TextDocument::builder()
-        .text("#!/bin/bash\n\n")
-        .relative_file_path("test.sh")
-        .programming_language(programming_language)
-        .build()?;
-
-    let editor_state = EditorState::builder()
-        .document(text_document)
-        .cursor_state(amzn_codewhisperer_streaming_client::types::CursorState::Position(
-            Position::builder().line(2).character(0).build()?,
-        ))
-        .build();
-
-    let user_input_message_context = UserInputMessageContext::builder().editor_state(editor_state).build();
-
-    let user_input_message = UserInputMessage::builder()
-        .content(input)
-        .user_input_message_context(user_input_message_context)
-        .user_intent(amzn_codewhisperer_streaming_client::types::UserIntent::ImproveCode)
-        .build()?;
-
-    let conversation_state = ConversationState::builder()
-        .current_message(ChatMessage::UserInputMessage(user_input_message))
-        .chat_trigger_type(ChatTriggerType::Manual)
-        .build()?;
-
-    tokio::spawn(async move {
-        if let Err(err) = try_send_message(client, &tx, conversation_state).await {
-            error!(%err);
-        }
-
-        // Try to end stream
-        tx.send(ApiResponse::End).await.ok();
-    });
-
-    Ok(rx)
-}
-
-async fn try_send_message(
-    client: Client,
-    tx: &Sender<ApiResponse>,
-    conversation_state: ConversationState,
-) -> Result<()> {
-    let mut res = client
-        .generate_assistant_response()
-        .conversation_state(conversation_state)
-        .send()
-        .await?;
-
-    while let Ok(Some(a)) = res.generate_assistant_response_response.recv().await {
-        match a {
-            ChatResponseStream::MessageMetadataEvent(_response) => {},
-            ChatResponseStream::AssistantResponseEvent(response) => {
-                tx.send(ApiResponse::Text(response.content)).await?;
-            },
-            ChatResponseStream::FollowupPromptEvent(_response) => {
-                // let followup = response.followup_prompt()?;
-                // println!("content: {}", followup.content());
-                // println!("intent: {:?}", followup.user_intent());
-            },
-            ChatResponseStream::CodeReferenceEvent(_) => {},
-            ChatResponseStream::SupplementaryWebLinksEvent(_) => {},
-            _ => {},
-        }
-    }
-
-    Ok(())
 }

@@ -438,6 +438,10 @@ pub async fn builder_id_token() -> Result<Option<BuilderIdToken>> {
     BuilderIdToken::load(&secret_store).await
 }
 
+pub async fn is_amzn_user() -> Result<bool> {
+    Ok(builder_id_token().await?.map_or(false, |t| t.is_amzn_user()))
+}
+
 pub async fn is_logged_in() -> bool {
     matches!(builder_id_token().await, Ok(Some(_)))
 }

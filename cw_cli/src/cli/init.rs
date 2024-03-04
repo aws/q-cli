@@ -147,11 +147,7 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
         to_source.push(assign_shell_variable(shell, "SHOULD_CWTERM_LAUNCH", status, false));
     }
 
-    let is_amzn_user = auth::builder_id_token()
-        .await
-        .ok()
-        .flatten()
-        .map_or(false, |t| t.is_amzn_user());
+    let is_amzn_user = auth::is_amzn_user().await.unwrap_or(false);
 
     if let When::Post = when {
         if !matches!(

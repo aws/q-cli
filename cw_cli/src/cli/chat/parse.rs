@@ -1,9 +1,14 @@
-use std::io::Stderr;
+use std::io::{
+    Stderr,
+    Write,
+};
 
 use crossterm::style::{
     Attribute,
     Color,
     Colors,
+    Print,
+    Stylize,
 };
 use crossterm::{
     style,
@@ -72,11 +77,11 @@ pub fn interpret_markdown<'a>(
     mut i: Partial<&'a str>,
     o: &Stderr,
     state: &mut ParseState,
-) -> PResult<(Partial<&'a str>, ()), Error<'a>> {
+) -> PResult<Partial<&'a str>, Error<'a>> {
     let mut error: Option<Error<'_>> = None;
     let start = i.checkpoint();
 
-    macro_rules! ex {
+    macro_rules! alt {
         ($($fns:ident),*) => {
             $({
                 i.reset(&start);
@@ -87,13 +92,13 @@ pub fn interpret_markdown<'a>(
                             None => Some(e),
                         };
                     },
-                    res => return res.map(|_| (i, ())),
+                    res => return res.map(|_| i),
                 }
             })*
         };
     }
 
-    ex!(
+    alt!(
         // multiline patterns
         blockquote,
         // linted_codeblock,
@@ -123,84 +128,93 @@ pub fn interpret_markdown<'a>(
 }
 
 fn heading<'a, 'b>(
-    mut o: impl QueueableCommand,
+    mut o: impl Write,
     _state: &'b mut ParseState,
 ) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
     move |i| {
         let level = terminated(take_while(1.., |c| c == '#'), multispace1).parse_next(i)?;
-        queue(&mut o, style::SetForegroundColor(Color::Magenta))?;
-        queue(&mut o, style::SetAttribute(Attribute::Bold))?;
-        queue(&mut o, style::Print(format!("{} ", "#".repeat(level.len()))))
+
+        o.queue(style::PrintStyledContent(
+            format!("{} ", "#".repeat(level.len()))
+                .with(Color::Magenta)
+                .attribute(Attribute::Bold),
+        ))
+        .map_err(cut)?;
+
+        Ok(())
     }
 }
 
 fn bulleted_item<'a, 'b>(
-    mut o: impl QueueableCommand,
+    mut o: impl Write,
     _state: &'b mut ParseState,
 ) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
     move |i| {
         ("-", multispace1).parse_next(i)?;
         queue(&mut o, style::ResetColor)?;
         queue(&mut o, style::SetAttribute(style::Attribute::Reset))?;
-        queue(&mut o, style::Print("• "))
+        queue(&mut o, Print("• "))
     }
 }
 
 fn numbered_item<'a, 'b>(
-    mut o: impl QueueableCommand,
+    mut o: impl Write,
     _state: &'b mut ParseState,
 ) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
     move |i| {
         let (digits, _, _) = (digit1, ".", multispace1).parse_next(i)?;
         queue(&mut o, style::ResetColor)?;
         queue(&mut o, style::SetAttribute(style::Attribute::Reset))?;
-        queue(&mut o, style::Print(format!("{digits}. ")))
+        queue(&mut o, Print(format!("{digits}. ")))
     }
 }
 
 fn blockquote<'a, 'b>(
-    mut o: impl QueueableCommand,
+    mut o: impl Write,
     _state: &'b mut ParseState,
 ) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
     move |i| {
         ("&gt;", multispace1).parse_next(i)?;
-        queue(&mut o, style::Print("│ "))
+        o.queue(Print("> ".with(Color::Grey))).map_err(cut)?;
+        Ok(())
     }
 }
 
 fn code<'a, 'b>(
-    mut o: impl QueueableCommand,
+    mut o: impl Write,
     _state: &'b mut ParseState,
 ) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
     move |i| {
         let content: &str = ("`", take_until(0.., '`'), "`").parse_next(i)?.1;
         queue(&mut o, style::SetColors(Colors::new(Color::Green, Color::Reset)))?;
-        queue(&mut o, style::Print(content))?;
+        queue(&mut o, Print(content))?;
         queue(&mut o, style::ResetColor)
     }
 }
 
 fn codeblock<'a, 'b>(
-    mut o: impl QueueableCommand + 'b,
+    mut o: impl Write + 'b,
     state: &'b mut ParseState,
 ) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
     move |i| {
         "```".parse_next(i)?;
 
+        queue(&mut o, Print("```"))?;
+
         state.in_quote = !state.in_quote;
-        if state.in_quote {
-            queue(&mut o, style::Print("│ "))?;
-        }
+        // if state.in_quote {
+        //     queue(&mut o, style::Print("│ "))?;
+        // }
 
         Ok(())
     }
 }
 
 fn bold<'a, 'b>(
-    mut o: impl QueueableCommand,
+    mut o: impl Write,
     _state: &'b mut ParseState,
 ) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
-    move |i| {
+    move |i: &mut Partial<&str>| {
         let content = alt((
             delimited("**", take_until(0.., "**"), "**"),
             preceded("**", till_line_ending),
@@ -208,12 +222,12 @@ fn bold<'a, 'b>(
         .parse_next(i)?;
 
         queue(&mut o, style::SetAttribute(Attribute::Bold))?;
-        queue(&mut o, style::Print(content))
+        queue(&mut o, Print(content))
     }
 }
 
 fn italic<'a, 'b>(
-    mut o: impl QueueableCommand,
+    mut o: impl Write,
     _state: &'b mut ParseState,
 ) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
     move |i| {
@@ -225,12 +239,12 @@ fn italic<'a, 'b>(
         ))
         .parse_next(i)?;
         queue(&mut o, style::SetAttribute(Attribute::Italic))?;
-        queue(&mut o, style::Print(content))
+        queue(&mut o, Print(content))
     }
 }
 
 fn url<'a, 'b>(
-    mut o: impl QueueableCommand,
+    mut o: impl Write,
     _state: &'b mut ParseState,
 ) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
     move |i| {
@@ -238,70 +252,71 @@ fn url<'a, 'b>(
         let link = ("(", take_till(0.., ')'), ")").parse_next(i)?.1;
 
         queue(&mut o, style::SetForegroundColor(Color::Blue))?;
-        queue(&mut o, style::Print(format!("{display} ")))?;
+        queue(&mut o, Print(format!("{display} ")))?;
         queue(&mut o, style::SetForegroundColor(Color::DarkGrey))?;
-        queue(&mut o, style::Print(link))?;
+        queue(&mut o, Print(link))?;
         queue(&mut o, style::SetForegroundColor(Color::Reset))
     }
 }
 
 fn less_than<'a, 'b>(
-    mut o: impl QueueableCommand,
+    mut o: impl Write,
     _state: &'b mut ParseState,
 ) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
     move |i| {
         "&lt;".parse_next(i)?;
-        queue(&mut o, style::Print('<'))
+        queue(&mut o, Print('<'))
     }
 }
 
 fn greater_than<'a, 'b>(
-    mut o: impl QueueableCommand,
+    mut o: impl Write,
     _state: &'b mut ParseState,
 ) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
     move |i| {
         "&gt;".parse_next(i)?;
-        queue(&mut o, style::Print('>'))
+        queue(&mut o, Print('>'))
     }
 }
 
 fn ampersand<'a, 'b>(
-    mut o: impl QueueableCommand,
+    mut o: impl Write,
     _state: &'b mut ParseState,
 ) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
     move |i| {
         "&amp;".parse_next(i)?;
-        queue(&mut o, style::Print('&'))
+        queue(&mut o, Print('&'))
     }
 }
 
 fn line_ending<'a, 'b>(
-    mut o: impl QueueableCommand + 'b,
-    state: &'b mut ParseState,
+    mut o: impl Write + 'b,
+    _state: &'b mut ParseState,
 ) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
     move |i| {
         ascii::line_ending.parse_next(i)?;
 
         queue(&mut o, style::ResetColor)?;
         queue(&mut o, style::SetAttribute(style::Attribute::Reset))?;
-        match state.in_quote {
-            true => queue(&mut o, style::Print("\n│ ")),
-            false => queue(&mut o, style::Print("\n")),
-        }
+        queue(&mut o, Print("\n"))
     }
 }
 
 fn text<'a, 'b>(
-    mut o: impl QueueableCommand,
+    mut o: impl Write,
     _state: &'b mut ParseState,
 ) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> {
     move |i| {
         let content = any.parse_next(i)?;
-        queue(&mut o, style::Print(content))
+        queue(&mut o, Print(content))
     }
 }
 
-fn queue<'a>(o: &mut impl QueueableCommand, command: impl Command) -> Result<(), ErrMode<Error<'a>>> {
+fn cut<'a>(err: std::io::Error) -> ErrMode<Error<'a>> {
+    ErrMode::Cut(Error::Stdio(err))
+}
+
+fn queue<'a>(o: &mut impl Write, command: impl Command) -> Result<(), ErrMode<Error<'a>>> {
     o.queue(command).map_err(|err| ErrMode::Cut(Error::Stdio(err)))?;
     Ok(())
 }
@@ -315,7 +330,7 @@ mod tests {
     use std::time::Duration;
 
     use unicode_segmentation::UnicodeSegmentation;
-    use winnow::stream::Offset;
+    use winnow::stream::Offset as _;
 
     use super::*;
 
@@ -332,7 +347,7 @@ mod tests {
 
             let input = Partial::new(&buf[offset..]);
             match interpret_markdown(input, &stderr, &mut parse_state) {
-                Ok((parsed, _)) => {
+                Ok(parsed) => {
                     offset += parsed.offset_from(&input);
                     stderr.lock().flush()?;
                 },

@@ -608,9 +608,10 @@ impl DoctorCheck for MidwayCheck {
     }
 
     async fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
-        match auth::builder_id_token().await {
-            Ok(Some(id)) if id.is_amzn_user() => DoctorCheckType::NormalCheck,
-            _ => DoctorCheckType::NoCheck,
+        if matches!(auth::is_amzn_user().await, Ok(true)) {
+            DoctorCheckType::NormalCheck
+        } else {
+            DoctorCheckType::NoCheck
         }
     }
 
