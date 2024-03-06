@@ -2985,6 +2985,7 @@ dependencies = [
 name = "fig_telemetry"
 version = "0.15.1"
 dependencies = [
+ "amzn-codewhisperer-client",
  "amzn-toolkit-telemetry",
  "anyhow",
  "auth",
@@ -2992,7 +2993,9 @@ dependencies = [
  "aws-sdk-cognitoidentity",
  "aws-sdk-cognitoidentityprovider",
  "aws-smithy-async",
+ "aws-smithy-types",
  "aws-toolkit-telemetry-definitions",
+ "fig_api_client",
  "fig_ipc",
  "fig_proto",
  "fig_request",

@@ -5,18 +5,28 @@ mod util;
 
 use std::time::SystemTime;
 
+use amzn_codewhisperer_client::types::{
+    Dimension,
+    IdeCategory,
+    MetricData,
+    OperatingSystem,
+    OptOutPreference,
+    TelemetryEvent,
+    UserContext,
+};
 use amzn_toolkit_telemetry::config::{
     AppName,
     BehaviorVersion,
     Region,
 };
 use amzn_toolkit_telemetry::error::DisplayErrorContext;
-use amzn_toolkit_telemetry::types::AwsProduct;
-use amzn_toolkit_telemetry::{
-    Client,
-    Config,
+use amzn_toolkit_telemetry::types::{
+    AwsProduct,
+    MetricDatum,
 };
+use amzn_toolkit_telemetry::Config;
 use aws_credential_types::provider::SharedCredentialsProvider;
+use aws_smithy_types::DateTime;
 use aws_toolkit_telemetry_definitions::metrics::{
     CodewhispererterminalCliSubcommandExecuted,
     CodewhispererterminalDashboardPageViewed,
@@ -46,6 +56,7 @@ use aws_toolkit_telemetry_definitions::{
 };
 use cognito::CognitoProvider;
 use endpoint::StaticEndpoint;
+use fig_api_client::ai::cw_client;
 use fig_util::system_info::os_version;
 use fig_util::terminal::{
     CURRENT_TERMINAL,
@@ -57,7 +68,10 @@ pub use install_method::{
     InstallMethod,
 };
 use once_cell::sync::Lazy;
-use tokio::sync::Mutex;
+use tokio::sync::{
+    Mutex,
+    OnceCell,
+};
 use tokio::task::JoinSet;
 use tracing::error;
 use util::telemetry_is_disabled;
@@ -73,7 +87,12 @@ pub enum Error {
 
 const APP_NAME: &str = "codewhisperer-terminal";
 
-static CLIENT: Lazy<TelemetryClient> = Lazy::new(|| TelemetryClient::new(TelemetryStage::EXTERNAL_PROD));
+async fn client() -> &'static Client {
+    static CLIENT: OnceCell<Client> = OnceCell::const_new();
+    CLIENT
+        .get_or_init(|| async { Client::new(TelemetryStage::EXTERNAL_PROD).await })
+        .await
+}
 
 #[derive(Debug, Clone)]
 #[non_exhaustive]
@@ -141,15 +160,16 @@ pub async fn finish_telemetry_unwrap() {
 }
 
 #[derive(Debug, Clone)]
-pub struct TelemetryClient {
+pub struct Client {
     client_id: Uuid,
-    aws_client: Client,
+    toolkit_telemetry_client: amzn_toolkit_telemetry::Client,
+    codewhisperer_client: &'static amzn_codewhisperer_client::Client,
 }
 
-impl TelemetryClient {
-    pub fn new(telemetry_stage: TelemetryStage) -> Self {
+impl Client {
+    pub async fn new(telemetry_stage: TelemetryStage) -> Self {
         let client_id = util::get_client_id();
-        let aws_client = Client::from_conf(
+        let toolkit_telemetry_client = amzn_toolkit_telemetry::Client::from_conf(
             Config::builder()
                 .behavior_version(BehaviorVersion::v2023_11_09())
                 .endpoint_resolver(StaticEndpoint(telemetry_stage.endpoint))
@@ -158,41 +178,127 @@ impl TelemetryClient {
                 .credentials_provider(SharedCredentialsProvider::new(CognitoProvider::new(telemetry_stage)))
                 .build(),
         );
-        Self { client_id, aws_client }
+
+        let codewhisperer_client = cw_client().await;
+
+        Self {
+            client_id,
+            toolkit_telemetry_client,
+            codewhisperer_client,
+        }
     }
 
-    pub async fn post_metric(&self, inner: impl IntoMetricDatum + 'static) {
+    pub async fn post_metric(&self, inner: impl IntoMetricDatum + Clone + 'static) {
         if telemetry_is_disabled() {
             return;
         }
 
-        let aws_client = self.aws_client.clone();
+        let toolkit_telemetry_client = self.toolkit_telemetry_client.clone();
+        let codewhisperer_client = self.codewhisperer_client.clone();
         let client_id = self.client_id;
 
         let mut set = JOIN_SET.lock().await;
-        set.spawn(async move {
-            let inner = inner.into_metric_datum();
-            let product = AwsProduct::CodewhispererTerminal;
-            let product_version = env!("CARGO_PKG_VERSION");
-            let os = std::env::consts::OS;
-            let os_architecture = std::env::consts::ARCH;
-            let os_version = os_version().map(|v| v.to_string()).unwrap_or_default();
-            let metric_name = inner.metric_name().to_owned();
+        set.spawn({
+            let inner = inner.clone();
+            async move {
+                let inner = inner.into_metric_datum();
+                let product = AwsProduct::CodewhispererTerminal;
+                let product_version = env!("CARGO_PKG_VERSION");
+                let os = std::env::consts::OS;
+                let os_architecture = std::env::consts::ARCH;
+                let os_version = os_version().map(|v| v.to_string()).unwrap_or_default();
+                let metric_name = inner.metric_name().to_owned();
 
-            if let Err(err) = aws_client
-                .post_metrics()
-                .aws_product(product)
-                .aws_product_version(product_version)
-                .client_id(client_id)
-                .os(os)
-                .os_architecture(os_architecture)
-                .os_version(os_version)
-                .metric_data(inner)
+                if let Err(err) = toolkit_telemetry_client
+                    .post_metrics()
+                    .aws_product(product)
+                    .aws_product_version(product_version)
+                    .client_id(client_id)
+                    .os(os)
+                    .os_architecture(os_architecture)
+                    .os_version(os_version)
+                    .metric_data(inner)
+                    .send()
+                    .await
+                    .map_err(DisplayErrorContext)
+                {
+                    error!(%err, ?metric_name, "Failed to post metric");
+                }
+            }
+        });
+
+        let client_id = self.client_id;
+        set.spawn(async move {
+            let MetricDatum {
+                metric_name,
+                epoch_timestamp,
+                value,
+                metadata,
+                ..
+            } = inner.into_metric_datum();
+            let product_version = env!("CARGO_PKG_VERSION");
+
+            let operating_system = match std::env::consts::OS {
+                "linux" => OperatingSystem::Linux,
+                "macos" => OperatingSystem::Mac,
+                "windows" => OperatingSystem::Windows,
+                os => {
+                    error!(%os, "Unsupported operating system");
+                    return;
+                },
+            };
+
+            let user_context = match UserContext::builder()
+                .ide_category(IdeCategory::VsCode)
+                .client_id(client_id.hyphenated().to_string())
+                .operating_system(operating_system)
+                .product("CodeWhisperer")
+                .ide_version(product_version)
+                .build()
+            {
+                Ok(user_context) => user_context,
+                Err(err) => {
+                    error!(%err, "Failed to build user context");
+                    return;
+                },
+            };
+
+            let dimensions = metadata
+                .unwrap_or_default()
+                .into_iter()
+                .map(|entry| Dimension::builder().set_name(entry.key).set_value(entry.value).build())
+                .collect();
+
+            let metric_data_builder = MetricData::builder()
+                .metric_name(metric_name)
+                .product("CodeWhisperer")
+                .timestamp(DateTime::from_secs(epoch_timestamp))
+                .set_dimensions(Some(dimensions))
+                .metric_value(value);
+
+            let metric_data = match metric_data_builder.build() {
+                Ok(metric_data) => metric_data,
+                Err(err) => {
+                    error!(%err, "Failed to build metric data");
+                    return;
+                },
+            };
+
+            let opt_out_preference = if telemetry_is_disabled() {
+                OptOutPreference::OptOut
+            } else {
+                OptOutPreference::OptIn
+            };
+
+            if let Err(err) = codewhisperer_client
+                .send_telemetry_event()
+                .telemetry_event(TelemetryEvent::MetricData(metric_data))
+                .user_context(user_context)
+                .opt_out_preference(opt_out_preference)
                 .send()
                 .await
-                .map_err(DisplayErrorContext)
             {
-                error!(%err, ?metric_name, "Failed to post metric");
+                error!(%err, "Failed to send telemetry event");
             }
         });
     }
@@ -208,7 +314,8 @@ async fn start_url() -> Option<CredentialStartUrl> {
 }
 
 pub async fn send_user_logged_in() {
-    CLIENT
+    client()
+        .await
         .post_metric(metrics::CodewhispererterminalUserLoggedIn {
             create_time: Some(SystemTime::now()),
             value: None,
@@ -218,7 +325,8 @@ pub async fn send_user_logged_in() {
 }
 
 pub async fn send_completion_inserted(command: String, terminal: Option<String>, shell: Option<String>) {
-    CLIENT
+    client()
+        .await
         .post_metric(metrics::CodewhispererterminalCompletionInserted {
             create_time: None,
             value: None,
@@ -239,7 +347,8 @@ pub async fn send_inline_shell_completion_actioned(accepted: bool, edit_buffer_l
         .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
         .unwrap_or((None, None));
 
-    CLIENT
+    client()
+        .await
         .post_metric(metrics::CodewhispererterminalInlineShellActioned {
             create_time: None,
             value: None,
@@ -272,7 +381,8 @@ pub async fn send_translation_actioned(
         .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
         .unwrap_or((None, None));
 
-    CLIENT
+    client()
+        .await
         .post_metric(CodewhispererterminalTranslationActioned {
             create_time: None,
             value: None,
@@ -298,7 +408,8 @@ pub async fn send_cli_subcommand_executed(command_name: impl Into<String>) {
         .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
         .unwrap_or((None, None));
 
-    CLIENT
+    client()
+        .await
         .post_metric(CodewhispererterminalCliSubcommandExecuted {
             create_time: None,
             value: None,
@@ -322,7 +433,8 @@ pub async fn send_doctor_check_failed(failed_check: impl Into<String>) {
         .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
         .unwrap_or((None, None));
 
-    CLIENT
+    client()
+        .await
         .post_metric(CodewhispererterminalDoctorCheckFailed {
             create_time: None,
             value: None,
@@ -341,7 +453,8 @@ pub async fn send_doctor_check_failed(failed_check: impl Into<String>) {
 }
 
 pub async fn send_dashboard_page_viewed(route: impl Into<String>) {
-    CLIENT
+    client()
+        .await
         .post_metric(CodewhispererterminalDashboardPageViewed {
             create_time: None,
             value: None,
@@ -352,7 +465,8 @@ pub async fn send_dashboard_page_viewed(route: impl Into<String>) {
 }
 
 pub async fn send_menu_bar_actioned(menu_bar_item: Option<impl Into<String>>) {
-    CLIENT
+    client()
+        .await
         .post_metric(CodewhispererterminalMenuBarActioned {
             create_time: None,
             value: None,
@@ -364,7 +478,8 @@ pub async fn send_menu_bar_actioned(menu_bar_item: Option<impl Into<String>>) {
 }
 
 pub async fn send_fig_user_migrated() {
-    CLIENT
+    client()
+        .await
         .post_metric(CodewhispererterminalFigUserMigrated {
             create_time: None,
             value: None,
@@ -394,7 +509,7 @@ mod test {
             .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
             .unwrap_or((None, None));
 
-        let client = TelemetryClient::new(TelemetryStage::BETA);
+        let client = Client::new(TelemetryStage::BETA).await;
 
         client
             .post_metric(metrics::CodewhispererterminalCliSubcommandExecuted {
