@@ -12,6 +12,7 @@
 /// ```text
 /// # let idecategory = unimplemented!();
 /// match idecategory {
+///     IdeCategory::Cli => { /* ... */ },
 ///     IdeCategory::JetBrains => { /* ... */ },
 ///     IdeCategory::VsCode => { /* ... */ },
 ///     other @ _ if other.as_str() == "NewFeature" => { /* handles a case for `NewFeature` */ },
@@ -48,6 +49,8 @@
 )]
 pub enum IdeCategory {
     #[allow(missing_docs)] // documentation missing in model
+    Cli,
+    #[allow(missing_docs)] // documentation missing in model
     JetBrains,
     #[allow(missing_docs)] // documentation missing in model
     VsCode,
@@ -60,6 +63,7 @@ pub enum IdeCategory {
 impl ::std::convert::From<&str> for IdeCategory {
     fn from(s: &str) -> Self {
         match s {
+            "CLI" => IdeCategory::Cli,
             "JETBRAINS" => IdeCategory::JetBrains,
             "VSCODE" => IdeCategory::VsCode,
             other => IdeCategory::Unknown(crate::primitives::sealed_enum_unknown::UnknownVariantValue(
@@ -79,6 +83,7 @@ impl IdeCategory {
     /// Returns the `&str` value of the enum member.
     pub fn as_str(&self) -> &str {
         match self {
+            IdeCategory::Cli => "CLI",
             IdeCategory::JetBrains => "JETBRAINS",
             IdeCategory::VsCode => "VSCODE",
             IdeCategory::Unknown(value) => value.as_str(),
@@ -87,7 +92,7 @@ impl IdeCategory {
 
     /// Returns all the `&str` representations of the enum members.
     pub const fn values() -> &'static [&'static str] {
-        &["JETBRAINS", "VSCODE"]
+        &["CLI", "JETBRAINS", "VSCODE"]
     }
 }
 impl ::std::convert::AsRef<str> for IdeCategory {

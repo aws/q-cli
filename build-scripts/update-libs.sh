@@ -28,9 +28,9 @@ function update_pkg() {
     mv "lib/${CRATE_NAME}/Cargo.toml.tmp" "lib/${CRATE_NAME}/Cargo.toml"
 }
 
-update_pkg "AWSVectorConsolasRuntimeServiceRustClient" "0.1.5" "amzn-codewhisperer-client"
-update_pkg "AWSVectorConsolasRuntimeServiceRustClient" "0.1.5" "amzn-codewhisperer-streaming-client"
-update_pkg "AWSVectorConsolasRuntimeServiceRustClient" "0.1.5" "amzn-consolas-client"
+update_pkg "AWSVectorConsolasRuntimeServiceRustClient" "0.1.19" "amzn-codewhisperer-client"
+update_pkg "AWSVectorConsolasRuntimeServiceRustClient" "0.1.19" "amzn-codewhisperer-streaming-client"
+update_pkg "AWSVectorConsolasRuntimeServiceRustClient" "0.1.19" "amzn-consolas-client"
 update_pkg "FigIoToolkitTelemetryLambdaClientRust" "1.0.0" "amzn-toolkit-telemetry"
 
 cargo clippy --fix --allow-dirty

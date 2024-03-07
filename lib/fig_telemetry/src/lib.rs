@@ -249,10 +249,10 @@ impl Client {
             };
 
             let user_context = match UserContext::builder()
-                .ide_category(IdeCategory::VsCode)
                 .client_id(client_id.hyphenated().to_string())
                 .operating_system(operating_system)
                 .product("CodeWhisperer")
+                .ide_category(IdeCategory::Cli)
                 .ide_version(product_version)
                 .build()
             {

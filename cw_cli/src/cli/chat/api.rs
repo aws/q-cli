@@ -263,9 +263,9 @@ mod tests {
     #[test]
     fn test_env_state() {
         let env_state = build_env_state(true);
-        assert!(env_state.environment_variables().len() > 0);
-        assert!(env_state.current_working_directory().unwrap().len() > 0);
-        assert!(env_state.operating_system().unwrap().len() > 0);
+        assert!(!env_state.environment_variables().is_empty());
+        assert!(!env_state.current_working_directory().unwrap().is_empty());
+        assert!(!env_state.operating_system().unwrap().is_empty());
         println!("{env_state:?}");
     }
 
