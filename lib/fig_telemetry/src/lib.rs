@@ -56,7 +56,10 @@ use aws_toolkit_telemetry_definitions::{
 };
 use cognito::CognitoProvider;
 use endpoint::StaticEndpoint;
-use fig_api_client::ai::cw_client;
+use fig_api_client::ai::{
+    cw_client,
+    Endpoint,
+};
 use fig_util::system_info::os_version;
 use fig_util::terminal::{
     CURRENT_TERMINAL,
@@ -163,7 +166,7 @@ pub async fn finish_telemetry_unwrap() {
 pub struct Client {
     client_id: Uuid,
     toolkit_telemetry_client: amzn_toolkit_telemetry::Client,
-    codewhisperer_client: &'static amzn_codewhisperer_client::Client,
+    codewhisperer_client: amzn_codewhisperer_client::Client,
 }
 
 impl Client {
@@ -179,7 +182,7 @@ impl Client {
                 .build(),
         );
 
-        let codewhisperer_client = cw_client().await;
+        let codewhisperer_client = cw_client(Endpoint::Prod).await;
 
         Self {
             client_id,
@@ -252,7 +255,7 @@ impl Client {
                 .client_id(client_id.hyphenated().to_string())
                 .operating_system(operating_system)
                 .product("CodeWhisperer")
-                .ide_category(IdeCategory::Cli)
+                .ide_category(IdeCategory::VsCode)
                 .ide_version(product_version)
                 .build()
             {
@@ -290,6 +293,8 @@ impl Client {
                 OptOutPreference::OptIn
             };
 
+            println!("{codewhisperer_client:?}");
+
             if let Err(err) = codewhisperer_client
                 .send_telemetry_event()
                 .telemetry_event(TelemetryEvent::MetricData(metric_data))
@@ -298,7 +303,7 @@ impl Client {
                 .send()
                 .await
             {
-                error!(%err, "Failed to send telemetry event");
+                error!(err =% DisplayErrorContext(err), "Failed to send telemetry event");
             }
         });
     }

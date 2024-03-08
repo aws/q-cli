@@ -649,8 +649,6 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
 
         let ai_enabled = fig_settings::settings::get_bool_or("ai.terminal-hash-sub", true);
 
-        fig_api_client::ai::init();
-
         if let Ok(shell) = get_parent_shell() {
             let path = std::path::Path::new(&shell);
             let name = path.file_name().and_then(|name| name.to_str()).unwrap_or(shell.as_str());

@@ -20,12 +20,11 @@ use http::{
     HeaderName,
     HeaderValue,
 };
-use tokio::sync::OnceCell;
+use once_cell::sync::Lazy;
 
-const DEFAULT_REGION: &str = "us-east-1";
-// "https://rts.alpha-us-west-2.codewhisperer.ai.aws.dev"
-const CODEWHISPERER_ENDPOINT: &str = "https://codewhisperer.us-east-1.amazonaws.com";
-const APP_NAME: &str = "codewhisperer-terminal";
+pub use crate::endpoints::Endpoint;
+
+static APP_NAME: Lazy<AppName> = Lazy::new(|| AppName::new("codewhisperer-terminal").unwrap());
 
 // Opt out constants
 const SHARE_CODEWHISPERER_CONTENT_SETTINGS_KEY: &str = "codeWhisperer.shareCodeWhispererContentWithAWS";
@@ -62,50 +61,34 @@ impl Intercept for OptOutInterceptor {
     }
 }
 
-async fn sdk_config() -> SdkConfig {
+async fn sdk_config(endpoint: &Endpoint) -> SdkConfig {
     aws_config::defaults(BehaviorVersion::v2023_11_09())
-        .region(DEFAULT_REGION)
+        .region(endpoint.region())
         .credentials_provider(Credentials::new("xxx", "xxx", None, None, "xxx"))
         .load()
         .await
 }
 
-pub async fn cw_client() -> &'static amzn_codewhisperer_client::Client {
-    static AWS_CLIENT: OnceCell<amzn_codewhisperer_client::Client> = OnceCell::const_new();
-    AWS_CLIENT
-        .get_or_init(|| async {
-            let conf_builder: amzn_codewhisperer_client::config::Builder = (&sdk_config().await).into();
-            let conf = conf_builder
-                .interceptor(OptOutInterceptor)
-                .bearer_token_resolver(BearerResolver)
-                .app_name(AppName::new(APP_NAME).unwrap())
-                .endpoint_url(CODEWHISPERER_ENDPOINT)
-                .build();
-            amzn_codewhisperer_client::Client::from_conf(conf)
-        })
-        .await
+pub async fn cw_client(endpoint: Endpoint) -> amzn_codewhisperer_client::Client {
+    let conf_builder: amzn_codewhisperer_client::config::Builder = (&sdk_config(&endpoint).await).into();
+    let conf = conf_builder
+        .interceptor(OptOutInterceptor)
+        .bearer_token_resolver(BearerResolver)
+        .app_name(APP_NAME.clone())
+        .endpoint_url(endpoint.url())
+        .build();
+    amzn_codewhisperer_client::Client::from_conf(conf)
 }
 
-pub async fn cw_streaming_client() -> &'static amzn_codewhisperer_streaming_client::Client {
-    static AWS_CLIENT: OnceCell<amzn_codewhisperer_streaming_client::Client> = OnceCell::const_new();
-    AWS_CLIENT
-        .get_or_init(|| async {
-            let conf_builder: amzn_codewhisperer_streaming_client::config::Builder = (&sdk_config().await).into();
-            let conf = conf_builder
-                .interceptor(OptOutInterceptor)
-                .bearer_token_resolver(BearerResolver)
-                .app_name(AppName::new(APP_NAME).unwrap())
-                .endpoint_url(CODEWHISPERER_ENDPOINT)
-                .build();
-            amzn_codewhisperer_streaming_client::Client::from_conf(conf)
-        })
-        .await
-}
-
-pub fn init() {
-    tokio::spawn(async {
-        cw_client().await;
-    });
+pub async fn cw_streaming_client(endpoint: Endpoint) -> amzn_codewhisperer_streaming_client::Client {
+    let conf_builder: amzn_codewhisperer_streaming_client::config::Builder = (&sdk_config(&endpoint).await).into();
+    let conf = conf_builder
+        .interceptor(OptOutInterceptor)
+        .bearer_token_resolver(BearerResolver)
+        .app_name(APP_NAME.clone())
+        .endpoint_url(endpoint.url())
+        .build();
+    amzn_codewhisperer_streaming_client::Client::from_conf(conf)
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
@@ -144,67 +127,13 @@ pub struct AiRequest {
     pub session_id: Option<String>,
 }
 
-// #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-// pub struct CodexChoice {
-//     pub text: Option<String>,
-// }
-
-// #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-// #[serde(rename_all = "camelCase")]
-// pub struct CodexResponse {
-//     pub choices: Vec<CodexChoice>,
-// }
-
-// pub async fn request(request: AiRequest) -> fig_request::Result<CodexResponse> {
-//     let codewhisperer_request = CodewhipererRequest {
-//         file_context: CodewhipererFileContext {
-//             left_file_content: match &request.edit_buffer[0] {
-//                 EditBufferComponent::String(s) => {
-//                     let history: Vec<_> = request
-//                         .history
-//                         .iter()
-//                         .rev()
-//                         // .take(20)
-//                         .filter_map(|c| c.command.clone())
-//                         .collect();
-
-//                     let prompt = format!("{}\n{}", history.join("\n"), s);
-//                     prompt
-//                 },
-//                 EditBufferComponent::Other { r#type: _ } => return Ok(CodexResponse { choices:
-// vec![] }),             }
-//             .into(),
-//             right_file_content: "".into(),
-//             filename: "history.sh".into(),
-//             programming_language: ProgrammingLanguage {
-//                 language_name: LanguageName::Shell,
-//             },
-//         },
-//         max_results: 1,
-//         next_token: "".into(),
-//     };
-
-//     let res = request_cw(codewhisperer_request).await.unwrap();
-
-//     info!(?res, "Codewhisperer response");
-
-//     let text = match res.recommendations.first() {
-//         Some(r) => r.content.clone(),
-//         None => return Ok(CodexResponse { choices: vec![] }),
-//     };
-
-//     Ok(CodexResponse {
-//         choices: vec![CodexChoice { text: Some(text) }],
-//     })
-// }
-
 pub async fn request_cw(
     request: CodewhipererRequest,
 ) -> Result<
     GenerateCompletionsOutput,
     SdkError<GenerateCompletionsError, aws_smithy_runtime_api::client::orchestrator::HttpResponse>,
 > {
-    cw_client()
+    cw_client(Endpoint::Alpha)
         .await
         .generate_completions()
         .file_context(
@@ -423,7 +352,7 @@ mod tests {
 1551  11.10.2023 15:19  cr
 1552  11.10.2023 15:20  g";
 
-        cw_client().await;
+        cw_client(Endpoint::Alpha).await;
 
         let mut request = CodewhipererRequest {
             file_context: CodewhipererFileContext {
