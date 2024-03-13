@@ -39,8 +39,10 @@ use crate::protocol::icons::{
     ProcessedAsset,
 };
 use crate::webview::notification::WebviewNotificationsState;
-use crate::webview::window::WindowId;
-use crate::webview::FigIdMap;
+use crate::webview::{
+    FigIdMap,
+    WindowId,
+};
 use crate::{
     EventLoopProxy,
     EventLoopWindowTarget,

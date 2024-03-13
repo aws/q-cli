@@ -49,20 +49,17 @@ export async function getScriptSuggestions(
       };
     }
 
-    // If both timeouts are specified use the greatest of the two timeouts.
-    const timeoutValue =
-      generator.scriptTimeout !== undefined &&
-      generator.scriptTimeout > defaultTimeout
-        ? generator.scriptTimeout
-        : defaultTimeout;
-    const timeoutPositiveOrUndefined =
-      timeoutValue >= 0 ? timeoutValue : undefined;
+    // Use the longest duration timeout
+    const timeout = Math.max(
+      defaultTimeout,
+      generator.scriptTimeout ?? 0,
+      executeCommandInput.timeout ?? 0
+    );
 
     const { stdout } = await runCachedGenerator(
       generator,
       context,
-      () =>
-        executeCommandTimeout(executeCommandInput, timeoutPositiveOrUndefined),
+      () => executeCommandTimeout(executeCommandInput, timeout),
       generator.cache?.cacheKey ?? JSON.stringify(executeCommandInput)
     );
 

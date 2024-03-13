@@ -11,7 +11,6 @@ use crate::proto::remote::{
     hostbound,
     Hostbound,
 };
-use crate::remote::hostbound::ConfirmExchangeCredentialsRequest;
 
 fn hook_enum_to_hook(request: hostbound::request::Request) -> hostbound::Request {
     hostbound::Request {
@@ -89,8 +88,6 @@ pub fn new_start_exchange_credentials_request() -> hostbound::Request {
     hook_enum_to_hook(hostbound::request::Request::StartExchangeCredentials(()))
 }
 
-pub fn new_confirm_exchange_credentials_request(code: String) -> hostbound::Request {
-    hook_enum_to_hook(hostbound::request::Request::ConfirmExchangeCredentials(
-        ConfirmExchangeCredentialsRequest { code },
-    ))
+pub fn new_confirm_exchange_credentials_request() -> hostbound::Request {
+    hook_enum_to_hook(hostbound::request::Request::ConfirmExchangeCredentials(()))
 }

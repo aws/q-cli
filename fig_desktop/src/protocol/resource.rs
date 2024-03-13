@@ -2,10 +2,7 @@ use std::borrow::Cow;
 use std::io::ErrorKind;
 use std::path::Path;
 
-use http::header::{
-    ACCESS_CONTROL_ALLOW_ORIGIN,
-    CONTENT_TYPE,
-};
+use http::header::CONTENT_TYPE;
 use http::{
     Request,
     Response,
@@ -18,6 +15,7 @@ use super::util::{
     res_404,
     res_500,
 };
+use crate::webview::WindowId;
 
 fn relativize(path: &Path) -> &Path {
     match path.strip_prefix("/") {
@@ -43,7 +41,7 @@ impl Scope for Autocomplete {
 }
 
 /// handle `resource://localhost/`
-pub async fn handle<S: Scope>(request: Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
+pub async fn handle<S: Scope>(request: Request<Vec<u8>>, _: WindowId) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
     let resources_path = fig_util::directories::resources_path()?.join(S::PATH);
 
     if request.uri().host() != Some("localhost") {
@@ -116,6 +114,5 @@ pub async fn handle<S: Scope>(request: Request<Vec<u8>>) -> anyhow::Result<Respo
     Ok(Response::builder()
         .status(StatusCode::OK)
         .header(CONTENT_TYPE, mime)
-        .header(ACCESS_CONTROL_ALLOW_ORIGIN, "*")
         .body(content.into())?)
 }

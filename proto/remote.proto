@@ -104,7 +104,7 @@ message Hostbound {
 
       fig_common.Empty account_info = 105;
       fig_common.Empty start_exchange_credentials = 106;
-      ConfirmExchangeCredentialsRequest confirm_exchange_credentials = 107;
+      fig_common.Empty confirm_exchange_credentials = 107;
     }
   }
 
@@ -125,9 +125,5 @@ message Hostbound {
     message ReadFileResponse {
       fig_common.FileData data = 1;
     }
-  }
-
-  message ConfirmExchangeCredentialsRequest {
-    string code = 1;
   }
 }

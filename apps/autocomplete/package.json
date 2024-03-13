@@ -32,7 +32,7 @@
     "@types/js-yaml": "^4.0.9",
     "@vitejs/plugin-react": "^4.2.1",
     "@withfig/api-bindings": "workspace:~",
-    "@withfig/autocomplete-types": "^1.29.0",
+    "@withfig/autocomplete-types": "^1.30.0",
     "deep-object-diff": "^1.1.9",
     "exponential-backoff": "^3.1.1",
     "js-yaml": "^4.1.0",

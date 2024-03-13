@@ -49,6 +49,7 @@ message ClientOriginatedMessage {
     AuthStatusRequest auth_status_request = 141;
     AuthBuilderIdStartDeviceAuthorizationRequest auth_builder_id_start_device_authorization_request = 142;
     AuthBuilderIdPollCreateTokenRequest auth_builder_id_poll_create_token_request = 143;
+    PingRequest ping_request = 144;
   }
 
   reserved 115;
@@ -80,6 +81,7 @@ message ServerOriginatedMessage {
     AuthStatusResponse auth_status_response = 116;
     AuthBuilderIdStartDeviceAuthorizationResponse auth_builder_id_start_device_authorization_response = 117;
     AuthBuilderIdPollCreateTokenResponse auth_builder_id_poll_create_token_response = 118;
+    PingResponse ping_response = 119;
 
     Notification notification = 1000;
   }
@@ -552,6 +554,7 @@ message RunProcessRequest {
   optional string working_directory = 3;
   repeated fig_common.EnvironmentVariable env = 4;
   optional string terminal_session_id = 5;
+  optional fig_common.Duration timeout = 6;
 }
 
 message RunProcessResponse {
@@ -653,6 +656,10 @@ message AuthStatusResponse {
   bool authed = 1;
   optional AuthKind auth_kind = 2;
 }
+
+message PingRequest {}
+
+message PingResponse {}
 
 /// Notifications
 

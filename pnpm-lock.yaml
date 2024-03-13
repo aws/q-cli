@@ -51,8 +51,8 @@ importers:
         specifier: workspace:~
         version: link:../../packages/typescript-api-bindings
       '@withfig/autocomplete-types':
-        specifier: ^1.29.0
-        version: 1.29.0
+        specifier: ^1.30.0
+        version: 1.30.0
       deep-object-diff:
         specifier: ^1.1.9
         version: 1.1.9
@@ -342,8 +342,8 @@ importers:
         specifier: workspace:^
         version: link:../types
       '@withfig/autocomplete-types':
-        specifier: ^1.29.0
-        version: 1.29.0
+        specifier: ^1.30.0
+        version: 1.30.0
       eslint:
         specifier: ^8.55.0
         version: 8.55.0
@@ -543,8 +543,8 @@ importers:
         specifier: ^6.13.2
         version: 6.13.2(@typescript-eslint/parser@6.21.0)(eslint@8.55.0)(typescript@5.3.3)
       '@withfig/autocomplete-types':
-        specifier: ^1.29.0
-        version: 1.29.0
+        specifier: ^1.30.0
+        version: 1.30.0
       eslint:
         specifier: ^8.55.0
         version: 8.55.0
@@ -4172,8 +4172,8 @@ packages:
       keytar: 7.9.0
     dev: true
 
-  /@withfig/autocomplete-types@1.29.0:
-    resolution: {integrity: sha512-lg7OR48K408nNPiciZ0HXveJuEgEAaylwk9VEnfPGgoWgNFnEPI32dZdZVTHTEtoE0taLByF8O8uosiYsl2+kQ==}
+  /@withfig/autocomplete-types@1.30.0:
+    resolution: {integrity: sha512-Wl1tC4HQprUtudM+htbxaxFhewiD2PpipKD3UxIqBlnEgT1x/+rETGdgXK8H2lHTLTF/TjDJ7Cw08feHIRWeyg==}
 
   /abab@2.0.6:
     resolution: {integrity: sha512-j2afSsaIENvHZN2B8GOpF566vZ5WVk5opAiMTvWgaQT8DkbOqsTfvNAvHoRGU2zzP8cPoqys+xHTRDWW8L+/BA==}

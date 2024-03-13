@@ -40,6 +40,8 @@ import {
   MacosInputMethodResponse,
   OnboardingRequest,
   OpenInExternalApplicationRequest,
+  PingRequest,
+  PingResponse,
   PositionWindowRequest,
   PositionWindowResponse,
   PseudoterminalExecuteRequest,
@@ -553,6 +555,32 @@ export async function sendAuthBuilderIdPollCreateTokenRequest(
             reject(
               Error(
                 `Invalid response '${response?.$case}' for 'AuthBuilderIdPollCreateTokenRequest'`
+              )
+            );
+        }
+      }
+    );
+  });
+}
+
+export async function sendPingRequest(
+  request: PingRequest
+): Promise<PingResponse> {
+  return new Promise((resolve, reject) => {
+    sendMessage(
+      { $case: "pingRequest", pingRequest: request },
+      (response) => {
+        switch (response?.$case) {
+          case "pingResponse":
+            resolve(response.pingResponse);
+            break;
+          case "error":
+            reject(Error(response.error));
+            break;
+          default:
+            reject(
+              Error(
+                `Invalid response '${response?.$case}' for 'PingRequest'`
               )
             );
         }

@@ -34,18 +34,23 @@ use tracing::{
 };
 use wry::RequestAsyncResponder;
 
+use crate::webview::window_id::WindowIdProvider;
+use crate::webview::WindowId;
+
 /// Determines if the build is ran in debug mode
 pub fn is_cargo_debug_build() -> bool {
     cfg!(debug_assertions) && !fig_settings::state::get_bool_or("developer.override-cargo-debug", false)
 }
 
-pub fn wrap_custom_protocol<F, Fut>(
+pub fn wrap_custom_protocol<F, Fut, W>(
     proto_name: &'static str,
+    window_id: W,
     f: F,
 ) -> impl Fn(HttpRequest<Vec<u8>>, RequestAsyncResponder) + 'static
 where
-    F: Fn(HttpRequest<Vec<u8>>) -> Fut + Send + Copy + 'static,
+    F: Fn(HttpRequest<Vec<u8>>, WindowId) -> Fut + Send + Copy + 'static,
     Fut: Future<Output = anyhow::Result<HttpResponse<Cow<'static, [u8]>>>> + Send + 'static,
+    W: WindowIdProvider + Copy + Send + Sync + 'static,
 {
     move |req: HttpRequest<Vec<u8>>, responder: RequestAsyncResponder| {
         let proto = proto_name;
@@ -67,14 +72,12 @@ where
                     .and_then(|accept| accept.split('/').last())
                     .map_or(false, |accept| accept == "json");
 
-                let mut response = match f(req).await {
+                let mut response = match f(req, window_id.window_id()).in_current_span().await {
                     Ok(res) => res,
                     Err(err) => {
                         error!(%err, "Custom protocol failed");
 
-                        let response = HttpResponse::builder()
-                            .status(StatusCode::INTERNAL_SERVER_ERROR)
-                            .header(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+                        let response = HttpResponse::builder().status(StatusCode::INTERNAL_SERVER_ERROR);
                         if accept_json {
                             response.header(CONTENT_TYPE, "application/json").body(
                                 serde_json::to_vec(&json!({ "error": err.to_string() }))
@@ -92,6 +95,10 @@ where
                 response
                     .headers_mut()
                     .insert("X-Request-Id", HeaderValue::from_str(&id.to_string()).unwrap());
+
+                response
+                    .headers_mut()
+                    .insert(ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue::from_static("*"));
 
                 debug!(status = %response.status(), "Custom proto response");
 

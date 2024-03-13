@@ -74,8 +74,10 @@ use crate::protocol::icons::{
     ProcessedAsset,
 };
 use crate::utils::Rect;
-use crate::webview::window::WindowId;
-use crate::webview::FigWindowMap;
+use crate::webview::{
+    FigWindowMap,
+    WindowId,
+};
 use crate::{
     EventLoopProxy,
     EventLoopWindowTarget,

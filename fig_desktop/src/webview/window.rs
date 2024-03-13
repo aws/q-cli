@@ -1,8 +1,4 @@
-use std::borrow::Cow;
-use std::fmt::{
-    self,
-    Display,
-};
+use std::fmt::Display;
 use std::sync::atomic::AtomicBool;
 
 use base64::prelude::*;
@@ -43,6 +39,7 @@ use wry::{
 };
 
 use super::notification::WebviewNotificationsState;
+use super::window_id::WindowId;
 use crate::event::{
     EmitEventName,
     WindowEvent,
@@ -53,28 +50,11 @@ use crate::platform::{
     PlatformState,
 };
 use crate::utils::Rect;
-// #[cfg(target_os = "macos")]
-// use crate::DASHBOARD_ID;
 use crate::{
     EventLoopWindowTarget,
     AUTOCOMPLETE_ID,
     DASHBOARD_ID,
 };
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct WindowId(pub Cow<'static, str>);
-
-impl fmt::Display for WindowId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.0)
-    }
-}
-
-impl serde::Serialize for WindowId {
-    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&self.0)
-    }
-}
 
 pub struct WindowGeometryState {
     /// The outer position of the window by positioning scheme

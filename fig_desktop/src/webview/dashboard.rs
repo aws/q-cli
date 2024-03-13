@@ -1,5 +1,6 @@
 use tracing::error;
 use url::Url;
+
 pub fn url() -> Url {
     if let Ok(dashboard_url) = std::env::var("DASHBOARD_URL") {
         return Url::parse(&dashboard_url).unwrap();

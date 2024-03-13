@@ -19,15 +19,11 @@ use fig_proto::local::{
     ShellContext,
 };
 use fig_proto::remote::clientbound;
-use fig_proto::remote::hostbound::ConfirmExchangeCredentialsRequest;
 use fig_remote_ipc::figterm::{
     FigtermSessionId,
     FigtermState,
 };
-use fig_remote_ipc::{
-    AuthCode,
-    RemoteHookHandler,
-};
+use fig_remote_ipc::RemoteHookHandler;
 use portable_pty::{
     native_pty_system,
     Child,
@@ -95,18 +91,11 @@ impl RemoteHookHandler for RemoteHook {
         Err(anyhow::anyhow!("account_info not implemented"))
     }
 
-    async fn start_exchange_credentials(
-        &mut self,
-        _last_auth_code: &mut AuthCode,
-    ) -> anyhow::Result<Option<clientbound::response::Response>> {
+    async fn start_exchange_credentials(&mut self) -> anyhow::Result<Option<clientbound::response::Response>> {
         Err(anyhow::anyhow!("start_exchange_credentials not implemented"))
     }
 
-    async fn confirm_exchange_credentials(
-        &mut self,
-        _request: ConfirmExchangeCredentialsRequest,
-        _last_auth_code: &mut AuthCode,
-    ) -> anyhow::Result<Option<clientbound::response::Response>> {
+    async fn confirm_exchange_credentials(&mut self) -> anyhow::Result<Option<clientbound::response::Response>> {
         Err(anyhow::anyhow!("confirm_exchange_credentials not implemented"))
     }
 

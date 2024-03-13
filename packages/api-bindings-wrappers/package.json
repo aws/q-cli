@@ -24,7 +24,7 @@
     "@internal/shared": "workspace:^",
     "@internal/tsconfig": "workspace:^",
     "@internal/types": "workspace:^",
-    "@withfig/autocomplete-types": "^1.29.0",
+    "@withfig/autocomplete-types": "^1.30.0",
     "eslint": "^8.55.0",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.1.0",

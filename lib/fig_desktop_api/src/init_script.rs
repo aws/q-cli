@@ -51,6 +51,8 @@ pub struct Constants {
     arch: &'static str,
     env: HashMap<String, String>,
     new_uri_format: bool,
+    support_api_proto: bool,
+    api_proto_url: String,
     #[cfg(target_os = "macos")]
     macos_version: String,
     #[cfg(target_os = "linux")]
@@ -100,6 +102,8 @@ impl Default for Constants {
             arch: consts::ARCH,
             env: std::env::vars().collect(),
             new_uri_format: true,
+            support_api_proto: true,
+            api_proto_url: "api://localhost".to_string(),
             #[cfg(target_os = "macos")]
             macos_version: macos_utils::os::NSOperatingSystemVersion::get().to_string(),
             #[cfg(target_os = "linux")]

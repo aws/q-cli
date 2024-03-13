@@ -24,13 +24,14 @@ export const executeCommandTimeout = async (
     logger.info(`About to run shell command '${command}'`);
     const start = performance.now();
     const result = await withTimeout(
-      timeout,
+      Math.max(timeout, input.timeout ?? 0),
       Process.run({
         executable: input.command,
         args: input.args,
         environment: input.env,
         workingDirectory: input.cwd,
         terminalSessionId: window.globalTerminalSessionId,
+        timeout: input.timeout,
       }),
     );
     const end = performance.now();

@@ -115,7 +115,7 @@ pub async fn api_request<Ctx: KVStore, E: EventHandler<Ctx = Ctx> + Sync>(
     };
 
     let response = match tokio::time::timeout(
-        Duration::from_secs(30),
+        Duration::from_secs(60),
         handle_request(event_handler, ctx, request_id, request),
     )
     .await
@@ -175,6 +175,7 @@ async fn handle_request<Ctx: KVStore, E: EventHandler<Ctx = Ctx> + Sync>(
                 NotificationRequest,
                 OnboardingRequest,
                 OpenInExternalApplicationRequest,
+                PingRequest,
                 PositionWindowRequest,
                 PseudoterminalExecuteRequest,
                 PseudoterminalRestartRequest,
@@ -251,6 +252,7 @@ async fn handle_request<Ctx: KVStore, E: EventHandler<Ctx = Ctx> + Sync>(
                 AuthBuilderIdPollCreateTokenRequest(request) => auth::builder_id_poll_create_token(request, &ctx).await,
                 // other
                 OpenInExternalApplicationRequest(request) => other::open_in_external_application(request).await,
+                PingRequest(request) => other::ping(request),
                 // deprecated
                 GetConfigPropertyRequest(request) => RequestResult::deprecated(request),
                 UpdateConfigPropertyRequest(request) => RequestResult::deprecated(request),

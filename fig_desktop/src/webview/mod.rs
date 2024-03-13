@@ -4,11 +4,14 @@ pub mod dashboard;
 pub mod menu;
 pub mod notification;
 pub mod window;
+pub mod window_id;
 
-use std::borrow::Cow;
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::sync::Arc;
+use std::sync::{
+    Arc,
+    OnceLock,
+};
 
 use cfg_if::cfg_if;
 use fig_desktop_api::init_script::javascript_init;
@@ -20,7 +23,6 @@ use fig_util::directories;
 use fnv::FnvBuildHasher;
 use muda::MenuEvent;
 use once_cell::sync::Lazy;
-use parking_lot::Mutex;
 use regex::RegexSet;
 use tao::dpi::LogicalSize;
 use tao::event::{
@@ -46,10 +48,7 @@ use tracing::{
     warn,
 };
 use url::Url;
-use window::{
-    WindowId,
-    WindowState,
-};
+use window::WindowState;
 use wry::{
     Theme as WryTheme,
     WebContext,
@@ -59,6 +58,7 @@ use wry::{
 
 use self::menu::menu_bar;
 use self::notification::WebviewNotificationsState;
+use self::window_id::DashboardId;
 use crate::event::{
     Event,
     WindowEvent,
@@ -72,6 +72,7 @@ use crate::platform::{
     PlatformState,
 };
 use crate::protocol::{
+    api,
     icons,
     resource,
     spec,
@@ -82,6 +83,12 @@ use crate::tray::{
     self,
     build_tray,
 };
+use crate::webview::window_id::AutocompleteId;
+pub use crate::webview::window_id::{
+    WindowId,
+    AUTOCOMPLETE_ID,
+    DASHBOARD_ID,
+};
 use crate::{
     file_watcher,
     local_ipc,
@@ -91,9 +98,6 @@ use crate::{
     EventLoopProxy,
     InterceptState,
 };
-
-pub const DASHBOARD_ID: WindowId = WindowId(Cow::Borrowed("dashboard"));
-pub const AUTOCOMPLETE_ID: WindowId = WindowId(Cow::Borrowed("autocomplete"));
 
 pub const DASHBOARD_SIZE: LogicalSize<f64> = LogicalSize::new(960.0, 720.0);
 pub const DASHBOARD_MINIMUM_SIZE: LogicalSize<f64> = LogicalSize::new(700.0, 480.0);
@@ -141,14 +145,19 @@ pub struct WebviewManager {
     dash_kv_store: Arc<DashKVStore>,
 }
 
-pub static GLOBAL_PROXY: Mutex<Option<EventLoopProxy>> = Mutex::new(None);
+pub static GLOBAL_PROXY: OnceLock<EventLoopProxy> = OnceLock::new();
+pub static DEBUG_STATE: OnceLock<Arc<DebugState>> = OnceLock::new();
+pub static FIGTERM_STATE: OnceLock<Arc<FigtermState>> = OnceLock::new();
+pub static INTERCEPT_STATE: OnceLock<Arc<InterceptState>> = OnceLock::new();
+pub static PLATFORM_STATE: OnceLock<Arc<PlatformState>> = OnceLock::new();
+pub static NOTIFICATIONS_STATE: OnceLock<Arc<WebviewNotificationsState>> = OnceLock::new();
+pub static DASH_KV_STORE: OnceLock<Arc<DashKVStore>> = OnceLock::new();
 
 impl WebviewManager {
     #[allow(unused_variables)]
     #[allow(unused_mut)]
     pub fn new(visible: bool) -> Self {
         let mut event_loop = EventLoopBuilder::with_user_event().build();
-        *GLOBAL_PROXY.lock() = Some(event_loop.create_proxy());
 
         #[cfg(target_os = "macos")]
         if !visible {
@@ -164,17 +173,36 @@ impl WebviewManager {
         }
 
         let proxy = event_loop.create_proxy();
+        GLOBAL_PROXY.set(proxy.clone()).unwrap();
+
+        let debug_state = Arc::new(DebugState::default());
+        DEBUG_STATE.set(debug_state.clone()).unwrap();
+
+        let figterm_state = Arc::new(FigtermState::default());
+        FIGTERM_STATE.set(figterm_state.clone()).unwrap();
+
+        let intercept_state = Arc::new(InterceptState::default());
+        INTERCEPT_STATE.set(intercept_state.clone()).unwrap();
+
+        let platform_state = Arc::new(PlatformState::new(proxy));
+        PLATFORM_STATE.set(platform_state.clone()).unwrap();
+
+        let notifications_state = Arc::new(WebviewNotificationsState::default());
+        NOTIFICATIONS_STATE.set(notifications_state.clone()).unwrap();
+
+        let dash_kv_store = Arc::new(DashKVStore::new());
+        DASH_KV_STORE.set(dash_kv_store.clone()).unwrap();
 
         Self {
             fig_id_map: Default::default(),
             window_id_map: Default::default(),
             event_loop,
-            debug_state: Arc::new(DebugState::default()),
-            figterm_state: Arc::new(FigtermState::default()),
-            intercept_state: Arc::new(InterceptState::default()),
-            platform_state: Arc::new(PlatformState::new(proxy)),
-            notifications_state: Arc::new(WebviewNotificationsState::default()),
-            dash_kv_store: Arc::new(DashKVStore::new()),
+            debug_state,
+            figterm_state,
+            intercept_state,
+            platform_state,
+            notifications_state,
+            dash_kv_store,
         }
     }
 
@@ -651,17 +679,17 @@ pub fn build_dashboard(
         .with_devtools(true)
         .with_asynchronous_custom_protocol(
             "resource".into(),
-            utils::wrap_custom_protocol("resource::Dashboard", resource::handle::<resource::Dashboard>),
+            utils::wrap_custom_protocol(
+                "resource::Dashboard",
+                DashboardId,
+                resource::handle::<resource::Dashboard>,
+            ),
         )
-        .with_navigation_handler(navigation_handler(DASHBOARD_ID, &[
-            // Main domain
-            r"app\.fig\.io$",
-            // Old domain
-            r"desktop\.fig\.io$",
-            // Dev domains
-            r"^localhost$",
-            r"^127\.0\.0\.1$",
-        ]))
+        .with_asynchronous_custom_protocol(
+            "api".into(),
+            utils::wrap_custom_protocol("api", DashboardId, api::handle),
+        )
+        .with_navigation_handler(navigation_handler(DASHBOARD_ID, &[r"^localhost$", r"^127\.0\.0\.1$"]))
         .with_initialization_script(&javascript_init())
         .with_clipboard(true)
         .with_hotkeys_zoom(true)
@@ -737,23 +765,34 @@ pub fn build_autocomplete(
                 })
                 .unwrap();
         })
-        .with_asynchronous_custom_protocol("fig".into(), utils::wrap_custom_protocol("fig", icons::handle))
-        .with_asynchronous_custom_protocol("icon".into(), utils::wrap_custom_protocol("icon", icons::handle))
-        .with_asynchronous_custom_protocol("spec".into(), utils::wrap_custom_protocol("spec", spec::handle))
+        .with_asynchronous_custom_protocol(
+            "fig".into(),
+            utils::wrap_custom_protocol("fig", AutocompleteId, icons::handle),
+        )
+        .with_asynchronous_custom_protocol(
+            "icon".into(),
+            utils::wrap_custom_protocol("icon", AutocompleteId, icons::handle),
+        )
+        .with_asynchronous_custom_protocol(
+            "spec".into(),
+            utils::wrap_custom_protocol("spec", AutocompleteId, spec::handle),
+        )
         .with_asynchronous_custom_protocol(
             "resource".into(),
-            utils::wrap_custom_protocol("resource::Autocomplete", resource::handle::<resource::Autocomplete>),
+            utils::wrap_custom_protocol(
+                "resource::Autocomplete",
+                AutocompleteId,
+                resource::handle::<resource::Autocomplete>,
+            ),
+        )
+        .with_asynchronous_custom_protocol(
+            "api".into(),
+            utils::wrap_custom_protocol("api", AutocompleteId, api::handle),
         )
         .with_devtools(true)
         .with_transparent(true)
         .with_initialization_script(&javascript_init())
-        .with_navigation_handler(navigation_handler(AUTOCOMPLETE_ID, &[
-            // Main domain
-            r"autocomplete\.fig\.io$",
-            // Dev domains
-            r"localhost$",
-            r"^127\.0\.0\.1$",
-        ]))
+        .with_navigation_handler(navigation_handler(AUTOCOMPLETE_ID, &[r"localhost$", r"^127\.0\.0\.1$"]))
         .with_clipboard(true)
         .with_hotkeys_zoom(true)
         .with_accept_first_mouse(true)

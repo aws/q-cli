@@ -192,7 +192,7 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
             .as_deref()
             .and_then(|username| HOSTNAME.as_deref().map(|hostname| format!("{username}@{hostname}"))),
         environment_variables: SHELL_ENVIRONMENT_VARIABLES.lock().clone(),
-        figterm_version: Some(env!("CARGO_PKG_VERSION").into()),
+        cwterm_version: Some(env!("CARGO_PKG_VERSION").into()),
         preexec: Some(shell_state.preexec),
         osc_lock: Some(shell_state.osc_lock),
         alias: SHELL_ALIAS.lock().clone(),
@@ -542,14 +542,14 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
     let pty_name = pty.slave.get_name().unwrap_or_else(|| session_id.clone());
 
     let _logger_guard = match fig_log::Logger::new()
-        .with_file(format!("figterm{pty_name}.log"))
+        .with_file(format!("cwterm{pty_name}.log"))
         .with_delete_old_log_file()
         .init()
         .context("Failed to init logger")
     {
         Ok(logger_guard) => Some(logger_guard),
         Err(err) => {
-            if !fig_settings::state::get_bool_or("figterm.suppress_log_error", false) {
+            if !fig_settings::state::get_bool_or("cwterm.suppress_log_error", false) {
                 // let id = capture_anyhow(&err);
                 eprintln!("Fig failed to init logger: {err:?}");
             }
@@ -575,7 +575,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
     let (child_tx, mut child_rx) = oneshot::channel();
     std::thread::spawn(move || child_tx.send(child.wait()));
 
-    info!("Figterm: {}", Pid::current());
+    info!("Cwterm: {}", Pid::current());
     info!("Pty name: {pty_name}");
 
     let runtime = runtime::Builder::new_multi_thread()
@@ -583,7 +583,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
         .thread_name_fn(|| {
             static ATOMIC_ID: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
             let id = ATOMIC_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-            format!("figterm-runtime-worker-{id}")
+            format!("cwterm-runtime-worker-{id}")
         })
         .build()?;
 
@@ -1048,9 +1048,9 @@ fn main() {
 
     logger::stdio_debug_log(format!("CW_LOG_LEVEL={}", fig_log::get_fig_log_level()));
 
-    if !state::get_bool_or("figterm.enabled", true) {
-        println!("[NOTE] figterm is disabled. Autocomplete will not work.");
-        logger::stdio_debug_log("figterm is disabled. `figterm.enabled` == false");
+    if !state::get_bool_or("cwterm.enabled", true) {
+        println!("[NOTE] cwterm is disabled. Autocomplete will not work.");
+        logger::stdio_debug_log("cwterm is disabled. `cwterm.enabled` == false");
         return;
     }
 

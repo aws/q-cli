@@ -49,19 +49,19 @@ export enum TokenType {
 
 export type BasicAnnotation =
   | {
-      text: string;
-      type: Exclude<TokenType, TokenType.Composite>;
+    text: string;
+    type: Exclude<TokenType, TokenType.Composite>;
 
-      // Same as text, unless in CompositeAnnotation, where, e.g. in ls -lah
-      // the "a" token has text: "a" but tokenName: -a
-      tokenName?: string;
-    }
+    // Same as text, unless in CompositeAnnotation, where, e.g. in ls -lah
+    // the "a" token has text: "a" but tokenName: -a
+    tokenName?: string;
+  }
   | {
-      text: string;
-      type: TokenType.Subcommand;
-      spec: Internal.Subcommand;
-      specLocation: Internal.SpecLocation;
-    };
+    text: string;
+    type: TokenType.Subcommand;
+    spec: Internal.Subcommand;
+    specLocation: Internal.SpecLocation;
+  };
 
 type CompositeAnnotation = {
   text: string;
@@ -318,7 +318,7 @@ const updateStateForOption = (
     if (currentRepetitions >= isRepeatable) {
       throw new UpdateStateError(
         `Cannot pass option again, already passed ${currentRepetitions} times, ` +
-          `and can only be passed ${isRepeatable} times`,
+        `and can only be passed ${isRepeatable} times`,
       );
     }
   }
@@ -640,8 +640,7 @@ const generateSpecForState = async (
   } catch (err) {
     if (!(err instanceof ParsingHistoryError)) {
       localLogger.error(
-        `There was an error with spec (generator owner: ${
-          completionObj.name
+        `There was an error with spec (generator owner: ${completionObj.name
         }, tokens: ${tokenArray.join(", ")}) generateSpec function`,
         err,
       );

@@ -16,7 +16,7 @@ use crate::event::{
     WindowPosition,
 };
 use crate::platform::PlatformState;
-use crate::webview::window::WindowId;
+use crate::webview::WindowId;
 use crate::{
     Event,
     EventLoopProxy,

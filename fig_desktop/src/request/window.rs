@@ -17,7 +17,7 @@ use crate::event::{
     Event,
     WindowEvent,
 };
-use crate::webview::window::WindowId;
+use crate::webview::WindowId;
 use crate::{
     EventLoopProxy,
     AUTOCOMPLETE_ID,

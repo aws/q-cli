@@ -1,4 +1,9 @@
-use fig_proto::fig::OpenInExternalApplicationRequest;
+use fig_proto::fig::server_originated_message::Submessage as ServerSubmessage;
+use fig_proto::fig::{
+    OpenInExternalApplicationRequest,
+    PingRequest,
+    PingResponse,
+};
 use fig_util::open_url_async;
 
 use super::{
@@ -14,4 +19,8 @@ pub async fn open_in_external_application(request: OpenInExternalApplicationRequ
         },
         None => RequestResult::error("No url provided to open"),
     }
+}
+
+pub fn ping(_request: PingRequest) -> RequestResult {
+    RequestResult::Ok(Box::new(ServerSubmessage::PingResponse(PingResponse {})))
 }

@@ -48,21 +48,21 @@ use crate::event::{
     WindowEvent,
 };
 use crate::webview::notification::WebviewNotificationsState;
-use crate::webview::window::WindowId;
+use crate::webview::WindowId;
 use crate::{
     DebugState,
     EventLoopProxy,
     InterceptState,
 };
 
-struct Context<'a> {
-    debug_state: &'a DebugState,
-    figterm_state: &'a FigtermState,
-    intercept_state: &'a InterceptState,
-    notifications_state: &'a WebviewNotificationsState,
-    proxy: &'a EventLoopProxy,
-    window_id: &'a WindowId,
-    dash_kv_store: &'a DashKVStore,
+pub struct Context<'a> {
+    pub debug_state: &'a DebugState,
+    pub figterm_state: &'a FigtermState,
+    pub intercept_state: &'a InterceptState,
+    pub notifications_state: &'a WebviewNotificationsState,
+    pub proxy: &'a EventLoopProxy,
+    pub window_id: &'a WindowId,
+    pub dash_kv_store: &'a DashKVStore,
 }
 
 impl KVStore for Context<'_> {
@@ -76,7 +76,7 @@ impl KVStore for Context<'_> {
 }
 
 #[derive(Default)]
-struct EventHandler<'a> {
+pub struct EventHandler<'a> {
     _lifetime: PhantomData<&'a ()>,
 }
 

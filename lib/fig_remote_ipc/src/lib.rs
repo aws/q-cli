@@ -9,7 +9,6 @@ use fig_proto::local::{
     ShellContext,
 };
 use fig_proto::remote::clientbound;
-use fig_proto::remote::hostbound::ConfirmExchangeCredentialsRequest;
 use figterm::{
     FigtermSessionId,
     FigtermState,
@@ -58,16 +57,9 @@ pub trait RemoteHookHandler {
 
     async fn account_info(&mut self) -> anyhow::Result<Option<clientbound::response::Response>>;
 
-    async fn start_exchange_credentials(
-        &mut self,
-        last_auth_code: &mut AuthCode,
-    ) -> anyhow::Result<Option<clientbound::response::Response>>;
+    async fn start_exchange_credentials(&mut self) -> anyhow::Result<Option<clientbound::response::Response>>;
 
-    async fn confirm_exchange_credentials(
-        &mut self,
-        request: ConfirmExchangeCredentialsRequest,
-        last_auth_code: &mut AuthCode,
-    ) -> anyhow::Result<Option<clientbound::response::Response>>;
+    async fn confirm_exchange_credentials(&mut self) -> anyhow::Result<Option<clientbound::response::Response>>;
 
     /// This is not technically a hook, it is triggers by many other hooks and does not allow for a
     /// response, mostly used for diagnostics and testing

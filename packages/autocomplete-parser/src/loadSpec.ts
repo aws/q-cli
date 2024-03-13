@@ -120,24 +120,6 @@ type ResolvedSpecLocation =
   | { type: "public"; name: string }
   | { type: "private"; namespace: string; name: string };
 
-// const loadMixinCached = async (
-//   resolvedLocation: ResolvedSpecLocation,
-//   authClient: AuthClient,
-// ): Promise<SpecMixin | undefined> => {
-//   if (mixinCache.size === 0) {
-//     await withTimeout(5000, preloadMixins(authClient));
-//   }
-
-//   const key = getMixinCacheKey(
-//     resolvedLocation.name,
-//     "namespace" in resolvedLocation ? resolvedLocation.namespace : undefined,
-//   );
-//   if (mixinCache.has(key)) {
-//     return mixinCache.get(key);
-//   }
-//   return undefined;
-// };
-
 export const importSpecFromLocation = async (
   specLocation: SpecLocation,
   localLogger: Logger = logger

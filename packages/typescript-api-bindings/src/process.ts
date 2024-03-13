@@ -6,12 +6,14 @@ export async function run({
   environment,
   workingDirectory,
   terminalSessionId,
+  timeout,
 }: {
   executable: string;
   args: string[];
   environment?: Record<string, string | undefined>;
   workingDirectory?: string;
   terminalSessionId?: string;
+  timeout?: number;
 }) {
   const env = environment ?? {};
   return sendRunProcessRequest({
@@ -20,5 +22,9 @@ export async function run({
     env: Object.keys(env).map((key) => ({ key, value: env[key] })),
     workingDirectory,
     terminalSessionId,
+    timeout: timeout ? {
+      nanos: Math.floor((timeout % 1000) * 1_000_000_000),
+      secs: Math.floor(timeout / 1000),
+    } : undefined,
   });
 }

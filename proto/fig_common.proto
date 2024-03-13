@@ -3,6 +3,11 @@ package fig_common;
 
 message Empty {}
 
+message Duration {
+  uint64 secs = 1;
+  uint32 nanos = 2;
+}
+
 message Json {
   message Number {
     oneof number {
@@ -56,8 +61,8 @@ message ShellContext {
   optional string wsl_distro = 11;
   // environment variables in the shell
   repeated EnvironmentVariable environment_variables = 13;
-  // the version of figterm
-  optional string figterm_version = 14;
+  // the version of cwterm
+  optional string cwterm_version = 14;
   // true if a command is running
   optional bool preexec = 15;
   // true if OSCs are locked

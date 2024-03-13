@@ -6,10 +6,10 @@ export const UpdateTerminalNotification = () => {
   const { figState } = useAutocompleteStore();
   const shellContext = figState.shellContext as ShellContext | undefined;
 
-  const figtermVersion = shellContext?.figtermVersion;
+  const cwtermVersion = shellContext?.cwtermVersion;
   const desktopVersion = window.fig.constants?.version;
 
-  const mismatchedVersions = figtermVersion !== desktopVersion;
+  const mismatchedVersions = cwtermVersion !== desktopVersion;
 
   const isLegacyVersion = parseInt((fig.constants?.version ?? "0")[0], 10) < 2;
 
@@ -19,7 +19,7 @@ export const UpdateTerminalNotification = () => {
         shellContext?.sessionId ?? "unknown"
       }`}
       show={
-        Boolean(figtermVersion) &&
+        Boolean(cwtermVersion) &&
         Boolean(desktopVersion) &&
         mismatchedVersions &&
         !isLegacyVersion

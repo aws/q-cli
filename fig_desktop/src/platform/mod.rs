@@ -11,8 +11,10 @@ use crate::protocol::icons::{
 };
 use crate::utils::Rect;
 use crate::webview::notification::WebviewNotificationsState;
-use crate::webview::window::WindowId;
-use crate::webview::FigIdMap;
+use crate::webview::{
+    FigIdMap,
+    WindowId,
+};
 use crate::{
     EventLoopProxy,
     EventLoopWindowTarget,
@@ -41,6 +43,7 @@ pub struct PlatformWindow {
     // pub inner: ExternalPlatformWindowImpl
 }
 
+#[derive(Debug)]
 pub struct PlatformState(Arc<PlatformStateImpl>);
 
 impl PlatformState {

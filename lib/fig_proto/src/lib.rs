@@ -248,7 +248,7 @@ mod tests {
             shell_path: Some("/bin/bash".into()),
             wsl_distro: None,
             environment_variables: vec![],
-            figterm_version: None,
+            cwterm_version: None,
             preexec: Some(false),
             osc_lock: Some(true),
             alias: Some("alias q='cw q'\n".into()),

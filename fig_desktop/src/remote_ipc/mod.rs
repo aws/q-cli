@@ -1,8 +1,5 @@
 use std::sync::Arc;
-use std::time::{
-    Duration,
-    SystemTime,
-};
+use std::time::Duration;
 
 use anyhow::{
     anyhow,
@@ -32,21 +29,15 @@ use fig_proto::local::{
 };
 use fig_proto::prost::Message;
 use fig_proto::remote::clientbound;
-use fig_proto::remote::hostbound::ConfirmExchangeCredentialsRequest;
 use fig_remote_ipc::figterm::{
     FigtermSessionId,
     FigtermState,
     SessionMetrics,
 };
-use fig_remote_ipc::AuthCode;
-use parking_lot::Mutex;
-use rand::distributions::uniform::SampleRange;
 use time::OffsetDateTime;
-use tokio::time::Instant;
 use tracing::{
     debug,
     error,
-    warn,
 };
 
 use crate::event::{
@@ -60,8 +51,6 @@ use crate::{
     EventLoopProxy,
     AUTOCOMPLETE_ID,
 };
-
-static LAST_EXECUTED_TIME: Mutex<SystemTime> = Mutex::new(SystemTime::UNIX_EPOCH);
 
 #[derive(Debug, Clone)]
 pub struct RemoteHook {
@@ -363,42 +352,11 @@ impl fig_remote_ipc::RemoteHookHandler for RemoteHook {
         Err(anyhow!("account info not implemented"))
     }
 
-    async fn start_exchange_credentials(
-        &mut self,
-        last_auth_code: &mut AuthCode,
-    ) -> Result<Option<clientbound::response::Response>> {
-        {
-            let mut last_time = LAST_EXECUTED_TIME.lock();
-            if last_time.elapsed().unwrap_or_default() < Duration::from_secs(1) {
-                warn!("start_exchange_credentials hit rate limit");
-                return Ok(None);
-            }
-            *last_time = SystemTime::now();
-        }
-
-        let new_code = (0..99999999).sample_single(&mut rand::thread_rng());
-        *last_auth_code = Some((new_code, Instant::now()));
-
-        if self
-            .proxy
-            .send_event(Event::ShowMessageNotification {
-                title: "Credential exchange requested".into(),
-                body: format!("Your exchange code is: {new_code:08}").into(),
-                parent: None,
-            })
-            .is_err()
-        {
-            error!("event loop closed!");
-        }
-
-        Ok(None)
+    async fn start_exchange_credentials(&mut self) -> Result<Option<clientbound::response::Response>> {
+        Err(anyhow!("start_exchange_credentials not implemented"))
     }
 
-    async fn confirm_exchange_credentials(
-        &mut self,
-        _request: ConfirmExchangeCredentialsRequest,
-        _last_auth_code: &mut AuthCode,
-    ) -> Result<Option<clientbound::response::Response>> {
-        Err(anyhow::anyhow!("confirm_exchange_credentials not implemented"))
+    async fn confirm_exchange_credentials(&mut self) -> Result<Option<clientbound::response::Response>> {
+        Err(anyhow!("confirm_exchange_credentials not implemented"))
     }
 }

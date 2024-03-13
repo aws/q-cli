@@ -25,6 +25,24 @@ export function setHandlerForId(handler: APIResponseHandler, id: number) {
   handlers[id] = handler;
 }
 
+const receivedMessage = (response: ServerOriginatedMessage): void => {
+  if (response.id === undefined) {
+    return;
+  }
+
+  const handler = handlers[response.id];
+
+  if (!handler) {
+    return;
+  }
+
+  const keepListeningOnID = handlers[response.id](response.submessage);
+
+  if (!keepListeningOnID) {
+    delete handlers[response.id];
+  }
+};
+
 export function sendMessage(
   message: ClientOriginatedMessage["submessage"],
   handler?: APIResponseHandler
@@ -39,6 +57,36 @@ export function sendMessage(
   }
 
   const buffer = ClientOriginatedMessage.encode(request).finish();
+
+  if (
+    window?.fig?.constants?.supportApiProto &&
+    window?.fig?.constants?.apiProtoUrl
+  ) {
+    const url = new URL(window.fig.constants.apiProtoUrl);
+
+    if (
+      request.submessage?.$case &&
+      typeof request.submessage?.$case === "string"
+    ) {
+      url.pathname = `/${request.submessage.$case}`;
+    } else {
+      url.pathname = "/unknown";
+    }
+
+    fetch(url, {
+      method: "POST",
+      headers: {
+        "content-type": "application/fig-api",
+      },
+      body: buffer,
+    }).then(async (res) => {
+      const body = new Uint8Array(await res.arrayBuffer());
+      const m = ServerOriginatedMessage.decode(body);
+      receivedMessage(m);
+    });
+    return;
+  }
+
   const b64 = bytesToBase64(buffer);
 
   if (window.ipc && window.ipc.postMessage) {
@@ -57,24 +105,6 @@ export function sendMessage(
     );
   }
 }
-
-const receivedMessage = (response: ServerOriginatedMessage): void => {
-  if (response.id === undefined) {
-    return;
-  }
-
-  const handler = handlers[response.id];
-
-  if (!handler) {
-    return;
-  }
-
-  const keepListeningOnID = handlers[response.id](response.submessage);
-
-  if (!keepListeningOnID) {
-    delete handlers[response.id];
-  }
-};
 
 const setupEventListeners = (): void => {
   document.addEventListener(FigGlobalErrorOccurred, (event: Event) => {

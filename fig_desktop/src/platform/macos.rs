@@ -101,9 +101,9 @@ use crate::protocol::icons::{
 };
 use crate::utils::Rect;
 use crate::webview::notification::WebviewNotificationsState;
-use crate::webview::window::WindowId;
 use crate::webview::{
     FigIdMap,
+    WindowId,
     GLOBAL_PROXY,
 };
 use crate::{
@@ -449,8 +449,7 @@ impl PlatformStateImpl {
                 ) -> BOOL {
                     trace!("application_should_handle_reopen");
 
-                    let proxy = GLOBAL_PROXY.lock();
-                    let proxy = proxy.as_ref().unwrap();
+                    let proxy = GLOBAL_PROXY.get().unwrap();
 
                     if let Err(err) = proxy.send_event(Event::WindowEvent {
                         window_id: DASHBOARD_ID,

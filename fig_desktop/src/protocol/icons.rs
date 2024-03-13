@@ -12,10 +12,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Result;
-use http::header::{
-    ACCESS_CONTROL_ALLOW_ORIGIN,
-    CONTENT_TYPE,
-};
+use http::header::CONTENT_TYPE;
 use http::{
     Request,
     Response,
@@ -39,6 +36,7 @@ use tracing::{
 use url::Url;
 
 use crate::platform::PlatformState;
+use crate::webview::WindowId;
 
 const DEFAULT_ICON: &str = "template";
 
@@ -153,7 +151,6 @@ fn build_asset_response(data: Cow<'static, [u8]>, asset_kind: AssetKind) -> Resp
             AssetKind::Png => "image/png",
             AssetKind::Svg => "image/svg+xml",
         })
-        .header(ACCESS_CONTROL_ALLOW_ORIGIN, "*")
         .body(data)
         .unwrap()
 }
@@ -172,7 +169,7 @@ fn scale(a: u8, b: u8) -> u8 {
     (a as f32 * (b as f32 / 256.0)) as u8
 }
 
-pub async fn handle(request: Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
+pub async fn handle(request: Request<Vec<u8>>, _: WindowId) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
     debug!(uri =% request.uri(), "Fig protocol request");
     let url = Url::parse(&request.uri().to_string())?;
     let domain = url.domain();

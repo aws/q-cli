@@ -331,8 +331,8 @@ impl DebugSubcommand {
                         // Add figterm*.log to the list of files to open
                         let pattern = logs_dir.join("cwterm*.log");
                         let globset = glob([pattern.to_str().unwrap()])?;
-                        let figterm_logs = glob_dir(&globset, &logs_dir)?;
-                        paths.extend(figterm_logs);
+                        let cwterm_logs = glob_dir(&globset, &logs_dir)?;
+                        paths.extend(cwterm_logs);
                     }
 
                     // Push any remaining files to open

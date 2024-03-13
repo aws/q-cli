@@ -4,6 +4,8 @@ declare global {
       | {
           version?: string;
           os?: string;
+          supportApiProto?: boolean;
+          apiProtoUrl?: string;
         }
       | undefined;
     const quiet: boolean | undefined;

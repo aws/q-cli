@@ -62,19 +62,13 @@ use crate::figterm::{
     FigtermState,
     InterceptMode,
 };
-use crate::{
-    AuthCode,
-    RemoteHookHandler,
-};
-// use crate::webview::notification::WebviewNotificationsState;
-// use crate::EventLoopProxy;
+use crate::RemoteHookHandler;
 
 pub async fn start_remote_ipc(
     socket_path: PathBuf,
     figterm_state: Arc<FigtermState>,
     hook: impl RemoteHookHandler + Send + Clone + 'static,
 ) -> Result<()> {
-    // let socket_path = directories::remote_socket_path()?;
     if let Some(parent) = socket_path.parent() {
         if !parent.exists() {
             std::fs::create_dir_all(parent).context("Failed creating socket path")?;
@@ -102,8 +96,6 @@ pub async fn start_remote_ipc(
 async fn handle_remote_ipc(
     stream: UnixStream,
     figterm_state: Arc<FigtermState>,
-    // notifications_state: Arc<WebviewNotificationsState>,
-    // proxy: EventLoopProxy,
     mut hook: impl RemoteHookHandler + Send,
 ) {
     let (reader, writer) = tokio::io::split(stream);
@@ -123,7 +115,6 @@ async fn handle_remote_ipc(
     let ping_task = tokio::spawn(send_pings(clientbound_tx.clone(), on_close_tx.subscribe()));
 
     let mut session_id: Option<FigtermSessionId> = None;
-    let mut last_auth_code: AuthCode = None;
 
     let mut reader = BufferedReader::new(reader);
     loop {
@@ -134,7 +125,7 @@ async fn handle_remote_ipc(
             }
             message = reader.recv_message::<Hostbound>() => match message {
                 Ok(Some(message)) => {
-                    trace!(?message, "Received remote message");
+                    debug!(?message, "Received remote message");
                     if let Some(response) = match message.packet {
                         Some(hostbound::Packet::Handshake(handshake)) => {
                             let result = if session_id.is_some() {
@@ -285,8 +276,8 @@ async fn handle_remote_ipc(
                                         hook.intercepted_key(intercepted_key).await
                                     },
                                     hostbound::request::Request::AccountInfo(_) => hook.account_info().await,
-                                    hostbound::request::Request::StartExchangeCredentials(_) => hook.start_exchange_credentials(&mut last_auth_code).await,
-                                    hostbound::request::Request::ConfirmExchangeCredentials(request) => hook.confirm_exchange_credentials(request, &mut last_auth_code).await,
+                                    hostbound::request::Request::StartExchangeCredentials(_) => hook.start_exchange_credentials().await,
+                                    hostbound::request::Request::ConfirmExchangeCredentials(_) => hook.confirm_exchange_credentials().await,
                                 } ;
 
                                 match res {

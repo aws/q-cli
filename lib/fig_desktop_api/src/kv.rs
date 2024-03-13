@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use bincode::Options;
 use dashmap::DashMap;
 use thiserror::Error;
@@ -60,6 +62,16 @@ impl DashKVStore {
 }
 
 impl KVStore for DashKVStore {
+    fn set_raw(&self, key: impl Into<Vec<u8>>, value: impl Into<Vec<u8>>) {
+        self.0.insert(key.into(), value.into());
+    }
+
+    fn get_raw(&self, key: impl AsRef<[u8]>) -> Option<Vec<u8>> {
+        self.0.get(key.as_ref()).as_ref().map(|v| v.to_vec())
+    }
+}
+
+impl KVStore for Arc<DashKVStore> {
     fn set_raw(&self, key: impl Into<Vec<u8>>, value: impl Into<Vec<u8>>) {
         self.0.insert(key.into(), value.into());
     }

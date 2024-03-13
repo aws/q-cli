@@ -82,8 +82,8 @@ pub async fn execute(request: PseudoterminalExecuteRequest, figterm_state: &Figt
 
         let response = timeout(Duration::from_secs(10), rx)
             .await
-            .map_err(|err| Error::from_std(err).wrap_err("Figterm response timed out after 10 sec"))?
-            .map_err(|err| Error::from_std(err).wrap_err("Figterm response failed to receive from sender"))?;
+            .map_err(|err| Error::from_std(err).wrap_err("Cwterm response timed out after 10 sec"))?
+            .map_err(|err| Error::from_std(err).wrap_err("CWterm response failed to receive from sender"))?;
 
         if let hostbound::response::Response::PseudoterminalExecute(response) = response {
             RequestResult::Ok(Box::new(ServerOriginatedSubMessage::PseudoterminalExecuteResponse(
@@ -150,7 +150,8 @@ pub async fn run(request: RunProcessRequest, state: &FigtermState) -> RequestRes
         exe = request.executable,
         args =? request.arguments,
         cwd = request.working_directory(),
-        env =? request.env
+        env =? request.env,
+        timeout =? request.timeout,
     }, "Running command");
 
     let session_sender = state.with_maybe_id(&request.terminal_session_id.map(FigtermSessionId::new), |session| {
@@ -169,7 +170,13 @@ pub async fn run(request: RunProcessRequest, state: &FigtermState) -> RequestRes
             .map_err(|err| format!("failed sending command to figterm: {err}"))?;
         drop(session_sender);
 
-        let response = timeout(Duration::from_secs(10), rx)
+        let timeout_duration = request
+            .timeout
+            .map(Duration::from)
+            .unwrap_or_default()
+            .max(Duration::from_secs(10));
+
+        let response = timeout(timeout_duration, rx)
             .await
             .map_err(|_err| "Timed out waiting for figterm response")?
             .map_err(|err| format!("Failed to receive figterm response: {err}"))?;

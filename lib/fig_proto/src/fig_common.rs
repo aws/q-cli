@@ -9,6 +9,23 @@ use serde_json::Value;
 
 use crate::proto::fig_common::*;
 
+// Duration conversion
+
+impl From<std::time::Duration> for Duration {
+    fn from(value: std::time::Duration) -> Self {
+        Self {
+            secs: value.as_secs(),
+            nanos: value.subsec_nanos(),
+        }
+    }
+}
+
+impl From<Duration> for std::time::Duration {
+    fn from(value: Duration) -> Self {
+        std::time::Duration::new(value.secs, value.nanos)
+    }
+}
+
 // Context utils
 
 impl ShellContext {}
@@ -29,7 +46,7 @@ impl Serialize for ShellContext {
         s.serialize_field("shell_path", &self.shell_path)?;
         s.serialize_field("wsl_distro", &self.wsl_distro)?;
         s.serialize_field("environment_variables", &self.environment_variables)?;
-        s.serialize_field("figterm_version", &self.figterm_version)?;
+        s.serialize_field("cwterm_version", &self.cwterm_version)?;
         s.serialize_field("preexec", &self.preexec)?;
         s.end()
     }

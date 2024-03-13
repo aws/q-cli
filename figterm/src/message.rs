@@ -345,7 +345,7 @@ pub async fn process_figterm_message(
                 Err(err) => error!(%err, "Failed to process figterm message"),
             }
         },
-        None => warn!("Figterm message with no request"),
+        None => warn!("Cwterm message with no request"),
     }
     Ok(())
 }
@@ -475,22 +475,26 @@ pub async fn process_remote_message(
 
                     tokio::spawn(async move {
                         debug!("running command");
-                        match cmd.output().await {
+                        let response = match cmd.output().await {
                             Ok(output) => {
                                 debug!("command successfully ran");
-                                let response = make_response(Response::RunProcess(RunProcessResponse {
+                                make_response(Response::RunProcess(RunProcessResponse {
                                     stdout: String::from_utf8_lossy(&output.stdout).to_string(),
                                     stderr: String::from_utf8_lossy(&output.stderr).to_string(),
                                     exit_code: output.status.code().unwrap_or(0),
-                                }));
-                                if let Err(err) = response_tx.send_async(response).await {
-                                    error!(%err, "Failed sending request response");
-                                }
+                                }))
                             },
                             Err(err) => {
-                                debug!("command unsuccessfully ran");
-                                warn!(%err, command = request.executable, "Failed running command");
+                                warn!(%err, executable = request.executable, "failed running executable");
+                                make_response(Response::Error(format!(
+                                    "failed running executable ({}): {err}",
+                                    request.executable
+                                )))
                             },
+                        };
+
+                        if let Err(err) = response_tx.send_async(response).await {
+                            error!(%err, "Failed sending request response");
                         }
                     });
                 },
@@ -529,25 +533,29 @@ pub async fn process_remote_message(
 
                     tokio::spawn(async move {
                         debug!("pseudoterminal executing");
-                        match cmd.output().await {
+                        let response = match cmd.output().await {
                             Ok(output) => {
-                                let response =
-                                    make_response(Response::PseudoterminalExecute(PseudoterminalExecuteResponse {
-                                        stdout: String::from_utf8_lossy(&output.stdout).to_string(),
-                                        stderr: if output.stderr.is_empty() {
-                                            None
-                                        } else {
-                                            Some(String::from_utf8_lossy(&output.stderr).to_string())
-                                        },
-                                        exit_code: output.status.code(),
-                                    }));
-                                if let Err(err) = response_tx.send_async(response).await {
-                                    error!(%err, "Failed sending request response");
-                                }
+                                make_response(Response::PseudoterminalExecute(PseudoterminalExecuteResponse {
+                                    stdout: String::from_utf8_lossy(&output.stdout).to_string(),
+                                    stderr: if output.stderr.is_empty() {
+                                        None
+                                    } else {
+                                        Some(String::from_utf8_lossy(&output.stderr).to_string())
+                                    },
+                                    exit_code: output.status.code(),
+                                }))
                             },
                             Err(err) => {
-                                warn!(%err, command = request.command, "Failed running command");
+                                warn!(%err, command = request.command, "failed running executable");
+                                make_response(Response::Error(format!(
+                                    "failed running command ({}): {err}",
+                                    request.command
+                                )))
                             },
+                        };
+
+                        if let Err(err) = response_tx.send_async(response).await {
+                            error!(%err, "Failed sending request response");
                         }
                     });
                 },

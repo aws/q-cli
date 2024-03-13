@@ -6,10 +6,7 @@ use auth::secret_store::SecretStore;
 use fig_request::reqwest::Client;
 use fnv::FnvHashSet;
 use futures::prelude::*;
-use http::header::{
-    ACCESS_CONTROL_ALLOW_ORIGIN,
-    CONTENT_TYPE,
-};
+use http::header::CONTENT_TYPE;
 use http::{
     HeaderValue,
     Request,
@@ -23,6 +20,8 @@ use serde::{
 };
 use tracing::error;
 use url::Url;
+
+use crate::webview::WindowId;
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -69,7 +68,6 @@ fn res_404() -> Response<Cow<'static, [u8]>> {
     Response::builder()
         .status(StatusCode::NOT_FOUND)
         .header(CONTENT_TYPE, "text/plain")
-        .header(ACCESS_CONTROL_ALLOW_ORIGIN, "*")
         .body(b"Not Found".as_ref().into())
         .unwrap()
 }
@@ -78,7 +76,6 @@ fn res_ok(bytes: Vec<u8>, content_type: HeaderValue) -> Response<Cow<'static, [u
     Response::builder()
         .status(StatusCode::OK)
         .header(CONTENT_TYPE, content_type)
-        .header(ACCESS_CONTROL_ALLOW_ORIGIN, "*")
         .body(bytes.into())
         .unwrap()
 }
@@ -187,7 +184,7 @@ async fn merged_index_json(client: &Client) -> Result<SpecIndex> {
 }
 
 // handle `spec://localhost/spec.js`
-pub async fn handle(request: Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
+pub async fn handle(request: Request<Vec<u8>>, _: WindowId) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
     let Some(client) = fig_request::client() else {
         return Ok(res_404());
     };

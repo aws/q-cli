@@ -10,7 +10,7 @@ use tao::event_loop::ControlFlow;
 use wry::Theme;
 
 use crate::platform::PlatformBoundEvent;
-use crate::webview::window::WindowId;
+use crate::webview::WindowId;
 
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug)]
