@@ -181,7 +181,7 @@ pub enum InternalSubcommand {
     /// Command that is run during the PreCmd section of
     /// the fig integrations.
     PreCmd {
-        #[arg(long)]
+        #[arg(long, allow_hyphen_values = true)]
         alias: Option<String>,
     },
     /// Change the local-state file
@@ -911,5 +911,42 @@ pub async fn pre_cmd(alias: Option<String>) {
             Err(err) => error!(%err, %session_id, "Failed to connect to Figterm socket"),
         },
         Err(err) => error!(%err, %session_id, "Failed to get Figterm socket path"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use clap::Parser;
+
+    use super::*;
+
+    #[derive(Debug, Parser, PartialEq, Eq)]
+    pub struct MockCli {
+        #[command(subcommand)]
+        pub subcommand: InternalSubcommand,
+    }
+
+    #[test]
+    fn parse_pre_cmd() {
+        assert_eq!(MockCli::parse_from(["_", "pre-cmd"]), MockCli {
+            subcommand: InternalSubcommand::PreCmd { alias: None }
+        });
+
+        let alias = "q='cw q'\nrd=rmdir";
+        assert_eq!(MockCli::parse_from(["_", "pre-cmd", "--alias", alias]), MockCli {
+            subcommand: InternalSubcommand::PreCmd {
+                alias: Some(alias.to_owned())
+            }
+        });
+
+        let hyphen_alias = "-='cd -'\n...=../..\nga='git add'";
+        assert_eq!(
+            MockCli::parse_from(["_", "pre-cmd", "--alias", hyphen_alias]),
+            MockCli {
+                subcommand: InternalSubcommand::PreCmd {
+                    alias: Some(hyphen_alias.to_owned())
+                }
+            }
+        );
     }
 }
