@@ -3,13 +3,22 @@ use std::io::{
     stdout,
     IsTerminal,
 };
+use std::time::{
+    Instant,
+    SystemTime,
+};
 
+use amzn_codewhisperer_client::types::SuggestionState;
 use arboard::Clipboard;
+use aws_types::request_id::RequestId;
 use clap::Args;
 use color_eyre::owo_colors::OwoColorize;
 use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;
-use eyre::bail;
+use eyre::{
+    bail,
+    Result,
+};
 use fig_api_client::ai::{
     request_cw,
     CodewhipererFileContext,
@@ -117,7 +126,7 @@ fn theme() -> ColorfulTheme {
     }
 }
 
-async fn send_figterm(text: String, execute: bool) -> eyre::Result<()> {
+async fn send_figterm(text: String, execute: bool) -> Result<()> {
     let session_id = std::env::var("CWTERM_SESSION_ID")?;
     let mut conn = BufferedUnixStream::connect(fig_util::directories::figterm_socket_path(&session_id)?).await?;
     conn.send_message(fig_proto::figterm::FigtermRequestMessage {
@@ -133,7 +142,12 @@ async fn send_figterm(text: String, execute: bool) -> eyre::Result<()> {
     Ok(())
 }
 
-async fn generate_response(question: &str, n: i32) -> eyre::Result<Vec<String>> {
+struct CwResponse {
+    request_id: String,
+    completions: Vec<String>,
+}
+
+async fn generate_response(question: &str, n: i32) -> Result<CwResponse> {
     let prompt = r#"# A collection of macOS shell one-liners that can be run interactively, they all must only be one line and line up with the comment above them
 
 # list all version of node on my path
@@ -161,9 +175,11 @@ i=`wc -l $FILENAME|cut -d ' ' -f1`; cat $FILENAME| echo "scale=2;(`paste -sd+`)/
     };
 
     let mut completions = vec![];
+    let mut request_id = None;
 
     loop {
         let response = request_cw(request.clone()).await?;
+        request_id = response.request_id().map(|s| s.to_owned());
         for comp in response.completions() {
             completions.push(comp.content.clone());
         }
@@ -178,7 +194,10 @@ i=`wc -l $FILENAME|cut -d ' ' -f1`; cat $FILENAME| echo "scale=2;(`paste -sd+`)/
         }
     }
 
-    Ok(completions)
+    Ok(CwResponse {
+        completions,
+        request_id: request_id.unwrap(),
+    })
 }
 
 fn warning_message(content: &str) {
@@ -250,7 +269,7 @@ fn highlighter(s: &str) -> String {
 }
 
 impl AiArgs {
-    pub async fn execute(self) -> eyre::Result<()> {
+    pub async fn execute(self) -> Result<()> {
         if !auth::is_logged_in().await {
             bail!("You are not logged in. Run `cw login` to login.")
         }
@@ -296,7 +315,7 @@ impl AiArgs {
                 },
             };
 
-            match &generate_response(&question, 1).await?[..] {
+            match &generate_response(&question, 1).await?.completions[..] {
                 [] => eyre::bail!("no valid completions were generated"),
                 [res, ..] => {
                     println!("{res}");
@@ -335,9 +354,11 @@ impl AiArgs {
                     SpinnerComponent::Spinner,
                 ]);
 
-                let choices = generate_response(&question, n).await?;
+                let response_time_start = Instant::now();
+                let res = generate_response(&question, n).await?;
+                let response_latency = response_time_start.elapsed();
 
-                match &choices[..] {
+                match &res.completions[..] {
                     [] => {
                         spinner.stop_with_message(format!("{spinner_text}❌"));
                         eyre::bail!("no valid completions were generated");
@@ -388,8 +409,17 @@ impl AiArgs {
 
                         let action = selected.and_then(|i| actions.get(i));
 
-                        let accepted = matches!(&action, &Some(DialogActions::Execute { .. }));
-                        fig_telemetry::send_translation_actioned(accepted).await;
+                        fig_telemetry::send_translation_actioned(
+                            SystemTime::now(),
+                            response_latency,
+                            match action {
+                                Some(DialogActions::Execute { .. }) => SuggestionState::Accept,
+                                _ => SuggestionState::Reject,
+                            },
+                            "".into(),
+                            res.request_id,
+                        )
+                        .await;
 
                         match action {
                             Some(DialogActions::Execute { command, .. }) => {
@@ -539,9 +569,9 @@ mod test {
         ];
 
         for prompt in prompts {
-            let a = generate_response(prompt, 1).await.unwrap();
-            let b = a.first().unwrap();
-            println!("{prompt},{b}");
+            let res = generate_response(prompt, 1).await.unwrap();
+            let first = res.completions.first().unwrap();
+            println!("{prompt},{first}");
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
     }

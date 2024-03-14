@@ -625,9 +625,9 @@ dependencies = [
 
 [[package]]
 name = "aws-credential-types"
-version = "1.1.6"
+version = "1.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5635d8707f265c773282a22abe1ecd4fbe96a8eb2f0f14c0796f8016f11a41a"
+checksum = "fa8587ae17c8e967e4b05a62d495be2fb7701bec52a97f7acfe8a29f938384c8"
 dependencies = [
  "aws-smithy-async",
  "aws-smithy-runtime-api",
@@ -803,9 +803,9 @@ dependencies = [
 
 [[package]]
 name = "aws-smithy-async"
-version = "1.1.7"
+version = "1.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fcf7f09a27286d84315dfb9346208abb3b0973a692454ae6d0bc8d803fcce3b4"
+checksum = "d26ea8fa03025b2face2b3038a63525a10891e3d8829901d502e5384a0d8cd46"
 dependencies = [
  "futures-util",
  "pin-project-lite",
@@ -910,9 +910,9 @@ dependencies = [
 
 [[package]]
 name = "aws-smithy-runtime-api"
-version = "1.1.7"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22389cb6f7cac64f266fb9f137745a9349ced7b47e0d2ba503e9e40ede4f7060"
+checksum = "9acb931e0adaf5132de878f1398d83f8677f90ba70f01f65ff87f6d7244be1c5"
 dependencies = [
  "aws-smithy-async",
  "aws-smithy-types",
@@ -927,9 +927,9 @@ dependencies = [
 
 [[package]]
 name = "aws-smithy-types"
-version = "1.1.7"
+version = "1.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f081da5481210523d44ffd83d9f0740320050054006c719eae0232d411f024d3"
+checksum = "abe14dceea1e70101d38fbf2a99e6a34159477c0fb95e68e05c66bd7ae4c3729"
 dependencies = [
  "base64-simd",
  "bytes",
@@ -972,9 +972,9 @@ dependencies = [
 
 [[package]]
 name = "aws-types"
-version = "1.1.6"
+version = "1.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8fbb5d48aae496f628e7aa2e41991dd4074f606d9e3ade1ce1059f293d40f9a2"
+checksum = "0dbf2f3da841a8930f159163175cf6a3d16ddde517c1b0fba7aa776822800f40"
 dependencies = [
  "aws-credential-types",
  "aws-smithy-async",
@@ -2005,6 +2005,7 @@ dependencies = [
  "assert_cmd",
  "async-trait",
  "auth",
+ "aws-types",
  "bitflags 2.4.2",
  "bstr",
  "bytes",

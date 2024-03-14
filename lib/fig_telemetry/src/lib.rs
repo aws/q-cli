@@ -3,16 +3,21 @@ pub mod endpoint;
 mod install_method;
 mod util;
 
-use std::time::SystemTime;
+use std::time::{
+    Duration,
+    SystemTime,
+};
 
 use amzn_codewhisperer_client::types::{
-    Dimension,
+    CompletionType,
     IdeCategory,
-    MetricData,
     OperatingSystem,
     OptOutPreference,
+    ProgrammingLanguage,
+    SuggestionState,
     TelemetryEvent,
     UserContext,
+    UserTriggerDecisionEvent,
 };
 use amzn_toolkit_telemetry::config::{
     AppName,
@@ -20,13 +25,9 @@ use amzn_toolkit_telemetry::config::{
     Region,
 };
 use amzn_toolkit_telemetry::error::DisplayErrorContext;
-use amzn_toolkit_telemetry::types::{
-    AwsProduct,
-    MetricDatum,
-};
+use amzn_toolkit_telemetry::types::AwsProduct;
 use amzn_toolkit_telemetry::Config;
 use aws_credential_types::provider::SharedCredentialsProvider;
-use aws_smithy_types::DateTime;
 use aws_toolkit_telemetry_definitions::metrics::{
     CodewhispererterminalCliSubcommandExecuted,
     CodewhispererterminalDashboardPageViewed,
@@ -162,6 +163,14 @@ pub async fn finish_telemetry_unwrap() {
     }
 }
 
+fn opt_out_preference() -> OptOutPreference {
+    if telemetry_is_disabled() {
+        OptOutPreference::OptOut
+    } else {
+        OptOutPreference::OptIn
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Client {
     client_id: Uuid,
@@ -191,13 +200,41 @@ impl Client {
         }
     }
 
+    fn user_context(&self) -> Option<UserContext> {
+        let product_version = env!("CARGO_PKG_VERSION");
+
+        let operating_system = match std::env::consts::OS {
+            "linux" => OperatingSystem::Linux,
+            "macos" => OperatingSystem::Mac,
+            "windows" => OperatingSystem::Windows,
+            os => {
+                error!(%os, "Unsupported operating system");
+                return None;
+            },
+        };
+
+        match UserContext::builder()
+            .client_id(self.client_id.hyphenated().to_string())
+            .operating_system(operating_system)
+            .product("CodeWhisperer")
+            .ide_category(IdeCategory::VsCode)
+            .ide_version(product_version)
+            .build()
+        {
+            Ok(user_context) => Some(user_context),
+            Err(err) => {
+                error!(%err, "Failed to build user context");
+                None
+            },
+        }
+    }
+
     pub async fn post_metric(&self, inner: impl IntoMetricDatum + Clone + 'static) {
         if telemetry_is_disabled() {
             return;
         }
 
         let toolkit_telemetry_client = self.toolkit_telemetry_client.clone();
-        let codewhisperer_client = self.codewhisperer_client.clone();
         let client_id = self.client_id;
 
         let mut set = JOIN_SET.lock().await;
@@ -229,75 +266,42 @@ impl Client {
                 }
             }
         });
+    }
 
-        let client_id = self.client_id;
+    async fn user_trigger_decision_event(
+        &self,
+        timestamp: SystemTime,
+        latency: Duration,
+        suggestion_state: SuggestionState,
+        session_id: String,
+        request_id: String,
+    ) {
+        let codewhisperer_client = self.codewhisperer_client.clone();
+        let user_context = self.user_context().unwrap();
+        let opt_out_preference = opt_out_preference();
+
+        let mut set = JOIN_SET.lock().await;
         set.spawn(async move {
-            let MetricDatum {
-                metric_name,
-                epoch_timestamp,
-                value,
-                metadata,
-                ..
-            } = inner.into_metric_datum();
-            let product_version = env!("CARGO_PKG_VERSION");
-
-            let operating_system = match std::env::consts::OS {
-                "linux" => OperatingSystem::Linux,
-                "macos" => OperatingSystem::Mac,
-                "windows" => OperatingSystem::Windows,
-                os => {
-                    error!(%os, "Unsupported operating system");
-                    return;
-                },
-            };
-
-            let user_context = match UserContext::builder()
-                .client_id(client_id.hyphenated().to_string())
-                .operating_system(operating_system)
-                .product("CodeWhisperer")
-                .ide_category(IdeCategory::VsCode)
-                .ide_version(product_version)
+            let user_trigger_decision_event = match UserTriggerDecisionEvent::builder()
+                .session_id(session_id)
+                .request_id(request_id)
+                .programming_language(ProgrammingLanguage::builder().language_name("shell").build().unwrap())
+                .completion_type(CompletionType::Line)
+                .suggestion_state(suggestion_state)
+                .recommendation_latency_milliseconds(latency.as_millis() as f64)
+                .timestamp(timestamp.into())
                 .build()
             {
-                Ok(user_context) => user_context,
+                Ok(event) => event,
                 Err(err) => {
-                    error!(%err, "Failed to build user context");
+                    error!(err =% DisplayErrorContext(err), "Failed to build UserTriggerDecisionEvent");
                     return;
                 },
             };
-
-            let dimensions = metadata
-                .unwrap_or_default()
-                .into_iter()
-                .map(|entry| Dimension::builder().set_name(entry.key).set_value(entry.value).build())
-                .collect();
-
-            let metric_data_builder = MetricData::builder()
-                .metric_name(metric_name)
-                .product("CodeWhisperer")
-                .timestamp(DateTime::from_secs(epoch_timestamp))
-                .set_dimensions(Some(dimensions))
-                .metric_value(value);
-
-            let metric_data = match metric_data_builder.build() {
-                Ok(metric_data) => metric_data,
-                Err(err) => {
-                    error!(%err, "Failed to build metric data");
-                    return;
-                },
-            };
-
-            let opt_out_preference = if telemetry_is_disabled() {
-                OptOutPreference::OptOut
-            } else {
-                OptOutPreference::OptIn
-            };
-
-            println!("{codewhisperer_client:?}");
 
             if let Err(err) = codewhisperer_client
                 .send_telemetry_event()
-                .telemetry_event(TelemetryEvent::MetricData(metric_data))
+                .telemetry_event(TelemetryEvent::UserTriggerDecisionEvent(user_trigger_decision_event))
                 .user_context(user_context)
                 .opt_out_preference(opt_out_preference)
                 .send()
@@ -306,6 +310,15 @@ impl Client {
                 error!(err =% DisplayErrorContext(err), "Failed to send telemetry event");
             }
         });
+    }
+
+    async fn command_line_completion_inserted(
+        &self,
+        _command: String,
+        _terminal: Option<String>,
+        _shell: Option<String>,
+    ) {
+        todo!()
     }
 }
 
@@ -330,8 +343,11 @@ pub async fn send_user_logged_in() {
 }
 
 pub async fn send_completion_inserted(command: String, terminal: Option<String>, shell: Option<String>) {
-    client()
-        .await
+    let client = client().await;
+    client
+        .command_line_completion_inserted(command.clone(), terminal.clone(), shell.clone())
+        .await;
+    client
         .post_metric(metrics::CodewhispererterminalCompletionInserted {
             create_time: None,
             value: None,
@@ -377,17 +393,25 @@ pub async fn send_inline_shell_completion_actioned(accepted: bool, edit_buffer_l
 }
 
 pub async fn send_translation_actioned(
-    // time_viewed: i64,
-    // time_waited: i64,
-    accepted: bool,
+    timestamp: SystemTime,
+    latency: Duration,
+    suggestion_state: SuggestionState,
+    session_id: String,
+    request_id: String,
 ) {
+    let accepted = suggestion_state == SuggestionState::Accept;
     let (shell, shell_version) = Shell::current_shell_version()
         .await
         .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
         .unwrap_or((None, None));
 
-    client()
-        .await
+    let client = client().await;
+
+    client
+        .user_trigger_decision_event(timestamp, latency, suggestion_state, session_id, request_id)
+        .await;
+
+    client
         .post_metric(CodewhispererterminalTranslationActioned {
             create_time: None,
             value: None,
@@ -552,7 +576,14 @@ mod test {
         send_user_logged_in().await;
         send_completion_inserted("cw".to_owned(), None, None).await;
         send_inline_shell_completion_actioned(true, 1, 2).await;
-        send_translation_actioned(true).await;
+        send_translation_actioned(
+            SystemTime::now(),
+            Duration::from_millis(10),
+            SuggestionState::Accept,
+            "".into(),
+            "".into(),
+        )
+        .await;
         send_cli_subcommand_executed("doctor").await;
         send_doctor_check_failed("").await;
         send_dashboard_page_viewed("/").await;
