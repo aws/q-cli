@@ -167,7 +167,6 @@ pub enum CliRootCommands {
     #[command(subcommand, alias("integration"))]
     Integrations(IntegrationsSubcommands),
     /// Natural Language to Shell translation
-    #[command(alias = "q")]
     Ai(ai::AiArgs),
     /// Enable/disable telemetry
     #[command(subcommand, hide = true)]
@@ -182,6 +181,8 @@ pub enum CliRootCommands {
     #[command(hide = true)]
     /// Chat
     Chat,
+    /// Q
+    Q,
 }
 
 impl CliRootCommands {
@@ -217,6 +218,7 @@ impl CliRootCommands {
             CliRootCommands::HelpAll => "help-all",
             CliRootCommands::Dashboard => "dashboard",
             CliRootCommands::Chat => "chat",
+            CliRootCommands::Q => "q",
         }
     }
 }
@@ -325,6 +327,13 @@ impl Cli {
                 },
                 CliRootCommands::Dashboard => launch_dashboard().await,
                 CliRootCommands::Chat => chat::chat().await,
+                CliRootCommands::Q => {
+                    if matches!(auth::is_amzn_user().await, Ok(true)) {
+                        chat::chat().await
+                    } else {
+                        ai::AiArgs::default().execute().await
+                    }
+                },
             },
             // Root command
             None => launch_dashboard().await,

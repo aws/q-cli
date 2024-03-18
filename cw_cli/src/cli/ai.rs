@@ -38,7 +38,7 @@ use crate::util::spinner::{
 
 const SEEN_ONBOARDING_KEY: &str = "ai.seen-onboarding";
 
-#[derive(Debug, Args, PartialEq, Eq)]
+#[derive(Debug, Args, Default, PartialEq, Eq)]
 pub struct AiArgs {
     input: Vec<String>,
     /// Number of completions to generate (must be <=5)
