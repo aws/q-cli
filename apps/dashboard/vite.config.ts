@@ -7,7 +7,7 @@ const csp: Record<string, string> = {
   "script-src": "'self'",
   "img-src": "'self'",
   "style-src": "'self'",
-  "connect-src": "'self'",
+  "connect-src": "'self' api:",
   "object-src": "'none'",
   "frame-src": "'none'",
 };
