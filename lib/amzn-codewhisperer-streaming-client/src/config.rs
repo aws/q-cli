@@ -318,6 +318,7 @@ impl Builder {
     /// # Examples
     /// Create a custom endpoint resolver that resolves a different endpoing per-stage, e.g. staging
     /// vs. production.
+    ///
     /// ```no_run
     /// use amzn_codewhisperer_streaming_client::config::endpoint::{
     ///     Endpoint,
@@ -1064,6 +1065,7 @@ impl Builder {
     ///
     /// Set the behavior major version to `latest`. This is equivalent to enabling the
     /// `behavior-version-latest` cargo feature.
+    ///
     /// ```no_run
     /// use amzn_codewhisperer_streaming_client::config::BehaviorVersion;
     ///
@@ -1101,6 +1103,7 @@ impl Builder {
     ///
     /// Set the behavior major version to `latest`. This is equivalent to enabling the
     /// `behavior-version-latest` cargo feature.
+    ///
     /// ```no_run
     /// use amzn_codewhisperer_streaming_client::config::BehaviorVersion;
     ///

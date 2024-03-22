@@ -151,6 +151,8 @@ pub(crate) mod shape_code_coverage_event;
 
 pub(crate) mod shape_code_scan_event;
 
+pub(crate) mod shape_code_scan_remediations_event;
+
 pub(crate) mod shape_completion;
 
 pub(crate) mod shape_customization;
@@ -160,6 +162,8 @@ pub(crate) mod shape_feature_evaluation;
 pub(crate) mod shape_metric_data;
 
 pub(crate) mod shape_task_assist_planning_upload_context;
+
+pub(crate) mod shape_terminal_user_interaction_event;
 
 pub(crate) mod shape_transformation_project_state;
 
@@ -180,6 +184,8 @@ pub(crate) mod shape_imports;
 pub(crate) mod shape_references;
 
 pub(crate) mod shape_transformation_platform_config;
+
+pub(crate) mod shape_transformation_runtime_env;
 
 pub(crate) mod shape_transformation_step;
 

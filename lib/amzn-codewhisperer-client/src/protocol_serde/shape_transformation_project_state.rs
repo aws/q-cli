@@ -6,14 +6,20 @@ pub fn ser_transformation_project_state(
     if let Some(var_1) = &input.language {
         object.key("language").string(var_1.as_str());
     }
-    if let Some(var_2) = &input.platform_config {
+    if let Some(var_2) = &input.runtime_env {
         #[allow(unused_mut)]
-        let mut object_3 = object.key("platformConfig").start_object();
-        crate::protocol_serde::shape_transformation_platform_config::ser_transformation_platform_config(
-            &mut object_3,
-            var_2,
-        )?;
+        let mut object_3 = object.key("runtimeEnv").start_object();
+        crate::protocol_serde::shape_transformation_runtime_env::ser_transformation_runtime_env(&mut object_3, var_2)?;
         object_3.finish();
+    }
+    if let Some(var_4) = &input.platform_config {
+        #[allow(unused_mut)]
+        let mut object_5 = object.key("platformConfig").start_object();
+        crate::protocol_serde::shape_transformation_platform_config::ser_transformation_platform_config(
+            &mut object_5,
+            var_4,
+        )?;
+        object_5.finish();
     }
     Ok(())
 }
@@ -48,6 +54,11 @@ where
                                         })
                                         .transpose()?,
                                 );
+                            },
+                            "runtimeEnv" => {
+                                builder = builder.set_runtime_env(
+                                crate::protocol_serde::shape_transformation_runtime_env::de_transformation_runtime_env(tokens)?,
+                            );
                             },
                             "platformConfig" => {
                                 builder = builder.set_platform_config(

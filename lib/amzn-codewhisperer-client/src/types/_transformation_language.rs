@@ -12,6 +12,7 @@
 /// ```text
 /// # let transformationlanguage = unimplemented!();
 /// match transformationlanguage {
+///     TransformationLanguage::CSharp => { /* ... */ },
 ///     TransformationLanguage::Java11 => { /* ... */ },
 ///     TransformationLanguage::Java17 => { /* ... */ },
 ///     TransformationLanguage::Java8 => { /* ... */ },
@@ -71,6 +72,8 @@
     ::std::hash::Hash,
 )]
 pub enum TransformationLanguage {
+    #[allow(missing_docs)] // documentation missing in model
+    CSharp,
     #[allow(missing_docs)] // documentation missing in model
     Java11,
     #[allow(missing_docs)] // documentation missing in model
@@ -132,6 +135,7 @@ pub enum TransformationLanguage {
 impl ::std::convert::From<&str> for TransformationLanguage {
     fn from(s: &str) -> Self {
         match s {
+            "C_SHARP" => TransformationLanguage::CSharp,
             "JAVA_11" => TransformationLanguage::Java11,
             "JAVA_17" => TransformationLanguage::Java17,
             "JAVA_8" => TransformationLanguage::Java8,
@@ -175,6 +179,7 @@ impl TransformationLanguage {
     /// Returns the `&str` value of the enum member.
     pub fn as_str(&self) -> &str {
         match self {
+            TransformationLanguage::CSharp => "C_SHARP",
             TransformationLanguage::Java11 => "JAVA_11",
             TransformationLanguage::Java17 => "JAVA_17",
             TransformationLanguage::Java8 => "JAVA_8",
@@ -208,6 +213,7 @@ impl TransformationLanguage {
     /// Returns all the `&str` representations of the enum members.
     pub const fn values() -> &'static [&'static str] {
         &[
+            "C_SHARP",
             "JAVA_11",
             "JAVA_17",
             "JAVA_8",

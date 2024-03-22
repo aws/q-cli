@@ -214,6 +214,13 @@ pub(crate) fn de_get_task_assist_code_generation(
                         crate::protocol_serde::shape_code_generation_status::de_code_generation_status(tokens)?,
                     );
                 },
+                "codeGenerationStatusDetail" => {
+                    builder = builder.set_code_generation_status_detail(
+                        ::aws_smithy_json::deserialize::token::expect_string_or_null(tokens.next())?
+                            .map(|s| s.to_unescaped().map(|u| u.into_owned()))
+                            .transpose()?,
+                    );
+                },
                 _ => ::aws_smithy_json::deserialize::token::skip_value(tokens)?,
             },
             other => {

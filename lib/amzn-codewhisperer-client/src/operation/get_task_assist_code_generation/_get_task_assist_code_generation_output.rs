@@ -2,12 +2,14 @@
 
 /// Response for getting task assist code generation status.
 #[non_exhaustive]
-#[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::fmt::Debug)]
+#[derive(::std::clone::Clone, ::std::cmp::PartialEq)]
 pub struct GetTaskAssistCodeGenerationOutput {
     /// ID which represents a multi-turn conversation
     pub conversation_id: ::std::string::String,
     #[allow(missing_docs)] // documentation missing in model
     pub code_generation_status: crate::types::CodeGenerationStatus,
+    /// Detailed message about the code generation status
+    pub code_generation_status_detail: ::std::option::Option<::std::string::String>,
     _request_id: Option<String>,
 }
 impl GetTaskAssistCodeGenerationOutput {
@@ -20,6 +22,21 @@ impl GetTaskAssistCodeGenerationOutput {
     #[allow(missing_docs)] // documentation missing in model
     pub fn code_generation_status(&self) -> &crate::types::CodeGenerationStatus {
         &self.code_generation_status
+    }
+
+    /// Detailed message about the code generation status
+    pub fn code_generation_status_detail(&self) -> ::std::option::Option<&str> {
+        self.code_generation_status_detail.as_deref()
+    }
+}
+impl ::std::fmt::Debug for GetTaskAssistCodeGenerationOutput {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        let mut formatter = f.debug_struct("GetTaskAssistCodeGenerationOutput");
+        formatter.field("conversation_id", &self.conversation_id);
+        formatter.field("code_generation_status", &self.code_generation_status);
+        formatter.field("code_generation_status_detail", &"*** Sensitive Data Redacted ***");
+        formatter.field("_request_id", &self._request_id);
+        formatter.finish()
     }
 }
 impl ::aws_types::request_id::RequestId for GetTaskAssistCodeGenerationOutput {
@@ -39,10 +56,11 @@ impl GetTaskAssistCodeGenerationOutput {
 /// A builder for
 /// [`GetTaskAssistCodeGenerationOutput`](crate::operation::get_task_assist_code_generation::GetTaskAssistCodeGenerationOutput).
 #[non_exhaustive]
-#[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
 pub struct GetTaskAssistCodeGenerationOutputBuilder {
     pub(crate) conversation_id: ::std::option::Option<::std::string::String>,
     pub(crate) code_generation_status: ::std::option::Option<crate::types::CodeGenerationStatus>,
+    pub(crate) code_generation_status_detail: ::std::option::Option<::std::string::String>,
     _request_id: Option<String>,
 }
 impl GetTaskAssistCodeGenerationOutputBuilder {
@@ -85,6 +103,23 @@ impl GetTaskAssistCodeGenerationOutputBuilder {
         &self.code_generation_status
     }
 
+    /// Detailed message about the code generation status
+    pub fn code_generation_status_detail(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
+        self.code_generation_status_detail = ::std::option::Option::Some(input.into());
+        self
+    }
+
+    /// Detailed message about the code generation status
+    pub fn set_code_generation_status_detail(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
+        self.code_generation_status_detail = input;
+        self
+    }
+
+    /// Detailed message about the code generation status
+    pub fn get_code_generation_status_detail(&self) -> &::std::option::Option<::std::string::String> {
+        &self.code_generation_status_detail
+    }
+
     pub(crate) fn _request_id(mut self, request_id: impl Into<String>) -> Self {
         self._request_id = Some(request_id.into());
         self
@@ -119,7 +154,18 @@ impl GetTaskAssistCodeGenerationOutputBuilder {
                     "code_generation_status was not specified but it is required when building GetTaskAssistCodeGenerationOutput",
                 )
             })?,
+            code_generation_status_detail: self.code_generation_status_detail,
             _request_id: self._request_id,
         })
+    }
+}
+impl ::std::fmt::Debug for GetTaskAssistCodeGenerationOutputBuilder {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        let mut formatter = f.debug_struct("GetTaskAssistCodeGenerationOutputBuilder");
+        formatter.field("conversation_id", &self.conversation_id);
+        formatter.field("code_generation_status", &self.code_generation_status);
+        formatter.field("code_generation_status_detail", &"*** Sensitive Data Redacted ***");
+        formatter.field("_request_id", &self._request_id);
+        formatter.finish()
     }
 }

@@ -6,12 +6,19 @@ pub struct TransformationProjectState {
     #[allow(missing_docs)] // documentation missing in model
     pub language: ::std::option::Option<crate::types::TransformationLanguage>,
     #[allow(missing_docs)] // documentation missing in model
+    pub runtime_env: ::std::option::Option<crate::types::TransformationRuntimeEnv>,
+    #[allow(missing_docs)] // documentation missing in model
     pub platform_config: ::std::option::Option<crate::types::TransformationPlatformConfig>,
 }
 impl TransformationProjectState {
     #[allow(missing_docs)] // documentation missing in model
     pub fn language(&self) -> ::std::option::Option<&crate::types::TransformationLanguage> {
         self.language.as_ref()
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn runtime_env(&self) -> ::std::option::Option<&crate::types::TransformationRuntimeEnv> {
+        self.runtime_env.as_ref()
     }
 
     #[allow(missing_docs)] // documentation missing in model
@@ -32,6 +39,7 @@ impl TransformationProjectState {
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
 pub struct TransformationProjectStateBuilder {
     pub(crate) language: ::std::option::Option<crate::types::TransformationLanguage>,
+    pub(crate) runtime_env: ::std::option::Option<crate::types::TransformationRuntimeEnv>,
     pub(crate) platform_config: ::std::option::Option<crate::types::TransformationPlatformConfig>,
 }
 impl TransformationProjectStateBuilder {
@@ -50,6 +58,23 @@ impl TransformationProjectStateBuilder {
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_language(&self) -> &::std::option::Option<crate::types::TransformationLanguage> {
         &self.language
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn runtime_env(mut self, input: crate::types::TransformationRuntimeEnv) -> Self {
+        self.runtime_env = ::std::option::Option::Some(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_runtime_env(mut self, input: ::std::option::Option<crate::types::TransformationRuntimeEnv>) -> Self {
+        self.runtime_env = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_runtime_env(&self) -> &::std::option::Option<crate::types::TransformationRuntimeEnv> {
+        &self.runtime_env
     }
 
     #[allow(missing_docs)] // documentation missing in model
@@ -77,6 +102,7 @@ impl TransformationProjectStateBuilder {
     pub fn build(self) -> crate::types::TransformationProjectState {
         crate::types::TransformationProjectState {
             language: self.language,
+            runtime_env: self.runtime_env,
             platform_config: self.platform_config,
         }
     }

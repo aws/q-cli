@@ -15,6 +15,8 @@ pub use crate::types::_code_generation_status::CodeGenerationStatus;
 pub use crate::types::_code_generation_workflow_stage::CodeGenerationWorkflowStage;
 pub use crate::types::_code_generation_workflow_status::CodeGenerationWorkflowStatus;
 pub use crate::types::_code_scan_event::CodeScanEvent;
+pub use crate::types::_code_scan_remediations_event::CodeScanRemediationsEvent;
+pub use crate::types::_code_scan_remediations_event_type::CodeScanRemediationsEventType;
 pub use crate::types::_completion::Completion;
 pub use crate::types::_completion_type::CompletionType;
 pub use crate::types::_content_checksum_type::ContentChecksumType;
@@ -55,8 +57,12 @@ pub use crate::types::_supplementary_web_link::SupplementaryWebLink;
 pub use crate::types::_symbol_type::SymbolType;
 pub use crate::types::_task_assist_planning_upload_context::TaskAssistPlanningUploadContext;
 pub use crate::types::_telemetry_event::TelemetryEvent;
+pub use crate::types::_terminal_user_interaction_event::TerminalUserInteractionEvent;
+pub use crate::types::_terminal_user_interaction_event_type::TerminalUserInteractionEventType;
 pub use crate::types::_text_document::TextDocument;
 pub use crate::types::_text_document_diagnostic::TextDocumentDiagnostic;
+pub use crate::types::_transformation_dot_net_runtime_env::TransformationDotNetRuntimeEnv;
+pub use crate::types::_transformation_java_runtime_env::TransformationJavaRuntimeEnv;
 pub use crate::types::_transformation_job::TransformationJob;
 pub use crate::types::_transformation_language::TransformationLanguage;
 pub use crate::types::_transformation_operating_system_family::TransformationOperatingSystemFamily;
@@ -65,6 +71,7 @@ pub use crate::types::_transformation_platform_config::TransformationPlatformCon
 pub use crate::types::_transformation_progress_update::TransformationProgressUpdate;
 pub use crate::types::_transformation_progress_update_status::TransformationProgressUpdateStatus;
 pub use crate::types::_transformation_project_state::TransformationProjectState;
+pub use crate::types::_transformation_runtime_env::TransformationRuntimeEnv;
 pub use crate::types::_transformation_spec::TransformationSpec;
 pub use crate::types::_transformation_status::TransformationStatus;
 pub use crate::types::_transformation_step::TransformationStep;
@@ -112,6 +119,10 @@ mod _code_generation_workflow_stage;
 mod _code_generation_workflow_status;
 
 mod _code_scan_event;
+
+mod _code_scan_remediations_event;
+
+mod _code_scan_remediations_event_type;
 
 mod _completion;
 
@@ -193,9 +204,17 @@ mod _task_assist_planning_upload_context;
 
 mod _telemetry_event;
 
+mod _terminal_user_interaction_event;
+
+mod _terminal_user_interaction_event_type;
+
 mod _text_document;
 
 mod _text_document_diagnostic;
+
+mod _transformation_dot_net_runtime_env;
+
+mod _transformation_java_runtime_env;
 
 mod _transformation_job;
 
@@ -212,6 +231,8 @@ mod _transformation_progress_update;
 mod _transformation_progress_update_status;
 
 mod _transformation_project_state;
+
+mod _transformation_runtime_env;
 
 mod _transformation_spec;
 

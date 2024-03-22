@@ -6,6 +6,7 @@ pub use crate::types::_chat_user_modification_event::ChatUserModificationEventBu
 pub use crate::types::_code_coverage_event::CodeCoverageEventBuilder;
 pub use crate::types::_code_generation_status::CodeGenerationStatusBuilder;
 pub use crate::types::_code_scan_event::CodeScanEventBuilder;
+pub use crate::types::_code_scan_remediations_event::CodeScanRemediationsEventBuilder;
 pub use crate::types::_completion::CompletionBuilder;
 pub use crate::types::_conversation_state::ConversationStateBuilder;
 pub use crate::types::_customization::CustomizationBuilder;
@@ -32,6 +33,7 @@ pub use crate::types::_span::SpanBuilder;
 pub use crate::types::_supplemental_context::SupplementalContextBuilder;
 pub use crate::types::_supplementary_web_link::SupplementaryWebLinkBuilder;
 pub use crate::types::_task_assist_planning_upload_context::TaskAssistPlanningUploadContextBuilder;
+pub use crate::types::_terminal_user_interaction_event::TerminalUserInteractionEventBuilder;
 pub use crate::types::_text_document::TextDocumentBuilder;
 pub use crate::types::_text_document_diagnostic::TextDocumentDiagnosticBuilder;
 pub use crate::types::_transformation_job::TransformationJobBuilder;

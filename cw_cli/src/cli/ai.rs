@@ -3,14 +3,10 @@ use std::io::{
     stdout,
     IsTerminal,
 };
-use std::time::{
-    Instant,
-    SystemTime,
-};
+use std::time::Instant;
 
 use amzn_codewhisperer_client::types::SuggestionState;
 use arboard::Clipboard;
-use aws_types::request_id::RequestId;
 use clap::Args;
 use color_eyre::owo_colors::OwoColorize;
 use crossterm::style::Stylize;
@@ -143,7 +139,6 @@ async fn send_figterm(text: String, execute: bool) -> Result<()> {
 }
 
 struct CwResponse {
-    request_id: String,
     completions: Vec<String>,
 }
 
@@ -175,11 +170,9 @@ i=`wc -l $FILENAME|cut -d ' ' -f1`; cat $FILENAME| echo "scale=2;(`paste -sd+`)/
     };
 
     let mut completions = vec![];
-    let mut request_id = None;
 
     loop {
         let response = request_cw(request.clone()).await?;
-        request_id = response.request_id().map(|s| s.to_owned());
         for comp in response.completions() {
             completions.push(comp.content.clone());
         }
@@ -194,10 +187,7 @@ i=`wc -l $FILENAME|cut -d ' ' -f1`; cat $FILENAME| echo "scale=2;(`paste -sd+`)/
         }
     }
 
-    Ok(CwResponse {
-        completions,
-        request_id: request_id.unwrap(),
-    })
+    Ok(CwResponse { completions })
 }
 
 fn warning_message(content: &str) {
@@ -409,16 +399,10 @@ impl AiArgs {
 
                         let action = selected.and_then(|i| actions.get(i));
 
-                        fig_telemetry::send_translation_actioned(
-                            SystemTime::now(),
-                            response_latency,
-                            match action {
-                                Some(DialogActions::Execute { .. }) => SuggestionState::Accept,
-                                _ => SuggestionState::Reject,
-                            },
-                            "".into(),
-                            res.request_id,
-                        )
+                        fig_telemetry::send_translation_actioned(response_latency, match action {
+                            Some(DialogActions::Execute { .. }) => SuggestionState::Accept,
+                            _ => SuggestionState::Reject,
+                        })
                         .await;
 
                         match action {

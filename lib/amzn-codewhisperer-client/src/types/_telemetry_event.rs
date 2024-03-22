@@ -14,7 +14,11 @@ pub enum TelemetryEvent {
     #[allow(missing_docs)] // documentation missing in model
     CodeScanEvent(crate::types::CodeScanEvent),
     #[allow(missing_docs)] // documentation missing in model
+    CodeScanRemediationsEvent(crate::types::CodeScanRemediationsEvent),
+    #[allow(missing_docs)] // documentation missing in model
     MetricData(crate::types::MetricData),
+    #[allow(missing_docs)] // documentation missing in model
+    TerminalUserInteractionEvent(crate::types::TerminalUserInteractionEvent),
     #[allow(missing_docs)] // documentation missing in model
     UserModificationEvent(crate::types::UserModificationEvent),
     #[allow(missing_docs)] // documentation missing in model
@@ -126,6 +130,26 @@ impl TelemetryEvent {
     }
 
     /// Tries to convert the enum instance into
+    /// [`CodeScanRemediationsEvent`](crate::types::TelemetryEvent::CodeScanRemediationsEvent),
+    /// extracting the inner [`CodeScanRemediationsEvent`](crate::types::CodeScanRemediationsEvent).
+    /// Returns `Err(&Self)` if it can't be converted.
+    pub fn as_code_scan_remediations_event(
+        &self,
+    ) -> ::std::result::Result<&crate::types::CodeScanRemediationsEvent, &Self> {
+        if let TelemetryEvent::CodeScanRemediationsEvent(val) = &self {
+            ::std::result::Result::Ok(val)
+        } else {
+            ::std::result::Result::Err(self)
+        }
+    }
+
+    /// Returns true if this is a
+    /// [`CodeScanRemediationsEvent`](crate::types::TelemetryEvent::CodeScanRemediationsEvent).
+    pub fn is_code_scan_remediations_event(&self) -> bool {
+        self.as_code_scan_remediations_event().is_ok()
+    }
+
+    /// Tries to convert the enum instance into
     /// [`MetricData`](crate::types::TelemetryEvent::MetricData), extracting the inner
     /// [`MetricData`](crate::types::MetricData). Returns `Err(&Self)` if it can't be converted.
     pub fn as_metric_data(&self) -> ::std::result::Result<&crate::types::MetricData, &Self> {
@@ -139,6 +163,27 @@ impl TelemetryEvent {
     /// Returns true if this is a [`MetricData`](crate::types::TelemetryEvent::MetricData).
     pub fn is_metric_data(&self) -> bool {
         self.as_metric_data().is_ok()
+    }
+
+    /// Tries to convert the enum instance into
+    /// [`TerminalUserInteractionEvent`](crate::types::TelemetryEvent::TerminalUserInteractionEvent),
+    /// extracting the inner
+    /// [`TerminalUserInteractionEvent`](crate::types::TerminalUserInteractionEvent).
+    /// Returns `Err(&Self)` if it can't be converted.
+    pub fn as_terminal_user_interaction_event(
+        &self,
+    ) -> ::std::result::Result<&crate::types::TerminalUserInteractionEvent, &Self> {
+        if let TelemetryEvent::TerminalUserInteractionEvent(val) = &self {
+            ::std::result::Result::Ok(val)
+        } else {
+            ::std::result::Result::Err(self)
+        }
+    }
+
+    /// Returns true if this is a
+    /// [`TerminalUserInteractionEvent`](crate::types::TelemetryEvent::TerminalUserInteractionEvent).
+    pub fn is_terminal_user_interaction_event(&self) -> bool {
+        self.as_terminal_user_interaction_event().is_ok()
     }
 
     /// Tries to convert the enum instance into

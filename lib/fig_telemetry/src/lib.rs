@@ -9,15 +9,14 @@ use std::time::{
 };
 
 use amzn_codewhisperer_client::types::{
-    CompletionType,
     IdeCategory,
     OperatingSystem,
     OptOutPreference,
-    ProgrammingLanguage,
     SuggestionState,
     TelemetryEvent,
+    TerminalUserInteractionEvent,
+    TerminalUserInteractionEventType,
     UserContext,
-    UserTriggerDecisionEvent,
 };
 use amzn_toolkit_telemetry::config::{
     AppName,
@@ -268,40 +267,61 @@ impl Client {
         });
     }
 
-    async fn user_trigger_decision_event(
-        &self,
-        timestamp: SystemTime,
-        latency: Duration,
-        suggestion_state: SuggestionState,
-        session_id: String,
-        request_id: String,
-    ) {
+    async fn translation_actioned_event(&self, latency: Duration, suggestion_state: SuggestionState) {
         let codewhisperer_client = self.codewhisperer_client.clone();
         let user_context = self.user_context().unwrap();
         let opt_out_preference = opt_out_preference();
 
+        // pub terminal_user_interaction_event_type:
+        // ::std::option::Option<crate::types::TerminalUserInteractionEventType>,
+        // #[allow(missing_docs)] // documentation missing in model
+        // pub terminal: ::std::option::Option<::std::string::String>,
+        // #[allow(missing_docs)] // documentation missing in model
+        // pub terminal_version: ::std::option::Option<::std::string::String>,
+        // #[allow(missing_docs)] // documentation missing in model
+        // pub shell: ::std::option::Option<::std::string::String>,
+        // #[allow(missing_docs)] // documentation missing in model
+        // pub shell_version: ::std::option::Option<::std::string::String>,
+        // #[allow(missing_docs)] // documentation missing in model
+        // pub duration: ::std::option::Option<i32>,
+        // #[allow(missing_docs)] // documentation missing in model
+        // pub time_to_suggestion: ::std::option::Option<i32>,
+        // #[allow(missing_docs)] // documentation missing in model
+        // pub is_completion_accepted: ::std::option::Option<bool>,
+        // #[allow(missing_docs)] // documentation missing in model
+        // pub cli_tool_command: ::std::option::Option<::std::string::String>,
+
         let mut set = JOIN_SET.lock().await;
         set.spawn(async move {
-            let user_trigger_decision_event = match UserTriggerDecisionEvent::builder()
-                .session_id(session_id)
-                .request_id(request_id)
-                .programming_language(ProgrammingLanguage::builder().language_name("shell").build().unwrap())
-                .completion_type(CompletionType::Line)
-                .suggestion_state(suggestion_state)
-                .recommendation_latency_milliseconds(latency.as_millis() as f64)
-                .timestamp(timestamp.into())
-                .build()
-            {
-                Ok(event) => event,
-                Err(err) => {
-                    error!(err =% DisplayErrorContext(err), "Failed to build UserTriggerDecisionEvent");
-                    return;
-                },
-            };
+            let mut terminal_user_interaction_event_builder = TerminalUserInteractionEvent::builder()
+                .terminal_user_interaction_event_type(
+                    TerminalUserInteractionEventType::CodewhispererTerminalTranslationAction,
+                )
+                .time_to_suggestion(latency.as_millis() as i32)
+                .is_completion_accepted(suggestion_state == SuggestionState::Accept);
+
+            if let Some(terminal) = &*CURRENT_TERMINAL {
+                terminal_user_interaction_event_builder =
+                    terminal_user_interaction_event_builder.terminal(terminal.to_string());
+            }
+
+            if let Some(terminal_version) = &*CURRENT_TERMINAL_VERSION {
+                terminal_user_interaction_event_builder =
+                    terminal_user_interaction_event_builder.terminal_version(terminal_version.to_string());
+            }
+
+            if let Some(shell) = Shell::current_shell() {
+                terminal_user_interaction_event_builder =
+                    terminal_user_interaction_event_builder.shell(shell.to_string());
+            }
+
+            let terminal_user_interaction_event = terminal_user_interaction_event_builder.build();
 
             if let Err(err) = codewhisperer_client
                 .send_telemetry_event()
-                .telemetry_event(TelemetryEvent::UserTriggerDecisionEvent(user_trigger_decision_event))
+                .telemetry_event(TelemetryEvent::TerminalUserInteractionEvent(
+                    terminal_user_interaction_event,
+                ))
                 .user_context(user_context)
                 .opt_out_preference(opt_out_preference)
                 .send()
@@ -312,13 +332,42 @@ impl Client {
         });
     }
 
-    async fn command_line_completion_inserted(
-        &self,
-        _command: String,
-        _terminal: Option<String>,
-        _shell: Option<String>,
-    ) {
-        todo!()
+    async fn completion_inserted_event(&self, command: String, terminal: Option<String>, shell: Option<String>) {
+        let codewhisperer_client = self.codewhisperer_client.clone();
+        let user_context = self.user_context().unwrap();
+        let opt_out_preference = opt_out_preference();
+
+        let mut set = JOIN_SET.lock().await;
+        set.spawn(async move {
+            let mut terminal_user_interaction_event_builder = TerminalUserInteractionEvent::builder()
+                .terminal_user_interaction_event_type(
+                    TerminalUserInteractionEventType::CodewhispererTerminalCompletionInserted,
+                )
+                .cli_tool_command(command);
+
+            if let Some(terminal) = terminal {
+                terminal_user_interaction_event_builder = terminal_user_interaction_event_builder.terminal(terminal);
+            }
+
+            if let Some(shell) = shell {
+                terminal_user_interaction_event_builder = terminal_user_interaction_event_builder.shell(shell);
+            }
+
+            let terminal_user_interaction_event = terminal_user_interaction_event_builder.build();
+
+            if let Err(err) = codewhisperer_client
+                .send_telemetry_event()
+                .telemetry_event(TelemetryEvent::TerminalUserInteractionEvent(
+                    terminal_user_interaction_event,
+                ))
+                .user_context(user_context)
+                .opt_out_preference(opt_out_preference)
+                .send()
+                .await
+            {
+                error!(err =% DisplayErrorContext(err), "Failed to send telemetry event");
+            }
+        });
     }
 }
 
@@ -345,7 +394,7 @@ pub async fn send_user_logged_in() {
 pub async fn send_completion_inserted(command: String, terminal: Option<String>, shell: Option<String>) {
     let client = client().await;
     client
-        .command_line_completion_inserted(command.clone(), terminal.clone(), shell.clone())
+        .completion_inserted_event(command.clone(), terminal.clone(), shell.clone())
         .await;
     client
         .post_metric(metrics::CodewhispererterminalCompletionInserted {
@@ -392,13 +441,7 @@ pub async fn send_inline_shell_completion_actioned(accepted: bool, edit_buffer_l
         .await;
 }
 
-pub async fn send_translation_actioned(
-    timestamp: SystemTime,
-    latency: Duration,
-    suggestion_state: SuggestionState,
-    session_id: String,
-    request_id: String,
-) {
+pub async fn send_translation_actioned(latency: Duration, suggestion_state: SuggestionState) {
     let accepted = suggestion_state == SuggestionState::Accept;
     let (shell, shell_version) = Shell::current_shell_version()
         .await
@@ -407,9 +450,7 @@ pub async fn send_translation_actioned(
 
     let client = client().await;
 
-    client
-        .user_trigger_decision_event(timestamp, latency, suggestion_state, session_id, request_id)
-        .await;
+    client.translation_actioned_event(latency, suggestion_state).await;
 
     client
         .post_metric(CodewhispererterminalTranslationActioned {
@@ -576,14 +617,7 @@ mod test {
         send_user_logged_in().await;
         send_completion_inserted("cw".to_owned(), None, None).await;
         send_inline_shell_completion_actioned(true, 1, 2).await;
-        send_translation_actioned(
-            SystemTime::now(),
-            Duration::from_millis(10),
-            SuggestionState::Accept,
-            "".into(),
-            "".into(),
-        )
-        .await;
+        send_translation_actioned(Duration::from_millis(10), SuggestionState::Accept).await;
         send_cli_subcommand_executed("doctor").await;
         send_doctor_check_failed("").await;
         send_dashboard_page_viewed("/").await;
