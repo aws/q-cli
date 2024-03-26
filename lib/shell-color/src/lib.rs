@@ -157,7 +157,7 @@ pub fn get_color_support() -> ColorSupport {
 pub fn parse_suggestion_color_zsh_autosuggest(suggestion_str: &str, color_support: ColorSupport) -> SuggestionColor {
     let mut sc = SuggestionColor { fg: None, bg: None };
 
-    for mut color_name in suggestion_str.to_string().split(',') {
+    for mut color_name in suggestion_str.split(',') {
         let is_fg = color_name.starts_with("fg=");
         let is_bg = color_name.starts_with("bg=");
         if is_fg || is_bg {
@@ -406,7 +406,7 @@ fn parse_fish_color_from_string(s: &str, color_support: ColorSupport) -> Option<
     let mut first_rgb = None;
     let mut first_named = None;
 
-    for color_name in s.to_string().split(|x| x == ' ' || x == '\t') {
+    for color_name in s.split(|x| x == ' ' || x == '\t') {
         if !color_name.starts_with('-') {
             let mut color = try_parse_named(color_name);
             if color.is_none() {

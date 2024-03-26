@@ -2,6 +2,7 @@ use std::io::Result;
 use std::path::PathBuf;
 use std::process::Command;
 
+#[allow(dead_code)]
 enum Version {
     V1([u32; 3]),
     V2([u32; 2]),
