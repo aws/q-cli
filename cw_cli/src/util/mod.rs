@@ -269,15 +269,20 @@ pub fn choose(prompt: impl Display, options: &[impl ToString]) -> Result<usize> 
         .ok_or_else(|| eyre::eyre!("Cancelled"))
 }
 
-pub fn input(prompt: &str) -> Result<String> {
+pub fn input(prompt: &str, initial_text: Option<&str>) -> Result<String> {
     if !*IS_TTY {
         warn!("called input without a tty");
         return Ok(String::new());
     }
 
-    Ok(dialoguer::Input::with_theme(&dialoguer_theme())
-        .with_prompt(prompt)
-        .interact_text()?)
+    let theme = dialoguer_theme();
+    let mut input = dialoguer::Input::with_theme(&theme).with_prompt(prompt);
+
+    if let Some(initial_text) = initial_text {
+        input = input.with_initial_text(initial_text);
+    }
+
+    Ok(input.interact_text()?)
 }
 
 pub fn get_running_app_info(bundle_id: impl AsRef<str>, field: impl AsRef<str>) -> Result<String> {

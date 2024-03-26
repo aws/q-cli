@@ -75,8 +75,16 @@ impl RootUserSubcommand {
                         let (start_url, region) = match login_method {
                             AuthMethod::Email => (None, None),
                             AuthMethod::IdentityCenter => {
-                                let start_url = input("Enter Start URL")?;
-                                let region = input("Enter Region")?;
+                                let default_start_url =
+                                    fig_settings::state::get_string("auth.idc.start-url").ok().flatten();
+                                let default_region = fig_settings::state::get_string("auth.idc.region").ok().flatten();
+
+                                let start_url = input("Enter Start URL", default_start_url.as_deref())?;
+                                let region = input("Enter Region", default_region.as_deref())?;
+
+                                let _ = fig_settings::state::set_value("auth.idc.start-url", start_url.clone());
+                                let _ = fig_settings::state::set_value("auth.idc.region", region.clone());
+
                                 (Some(start_url), Some(region))
                             },
                         };
