@@ -91,6 +91,17 @@ pub async fn cw_streaming_client(endpoint: Endpoint) -> amzn_codewhisperer_strea
     amzn_codewhisperer_streaming_client::Client::from_conf(conf)
 }
 
+pub fn cw_endpoint() -> Endpoint {
+    match fig_settings::state::get_string("api.codewhisperer.endpoint")
+        .ok()
+        .flatten()
+        .as_deref()
+    {
+        Some("alpha") => Endpoint::Alpha,
+        _ => Endpoint::Prod,
+    }
+}
+
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CommandInfo {
@@ -133,7 +144,7 @@ pub async fn request_cw(
     GenerateCompletionsOutput,
     SdkError<GenerateCompletionsError, aws_smithy_runtime_api::client::orchestrator::HttpResponse>,
 > {
-    cw_client(Endpoint::Alpha)
+    cw_client(cw_endpoint())
         .await
         .generate_completions()
         .file_context(

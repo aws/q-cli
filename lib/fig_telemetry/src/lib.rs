@@ -58,7 +58,7 @@ use cognito::CognitoProvider;
 use endpoint::StaticEndpoint;
 use fig_api_client::ai::{
     cw_client,
-    Endpoint,
+    cw_endpoint,
 };
 use fig_util::system_info::os_version;
 use fig_util::terminal::{
@@ -190,7 +190,7 @@ impl Client {
                 .build(),
         );
 
-        let codewhisperer_client = cw_client(Endpoint::Prod).await;
+        let codewhisperer_client = cw_client(cw_endpoint()).await;
 
         Self {
             client_id,

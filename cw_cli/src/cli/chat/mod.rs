@@ -36,8 +36,8 @@ use eyre::{
     Result,
 };
 use fig_api_client::ai::{
+    cw_endpoint,
     cw_streaming_client,
-    Endpoint,
 };
 use futures::{
     FutureExt,
@@ -92,7 +92,7 @@ pub async fn chat() -> Result<()> {
 }
 
 async fn try_chat(stderr: &mut Stderr) -> Result<()> {
-    let client = cw_streaming_client(Endpoint::Prod).await;
+    let client = cw_streaming_client(cw_endpoint()).await;
     let mut input = String::new();
     let mut rx = None;
 
