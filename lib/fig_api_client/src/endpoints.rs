@@ -1,10 +1,10 @@
 use aws_config::Region;
 
-const PROD_URL: &str = "https://rts.alpha-us-west-2.codewhisperer.ai.aws.dev";
-const PROD_REGION: Region = Region::from_static("us-west-2");
+const PROD_URL: &str = "https://codewhisperer.us-east-1.amazonaws.com";
+const PROD_REGION: Region = Region::from_static("us-east-1");
 
-const ALPHA_URL: &str = "https://codewhisperer.us-east-1.amazonaws.com";
-const ALPHA_REGION: Region = Region::from_static("us-east-1");
+const ALPHA_URL: &str = "https://rts.alpha-us-west-2.codewhisperer.ai.aws.dev";
+const ALPHA_REGION: Region = Region::from_static("us-west-2");
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
