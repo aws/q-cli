@@ -15,6 +15,7 @@ use amzn_codewhisperer_streaming_client::types::{
 };
 use amzn_codewhisperer_streaming_client::Client;
 use eyre::Result;
+use fig_settings::history::OrderBy;
 use fig_util::Shell;
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -26,8 +27,43 @@ use tracing::error;
 
 use super::ApiResponse;
 
+// Max constants for length of strings and lists, use these to truncate elements
+// to ensure the API request is valid
+
+// https://code.amazon.com/packages/AWSVectorConsolasPlatformModel/blobs/heads/mainline/--/model/types/env_types.smithy
+const MAX_ENV_VAR_LIST_LEN: usize = 100;
+const MAX_ENV_VAR_KEY_LEN: usize = 256;
+const MAX_ENV_VAR_VALUE_LEN: usize = 256;
+const MAX_CURRENT_WORKING_DIRECTORY_LEN: usize = 256;
+
+// https://code.amazon.com/packages/AWSVectorConsolasPlatformModel/blobs/mainline/--/model/types/git_types.smithy
+const MAX_GIT_STATUS_LEN: usize = 4096;
+
+// https://code.amazon.com/packages/AWSVectorConsolasPlatformModel/blobs/mainline/--/model/types/shell_types.smithy
+const MAX_SHELL_HISTORY_LIST_LEN: usize = 20;
+const MAX_SHELL_HISTORY_COMMAND_LEN: usize = 1024;
+const MAX_SHELL_HISTORY_DIRECTORY_LEN: usize = 256;
+
 /// Regex for the context modifiers `@git`, `@env`, and `@history`
 static CONTEXT_MODIFIER_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"@(git|env|history) ?").unwrap());
+
+fn truncate_safe(s: &str, max_bytes: usize) -> &str {
+    if s.len() <= max_bytes {
+        return s;
+    }
+
+    let mut byte_count = 0;
+    let mut char_indices = s.char_indices();
+
+    for (byte_idx, _) in &mut char_indices {
+        if byte_count + (byte_idx - byte_count) > max_bytes {
+            break;
+        }
+        byte_count = byte_idx;
+    }
+
+    &s[..byte_count]
+}
 
 /// The context modifiers that are used in a specific chat message
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -60,12 +96,27 @@ fn input_to_modifiers(input: String) -> (ContextModifiers, String) {
 fn build_shell_history() -> Option<Vec<ShellHistoryEntry>> {
     let mut shell_history = vec![];
 
-    if let Ok(commands) = fig_settings::history::History::new().rows(None, vec![], 10, 0) {
-        for command in commands.into_iter().filter(|c| c.command.is_some()) {
+    if let Ok(commands) = fig_settings::history::History::new().rows(
+        None,
+        vec![OrderBy::new(
+            fig_settings::history::HistoryColumn::Id,
+            fig_settings::history::Order::Desc,
+        )],
+        MAX_SHELL_HISTORY_LIST_LEN,
+        0,
+    ) {
+        for command in commands.into_iter().filter(|c| c.command.is_some()).rev() {
             shell_history.push(
                 ShellHistoryEntry::builder()
-                    .command(command.command.expect("command is filtered on"))
-                    .set_directory(command.cwd)
+                    .command(truncate_safe(
+                        &command.command.expect("command is filtered on"),
+                        MAX_SHELL_HISTORY_COMMAND_LEN,
+                    ))
+                    .set_directory(
+                        command
+                            .cwd
+                            .map(|cwd| truncate_safe(&cwd, MAX_SHELL_HISTORY_DIRECTORY_LEN).into()),
+                    )
                     .set_exit_code(command.exit_code)
                     .build()
                     .expect("command is provided"),
@@ -103,13 +154,20 @@ fn build_shell_state(shell_history: bool) -> ShellState {
 
 fn build_env_state(environment_variables: bool) -> EnvState {
     let mut env_state_builder = EnvState::builder()
-        .current_working_directory(env::current_dir().unwrap_or_default().to_string_lossy())
+        .current_working_directory(truncate_safe(
+            &env::current_dir().unwrap_or_default().to_string_lossy(),
+            MAX_CURRENT_WORKING_DIRECTORY_LEN,
+        ))
         .operating_system(env::consts::OS);
 
     if environment_variables {
-        for (key, value) in env::vars() {
-            env_state_builder =
-                env_state_builder.environment_variables(EnvironmentVariable::builder().key(key).value(value).build());
+        for (key, value) in env::vars().take(MAX_ENV_VAR_LIST_LEN) {
+            env_state_builder = env_state_builder.environment_variables(
+                EnvironmentVariable::builder()
+                    .key(truncate_safe(&key, MAX_ENV_VAR_KEY_LEN))
+                    .value(truncate_safe(&value, MAX_ENV_VAR_VALUE_LEN))
+                    .build(),
+            );
         }
     }
 
@@ -126,7 +184,10 @@ async fn build_git_state() -> Option<GitState> {
 
     Some(
         GitState::builder()
-            .status(String::from_utf8_lossy(&output.stdout))
+            .status(truncate_safe(
+                &String::from_utf8_lossy(&output.stdout),
+                MAX_GIT_STATUS_LEN,
+            ))
             .build(),
     )
 }
@@ -206,6 +267,14 @@ mod tests {
 
     use super::*;
 
+    #[test]
+    fn test_truncate_safe() {
+        assert_eq!(truncate_safe("Hello World", 5), "Hello");
+        assert_eq!(truncate_safe("Hello ", 5), "Hello");
+        assert_eq!(truncate_safe("Hello World", 11), "Hello World");
+        assert_eq!(truncate_safe("Hello World", 15), "Hello World");
+    }
+
     #[tokio::test]
     #[ignore = "not in ci"]
     async fn test_send_message() {
@@ -260,7 +329,15 @@ mod tests {
     #[test]
     fn test_shell_state() {
         let shell_state = build_shell_state(true);
-        println!("{shell_state:?}");
+
+        for history in shell_state.shell_history() {
+            println!(
+                "{} {:?} {:?}",
+                history.command(),
+                history.directory(),
+                history.exit_code()
+            );
+        }
     }
 
     #[test]
