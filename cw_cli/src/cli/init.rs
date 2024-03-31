@@ -6,6 +6,7 @@ use std::io::{
 };
 use std::path::Path;
 
+use auth::AMZN_START_URL;
 use clap::Args;
 use eyre::Result;
 use fig_integrations::shell::{
@@ -147,7 +148,8 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
         to_source.push(assign_shell_variable(shell, "SHOULD_CWTERM_LAUNCH", status, false));
     }
 
-    let is_amzn_user = auth::is_amzn_user().await.unwrap_or(false);
+    // Grabbing the real auth is too slow here, so we just rely on the cached value
+    let is_amzn_user = fig_settings::state::get_string_or("auth.idc.start-url", "") == AMZN_START_URL;
 
     if let When::Post = when {
         if !matches!(

@@ -8,6 +8,8 @@ pub use builder_id::{
     is_amzn_user,
     is_logged_in,
     logout,
+    AMZN_START_URL,
+    START_URL,
 };
 pub use error::Error;
 pub(crate) use error::Result;

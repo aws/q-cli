@@ -68,10 +68,10 @@ const SCOPES: &[&str] = &[
 const CLIENT_TYPE: &str = "public";
 
 // The start URL for public builder ID users
-const START_URL: &str = "https://view.awsapps.com/start";
+pub const START_URL: &str = "https://view.awsapps.com/start";
 
 // The start URL for internal amzn users
-const AMZN_START_URL: &str = "https://amzn.awsapps.com/start";
+pub const AMZN_START_URL: &str = "https://amzn.awsapps.com/start";
 
 const DEVICE_GRANT_TYPE: &str = "urn:ietf:params:oauth:grant-type:device_code";
 const REFRESH_GRANT_TYPE: &str = "refresh_token";
