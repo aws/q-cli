@@ -42,11 +42,6 @@ use bytes::BytesMut;
 use cfg_if::cfg_if;
 use clap::Parser;
 use cli::Cli;
-use console::{
-    Key,
-    Term as ConsoleTerm,
-};
-use dialoguer::theme::ColorfulTheme;
 use fig_proto::local::{
     self,
     EnvironmentVariable,
@@ -119,7 +114,6 @@ use crate::pty::{
     CommandBuilder,
 };
 use crate::term::{
-    InputEventResult,
     SystemTerminal,
     Terminal,
 };
@@ -139,13 +133,6 @@ static USER_ENABLED_SHELLS: Lazy<Vec<String>> = Lazy::new(|| {
         .flatten()
         .unwrap_or_default()
 });
-
-pub fn dialoguer_theme() -> ColorfulTheme {
-    ColorfulTheme {
-        prompt_prefix: dialoguer::console::style("?".into()).for_stderr().magenta(),
-        ..ColorfulTheme::default()
-    }
-}
 
 static HOSTNAME: Lazy<Option<String>> = Lazy::new(sysinfo::System::host_name);
 
@@ -286,69 +273,6 @@ async fn _should_install_remote_ssh_integration(
     }
 
     None
-}
-
-async fn _prompt_remote_integration_install(
-    remote_host: String,
-    console_term: ConsoleTerm,
-    console_term_key_tx: Sender<Key>,
-    terminal: &mut SystemTerminal,
-    input_rx: Receiver<InputEventResult>,
-) -> Result<bool> {
-    let (stop_tx, stop_rx) = flume::unbounded();
-
-    tokio::spawn(async move {
-        loop {
-            let rx = stop_rx.clone();
-            let term_key_tx = console_term_key_tx.clone();
-            select! {
-                biased;
-                res = input_rx.recv_async() => {
-                    if let Ok(events) = res {
-                        for event in events.into_iter().flatten() {
-                            if let (_, InputEvent::Key(event)) = event {
-                                let key: Key = event.key.into();
-                                term_key_tx.send(key).ok();
-                            }
-                        }
-                    }
-                }
-                _ = rx.recv_async() => {
-                    break;
-            }
-            }
-        }
-    });
-
-    terminal.set_cooked_mode()?;
-    let should_install = dialoguer::Select::with_theme(&dialoguer_theme())
-        .with_prompt("Up-to-date Fig integration not found on remote. Would you like to install/update?")
-        .items(&["Always", "Yes", "No", "Never for this remote", "Never"])
-        .default(1)
-        .interact_on_opt(&console_term)?;
-
-    stop_tx.send(()).ok();
-    terminal.set_raw_mode()?;
-
-    let result = match should_install {
-        Some(0) => {
-            fig_settings::settings::set_value("ssh.remote-prompt", "always").ok();
-            true
-        },
-        Some(1) => true,
-        Some(3) => {
-            let key = format!("ssh.remote-prompt.disable-host.{remote_host}");
-            fig_settings::state::set_value(key, true).ok();
-            false
-        },
-        Some(4) => {
-            fig_settings::settings::set_value("ssh.remote-prompt", "never").ok();
-            false
-        },
-        Some(_) | None => false,
-    };
-
-    Ok(result)
 }
 
 fn can_send_edit_buffer<T>(term: &Term<T>) -> bool
