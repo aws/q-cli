@@ -56,13 +56,12 @@ def rust_env(linker=None) -> Dict[str, str]:
 
 
 def rust_targets() -> List[str]:
-    match platform.system():
-        case "Darwin":
-            return ["x86_64-apple-darwin", "aarch64-apple-darwin"]
-        case "Linux":
-            return ["x86_64-unknown-linux-gnu"]
-        case _:
-            raise ValueError("Unsupported platform")
+    if isDarwin():
+        return ["x86_64-apple-darwin", "aarch64-apple-darwin"]
+    elif isLinux():
+        return ["x86_64-unknown-linux-gnu"]
+    else:
+        raise ValueError("Unsupported platform")
 
 
 def build_cargo_bin(
