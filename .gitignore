@@ -15,7 +15,10 @@ package-lock.json
 *.swp
 *.swo
 *.pending-snap
+
+# Python
 __pycache__
+.venv
 
 # Ignore all compiled protobuf artifacts
 **/*.pb.ts
