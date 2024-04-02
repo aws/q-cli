@@ -1,9 +1,18 @@
-use std::fs::File;
+use std::fs::{
+    DirBuilder,
+    File,
+};
 use std::io::Write;
+use std::os::unix::fs::DirBuilderExt;
 use std::path::PathBuf;
 
 use async_trait::async_trait;
-use fig_util::directories;
+use fig_util::consts::CODEWHISPERER_CLI_BINARY_NAME;
+use fig_util::directories::{
+    self,
+    fig_data_dir_utf8,
+    home_dir,
+};
 use regex::Regex;
 
 use crate::error::{
@@ -16,8 +25,6 @@ use crate::{
     Integration,
 };
 
-pub static SSH_CONFIG_EMPTY: &str = include_str!("./ssh_config_empty");
-
 #[derive(Debug, Clone)]
 pub struct SshIntegration {
     path: PathBuf,
@@ -25,7 +32,7 @@ pub struct SshIntegration {
 
 impl SshIntegration {
     pub fn new() -> Result<Self, Error> {
-        let path = directories::home_dir()?.join(".ssh").join("config");
+        let path = home_dir()?.join(".ssh").join("config");
         Ok(SshIntegration { path })
     }
 
@@ -35,34 +42,30 @@ impl SshIntegration {
     }
 
     fn get_file_integration(&self) -> Result<FileIntegration> {
+        let bin_name = CODEWHISPERER_CLI_BINARY_NAME;
+        let include_path = fig_data_dir_utf8()?.join("ssh_inner");
+
         Ok(FileIntegration {
             path: self.get_integration_path()?,
-            contents: include_str!("./ssh_config").into(),
+            contents: indoc::formatdoc! {"
+                Match exec=\"command -v {bin_name} && {bin_name} internal generate-ssh --remote-host %h --remote-port %p --remote-username %r\"
+                    Include \"{include_path}\"
+            "},
+            #[cfg(unix)]
+            mode: Some(0o600),
         })
-    }
-
-    fn legacy_text(&self) -> Result<String> {
-        let home = directories::home_dir()?;
-        let integration_path = self.get_integration_path()?;
-        let path = integration_path.strip_prefix(home)?;
-        Ok(format!("Include ~/{}", path.display()))
-    }
-
-    fn legacy_regex(&self) -> Result<Regex> {
-        let regex = format!(r#"{}\n{{0,2}}"#, regex::escape(&self.legacy_text()?));
-        Ok(Regex::new(&regex)?)
     }
 
     #[allow(clippy::unused_self)]
     fn description(&self) -> String {
-        "# CodeWhisperer ssh integration. Keep at the bottom of this file.".into()
+        "# CodeWhisperer SSH Integration. Keep at the bottom of this file.".into()
     }
 
     fn source_text(&self) -> Result<String> {
-        let home = directories::home_dir()?;
+        let home = home_dir()?;
         let integration_path = self.get_integration_path()?;
         let path = integration_path.strip_prefix(home)?;
-        Ok(format!("Match all\n  Include ~/{}", path.display()))
+        Ok(format!("Match all\n  Include \"~/{}\"", path.display()))
     }
 
     fn source_regex(&self) -> Result<Regex> {
@@ -89,13 +92,21 @@ impl Integration for SshIntegration {
     }
 
     async fn install(&self) -> Result<()> {
+        self.get_file_integration()?.install().await?;
+
         if self.is_installed().await.is_ok() {
             return Ok(());
         }
 
-        // Create the .ssh directory
+        // Create the .ssh directory if it doesn't exist
         if let Some(path) = self.path.parent() {
-            std::fs::create_dir_all(path)?;
+            if !path.exists() {
+                let mut builder = DirBuilder::new();
+                builder.recursive(true);
+                #[cfg(unix)]
+                builder.mode(0o700);
+                builder.create(path)?;
+            }
         }
 
         let contents = if self.path.exists() {
@@ -106,7 +117,6 @@ impl Integration for SshIntegration {
             String::new()
         };
 
-        self.get_file_integration()?.install().await?;
         let new_contents = format!("{}\n{}\n{}\n", contents, self.description(), self.source_text()?);
         let mut file = File::create(&self.path)?;
         file.write_all(new_contents.as_bytes())?;
@@ -118,7 +128,6 @@ impl Integration for SshIntegration {
         if self.path.exists() {
             let mut contents = std::fs::read_to_string(&self.path)?;
             contents = self.source_regex()?.replace_all(&contents, "").into();
-            contents = self.legacy_regex()?.replace_all(&contents, "").into();
             contents = contents.trim().to_string();
             contents.push('\n');
             std::fs::write(&self.path, contents.as_bytes())?;
@@ -149,5 +158,24 @@ impl Integration for SshIntegration {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_file_integration() {
+        let integration = SshIntegration::new().unwrap();
+        let file_integration = integration.get_file_integration().unwrap();
+
+        println!("=== source_text ===");
+        println!("{}", integration.source_text().unwrap());
+        println!("===================");
+        println!();
+        println!("=== file_integration ===");
+        println!("{}", file_integration.contents);
+        println!("========================");
     }
 }

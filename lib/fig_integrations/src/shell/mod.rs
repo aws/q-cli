@@ -257,6 +257,8 @@ impl ShellScriptShellIntegration {
         FileIntegration {
             path: self.path.clone(),
             contents: self.get_contents(),
+            #[cfg(unix)]
+            mode: None,
         }
     }
 

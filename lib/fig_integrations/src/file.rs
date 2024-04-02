@@ -1,6 +1,8 @@
+use std::io::ErrorKind;
 use std::path::PathBuf;
 
 use async_trait::async_trait;
+use tokio::io::AsyncWriteExt;
 
 use crate::error::{
     Error,
@@ -12,6 +14,8 @@ use crate::Integration;
 pub struct FileIntegration {
     pub path: PathBuf,
     pub contents: String,
+    #[cfg(unix)]
+    pub mode: Option<u32>,
 }
 
 #[async_trait]
@@ -21,7 +25,8 @@ impl Integration for FileIntegration {
     }
 
     async fn is_installed(&self) -> Result<()> {
-        let current_contents = std::fs::read_to_string(&self.path)
+        let current_contents = tokio::fs::read_to_string(&self.path)
+            .await
             .map_err(|err| Error::Custom(format!("{} does not exist: {err}", self.path.display()).into()))?;
         if current_contents.ne(&self.contents) {
             let message = format!("{} should contain:\n{}", self.path.display(), self.contents);
@@ -34,39 +39,43 @@ impl Integration for FileIntegration {
         if self.is_installed().await.is_ok() {
             return Ok(());
         }
+
         let parent_dir = self
             .path
             .parent()
             .ok_or_else(|| Error::Custom("Could not get integration file directory".into()))?;
-        std::fs::create_dir_all(parent_dir)?;
+        if !parent_dir.is_dir() {
+            tokio::fs::create_dir_all(parent_dir).await?;
+        }
 
-        match std::fs::write(&self.path, &self.contents) {
-            Ok(_) => Ok(()),
-            Err(e) => {
-                if e.kind() == std::io::ErrorKind::PermissionDenied {
-                    Err(Error::PermissionDenied {
-                        path: self.path.clone(),
-                    })
-                } else {
-                    Err(e.into())
-                }
+        let mut options = tokio::fs::File::options();
+        options.write(true).create(true).truncate(true);
+
+        #[cfg(unix)]
+        if let Some(mode) = self.mode {
+            options.mode(mode);
+        }
+
+        match options.open(&self.path).await {
+            Ok(mut file) => {
+                file.write_all(self.contents.as_bytes()).await?;
+                Ok(())
             },
+            Err(err) if err.kind() == ErrorKind::PermissionDenied => Err(Error::PermissionDenied {
+                path: self.path.clone(),
+            }),
+            Err(err) => Err(err.into()),
         }
     }
 
     async fn uninstall(&self) -> Result<()> {
         if self.path.exists() {
-            match std::fs::remove_file(&self.path) {
+            match tokio::fs::remove_file(&self.path).await {
                 Ok(_) => Ok(()),
-                Err(e) => {
-                    if e.kind() == std::io::ErrorKind::PermissionDenied {
-                        Err(Error::PermissionDenied {
-                            path: self.path.clone(),
-                        })
-                    } else {
-                        Err(e.into())
-                    }
-                },
+                Err(err) if err.kind() == ErrorKind::PermissionDenied => Err(Error::PermissionDenied {
+                    path: self.path.clone(),
+                }),
+                Err(err) => Err(err.into()),
             }
         } else {
             Ok(())

@@ -67,18 +67,6 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
         }
     }
 
-    // TODO: (mia)
-    // Disable ssh by default for now.
-    // if install_components.contains(InstallComponents::SSH) {
-    //  if let Err(e) = install(InstallComponents::SSH) {
-    //      println!("{}\n {}", "Failed to install SSH integration.".bold(), e);
-    //  }
-    // }
-
-    if install_components.contains(InstallComponents::DAEMON) {
-        install(InstallComponents::DAEMON).await?;
-    }
-
     if install_components.contains(InstallComponents::INPUT_METHOD) {
         cfg_if::cfg_if! {
             if #[cfg(target_os = "macos")] {

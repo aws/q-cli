@@ -14,12 +14,11 @@ bitflags::bitflags! {
     /// The different components that can be installed.
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct InstallComponents: u64 {
-        const DAEMON             = 0b00000001;
-        const SHELL_INTEGRATIONS = 0b00000010;
-        const BINARY             = 0b00000100;
-        const SSH                = 0b00001000;
-        const DESKTOP_APP        = 0b00010000;
-        const INPUT_METHOD       = 0b00100000;
+        const SHELL_INTEGRATIONS = 0b00000001;
+        const BINARY             = 0b00000010;
+        const SSH                = 0b00000100;
+        const DESKTOP_APP        = 0b00001000;
+        const INPUT_METHOD       = 0b00010000;
     }
 }
 

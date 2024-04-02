@@ -1,5 +1,7 @@
+mod generate_ssh;
 pub mod local_state;
 pub mod should_cwterm_launch;
+
 use std::fmt::Display;
 use std::io::{
     stdout,
@@ -97,9 +99,6 @@ pub struct CallbackArgs {
 
 #[derive(Debug, Args, PartialEq, Eq)]
 pub struct InstallArgs {
-    /// Install only the daemon
-    #[arg(long)]
-    pub daemon: bool,
     /// Install only the shell integrations
     #[arg(long)]
     pub dotfiles: bool,
@@ -112,26 +111,17 @@ pub struct InstallArgs {
     /// Force installation of fig
     #[arg(long)]
     pub force: bool,
-    /// Install only the ssh integration.
-    #[arg(long)]
-    pub ssh: bool,
 }
 
 impl From<InstallArgs> for InstallComponents {
     fn from(args: InstallArgs) -> Self {
         let InstallArgs {
-            daemon,
-            dotfiles,
-            input_method,
-            ssh,
-            ..
+            dotfiles, input_method, ..
         } = args;
-        if daemon || dotfiles || ssh || input_method {
+        if dotfiles || input_method {
             let mut install_components = InstallComponents::empty();
-            install_components.set(InstallComponents::DAEMON, daemon);
             install_components.set(InstallComponents::SHELL_INTEGRATIONS, dotfiles);
             install_components.set(InstallComponents::INPUT_METHOD, input_method);
-            install_components.set(InstallComponents::SSH, ssh);
             install_components
         } else {
             InstallComponents::all()
@@ -192,9 +182,6 @@ pub enum InternalSubcommand {
     Install(InstallArgs),
     /// Uninstall CodeWhsiperer cli
     Uninstall {
-        /// Uninstall only the daemon
-        #[arg(long)]
-        daemon: bool,
         /// Uninstall only the shell integrations
         #[arg(long)]
         dotfiles: bool,
@@ -285,11 +272,6 @@ pub enum InternalSubcommand {
         from: PathBuf,
         to: PathBuf,
     },
-    #[deprecated]
-    #[command(hide = true)]
-    CheckSSH {
-        remote_username: String,
-    },
     #[cfg(target_os = "macos")]
     BrewUninstall {
         #[arg(long)]
@@ -299,9 +281,7 @@ pub enum InternalSubcommand {
     ///
     /// This lets us bypass a bug in Include and vdollar_expand that causes environment variables to
     /// be expanded, even in files that are only referenced in match blocks that resolve to false
-    GenerateSSH {
-        remote_username: String,
-    },
+    GenerateSsh(generate_ssh::GenerateSshArgs),
     InlineShellCompletion {
         #[arg(long, allow_hyphen_values = true)]
         buffer: String,
@@ -325,15 +305,13 @@ impl InternalSubcommand {
                 install_cli(args.into(), no_confirm, force).await?;
             },
             InternalSubcommand::Uninstall {
-                daemon,
                 dotfiles,
                 input_method,
                 binary,
                 ssh,
             } => {
-                let components = if daemon || dotfiles || binary || ssh || input_method {
+                let components = if dotfiles || binary || ssh || input_method {
                     let mut uninstall_components = InstallComponents::empty();
-                    uninstall_components.set(InstallComponents::DAEMON, daemon);
                     uninstall_components.set(InstallComponents::SHELL_INTEGRATIONS, dotfiles);
                     uninstall_components.set(InstallComponents::INPUT_METHOD, input_method);
                     uninstall_components.set(InstallComponents::BINARY, binary);
@@ -755,10 +733,6 @@ impl InternalSubcommand {
                     },
                 }
             },
-            #[allow(deprecated)]
-            InternalSubcommand::CheckSSH { .. } => {
-                std::process::exit(1);
-            },
             #[cfg(target_os = "macos")]
             InternalSubcommand::BrewUninstall { zap } => {
                 let brew_is_reinstalling = crate::util::is_brew_reinstall().await;
@@ -774,46 +748,12 @@ impl InternalSubcommand {
                     // All except the desktop app
                     InstallComponents::all() & !InstallComponents::DESKTOP_APP
                 } else {
-                    InstallComponents::SHELL_INTEGRATIONS | InstallComponents::SSH | InstallComponents::DAEMON
+                    InstallComponents::SHELL_INTEGRATIONS | InstallComponents::SSH
                 };
                 fig_install::uninstall(components).await.ok();
             },
-            InternalSubcommand::GenerateSSH { remote_username: _ } => {
-                // let mut should_generate_config =
-                // fig_settings::settings::get_bool_or("integrations.ssh.enabled", true);
-
-                // for username in ["git", "aur"] {
-                //     if remote_username == username {
-                //         should_generate_config = false;
-                //     }
-                // }
-
-                // let config_path = directories::fig_data_dir()?.join("ssh_inner");
-
-                // if should_generate_config {
-                //     let uuid = uuid::Uuid::new_v4();
-                //     let exe_path = std::env::current_exe()?;
-                //     let exe_path = exe_path.to_string_lossy();
-
-                //     let config = format!(
-                //         "# automatically generated by fig\n\
-                //         # do not edit\n\n\
-                //         Match all\n  \
-                //         RemoteForward /var/tmp/fig-parent-{uuid}.socket
-                // /var/tmp/fig/${{USER}}/remote.socket\n  \         SetEnv
-                // LC_CW_SET_PARENT={uuid} CW_SET_PARENT={uuid}\n  \
-                //         StreamLocalBindMask 600\n  \
-                //         StreamLocalBindUnlink yes\n  \
-                //         PermitLocalCommand yes\n  \
-                //         LocalCommand {exe_path} _ ssh-local-command '%r@%n' '{uuid}' 1>&2\n"
-                //     );
-
-                //     std::fs::write(config_path, config)?;
-                //     writeln!(stdout(), "wrote inner config").ok();
-                // } else {
-                //     std::fs::write(config_path, fig_integrations::ssh::SSH_CONFIG_EMPTY)?;
-                //     writeln!(stdout(), "cleared inner config").ok();
-                // }
+            InternalSubcommand::GenerateSsh(args) => {
+                args.execute()?;
             },
             InternalSubcommand::InlineShellCompletion { buffer } => {
                 let Ok(session_id) = std::env::var("CWTERM_SESSION_ID") else {

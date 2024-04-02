@@ -40,9 +40,6 @@ pub struct UninstallArgs {
     /// Remove input method
     #[arg(long)]
     pub input_method: bool,
-    /// Remove CodeWhisperer daemon
-    #[arg(long)]
-    pub daemon: bool,
     /// Remove dotfile shell integration
     #[arg(long)]
     pub dotfiles: bool,
@@ -82,12 +79,11 @@ pub enum AppSubcommand {
 
 impl From<&UninstallArgs> for InstallComponents {
     fn from(args: &UninstallArgs) -> Self {
-        if args.input_method || args.dotfiles || args.ssh || args.daemon || args.app_bundle {
+        if args.input_method || args.dotfiles || args.ssh || args.app_bundle {
             let mut flags = InstallComponents::empty();
             flags.set(InstallComponents::INPUT_METHOD, args.input_method);
             flags.set(InstallComponents::SHELL_INTEGRATIONS, args.dotfiles);
             flags.set(InstallComponents::SSH, args.ssh);
-            flags.set(InstallComponents::DAEMON, args.daemon);
             flags.set(InstallComponents::DESKTOP_APP, args.app_bundle);
             flags
         } else {

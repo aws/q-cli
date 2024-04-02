@@ -1,2 +1,0 @@
-Match exec="command -v cw && cw _ generate-ssh %r"
-  Include ~/.fig/ssh_inner

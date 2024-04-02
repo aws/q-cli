@@ -1,10 +1,14 @@
 use clap::Subcommand;
+use crossterm::style::Stylize;
 use eyre::Result;
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
 use fig_integrations::Integration as _;
 use fig_util::Shell;
+use serde_json::json;
 use tracing::debug;
+
+use super::OutputFormat;
 
 #[derive(Debug, PartialEq, Eq, Subcommand)]
 pub enum IntegrationsSubcommands {
@@ -36,6 +40,8 @@ pub enum IntegrationsSubcommands {
         /// Integration to check status of
         #[command(subcommand)]
         integration: Integration,
+        #[arg(long, short, value_enum, default_value_t)]
+        format: OutputFormat,
     },
 }
 
@@ -85,7 +91,7 @@ impl IntegrationsSubcommands {
                 }
                 Ok(())
             },
-            IntegrationsSubcommands::Status { integration } => status(integration).await,
+            IntegrationsSubcommands::Status { integration, format } => status(integration, format).await,
             IntegrationsSubcommands::Reinstall { integration, silent } => {
                 if let Integration::All = integration {
                     uninstall(Integration::Dotfiles { shell: None }, silent).await?;
@@ -333,50 +339,107 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
     result
 }
 
-async fn status(integration: Integration) -> Result<()> {
+async fn status(integration: Integration, format: OutputFormat) -> Result<()> {
     match integration {
         Integration::All => Err(eyre::eyre!("Cannot check status of all integrations")),
         Integration::Ssh => {
             let ssh_integration = SshIntegration::new()?;
-            if ssh_integration.is_installed().await.is_ok() {
-                println!("Installed");
-            } else {
-                println!("Not installed");
-            }
+            let installed = ssh_integration.is_installed().await.is_ok();
+            format.print(
+                || if installed { "Installed" } else { "Not installed" },
+                || {
+                    json!({
+                        "installed": installed,
+                    })
+                },
+            );
             Ok(())
         },
         Integration::Daemon => Ok(()),
         Integration::Dotfiles { .. } => {
+            let mut all_integrations = vec![];
+            let mut errors = vec![];
+
             for shell in &[Shell::Bash, Shell::Zsh, Shell::Fish] {
                 match shell.get_shell_integrations() {
                     Ok(integrations) => {
                         for integration in integrations {
-                            match integration.is_installed().await {
-                                Ok(_) => {
-                                    println!("{}: Installed", integration.describe());
-                                },
-                                Err(_) => {
-                                    println!("{}: Not installed", integration.describe());
-                                },
-                            }
+                            all_integrations.push((
+                                integration.is_installed().await.is_ok(),
+                                integration.describe(),
+                                integration.get_shell(),
+                                integration.file_name().to_owned(),
+                            ));
                         }
                     },
                     Err(e) => {
-                        println!("{shell}: {}", e.verbose_message());
+                        errors.push((shell.to_string(), e.verbose_message()));
                     },
                 }
             }
+
+            format.print(
+                || {
+                    let mut s = String::new();
+                    for (installed, describe, _, _) in &all_integrations {
+                        s.push_str(&if *installed {
+                            "✔ ".green().to_string()
+                        } else {
+                            "✘ ".red().to_string()
+                        });
+                        s.push_str(describe);
+                        s.push('\n');
+                    }
+
+                    for (shell, error) in &errors {
+                        s.push_str(&format!("{shell}: {error}\n"));
+                    }
+
+                    s
+                },
+                || {
+                    let integrations = all_integrations
+                        .iter()
+                        .map(|(installed, describe, shell, file_name)| {
+                            json!({
+                                "installed": installed,
+                                "description": describe,
+                                "shell": shell,
+                                "file_name": file_name,
+                            })
+                        })
+                        .collect::<Vec<_>>();
+
+                    let errors = errors
+                        .iter()
+                        .map(|(shell, error)| {
+                            json!({
+                                "shell": shell,
+                                "error": error,
+                            })
+                        })
+                        .collect::<Vec<_>>();
+
+                    json!({
+                        "integrations": integrations,
+                        "errors": errors,
+                    })
+                },
+            );
+
             Ok(())
         },
         Integration::InputMethod => {
             cfg_if::cfg_if! {
                 if #[cfg(target_os = "macos")] {
                     let input_method = fig_integrations::input_method::InputMethod::default();
-                    if input_method.is_installed().await.is_ok() {
-                        println!("Installed");
-                    } else {
-                        println!("Not installed");
-                    }
+                    let installed = input_method.is_installed().await.is_ok();
+                    format.print(
+                        || if installed { "Installed" } else { "Not installed" },
+                        || json!({
+                            "installed": installed,
+                        })
+                    );
                     Ok(())
                 } else {
                     Err(eyre::eyre!("Input method integration is only supported on macOS"))
