@@ -251,7 +251,7 @@ pub(super) async fn send_message(client: Client, input: String) -> Result<Receiv
 
     tokio::spawn(async move {
         if let Err(err) = try_send_message(client, &tx, conversation_state).await {
-            error!("{err}");
+            error!(%err);
             tx.send(ApiResponse::Error).await.ok();
             return;
         }

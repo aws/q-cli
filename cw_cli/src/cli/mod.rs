@@ -337,7 +337,12 @@ impl Cli {
                     if matches!(auth::is_amzn_user().await, Ok(true)) {
                         chat::chat(input.unwrap_or_default()).await
                     } else {
-                        ai::AiArgs::default().execute().await
+                        ai::AiArgs {
+                            input: input.unwrap_or_default().split(' ').map(str::to_owned).collect(),
+                            ..Default::default()
+                        }
+                        .execute()
+                        .await
                     }
                 },
             },

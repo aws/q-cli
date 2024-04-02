@@ -14,6 +14,7 @@ use crossterm::style::{
     Print,
 };
 use crossterm::{
+    cursor,
     style,
     ExecutableCommand,
     QueueableCommand,
@@ -124,7 +125,7 @@ You can include additional context from your shell by typing @history, @git or @
                 // this is a hack since otherwise the parser might report Incomplete with useful data
                 // still left in the buffer. I'm not sure how this is intended to be handled.
                 if ended {
-                    buf.push(' ');
+                    buf.push('\n');
                 }
 
                 loop {
@@ -157,6 +158,13 @@ You can include additional context from your shell by typing @history, @git or @
         }
 
         // Prompt user for input
-        input = Input::new().report(true).with_prompt("?").interact_text()?;
+        input = Input::new().report(false).with_prompt("?").interact_text()?;
+        let lines = (input.len() + 3) / usize::from(crossterm::terminal::window_size()?.columns);
+        if let Ok(lines) = u16::try_from(lines) {
+            if lines > 0 {
+                stderr.queue(cursor::MoveToPreviousLine(lines))?;
+            }
+        }
+        stderr.execute(style::Print(format!("?: {input}\n")))?;
     }
 }

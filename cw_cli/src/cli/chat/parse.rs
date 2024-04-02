@@ -17,8 +17,8 @@ use winnow::ascii::{
     self,
     alphanumeric1,
     digit1,
-    multispace0,
-    multispace1,
+    space0,
+    space1,
     till_line_ending,
 };
 use winnow::combinator::{
@@ -178,7 +178,7 @@ fn heading<'a, 'b>(
             return Err(ErrMode::from_error_kind(i, ErrorKind::Fail));
         }
 
-        let level = terminated(take_while(1.., |c| c == '#'), multispace1).parse_next(i)?;
+        let level = terminated(take_while(1.., |c| c == '#'), space1).parse_next(i)?;
         let print = format!("{level} ");
 
         queue_newline_or_advance(&mut o, state, print.width())?;
@@ -197,7 +197,7 @@ fn bulleted_item<'a, 'b>(
             return Err(ErrMode::from_error_kind(i, ErrorKind::Fail));
         }
 
-        let ws = (multispace0, "-", multispace1).parse_next(i)?.0;
+        let ws = (space0, "-", space1).parse_next(i)?.0;
         let print = format!("{ws}• ");
 
         queue_newline_or_advance(&mut o, state, print.width())?;
@@ -216,7 +216,7 @@ fn numbered_item<'a, 'b>(
             return Err(ErrMode::from_error_kind(i, ErrorKind::Fail));
         }
 
-        let (ws, digits, _, _) = (multispace0, digit1, ".", multispace1).parse_next(i)?;
+        let (ws, digits, _, _) = (space0, digit1, ".", space1).parse_next(i)?;
         let print = format!("{ws}{digits}. ");
 
         queue_newline_or_advance(&mut o, state, print.width())?;
@@ -236,9 +236,9 @@ fn horizontal_rule<'a, 'b>(
         }
 
         (
-            multispace0,
+            space0,
             alt((take_while(3.., '-'), take_while(3.., '*'), take_while(3.., '_'))),
-            multispace0,
+            space0,
         )
             .parse_next(i)?;
 
@@ -278,7 +278,7 @@ fn blockquote<'a, 'b>(
             return Err(ErrMode::from_error_kind(i, ErrorKind::Fail));
         }
 
-        let level = repeat::<_, _, Vec<&'_ str>, _, _>(1.., terminated("&gt;", multispace0))
+        let level = repeat::<_, _, Vec<&'_ str>, _, _>(1.., terminated("&gt;", space0))
             .parse_next(i)?
             .len();
         let print = "│ ".repeat(level);
@@ -496,7 +496,10 @@ mod tests {
                     state.newline = state.set_newline;
                     state.set_newline = false;
                 },
-                Err(_) => break,
+                Err(err) => match err.into_inner() {
+                    Some(err) => panic!("{err}"),
+                    None => break, // Data was incomplete
+                },
             }
         }
 
@@ -552,7 +555,7 @@ mod tests {
 
     #[test]
     fn greater_than() {
-        assert_parse_eq("&gt;", ">");
+        assert_parse_eq("1 &gt; 2 ", "1 > 2 ");
     }
 
     #[test]
