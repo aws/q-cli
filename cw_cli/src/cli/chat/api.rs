@@ -260,8 +260,8 @@ pub(super) async fn send_message(client: Client, input: String) -> Result<Receiv
 #[cfg(test)]
 mod tests {
     use fig_api_client::ai::{
+        cw_endpoint,
         cw_streaming_client,
-        Endpoint,
     };
     use tokio::io::AsyncWriteExt;
 
@@ -278,7 +278,7 @@ mod tests {
     #[tokio::test]
     #[ignore = "not in ci"]
     async fn test_send_message() {
-        let client = cw_streaming_client(Endpoint::Alpha).await;
+        let client = cw_streaming_client(cw_endpoint()).await;
         let question = "@git Explain my git status.".to_string();
 
         let mut rx = send_message(client.clone(), question).await.unwrap();

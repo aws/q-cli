@@ -21,6 +21,7 @@ use http::{
     HeaderValue,
 };
 use once_cell::sync::Lazy;
+use serde_json::Value;
 
 pub use crate::endpoints::Endpoint;
 
@@ -92,12 +93,19 @@ pub async fn cw_streaming_client(endpoint: Endpoint) -> amzn_codewhisperer_strea
 }
 
 pub fn cw_endpoint() -> Endpoint {
-    match fig_settings::state::get_string("api.codewhisperer.endpoint")
-        .ok()
-        .flatten()
-        .as_deref()
-    {
-        Some("alpha") => Endpoint::Alpha,
+    match fig_settings::state::get_value("api.codewhisperer.service") {
+        Ok(Some(Value::Object(o))) => {
+            let endpoint = o.get("endpoint").and_then(|v| v.as_str());
+            let region = o.get("region").and_then(|v| v.as_str());
+
+            match (endpoint, region) {
+                (Some(endpoint), Some(region)) => Endpoint::Custom {
+                    url: endpoint.to_owned().into(),
+                    region: region.to_owned().into(),
+                },
+                _ => Endpoint::Prod,
+            }
+        },
         _ => Endpoint::Prod,
     }
 }
@@ -363,7 +371,7 @@ mod tests {
 1551  11.10.2023 15:19  cr
 1552  11.10.2023 15:20  g";
 
-        cw_client(Endpoint::Alpha).await;
+        cw_client(cw_endpoint()).await;
 
         let mut request = CodewhipererRequest {
             file_context: CodewhipererFileContext {
