@@ -62,7 +62,7 @@ rustup target add aarch64-apple-darwin
 cargo install tauri-cli@1.5.2 --locked
 
 # create python venv and install dmgbuild
-python3 -m venv .venv
+python3.11 -m venv .venv
 source .venv/bin/activate
 pip3 install dmgbuild==1.6.1
 
@@ -86,4 +86,4 @@ build_params_json="$(
         }'
 )"
 
-python3 build-scripts/build.py "${build_params_json}" 2>&1
+python3.11 build-scripts/build.py "${build_params_json}" 2>&1

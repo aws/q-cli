@@ -2,14 +2,13 @@ import os
 import json
 import datetime
 import pathlib
-import platform
 import shutil
 import sys
 import itertools
 from typing import Dict, List, Mapping, Sequence
 from util import isDarwin, isLinux, run_cmd, run_cmd_output, info
 from signing import SigningData, SigningType, rebundle_dmg, sign_file, notarize_file
-from dmgbuild import build_dmg
+from importlib import import_module
 
 APP_NAME = "CodeWhisperer"
 BUILD_DIR = pathlib.Path(os.environ.get("BUILD_DIR") or "build").absolute()
@@ -107,7 +106,8 @@ def build_cargo_bin(
     else:
         # assumes linux
         target_path = pathlib.Path("target/x86_64-unknown-linux-gnu/release") / package
-        out_path = BUILD_DIR / (output_name or package)
+        out_path = BUILD_DIR / "bin" / (output_name or package)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(target_path, out_path)
         return out_path
 
@@ -135,7 +135,6 @@ def run_cargo_tests(features: Mapping[str, Sequence[str]] | None = None):
         env={
             **os.environ,
             **rust_env(),
-            "RUST_BACKTRACE": "1",
         },
     )
 
@@ -158,7 +157,33 @@ def run_cargo_tests(features: Mapping[str, Sequence[str]] | None = None):
         env={
             **os.environ,
             **rust_env(),
-            "RUST_BACKTRACE": "1",
+        },
+    )
+
+
+def run_clippy(features: Mapping[str, Sequence[str]] | None = None):
+    # run clippy using the same config as normal builds
+    args = ["cargo", "clippy", "--release", "--locked"]
+
+    for target in rust_targets():
+        args.extend(["--target", target])
+
+    if isLinux():
+        args.extend(["--workspace", "--exclude", "fig_desktop"])
+
+    if features:
+        args.extend(
+            [
+                "--features",
+                ",".join(set(itertools.chain.from_iterable(features.values()))),
+            ]
+        )
+
+    run_cmd(
+        args,
+        env={
+            **os.environ,
+            **rust_env(),
         },
     )
 
@@ -374,7 +399,11 @@ def build_desktop_app(
     background_path = dmg_resources_dir / "background.png"
     icon_path = dmg_resources_dir / "VolumeIcon.icns"
 
-    build_dmg(
+    # we use a dynamic import here so that we dont use this dep
+    # on other platforms
+    dmgbuild = import_module("dmgbuild")
+
+    dmgbuild.build_dmg(
         volume_name=APP_NAME,
         filename=dmg_path,
         settings={
@@ -465,7 +494,7 @@ build_args = {
     if isinstance(k, str) and isinstance(v, str)
 }
 
-info(f"{build_args}")
+info(f"Build Args: {build_args}")
 
 output_bucket = build_args.get("output_bucket")
 signing_bucket = build_args.get("signing_bucket")
@@ -474,6 +503,7 @@ apple_id_secret = build_args.get("apple_id_secret")
 signing_queue = build_args.get("signing_queue")
 signing_role_name = build_args.get("signing_role_name")
 stage_name = build_args.get("stage_name")
+run_lints = build_args.get("run_lints")
 
 if (
     signing_bucket
@@ -507,11 +537,16 @@ info(f"Signing app: {signing_data is not None}")
 
 BUILD_DIR.mkdir(parents=True, exist_ok=True)
 
-info("Building npm packages")
-npm_packages = build_npm_packages()
+# this is disabled for now on linux
+if not isLinux():
+    info("Building npm packages")
+    npm_packages = build_npm_packages()
 
 info("Running cargo tests")
 run_cargo_tests(features=cargo_features)
+
+if run_lints:
+    run_clippy(features=cargo_features)
 
 info("Building cw_cli")
 cw_cli_path = build_cargo_bin("cw_cli", output_name="cw", features=cargo_features)
