@@ -459,9 +459,9 @@ def linux_bundle(
     cwterm_path: pathlib.Path,
     cw_cli_path: pathlib.Path,
     codewhisperer_desktop_path: pathlib.Path,
-    is_headless: bool,
+    is_minimal: bool,
 ):
-    if not is_headless:
+    if not is_minimal:
         for res in [16, 22, 24, 32, 48, 64, 128, 256, 512]:
             shutil.copy2(
                 f"fig_desktop/icons/{res}x{res}.png",
@@ -473,8 +473,8 @@ def linux_bundle(
     bin_path.mkdir(parents=True, exist_ok=True)
     shutil.copy2(cw_cli_path, bin_path)
     shutil.copy2(cwterm_path, bin_path)
-    shutil.copytree("bundle/linux/headless", BUILD_DIR, dirs_exist_ok=True)
-    if not is_headless:
+    shutil.copytree("bundle/linux/minimal", BUILD_DIR, dirs_exist_ok=True)
+    if not is_minimal:
         shutil.copytree("bundle/linux/desktop", BUILD_DIR, dirs_exist_ok=True)
         shutil.copy2(codewhisperer_desktop_path, bin_path)
 

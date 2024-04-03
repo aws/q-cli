@@ -14,7 +14,7 @@ pub(crate) async fn update(
     _relaunch_dashboard: bool,
 ) -> Result<(), Error> {
     if manifest().is_none() {
-        Err(Error::UpdateFailed("Please remove `~/.local/bin/cw` and reinstall Fig with `curl -fSsL https://fig.io/install-headless.sh | bash`".into()))
+        Err(Error::UpdateFailed("Please remove `~/.local/bin/cw` and reinstall Fig with `curl -fSsL https://fig.io/install-minimal.sh | bash`".into()))
     } else {
         Err(Error::PackageManaged)
     }

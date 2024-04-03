@@ -5,7 +5,7 @@ Summary: Fig for Linux
 License: Fig License
 Group: Applications/System
 URL: https://fig.io
-Conflicts: fig-headless
+Conflicts: fig-minimal
 
 Requires: webkit2gtk4.1
 Requires: gtk3

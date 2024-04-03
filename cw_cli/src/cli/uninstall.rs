@@ -79,7 +79,7 @@ async fn uninstall() -> Result<()> {
 
     if nix::unistd::getuid().is_root() {
         let package_name = env::var("CW_PACKAGE_NAME")
-            .unwrap_or_else(|_| if !manifest::is_headless() { "cw" } else { "cw-headless" }.to_owned());
+            .unwrap_or_else(|_| if !manifest::is_minimal() { "cw" } else { "cw-minimal" }.to_owned());
 
         let package_manager = &manifest::manifest()
             .as_ref()

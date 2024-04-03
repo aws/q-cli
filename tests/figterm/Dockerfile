@@ -75,7 +75,7 @@ RUN cd figterm && cargo build --release
 
 RUN FIG_CLI=cw_cli/target/x86_64-unknown-linux-musl/release/cw_cli \
   FIGTERM=figterm/target/x86_64-unknown-linux-musl/release/figterm \
-  IS_HEADLESS=1 \
+  IS_MINIMAL=1 \
   build-scripts/deb.sh
 
 # Generate local.ts

@@ -186,7 +186,7 @@ impl AppSubcommand {
                 }
             },
             AppSubcommand::Prompts => {
-                if fig_util::manifest::is_headless() {
+                if fig_util::manifest::is_minimal() {
                     if let Ok(Some(version)) = state::get_string("update.latestVersion") {
                         writeln!(
                             std::io::stdout(),
@@ -248,8 +248,7 @@ impl AppSubcommand {
                         }
                     }
                 } else {
-                    let no_autolaunch =
-                        settings::get_bool_or("app.disableAutolaunch", false) || manifest::is_headless();
+                    let no_autolaunch = settings::get_bool_or("app.disableAutolaunch", false) || manifest::is_minimal();
                     let user_quit_app = state::get_bool_or("APP_TERMINATED_BY_USER", false);
                     if !no_autolaunch && !user_quit_app && !fig_util::system_info::in_ssh() {
                         let already_seen_hint: bool =

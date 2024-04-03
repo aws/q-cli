@@ -10,7 +10,7 @@ prepare_bundle() {
     echo Checking for binaries
     ls "$FIGTERM" >/dev/null
     ls "$FIG_CLI" >/dev/null
-    if [[ $IS_HEADLESS = 0 ]]; then
+    if [[ $IS_MINIMAL = 0 ]]; then
         ls "$FIG_DESKTOP" >/dev/null
 
         echo Installing icons
@@ -25,8 +25,8 @@ prepare_bundle() {
     mkdir -p build/usr/bin
     cp "$FIG_CLI" build/usr/bin/fig
     cp "$FIGTERM" build/usr/bin/figterm
-    cp -r bundle/linux/headless/. build/
-    if [[ $IS_HEADLESS = 0 ]]; then
+    cp -r bundle/linux/minimal/. build/
+    if [[ $IS_MINIMAL = 0 ]]; then
         cp -r bundle/linux/desktop/. build/
         cp "$FIG_DESKTOP" build/usr/bin/fig_desktop
     fi
@@ -35,10 +35,10 @@ prepare_bundle() {
 gen_manifest() {
     echo Generating install manifest
     mkdir -p build/usr/share/fig
-    if [[ $IS_HEADLESS = 0 ]]; then
+    if [[ $IS_MINIMAL = 0 ]]; then
         VARIANT=full
     else
-        VARIANT=headless
+        VARIANT=minimal
     fi
     jq -n \
         --arg ib "$1" \

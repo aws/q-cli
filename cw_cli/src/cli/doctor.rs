@@ -1041,8 +1041,7 @@ impl DoctorCheck<()> for SshdConfigCheck {
                 }
             })?;
 
-        let accept_env_regex =
-            Regex::new(r"(?m)^\s*AcceptEnv\s+.*(CW_\*|CW_SET_PARENT)([^\S\r\n]+.*$|$)").unwrap();
+        let accept_env_regex = Regex::new(r"(?m)^\s*AcceptEnv\s+.*(CW_\*|CW_SET_PARENT)([^\S\r\n]+.*$|$)").unwrap();
 
         let allow_stream_local_forwarding_regex =
             Regex::new(r"(?m)^\s*AllowStreamLocalForwarding\s+yes([^\S\r\n]+.*$|$)").unwrap();
@@ -2275,7 +2274,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         .await
         .ok();
 
-        if fig_util::manifest::is_headless() {
+        if fig_util::manifest::is_minimal() {
             return Ok(());
         }
 

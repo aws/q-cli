@@ -689,7 +689,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                                     // };
 
                                     // if should_install {
-                                    //     let installation_command = "curl -fSsL https://fig.io/install-headless.sh | bash; exec $SHELL\n";
+                                    //     let installation_command = "curl -fSsL https://fig.io/install-minimal.sh | bash; exec $SHELL\n";
                                     //     master.write_all(installation_command.as_bytes()).await?;
                                     // }
                                 }

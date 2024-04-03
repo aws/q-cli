@@ -41,10 +41,8 @@ pub enum ManagedBy {
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum Variant {
-    Online,
-    Offline,
     Full,
-    Headless,
+    Minimal,
     #[strum(default)]
     Other(String),
 }
@@ -156,7 +154,7 @@ pub fn manifest() -> &'static Option<Manifest> {
 }
 
 /// Checks if this is a full build according to the manifest.
-/// Note that this does not guarantee the value of is_headless
+/// Note that this does not guarantee the value of is_minimal
 pub fn is_full() -> bool {
     cfg_if! {
         if #[cfg(target_os = "macos")] {
@@ -175,9 +173,9 @@ pub fn is_full() -> bool {
     }
 }
 
-/// Checks if this is a headless build according to the manifest.
+/// Checks if this is a minimal build according to the manifest.
 /// Note that this does not guarantee the value of is_full
-pub fn is_headless() -> bool {
+pub fn is_minimal() -> bool {
     cfg_if! {
         if #[cfg(target_os = "macos")] {
             false
@@ -185,7 +183,7 @@ pub fn is_headless() -> bool {
             matches!(
                 manifest(),
                 Some(Manifest {
-                    variant: Variant::Headless,
+                    variant: Variant::Minimal,
                     ..
                 })
             )

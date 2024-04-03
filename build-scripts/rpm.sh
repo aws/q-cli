@@ -12,10 +12,10 @@ KIND=rpm gen_manifest dnf
 
 echo 'Packaging'
 rpmdev-setuptree
-if [[ $IS_HEADLESS = 0 ]]; then
+if [[ $IS_MINIMAL = 0 ]]; then
     cp bundle/rpm/fig.spec ~/rpmbuild/SPECS/fig.spec
 else
-    cp bundle/rpm/fig-headless.spec ~/rpmbuild/SPECS/fig.spec
+    cp bundle/rpm/fig-minimal.spec ~/rpmbuild/SPECS/fig.spec
 fi
 SPLIT=$(python3 build-scripts/rpm-ver.py $VERSION)
 FIRST=$(echo "$SPLIT" | head -n 1)
@@ -27,8 +27,8 @@ rm -r ~/rpmbuild/BUILD/fig-${VERSION}-1.${ARCH}/
 cp -r build/ ~/rpmbuild/BUILD/fig-${VERSION}-1.${ARCH}/
 rpmbuild -bb --target "$ARCH" ~/rpmbuild/SPECS/fig.spec
 
-if [[ $IS_HEADLESS = 0 ]]; then
+if [[ $IS_MINIMAL = 0 ]]; then
     cp ~/rpmbuild/RPMS/${ARCH}/fig-${FIRST}-${SECOND}.${ARCH}.rpm fig.rpm
 else
-    cp ~/rpmbuild/RPMS/${ARCH}/fig-headless-${FIRST}-${SECOND}.${ARCH}.rpm fig.rpm
+    cp ~/rpmbuild/RPMS/${ARCH}/fig-minimal-${FIRST}-${SECOND}.${ARCH}.rpm fig.rpm
 fi

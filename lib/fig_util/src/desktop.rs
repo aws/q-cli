@@ -122,9 +122,9 @@ pub fn is_codewhisperer_desktop_running() -> bool {
 }
 
 pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
-    if manifest::is_headless() {
+    if manifest::is_minimal() {
         return Err(Error::LaunchError(
-            "launching CodeWhisperer from headless installs is not yet supported".to_owned(),
+            "launching CodeWhisperer from minimal installs is not yet supported".to_owned(),
         ));
     }
 

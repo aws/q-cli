@@ -10,7 +10,7 @@ license=('custom')
 provides=('fig')
 conflicts=('fig')
 makedepends=('jq' 'xz')
-source=("${pkgname}-${pkgver//_/-}.tar.xz::https://repo.fig.io/generic/$aur_channel/asset/${pkgver//_/-}/x86_64/fig_headless.tar.xz")
+source=("${pkgname}-${pkgver//_/-}.tar.xz::https://repo.fig.io/generic/$aur_channel/asset/${pkgver//_/-}/x86_64/fig_minimal.tar.xz")
 
 sha256sums=('$aur_sha256sum')
 

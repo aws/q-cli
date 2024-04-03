@@ -23,13 +23,13 @@ esac
 
 echo 'Packaging'
 mkdir -p build/DEBIAN
-if [[ $IS_HEADLESS = 0 ]]; then
+if [[ $IS_MINIMAL = 0 ]]; then
     cat bundle/deb/control | APT_ARCH=$APT_ARCH envsubst > build/DEBIAN/control
 else
-    cat bundle/deb/control_headless | APT_ARCH=$APT_ARCH envsubst > build/DEBIAN/control
+    cat bundle/deb/control_minimal | APT_ARCH=$APT_ARCH envsubst > build/DEBIAN/control
 fi
 cp bundle/deb/prerm build/DEBIAN/prerm
-if [[ $IS_HEADLESS = 0 ]]; then
+if [[ $IS_MINIMAL = 0 ]]; then
     cp bundle/deb/postrm build/DEBIAN/postrm
     chmod 755 build/DEBIAN/postrm
 else

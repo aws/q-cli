@@ -1,4 +1,4 @@
-Name: fig-headless
+Name: fig-minimal
 Version: $VERSION
 Release: $RELEASE
 Summary: Fig for Linux

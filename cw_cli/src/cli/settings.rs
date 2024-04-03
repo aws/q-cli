@@ -149,7 +149,7 @@ impl SettingsArgs {
                     _ => Ok(()),
                 },
                 None => {
-                    if manifest::is_headless() || system_info::is_remote() {
+                    if manifest::is_minimal() || system_info::is_remote() {
                         Cli::parse_from([CODEWHISPERER_CLI_BINARY_NAME, "settings", "--help"]);
                         return Ok(());
                     }

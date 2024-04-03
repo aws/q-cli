@@ -4,5 +4,5 @@ Maintainer: Grant Gurvis <grant@fig.io>
 Homepage: https://fig.io
 Version: $VERSION
 Architecture: $APT_ARCH
-Conflicts: fig-headless
+Conflicts: fig-minimal
 Depends: libwebkit2gtk-4.1-0, libgtk-3-0, libayatana-appindicator3-1, libayatana-appindicator3-dev, ibus, util-linux

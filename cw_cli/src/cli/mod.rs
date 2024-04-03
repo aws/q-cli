@@ -366,7 +366,7 @@ impl Cli {
 }
 
 async fn launch_dashboard() -> Result<()> {
-    if manifest::is_headless() || system_info::is_remote() {
+    if manifest::is_minimal() || system_info::is_remote() {
         Cli::command().print_help()?;
         return Ok(());
     }
