@@ -113,7 +113,7 @@ pub async fn handle_request(
                     limit: std::env::var("CW_INLINE_SHELL_COMPLETION_HISTORY_COUNT")
                         .ok()
                         .and_then(|s| s.parse().ok())
-                        .unwrap_or(25),
+                        .unwrap_or(50),
                 },
                 history_query_tx,
             ))
@@ -164,18 +164,15 @@ pub async fn handle_request(
                 let mut completion_cache = COMPLETION_CACHE.lock().await;
 
                 for choice in &recommendations {
-                    // let logprob = match &choice.logprobs {
-                    //     Some(logprobs) => match &logprobs.token_logprobs {
-                    //         Some(token_logprobs) => *token_logprobs.first().unwrap_or(&1.0),
-                    //         None => 1.0,
-                    //     },
-                    //     None => 1.0,
-                    // };
-                    let logprob = 1.0;
+                    let content = choice
+                        .content
+                        .split_once('\n')
+                        .map_or(&*choice.content, |(l, _)| l)
+                        .trim_end();
 
-                    let full_text = format!("{}{}", figterm_request.buffer, choice.content.trim_end());
+                    let full_text = format!("{}{}", figterm_request.buffer, content);
 
-                    completion_cache.insert(full_text, logprob);
+                    completion_cache.insert(full_text, 1.0);
                 }
 
                 recommendations
