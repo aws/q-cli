@@ -20,8 +20,8 @@ use fig_util::Shell;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use tokio::sync::mpsc::{
-    Receiver,
-    Sender,
+    UnboundedReceiver,
+    UnboundedSender,
 };
 use tracing::error;
 
@@ -87,8 +87,6 @@ fn input_to_modifiers(input: String) -> (ContextModifiers, String) {
             _ => unreachable!(),
         }
     }
-
-    let input = CONTEXT_MODIFIER_REGEX.replace_all(&input, "").to_string();
 
     (modifiers, input)
 }
@@ -194,7 +192,7 @@ async fn build_git_state() -> Option<GitState> {
 
 async fn try_send_message(
     client: Client,
-    tx: &Sender<ApiResponse>,
+    tx: &UnboundedSender<ApiResponse>,
     conversation_state: ConversationState,
 ) -> Result<()> {
     let mut res = client
@@ -207,7 +205,7 @@ async fn try_send_message(
         match res.generate_assistant_response_response.recv().await {
             Ok(Some(stream)) => match stream {
                 ChatResponseStream::AssistantResponseEvent(response) => {
-                    tx.send(ApiResponse::Text(response.content)).await?;
+                    tx.send(ApiResponse::Text(response.content))?;
                 },
                 ChatResponseStream::MessageMetadataEvent(_event) => {},
                 ChatResponseStream::FollowupPromptEvent(_event) => {},
@@ -224,10 +222,10 @@ async fn try_send_message(
     Ok(())
 }
 
-pub(super) async fn send_message(client: Client, input: String) -> Result<Receiver<ApiResponse>> {
+pub(super) async fn send_message(client: Client, input: String) -> Result<UnboundedReceiver<ApiResponse>> {
     let (ctx, input) = input_to_modifiers(input);
 
-    let (tx, rx) = tokio::sync::mpsc::channel(8);
+    let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
 
     let mut context_builder = UserInputMessageContext::builder()
         .shell_state(build_shell_state(ctx.history))
@@ -252,12 +250,12 @@ pub(super) async fn send_message(client: Client, input: String) -> Result<Receiv
     tokio::spawn(async move {
         if let Err(err) = try_send_message(client, &tx, conversation_state).await {
             error!(%err);
-            tx.send(ApiResponse::Error).await.ok();
+            tx.send(ApiResponse::Error).ok();
             return;
         }
 
         // Try to end stream
-        tx.send(ApiResponse::End).await.ok();
+        tx.send(ApiResponse::End).ok();
     });
 
     Ok(rx)

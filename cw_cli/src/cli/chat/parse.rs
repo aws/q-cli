@@ -73,7 +73,6 @@ impl<'a> ParserError<Partial<&'a str>> for Error<'a> {
 pub struct ParseState {
     pub terminal_width: usize,
     pub column: usize,
-    pub code: bool,
     pub bold: bool,
     pub italic: bool,
     pub strikethrough: bool,
@@ -86,7 +85,6 @@ impl ParseState {
         Self {
             terminal_width,
             column: 0,
-            code: false,
             bold: false,
             italic: false,
             strikethrough: false,
@@ -243,7 +241,6 @@ fn horizontal_rule<'a, 'b>(
             .parse_next(i)?;
 
         state.column = 0;
-        state.code = false;
         state.set_newline = true;
 
         queue(&mut o, style::ResetColor)?;
@@ -258,12 +255,10 @@ fn code<'a, 'b>(
 ) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
     move |i| {
         "`".parse_next(i)?;
+        let code = terminated(take_until(0.., "`"), "`").parse_next(i)?;
 
-        state.code = !state.code;
-        match state.code {
-            true => queue(&mut o, style::SetForegroundColor(Color::Green))?,
-            false => queue(&mut o, style::SetForegroundColor(Color::Reset))?,
-        }
+        queue_newline_or_advance(&mut o, state, code.width())?;
+        queue(&mut o, style::Print(code.green()))?;
 
         Ok(())
     }
@@ -302,6 +297,7 @@ fn codeblock<'a, 'b>(
         // The alternative is to switch between parse rules at the top level but that's slightly involved
         let language = preceded("```", till_line_ending).parse_next(i)?;
         let code = terminated(take_until(0.., "```"), "```").parse_next(i)?;
+        ascii::line_ending.parse_next(i)?;
 
         queue(&mut o, style::ResetColor)?;
         queue(&mut o, style::SetAttribute(Attribute::Reset))?;
@@ -381,7 +377,7 @@ fn url<'a, 'b>(
         queue(&mut o, style::SetForegroundColor(Color::Blue))?;
         queue(&mut o, style::Print(format!("{display} ")))?;
         queue(&mut o, style::SetForegroundColor(Color::DarkGrey))?;
-        queue_newline_or_advance(&mut o, state, link.width())?;
+        state.column += link.width();
         queue(&mut o, style::Print(link))?;
         queue(&mut o, style::SetForegroundColor(Color::Reset))
     }
@@ -428,7 +424,6 @@ fn line_ending<'a, 'b>(
         ascii::line_ending.parse_next(i)?;
 
         state.column = 0;
-        state.code = false;
         state.set_newline = true;
 
         queue(&mut o, style::ResetColor)?;

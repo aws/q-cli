@@ -45,10 +45,19 @@ const SEEN_ONBOARDING_KEY: &str = "ai.seen-onboarding";
 
 #[derive(Debug, Args, Default, PartialEq, Eq)]
 pub struct AiArgs {
-    pub input: Vec<String>,
+    input: Vec<String>,
     /// Number of completions to generate (must be <=5)
     #[arg(short, long, hide = true)]
-    pub n: Option<i32>,
+    n: Option<i32>,
+}
+
+impl AiArgs {
+    pub fn new(input: Vec<String>) -> Self {
+        Self {
+            input,
+            ..Default::default()
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
