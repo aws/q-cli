@@ -312,7 +312,7 @@ mod tests {
             history: true,
             git: true
         });
-        assert_eq!(input, "How do I use git?");
+        assert_eq!(input, "@git @env @history How do I use git?");
 
         let (modifiers, input) = input_to_modifiers("@git How do I use git?".to_string());
         assert_eq!(modifiers, ContextModifiers {
@@ -320,7 +320,7 @@ mod tests {
             history: false,
             git: true
         });
-        assert_eq!(input, "How do I use git?");
+        assert_eq!(input, "@git How do I use git?");
 
         let (modifiers, input) = input_to_modifiers("@env How do I use git?".to_string());
         assert_eq!(modifiers, ContextModifiers {
@@ -328,7 +328,7 @@ mod tests {
             history: false,
             git: false
         });
-        assert_eq!(input, "How do I use git?");
+        assert_eq!(input, "@env How do I use git?");
     }
 
     #[test]
