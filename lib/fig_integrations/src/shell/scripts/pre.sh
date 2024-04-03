@@ -15,12 +15,8 @@ fi
 
 if [[ -z "${CW_SET_PARENT_CHECK}" ]]; then
   # Load parent from env variables
-  if [[ "$CW_SET_PARENT" = "" && "$LC_CW_SET_PARENT" != "" ]]; then
-    export CW_SET_PARENT=$LC_CW_SET_PARENT
-    unset -v LC_CW_SET_PARENT
-  fi
-  if [[ "$CW_PARENT" = "" && "$CW_SET_PARENT" != "" ]]; then
-    export CW_PARENT=$CW_SET_PARENT
+  if [[ -z "$CW_PARENT" && -n "$CW_SET_PARENT" ]]; then
+    export CW_PARENT="$CW_SET_PARENT"
     unset -v CW_SET_PARENT
   fi
   export CW_SET_PARENT_CHECK=1

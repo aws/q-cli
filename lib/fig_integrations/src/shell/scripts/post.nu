@@ -7,11 +7,6 @@ def pathadd [path: string] {
 }
 
 let-env PATH = pathadd $"($env.HOME)/.local/bin"
-let-env PATH = pathadd $"($env.HOME)/.local/bin"
-
-let-env CW_SET_PARENT = $env.CWTERM_SESSION_ID
-let-env LC_CW_SET_PARENT = $env.CWTERM_SESSION_ID
-
 let-env CW_SHELL = (^cw _ get-shell)
 
 let-env PATH = $env.PATH

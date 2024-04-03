@@ -10,8 +10,6 @@ set --query TTY; or set TTY (command tty)
 set --export TTY
 
 set --export SHELL_PID $fish_pid
-set --export CW_SET_PARENT $TERM_SESSION_ID
-set --export LC_CW_SET_PARENT $TERM_SESSION_ID
 
 set --query CW_SHELL; or set CW_SHELL (cw _ get-shell)
 

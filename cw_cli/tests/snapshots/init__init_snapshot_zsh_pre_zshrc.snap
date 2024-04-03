@@ -21,12 +21,8 @@ fi
 
 if [[ -z "${CW_SET_PARENT_CHECK}" ]]; then
   # Load parent from env variables
-  if [[ "$CW_SET_PARENT" = "" && "$LC_CW_SET_PARENT" != "" ]]; then
-    export CW_SET_PARENT=$LC_CW_SET_PARENT
-    unset -v LC_CW_SET_PARENT
-  fi
-  if [[ "$CW_PARENT" = "" && "$CW_SET_PARENT" != "" ]]; then
-    export CW_PARENT=$CW_SET_PARENT
+  if [[ -z "$CW_PARENT" && -n "$CW_SET_PARENT" ]]; then
+    export CW_PARENT="$CW_SET_PARENT"
     unset -v CW_SET_PARENT
   fi
   export CW_SET_PARENT_CHECK=1
@@ -83,5 +79,3 @@ then
     CW_EXECUTION_STRING="${CW_EXECUTION_STRING}" CW_START_TEXT="$(printf "%b" "${INITIAL_TEXT}")" CW_SHELL="${CW_SHELL}" CW_IS_LOGIN_SHELL="${CW_IS_LOGIN_SHELL}" exec -a "${CW_TERM_NAME}" "${CW_TERM_PATH}"
   fi
 fi
-
-

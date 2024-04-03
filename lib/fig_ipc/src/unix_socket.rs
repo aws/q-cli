@@ -3,8 +3,10 @@ use std::time::Duration;
 
 use tokio::net::UnixStream;
 use tracing::{
+    debug,
     error,
     trace,
+    warn,
 };
 
 use crate::{
@@ -17,13 +19,35 @@ pub async fn socket_connect(socket: impl AsRef<Path>) -> Result<UnixStream, Conn
     let socket = socket.as_ref();
 
     #[cfg(unix)]
-    if let Some(parent) = socket.parent() {
+    'socket_check: {
         use std::os::unix::fs::PermissionsExt;
-        let mode = parent.metadata()?.permissions().mode();
-        if !validate_mode_bits(mode) {
-            error!(?socket, mode, "Socket folder permissions are not 0o700");
-            return Err(ConnectError::IncorrectSocketPermissions);
+
+        match tokio::fs::metadata(socket).await {
+            Ok(metadata) => {
+                let mode = metadata.permissions().mode();
+                if validate_mode_bits(mode, 0o600) {
+                    debug!(?socket, mode, "Socket permissions are 0o600");
+                    break 'socket_check;
+                }
+                warn!(?socket, mode, "Socket permissions are not 0o600");
+            },
+            Err(err) => {
+                warn!(%err, ?socket, "Failed to get socket metadata, checking parent folder permissions");
+            },
         }
+
+        if let Some(parent_path) = socket.parent() {
+            let metadata = tokio::fs::metadata(parent_path).await?;
+            let mode = metadata.permissions().mode();
+            if validate_mode_bits(mode, 0o700) {
+                debug!(?socket, mode, "Socket folder permissions are 0o700");
+                break 'socket_check;
+            }
+            warn!(?socket, mode, "Socket folder permissions are not 0o700");
+        }
+
+        error!(?socket, "Incorrect socket permissions, not connecting to socket");
+        return Err(ConnectError::IncorrectSocketPermissions);
     }
 
     let stream = match UnixStream::connect(socket).await {
@@ -52,8 +76,9 @@ pub async fn socket_connect_timeout(socket: impl AsRef<Path>, timeout: Duration)
     }
 }
 
-fn validate_mode_bits(mode: u32) -> bool {
-    mode & 0o777 == 0o700
+/// Checks all the lower bits of a permission with the mask 0o777
+fn validate_mode_bits(left: u32, right: u32) -> bool {
+    left & 0o777 == right & 0o777
 }
 
 pub type BufferedUnixStream = BufferedReader<UnixStream>;
@@ -77,15 +102,15 @@ mod tests {
     /// If this test fails, we need to reevaluate the permissions model design around our sockets
     /// and double check with security
     #[test]
-    fn test_socket_folder_mode() {
-        assert!(validate_mode_bits(0o700));
+    fn test_validate_mode_bits() {
+        let valid = 0o700;
 
         for i in 0..0o700 {
-            assert!(!validate_mode_bits(i));
+            assert!(!validate_mode_bits(i, valid));
         }
 
         for i in 0o701..0o777 {
-            assert!(!validate_mode_bits(i));
+            assert!(!validate_mode_bits(i, valid));
         }
     }
 }

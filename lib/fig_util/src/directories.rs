@@ -8,6 +8,7 @@ use time::OffsetDateTime;
 
 #[cfg(target_os = "macos")]
 use crate::consts::CODEWHISPERER_CLI_BINARY_NAME;
+use crate::system_info::is_remote;
 
 macro_rules! utf8_dir {
     ($name:ident, $($arg:ident: $type:ty),*) => {
@@ -44,6 +45,8 @@ pub enum DirectoryError {
     FromVecWithNul(#[from] std::ffi::FromVecWithNulError),
     #[error(transparent)]
     IntoString(#[from] std::ffi::IntoStringError),
+    #[error("CW_PARENT env variable not set")]
+    CwParentNotSet,
 }
 
 type Result<T, E = DirectoryError> = std::result::Result<T, E>;
@@ -240,21 +243,22 @@ pub fn desktop_socket_path() -> Result<PathBuf> {
 }
 
 /// The path to remote socket
-// - Linux/MacOS on ssh:
+// - Linux/MacOS on ssh: At the value of `CW_PARENT`
 // - Linux/MacOS not on ssh:
 /// - MacOS: `$TMPDIR/cwrun/remote.sock`
 /// - Linux: `$XDG_RUNTIME_DIR/cwrun/remote.sock`
 /// - Windows: `%APPDATA%/Fig/%USER%/remote.sock`
 pub fn remote_socket_path() -> Result<PathBuf> {
-    // TODO: reenable remote cw
-    // if is_remote() {
-    //     if let Ok(parent_id) = std::env::var("CW_PARENT") {
-    //         if !parent_id.is_empty() {
-    //             return parent_socket_path(&parent_id);
-    //         }
-    //     }
-    // }
-    local_remote_socket_path()
+    // TODO(grant): This is only enabled on Linux for now to prevent public dist
+    if is_remote() && cfg!(target_os = "linux") && !cfg!(test) {
+        if let Some(parent_socket) = std::env::var_os("CW_PARENT") {
+            Ok(PathBuf::from(parent_socket))
+        } else {
+            Err(DirectoryError::CwParentNotSet)
+        }
+    } else {
+        local_remote_socket_path()
+    }
 }
 
 /// The path to local remote socket

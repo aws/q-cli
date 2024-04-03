@@ -19,9 +19,6 @@ if not test -z "$CW_NEW_SESSION"
 end
 
 # Load parent from env variables
-if test -n "$CW_SET_PARENT"; and test -z "$LC_CW_SET_PARENT"
-    set --export CW_SET_PARENT $LC_CW_SET_PARENT
-end
 if test -n "$CW_PARENT"; and test -z "$CW_SET_PARENT"
     set --export CW_PARENT $CW_SET_PARENT
 end
@@ -59,5 +56,3 @@ if test -t 1
         exec bash -c "CW_PARENT=$CW_PARENT CW_SHELL=$CW_SHELL CW_IS_LOGIN_SHELL=$CW_IS_LOGIN_SHELL exec -a \"$CW_TERM_NAME\" \"$CW_TERM_PATH\""
     end
 end
-
-

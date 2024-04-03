@@ -233,17 +233,14 @@ impl CliRootCommands {
 #[command(version, about, name = "cw")]
 #[command(help_template = "\x1B[1;95m
  cw\x1B[0m (Amazon CodeWhisperer CLI)
-╭──────────────────────────────────────────────────────╮
-│ \x1B[1mcw\x1B[0m          \x1B[0;90mOpen the CodeWhisperer Dashboard\x1B[0m         │ 
-│ \x1B[1mcw doctor\x1B[0m   \x1B[0;90mDebug CodeWhisperer installation issues\x1B[0m  │ 
-╰──────────────────────────────────────────────────────╯
 
  \x1B[1;95mPopular Subcommands\x1B[0m           \x1B[1;90mUsage:\x1B[0;90m cw [subcommand]\x1B[0m
-╭──────────────────────────────────────────────────────╮
-│ \x1B[1mai\x1B[0m             \x1B[0;90mNatural Language to Shell translation\x1B[0m |
-│ \x1B[1msettings\x1B[0m       \x1B[0;90mCustomize appearance & behavior\x1B[0m       │
-│ \x1B[1mquit\x1B[0m           \x1B[0;90mQuit the CodeWhisperer app\x1B[0m            │
-╰──────────────────────────────────────────────────────╯
+╭────────────────────────────────────────────────────────╮
+│ \x1B[1mai\x1B[0m             \x1B[0;90mNatural Language to Shell translation\x1B[0m   |
+│ \x1B[1mdoctor\x1B[0m         \x1B[0;90mDebug CodeWhisperer installation issues\x1B[0m │ 
+│ \x1B[1msettings\x1B[0m       \x1B[0;90mCustomize appearance & behavior\x1B[0m         │
+│ \x1B[1mquit\x1B[0m           \x1B[0;90mQuit the CodeWhisperer app\x1B[0m              │
+╰────────────────────────────────────────────────────────╯
 
  \x1B[0;90mTo see all subcommands, use:\x1B[0m
   > cw help-all
@@ -370,7 +367,8 @@ impl Cli {
 
 async fn launch_dashboard() -> Result<()> {
     if manifest::is_headless() || system_info::is_remote() {
-        eyre::bail!("Opening the dashboard from a remote machine is not supported");
+        Cli::command().print_help()?;
+        return Ok(());
     }
 
     launch_fig_desktop(LaunchArgs {

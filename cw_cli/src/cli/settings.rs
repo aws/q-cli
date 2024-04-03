@@ -2,6 +2,7 @@ use auth::is_logged_in;
 use clap::{
     ArgGroup,
     Args,
+    Parser,
     Subcommand,
 };
 use eyre::{
@@ -15,11 +16,17 @@ use fig_util::desktop::{
     launch_fig_desktop,
     LaunchArgs,
 };
-use fig_util::directories;
+use fig_util::{
+    directories,
+    manifest,
+    system_info,
+    CODEWHISPERER_CLI_BINARY_NAME,
+};
 use globset::Glob;
 use serde_json::json;
 
 use super::OutputFormat;
+use crate::cli::Cli;
 use crate::util::app_not_running_message;
 
 #[derive(Debug, Subcommand, PartialEq, Eq)]
@@ -142,6 +149,11 @@ impl SettingsArgs {
                     _ => Ok(()),
                 },
                 None => {
+                    if manifest::is_headless() || system_info::is_remote() {
+                        Cli::parse_from([CODEWHISPERER_CLI_BINARY_NAME, "settings", "--help"]);
+                        return Ok(());
+                    }
+
                     launch_fig_desktop(LaunchArgs {
                         wait_for_socket: true,
                         open_dashboard: false,

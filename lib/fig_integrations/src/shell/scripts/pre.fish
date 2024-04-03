@@ -13,9 +13,6 @@ if not test -z "$CW_NEW_SESSION"
 end
 
 # Load parent from env variables
-if test -n "$CW_SET_PARENT"; and test -z "$LC_CW_SET_PARENT"
-    set --export CW_SET_PARENT $LC_CW_SET_PARENT
-end
 if test -n "$CW_PARENT"; and test -z "$CW_SET_PARENT"
     set --export CW_PARENT $CW_SET_PARENT
 end

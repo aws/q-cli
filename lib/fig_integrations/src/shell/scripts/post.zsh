@@ -13,8 +13,6 @@ fi
 export TTY
 
 export SHELL_PID="$$"
-export CW_SET_PARENT=$CWTERM_SESSION_ID
-export LC_CW_SET_PARENT=$CWTERM_SESSION_ID
 
 if [[ -z "${CW_SHELL}" ]]; then
   CW_SHELL=$(cw _ get-shell)
