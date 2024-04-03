@@ -256,9 +256,10 @@ fn code<'a, 'b>(
     move |i| {
         "`".parse_next(i)?;
         let code = terminated(take_until(0.., "`"), "`").parse_next(i)?;
+        let out = code.replace("&amp;", "&").replace("&gt;", ">").replace("&lt;", "<");
 
-        queue_newline_or_advance(&mut o, state, code.width())?;
-        queue(&mut o, style::Print(code.green()))?;
+        queue_newline_or_advance(&mut o, state, out.width())?;
+        queue(&mut o, style::Print(out.green()))?;
 
         Ok(())
     }
