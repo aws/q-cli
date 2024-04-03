@@ -121,10 +121,13 @@ fn runtime_dir() -> Result<PathBuf> {
     let mut dir = dirs::runtime_dir();
     dir = dir.or_else(|| std::env::var_os("TMPDIR").map(PathBuf::from));
 
-    #[cfg(target_os = "macos")]
-    {
-        let macos_tempdir = macos_tempdir()?;
-        dir = dir.or(Some(macos_tempdir));
+    cfg_if::cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            let macos_tempdir = macos_tempdir()?;
+            dir = dir.or(Some(macos_tempdir));
+        } else {
+            dir = dir.or_else(|| Some(std::env::temp_dir()));
+        }
     }
 
     dir.ok_or(DirectoryError::NoRuntimeDirectory)
