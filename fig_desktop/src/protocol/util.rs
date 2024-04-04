@@ -2,8 +2,8 @@ use std::borrow::Cow;
 use std::error::Error;
 
 use anyhow::Result;
-use http::header::CONTENT_TYPE;
-use http::{
+use wry::http::header::CONTENT_TYPE;
+use wry::http::{
     Response,
     StatusCode,
 };

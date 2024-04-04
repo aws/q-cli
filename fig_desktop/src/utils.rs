@@ -5,16 +5,6 @@ use std::sync::atomic::{
     Ordering,
 };
 
-use http::header::{
-    ACCESS_CONTROL_ALLOW_ORIGIN,
-    CONTENT_TYPE,
-};
-use http::status::StatusCode;
-use http::{
-    HeaderValue,
-    Request as HttpRequest,
-    Response as HttpResponse,
-};
 use once_cell::sync::Lazy;
 use serde::{
     Deserialize,
@@ -31,6 +21,16 @@ use tracing::{
     debug_span,
     error,
     Instrument,
+};
+use wry::http::header::{
+    ACCESS_CONTROL_ALLOW_ORIGIN,
+    CONTENT_TYPE,
+};
+use wry::http::status::StatusCode;
+use wry::http::{
+    HeaderValue,
+    Request as HttpRequest,
+    Response as HttpResponse,
 };
 use wry::RequestAsyncResponder;
 

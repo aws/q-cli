@@ -6,13 +6,6 @@ use auth::secret_store::SecretStore;
 use fig_request::reqwest::Client;
 use fnv::FnvHashSet;
 use futures::prelude::*;
-use http::header::CONTENT_TYPE;
-use http::{
-    HeaderValue,
-    Request,
-    Response,
-    StatusCode,
-};
 use once_cell::sync::Lazy;
 use serde::{
     Deserialize,
@@ -20,6 +13,13 @@ use serde::{
 };
 use tracing::error;
 use url::Url;
+use wry::http::header::CONTENT_TYPE;
+use wry::http::{
+    HeaderValue,
+    Request,
+    Response,
+    StatusCode,
+};
 
 use crate::webview::WindowId;
 
@@ -223,10 +223,13 @@ pub async fn handle(request: Request<Vec<u8>>, _: WindowId) -> anyhow::Result<Re
 
         let content_type = response
             .headers()
-            .get(CONTENT_TYPE)
+            .get(http::header::CONTENT_TYPE)
             .map_or_else(|| "application/javascript".try_into().unwrap(), |v| v.to_owned());
 
-        Ok(res_ok(response.bytes().await?.to_vec(), content_type))
+        Ok(res_ok(
+            response.bytes().await?.to_vec(),
+            content_type.as_bytes().try_into()?,
+        ))
     }
 }
 

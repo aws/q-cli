@@ -12,12 +12,6 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Result;
-use http::header::CONTENT_TYPE;
-use http::{
-    Request,
-    Response,
-    StatusCode,
-};
 use image::imageops::FilterType;
 use image::{
     GenericImage,
@@ -34,6 +28,12 @@ use tracing::{
     warn,
 };
 use url::Url;
+use wry::http::header::CONTENT_TYPE;
+use wry::http::{
+    Request,
+    Response,
+    StatusCode,
+};
 
 use crate::platform::PlatformState;
 use crate::webview::WindowId;

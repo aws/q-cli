@@ -3,8 +3,8 @@ use std::borrow::Cow;
 use bytes::Bytes;
 use fig_proto::fig::ClientOriginatedMessage;
 use fig_proto::prost::Message;
-use http::header::CONTENT_TYPE;
-use http::{
+use wry::http::header::CONTENT_TYPE;
+use wry::http::{
     HeaderValue,
     Method,
     Request,

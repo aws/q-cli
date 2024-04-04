@@ -6,70 +6,22 @@ use std::sync::Arc;
 
 use once_cell::sync::Lazy;
 use reqwest::Client;
-use rustls::client::{
-    HandshakeSignatureValid,
-    ServerCertVerified,
-    ServerCertVerifier,
-};
 use rustls::{
     ClientConfig,
-    DigitallySignedStruct,
-    Error,
     RootCertStore,
-    ServerName,
 };
-
-// This is very similar to the same struct in reqwest
-struct NoVerifier;
-
-impl ServerCertVerifier for NoVerifier {
-    fn verify_server_cert(
-        &self,
-        _end_entity: &rustls::Certificate,
-        _intermediates: &[rustls::Certificate],
-        _server_name: &ServerName,
-        _scts: &mut dyn Iterator<Item = &[u8]>,
-        _ocsp_response: &[u8],
-        _now: std::time::SystemTime,
-    ) -> Result<ServerCertVerified, Error> {
-        Ok(ServerCertVerified::assertion())
-    }
-
-    fn verify_tls12_signature(
-        &self,
-        _message: &[u8],
-        _cert: &rustls::Certificate,
-        _dss: &DigitallySignedStruct,
-    ) -> Result<HandshakeSignatureValid, Error> {
-        Ok(HandshakeSignatureValid::assertion())
-    }
-
-    fn verify_tls13_signature(
-        &self,
-        _message: &[u8],
-        _cert: &rustls::Certificate,
-        _dss: &DigitallySignedStruct,
-    ) -> Result<HandshakeSignatureValid, Error> {
-        Ok(HandshakeSignatureValid::assertion())
-    }
-}
 
 pub fn create_default_root_cert_store(native_certs: bool) -> RootCertStore {
     let mut root_cert_store = RootCertStore::empty();
-    root_cert_store.add_trust_anchors(webpki_roots::TLS_SERVER_ROOTS.iter().map(|ta| {
-        rustls::OwnedTrustAnchor::from_subject_spki_name_constraints(
-            ta.subject.as_ref(),
-            ta.subject_public_key_info.as_ref(),
-            ta.name_constraints.as_deref(),
-        )
-    }));
+
+    root_cert_store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
 
     if native_certs {
         if let Ok(certs) = rustls_native_certs::load_native_certs() {
             for cert in certs {
                 // This error is ignored because root certificates often include
                 // ancient or syntactically invalid certificates
-                root_cert_store.add(&rustls::Certificate(cert.to_vec())).ok();
+                let _ = root_cert_store.add(cert);
             }
         }
     }
@@ -85,7 +37,7 @@ pub fn create_default_root_cert_store(native_certs: bool) -> RootCertStore {
                 for cert in rustls_pemfile::certs(reader) {
                     match cert {
                         Ok(cert) => {
-                            if let Err(err) = root_cert_store.add(&rustls::Certificate(cert.to_vec())) {
+                            if let Err(err) = root_cert_store.add(cert) {
                                 tracing::error!(path =% custom_cert, %err, "Failed to add custom cert");
                             };
                         },
@@ -100,40 +52,17 @@ pub fn create_default_root_cert_store(native_certs: bool) -> RootCertStore {
     root_cert_store
 }
 
-// note(grant): we may need to deal with client auth ??
-static CLIENT_CONFIG_NATIVE_CERTS: Lazy<Arc<ClientConfig>> = Lazy::new(|| {
-    Arc::new(
-        ClientConfig::builder()
-            .with_safe_defaults()
-            .with_root_certificates(create_default_root_cert_store(true))
-            .with_no_client_auth(),
-    )
-});
+fn client_config(native_certs: bool) -> ClientConfig {
+    ClientConfig::builder()
+        .with_root_certificates(create_default_root_cert_store(native_certs))
+        .with_no_client_auth()
+}
 
-static CLIENT_CONFIG_NO_NATIVE_CERTS: Lazy<Arc<ClientConfig>> = Lazy::new(|| {
-    Arc::new(
-        ClientConfig::builder()
-            .with_safe_defaults()
-            .with_root_certificates(create_default_root_cert_store(false))
-            .with_no_client_auth(),
-    )
-});
+static CLIENT_CONFIG_NATIVE_CERTS: Lazy<Arc<ClientConfig>> = Lazy::new(|| Arc::new(client_config(true)));
+static CLIENT_CONFIG_NO_NATIVE_CERTS: Lazy<Arc<ClientConfig>> = Lazy::new(|| Arc::new(client_config(false)));
 
-static CLIENT_CONFIG_NO_CERTS: Lazy<Arc<ClientConfig>> = Lazy::new(|| {
-    Arc::new(
-        ClientConfig::builder()
-            .with_safe_defaults()
-            .with_custom_certificate_verifier(Arc::new(NoVerifier))
-            .with_no_client_auth(),
-    )
-});
-
-pub fn client_config(native_certs: bool) -> Arc<ClientConfig> {
-    if std::env::var_os("FIG_DANGER_ACCEPT_INVALID_CERTS").is_some()
-        || fig_settings::state::get_bool_or("FIG_DANGER_ACCEPT_INVALID_CERTS", false)
-    {
-        CLIENT_CONFIG_NO_CERTS.clone()
-    } else if native_certs {
+pub fn client_config_cached(native_certs: bool) -> Arc<ClientConfig> {
+    if native_certs {
         CLIENT_CONFIG_NATIVE_CERTS.clone()
     } else {
         CLIENT_CONFIG_NO_NATIVE_CERTS.clone()
@@ -158,21 +87,25 @@ pub fn user_agent() -> &'static str {
 }
 
 pub static CLIENT_NATIVE_CERTS: Lazy<Option<Client>> = Lazy::new(|| {
-    Client::builder()
-        .use_preconfigured_tls((*client_config(true)).clone())
-        .user_agent(USER_AGENT.chars().filter(|c| c.is_ascii_graphic()).collect::<String>())
-        .cookie_store(true)
-        .build()
-        .ok()
+    Some(
+        Client::builder()
+            .use_preconfigured_tls((*client_config_cached(true)).clone())
+            .user_agent(USER_AGENT.chars().filter(|c| c.is_ascii_graphic()).collect::<String>())
+            .cookie_store(true)
+            .build()
+            .unwrap(),
+    )
 });
 
 pub static CLIENT_NO_NATIVE_CERTS: Lazy<Option<Client>> = Lazy::new(|| {
-    Client::builder()
-        .use_preconfigured_tls((*client_config(false)).clone())
-        .user_agent(USER_AGENT.chars().filter(|c| c.is_ascii_graphic()).collect::<String>())
-        .cookie_store(true)
-        .build()
-        .ok()
+    Some(
+        Client::builder()
+            .use_preconfigured_tls((*client_config_cached(false)).clone())
+            .user_agent(USER_AGENT.chars().filter(|c| c.is_ascii_graphic()).collect::<String>())
+            .cookie_store(true)
+            .build()
+            .unwrap(),
+    )
 });
 
 pub fn reqwest_client(native_certs: bool) -> Option<&'static reqwest::Client> {
@@ -185,7 +118,7 @@ pub fn reqwest_client(native_certs: bool) -> Option<&'static reqwest::Client> {
 
 pub static CLIENT_NATIVE_CERT_NO_REDIRECT: Lazy<Option<Client>> = Lazy::new(|| {
     Client::builder()
-        .use_preconfigured_tls((*client_config(true)).clone())
+        .use_preconfigured_tls((*client_config_cached(true)).clone())
         .user_agent(USER_AGENT.chars().filter(|c| c.is_ascii_graphic()).collect::<String>())
         .cookie_store(true)
         .redirect(reqwest::redirect::Policy::none())

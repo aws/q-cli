@@ -2,13 +2,13 @@ use std::borrow::Cow;
 use std::io::ErrorKind;
 use std::path::Path;
 
-use http::header::CONTENT_TYPE;
-use http::{
+use tracing::info;
+use wry::http::header::CONTENT_TYPE;
+use wry::http::{
     Request,
     Response,
     StatusCode,
 };
-use tracing::info;
 
 use super::util::{
     res_400,

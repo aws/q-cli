@@ -16,10 +16,6 @@ use aws_config::{
 };
 use aws_credential_types::Credentials;
 use aws_smithy_types::config_bag::ConfigBag;
-use http::{
-    HeaderName,
-    HeaderValue,
-};
 use once_cell::sync::Lazy;
 use serde_json::Value;
 
@@ -29,7 +25,7 @@ static APP_NAME: Lazy<AppName> = Lazy::new(|| AppName::new("codewhisperer-termin
 
 // Opt out constants
 const SHARE_CODEWHISPERER_CONTENT_SETTINGS_KEY: &str = "codeWhisperer.shareCodeWhispererContentWithAWS";
-static X_AMZN_CODEWHISPERER_OPT_OUT_HEADER: HeaderName = HeaderName::from_static("x-amzn-codewhisperer-optout");
+static X_AMZN_CODEWHISPERER_OPT_OUT_HEADER: &str = "x-amzn-codewhisperer-optout";
 
 fn is_codewhisperer_content_optout() -> bool {
     !fig_settings::settings::get_bool_or(SHARE_CODEWHISPERER_CONTENT_SETTINGS_KEY, true)
@@ -50,11 +46,11 @@ impl Intercept for OptOutInterceptor {
         _cfg: &mut ConfigBag,
     ) -> Result<(), amzn_codewhisperer_client::error::BoxError> {
         context.request_mut().headers_mut().insert(
-            X_AMZN_CODEWHISPERER_OPT_OUT_HEADER.clone(),
+            X_AMZN_CODEWHISPERER_OPT_OUT_HEADER,
             if is_codewhisperer_content_optout() {
-                HeaderValue::from_static("true")
+                "true"
             } else {
-                HeaderValue::from_static("false")
+                "false"
             },
         );
 
