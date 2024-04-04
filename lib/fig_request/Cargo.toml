@@ -20,7 +20,7 @@ cookie = "0.18.0"
 fig_settings = { path = "../fig_settings" }
 fig_util = { path = "../fig_util" }
 once_cell = { version = "1.17.1", features = ["parking_lot"] }
-reqwest = { version = "=0.12.0", default-features = false, features = [
+reqwest = { version = "0.12.2", default-features = false, features = [
     # defaults except tls
     "http2",
     "charset",

@@ -250,7 +250,7 @@ pub fn desktop_socket_path() -> Result<PathBuf> {
 /// - Windows: `%APPDATA%/Fig/%USER%/remote.sock`
 pub fn remote_socket_path() -> Result<PathBuf> {
     // TODO(grant): This is only enabled on Linux for now to prevent public dist
-    if is_remote() && cfg!(target_os = "linux") && !cfg!(test) {
+    if is_remote() && cfg!(target_os = "linux") {
         if let Some(parent_socket) = std::env::var_os("CW_PARENT") {
             Ok(PathBuf::from(parent_socket))
         } else {

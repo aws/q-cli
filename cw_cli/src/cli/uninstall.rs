@@ -81,10 +81,7 @@ async fn uninstall() -> Result<()> {
         let package_name = env::var("CW_PACKAGE_NAME")
             .unwrap_or_else(|_| if !manifest::is_minimal() { "cw" } else { "cw-minimal" }.to_owned());
 
-        let package_manager = &manifest::manifest()
-            .as_ref()
-            .ok_or_else(|| eyre::eyre!("Failed getting installation manifest"))?
-            .managed_by;
+        let package_manager = &manifest::manifest().managed_by;
 
         Command::new("killall").arg("fig_desktop").status()?;
 

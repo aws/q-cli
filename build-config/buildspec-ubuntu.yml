@@ -13,6 +13,8 @@ phases:
       # Install cargo
       - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - . $HOME/.cargo/env
+      - rustup target add x86_64-unknown-linux-gnu
+      - rustup target add aarch64-unknown-linux-gnu
       # Install node via rtx
       - curl https://rtx.pub/rtx-latest-linux-amd64 > /usr/bin/rtx
       - chmod +x /usr/bin/rtx
@@ -26,8 +28,11 @@ phases:
 
 artifacts:
   files:
-    - build/cw
-    - build/cwterm
-    - build/codewhisperer_desktop
+    - build/bin/cw-x86_64-unknown-linux-gnu
+    - build/bin/cwterm-x86_64-unknown-linux-gnu
+    - build/bin/cw-aarch64-unknown-linux-gnu
+    - build/bin/cwterm-aarch64-unknown-linux-gnu
+    - build/bin/*.sha256
+
 
   discard-paths: "yes"

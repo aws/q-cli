@@ -129,9 +129,9 @@ mod tests {
 
         let uuid = Uuid::new_v4();
         let exe_path = "/usr/bin/cw";
-        let remote_socket = directories::remote_socket_path_utf8().unwrap();
+        let remote_socket = "/tmp/remote.socket";
 
-        let config = args.ssh_config(&uuid, exe_path, remote_socket.as_str());
+        let config = args.ssh_config(&uuid, exe_path, remote_socket);
         println!("{config}");
     }
 }

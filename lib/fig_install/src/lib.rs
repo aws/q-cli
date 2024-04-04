@@ -98,7 +98,7 @@ pub fn get_channel() -> Result<Channel, Error> {
     Ok(match fig_settings::state::get_string("updates.channel")? {
         Some(channel) => Channel::from_str(&channel)?,
         None => {
-            let manifest_channel = manifest().as_ref().ok_or(Error::ManifestNotFound)?.default_channel;
+            let manifest_channel = manifest().default_channel;
             if fig_settings::settings::get_bool_or("app.beta", false) {
                 manifest_channel.max(Channel::Beta)
             } else {
@@ -115,7 +115,7 @@ pub fn get_max_channel() -> Channel {
         .flatten()
         .and_then(|s| Channel::from_str(&s).ok())
         .unwrap_or(Channel::Stable);
-    let manifest_channel = manifest().as_ref().map_or(Channel::Stable, |m| m.default_channel);
+    let manifest_channel = manifest().default_channel;
     let settings_channel = if fig_settings::settings::get_bool_or("app.beta", false) {
         Channel::Beta
     } else {
@@ -129,8 +129,7 @@ pub fn get_max_channel() -> Channel {
 }
 
 pub async fn check_for_updates(ignore_rollout: bool) -> Result<Option<UpdatePackage>, Error> {
-    let manifest = manifest().as_ref().ok_or(Error::ManifestNotFound)?;
-
+    let manifest = manifest();
     index::check_for_updates(
         get_channel()?,
         manifest.kind.clone(),

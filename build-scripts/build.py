@@ -1,7 +1,9 @@
+from enum import Enum
 import os
 import json
 import datetime
 import pathlib
+import platform
 import shutil
 import sys
 import itertools
@@ -12,6 +14,21 @@ from importlib import import_module
 
 APP_NAME = "CodeWhisperer"
 BUILD_DIR = pathlib.Path(os.environ.get("BUILD_DIR") or "build").absolute()
+
+
+class Variant(Enum):
+    FULL = 1
+    MINIMAL = 2
+
+
+def get_variant() -> Variant:
+    match platform.system():
+        case "Darwin":
+            return Variant.FULL
+        case "Linux":
+            return Variant.MINIMAL
+        case other:
+            raise ValueError(f"Unsupported platform {other}")
 
 
 def build_npm_packages() -> Dict[str, pathlib.Path]:
@@ -51,23 +68,27 @@ def rust_env(linker=None) -> Dict[str, str]:
     if isDarwin():
         env["MACOSX_DEPLOYMENT_TARGET"] = "10.13"
 
+    # TODO(grant): move Variant to be an arg of the functions
+    env["CW_BUILD_VARIANT"] = get_variant().name
+
     return env
 
 
 def rust_targets() -> List[str]:
-    if isDarwin():
-        return ["x86_64-apple-darwin", "aarch64-apple-darwin"]
-    elif isLinux():
-        return ["x86_64-unknown-linux-gnu"]
-    else:
-        raise ValueError("Unsupported platform")
+    match platform.system():
+        case "Darwin":
+            return ["x86_64-apple-darwin", "aarch64-apple-darwin"]
+        case "Linux":
+            return ["x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu"]
+        case other:
+            raise ValueError(f"Unsupported platform {other}")
 
 
 def build_cargo_bin(
     package: str,
     output_name: str | None = None,
     features: Mapping[str, Sequence[str]] | None = None,
-) -> pathlib.Path:
+) -> List[pathlib.Path]:
     args = ["cargo", "build", "--release", "--locked", "--package", package]
 
     targets = rust_targets()
@@ -87,13 +108,13 @@ def build_cargo_bin(
 
     # create "universal" binary for macos
     if isDarwin():
-        outpath = BUILD_DIR / f"{output_name or package}-universal-apple-darwin"
+        out_path = BUILD_DIR / f"{output_name or package}-universal-apple-darwin"
 
         args = [
             "lipo",
             "-create",
             "-output",
-            outpath,
+            out_path,
         ]
         for target in targets:
             args.extend(
@@ -102,14 +123,17 @@ def build_cargo_bin(
                 ]
             )
         run_cmd(args)
-        return outpath
+        return [out_path]
     else:
-        # assumes linux
-        target_path = pathlib.Path("target/x86_64-unknown-linux-gnu/release") / package
-        out_path = BUILD_DIR / "bin" / (output_name or package)
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(target_path, out_path)
-        return out_path
+        out_paths = []
+        for target in targets:
+            target_path = pathlib.Path("target") / target / "release" / package
+            out_path = BUILD_DIR / "bin" / f"{(output_name or package)}-{target}"
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(target_path, out_path)
+            out_paths.append(out_path)
+
+        return out_paths
 
 
 def run_cargo_tests(features: Mapping[str, Sequence[str]] | None = None):
@@ -233,7 +257,8 @@ def gen_manifest() -> str:
 
 
 def build_macos_ime(signing_data: SigningData | None) -> pathlib.Path:
-    fig_input_method_bin = build_cargo_bin("fig_input_method")
+    # On macos we only build 1 binary
+    fig_input_method_bin = build_cargo_bin("fig_input_method")[0]
     input_method_app = pathlib.Path("build/CodeWhispererInputMethod.app")
 
     (input_method_app / "Contents/MacOS").mkdir(parents=True, exist_ok=True)
@@ -504,6 +529,7 @@ signing_queue = build_args.get("signing_queue")
 signing_role_name = build_args.get("signing_role_name")
 stage_name = build_args.get("stage_name")
 run_lints = build_args.get("run_lints")
+variant = get_variant()
 
 if (
     signing_bucket
@@ -534,11 +560,11 @@ else:
 
 info(f"Cargo features: {cargo_features}")
 info(f"Signing app: {signing_data is not None}")
+info(f"Variant: {variant}")
 
 BUILD_DIR.mkdir(parents=True, exist_ok=True)
 
-# this is disabled for now on linux
-if not isLinux():
+if variant == Variant.FULL:
     info("Building npm packages")
     npm_packages = build_npm_packages()
 
@@ -549,16 +575,17 @@ if run_lints:
     run_clippy(features=cargo_features)
 
 info("Building cw_cli")
-cw_cli_path = build_cargo_bin("cw_cli", output_name="cw", features=cargo_features)
+cw_cli_paths = build_cargo_bin("cw_cli", output_name="cw", features=cargo_features)
 
 info("Building figterm")
-cwterm_path = build_cargo_bin("figterm", output_name="cwterm", features=cargo_features)
+cwterm_paths = build_cargo_bin("figterm", output_name="cwterm", features=cargo_features)
 
 if isDarwin():
     info("Building CodeWhisperer.dmg")
     dmg_path = build_desktop_app(
-        cw_cli_path=cw_cli_path,
-        cwterm_path=cwterm_path,
+        # on macos we only build 1 binary
+        cw_cli_path=cw_cli_paths[0],
+        cwterm_path=cwterm_paths[0],
         npm_packages=npm_packages,
         signing_data=signing_data,
         features=cargo_features,
@@ -573,14 +600,19 @@ if isDarwin():
         run_cmd(["aws", "s3", "cp", dmg_path, staging_location])
         run_cmd(["aws", "s3", "cp", sha_path, staging_location])
 elif isLinux():
+    shasums = []
+    for path in cw_cli_paths:
+        shasums.append(generate_sha(path))
+    for path in cwterm_paths:
+        shasums.append(generate_sha(path))
+
     if output_bucket:
         staging_location = f"s3://{build_args['output_bucket']}/staging/"
         info(f"Build complete, sending to {staging_location}")
 
-        run_cmd(["aws", "s3", "cp", cw_cli_path, staging_location])
-        run_cmd(["aws", "s3", "cp", cwterm_path, staging_location])
-
-    # disabled for now
-    # build_cargo_bin(
-    #     "fig_desktop", output_name="codewhisperer_desktop", features=features
-    # )
+        for path in cw_cli_paths:
+            run_cmd(["aws", "s3", "cp", path, staging_location])
+        for path in cwterm_paths:
+            run_cmd(["aws", "s3", "cp", path, staging_location])
+        for path in shasums:
+            run_cmd(["aws", "s3", "cp", path, staging_location])

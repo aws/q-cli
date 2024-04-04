@@ -1,4 +1,3 @@
-use fig_util::manifest::manifest;
 use tokio::sync::mpsc::Sender;
 
 use crate::index::UpdatePackage;
@@ -13,9 +12,8 @@ pub(crate) async fn update(
     _interactive: bool,
     _relaunch_dashboard: bool,
 ) -> Result<(), Error> {
-    if manifest().is_none() {
-        Err(Error::UpdateFailed("Please remove `~/.local/bin/cw` and reinstall Fig with `curl -fSsL https://fig.io/install-minimal.sh | bash`".into()))
-    } else {
-        Err(Error::PackageManaged)
-    }
+    Err(Error::UpdateFailed(
+        "Please remove `~/.local/bin/cw` and reinstall Fig with `curl -fSsL https://fig.io/install-minimal.sh | bash`"
+            .into(),
+    ))
 }
