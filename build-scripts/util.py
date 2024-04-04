@@ -22,18 +22,18 @@ def isLinux() -> bool:
     return platform.system() == "Linux"
 
 
-def info(s: str):
+def info(*s: str):
     if isCi():
-        print(f"INFO: {s}")
+        print(f"INFO: {' '.join(s)}")
     else:
-        print(f"{INFO}INFO:{ENDC} {s}")
+        print(f"{INFO}INFO:{ENDC} {' '.join(s)}")
 
 
-def fail(s: str):
+def fail(*s: str):
     if isCi():
-        print(f"FAIL: {s}")
+        print(f"FAIL: {' '.join(s)}")
     else:
-        print(f"{FAIL}FAIL:{ENDC} {s}")
+        print(f"{FAIL}FAIL:{ENDC} {' '.join(s)}")
 
 
 Args = Sequence[str | os.PathLike]
