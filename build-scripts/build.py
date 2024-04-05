@@ -9,11 +9,12 @@ import sys
 import itertools
 from typing import Dict, List, Mapping, Sequence
 from util import isDarwin, isLinux, run_cmd, run_cmd_output, info
-from signing import SigningData, SigningType, rebundle_dmg, sign_file, notarize_file
+from signing import EcSigningData, EcSigningType, rebundle_dmg, ec_sign_file, apple_notarize_file
 from importlib import import_module
 
 APP_NAME = "CodeWhisperer"
-BUILD_DIR = pathlib.Path(os.environ.get("BUILD_DIR") or "build").absolute()
+BUILD_DIR_RELATIVE = pathlib.Path(os.environ.get("BUILD_DIR") or "build")
+BUILD_DIR = BUILD_DIR_RELATIVE.absolute()
 
 
 class Variant(Enum):
@@ -79,7 +80,13 @@ def rust_targets() -> List[str]:
         case "Darwin":
             return ["x86_64-apple-darwin", "aarch64-apple-darwin"]
         case "Linux":
-            return ["x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu"]
+            match platform.machine():
+                case "x86_64":
+                    return ["x86_64-unknown-linux-gnu"]
+                case "aarch64":
+                    return ["aarch64-unknown-linux-gnu"]
+                case other:
+                    raise ValueError(f"Unsupported machine {other}")
         case other:
             raise ValueError(f"Unsupported platform {other}")
 
@@ -88,7 +95,7 @@ def build_cargo_bin(
     package: str,
     output_name: str | None = None,
     features: Mapping[str, Sequence[str]] | None = None,
-) -> List[pathlib.Path]:
+) -> pathlib.Path:
     args = ["cargo", "build", "--release", "--locked", "--package", package]
 
     targets = rust_targets()
@@ -123,17 +130,15 @@ def build_cargo_bin(
                 ]
             )
         run_cmd(args)
-        return [out_path]
+        return out_path
     else:
-        out_paths = []
-        for target in targets:
-            target_path = pathlib.Path("target") / target / "release" / package
-            out_path = BUILD_DIR / "bin" / f"{(output_name or package)}-{target}"
-            out_path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(target_path, out_path)
-            out_paths.append(out_path)
-
-        return out_paths
+        # linux does not cross compile arch
+        target = targets[0]
+        target_path = pathlib.Path("target") / target / "release" / package
+        out_path = BUILD_DIR / "bin" / (output_name or package)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(target_path, out_path)
+        return out_path
 
 
 def run_cargo_tests(features: Mapping[str, Sequence[str]] | None = None):
@@ -256,9 +261,8 @@ def gen_manifest() -> str:
     )
 
 
-def build_macos_ime(signing_data: SigningData | None) -> pathlib.Path:
-    # On macos we only build 1 binary
-    fig_input_method_bin = build_cargo_bin("fig_input_method")[0]
+def build_macos_ime(signing_data: EcSigningData | None) -> pathlib.Path:
+    fig_input_method_bin = build_cargo_bin("fig_input_method")
     input_method_app = pathlib.Path("build/CodeWhispererInputMethod.app")
 
     (input_method_app / "Contents/MacOS").mkdir(parents=True, exist_ok=True)
@@ -279,15 +283,13 @@ def build_macos_ime(signing_data: SigningData | None) -> pathlib.Path:
 
     if signing_data:
         info("Signing macos ime")
-        sign_file(input_method_app, SigningType.IME, signing_data)
-        notarize_file(input_method_app, signing_data)
+        ec_sign_file(input_method_app, EcSigningType.IME, signing_data)
+        apple_notarize_file(input_method_app, signing_data)
 
     return input_method_app
 
 
-def tauri_config(
-    cw_cli_path: pathlib.Path, cwterm_path: pathlib.Path, target: str
-) -> str:
+def tauri_config(cw_cli_path: pathlib.Path, cwterm_path: pathlib.Path, target: str) -> str:
     config = {
         "tauri": {
             "bundle": {
@@ -306,7 +308,7 @@ def build_desktop_app(
     cwterm_path: pathlib.Path,
     cw_cli_path: pathlib.Path,
     npm_packages: Dict[str, pathlib.Path],
-    signing_data: SigningData | None,
+    signing_data: EcSigningData | None,
     features: Mapping[str, Sequence[str]] | None = None,
 ) -> pathlib.Path:
     target = "universal-apple-darwin"
@@ -320,9 +322,7 @@ def build_desktop_app(
 
     info("Building tauri config")
     tauri_config_path = pathlib.Path("fig_desktop/build-config.json")
-    tauri_config_path.write_text(
-        tauri_config(cw_cli_path=cw_cli_path, cwterm_path=cwterm_path, target=target)
-    )
+    tauri_config_path.write_text(tauri_config(cw_cli_path=cw_cli_path, cwterm_path=cwterm_path, target=target))
 
     info("Building fig_desktop")
 
@@ -348,9 +348,7 @@ def build_desktop_app(
     manifest_path.unlink(missing_ok=True)
     tauri_config_path.unlink(missing_ok=True)
 
-    target_bundle = pathlib.Path(
-        f"target/{target}/release/bundle/macos/codewhisperer_desktop.app"
-    )
+    target_bundle = pathlib.Path(f"target/{target}/release/bundle/macos/codewhisperer_desktop.app")
     app_path = BUILD_DIR / "CodeWhisperer.app"
     shutil.rmtree(app_path, ignore_errors=True)
     shutil.copytree(target_bundle, app_path)
@@ -450,32 +448,28 @@ def build_desktop_app(
     info(f"Created dmg at {dmg_path}")
 
     if signing_data:
-        sign_and_rebundle_macos(
-            app_path=app_path, dmg_path=dmg_path, signing_data=signing_data
-        )
+        sign_and_rebundle_macos(app_path=app_path, dmg_path=dmg_path, signing_data=signing_data)
 
     return dmg_path
 
 
-def sign_and_rebundle_macos(
-    app_path: pathlib.Path, dmg_path: pathlib.Path, signing_data: SigningData
-):
+def sign_and_rebundle_macos(app_path: pathlib.Path, dmg_path: pathlib.Path, signing_data: EcSigningData):
     info("Signing app and dmg")
 
     # Sign the application
-    sign_file(app_path, SigningType.APP, signing_data)
+    ec_sign_file(app_path, EcSigningType.APP, signing_data)
 
     # Notarize the application
-    notarize_file(app_path, signing_data)
+    apple_notarize_file(app_path, signing_data)
 
     # Rebundle the dmg file with the signed and notarized application
     rebundle_dmg(app_path=app_path, dmg_path=dmg_path)
 
     # Sign the dmg
-    sign_file(dmg_path, SigningType.DMG, signing_data)
+    ec_sign_file(dmg_path, EcSigningType.DMG, signing_data)
 
     # Notarize the dmg
-    notarize_file(dmg_path, signing_data)
+    apple_notarize_file(dmg_path, signing_data)
 
     info("Done signing!!")
 
@@ -505,10 +499,11 @@ def linux_bundle(
 
 
 def generate_sha(path: pathlib.Path) -> pathlib.Path:
-    shasum_output = run_cmd_output(["shasum", "-a", "256", path])
+    shasum_output = run_cmd_output(["sha256sum", path])
     sha = shasum_output.split(" ")[0]
     path = path.with_name(f"{path.name}.sha256")
     path.write_text(sha)
+    info(f"Wrote sha256sum to {path}:", sha)
     return path
 
 
@@ -531,14 +526,8 @@ stage_name = build_args.get("stage_name")
 run_lints = build_args.get("run_lints")
 variant = get_variant()
 
-if (
-    signing_bucket
-    and aws_account_id
-    and apple_id_secret
-    and signing_queue
-    and signing_role_name
-):
-    signing_data = SigningData(
+if signing_bucket and aws_account_id and apple_id_secret and signing_queue and signing_role_name:
+    signing_data = EcSigningData(
         bucket_name=signing_bucket,
         aws_account_id=aws_account_id,
         notarizing_secret_id=apple_id_secret,
@@ -560,7 +549,7 @@ else:
 
 info(f"Cargo features: {cargo_features}")
 info(f"Signing app: {signing_data is not None}")
-info(f"Variant: {variant}")
+info(f"Variant: {variant.name}")
 
 BUILD_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -575,17 +564,16 @@ if run_lints:
     run_clippy(features=cargo_features)
 
 info("Building cw_cli")
-cw_cli_paths = build_cargo_bin("cw_cli", output_name="cw", features=cargo_features)
+cw_cli_path = build_cargo_bin("cw_cli", output_name="cw", features=cargo_features)
 
 info("Building figterm")
-cwterm_paths = build_cargo_bin("figterm", output_name="cwterm", features=cargo_features)
+cwterm_path = build_cargo_bin("figterm", output_name="cwterm", features=cargo_features)
 
 if isDarwin():
     info("Building CodeWhisperer.dmg")
     dmg_path = build_desktop_app(
-        # on macos we only build 1 binary
-        cw_cli_path=cw_cli_paths[0],
-        cwterm_path=cwterm_paths[0],
+        cw_cli_path=cw_cli_path,
+        cwterm_path=cwterm_path,
         npm_packages=npm_packages,
         signing_data=signing_data,
         features=cargo_features,
@@ -600,19 +588,43 @@ if isDarwin():
         run_cmd(["aws", "s3", "cp", dmg_path, staging_location])
         run_cmd(["aws", "s3", "cp", sha_path, staging_location])
 elif isLinux():
-    shasums = []
-    for path in cw_cli_paths:
-        shasums.append(generate_sha(path))
-    for path in cwterm_paths:
-        shasums.append(generate_sha(path))
+    # create the archive structure:
+    #   amazon-q/bin/cw
+    #   amazon-q/bin/cwterm
+    #   amazon-q/install.sh
 
-    if output_bucket:
-        staging_location = f"s3://{build_args['output_bucket']}/staging/"
-        info(f"Build complete, sending to {staging_location}")
+    archive_name = "amazon-q"
 
-        for path in cw_cli_paths:
-            run_cmd(["aws", "s3", "cp", path, staging_location])
-        for path in cwterm_paths:
-            run_cmd(["aws", "s3", "cp", path, staging_location])
-        for path in shasums:
-            run_cmd(["aws", "s3", "cp", path, staging_location])
+    archive_path = pathlib.Path(archive_name)
+    archive_path.mkdir(parents=True, exist_ok=True)
+
+    shutil.copy2("bundle/linux/install.sh", archive_path)
+
+    archive_bin_path = archive_path / "bin"
+    archive_bin_path.mkdir(parents=True, exist_ok=True)
+
+    shutil.copy2(cw_cli_path, archive_bin_path)
+    shutil.copy2(cwterm_path, archive_bin_path)
+
+    info(f"Building {archive_name}.tar.gz")
+    tar_gz_path = BUILD_DIR / f"{archive_name}.tar.gz"
+    run_cmd(["tar", "-czf", tar_gz_path, archive_path])
+    generate_sha(tar_gz_path)
+
+    info(f"Building {archive_name}.tar.xz")
+    tar_xz_path = BUILD_DIR / f"{archive_name}.tar.xz"
+    run_cmd(["tar", "-cJf", tar_xz_path, archive_path])
+    generate_sha(tar_xz_path)
+
+    info(f"Building {archive_name}.tar.zst")
+    tar_zst_path = BUILD_DIR / f"{archive_name}.tar.zst"
+    run_cmd(["tar", "-I", "zstd", "-cf", tar_zst_path, archive_path], {"ZSTD_CLEVEL": "19"})
+    generate_sha(tar_zst_path)
+
+    info(f"Building {archive_name}.zip")
+    zip_path = BUILD_DIR / f"{archive_name}.zip"
+    run_cmd(["zip", "-r", zip_path, archive_path])
+    generate_sha(zip_path)
+
+    # clean up
+    shutil.rmtree(archive_path)

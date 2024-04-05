@@ -9,6 +9,7 @@ use std::process::{
 #[cfg(not(windows))]
 use assert_cmd::prelude::*;
 use paste::paste;
+use eyre::Context;
 
 macro_rules! init_test {
     ($shell:expr, $stage:expr, $file:expr, [$exe:expr, $($arg:expr),*]) => {
@@ -51,7 +52,7 @@ macro_rules! init_test {
                 cmd$(.arg($arg))*.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped());
                 cmd.env("CW_INIT_SNAPSHOT_TEST", "1");
 
-                let child = cmd.spawn()?;
+                let child = cmd.spawn().context(format!("{} is not installed", $exe))?;
                 write!(child.stdin.as_ref().unwrap(), "{}", init)?;
                 let output = child.wait_with_output()?;
                 if !output.status.success() {

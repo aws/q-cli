@@ -13,26 +13,21 @@ phases:
       # Install cargo
       - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - . $HOME/.cargo/env
-      - rustup target add x86_64-unknown-linux-gnu
-      - rustup target add aarch64-unknown-linux-gnu
-      # Install node via rtx
-      - curl https://rtx.pub/rtx-latest-linux-amd64 > /usr/bin/rtx
-      - chmod +x /usr/bin/rtx
-      - eval "$(rtx activate bash)"
-      - rtx install
+      # Install python/node via mise
+      - curl --proto '=https' --tlsv1.2 -sSf https://mise.run | sh
+      - mise install
       - corepack enable
       # - cargo install tauri-cli
   build:
     commands:
-      - python3 build-scripts/build.py
+      - python3.11 build-scripts/build.py
 
 artifacts:
-  files:
-    - build/bin/cw-x86_64-unknown-linux-gnu
-    - build/bin/cwterm-x86_64-unknown-linux-gnu
-    - build/bin/cw-aarch64-unknown-linux-gnu
-    - build/bin/cwterm-aarch64-unknown-linux-gnu
-    - build/bin/*.sha256
-
-
   discard-paths: "yes"
+  base-directory: "build"
+  files:
+    - ./*.sha256
+    - ./*.tar.gz
+    - ./*.tar.xz
+    - ./*.tar.zst
+    - ./*.zip

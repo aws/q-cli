@@ -5,10 +5,10 @@ import json
 import shutil
 import time
 
-TEAM_ID = "94KV3E626L"
+APPLE_TEAM_ID = "94KV3E626L"
 
 
-class SigningData:
+class EcSigningData:
     bucket_name: str
     signing_request_queue_name: str
     notarizing_secret_id: str
@@ -30,20 +30,18 @@ class SigningData:
         self.signing_role_name = signing_role_name
 
 
-def signed_package_exists(name: str, signing_data: SigningData) -> bool:
+def ec_signed_package_exists(name: str, signing_data: EcSigningData) -> bool:
     s3_path = f"s3://{signing_data.bucket_name}/{name}"
     info(f"Checking if {s3_path} exists")
     return run_cmd_status(["aws", "s3", "ls", s3_path]) == 0
 
 
-def post_request(source: str, destination: str, signing_data: SigningData):
+def ec_post_request(source: str, destination: str, signing_data: EcSigningData):
     message = {
         "data": {
             "source": {"arn": f"arn:aws:s3:::{source}"},
             "destination": {"arn": f"arn:aws:s3:::{destination}"},
-            "iam-role": {
-                "arn": f"arn:aws:iam::{signing_data.aws_account_id}:role/{signing_data.signing_role_name}"
-            },
+            "iam-role": {"arn": f"arn:aws:iam::{signing_data.aws_account_id}:role/{signing_data.signing_role_name}"},
         }
     }
     message_json = json.dumps(message)
@@ -72,23 +70,21 @@ def post_request(source: str, destination: str, signing_data: SigningData):
     )
 
 
-class SigningType(Enum):
+class EcSigningType(Enum):
     DMG = "dmg"
     APP = "app"
     IME = "ime"
 
 
-def build_signed_package(type: SigningType, file_path: pathlib.Path, name: str):
+def ec_build_signed_package(type: EcSigningType, file_path: pathlib.Path, name: str):
     working_dir = pathlib.Path(f"build-config/signing/{type.value}")
     starting_dir = pathlib.Path.cwd()
 
-    if type == SigningType.DMG:
+    if type == EcSigningType.DMG:
         # Our dmg file names vary by platform, so this is templated in the manifest
         manifest_template_path = working_dir / "manifest.yaml.template"
         manifest_path = working_dir / "manifest.yaml"
-        manifest_path.write_text(
-            manifest_template_path.read_text().replace("__NAME__", name)
-        )
+        manifest_path.write_text(manifest_template_path.read_text().replace("__NAME__", name))
 
     if file_path.is_dir():
         shutil.copytree(file_path, working_dir / "artifact" / file_path.name)
@@ -123,14 +119,15 @@ def build_signed_package(type: SigningType, file_path: pathlib.Path, name: str):
     shutil.rmtree(working_dir / "artifact")
 
 
-def sign_file(file: pathlib.Path, type: SigningType, signing_data: SigningData):
+# Sign a file with electric company
+def ec_sign_file(file: pathlib.Path, type: EcSigningType, signing_data: EcSigningData):
     name = file.name
 
     info(f"Signing {name}")
 
     # Electric Company requires us to build up a tar file in an extremely specific format
     info("Packaging...")
-    build_signed_package(type, file, name)
+    ec_build_signed_package(type, file, name)
 
     # Upload package for signing to S3
     info("Uploading...")
@@ -164,7 +161,7 @@ def sign_file(file: pathlib.Path, type: SigningType, signing_data: SigningData):
     pathlib.Path("package.tar.gz").unlink()
 
     info("Sending request...")
-    post_request(
+    ec_post_request(
         f"{signing_data.bucket_name}/pre-signed/package.tar.gz",
         f"{signing_data.bucket_name}/signed/signed.zip",
         signing_data,
@@ -176,7 +173,7 @@ def sign_file(file: pathlib.Path, type: SigningType, signing_data: SigningData):
     i = 1
     while True:
         info(f"Checking for signed package {i}")
-        if signed_package_exists("signed/signed.zip", signing_data):
+        if ec_signed_package_exists("signed/signed.zip", signing_data):
             break
         if time.time() >= end_time:
             raise RuntimeError("Signed package did not appear, check signer logs")
@@ -259,7 +256,7 @@ def rebundle_dmg(dmg_path: pathlib.Path, app_path: pathlib.Path):
     )
 
 
-def notarize_file(file: pathlib.Path, signing_data: SigningData):
+def apple_notarize_file(file: pathlib.Path, signing_data: EcSigningData):
     name = file.name
     file_type = file.suffix[1:]
 
@@ -289,7 +286,7 @@ def notarize_file(file: pathlib.Path, signing_data: SigningData):
             "submit",
             file_to_notarize,
             "--team-id",
-            TEAM_ID,
+            APPLE_TEAM_ID,
             "--apple-id",
             secrets["appleId"],
             "--password",
@@ -347,3 +344,27 @@ def get_signing_secrets(notarizing_secret_id: str):
     )
     secret_string = json.loads(secret_string)["SecretString"]
     return json.loads(secret_string)
+
+
+def gpg_sign_file(file: pathlib.Path):
+    name = file.name
+
+    info(f"Signing {name}")
+
+    # tmpdir
+    passphrase_file = pathlib.Path("/tmp/passphrase")
+    passphrase_file.write_text("")
+
+    run_cmd(
+        [
+            "gpg",
+            "--batch",
+            "--armor",
+            "--detach-sign",
+            "--local-user",
+            "Amazon",
+            "--passphrase-file",
+            passphrase_file,
+            file,
+        ]
+    )

@@ -272,25 +272,6 @@ impl Client {
         let user_context = self.user_context().unwrap();
         let opt_out_preference = opt_out_preference();
 
-        // pub terminal_user_interaction_event_type:
-        // ::std::option::Option<crate::types::TerminalUserInteractionEventType>,
-        // #[allow(missing_docs)] // documentation missing in model
-        // pub terminal: ::std::option::Option<::std::string::String>,
-        // #[allow(missing_docs)] // documentation missing in model
-        // pub terminal_version: ::std::option::Option<::std::string::String>,
-        // #[allow(missing_docs)] // documentation missing in model
-        // pub shell: ::std::option::Option<::std::string::String>,
-        // #[allow(missing_docs)] // documentation missing in model
-        // pub shell_version: ::std::option::Option<::std::string::String>,
-        // #[allow(missing_docs)] // documentation missing in model
-        // pub duration: ::std::option::Option<i32>,
-        // #[allow(missing_docs)] // documentation missing in model
-        // pub time_to_suggestion: ::std::option::Option<i32>,
-        // #[allow(missing_docs)] // documentation missing in model
-        // pub is_completion_accepted: ::std::option::Option<bool>,
-        // #[allow(missing_docs)] // documentation missing in model
-        // pub cli_tool_command: ::std::option::Option<::std::string::String>,
-
         let mut set = JOIN_SET.lock().await;
         set.spawn(async move {
             let mut terminal_user_interaction_event_builder = TerminalUserInteractionEvent::builder()
