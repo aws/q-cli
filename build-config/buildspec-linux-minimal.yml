@@ -13,10 +13,12 @@ phases:
       # Install cargo
       - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - . $HOME/.cargo/env
-      # Install python/node via mise
+      # Install python/node via mise (https://mise.jdx.dev/continuous-integration.html)
       - curl --proto '=https' --tlsv1.2 -sSf https://mise.run | sh
-      - export PATH="$HOME/.local/share/mise/shims:$HOME/.local/share/mise/bin:$PATH"
+      - export PATH="$HOME/.local/bin:$PATH"
       - mise install
+      - eval "$(mise activate bash --shims)"
+      # Enable corepack for pnpm
       - corepack enable
       # Disable tests that need fish/shellcheck
       - export CW_BUILD_SKIP_SHELL_TESTS=1
