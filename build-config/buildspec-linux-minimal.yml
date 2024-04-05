@@ -15,6 +15,7 @@ phases:
       - . $HOME/.cargo/env
       # Install python/node via mise
       - curl --proto '=https' --tlsv1.2 -sSf https://mise.run | sh
+      - export PATH="$HOME/.local/share/mise/shims:$HOME/.local/share/mise/bin:$PATH"
       - mise install
       - corepack enable
       # - cargo install tauri-cli

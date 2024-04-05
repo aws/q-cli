@@ -6,5 +6,6 @@ export default {
   "*.proto": () => [
     "cd proto && buf lint && buf format --exit-code > /dev/null",
   ],
+  "*.py": ["ruff format --check", "ruff check"],
   "*": "typos",
 };
