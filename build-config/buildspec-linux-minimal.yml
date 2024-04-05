@@ -6,8 +6,8 @@ env:
 phases:
   install:
     commands:
-      - sudo apt-get update
-      - sudo apt-get install -y clang cmake curl git jq unzip libayatana-appindicator3-dev libgtk-3-dev libibus-1.0-dev libwebkit2gtk-4.1-dev libjavascriptcoregtk-4.1-dev valac protobuf-compiler python3 shellcheck bash zsh fish
+      - sudo yum update
+      - sudo yum install -y curl cmake python cmake bash zsh unzip zstd xz git jq
       # Create fish config dir to prevent rustup from failing
       - mkdir -p /root/.config/fish/conf.d
       # Install cargo
@@ -18,7 +18,8 @@ phases:
       - export PATH="$HOME/.local/share/mise/shims:$HOME/.local/share/mise/bin:$PATH"
       - mise install
       - corepack enable
-      # - cargo install tauri-cli
+      # Disable tests that need fish/shellcheck
+      - export CW_BUILD_SKIP_SHELL_TESTS=1
   build:
     commands:
       - python3.11 build-scripts/build.py

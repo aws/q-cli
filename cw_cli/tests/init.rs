@@ -8,8 +8,8 @@ use std::process::{
 
 #[cfg(not(windows))]
 use assert_cmd::prelude::*;
-use paste::paste;
 use eyre::Context;
+use paste::paste;
 
 macro_rules! init_test {
     ($shell:expr, $stage:expr, $file:expr, [$exe:expr, $($arg:expr),*]) => {
@@ -43,6 +43,10 @@ macro_rules! init_test {
 
                 // Ignore all fish in brazil
                 if $exe == "fish" && std::env::var_os("BRAZIL_BUILD_HOME").is_some() {
+                    return Ok(());
+                }
+
+                if std::env::var_os("CW_BUILD_SKIP_SHELL_TESTS").is_some() {
                     return Ok(());
                 }
 
