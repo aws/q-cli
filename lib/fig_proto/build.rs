@@ -30,8 +30,7 @@ fn protoc_version() -> Option<Version> {
 }
 
 fn download_protoc() {
-    let protoc_version = "25.3";
-    let checksum = "f853e691868d0557425ea290bf7ba6384eef2fa9b04c323afab49a770ba9da80";
+    let protoc_version = "26.1";
 
     let tmp_folder = tempfile::tempdir().unwrap();
 
@@ -45,6 +44,14 @@ fn download_protoc() {
         "x86_64" => "x86_64",
         "aarch64" => "aarch_64",
         arch => panic!("Unsupported arch: {arch}"),
+    };
+
+    let checksum = match (os, arch) {
+        ("linux", "x86_64") => "a7be2928c0454f132c599e25b79b7ad1b57663f2337d7f7e468a1d59b98ec1b0",
+        ("linux", "aarch_64") => "64a3b3b5f7dac0c8f9cf1cb85b2b1a237eb628644f6bcb0fb8f23db6e0d66181",
+        ("osx", "x86_64") => "febd8821c3a2a23f72f4641471e0ab6486f4fb07b68111490a27a31681465b3c",
+        ("osx", "aarch_64") => "26a29befa8891ecc48809958c909d284f2b9539a2eb47f22cadc631fe6abe8fd",
+        _ => unreachable!(),
     };
 
     let mut download_command = Command::new("curl");

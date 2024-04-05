@@ -718,11 +718,17 @@ mod test {
 
     #[test]
     fn shellcheck_bash_pre() {
+        if std::env::var_os("CW_BUILD_SKIP_SHELL_TESTS").is_some() {
+            return;
+        }
         check_script(Shell::Bash, When::Pre);
     }
 
     #[test]
     fn shellcheck_bash_post() {
+        if std::env::var_os("CW_BUILD_SKIP_SHELL_TESTS").is_some() {
+            return;
+        }
         check_script(Shell::Bash, When::Post);
     }
 }

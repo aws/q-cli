@@ -499,7 +499,13 @@ def linux_bundle(
 
 
 def generate_sha(path: pathlib.Path) -> pathlib.Path:
-    shasum_output = run_cmd_output(["sha256sum", path])
+    if isDarwin():
+        shasum_output = run_cmd_output(["shasum", "-a", "256", path])
+    elif isLinux():
+        shasum_output = run_cmd_output(["sha256sum", path])
+    else:
+        raise Exception("Unsupported platform")
+
     sha = shasum_output.split(" ")[0]
     path = path.with_name(f"{path.name}.sha256")
     path.write_text(sha)

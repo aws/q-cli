@@ -7,7 +7,7 @@ phases:
   install:
     commands:
       - sudo dnf update -y
-      - sudo dnf install -y python cmake bash zsh unzip zstd xz git jq
+      - sudo dnf install -y python cmake bash zsh unzip zstd xz git jq protobuf
       # Create fish config dir to prevent rustup from failing
       - mkdir -p /root/.config/fish/conf.d
       # Install cargo
