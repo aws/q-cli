@@ -11,8 +11,6 @@ members = [
     "lib/macos-utils/appkit-nsworkspace-bindings",
     "tests/fig-api/fig-api-mock",
     "tests/figterm2",
-    "tests/stress/stress_client",
-    "tests/stress/stress_server",
 ]
 
 [workspace.package]

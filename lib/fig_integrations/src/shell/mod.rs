@@ -672,6 +672,7 @@ impl ShellIntegration for DotfileShellIntegration {
 
 #[cfg(all(test, target_os = "linux"))]
 mod test {
+    use std::env::var_os;
     use std::io::Write;
     use std::process::{
         Command,
@@ -718,7 +719,7 @@ mod test {
 
     #[test]
     fn shellcheck_bash_pre() {
-        if std::env::var_os("CW_BUILD_SKIP_SHELL_TESTS").is_some() {
+        if var_os("CW_BUILD_SKIP_SHELL_TESTS").is_some() {
             return;
         }
         check_script(Shell::Bash, When::Pre);
@@ -726,7 +727,7 @@ mod test {
 
     #[test]
     fn shellcheck_bash_post() {
-        if std::env::var_os("CW_BUILD_SKIP_SHELL_TESTS").is_some() {
+        if var_os("CW_BUILD_SKIP_SHELL_TESTS").is_some() {
             return;
         }
         check_script(Shell::Bash, When::Post);

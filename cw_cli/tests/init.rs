@@ -1,3 +1,4 @@
+use std::env::var_os;
 #[cfg(not(windows))]
 use std::io::Write;
 #[cfg(not(windows))]
@@ -42,11 +43,11 @@ macro_rules! init_test {
                 }
 
                 // Ignore all fish in brazil
-                if $exe == "fish" && std::env::var_os("BRAZIL_BUILD_HOME").is_some() {
+                if $exe == "fish" && var_os("BRAZIL_BUILD_HOME").is_some() {
                     return Ok(());
                 }
 
-                if std::env::var_os("CW_BUILD_SKIP_SHELL_TESTS").is_some() {
+                if var_os("CW_BUILD_SKIP_SHELL_TESTS").is_some() {
                     return Ok(());
                 }
 
