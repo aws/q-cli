@@ -33,7 +33,7 @@ use super::ApiResponse;
 // https://code.amazon.com/packages/AWSVectorConsolasPlatformModel/blobs/heads/mainline/--/model/types/env_types.smithy
 const MAX_ENV_VAR_LIST_LEN: usize = 100;
 const MAX_ENV_VAR_KEY_LEN: usize = 256;
-const MAX_ENV_VAR_VALUE_LEN: usize = 256;
+const MAX_ENV_VAR_VALUE_LEN: usize = 1024;
 const MAX_CURRENT_WORKING_DIRECTORY_LEN: usize = 256;
 
 // https://code.amazon.com/packages/AWSVectorConsolasPlatformModel/blobs/mainline/--/model/types/git_types.smithy
