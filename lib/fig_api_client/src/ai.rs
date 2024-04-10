@@ -1,7 +1,10 @@
+use std::time::Duration;
+
 use amzn_codewhisperer_client::config::interceptors::BeforeTransmitInterceptorContextMut;
 use amzn_codewhisperer_client::config::{
     Intercept,
     RuntimeComponents,
+    StalledStreamProtectionConfig,
 };
 use amzn_codewhisperer_client::error::SdkError;
 use amzn_codewhisperer_client::operation::generate_completions::{
@@ -79,11 +82,15 @@ pub async fn cw_client(endpoint: Endpoint) -> amzn_codewhisperer_client::Client 
 
 pub async fn cw_streaming_client(endpoint: Endpoint) -> amzn_codewhisperer_streaming_client::Client {
     let conf_builder: amzn_codewhisperer_streaming_client::config::Builder = (&sdk_config(&endpoint).await).into();
+    let stalled_stream_protection_config = StalledStreamProtectionConfig::enabled()
+        .grace_period(Duration::from_secs(10))
+        .build();
     let conf = conf_builder
         .interceptor(OptOutInterceptor)
         .bearer_token_resolver(BearerResolver)
         .app_name(APP_NAME.clone())
         .endpoint_url(endpoint.url())
+        .stalled_stream_protection(stalled_stream_protection_config)
         .build();
     amzn_codewhisperer_streaming_client::Client::from_conf(conf)
 }
