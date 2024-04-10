@@ -602,11 +602,11 @@ if isDarwin():
         run_cmd(["aws", "s3", "cp", sha_path, staging_location])
 elif isLinux():
     # create the archive structure:
-    #   amazon-q/bin/cw
-    #   amazon-q/bin/cwterm
-    #   amazon-q/install.sh
+    #   archive/bin/cw
+    #   archive/bin/cwterm
+    #   archive/install.sh
 
-    archive_name = "amazon-q"
+    archive_name = APP_NAME.lower()
 
     archive_path = pathlib.Path(archive_name)
     archive_path.mkdir(parents=True, exist_ok=True)
