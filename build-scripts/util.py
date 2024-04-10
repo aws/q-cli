@@ -41,14 +41,10 @@ Env = Mapping[str, str | os.PathLike]
 Cwd = str | os.PathLike
 
 
-def run_cmd(
-    args: Args,
-    env: Env | None = None,
-    cwd: Cwd | None = None,
-):
+def run_cmd(args: Args, env: Env | None = None, cwd: Cwd | None = None, check: bool = True):
     args_str = [str(arg) for arg in args]
     print(f"+ {shlex.join(args_str)}")
-    subprocess.run(args, env=env, cwd=cwd, check=True)
+    subprocess.run(args, env=env, cwd=cwd, check=check)
 
 
 def run_cmd_output(

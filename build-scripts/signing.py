@@ -1,4 +1,6 @@
+import os
 import pathlib
+from typing import Optional
 from util import info, run_cmd, run_cmd_output, run_cmd_status
 from enum import Enum
 import json
@@ -277,7 +279,7 @@ def apple_notarize_file(file: pathlib.Path, signing_data: EcSigningData):
             ]
         )
 
-    secrets = get_signing_secrets(signing_data.notarizing_secret_id)
+    secrets = get_secretmanager_json(signing_data.notarizing_secret_id)
 
     run_cmd(
         [
@@ -332,39 +334,72 @@ def apple_notarize_file(file: pathlib.Path, signing_data: EcSigningData):
         )
 
 
-def get_signing_secrets(notarizing_secret_id: str):
+def get_secretmanager_json(secret_id: str):
+    info(f"Loading secretmanager value: {secret_id}")
     secret_string = run_cmd_output(
         [
             "aws",
             "secretsmanager",
             "get-secret-value",
             "--secret-id",
-            notarizing_secret_id,
+            secret_id,
         ]
     )
     secret_string = json.loads(secret_string)["SecretString"]
     return json.loads(secret_string)
 
 
-def gpg_sign_file(file: pathlib.Path):
-    name = file.name
+class GpgSigner:
+    def __init__(self, gpg_id: str, gpg_secret_key: str, gpg_passphrase: str):
+        self.gpg_id = gpg_id
+        self.gpg_secret_key = gpg_secret_key
+        self.gpg_passphrase = gpg_passphrase
 
-    info(f"Signing {name}")
+        # write gpg secret key to file
+        self.gpg_secret_key_path = pathlib.Path("/tmp/gpg_secret_key")
+        self.gpg_secret_key_path.write_text(gpg_secret_key)
 
-    # tmpdir
-    passphrase_file = pathlib.Path("/tmp/passphrase")
-    passphrase_file.write_text("")
+        self.gpg_passphrase_path = pathlib.Path("/tmp/gpg_passphrase")
+        self.gpg_passphrase_path.write_text(gpg_passphrase)
 
-    run_cmd(
-        [
-            "gpg",
+        info("Importing GPG key")
+        run_cmd(["gpg", "--allow-secret-key-import", *self.sign_args(), "--import", self.gpg_secret_key_path])
+        run_cmd(["gpg", "--list-keys"])
+
+    def sign_args(self) -> list[str | pathlib.Path]:
+        return [
             "--batch",
-            "--armor",
-            "--detach-sign",
-            "--local-user",
-            "Amazon",
+            "--no-options",
+            "--pinentry-mode",
+            "loopback",
+            "--passphrase-fd",
+            "0",
+            "--no-tty",
             "--passphrase-file",
-            passphrase_file,
-            file,
+            self.gpg_passphrase_path,
         ]
-    )
+
+    def sign_file(self, path: pathlib.Path) -> pathlib.Path:
+        info(f"Signing {path.name}")
+        run_cmd(["gpg", "--detach-sign", *self.sign_args(), "--armor", "--local-user", self.gpg_id, path])
+        return path.with_suffix(path.suffix + ".asc")
+
+    def clean(self):
+        info("Cleaning gpg keys")
+        self.gpg_secret_key_path.unlink(missing_ok=True)
+        self.gpg_passphrase_path.unlink(missing_ok=True)
+        run_cmd(["gpg", "--batch", "--yes", "--delete-secret-key", self.gpg_id], check=False)
+        run_cmd(["gpg", "--batch", "--yes", "--delete-key", self.gpg_id], check=False)
+
+
+def load_gpg_signer() -> Optional[GpgSigner]:
+    pgp_secret_arn = os.getenv("FIG_IO_DESKTOP_PGP_KEY_ARN")
+    info(f"FIG_IO_DESKTOP_PGP_KEY_ARN: {pgp_secret_arn}")
+    if pgp_secret_arn:
+        gpg_secret_json = get_secretmanager_json(pgp_secret_arn)
+        gpg_id = gpg_secret_json["gpg_id"]
+        gpg_secret_key = gpg_secret_json["gpg_secret_key"]
+        gpg_passphrase = gpg_secret_json["gpg_passphrase"]
+        return GpgSigner(gpg_id=gpg_id, gpg_secret_key=gpg_secret_key, gpg_passphrase=gpg_passphrase)
+    else:
+        return None

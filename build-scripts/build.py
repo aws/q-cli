@@ -9,7 +9,14 @@ import sys
 import itertools
 from typing import Dict, List, Mapping, Sequence
 from util import isDarwin, isLinux, run_cmd, run_cmd_output, info
-from signing import EcSigningData, EcSigningType, rebundle_dmg, ec_sign_file, apple_notarize_file
+from signing import (
+    EcSigningData,
+    EcSigningType,
+    load_gpg_signer,
+    rebundle_dmg,
+    ec_sign_file,
+    apple_notarize_file,
+)
 from importlib import import_module
 
 APP_NAME = "CodeWhisperer"
@@ -612,25 +619,37 @@ elif isLinux():
     shutil.copy2(cw_cli_path, archive_bin_path)
     shutil.copy2(cwterm_path, archive_bin_path)
 
+    signer = load_gpg_signer()
+
     info(f"Building {archive_name}.tar.gz")
     tar_gz_path = BUILD_DIR / f"{archive_name}.tar.gz"
     run_cmd(["tar", "-czf", tar_gz_path, archive_path])
     generate_sha(tar_gz_path)
+    if signer:
+        signer.sign_file(tar_gz_path)
 
     info(f"Building {archive_name}.tar.xz")
     tar_xz_path = BUILD_DIR / f"{archive_name}.tar.xz"
     run_cmd(["tar", "-cJf", tar_xz_path, archive_path])
     generate_sha(tar_xz_path)
+    if signer:
+        signer.sign_file(tar_xz_path)
 
     info(f"Building {archive_name}.tar.zst")
     tar_zst_path = BUILD_DIR / f"{archive_name}.tar.zst"
     run_cmd(["tar", "-I", "zstd", "-cf", tar_zst_path, archive_path], {"ZSTD_CLEVEL": "19"})
     generate_sha(tar_zst_path)
+    if signer:
+        signer.sign_file(tar_zst_path)
 
     info(f"Building {archive_name}.zip")
     zip_path = BUILD_DIR / f"{archive_name}.zip"
     run_cmd(["zip", "-r", zip_path, archive_path])
     generate_sha(zip_path)
+    if signer:
+        signer.sign_file(zip_path)
 
     # clean up
     shutil.rmtree(archive_path)
+    if signer:
+        signer.clean()

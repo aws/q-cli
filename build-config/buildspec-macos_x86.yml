@@ -40,6 +40,7 @@ artifacts:
     - ./*.tar.gz
     - ./*.sig
     - ./*.sha256
+    - ./*.asc
     - license.txt
     - CHANGELOG
 
