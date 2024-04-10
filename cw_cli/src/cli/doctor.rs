@@ -2224,9 +2224,9 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 #[cfg(target_os = "windows")]
                 &WindowsConsoleCheck,
                 &SettingsCorruptionCheck,
+                &SshdConfigCheck,
                 &FigIntegrationsCheck,
                 // &SshIntegrationCheck,
-                // &SshdConfigCheck,
             ],
             config,
             &mut spinner,
