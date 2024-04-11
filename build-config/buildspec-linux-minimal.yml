@@ -9,10 +9,16 @@ phases:
   install:
     run-as: root
     commands:
-      - sudo dnf update -y
-      - sudo dnf install -y python cmake bash zsh unzip zstd xz git jq protobuf
+      - dnf update -y
+      - dnf install -y python cmake bash zsh unzip zstd xz git jq protobuf
+      - mkdir -p /home/codebuild-user
+      - chown -R codebuild-user:codebuild-user /home/codebuild-user 
+      - chmod -R ug+rwx /home/codebuild-user
   pre_build:
     commands:
+      - export HOME=/home/codebuild-user
+      - export PATH="$HOME/.local/bin:$PATH"
+      - mkdir -p "$HOME/.local/bin"
       # Create fish config dir to prevent rustup from failing
       - mkdir -p "$HOME/.config/fish/conf.d"
       # Install cargo
@@ -20,7 +26,6 @@ phases:
       - . "$HOME/.cargo/env"
       # Install python/node via mise (https://mise.jdx.dev/continuous-integration.html)
       - curl --proto '=https' --tlsv1.2 -sSf https://mise.run | sh
-      - export PATH="$HOME/.local/bin:$PATH"
       - mise install
       - eval "$(mise activate bash --shims)"
       # Enable corepack for pnpm
