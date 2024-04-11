@@ -49,27 +49,11 @@ def ec_post_request(source: str, destination: str, signing_data: EcSigningData):
     message_json = json.dumps(message)
 
     queue_url_output = run_cmd_output(
-        [
-            "aws",
-            "sqs",
-            "get-queue-url",
-            "--queue-name",
-            signing_data.signing_request_queue_name,
-        ]
+        ["aws", "sqs", "get-queue-url", "--queue-name", signing_data.signing_request_queue_name]
     )
     queue_url = json.loads(queue_url_output)["QueueUrl"]
 
-    run_cmd(
-        [
-            "aws",
-            "sqs",
-            "send-message",
-            "--queue-url",
-            queue_url,
-            "--message-body",
-            message_json,
-        ]
-    )
+    run_cmd(["aws", "sqs", "send-message", "--queue-url", queue_url, "--message-body", message_json])
 
 
 class EcSigningType(Enum):
@@ -97,24 +81,9 @@ def ec_build_signed_package(type: EcSigningType, file_path: pathlib.Path, name: 
     else:
         raise Exception(f"Unknown file type: {file_path}")
 
+    run_cmd(["gtar", "-czf", working_dir / "artifact.gz", "-C", working_dir / "artifact", "."])
     run_cmd(
-        [
-            "gtar",
-            "-czf",
-            working_dir / "artifact.gz",
-            "-C",
-            working_dir / "artifact",
-            ".",
-        ]
-    )
-    run_cmd(
-        [
-            "gtar",
-            "-czf",
-            starting_dir / "package.tar.gz",
-            "manifest.yaml",
-            "artifact.gz",
-        ],
+        ["gtar", "-czf", starting_dir / "package.tar.gz", "manifest.yaml", "artifact.gz"],
         cwd=working_dir,
     )
     (working_dir / "artifact.gz").unlink()
@@ -133,33 +102,9 @@ def ec_sign_file(file: pathlib.Path, type: EcSigningType, signing_data: EcSignin
 
     # Upload package for signing to S3
     info("Uploading...")
-    run_cmd(
-        [
-            "aws",
-            "s3",
-            "rm",
-            "--recursive",
-            f"s3://{signing_data.bucket_name}/signed",
-        ]
-    )
-    run_cmd(
-        [
-            "aws",
-            "s3",
-            "rm",
-            "--recursive",
-            f"s3://{signing_data.bucket_name}/pre-signed",
-        ]
-    )
-    run_cmd(
-        [
-            "aws",
-            "s3",
-            "cp",
-            "package.tar.gz",
-            f"s3://{signing_data.bucket_name}/pre-signed/package.tar.gz",
-        ]
-    )
+    run_cmd(["aws", "s3", "rm", "--recursive", f"s3://{signing_data.bucket_name}/signed"])
+    run_cmd(["aws", "s3", "rm", "--recursive", f"s3://{signing_data.bucket_name}/pre-signed"])
+    run_cmd(["aws", "s3", "cp", "package.tar.gz", f"s3://{signing_data.bucket_name}/pre-signed/package.tar.gz"])
     pathlib.Path("package.tar.gz").unlink()
 
     info("Sending request...")
@@ -185,15 +130,7 @@ def ec_sign_file(file: pathlib.Path, type: EcSigningType, signing_data: EcSignin
     info("Signed!")
 
     info("Downloading...")
-    run_cmd(
-        [
-            "aws",
-            "s3",
-            "cp",
-            f"s3://{signing_data.bucket_name}/signed/signed.zip",
-            "signed.zip",
-        ]
-    )
+    run_cmd(["aws", "s3", "cp", f"s3://{signing_data.bucket_name}/signed/signed.zip", "signed.zip"])
     run_cmd(["unzip", "signed.zip"])
 
     # find child of Payload
@@ -245,17 +182,7 @@ def rebundle_dmg(dmg_path: pathlib.Path, app_path: pathlib.Path):
 
     # Convert the dmg to zipped, read only - this is the only type that EC will accept!!
     dmg_path.unlink()
-    run_cmd(
-        [
-            "hdiutil",
-            "convert",
-            tempdmg_path,
-            "-format",
-            "UDZO",
-            "-o",
-            dmg_path,
-        ]
-    )
+    run_cmd(["hdiutil", "convert", tempdmg_path, "-format", "UDZO", "-o", dmg_path])
 
 
 def apple_notarize_file(file: pathlib.Path, signing_data: EcSigningData):
@@ -267,17 +194,7 @@ def apple_notarize_file(file: pathlib.Path, signing_data: EcSigningData):
     if file_type == "app":
         # We can submit dmg files as is, but we have to zip up app files in a specific way
         file_to_notarize = pathlib.Path(f"{name}.zip")
-        run_cmd(
-            [
-                "ditto",
-                "-c",
-                "-k",
-                "--sequesterRsrc",
-                "--keepParent",
-                file,
-                file_to_notarize,
-            ]
-        )
+        run_cmd(["ditto", "-c", "-k", "--sequesterRsrc", "--keepParent", file, file_to_notarize])
 
     secrets = get_secretmanager_json(signing_data.notarizing_secret_id)
 
@@ -297,55 +214,21 @@ def apple_notarize_file(file: pathlib.Path, signing_data: EcSigningData):
         ]
     )
 
-    run_cmd(
-        [
-            "xcrun",
-            "stapler",
-            "staple",
-            file,
-        ]
-    )
+    run_cmd(["xcrun", "stapler", "staple", file])
 
     if file_type == "app":
         # Verify notarization for .app
-        run_cmd(
-            [
-                "spctl",
-                "-a",
-                "-v",
-                file,
-            ]
-        )
-
+        run_cmd(["spctl", "-a", "-v", file])
         pathlib.Path(file_to_notarize).unlink()
     else:
         # Verify notarization for .dmg
-        run_cmd(
-            [
-                "spctl",
-                "-a",
-                "-t",
-                "open",
-                "--context",
-                "context:primary-signature",
-                "-v",
-                file,
-            ]
-        )
+        run_cmd(["spctl", "-a", "-t", "open", "--context", "context:primary-signature", "-v", file])
 
 
 def get_secretmanager_json(secret_id: str):
     info(f"Loading secretmanager value: {secret_id}")
-    secret_string = run_cmd_output(
-        [
-            "aws",
-            "secretsmanager",
-            "get-secret-value",
-            "--secret-id",
-            secret_id,
-        ]
-    )
-    secret_string = json.loads(secret_string)["SecretString"]
+    secret_value = run_cmd_output(["aws", "secretsmanager", "get-secret-value", "--secret-id", secret_id])
+    secret_string = json.loads(secret_value)["SecretString"]
     return json.loads(secret_string)
 
 
@@ -362,9 +245,21 @@ class GpgSigner:
         self.gpg_passphrase_path = pathlib.Path("/tmp/gpg_passphrase")
         self.gpg_passphrase_path.write_text(gpg_passphrase)
 
+        self.gpg_home = pathlib.Path.home() / ".gnupg-tmp"
+        self.gpg_home.mkdir(parents=True, exist_ok=True)
+
         info("Importing GPG key")
-        run_cmd(["gpg", "--allow-secret-key-import", *self.sign_args(), "--import", self.gpg_secret_key_path])
-        run_cmd(["gpg", "--list-keys"])
+        run_cmd(["gpg", "--list-keys"], env=self.gpg_env())
+        run_cmd(
+            ["gpg", "--allow-secret-key-import", *self.sign_args(), "--import", self.gpg_secret_key_path],
+            env=self.gpg_env(),
+        )
+        run_cmd(["gpg", "--list-keys"], env=self.gpg_env())
+
+    def gpg_env(self) -> dict[str, pathlib.Path]:
+        return {
+            "GNUPGHOME": self.gpg_home,
+        }
 
     def sign_args(self) -> list[str | pathlib.Path]:
         return [
@@ -375,21 +270,26 @@ class GpgSigner:
             "--passphrase-fd",
             "0",
             "--no-tty",
+            "--yes",
             "--passphrase-file",
             self.gpg_passphrase_path,
         ]
 
     def sign_file(self, path: pathlib.Path) -> pathlib.Path:
         info(f"Signing {path.name}")
-        run_cmd(["gpg", "--detach-sign", *self.sign_args(), "--armor", "--local-user", self.gpg_id, path])
-        return path.with_suffix(path.suffix + ".asc")
+        run_cmd(
+            ["gpg", "--detach-sign", *self.sign_args(), "--armor", "--local-user", self.gpg_id, path],
+            env=self.gpg_env(),
+        )
+        return path.with_suffix(f"{path.suffix}.asc")
 
     def clean(self):
         info("Cleaning gpg keys")
         self.gpg_secret_key_path.unlink(missing_ok=True)
         self.gpg_passphrase_path.unlink(missing_ok=True)
-        run_cmd(["gpg", "--batch", "--yes", "--delete-secret-key", self.gpg_id], check=False)
-        run_cmd(["gpg", "--batch", "--yes", "--delete-key", self.gpg_id], check=False)
+        run_cmd(["gpg", "--batch", "--yes", "--delete-secret-key", self.gpg_id], env=self.gpg_env(), check=False)
+        run_cmd(["gpg", "--batch", "--yes", "--delete-key", self.gpg_id], env=self.gpg_env(), check=False)
+        shutil.rmtree(self.gpg_home, ignore_errors=True)
 
 
 def load_gpg_signer() -> Optional[GpgSigner]:

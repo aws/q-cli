@@ -363,24 +363,8 @@ def build_desktop_app(
     info_plist_path = app_path / "Contents/Info.plist"
 
     # Change the display name of the app
-    run_cmd(
-        [
-            "defaults",
-            "write",
-            info_plist_path,
-            "CFBundleDisplayName",
-            APP_NAME,
-        ]
-    )
-    run_cmd(
-        [
-            "defaults",
-            "write",
-            info_plist_path,
-            "CFBundleName",
-            APP_NAME,
-        ]
-    )
+    run_cmd(["defaults", "write", info_plist_path, "CFBundleDisplayName", APP_NAME])
+    run_cmd(["defaults", "write", info_plist_path, "CFBundleName", APP_NAME])
 
     # Specifies the app is an "agent app"
     run_cmd(["defaults", "write", info_plist_path, "LSUIElement", "-bool", "TRUE"])
@@ -520,136 +504,139 @@ def generate_sha(path: pathlib.Path) -> pathlib.Path:
     return path
 
 
-# parse argv[1] for json and build into dict, then grab each known value
-build_args = {
-    k: v
-    for (k, v) in json.loads(sys.argv[1] if len(sys.argv) > 1 else "{}").items()
-    if isinstance(k, str) and isinstance(v, str)
-}
+if __name__ == "__main__":
+    # parse argv[1] for json and build into dict, then grab each known value
+    build_args = {
+        k: v
+        for (k, v) in json.loads(sys.argv[1] if len(sys.argv) > 1 else "{}").items()
+        if isinstance(k, str) and isinstance(v, str)
+    }
 
-info(f"Build Args: {build_args}")
+    info(f"Build Args: {build_args}")
 
-output_bucket = build_args.get("output_bucket")
-signing_bucket = build_args.get("signing_bucket")
-aws_account_id = build_args.get("aws_account_id")
-apple_id_secret = build_args.get("apple_id_secret")
-signing_queue = build_args.get("signing_queue")
-signing_role_name = build_args.get("signing_role_name")
-stage_name = build_args.get("stage_name")
-run_lints = build_args.get("run_lints")
-variant = get_variant()
+    output_bucket = build_args.get("output_bucket")
+    signing_bucket = build_args.get("signing_bucket")
+    aws_account_id = build_args.get("aws_account_id")
+    apple_id_secret = build_args.get("apple_id_secret")
+    signing_queue = build_args.get("signing_queue")
+    signing_role_name = build_args.get("signing_role_name")
+    stage_name = build_args.get("stage_name")
+    run_lints = build_args.get("run_lints")
+    variant = get_variant()
 
-if signing_bucket and aws_account_id and apple_id_secret and signing_queue and signing_role_name:
-    signing_data = EcSigningData(
-        bucket_name=signing_bucket,
-        aws_account_id=aws_account_id,
-        notarizing_secret_id=apple_id_secret,
-        signing_request_queue_name=signing_queue,
-        signing_role_name=signing_role_name,
-    )
-else:
-    signing_data = None
+    if signing_bucket and aws_account_id and apple_id_secret and signing_queue and signing_role_name:
+        signing_data = EcSigningData(
+            bucket_name=signing_bucket,
+            aws_account_id=aws_account_id,
+            notarizing_secret_id=apple_id_secret,
+            signing_request_queue_name=signing_queue,
+            signing_role_name=signing_role_name,
+        )
+    else:
+        signing_data = None
 
-cargo_features: Mapping[str, Sequence[str]] = {}
+    cargo_features: Mapping[str, Sequence[str]] = {}
 
-if stage_name == "prod" or stage_name is None:
-    info("Building for prod")
-elif stage_name == "gamma":
-    info("Building for gamma")
-    cargo_features = {"cw_cli": ["cw_cli/gamma"], "fig_desktop": ["fig_desktop/gamma"]}
-else:
-    raise ValueError(f"Unknown stage name: {stage_name}")
+    if stage_name == "prod" or stage_name is None:
+        info("Building for prod")
+    elif stage_name == "gamma":
+        info("Building for gamma")
+        cargo_features = {"cw_cli": ["cw_cli/gamma"], "fig_desktop": ["fig_desktop/gamma"]}
+    else:
+        raise ValueError(f"Unknown stage name: {stage_name}")
 
-info(f"Cargo features: {cargo_features}")
-info(f"Signing app: {signing_data is not None}")
-info(f"Variant: {variant.name}")
+    info(f"Cargo features: {cargo_features}")
+    info(f"Signing app: {signing_data is not None}")
+    info(f"Variant: {variant.name}")
 
-BUILD_DIR.mkdir(parents=True, exist_ok=True)
+    BUILD_DIR.mkdir(parents=True, exist_ok=True)
 
-if variant == Variant.FULL:
-    info("Building npm packages")
-    npm_packages = build_npm_packages()
+    if variant == Variant.FULL:
+        info("Building npm packages")
+        npm_packages = build_npm_packages()
 
-info("Running cargo tests")
-run_cargo_tests(features=cargo_features)
+    info("Running cargo tests")
+    run_cargo_tests(features=cargo_features)
 
-if run_lints:
-    run_clippy(features=cargo_features)
+    if run_lints:
+        run_clippy(features=cargo_features)
 
-info("Building cw_cli")
-cw_cli_path = build_cargo_bin("cw_cli", output_name="cw", features=cargo_features)
+    info("Building cw_cli")
+    cw_cli_path = build_cargo_bin("cw_cli", output_name="cw", features=cargo_features)
 
-info("Building figterm")
-cwterm_path = build_cargo_bin("figterm", output_name="cwterm", features=cargo_features)
+    info("Building figterm")
+    cwterm_path = build_cargo_bin("figterm", output_name="cwterm", features=cargo_features)
 
-if isDarwin():
-    info("Building CodeWhisperer.dmg")
-    dmg_path = build_desktop_app(
-        cw_cli_path=cw_cli_path,
-        cwterm_path=cwterm_path,
-        npm_packages=npm_packages,
-        signing_data=signing_data,
-        features=cargo_features,
-    )
+    if isDarwin():
+        info("Building CodeWhisperer.dmg")
+        dmg_path = build_desktop_app(
+            cw_cli_path=cw_cli_path,
+            cwterm_path=cwterm_path,
+            npm_packages=npm_packages,
+            signing_data=signing_data,
+            features=cargo_features,
+        )
 
-    sha_path = generate_sha(dmg_path)
+        sha_path = generate_sha(dmg_path)
 
-    if output_bucket:
-        staging_location = f"s3://{build_args['output_bucket']}/staging/"
-        info(f"Build complete, sending to {staging_location}")
+        if output_bucket:
+            staging_location = f"s3://{build_args['output_bucket']}/staging/"
+            info(f"Build complete, sending to {staging_location}")
 
-        run_cmd(["aws", "s3", "cp", dmg_path, staging_location])
-        run_cmd(["aws", "s3", "cp", sha_path, staging_location])
-elif isLinux():
-    # create the archive structure:
-    #   archive/bin/cw
-    #   archive/bin/cwterm
-    #   archive/install.sh
+            run_cmd(["aws", "s3", "cp", dmg_path, staging_location])
+            run_cmd(["aws", "s3", "cp", sha_path, staging_location])
+    elif isLinux():
+        # create the archive structure:
+        #   archive/bin/cw
+        #   archive/bin/cwterm
+        #   archive/install.sh
+        #   archive/README
 
-    archive_name = APP_NAME.lower()
+        archive_name = APP_NAME.lower()
 
-    archive_path = pathlib.Path(archive_name)
-    archive_path.mkdir(parents=True, exist_ok=True)
+        archive_path = pathlib.Path(archive_name)
+        archive_path.mkdir(parents=True, exist_ok=True)
 
-    shutil.copy2("bundle/linux/install.sh", archive_path)
+        shutil.copy2("bundle/linux/install.sh", archive_path)
+        shutil.copy2("bundle/linux/README", archive_path)
 
-    archive_bin_path = archive_path / "bin"
-    archive_bin_path.mkdir(parents=True, exist_ok=True)
+        archive_bin_path = archive_path / "bin"
+        archive_bin_path.mkdir(parents=True, exist_ok=True)
 
-    shutil.copy2(cw_cli_path, archive_bin_path)
-    shutil.copy2(cwterm_path, archive_bin_path)
+        shutil.copy2(cw_cli_path, archive_bin_path)
+        shutil.copy2(cwterm_path, archive_bin_path)
 
-    signer = load_gpg_signer()
+        signer = load_gpg_signer()
 
-    info(f"Building {archive_name}.tar.gz")
-    tar_gz_path = BUILD_DIR / f"{archive_name}.tar.gz"
-    run_cmd(["tar", "-czf", tar_gz_path, archive_path])
-    generate_sha(tar_gz_path)
-    if signer:
-        signer.sign_file(tar_gz_path)
+        info(f"Building {archive_name}.tar.gz")
+        tar_gz_path = BUILD_DIR / f"{archive_name}.tar.gz"
+        run_cmd(["tar", "-czf", tar_gz_path, archive_path])
+        generate_sha(tar_gz_path)
+        if signer:
+            signer.sign_file(tar_gz_path)
 
-    info(f"Building {archive_name}.tar.xz")
-    tar_xz_path = BUILD_DIR / f"{archive_name}.tar.xz"
-    run_cmd(["tar", "-cJf", tar_xz_path, archive_path])
-    generate_sha(tar_xz_path)
-    if signer:
-        signer.sign_file(tar_xz_path)
+        info(f"Building {archive_name}.tar.xz")
+        tar_xz_path = BUILD_DIR / f"{archive_name}.tar.xz"
+        run_cmd(["tar", "-cJf", tar_xz_path, archive_path])
+        generate_sha(tar_xz_path)
+        if signer:
+            signer.sign_file(tar_xz_path)
 
-    info(f"Building {archive_name}.tar.zst")
-    tar_zst_path = BUILD_DIR / f"{archive_name}.tar.zst"
-    run_cmd(["tar", "-I", "zstd", "-cf", tar_zst_path, archive_path], {"ZSTD_CLEVEL": "19"})
-    generate_sha(tar_zst_path)
-    if signer:
-        signer.sign_file(tar_zst_path)
+        info(f"Building {archive_name}.tar.zst")
+        tar_zst_path = BUILD_DIR / f"{archive_name}.tar.zst"
+        run_cmd(["tar", "-I", "zstd", "-cf", tar_zst_path, archive_path], {"ZSTD_CLEVEL": "19"})
+        generate_sha(tar_zst_path)
+        if signer:
+            signer.sign_file(tar_zst_path)
 
-    info(f"Building {archive_name}.zip")
-    zip_path = BUILD_DIR / f"{archive_name}.zip"
-    run_cmd(["zip", "-r", zip_path, archive_path])
-    generate_sha(zip_path)
-    if signer:
-        signer.sign_file(zip_path)
+        info(f"Building {archive_name}.zip")
+        zip_path = BUILD_DIR / f"{archive_name}.zip"
+        run_cmd(["zip", "-r", zip_path, archive_path])
+        generate_sha(zip_path)
+        if signer:
+            signer.sign_file(zip_path)
 
-    # clean up
-    shutil.rmtree(archive_path)
-    if signer:
-        signer.clean()
+        # clean up
+        shutil.rmtree(archive_path)
+        if signer:
+            signer.clean()

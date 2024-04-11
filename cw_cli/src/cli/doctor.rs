@@ -66,7 +66,6 @@ use semver::{
     Version,
     VersionReq,
 };
-use serde_json::json;
 use spinners::{
     Spinner,
     Spinners,
@@ -2162,11 +2161,6 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             execute!(std::io::stdout(), cursor::Show).ok();
             std::process::exit(1);
         })?;
-    }
-
-    // Set pseudoterminal path first so we avoid the check failing if it is not set
-    if let Ok(path) = std::env::var("PATH") {
-        fig_settings::state::set_value("pty.path", json!(path)).ok();
     }
 
     // Remove update lock on doctor runs to fix bad state if update crashed.

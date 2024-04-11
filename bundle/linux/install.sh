@@ -1,7 +1,10 @@
 #!/bin/sh
-# Installs the CodeWhisperer CLI into place on the user's machine
 
-set -e
+# Installs the cw and cwterm into place on the user's machine
+# and installs the recommended integtations
+
+set -o errexit
+set -o nounset
 
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 

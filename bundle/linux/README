@@ -1,0 +1,9 @@
+To install the CodeWhiperer CLI run the install.sh script
+
+./install.sh
+
+To enable support for SSH if this is being installed on a remote machine,
+run the following lines then restart sshd and reconnect to the machine.
+
+AcceptEnv CW_SET_PARENT
+AllowStreamLocalForwarding yes
