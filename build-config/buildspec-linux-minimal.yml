@@ -11,7 +11,7 @@ phases:
     commands:
       - sudo dnf update -y
       - sudo dnf install -y python cmake bash zsh unzip zstd xz git jq protobuf
-  pre-build:
+  pre_build:
     commands:
       # Create fish config dir to prevent rustup from failing
       - mkdir -p "$HOME/.config/fish/conf.d"
