@@ -6,12 +6,12 @@ env:
 run-as: codebuild-user
 
 phases:
-  install-root:
+  install:
     run-as: root
     commands:
       - sudo dnf update -y
       - sudo dnf install -y python cmake bash zsh unzip zstd xz git jq protobuf
-  install-user:
+  pre-build:
     commands:
       # Create fish config dir to prevent rustup from failing
       - mkdir -p "$HOME/.config/fish/conf.d"
@@ -25,10 +25,10 @@ phases:
       - eval "$(mise activate bash --shims)"
       # Enable corepack for pnpm
       - corepack enable
-      # Disable tests that need fish/shellcheck
-      - export CW_BUILD_SKIP_SHELL_TESTS=1
   build:
     commands:
+      # Disable tests that need fish/shellcheck
+      - export CW_BUILD_SKIP_SHELL_TESTS=1
       - python3.11 build-scripts/build.py
 
 artifacts:
