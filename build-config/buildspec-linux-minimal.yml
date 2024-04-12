@@ -11,8 +11,9 @@ phases:
     commands:
       - dnf update -y
       - dnf install -y python cmake bash zsh unzip zstd xz git jq protobuf
+      - dnf swap gnupg2-minimal gnupg2-full
       - mkdir -p /home/codebuild-user
-      - chown -R codebuild-user:codebuild-user /home/codebuild-user 
+      - chown -R codebuild-user:codebuild-user /home/codebuild-user
       - chmod -R ug+rwx /home/codebuild-user
   pre_build:
     commands:
@@ -40,9 +41,13 @@ artifacts:
   discard-paths: "yes"
   base-directory: "build"
   files:
-    - ./*.sha256
+    # Archives
     - ./*.tar.gz
     - ./*.tar.xz
     - ./*.tar.zst
-    - ./*.asc
     - ./*.zip
+    # Hashes
+    - ./*.sha256
+    # Signatures
+    - ./*.asc
+    - ./*.sig

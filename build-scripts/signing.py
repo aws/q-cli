@@ -1,8 +1,8 @@
 import base64
 import os
 import pathlib
-from typing import Optional
-from util import info, run_cmd, run_cmd_output, run_cmd_status
+from typing import List, Optional
+from util import Args, Env, info, run_cmd, run_cmd_output, run_cmd_status
 from enum import Enum
 import json
 import shutil
@@ -260,10 +260,10 @@ class GpgSigner:
         run_cmd(["gpg", "--list-keys"], env=self.gpg_env())
         run_cmd(["gpg", "--list-secret-keys"], env=self.gpg_env())
 
-    def gpg_env(self) -> dict[str, str]:
-        return {**os.environ, "GNUPGHOME": str(self.gpg_home)}
+    def gpg_env(self) -> Env:
+        return {**os.environ, "GNUPGHOME": self.gpg_home}
 
-    def sign_args(self) -> list[str | pathlib.Path]:
+    def sign_args(self) -> Args:
         return [
             "--batch",
             "--pinentry-mode",
@@ -274,13 +274,17 @@ class GpgSigner:
             self.gpg_passphrase_path,
         ]
 
-    def sign_file(self, path: pathlib.Path) -> pathlib.Path:
+    def sign_file(self, path: pathlib.Path) -> List[pathlib.Path]:
         info(f"Signing {path.name}")
+        run_cmd(
+            ["gpg", "--detach-sign", *self.sign_args(), "--local-user", self.gpg_id, path],
+            env=self.gpg_env(),
+        )
         run_cmd(
             ["gpg", "--detach-sign", *self.sign_args(), "--armor", "--local-user", self.gpg_id, path],
             env=self.gpg_env(),
         )
-        return path.with_suffix(f"{path.suffix}.asc")
+        return [path.with_suffix(f"{path.suffix}.asc"), path.with_suffix(f"{path.suffix}.sig")]
 
     def clean(self):
         info("Cleaning gpg keys")
