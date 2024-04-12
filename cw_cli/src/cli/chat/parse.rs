@@ -356,12 +356,26 @@ fn italic<'a, 'b>(
     state: &'b mut ParseState,
 ) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
     move |i| {
-        preceded(space1, alt(("*", "_"))).parse_next(i)?;
+        match state.newline {
+            true => {
+                alt(("*", "_")).parse_next(i)?;
+                queue(&mut o, style::SetAttribute(Attribute::Italic))?;
+            },
+            false => match state.italic {
+                true => {
+                    alt(("*", "_")).parse_next(i)?;
+                    queue(&mut o, style::SetAttribute(Attribute::NoItalic))?;
+                },
+                false => {
+                    preceded(space1, alt(("*", "_"))).parse_next(i)?;
+                    queue(&mut o, style::SetAttribute(Attribute::Italic))?;
+                },
+            },
+        };
+
         state.italic = !state.italic;
-        match state.italic {
-            true => queue(&mut o, style::SetAttribute(Attribute::Italic)),
-            false => queue(&mut o, style::SetAttribute(Attribute::NoItalic)),
-        }
+
+        Ok(())
     }
 }
 
@@ -585,19 +599,19 @@ mod tests {
     #[test]
     fn url() {
         assert_parse_eq(
-            "[[0]](google.com)",
-            "\u{1b}[38;5;12m[0] \u{1b}[38;5;8mgoogle.com\u{1b}[39m",
+            "[[google]](google.com)",
+            "\u{1b}[38;5;12m[google] \u{1b}[38;5;8mgoogle.com\u{1b}[39m",
         );
     }
 
     #[test]
     fn bold() {
-        assert_parse_eq("**hello** ", "\u{1b}[1mhello\u{1b}[22m ");
+        assert_parse_eq("**hello** ", "\u{1b}[1mhello\u{1b}[22m");
     }
 
     #[test]
     fn italic() {
-        assert_parse_eq("*hello* ", "\u{1b}[3mhello\u{1b}[23m ");
+        assert_parse_eq("*hello* ", "\u{1b}[3mhello\u{1b}[23m");
     }
 
     #[test]
@@ -612,7 +626,7 @@ mod tests {
 
     #[test]
     fn greater_than() {
-        assert_parse_eq("1 &gt; 2 ", "1 > 2 ");
+        assert_parse_eq("1 &gt; 2 ", "1 > 2");
     }
 
     #[test]
@@ -622,11 +636,11 @@ mod tests {
 
     #[test]
     fn line_ending() {
-        assert_parse_eq(".\n.", ".\u{1b}[0m\u{1b}[0m\n.");
+        assert_parse_eq(".\n. ", ".\u{1b}[0m\u{1b}[0m\n.");
     }
 
     #[test]
     fn test_fallback() {
-        assert_parse_eq("+ % @ . ?", "+ % @ . ?");
+        assert_parse_eq("+ % @ . ? ", "+ % @ . ?");
     }
 }

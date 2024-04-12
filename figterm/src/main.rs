@@ -724,7 +724,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                                                     );
                                                     write_buffer.extend(
                                                         format!(
-                                                            "{} chat '{}'\r",
+                                                            "{} q '{}'\r",
                                                             CODEWHISPERER_CLI_BINARY_NAME,
                                                             buffer
                                                                 .trim_start_matches('#')
