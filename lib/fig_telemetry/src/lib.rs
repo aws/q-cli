@@ -9,9 +9,11 @@ use std::time::{
 };
 
 use amzn_codewhisperer_client::types::{
+    ChatAddMessageEvent,
     IdeCategory,
     OperatingSystem,
     OptOutPreference,
+    ProgrammingLanguage,
     SuggestionState,
     TelemetryEvent,
     TerminalUserInteractionEvent,
@@ -350,6 +352,32 @@ impl Client {
             }
         });
     }
+
+    async fn chat_add_message_event(&self, conversation_id: String) {
+        let codewhisperer_client = self.codewhisperer_client.clone();
+        let user_context = self.user_context().unwrap();
+        let opt_out_preference = opt_out_preference();
+
+        let mut set = JOIN_SET.lock().await;
+        set.spawn(async move {
+            if let Err(err) = codewhisperer_client
+                .send_telemetry_event()
+                .telemetry_event(TelemetryEvent::ChatAddMessageEvent(
+                    ChatAddMessageEvent::builder()
+                        .conversation_id(conversation_id)
+                        .programming_language(ProgrammingLanguage::builder().language_name("shell").build().unwrap())
+                        .build()
+                        .unwrap(),
+                ))
+                .user_context(user_context)
+                .opt_out_preference(opt_out_preference)
+                .send()
+                .await
+            {
+                error!(err =% DisplayErrorContext(err), "Failed to send telemetry event");
+            }
+        });
+    }
 }
 
 async fn start_url() -> Option<CredentialStartUrl> {
@@ -537,6 +565,10 @@ pub async fn send_fig_user_migrated() {
             credential_start_url: start_url().await,
         })
         .await;
+}
+
+pub async fn send_chat_added_message(conversation_id: String) {
+    client().await.chat_add_message_event(conversation_id).await;
 }
 
 #[cfg(test)]

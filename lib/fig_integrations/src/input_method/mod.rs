@@ -762,9 +762,10 @@ mod tests {
         match InputMethod::list_input_sources_for_bundle_id(bundle_id) {
             Some(inputs) => {
                 println!("Uninstalling...");
-                inputs
-                    .iter()
-                    .for_each(|s| println!("{}", s.is_enabled().unwrap_or_default()));
+                for s in inputs.iter() {
+                    println!("{}", s.is_enabled().unwrap_or_default());
+                }
+
                 match method.uninstall().await {
                     Ok(_) => println!("Uninstalled!"),
                     Err(e) => println!("{e}"),
@@ -842,7 +843,8 @@ mod tests {
         let sources = InputMethod::list_all_input_sources(None, true).unwrap_or_default();
 
         assert!(!sources.is_empty());
-
-        sources.iter().for_each(|source| println!("{source:?}"));
+        for source in sources.iter() {
+            println!("{source:?}");
+        }
     }
 }
