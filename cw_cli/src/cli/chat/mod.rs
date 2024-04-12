@@ -8,6 +8,7 @@ use std::io::{
 };
 use std::time::Duration;
 
+use color_eyre::owo_colors::OwoColorize;
 use crossterm::style::{
     Attribute,
     Color,
@@ -42,6 +43,7 @@ use self::parse::{
 enum ApiResponse {
     Text(String),
     ConversationId(String),
+    MessageId(String),
     End,
     Error,
 }
@@ -68,6 +70,7 @@ async fn try_chat(stderr: &mut Stderr, mut input: String) -> Result<()> {
     let client = cw_streaming_client(cw_endpoint()).await;
     let mut rx = None;
     let mut conversation_id = None;
+    let mut message_id = None;
 
     loop {
         // Make request with input
@@ -94,17 +97,20 @@ async fn try_chat(stderr: &mut Stderr, mut input: String) -> Result<()> {
                 .queue(style::SetForegroundColor(Color::Reset))?
                 .execute(style::Print("\n"))?;
         } else {
-            stderr.execute(style::Print(
+            stderr.execute(style::Print(format!(
                 "
 Hi, I'm Amazon Q. I can answer questions about your shell and CLI tools!
 You can include additional context by adding the following to your prompt:
 
-@history: to pass your shell history
-@git: to pass information about your current git repository
-@env: to pass your shell environment
+{} to pass your shell history
+{} to pass information about your current git repository
+{} to pass your shell environment
 
 ",
-            ))?;
+                "@history".bold(),
+                "@git".bold(),
+                "@env".bold()
+            )))?;
         }
 
         // Print response as we receive it
@@ -124,6 +130,7 @@ You can include additional context by adding the following to your prompt:
                             false => buf.push_str(&content),
                         },
                         ApiResponse::ConversationId(id) => conversation_id = Some(id),
+                        ApiResponse::MessageId(id) => message_id = Some(id),
                         ApiResponse::End => ended = true,
                         ApiResponse::Error => {
                             stderr.execute(style::Print(
@@ -177,7 +184,9 @@ You can include additional context by adding the following to your prompt:
                         stderr.execute(Print("\n"))?;
                     }
 
-                    fig_telemetry::send_chat_added_message(conversation_id.clone().unwrap_or_default()).await;
+                    if let (Some(conversation_id), Some(message_id)) = (&conversation_id, &message_id) {
+                        fig_telemetry::send_chat_added_message(conversation_id.to_owned(), message_id.to_owned()).await;
+                    }
 
                     break;
                 }

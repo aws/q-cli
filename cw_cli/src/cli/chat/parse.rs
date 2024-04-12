@@ -108,7 +108,7 @@ pub fn interpret_markdown<'a, 'b>(
     let mut error: Option<Error<'_>> = None;
     let start = i.checkpoint();
 
-    macro_rules! alt {
+    macro_rules! stateful_alt {
         ($($fns:ident),*) => {
             $({
                 i.reset(&start);
@@ -128,18 +128,15 @@ pub fn interpret_markdown<'a, 'b>(
     }
 
     match state.in_codeblock {
-        true => {
-            alt!(codeblock_end, line_ending_no_wrap, fallback_no_wrap);
-        },
         false => {
-            alt!(
+            stateful_alt!(
                 // This pattern acts as a short circuit for alphanumeric plaintext
                 // More importantly, it's needed to support manual wordwrapping
                 text,
                 // multiline patterns
                 blockquote,
                 // linted_codeblock,
-                codeblock,
+                codeblock_begin,
                 // single line patterns
                 horizontal_rule,
                 heading,
@@ -160,6 +157,17 @@ pub fn interpret_markdown<'a, 'b>(
                 line_ending,
                 // fallback
                 fallback
+            );
+        },
+        true => {
+            stateful_alt!(
+                codeblock_less_than,
+                codeblock_greater_than,
+                codeblock_ampersand,
+                codeblock_quot,
+                codeblock_end,
+                codeblock_line_ending,
+                codeblock_fallback
             );
         },
     }
@@ -300,54 +308,32 @@ fn blockquote<'a, 'b>(
     }
 }
 
-fn codeblock<'a, 'b>(
-    mut o: impl Write + 'b,
-    state: &'b mut ParseState,
-) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
-    move |i| {
-        if !state.newline {
-            return Err(ErrMode::from_error_kind(i, ErrorKind::Fail));
-        }
-
-        // We don't want to do anything special to text inside codeblocks so we wait for all of it
-        // The alternative is to switch between parse rules at the top level but that's slightly involved
-        let language = preceded("```", till_line_ending).parse_next(i)?;
-        ascii::line_ending.parse_next(i)?;
-
-        state.in_codeblock = true;
-
-        if !language.is_empty() {
-            queue(&mut o, style::Print(format!("{}\n", language).bold()))?;
-        }
-
-        queue(&mut o, style::SetForegroundColor(Color::Green))?;
-
-        Ok(())
-    }
-}
-
-fn codeblock_end<'a, 'b>(
-    mut o: impl Write + 'b,
-    state: &'b mut ParseState,
-) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
-    move |i| {
-        "```".parse_next(i)?;
-        state.in_codeblock = false;
-        queue(&mut o, style::SetForegroundColor(Color::Reset))
-    }
-}
-
 fn bold<'a, 'b>(
     mut o: impl Write + 'b,
     state: &'b mut ParseState,
 ) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
     move |i| {
-        alt(("**", "__")).parse_next(i)?;
+        match state.newline {
+            true => {
+                alt(("**", "__")).parse_next(i)?;
+                queue(&mut o, style::SetAttribute(Attribute::Bold))?;
+            },
+            false => match state.bold {
+                true => {
+                    alt(("**", "__")).parse_next(i)?;
+                    queue(&mut o, style::SetAttribute(Attribute::NormalIntensity))?;
+                },
+                false => {
+                    preceded(space1, alt(("**", "__"))).parse_next(i)?;
+                    queue(&mut o, style::Print(' '))?;
+                    queue(&mut o, style::SetAttribute(Attribute::Bold))?;
+                },
+            },
+        };
+
         state.bold = !state.bold;
-        match state.bold {
-            true => queue(&mut o, style::SetAttribute(Attribute::Bold)),
-            false => queue(&mut o, style::SetAttribute(Attribute::NormalIntensity)),
-        }
+
+        Ok(())
     }
 }
 
@@ -368,6 +354,7 @@ fn italic<'a, 'b>(
                 },
                 false => {
                     preceded(space1, alt(("*", "_"))).parse_next(i)?;
+                    queue(&mut o, style::Print(' '))?;
                     queue(&mut o, style::SetAttribute(Attribute::Italic))?;
                 },
             },
@@ -488,16 +475,6 @@ fn line_ending<'a, 'b>(
     }
 }
 
-fn line_ending_no_wrap<'a, 'b>(
-    mut o: impl Write + 'b,
-    _state: &'b mut ParseState,
-) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
-    move |i| {
-        ascii::line_ending.parse_next(i)?;
-        queue(&mut o, style::Print("\n"))
-    }
-}
-
 fn fallback<'a, 'b>(
     mut o: impl Write + 'b,
     state: &'b mut ParseState,
@@ -512,16 +489,6 @@ fn fallback<'a, 'b>(
         }
 
         Ok(())
-    }
-}
-
-fn fallback_no_wrap<'a, 'b>(
-    mut o: impl Write + 'b,
-    _state: &'b mut ParseState,
-) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
-    move |i| {
-        let fallback = any.parse_next(i)?;
-        queue(&mut o, style::Print(fallback))
     }
 }
 
@@ -544,6 +511,103 @@ fn queue<'a>(o: &mut impl Write, command: impl Command) -> Result<(), ErrMode<Er
     use crossterm::QueueableCommand;
     o.queue(command).map_err(|err| ErrMode::Cut(Error::Stdio(err)))?;
     Ok(())
+}
+
+fn codeblock_begin<'a, 'b>(
+    mut o: impl Write + 'b,
+    state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
+    move |i| {
+        if !state.newline {
+            return Err(ErrMode::from_error_kind(i, ErrorKind::Fail));
+        }
+
+        // We don't want to do anything special to text inside codeblocks so we wait for all of it
+        // The alternative is to switch between parse rules at the top level but that's slightly involved
+        let language = preceded("```", till_line_ending).parse_next(i)?;
+        ascii::line_ending.parse_next(i)?;
+
+        state.in_codeblock = true;
+
+        if !language.is_empty() {
+            queue(&mut o, style::Print(format!("{}\n", language).bold()))?;
+        }
+
+        queue(&mut o, style::SetForegroundColor(Color::Green))?;
+
+        Ok(())
+    }
+}
+
+fn codeblock_end<'a, 'b>(
+    mut o: impl Write + 'b,
+    state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
+    move |i| {
+        "```".parse_next(i)?;
+        state.in_codeblock = false;
+        queue(&mut o, style::SetForegroundColor(Color::Reset))
+    }
+}
+
+fn codeblock_less_than<'a, 'b>(
+    mut o: impl Write + 'b,
+    _state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
+    move |i| {
+        "&lt;".parse_next(i)?;
+        queue(&mut o, style::Print('<'))
+    }
+}
+
+fn codeblock_greater_than<'a, 'b>(
+    mut o: impl Write + 'b,
+    _state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
+    move |i| {
+        "&gt;".parse_next(i)?;
+        queue(&mut o, style::Print('>'))
+    }
+}
+
+fn codeblock_ampersand<'a, 'b>(
+    mut o: impl Write + 'b,
+    _state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
+    move |i| {
+        "&amp;".parse_next(i)?;
+        queue(&mut o, style::Print('&'))
+    }
+}
+
+fn codeblock_quot<'a, 'b>(
+    mut o: impl Write + 'b,
+    _state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
+    move |i| {
+        "&quot;".parse_next(i)?;
+        queue(&mut o, style::Print('"'))
+    }
+}
+
+fn codeblock_line_ending<'a, 'b>(
+    mut o: impl Write + 'b,
+    _state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
+    move |i| {
+        ascii::line_ending.parse_next(i)?;
+        queue(&mut o, style::Print("\n"))
+    }
+}
+
+fn codeblock_fallback<'a, 'b>(
+    mut o: impl Write + 'b,
+    _state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
+    move |i| {
+        let fallback = any.parse_next(i)?;
+        queue(&mut o, style::Print(fallback))
+    }
 }
 
 #[cfg(test)]

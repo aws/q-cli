@@ -13,7 +13,6 @@ use amzn_codewhisperer_client::types::{
     IdeCategory,
     OperatingSystem,
     OptOutPreference,
-    ProgrammingLanguage,
     SuggestionState,
     TelemetryEvent,
     TerminalUserInteractionEvent,
@@ -272,6 +271,7 @@ impl Client {
     async fn translation_actioned_event(&self, latency: Duration, suggestion_state: SuggestionState) {
         let codewhisperer_client = self.codewhisperer_client.clone();
         let user_context = self.user_context().unwrap();
+
         let opt_out_preference = opt_out_preference();
 
         let mut set = JOIN_SET.lock().await;
@@ -353,22 +353,28 @@ impl Client {
         });
     }
 
-    async fn chat_add_message_event(&self, conversation_id: String) {
+    async fn chat_add_message_event(&self, conversation_id: String, message_id: String) {
         let codewhisperer_client = self.codewhisperer_client.clone();
         let user_context = self.user_context().unwrap();
         let opt_out_preference = opt_out_preference();
+
+        let chat_add_message_event = match ChatAddMessageEvent::builder()
+            .conversation_id(conversation_id)
+            .message_id(message_id)
+            .build()
+        {
+            Ok(event) => event,
+            Err(err) => {
+                error!(err =% DisplayErrorContext(err), "Failed to send telemetry event");
+                return;
+            },
+        };
 
         let mut set = JOIN_SET.lock().await;
         set.spawn(async move {
             if let Err(err) = codewhisperer_client
                 .send_telemetry_event()
-                .telemetry_event(TelemetryEvent::ChatAddMessageEvent(
-                    ChatAddMessageEvent::builder()
-                        .conversation_id(conversation_id)
-                        .programming_language(ProgrammingLanguage::builder().language_name("shell").build().unwrap())
-                        .build()
-                        .unwrap(),
-                ))
+                .telemetry_event(TelemetryEvent::ChatAddMessageEvent(chat_add_message_event))
                 .user_context(user_context)
                 .opt_out_preference(opt_out_preference)
                 .send()
@@ -567,8 +573,8 @@ pub async fn send_fig_user_migrated() {
         .await;
 }
 
-pub async fn send_chat_added_message(conversation_id: String) {
-    client().await.chat_add_message_event(conversation_id).await;
+pub async fn send_chat_added_message(conversation_id: String, message_id: String) {
+    client().await.chat_add_message_event(conversation_id, message_id).await;
 }
 
 #[cfg(test)]
@@ -624,6 +630,7 @@ mod test {
         send_doctor_check_failed("").await;
         send_dashboard_page_viewed("/").await;
         send_menu_bar_actioned(Some("Settings")).await;
+        send_chat_added_message("debug".to_owned(), "debug".to_owned()).await;
 
         finish_telemetry_unwrap().await;
 
@@ -632,5 +639,24 @@ mod test {
         assert!(!logs_contain("WARN"));
         assert!(!logs_contain("warn"));
         assert!(!logs_contain("Failed to post metric"));
+    }
+
+    #[tokio::test]
+    #[ignore = "needs auth which is not in CI"]
+    async fn test_without_optout() {
+        Client::new(TelemetryStage::BETA)
+            .await
+            .codewhisperer_client
+            .send_telemetry_event()
+            .telemetry_event(TelemetryEvent::ChatAddMessageEvent(
+                ChatAddMessageEvent::builder()
+                    .conversation_id("debug".to_owned())
+                    .message_id("debug".to_owned())
+                    .build()
+                    .unwrap(),
+            ))
+            .send()
+            .await
+            .unwrap();
     }
 }

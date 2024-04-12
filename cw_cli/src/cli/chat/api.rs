@@ -1,5 +1,6 @@
 use std::env;
 
+use amzn_codewhisperer_streaming_client::operation::RequestId;
 use amzn_codewhisperer_streaming_client::types::{
     ChatMessage,
     ChatResponseStream,
@@ -206,21 +207,28 @@ async fn try_send_message(
     client: Client,
     tx: &UnboundedSender<ApiResponse>,
     conversation_state: ConversationState,
-) -> Result<Option<String>> {
+) -> Result<()> {
     let mut res = client
         .generate_assistant_response()
-        .conversation_state(conversation_state.clone())
+        .conversation_state(conversation_state)
         .send()
         .await?;
 
-    let mut conversation_id = None;
+    if let Some(message_id) = res.request_id().map(ToOwned::to_owned) {
+        tx.send(ApiResponse::MessageId(message_id))?;
+    }
+
     loop {
         match res.generate_assistant_response_response.recv().await {
             Ok(Some(stream)) => match stream {
                 ChatResponseStream::AssistantResponseEvent(response) => {
                     tx.send(ApiResponse::Text(response.content))?;
                 },
-                ChatResponseStream::MessageMetadataEvent(event) => conversation_id = event.conversation_id,
+                ChatResponseStream::MessageMetadataEvent(event) => {
+                    if let Some(id) = event.conversation_id {
+                        tx.send(ApiResponse::ConversationId(id))?;
+                    }
+                },
                 ChatResponseStream::FollowupPromptEvent(_event) => {},
                 ChatResponseStream::CodeReferenceEvent(_event) => {},
                 ChatResponseStream::SupplementaryWebLinksEvent(_event) => {},
@@ -232,7 +240,7 @@ async fn try_send_message(
         }
     }
 
-    Ok(conversation_id)
+    Ok(())
 }
 
 pub(super) async fn send_message(
@@ -273,16 +281,10 @@ pub(super) async fn send_message(
     let conversation_state = conversation_state.build()?;
 
     tokio::spawn(async move {
-        match try_send_message(client, &tx, conversation_state).await {
-            Ok(Some(id)) => {
-                tx.send(ApiResponse::ConversationId(id)).ok();
-            },
-            Err(err) => {
-                error!(%err);
-                tx.send(ApiResponse::Error).ok();
-                return;
-            },
-            _ => (),
+        if let Err(err) = try_send_message(client, &tx, conversation_state).await {
+            error!(%err);
+            tx.send(ApiResponse::Error).ok();
+            return;
         }
 
         // Try to end stream
@@ -326,6 +328,7 @@ mod tests {
                     stderr.flush().await.unwrap();
                 },
                 ApiResponse::ConversationId(_) => (),
+                ApiResponse::MessageId(_) => (),
                 ApiResponse::End => break,
                 ApiResponse::Error => panic!(),
             }
