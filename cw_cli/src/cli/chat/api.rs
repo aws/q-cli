@@ -12,6 +12,7 @@ use amzn_codewhisperer_streaming_client::types::{
     ShellState,
     UserInputMessage,
     UserInputMessageContext,
+    UserIntent,
 };
 use amzn_codewhisperer_streaming_client::Client;
 use eyre::Result;
@@ -71,6 +72,17 @@ struct ContextModifiers {
     env: bool,
     history: bool,
     git: bool,
+}
+
+impl ContextModifiers {
+    fn user_intent(&self) -> Option<UserIntent> {
+        if self.env || self.history || self.git {
+            // This disables RAG (it should)
+            return Some(UserIntent::ApplyCommonBestPractices);
+        }
+
+        None
+    }
 }
 
 /// Convert the `input` into the [ContextModifiers] and a string with them removed
@@ -194,20 +206,21 @@ async fn try_send_message(
     client: Client,
     tx: &UnboundedSender<ApiResponse>,
     conversation_state: ConversationState,
-) -> Result<()> {
+) -> Result<Option<String>> {
     let mut res = client
         .generate_assistant_response()
-        .conversation_state(conversation_state)
+        .conversation_state(conversation_state.clone())
         .send()
         .await?;
 
+    let mut conversation_id = None;
     loop {
         match res.generate_assistant_response_response.recv().await {
             Ok(Some(stream)) => match stream {
                 ChatResponseStream::AssistantResponseEvent(response) => {
                     tx.send(ApiResponse::Text(response.content))?;
                 },
-                ChatResponseStream::MessageMetadataEvent(_event) => {},
+                ChatResponseStream::MessageMetadataEvent(event) => conversation_id = event.conversation_id,
                 ChatResponseStream::FollowupPromptEvent(_event) => {},
                 ChatResponseStream::CodeReferenceEvent(_event) => {},
                 ChatResponseStream::SupplementaryWebLinksEvent(_event) => {},
@@ -219,10 +232,14 @@ async fn try_send_message(
         }
     }
 
-    Ok(())
+    Ok(conversation_id)
 }
 
-pub(super) async fn send_message(client: Client, input: String) -> Result<UnboundedReceiver<ApiResponse>> {
+pub(super) async fn send_message(
+    client: Client,
+    input: String,
+    conversation_id: &Option<String>,
+) -> Result<UnboundedReceiver<ApiResponse>> {
     let (ctx, input) = input_to_modifiers(input);
 
     let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
@@ -237,21 +254,35 @@ pub(super) async fn send_message(client: Client, input: String) -> Result<Unboun
         }
     }
 
-    let user_input_message = UserInputMessage::builder()
+    let mut user_input_message = UserInputMessage::builder()
         .content(input)
-        .user_input_message_context(context_builder.build())
-        .build()?;
+        .user_input_message_context(context_builder.build());
 
-    let conversation_state = ConversationState::builder()
-        .current_message(ChatMessage::UserInputMessage(user_input_message))
-        .chat_trigger_type(ChatTriggerType::Manual)
-        .build()?;
+    if let Some(intent) = ctx.user_intent() {
+        user_input_message = user_input_message.user_intent(intent);
+    }
+
+    let mut conversation_state = ConversationState::builder()
+        .current_message(ChatMessage::UserInputMessage(user_input_message.build()?))
+        .chat_trigger_type(ChatTriggerType::Manual);
+
+    if let Some(conversation_id) = conversation_id {
+        conversation_state = conversation_state.conversation_id(conversation_id.to_owned());
+    }
+
+    let conversation_state = conversation_state.build()?;
 
     tokio::spawn(async move {
-        if let Err(err) = try_send_message(client, &tx, conversation_state).await {
-            error!(%err);
-            tx.send(ApiResponse::Error).ok();
-            return;
+        match try_send_message(client, &tx, conversation_state).await {
+            Ok(Some(id)) => {
+                tx.send(ApiResponse::ConversationId(id)).ok();
+            },
+            Err(err) => {
+                error!(%err);
+                tx.send(ApiResponse::Error).ok();
+                return;
+            },
+            _ => (),
         }
 
         // Try to end stream
@@ -285,7 +316,7 @@ mod tests {
         let client = cw_streaming_client(cw_endpoint()).await;
         let question = "@git Explain my git status.".to_string();
 
-        let mut rx = send_message(client.clone(), question).await.unwrap();
+        let mut rx = send_message(client.clone(), question, &None).await.unwrap();
 
         while let Some(res) = rx.recv().await {
             match res {
@@ -294,6 +325,7 @@ mod tests {
                     stderr.write_all(text.as_bytes()).await.unwrap();
                     stderr.flush().await.unwrap();
                 },
+                ApiResponse::ConversationId(_) => (),
                 ApiResponse::End => break,
                 ApiResponse::Error => panic!(),
             }

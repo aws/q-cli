@@ -19,6 +19,7 @@ use crossterm::{
     ExecutableCommand,
     QueueableCommand,
 };
+use dialoguer::theme::ColorfulTheme;
 use dialoguer::Input;
 use eyre::{
     eyre,
@@ -40,6 +41,7 @@ use self::parse::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum ApiResponse {
     Text(String),
+    ConversationId(String),
     End,
     Error,
 }
@@ -65,9 +67,14 @@ pub async fn chat(input: String) -> Result<()> {
 async fn try_chat(stderr: &mut Stderr, mut input: String) -> Result<()> {
     let client = cw_streaming_client(cw_endpoint()).await;
     let mut rx = None;
+    let mut conversation_id = None;
 
     loop {
         // Make request with input
+        if input.trim() == "exit" {
+            return Ok(());
+        }
+
         if !input.is_empty() {
             stderr.queue(style::SetForegroundColor(Color::Magenta))?;
             if input.contains("@history") {
@@ -82,15 +89,19 @@ async fn try_chat(stderr: &mut Stderr, mut input: String) -> Result<()> {
                 stderr.queue(style::Print("Using environment\n"))?;
             }
 
-            rx = Some(send_message(client.clone(), input).await?);
+            rx = Some(send_message(client.clone(), input, &conversation_id).await?);
             stderr
                 .queue(style::SetForegroundColor(Color::Reset))?
                 .execute(style::Print("\n"))?;
         } else {
             stderr.execute(style::Print(
                 "
-Hi, I'm Amazon Q. I can answer your software development questions!
-You can include additional context from your shell by typing @history, @git or @env in your prompt.
+Hi, I'm Amazon Q. I can answer questions about your shell and CLI tools!
+You can include additional context by adding the following to your prompt:
+
+@history: to pass your shell history
+@git: to pass information about your current git repository
+@env: to pass your shell environment
 
 ",
             ))?;
@@ -112,6 +123,7 @@ You can include additional context from your shell by typing @history, @git or @
                             true => buf.push_str(content.trim_start()),
                             false => buf.push_str(&content),
                         },
+                        ApiResponse::ConversationId(id) => conversation_id = Some(id),
                         ApiResponse::End => ended = true,
                         ApiResponse::Error => {
                             stderr.execute(style::Print(
@@ -150,21 +162,48 @@ You can include additional context from your shell by typing @history, @git or @
                     stderr
                         .queue(style::ResetColor)?
                         .queue(style::SetAttribute(Attribute::Reset))?
-                        .queue(Print("\n\n"))?
-                        .flush()?;
+                        .queue(Print("\n"))?;
+
+                    for (i, citation) in &state.citations {
+                        stderr
+                            .queue(style::SetForegroundColor(Color::Blue))?
+                            .queue(style::Print(format!("{i} ")))?
+                            .queue(style::SetForegroundColor(Color::DarkGrey))?
+                            .queue(style::Print(format!("{citation}\n")))?
+                            .queue(style::SetForegroundColor(Color::Reset))?;
+                    }
+
+                    if !state.citations.is_empty() {
+                        stderr.execute(Print("\n"))?;
+                    }
+
+                    fig_telemetry::send_chat_added_message(conversation_id.clone().unwrap_or_default()).await;
+
                     break;
                 }
             }
         }
 
         // Prompt user for input
-        input = Input::new().report(false).with_prompt("?").interact_text()?;
+        const PROMPT: &str = ">";
+        input = Input::with_theme(&ColorfulTheme {
+            prompt_suffix: dialoguer::console::style(PROMPT.into()).magenta().bright(),
+            ..ColorfulTheme::default()
+        })
+        .report(false)
+        .interact_text()?;
+
         let lines = (input.len() + 3) / usize::from(crossterm::terminal::window_size()?.columns);
         if let Ok(lines) = u16::try_from(lines) {
             if lines > 0 {
                 stderr.queue(cursor::MoveToPreviousLine(lines))?;
             }
         }
-        stderr.execute(style::Print(format!("?: {input}\n")))?;
+
+        stderr
+            .queue(style::SetForegroundColor(Color::DarkGrey))?
+            .queue(style::Print(format!("{PROMPT} {input}\n")))?
+            .queue(style::SetForegroundColor(Color::Reset))?
+            .flush()?;
     }
 }

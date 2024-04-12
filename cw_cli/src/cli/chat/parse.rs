@@ -15,7 +15,6 @@ use unicode_width::{
 };
 use winnow::ascii::{
     self,
-    alphanumeric1,
     digit1,
     space0,
     space1,
@@ -34,7 +33,10 @@ use winnow::error::{
     ParserError,
 };
 use winnow::prelude::*;
-use winnow::stream::Stream;
+use winnow::stream::{
+    AsChar,
+    Stream,
+};
 use winnow::token::{
     any,
     take_till,
@@ -73,11 +75,13 @@ impl<'a> ParserError<Partial<&'a str>> for Error<'a> {
 pub struct ParseState {
     pub terminal_width: usize,
     pub column: usize,
+    pub in_codeblock: bool,
     pub bold: bool,
     pub italic: bool,
     pub strikethrough: bool,
     pub set_newline: bool,
     pub newline: bool,
+    pub citations: Vec<(String, String)>,
 }
 
 impl ParseState {
@@ -85,11 +89,13 @@ impl ParseState {
         Self {
             terminal_width,
             column: 0,
+            in_codeblock: false,
             bold: false,
             italic: false,
             strikethrough: false,
             set_newline: false,
             newline: true,
+            citations: vec![],
         }
     }
 }
@@ -121,33 +127,42 @@ pub fn interpret_markdown<'a, 'b>(
         };
     }
 
-    alt!(
-        // This pattern acts as a short circuit for alphanumeric plaintext
-        // More importantly, it's needed to support manual wordwrapping
-        text,
-        // multiline patterns
-        blockquote,
-        // linted_codeblock,
-        codeblock,
-        // single line patterns
-        horizontal_rule,
-        heading,
-        bulleted_item,
-        numbered_item,
-        // inline patterns
-        code,
-        url,
-        bold,
-        italic,
-        strikethrough,
-        // symbols
-        less_than,
-        greater_than,
-        ampersand,
-        line_ending,
-        // fallback
-        fallback
-    );
+    match state.in_codeblock {
+        true => {
+            alt!(codeblock_end, line_ending_no_wrap, fallback_no_wrap);
+        },
+        false => {
+            alt!(
+                // This pattern acts as a short circuit for alphanumeric plaintext
+                // More importantly, it's needed to support manual wordwrapping
+                text,
+                // multiline patterns
+                blockquote,
+                // linted_codeblock,
+                codeblock,
+                // single line patterns
+                horizontal_rule,
+                heading,
+                bulleted_item,
+                numbered_item,
+                // inline patterns
+                code,
+                citation,
+                url,
+                bold,
+                italic,
+                strikethrough,
+                // symbols
+                less_than,
+                greater_than,
+                ampersand,
+                quot,
+                line_ending,
+                // fallback
+                fallback
+            );
+        },
+    }
 
     match error {
         Some(e) => Err(ErrMode::Backtrack(e.append(&i, &start, ErrorKind::Alt))),
@@ -160,7 +175,7 @@ fn text<'a, 'b>(
     state: &'b mut ParseState,
 ) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
     move |i| {
-        let content = alphanumeric1.parse_next(i)?;
+        let content = take_while(1.., |t| AsChar::is_alphanum(t) || "+,.!?\"".contains(t)).parse_next(i)?;
         queue_newline_or_advance(&mut o, state, content.width())?;
         queue(&mut o, style::Print(content))?;
         Ok(())
@@ -297,30 +312,28 @@ fn codeblock<'a, 'b>(
         // We don't want to do anything special to text inside codeblocks so we wait for all of it
         // The alternative is to switch between parse rules at the top level but that's slightly involved
         let language = preceded("```", till_line_ending).parse_next(i)?;
-        let code = terminated(take_until(0.., "```"), "```").parse_next(i)?;
         ascii::line_ending.parse_next(i)?;
 
-        queue(&mut o, style::ResetColor)?;
-        queue(&mut o, style::SetAttribute(Attribute::Reset))?;
+        state.in_codeblock = true;
 
-        // Do some simple replacements so it's slightly readable
-        let out = code
-            .trim()
-            .replace("&amp;", "&")
-            .replace("&gt;", ">")
-            .replace("&lt;", "<");
-
-        if !language.is_empty() && out.lines().count() > 1 {
+        if !language.is_empty() {
             queue(&mut o, style::Print(format!("{}\n", language).bold()))?;
         }
 
-        for line in out.lines() {
-            queue(&mut o, style::Print(format!("{line}\n").green()))?;
-        }
-
-        state.column = 0;
+        queue(&mut o, style::SetForegroundColor(Color::Green))?;
 
         Ok(())
+    }
+}
+
+fn codeblock_end<'a, 'b>(
+    mut o: impl Write + 'b,
+    state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
+    move |i| {
+        "```".parse_next(i)?;
+        state.in_codeblock = false;
+        queue(&mut o, style::SetForegroundColor(Color::Reset))
     }
 }
 
@@ -343,7 +356,7 @@ fn italic<'a, 'b>(
     state: &'b mut ParseState,
 ) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
     move |i| {
-        alt(("*", "_")).parse_next(i)?;
+        preceded(space1, alt(("*", "_"))).parse_next(i)?;
         state.italic = !state.italic;
         match state.italic {
             true => queue(&mut o, style::SetAttribute(Attribute::Italic)),
@@ -363,6 +376,23 @@ fn strikethrough<'a, 'b>(
             true => queue(&mut o, style::SetAttribute(Attribute::CrossedOut)),
             false => queue(&mut o, style::SetAttribute(Attribute::NotCrossedOut)),
         }
+    }
+}
+
+fn citation<'a, 'b>(
+    mut o: impl Write + 'b,
+    state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
+    move |i| {
+        let num = delimited("[[", digit1, "]]").parse_next(i)?;
+        let link = delimited("(", take_till(0.., ')'), ")").parse_next(i)?;
+
+        state.citations.push((num.to_owned(), link.to_owned()));
+
+        queue_newline_or_advance(&mut o, state, num.width() + 1)?;
+        queue(&mut o, style::SetForegroundColor(Color::Blue))?;
+        queue(&mut o, style::Print(format!("[{num}]")))?;
+        queue(&mut o, style::SetForegroundColor(Color::Reset))
     }
 }
 
@@ -417,6 +447,17 @@ fn ampersand<'a, 'b>(
     }
 }
 
+fn quot<'a, 'b>(
+    mut o: impl Write + 'b,
+    state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
+    move |i| {
+        "&quot;".parse_next(i)?;
+        queue_newline_or_advance(&mut o, state, 1)?;
+        queue(&mut o, style::Print('"'))
+    }
+}
+
 fn line_ending<'a, 'b>(
     mut o: impl Write + 'b,
     state: &'b mut ParseState,
@@ -429,6 +470,16 @@ fn line_ending<'a, 'b>(
 
         queue(&mut o, style::ResetColor)?;
         queue(&mut o, style::SetAttribute(style::Attribute::Reset))?;
+        queue(&mut o, style::Print("\n"))
+    }
+}
+
+fn line_ending_no_wrap<'a, 'b>(
+    mut o: impl Write + 'b,
+    _state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
+    move |i| {
+        ascii::line_ending.parse_next(i)?;
         queue(&mut o, style::Print("\n"))
     }
 }
@@ -447,6 +498,16 @@ fn fallback<'a, 'b>(
         }
 
         Ok(())
+    }
+}
+
+fn fallback_no_wrap<'a, 'b>(
+    mut o: impl Write + 'b,
+    _state: &'b mut ParseState,
+) -> impl FnMut(&mut Partial<&'a str>) -> PResult<(), Error<'a>> + 'b {
+    move |i| {
+        let fallback = any.parse_next(i)?;
+        queue(&mut o, style::Print(fallback))
     }
 }
 
