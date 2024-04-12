@@ -1,3 +1,4 @@
+import base64
 import os
 import pathlib
 from typing import Optional
@@ -238,37 +239,35 @@ class GpgSigner:
         self.gpg_secret_key = gpg_secret_key
         self.gpg_passphrase = gpg_passphrase
 
-        # write gpg secret key to file
-        self.gpg_secret_key_path = pathlib.Path("/tmp/gpg_secret_key")
-        self.gpg_secret_key_path.write_text(gpg_secret_key)
+        self.gpg_home = pathlib.Path.home() / ".gnupg-tmp"
+        self.gpg_home.mkdir(parents=True, exist_ok=True, mode=0o700)
 
-        self.gpg_passphrase_path = pathlib.Path("/tmp/gpg_passphrase")
+        # write gpg secret key to file
+        self.gpg_secret_key_path = self.gpg_home / "gpg_secret"
+        self.gpg_secret_key_path.write_bytes(base64.b64decode(gpg_secret_key))
+
+        self.gpg_passphrase_path = self.gpg_home / "gpg_pass"
         self.gpg_passphrase_path.write_text(gpg_passphrase)
 
-        self.gpg_home = pathlib.Path.home() / ".gnupg-tmp"
-        self.gpg_home.mkdir(parents=True, exist_ok=True)
+        run_cmd(["gpg", "--version"])
 
         info("Importing GPG key")
         run_cmd(["gpg", "--list-keys"], env=self.gpg_env())
         run_cmd(
-            ["gpg", "--allow-secret-key-import", *self.sign_args(), "--import", self.gpg_secret_key_path],
+            ["gpg", *self.sign_args(), "--allow-secret-key-import", "--import", self.gpg_secret_key_path],
             env=self.gpg_env(),
         )
         run_cmd(["gpg", "--list-keys"], env=self.gpg_env())
+        run_cmd(["gpg", "--list-secret-keys"], env=self.gpg_env())
 
-    def gpg_env(self) -> dict[str, pathlib.Path]:
-        return {
-            "GNUPGHOME": self.gpg_home,
-        }
+    def gpg_env(self) -> dict[str, str]:
+        return {**os.environ, "GNUPGHOME": str(self.gpg_home)}
 
     def sign_args(self) -> list[str | pathlib.Path]:
         return [
             "--batch",
-            "--no-options",
             "--pinentry-mode",
             "loopback",
-            "--passphrase-fd",
-            "0",
             "--no-tty",
             "--yes",
             "--passphrase-file",
@@ -285,10 +284,6 @@ class GpgSigner:
 
     def clean(self):
         info("Cleaning gpg keys")
-        self.gpg_secret_key_path.unlink(missing_ok=True)
-        self.gpg_passphrase_path.unlink(missing_ok=True)
-        run_cmd(["gpg", "--batch", "--yes", "--delete-secret-key", self.gpg_id], env=self.gpg_env(), check=False)
-        run_cmd(["gpg", "--batch", "--yes", "--delete-key", self.gpg_id], env=self.gpg_env(), check=False)
         shutil.rmtree(self.gpg_home, ignore_errors=True)
 
 
