@@ -21,5 +21,6 @@ pub use send_recv_message::SendRecvMessage;
 pub use unix_socket::{
     socket_connect,
     socket_connect_timeout,
+    validate_socket,
     BufferedUnixStream,
 };

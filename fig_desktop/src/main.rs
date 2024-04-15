@@ -20,7 +20,6 @@ use std::process::exit;
 use clap::Parser;
 use event::Event;
 use fig_log::Logger;
-// use fig_telemetry::sentry::release_name;
 use fig_util::consts::CODEWHISPERER_DESKTOP_PROCESS_NAME;
 use parking_lot::RwLock;
 use platform::PlatformState;

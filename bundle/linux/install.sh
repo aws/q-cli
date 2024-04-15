@@ -6,6 +6,12 @@
 set -o errexit
 set -o nounset
 
+# If not on linux error
+if [ "$(uname)" != "Linux" ]; then
+    echo "This script only works on Linux"
+    exit 1
+fi
+
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 
 mkdir -p "$HOME/.local/bin"

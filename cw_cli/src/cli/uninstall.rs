@@ -16,15 +16,6 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
             "\nIs CodeWhisperer not working? Try running {}\n",
             "cw doctor".bold().magenta()
         );
-        // println!(
-        //     r#"* Autocomplete doesn't "feel" right? Watch {}"#,
-        //     "https://fig.io/l/configuring-autocomplete".bold()
-        // );
-        // println!(
-        //     "* Keep CodeWhisperer but disable Autocomplete? Run {}\n",
-        //     "fig settings autocomplete.disable true".bold().magenta()
-        // );
-
         let should_continue = dialoguer::Select::with_theme(&dialoguer_theme())
             .with_prompt("Are you sure want to continue uninstalling CodeWhisperer?")
             .items(&["Yes", "No"])

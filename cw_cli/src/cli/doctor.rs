@@ -50,7 +50,10 @@ use fig_util::desktop::{
     launch_fig_desktop,
     LaunchArgs,
 };
-use fig_util::directories::settings_path;
+use fig_util::directories::{
+    remote_socket_path,
+    settings_path,
+};
 use fig_util::system_info::SupportLevel;
 use fig_util::{
     directories,
@@ -71,6 +74,7 @@ use spinners::{
     Spinners,
 };
 use tokio::io::AsyncBufReadExt;
+use which::which;
 
 use super::app::restart_fig;
 use super::diagnostics::verify_integration;
@@ -211,6 +215,16 @@ fn check_file_exists(path: impl AsRef<Path>) -> Result<()> {
         eyre::bail!("No file at path {}", path.as_ref().display())
     }
     Ok(())
+}
+
+async fn check_socket_perms(path: impl AsRef<Path>) -> Result<(), DoctorError> {
+    let path = path.as_ref();
+    fig_ipc::validate_socket(&path).await.map_err(|err| DoctorError::Error {
+        reason: format!("Failed to validate socket permissions: {err}").into(),
+        info: vec![format!("Socket path: {path:?}").into()],
+        fix: None,
+        error: Some(err.into()),
+    })
 }
 
 fn command_fix<A, I, D>(args: A, sleep_duration: D) -> Option<DoctorFix>
@@ -410,12 +424,12 @@ impl DoctorCheck for AppRunningCheck {
     }
 }
 
-struct FigSocketCheck;
+struct DesktopSocketCheck;
 
 #[async_trait]
-impl DoctorCheck for FigSocketCheck {
+impl DoctorCheck for DesktopSocketCheck {
     fn name(&self) -> Cow<'static, str> {
-        "CodeWhisperer socket exists".into()
+        "CodeWhisperer desktop socket exists".into()
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
@@ -436,12 +450,14 @@ impl DoctorCheck for FigSocketCheck {
             }
         }
 
-        check_file_exists(directories::desktop_socket_path().expect("No home directory")).map_err(|_err| {
+        check_file_exists(&fig_socket_path).map_err(|_err| {
             doctor_fix_async!({
                 reason: "CodeWhisperer socket missing",
                 fix: restart_fig()
             })
-        })
+        })?;
+
+        check_socket_perms(fig_socket_path).await
     }
 
     async fn get_type(&self, _: &(), platform: Platform) -> DoctorCheckType {
@@ -449,6 +465,63 @@ impl DoctorCheck for FigSocketCheck {
             DoctorCheckType::NormalCheck
         } else {
             DoctorCheckType::NoCheck
+        }
+    }
+}
+
+struct RemoteSocketCheck;
+
+#[async_trait]
+impl DoctorCheck for RemoteSocketCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "CodeWhisperer socket exists".into()
+    }
+
+    async fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
+        DoctorCheckType::NormalCheck
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        let cw_parent = std::env::var("CW_PARENT").ok();
+        let remote_socket = remote_socket_path().map_err(|err| DoctorError::Error {
+            reason: "Unable to get remote socket path".into(),
+            info: vec![
+                format!("CW_PARENT: {cw_parent:?}").into(),
+                format!("Error: {err}").into(),
+            ],
+            fix: None,
+            error: Some(err.into()),
+        })?;
+
+        // Check file exists
+        check_file_exists(&remote_socket).map_err(|err| DoctorError::Error {
+            reason: "CodeWhisperer socket missing".into(),
+            info: vec![
+                format!("Path: {remote_socket:?}").into(),
+                format!("CW_PARENT: {cw_parent:?}").into(),
+                format!("Error: {err}").into(),
+            ],
+            fix: None,
+            error: Some(err),
+        })?;
+
+        // Check socket permissions
+        check_socket_perms(&remote_socket).await?;
+
+        // Check connecting to socket
+        match tokio::net::UnixStream::connect(&remote_socket).await {
+            Ok(_) => Ok(()),
+            Err(err) => Err(DoctorError::Error {
+                reason: "Failed to connect to remote socket".into(),
+                info: vec![
+                    "Ensure the desktop app is running".into(),
+                    format!("Path: {remote_socket:?}").into(),
+                    format!("CW_PARENT: {cw_parent:?}").into(),
+                    format!("Error: {err}").into(),
+                ],
+                fix: None,
+                error: Some(err.into()),
+            }),
         }
     }
 }
@@ -607,7 +680,10 @@ impl DoctorCheck for MidwayCheck {
     }
 
     async fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
-        if matches!(auth::is_amzn_user().await, Ok(true)) {
+        let amzn_user = matches!(auth::is_amzn_user().await, Ok(true));
+        let has_mwinit = which("mwinit").is_ok();
+
+        if amzn_user && has_mwinit {
             DoctorCheckType::NormalCheck
         } else {
             DoctorCheckType::NoCheck
@@ -615,18 +691,16 @@ impl DoctorCheck for MidwayCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        fig_request::midway::midway_request(
-            url::Url::parse("https://prod.us-east-1.shellspecs.jupiter.ai.aws.dev/index.json").unwrap(),
-        )
-        .await
-        .map_err(|err| DoctorError::Error {
-            reason: "Failed to make midway request".into(),
-            info: vec!["Try running `mwinit` and restarting the app with `cw restart`.".into()],
-            fix: None,
-            error: Some(err.into()),
-        })?;
-
-        Ok(())
+        let url = url::Url::parse("https://prod.us-east-1.shellspecs.jupiter.ai.aws.dev/index.json").unwrap();
+        match fig_request::midway::midway_request(url).await {
+            Ok(_) => Ok(()),
+            Err(err) => Err(DoctorError::Error {
+                reason: "Failed to make midway request".into(),
+                info: vec!["Try running `mwinit` and restarting the app with `cw restart`.".into()],
+                fix: None,
+                error: Some(err.into()),
+            }),
+        }
     }
 }
 
@@ -649,6 +723,8 @@ impl DoctorCheck for CwtermSocketCheck {
             },
         };
         let socket_path = fig_util::directories::figterm_socket_path(term_session).context("No figterm path")?;
+
+        check_socket_perms(&socket_path).await?;
 
         if let Err(err) = check_file_exists(&socket_path) {
             return Err(DoctorError::Error {
@@ -1014,10 +1090,11 @@ impl DoctorCheck<()> for SshdConfigCheck {
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         let info = vec![
             "The /etc/ssh/sshd_config file needs to have the following line:".into(),
-            "  AcceptEnv LANG LC_* CW_*".magenta().to_string().into(),
+            "  AcceptEnv CW_SET_PARENT".magenta().to_string().into(),
             "  AllowStreamLocalForwarding yes".magenta().to_string().into(),
-            "".into(),
-            "See https://fig.io/user-manual/autocomplete/ssh for more info".into(),
+            // TODO(grant): Add AWS docs
+            // "".into(),
+            // "See https://fig.io/user-manual/autocomplete/ssh for more info".into(),
         ];
 
         let sshd_config_path = "/etc/ssh/sshd_config";
@@ -1028,7 +1105,9 @@ impl DoctorCheck<()> for SshdConfigCheck {
                 if std::env::var_os("CW_PARENT").is_some() {
                     // We will assume the integration is correct if CW_PARENT is set
                     doctor_warning!(
-                        "Could not read sshd_config, check https://fig.io/user-manual/autocomplete/ssh for more info"
+                        "Could not read sshd_config"
+                        // TODO(grant): Add AWS docs
+                        // "Could not read sshd_config, check https://fig.io/user-manual/autocomplete/ssh for more info"
                     )
                 } else {
                     DoctorError::Error {
@@ -2230,7 +2309,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         if fig_util::manifest::is_full() {
             run_checks(
                 "Let's make sure CodeWhisperer is running...".into(),
-                vec![&AppRunningCheck, &FigSocketCheck],
+                vec![&AppRunningCheck, &DesktopSocketCheck],
                 config,
                 &mut spinner,
             )

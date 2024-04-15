@@ -3,6 +3,7 @@ use crossterm::style::Stylize;
 use dialoguer::Select;
 use eyre::Result;
 use fig_diagnostic::Diagnostics;
+use fig_util::system_info::is_remote;
 use owo_colors::{
     OwoColorize,
     Rgb,
@@ -25,7 +26,7 @@ impl IssueArgs {
     #[allow(unreachable_code)]
     pub async fn execute(&self) -> Result<()> {
         // Check if fig is running
-        if !self.force && !fig_util::is_codewhisperer_desktop_running() {
+        if !(self.force || fig_util::is_codewhisperer_desktop_running() || is_remote()) {
             println!(
                 "\n→ CodeWhisperer is not running.\n  Please launch CodeWhisperer with {} or run {} to create the issue anyways",
                 "cw launch".magenta(),
@@ -118,8 +119,10 @@ impl IssueArgs {
 
                 if selected < options.len() - 1 {
                     let (_, _, url, _) = &issues[selected];
-                    println!("Opening issue in the browser...");
-                    fig_util::open_url(url).expect("Failed to open issue in browser");
+                    println!("Heading over to GitHub...");
+                    if fig_util::open_url(url.as_str()).is_err() {
+                        println!("Issue Url: {}", url.as_str().underlined());
+                    }
                     return Ok(());
                 }
             }

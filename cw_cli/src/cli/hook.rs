@@ -1,18 +1,12 @@
-use std::fs::OpenOptions;
-use std::io::prelude::*;
 use std::process::exit;
 
 use clap::Subcommand;
-use crossterm::style::Stylize;
 use eyre::{
     Result,
     WrapErr,
 };
 use fig_ipc::local::send_hook_to_socket;
 use fig_proto::hooks;
-use fig_util::directories;
-use fig_util::terminal::CURRENT_TERMINAL;
-use once_cell::sync::Lazy;
 
 #[derive(Debug, PartialEq, Eq, Subcommand)]
 #[command(hide = true)]
@@ -59,15 +53,6 @@ pub enum HookSubcommand {
         cli: Vec<String>,
     },
 }
-
-static BASH_UNICODE: Lazy<String> = Lazy::new(|| {
-    if let Some(terminal) = &*CURRENT_TERMINAL {
-        if !terminal.supports_fancy_boxes() {
-            return "$_".to_string();
-        }
-    }
-    "\x1b[1m\x1b[3m$\x1b[0m\u{20de} ".to_string()
-});
 
 impl HookSubcommand {
     pub async fn execute(&self) -> Result<()> {
@@ -120,36 +105,8 @@ impl HookSubcommand {
                 pid,
                 tty,
                 remote_dest,
-                prompt,
+                ..
             } => {
-                if *prompt && !remote_dest.starts_with("git@") && !remote_dest.starts_with("aur@") {
-                    let installed_hosts_file = directories::fig_data_dir()
-                        .context("Can't get fig dir")?
-                        .join("ssh_hostnames");
-                    let mut installed_hosts = OpenOptions::new()
-                        .create(true)
-                        .read(true)
-                        .append(true)
-                        .open(installed_hosts_file)?;
-
-                    let mut contents = String::new();
-                    #[allow(clippy::verbose_file_reads)]
-                    installed_hosts.read_to_string(&mut contents)?;
-
-                    if !contents.contains(remote_dest) {
-                        let bar = format!("╞{}╡", (0..74).map(|_| '═').collect::<String>());
-                        println!(
-                            "{bar}\n  To install SSH support for {}, run the following on your remote machine\n\n    {} {} \n     \
-                            source <(curl -Ls fig.io/install)\n\n    🐟 {} \n     curl -Ls fig.io/install | bash; and exec fish\n{bar}",
-                            "CodeWhisperer".magenta(),
-                            *BASH_UNICODE,
-                            "Bash/zsh:".bold().underlined(),
-                            "Fish:".bold().underlined(),
-                        );
-                        let new_line = format!("\n{remote_dest}");
-                        installed_hosts.write_all(&new_line.into_bytes())?;
-                    }
-                }
                 let context = hooks::generate_shell_context(*pid, tty, session_id)?;
                 hooks::new_ssh_hook(context, control_path, remote_dest)
             },

@@ -14,41 +14,51 @@ use crate::{
     ConnectError,
 };
 
+pub async fn validate_socket(socket: impl AsRef<Path>) -> Result<(), ConnectError> {
+    cfg_if::cfg_if! {
+            if #[cfg(unix)] {
+            use std::os::unix::fs::PermissionsExt;
+
+            let socket = socket.as_ref();
+
+            match tokio::fs::metadata(socket).await {
+                Ok(metadata) => {
+                    let mode = metadata.permissions().mode();
+                    if validate_mode_bits(mode, 0o600) {
+                        debug!(?socket, mode, "Socket permissions are 0o600");
+                        return Ok(());
+                    }
+                    warn!(?socket, mode, "Socket permissions are not 0o600");
+                },
+                Err(err) => {
+                    warn!(%err, ?socket, "Failed to get socket metadata, checking parent folder permissions");
+                },
+            }
+
+            if let Some(parent_path) = socket.parent() {
+                let metadata = tokio::fs::metadata(parent_path).await?;
+                let mode = metadata.permissions().mode();
+                if validate_mode_bits(mode, 0o700) {
+                    debug!(?socket, mode, "Socket folder permissions are 0o700");
+                    return Ok(());
+                }
+                warn!(?socket, mode, "Socket folder permissions are not 0o700");
+            }
+
+            error!(?socket, "Incorrect socket permissions, not connecting to socket");
+            Err(ConnectError::IncorrectSocketPermissions)
+        } else {
+            let _ = socket;
+            todo!()
+        }
+    }
+}
+
 /// Connects to a unix socket
 pub async fn socket_connect(socket: impl AsRef<Path>) -> Result<UnixStream, ConnectError> {
     let socket = socket.as_ref();
 
-    #[cfg(unix)]
-    'socket_check: {
-        use std::os::unix::fs::PermissionsExt;
-
-        match tokio::fs::metadata(socket).await {
-            Ok(metadata) => {
-                let mode = metadata.permissions().mode();
-                if validate_mode_bits(mode, 0o600) {
-                    debug!(?socket, mode, "Socket permissions are 0o600");
-                    break 'socket_check;
-                }
-                warn!(?socket, mode, "Socket permissions are not 0o600");
-            },
-            Err(err) => {
-                warn!(%err, ?socket, "Failed to get socket metadata, checking parent folder permissions");
-            },
-        }
-
-        if let Some(parent_path) = socket.parent() {
-            let metadata = tokio::fs::metadata(parent_path).await?;
-            let mode = metadata.permissions().mode();
-            if validate_mode_bits(mode, 0o700) {
-                debug!(?socket, mode, "Socket folder permissions are 0o700");
-                break 'socket_check;
-            }
-            warn!(?socket, mode, "Socket folder permissions are not 0o700");
-        }
-
-        error!(?socket, "Incorrect socket permissions, not connecting to socket");
-        return Err(ConnectError::IncorrectSocketPermissions);
-    }
+    validate_socket(&socket).await?;
 
     let stream = match UnixStream::connect(socket).await {
         Ok(stream) => stream,
