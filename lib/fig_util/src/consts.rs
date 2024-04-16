@@ -8,3 +8,5 @@ pub const CODEWHISPERER_DESKTOP_PROCESS_NAME: &str = "codewhisperer_desktop.exe"
 pub const CODEWHISPERER_CLI_BINARY_NAME: &str = "cw";
 
 pub const CWTERM_BINARY_NAME: &str = "cwterm";
+
+pub const CODEWHISPERER_BUNDLE_NAME: &str = "CodeWhisperer.app";

@@ -60,6 +60,7 @@ use fig_util::{
     is_codewhisperer_desktop_running,
     Shell,
     Terminal,
+    CODEWHISPERER_BUNDLE_NAME,
 };
 use futures::future::BoxFuture;
 use futures::FutureExt;
@@ -1157,9 +1158,9 @@ impl DoctorCheck<DiagnosticsResponse> for BundlePathCheck {
 
     async fn check(&self, diagnostics: &DiagnosticsResponse) -> Result<(), DoctorError> {
         let path = diagnostics.path_to_bundle.clone();
-        if path.contains("/Applications/CodeWhisperer.app") {
+        if path.contains(&format!("/Applications/{CODEWHISPERER_BUNDLE_NAME}")) {
             Ok(())
-        } else if path.contains("/Build/Products/Debug/CodeWhisperer.app") {
+        } else if path.contains(&format!("/Build/Products/Debug/{CODEWHISPERER_BUNDLE_NAME}")) {
             Err(DoctorError::Warning(
                 format!("Running debug build in {}", path.bold()).into(),
             ))

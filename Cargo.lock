@@ -2709,7 +2709,6 @@ dependencies = [
  "fig_util",
  "hex",
  "libc",
- "once_cell",
  "regex",
  "reqwest",
  "ring",

@@ -1,4 +1,3 @@
-use std::io::Write;
 use std::time::Duration;
 
 use cfg_if::cfg_if;
@@ -27,7 +26,6 @@ use fig_util::{
     manifest,
 };
 use tracing::{
-    error,
     info,
     trace,
 };
@@ -187,24 +185,6 @@ impl AppSubcommand {
             },
             AppSubcommand::Prompts => {
                 if fig_util::manifest::is_minimal() {
-                    if let Ok(Some(version)) = state::get_string("update.latestVersion") {
-                        writeln!(
-                            std::io::stdout(),
-                            "A new version ({version}) of CodeWhisperer is available! Please update from your package manager."
-                        )
-                        .ok();
-                    }
-
-                    match fig_install::check_for_updates(false).await {
-                        Ok(Some(package)) => {
-                            let _ = state::set_value("update.latestVersion", package.version);
-                        },
-                        Ok(None) => {
-                            // no version available
-                            let _ = state::remove_value("update.latestVersion");
-                        },
-                        Err(err) => error!(%err, "Failed checking for updates"),
-                    }
                 } else if is_codewhisperer_desktop_running() {
                     let new_version = state::get_string("NEW_VERSION_AVAILABLE").ok().flatten();
                     if let Some(version) = new_version {

@@ -3,6 +3,7 @@ use std::hash::{
     Hash,
     Hasher,
 };
+use std::sync::OnceLock;
 use std::time::{
     SystemTime,
     UNIX_EPOCH,
@@ -11,11 +12,12 @@ use std::time::{
 use cfg_if::cfg_if;
 use fig_util::manifest::{
     Channel,
-    Kind,
+    FileType,
+    Os,
     Variant,
 };
 use fig_util::system_info::get_system_id;
-use once_cell::sync::Lazy;
+use semver::Version;
 use serde::{
     Deserialize,
     Serialize,
@@ -26,13 +28,56 @@ use tracing::{
     info,
     trace,
 };
+use url::Url;
 
 use crate::Error;
 
-static RELEASE_URL: Lazy<&str> = Lazy::new(|| {
-    option_env!("CW_BUILD_DESKTOP_RELEASE_URL")
-        .unwrap_or("https://desktop-release.codewhisperer.us-east-1.amazonaws.com")
-});
+const DEFAULT_RELEASE_URL: &str = "https://desktop-release.codewhisperer.us-east-1.amazonaws.com";
+
+/// The url to check for updates from, trys the following order:
+/// - The env var `CW_DESKTOP_RELEASE_URL`
+/// - The setting `install.releaseUrl`
+/// - Falls back to the default or the build time env var `CW_BUILD_DESKTOP_RELEASE_URL`
+fn release_url() -> &'static Url {
+    static RELEASE_URL: OnceLock<Url> = OnceLock::new();
+    RELEASE_URL.get_or_init(|| {
+        match std::env::var("CW_DESKTOP_RELEASE_URL") {
+            Ok(s) => Url::parse(&s),
+            Err(_) => match fig_settings::settings::get_string("install.releaseUrl") {
+                Ok(Some(s)) => Url::parse(&s),
+                _ => Url::parse(option_env!("CW_BUILD_DESKTOP_RELEASE_URL").unwrap_or(DEFAULT_RELEASE_URL)),
+            },
+        }
+        .unwrap()
+    })
+}
+
+fn deser_enum_other<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: std::str::FromStr,
+    T::Err: std::fmt::Display,
+{
+    match T::from_str(<&str as Deserialize<'de>>::deserialize(deserializer)?) {
+        Ok(s) => Ok(s),
+        Err(err) => Err(serde::de::Error::custom(err)),
+    }
+}
+
+fn deser_opt_enum_other<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: std::str::FromStr,
+    T::Err: std::fmt::Display,
+{
+    match Option::<&'de str>::deserialize(deserializer)? {
+        Some(s) => match T::from_str(s) {
+            Ok(s) => Ok(Some(s)),
+            Err(err) => Err(serde::de::Error::custom(err)),
+        },
+        None => Ok(None),
+    }
+}
 
 #[allow(unused)]
 #[derive(Deserialize, Serialize, Debug)]
@@ -41,41 +86,67 @@ pub struct Index {
     versions: Vec<RemoteVersion>,
 }
 
+impl Index {
+    #[allow(dead_code)]
+    pub(crate) fn latest(&self) -> Option<&RemoteVersion> {
+        self.versions.iter().max_by(|a, b| a.version.cmp(&b.version))
+    }
+}
+
 #[allow(unused)]
 #[derive(Deserialize, Serialize, Debug)]
 struct Support {
-    kind: Kind,
+    #[serde(deserialize_with = "deser_enum_other")]
     architecture: PackageArchitecture,
+    #[serde(deserialize_with = "deser_enum_other")]
     variant: Variant,
+    #[serde(deserialize_with = "deser_opt_enum_other", default)]
+    os: Option<Os>,
+    #[serde(deserialize_with = "deser_opt_enum_other", default)]
+    file_type: Option<FileType>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
-struct RemoteVersion {
-    version: semver::Version,
-    rollout: Option<Rollout>,
-    packages: Vec<Package>,
+pub(crate) struct RemoteVersion {
+    pub version: Version,
+    pub rollout: Option<Rollout>,
+    pub packages: Vec<Package>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
-struct Rollout {
+pub(crate) struct Rollout {
     start: u64,
     end: u64,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct Package {
-    kind: Kind,
-    architecture: PackageArchitecture,
-    variant: Variant,
-    download: String,
-    sha256: String,
-    size: u64,
+    #[serde(deserialize_with = "deser_enum_other")]
+    pub(crate) architecture: PackageArchitecture,
+    #[serde(deserialize_with = "deser_enum_other")]
+    pub(crate) variant: Variant,
+    #[serde(deserialize_with = "deser_opt_enum_other", default)]
+    pub(crate) os: Option<Os>,
+    #[serde(deserialize_with = "deser_opt_enum_other", default)]
+    pub(crate) file_type: Option<FileType>,
+    pub(crate) download: String,
+    pub(crate) sha256: String,
+    pub(crate) size: u64,
+}
+
+impl Package {
+    pub(crate) fn download_url(&self) -> Url {
+        let mut url = release_url().clone();
+        url.set_path(&self.download);
+        url
+    }
 }
 
 #[derive(Debug)]
 pub struct UpdatePackage {
-    pub version: String,
-    pub download: String,
+    pub version: Version,
+    pub download_url: Url,
     pub sha256: String,
     pub size: u64,
 }
@@ -109,8 +180,10 @@ impl PackageArchitecture {
     }
 }
 
-fn index_endpoint(_channel: &Channel) -> String {
-    format!("{}/index.json", *RELEASE_URL)
+fn index_endpoint(_channel: &Channel) -> Url {
+    let mut url = release_url().clone();
+    url.set_path("index.json");
+    url
 }
 
 pub async fn pull(channel: &Channel) -> Result<Index, Error> {
@@ -125,7 +198,7 @@ pub async fn pull(channel: &Channel) -> Result<Index, Error> {
 
 pub async fn check_for_updates(
     channel: Channel,
-    kind: Kind,
+    os: Os,
     variant: Variant,
     ignore_rollout: bool,
 ) -> Result<Option<UpdatePackage>, Error> {
@@ -134,7 +207,7 @@ pub async fn check_for_updates(
 
     query_index(
         channel,
-        kind,
+        os,
         variant,
         CURRENT_VERSION,
         ARCHITECTURE,
@@ -146,7 +219,7 @@ pub async fn check_for_updates(
 
 pub async fn query_index(
     channel: Channel,
-    kind: Kind,
+    os: Os,
     variant: Variant,
     current_version: &str,
     architecture: PackageArchitecture,
@@ -155,11 +228,9 @@ pub async fn query_index(
 ) -> Result<Option<UpdatePackage>, Error> {
     let index = pull(&channel).await?;
 
-    if !index
-        .supported
-        .iter()
-        .any(|support| support.kind == kind && support.architecture == architecture && support.variant == variant)
-    {
+    if !index.supported.iter().any(|support| {
+        support.os.as_ref() == Some(&os) && support.architecture == architecture && support.variant == variant
+    }) {
         return Err(Error::SystemNotOnChannel);
     }
 
@@ -170,7 +241,7 @@ pub async fn query_index(
         .into_iter()
         .filter(|version| {
             version.packages.iter().any(|package| {
-                package.kind == kind && package.architecture == architecture && package.variant == variant
+                package.os.as_ref() == Some(&os) && package.architecture == architecture && package.variant == variant
             })
         })
         .filter(|version| match &version.rollout {
@@ -254,10 +325,12 @@ pub async fn query_index(
     let package = chosen
         .packages
         .into_iter()
-        .find(|package| package.kind == kind && package.architecture == architecture && package.variant == variant)
+        .find(|package| {
+            package.os.as_ref() == Some(&os) && package.architecture == architecture && package.variant == variant
+        })
         .unwrap();
 
-    if match semver::Version::parse(current_version) {
+    if match Version::parse(current_version) {
         Ok(current_version) => chosen.version <= current_version,
         Err(err) => {
             error!("failed parsing current version semver: {err:?}");
@@ -268,112 +341,19 @@ pub async fn query_index(
     }
 
     Ok(Some(UpdatePackage {
-        version: chosen.version.to_string(),
-        download: format!("{}/{}", *RELEASE_URL, package.download),
+        version: chosen.version,
+        download_url: package.download_url(),
         sha256: package.sha256,
         size: package.size,
     }))
 }
 
-// Tests only work on macos currently
-#[cfg(all(test, target_os = "macos"))]
+#[cfg(test)]
 mod tests {
-    use semver::Version;
-
     use super::*;
 
-    #[test]
-    #[ignore]
-    fn index_make() {
-        let version = |version: &str, sha256: &str, size: u64| RemoteVersion {
-            version: Version::parse(version).unwrap(),
-            rollout: None,
-            packages: vec![Package {
-                kind: Kind::Dmg,
-                architecture: PackageArchitecture::Universal,
-                variant: Variant::Full,
-                download: format!("{version}/CodeWhisperer.dmg"),
-                sha256: sha256.into(),
-                size,
-            }],
-        };
-
-        let index = Index {
-            supported: vec![Support {
-                kind: Kind::Dmg,
-                architecture: PackageArchitecture::Universal,
-                variant: Variant::Full,
-            }],
-            versions: vec![
-                // version(
-                //     "0.1.0",
-                //     "c588348eb6cc6f4a3b2ececa262ab630e89422d0087fdaf03001499bbb917af0",
-                //     93018817,
-                // ),
-                // version(
-                //     "0.2.0",
-                //     "1b51608c6d5b8cbc43d05396b1ec74557958df05298f6b6d1efadb203bf9b50a0",
-                //     93022923,
-                // ),
-                // version(
-                //     "0.3.0",
-                //     "7fff5995557907fb90c4808f5c2ab9307ab94464dcb5703cc9b022d25f1f6718",
-                //     93024994,
-                // ),
-                // version(
-                //     "0.4.0",
-                //     "21c1145d79cf927a7c6303e40a9933d1efe0dfda52d8bc80e4b9d3ac3643ba7d",
-                //     92465710,
-                // ),
-                // version(
-                //     "0.5.0",
-                //     "0f85d19c7e90bff7bef16a0643018225465674e0326520171d7e366d47df79d2",
-                //     92686534,
-                // ),
-                // version(
-                //     "0.6.0",
-                //     "a69a1fec68cd43daa5d80bd6e02c57dfc9e800873a6719d13ad4e20360cb7f9d",
-                //     92695962,
-                // ),
-                version(
-                    "0.7.0",
-                    "4213d7649e4b1a2ec50adc0266d32d3e1e1f952ed6a863c28d7538190dc92472",
-                    82975504,
-                ),
-                version(
-                    "0.8.0",
-                    "ee0a8074f094dd2aac3a8d6c136778ab46a1911288d6f2dc9c6f12066578ee4d",
-                    82957941,
-                ),
-                version(
-                    "0.9.0",
-                    "ec49faa192f3bc01f281676eea16f68053cb1c49f2e18c5fa8addd5946839119",
-                    82942146,
-                ),
-                version(
-                    "0.10.0",
-                    "3a7c0dd47eb76252c3e3e74b023b35455269dd64255f7083219631d12f6943be",
-                    82946880,
-                ),
-                version(
-                    "0.11.0",
-                    "cbc95e10c572d7f2046d0d145ab3d859caa6b6da7fe35b54780fe7d235879e19",
-                    82967406,
-                ),
-                version(
-                    "0.12.0",
-                    "705ecf656209689184c4d66072cc147b965838bb3f57c3b10c8b5c442b1421b3",
-                    82965695,
-                ),
-            ],
-        };
-
-        let json = serde_json::to_string(&index).unwrap();
-        println!("{json}");
-        std::fs::write("index.json", json).unwrap();
-    }
-
     #[tokio::test]
+    #[cfg(target_os = "macos")]
     async fn pull_test() {
         let index = pull(&Channel::Stable).await.unwrap();
         println!("{:#?}", index);
@@ -382,9 +362,105 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(target_os = "macos")]
+    #[ignore = "New index format not used yet"]
     async fn check_test() {
-        check_for_updates(Channel::Stable, Kind::Dmg, Variant::Full, false)
+        check_for_updates(Channel::Stable, Os::Macos, Variant::Full, false)
             .await
             .unwrap();
+    }
+
+    #[test]
+    fn test_release_url() {
+        println!("{}", *release_url());
+        println!("{:#?}", *release_url());
+    }
+
+    #[test]
+    fn index_serde_test() {
+        let json_str = serde_json::json!({
+            "supported": [
+                {
+                    "kind": "dmg",
+                    "architecture": "universal",
+                    "variant": "full"
+                },
+                {
+                    "kind": "other",
+                    "os": "macos",
+                    "fileType": "dmg",
+                    "architecture": "universal",
+                    "variant": "full"
+                }
+            ],
+            "versions": [
+                {
+                    "version": "0.7.0",
+                    "rollout": null,
+                    "packages": [
+                        {
+                            "kind": "dmg",
+                            "architecture": "universal",
+                            "variant": "full",
+                            "download": "0.7.0/CodeWhisperer.dmg",
+                            "sha256": "4213d7649e4b1a2ec50adc0266d32d3e1e1f952ed6a863c28d7538190dc92472",
+                            "size": 82975504
+                        }
+                    ]
+                },
+                {
+                    "version": "0.15.3",
+                    "packages": [
+                        {
+                            "kind": "dmg",
+                            "architecture": "universal",
+                            "variant": "full",
+                            "download": "0.15.3/CodeWhisperer.dmg",
+                            "sha256": "87a311e493bb2b0e68a1b4b5d267c79628d23c1e39b0a62d1a80b0c2352f80a2",
+                            "size": 88174538
+                        }
+                    ]
+                },
+                {
+                    "version": "1.0.0",
+                    "packages": [
+                        {
+                            "kind": "other",
+                            "fileType": "dmg",
+                            "os": "macos",
+                            "architecture": "universal",
+                            "variant": "full",
+                            "download": "1.0.0/Q.dmg",
+                            "sha256": "87a311e493bb2b0e68a1b4b5d267c79628d23c1e39b0a62d1a80b0c2352f80a2",
+                            "size": 88174538
+                        }
+                    ]
+                }
+            ]
+        })
+        .to_string();
+
+        let index = serde_json::from_str::<Index>(&json_str).unwrap();
+        println!("{:#?}", index);
+
+        assert_eq!(index.supported.len(), 2);
+        assert_eq!(index.versions.len(), 3);
+
+        // check the last entry matches
+        assert_eq!(index.versions[2].version, Version::new(1, 0, 0));
+        assert_eq!(index.versions[2].packages.len(), 1);
+        assert_eq!(index.versions[2].packages[0].file_type, Some(FileType::Dmg));
+        assert_eq!(index.versions[2].packages[0].os, Some(Os::Macos));
+        assert_eq!(
+            index.versions[2].packages[0].architecture,
+            PackageArchitecture::Universal
+        );
+        assert_eq!(index.versions[2].packages[0].variant, Variant::Full);
+        assert_eq!(index.versions[2].packages[0].download, "1.0.0/Q.dmg");
+        assert_eq!(
+            index.versions[2].packages[0].sha256,
+            "87a311e493bb2b0e68a1b4b5d267c79628d23c1e39b0a62d1a80b0c2352f80a2"
+        );
+        assert_eq!(index.versions[2].packages[0].size, 88174538);
     }
 }

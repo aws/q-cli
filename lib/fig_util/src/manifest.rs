@@ -20,8 +20,6 @@ pub struct Manifest {
     #[serde(deserialize_with = "deser_enum_other")]
     pub variant: Variant,
     #[serde(deserialize_with = "deser_enum_other")]
-    pub kind: Kind,
-    #[serde(deserialize_with = "deser_enum_other")]
     pub default_channel: Channel,
     pub packaged_at: String,
     pub packaged_by: String,
@@ -50,13 +48,33 @@ pub enum Variant {
 #[derive(EnumString, Display, Deserialize, Serialize, PartialEq, Eq, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
-pub enum Kind {
-    WindowsInstaller,
-    WindowsBundle,
+pub enum Os {
+    Macos,
+    Linux,
+    #[strum(default)]
+    Other(String),
+}
+
+impl Os {
+    pub fn current() -> Self {
+        match std::env::consts::OS {
+            "macos" => Os::Macos,
+            "linux" => Os::Linux,
+            _ => panic!("Unsupported OS: {}", std::env::consts::OS),
+        }
+    }
+
+    pub fn is_current_os(&self) -> bool {
+        self == &Os::current()
+    }
+}
+
+#[derive(EnumString, Display, Deserialize, Serialize, PartialEq, Eq, Clone, Debug)]
+#[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
+pub enum FileType {
     Dmg,
-    Tar,
-    Deb,
-    Rpm,
+    Zip,
     #[strum(default)]
     Other(String),
 }
@@ -126,7 +144,6 @@ static CACHED: Lazy<Manifest> = Lazy::new(|| Manifest {
         Some("minimal") => Variant::Minimal,
         _ => Variant::Full,
     },
-    kind: Kind::Dmg,
     default_channel: Channel::Stable,
     packaged_at: "unknown".into(),
     packaged_by: "unknown".into(),

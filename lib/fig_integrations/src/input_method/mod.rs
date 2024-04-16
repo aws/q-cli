@@ -146,8 +146,6 @@ pub enum InputMethodError {
     NotEnabled,
     #[error("Input source is not selected")]
     NotSelected,
-    #[error("Could not locate CodeWhisperer CLI")]
-    HelperExecutableNotFound,
     #[error("Input method not running")]
     NotRunning,
     #[error("An unknown error occurred")]
@@ -262,7 +260,7 @@ impl std::fmt::Debug for TISInputSource {
 
 impl std::default::Default for InputMethod {
     fn default() -> Self {
-        let fig_app_path = fig_util::codwhisperer_bundle().unwrap_or_else(|| "/Applications/CodeWhisperer.app".into());
+        let fig_app_path = fig_util::codewhisperer_bundle();
         let bundle_path = fig_app_path.join("Contents/Helpers/CodeWhispererInputMethod.app");
         Self { bundle_path }
     }
@@ -481,13 +479,10 @@ impl Integration for InputMethod {
         // Can we load input source?
 
         // todo: pull this into a function in fig_directories
-        let cw_cli_path = match fig_util::codwhisperer_bundle() {
-            Some(bundle) => bundle
-                .join("Contents")
-                .join("MacOS")
-                .join(CODEWHISPERER_CLI_BINARY_NAME),
-            None => return Err(InputMethodError::HelperExecutableNotFound.into()),
-        };
+        let cw_cli_path = fig_util::codewhisperer_bundle()
+            .join("Contents")
+            .join("MacOS")
+            .join(CODEWHISPERER_CLI_BINARY_NAME);
 
         let out = tokio::process::Command::new(cw_cli_path)
             .args(["_", "attempt-to-finish-input-method-installation"])
@@ -546,13 +541,10 @@ impl Integration for InputMethod {
         }
 
         // todo: pull this into a function in fig_directories
-        let cw_cli_path = match fig_util::codwhisperer_bundle() {
-            Some(bundle) => bundle
-                .join("Contents")
-                .join("MacOS")
-                .join(CODEWHISPERER_CLI_BINARY_NAME),
-            None => return Err(InputMethodError::HelperExecutableNotFound.into()),
-        };
+        let cw_cli_path = fig_util::codewhisperer_bundle()
+            .join("Contents")
+            .join("MacOS")
+            .join(CODEWHISPERER_CLI_BINARY_NAME);
 
         loop {
             let out = tokio::process::Command::new(&cw_cli_path)

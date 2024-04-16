@@ -258,7 +258,6 @@ class GpgSigner:
             env=self.gpg_env(),
         )
         run_cmd(["gpg", "--list-keys"], env=self.gpg_env())
-        run_cmd(["gpg", "--list-secret-keys"], env=self.gpg_env())
 
     def gpg_env(self) -> Env:
         return {**os.environ, "GNUPGHOME": self.gpg_home}

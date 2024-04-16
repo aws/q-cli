@@ -227,7 +227,7 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
     fs::create_dir_all(&local_bin).ok();
 
     if let Some(cwterm_path) = get_bundle_path_for_executable(CWTERM_BINARY_NAME) {
-        let link = local_bin.join("cwterm");
+        let link = local_bin.join(CWTERM_BINARY_NAME);
         symlink(&cwterm_path, link).ok();
 
         for shell in Shell::all() {

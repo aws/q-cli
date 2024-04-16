@@ -1,4 +1,3 @@
-use std::borrow::BorrowMut;
 use std::ffi::{
     CStr,
     CString,
@@ -14,16 +13,16 @@ use std::path::{
     PathBuf,
 };
 use std::process::exit;
-use std::time::Duration;
 
 use fig_util::consts::{
     CODEWHISPERER_BUNDLE_ID,
     CODEWHISPERER_CLI_BINARY_NAME,
 };
-use fig_util::directories;
-use hex::encode;
+use fig_util::{
+    directories,
+    CODEWHISPERER_BUNDLE_NAME,
+};
 use regex::Regex;
-use reqwest::IntoUrl;
 use tokio::io::{
     AsyncReadExt,
     AsyncWriteExt,
@@ -35,6 +34,7 @@ use tracing::{
     warn,
 };
 
+use crate::download::download_file;
 use crate::index::UpdatePackage;
 use crate::{
     Error,
@@ -50,17 +50,17 @@ pub(crate) async fn update(
     debug!("starting update");
 
     // Get all of the paths up front so we can get an error early if something is wrong
+    let temp_dir = tempfile::Builder::new()
+        .prefix(&format!("{CODEWHISPERER_CLI_BINARY_NAME}-download"))
+        .tempdir()?;
 
-    let fig_app_path = fig_util::codwhisperer_bundle()
-        .ok_or_else(|| Error::UpdateFailed("binary invoked does not reside in a valid app bundle.".into()))?;
+    let dmg_name = update
+        .download_url
+        .path_segments()
+        .and_then(|s| s.last())
+        .unwrap_or(CODEWHISPERER_BUNDLE_NAME);
 
-    let temp_dir = tempfile::Builder::new().prefix("fig-download").tempdir()?;
-
-    let dmg_path = temp_dir.path().join("Fig.dmg");
-    let temp_bundle_path = temp_dir.path().join("CodeWhisperer.app");
-
-    let fig_app_cstr = CString::new(fig_app_path.as_os_str().as_bytes())?;
-    let temp_bundle_cstr = CString::new(temp_bundle_path.as_os_str().as_bytes())?;
+    let dmg_path = temp_dir.path().join(dmg_name);
 
     // Set the permissions to 700 so that only the user can read and write
     let permissions = std::fs::Permissions::from_mode(0o700);
@@ -68,8 +68,7 @@ pub(crate) async fn update(
 
     debug!(?dmg_path, "downloading dmg");
 
-    let real_digest = download_dmg(update.download, &dmg_path, update.size, tx.clone()).await?;
-    let real_hash = encode(real_digest);
+    let real_hash = download_file(update.download_url, &dmg_path, update.size, Some(tx.clone())).await?;
 
     // validate the dmg hash
     let expected_hash = update.sha256;
@@ -109,9 +108,39 @@ pub(crate) async fn update(
             .as_str(),
     );
 
+    // find `.app` file in the dmg
+    let app_entries = std::fs::read_dir(&mount_point)?
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| {
+            let entry_path = entry.path();
+            entry_path.is_dir() && entry_path.ends_with(".app")
+        })
+        .collect::<Vec<_>>();
+
+    if app_entries.is_empty() {
+        return Err(Error::UpdateFailed("the update dmg is missing a .app directory".into()));
+    }
+    if app_entries.len() > 1 {
+        return Err(Error::UpdateFailed(
+            "the update dmg has more than one .app directory".into(),
+        ));
+    }
+
+    let mount_app_path = app_entries[0].path();
+
+    let app_name = match mount_app_path.file_name() {
+        Some(name) => Path::new(name),
+        None => {
+            return Err(Error::UpdateFailed("the update dmg is missing a .app directory".into()));
+        },
+    };
+
+    let temp_app_path = temp_dir.path().join(app_name);
+    let temp_app_path_cstr = CString::new(temp_app_path.as_os_str().as_bytes())?;
+
     let ditto_output = tokio::process::Command::new("ditto")
-        .arg(mount_point.join("CodeWhisperer.app"))
-        .arg(&temp_bundle_path)
+        .arg(&mount_app_path)
+        .arg(&temp_app_path)
         .output()
         .await?;
 
@@ -123,7 +152,8 @@ pub(crate) async fn update(
 
     tx.send(UpdateStatus::Message("Installing update...".into())).await.ok();
 
-    let cli_path = fig_app_path
+    // This points at the currently installed CLI
+    let cli_path = fig_util::codewhisperer_bundle()
         .join("Contents")
         .join("MacOS")
         .join(CODEWHISPERER_CLI_BINARY_NAME);
@@ -134,7 +164,18 @@ pub(crate) async fn update(
         )));
     }
 
-    match swap(&temp_bundle_cstr, &fig_app_cstr) {
+    let same_bundle_name = app_name == Path::new(CODEWHISPERER_BUNDLE_NAME);
+
+    let installed_app_path = if same_bundle_name {
+        fig_util::codewhisperer_bundle()
+    } else {
+        Path::new("/Applications").join(app_name)
+    };
+
+    let installed_app_path_cstr = CString::new(installed_app_path.as_os_str().as_bytes())?;
+
+    // Swap if same name
+    match swap(&temp_app_path_cstr, &installed_app_path_cstr) {
         Ok(()) => debug!("swapped app bundle"),
         // Try to elevate permissions if we can't swap the app bundle and in interactive mode
         Err(err) if interactive => {
@@ -159,8 +200,8 @@ pub(crate) async fn update(
                     [
                         OsStr::new("_"),
                         OsStr::new("swap-files"),
-                        temp_bundle_path.as_os_str(),
-                        fig_app_path.as_os_str(),
+                        temp_app_path.as_os_str(),
+                        installed_app_path.as_os_str(),
                     ],
                     security_framework::authorization::Flags::DEFAULTS,
                 )?;
@@ -196,19 +237,26 @@ pub(crate) async fn update(
         debug!("unmounted dmg");
     }
 
-    if !cli_path.exists() {
+    // This points at the newly installed CLI via the cli symlink
+    let new_cli_path = installed_app_path.join("Contents").join("MacOS").join("cli");
+    if !new_cli_path.exists() {
         return Err(Error::UpdateFailed(format!(
             "the update succeeded, but the cli did not have the expected name or was missing, expected {CODEWHISPERER_CLI_BINARY_NAME}"
         )));
     }
 
-    debug!(?cli_path, "using cli at path");
+    debug!(?new_cli_path, "using cli at path");
 
     tx.send(UpdateStatus::Message("Relaunching...".into())).await.ok();
 
     debug!("restarting CodeWhisperer");
-    let mut cmd = std::process::Command::new(&cli_path);
+    let mut cmd = std::process::Command::new(&new_cli_path);
     cmd.process_group(0).args(["_", "finish-update"]);
+
+    // If the bundle name changed, delete the old bundle
+    if !same_bundle_name {
+        cmd.arg("--delete-bundle").arg(fig_util::codewhisperer_bundle());
+    }
 
     if relaunch_dashboard {
         cmd.arg("--relaunch-dashboard");
@@ -292,11 +340,11 @@ pub(crate) async fn uninstall_desktop() -> Result<(), Error> {
         }
     }
 
-    let app_path = PathBuf::from("/Applications/CodeWhisperer.app");
+    let app_path = fig_util::codewhisperer_bundle();
     if app_path.exists() {
         tokio::fs::remove_dir_all(&app_path)
             .await
-            .map_err(|err| warn!("Failed to remove CodeWhisperer.app: {err}"))
+            .map_err(|err| warn!("Failed to remove {app_path:?}: {err}"))
             .ok();
     }
 
@@ -403,46 +451,6 @@ pub async fn uninstall_terminal_integrations() {
     }
 }
 
-async fn download_dmg(
-    src: impl IntoUrl,
-    dst: impl AsRef<Path>,
-    size: u64,
-    tx: Sender<UpdateStatus>,
-) -> Result<ring::digest::Digest, Error> {
-    let client = fig_request::client().expect("fig_request client must be instantiated on first request");
-    let mut response = client.get(src).timeout(Duration::from_secs(30 * 60)).send().await?;
-
-    let mut bytes_downloaded = 0;
-    let mut file = tokio::fs::File::create(&dst).await?;
-    let mut ctx = ring::digest::Context::new(&ring::digest::SHA256);
-
-    while let Some(mut bytes) = response.chunk().await? {
-        bytes_downloaded += bytes.len() as u64;
-
-        ctx.update(&bytes);
-
-        tx.send(UpdateStatus::Percent(bytes_downloaded as f32 / size as f32 * 100.0))
-            .await
-            .ok();
-
-        tx.send(UpdateStatus::Message(format!(
-            "Downloading ({:.2}/{:.2} MB)",
-            bytes_downloaded as f32 / 1_000_000.0,
-            size as f32 / 1_000_000.0
-        )))
-        .await
-        .ok();
-
-        file.write_all_buf(bytes.borrow_mut()).await?;
-    }
-
-    tx.send(UpdateStatus::Percent(100.0)).await.ok();
-
-    let digest = ctx.finish();
-
-    Ok(digest)
-}
-
 pub fn swap(src: impl AsRef<CStr>, dst: impl AsRef<CStr>) -> Result<(), Error> {
     // We want to swap the app bundles, like sparkle does
     // https://github.com/sparkle-project/Sparkle/blob/863f85b5f5398c03553f2544668b95816b2860db/Sparkle/SUFileManager.m#L235
@@ -467,6 +475,7 @@ pub fn swap(src: impl AsRef<CStr>, dst: impl AsRef<CStr>) -> Result<(), Error> {
 
 #[cfg(test)]
 mod test {
+    use fig_util::manifest::Channel;
     use tempfile::TempDir;
 
     use super::*;
@@ -474,27 +483,18 @@ mod test {
     #[ignore]
     #[tokio::test]
     async fn test_download_dmg() -> Result<(), Error> {
-        let (tx, mut rx) = tokio::sync::mpsc::channel(1);
-
-        // dump
-        tokio::spawn(async move {
-            while let Some(a) = rx.recv().await {
-                drop(a);
-            }
-        });
+        let index = crate::index::pull(&Channel::Stable).await.unwrap();
+        let version = index.latest().unwrap();
+        let dmg_pkg = version.packages.first().unwrap();
 
         let temp_dir = TempDir::new().unwrap();
         let dmg_path = temp_dir.path().join("CodeWhisperer.dmg");
-        let real_digest = download_dmg(
-            "https://desktop-release.codewhisperer.us-east-1.amazonaws.com/latest/CodeWhisperer.dmg",
-            dmg_path,
-            0,
-            tx,
-        )
-        .await
-        .unwrap();
-        let real_hash = encode(real_digest);
+        let real_hash = download_file(dmg_pkg.download.clone(), dmg_path, 0, None)
+            .await
+            .unwrap();
         println!("{real_hash}");
+
+        assert_eq!(dmg_pkg.sha256, real_hash);
         Ok(())
     }
 }

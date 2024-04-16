@@ -20,6 +20,9 @@ from signing import (
 from importlib import import_module
 
 APP_NAME = "CodeWhisperer"
+CLI_BINARY_NAME = "cw"
+PTY_BINARY_NAME = "cwterm"
+
 BUILD_DIR_RELATIVE = pathlib.Path(os.environ.get("BUILD_DIR") or "build")
 BUILD_DIR = BUILD_DIR_RELATIVE.absolute()
 
@@ -406,6 +409,9 @@ def build_desktop_app(
         info(f"Copying {package} into bundle")
         shutil.copytree(path, app_path / "Contents/Resources" / package)
 
+    # Add symlinks
+    os.symlink(f"./{CLI_BINARY_NAME}", app_path / "Contents/MacOS/cli")
+
     dmg_path = BUILD_DIR / "CodeWhisperer.dmg"
     dmg_path.unlink(missing_ok=True)
 
@@ -562,10 +568,10 @@ if __name__ == "__main__":
         run_clippy(features=cargo_features)
 
     info("Building cw_cli")
-    cw_cli_path = build_cargo_bin("cw_cli", output_name="cw", features=cargo_features)
+    cw_cli_path = build_cargo_bin("cw_cli", output_name=CLI_BINARY_NAME, features=cargo_features)
 
     info("Building figterm")
-    cwterm_path = build_cargo_bin("figterm", output_name="cwterm", features=cargo_features)
+    cwterm_path = build_cargo_bin("figterm", output_name=PTY_BINARY_NAME, features=cargo_features)
 
     if isDarwin():
         info("Building CodeWhisperer.dmg")

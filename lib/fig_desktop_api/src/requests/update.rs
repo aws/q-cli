@@ -27,7 +27,7 @@ pub async fn check_for_updates(_request: CheckForUpdatesRequest) -> RequestResul
             Box::new(ServerOriginatedSubMessage::CheckForUpdatesResponse(
                 CheckForUpdatesResponse {
                     is_update_available: Some(res.is_some()),
-                    version: res.map(|update| update.version),
+                    version: res.map(|update| update.version.to_string()),
                 },
             ))
         })

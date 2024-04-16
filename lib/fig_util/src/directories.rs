@@ -289,7 +289,7 @@ pub fn resources_path() -> Result<PathBuf> {
         if #[cfg(all(unix, not(target_os = "macos")))] {
             Ok(std::path::Path::new("/usr/share/fig").into())
         } else if #[cfg(target_os = "macos")] {
-            Ok(std::path::Path::new("/Applications/CodeWhisperer.app/Contents/Resources").into())
+            Ok(crate::codewhisperer_bundle().join("Contents/Resources"))
         }
     }
 }

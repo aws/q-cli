@@ -266,6 +266,8 @@ pub enum InternalSubcommand {
     FinishUpdate {
         #[arg(long)]
         relaunch_dashboard: bool,
+        #[arg(long)]
+        delete_bundle: Option<String>,
     },
     #[cfg(target_os = "macos")]
     SwapFiles {
@@ -686,13 +688,28 @@ impl InternalSubcommand {
 
                 println!("{}", state.json);
             },
-            InternalSubcommand::FinishUpdate { relaunch_dashboard } => {
+            InternalSubcommand::FinishUpdate {
+                relaunch_dashboard,
+                delete_bundle,
+            } => {
                 // Wait some time for the previous installation to close
                 tokio::time::sleep(Duration::from_millis(100)).await;
 
                 crate::util::quit_fig(false).await.ok();
 
                 tokio::time::sleep(Duration::from_millis(200)).await;
+
+                if let Some(bundle_path) = delete_bundle {
+                    let path = std::path::Path::new(&bundle_path);
+                    if path.exists() {
+                        tokio::fs::remove_dir_all(&path)
+                            .await
+                            .map_err(|err| tracing::warn!("Failed to remove {path:?}: {err}"))
+                            .ok();
+                    }
+
+                    tokio::time::sleep(Duration::from_millis(200)).await;
+                }
 
                 launch_fig_desktop(LaunchArgs {
                     wait_for_socket: false,

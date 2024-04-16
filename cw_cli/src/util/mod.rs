@@ -205,8 +205,10 @@ pub fn get_fig_version() -> Result<String> {
         if #[cfg(target_os = "macos")] {
             use eyre::ContextCompat;
             use regex::Regex;
+            use fig_util::codewhisperer_bundle;
 
-            let plist = std::fs::read_to_string("/Applications/CodeWhisperer.app/Contents/Info.plist")?;
+
+            let plist = std::fs::read_to_string(codewhisperer_bundle().join("Contents/Info.plist"))?;
 
             let get_plist_field = |field: &str| -> Result<String> {
                 let regex =

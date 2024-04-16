@@ -84,19 +84,25 @@ pub fn current_exe_origin() -> Result<PathBuf, Error> {
 
 #[must_use]
 #[cfg(target_os = "macos")]
-pub fn codwhisperer_bundle() -> Option<PathBuf> {
+fn codewhisperer_bundle_opt() -> Option<PathBuf> {
     let current_exe = current_exe_origin().ok()?;
 
     // Verify we have .../Bundle.app/Contents/MacOS/binary-name
     let mut parts: PathBuf = current_exe.components().rev().skip(1).take(3).collect();
     parts = parts.iter().rev().collect();
 
-    if parts != PathBuf::from("CodeWhisperer.app/Contents/MacOS") {
+    if parts != PathBuf::from(CODEWHISPERER_BUNDLE_NAME).join("Contents/MacOS") {
         return None;
     }
 
     // .../Bundle.app/Contents/MacOS/binary-name -> .../Bundle.app
     current_exe.ancestors().nth(3).map(|s| s.into())
+}
+
+#[must_use]
+#[cfg(target_os = "macos")]
+pub fn codewhisperer_bundle() -> PathBuf {
+    codewhisperer_bundle_opt().unwrap_or_else(|| Path::new("/Applications").join(CODEWHISPERER_BUNDLE_NAME))
 }
 
 pub fn partitioned_compare(lhs: &str, rhs: &str, by: char) -> Ordering {

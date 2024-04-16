@@ -32,6 +32,8 @@ use fig_util::desktop::LaunchArgs;
 use fig_util::{
     directories,
     Shell,
+    CODEWHISPERER_BUNDLE_NAME,
+    CWTERM_BINARY_NAME,
 };
 use owo_colors::OwoColorize;
 use serde_json::json;
@@ -171,6 +173,7 @@ pub enum DebugSubcommand {
     /// Sample CodeWhisperer process
     Sample,
     /// Debug CodeWhisperer codesign verification
+    #[cfg(target_os = "macos")]
     VerifyCodesign,
     /// Accessibility
     Accessibility {
@@ -191,7 +194,7 @@ pub enum DebugSubcommand {
         #[arg(short, long)]
         channel: String,
         #[arg(short, long)]
-        kind: String,
+        os: String,
         #[arg(short, long)]
         variant: String,
         #[arg(short = 'e', long)]
@@ -247,7 +250,7 @@ impl DebugSubcommand {
                     None => "".into(),
                 };
 
-                println!("Running the CodeWhisperer.app executable directly from {fig_path}.");
+                println!("Running the {CODEWHISPERER_BUNDLE_NAME} executable directly from {fig_path}.");
                 println!("You will need to grant accessibility permissions to the current terminal{terminal_text}!");
 
                 Command::new(format!("{fig_path}/Contents/MacOS/cw")).spawn()?.wait()?;
@@ -324,12 +327,12 @@ impl DebugSubcommand {
                     let mut files = files.as_ref().clone();
                     let mut paths = Vec::new();
 
-                    if files.iter().any(|f| f == "cwterm") {
+                    if files.iter().any(|f| f == CWTERM_BINARY_NAME) {
                         // Remove figterm from the list of files to open
-                        files.retain(|f| f != "cwterm");
+                        files.retain(|f| f != CWTERM_BINARY_NAME);
 
                         // Add figterm*.log to the list of files to open
-                        let pattern = logs_dir.join("cwterm*.log");
+                        let pattern = logs_dir.join(format!("{CWTERM_BINARY_NAME}*.log"));
                         let globset = glob([pattern.to_str().unwrap()])?;
                         let cwterm_logs = glob_dir(&globset, &logs_dir)?;
                         paths.extend(cwterm_logs);
@@ -485,9 +488,11 @@ impl DebugSubcommand {
                 println!("Please send this file to the CodeWhisperer Team");
                 println!("Or attach it to a Github issue (run '{}')", "fig issue".magenta());
             },
+            #[cfg(target_os = "macos")]
             DebugSubcommand::VerifyCodesign => {
                 Command::new("codesign")
-                    .args(["-vvvv", "/Applications/CodeWhisperer.app"])
+                    .arg("-vvvv")
+                    .arg(fig_util::codewhisperer_bundle())
                     .spawn()?
                     .wait()?;
             },
@@ -698,7 +703,7 @@ impl DebugSubcommand {
             },
             DebugSubcommand::QueryIndex {
                 channel,
-                kind,
+                os,
                 variant,
                 version: current_version,
                 architecture,
@@ -708,13 +713,13 @@ impl DebugSubcommand {
                 use fig_install::index::PackageArchitecture;
                 use fig_util::manifest::{
                     Channel,
-                    Kind,
+                    Os,
                     Variant,
                 };
 
                 let result = fig_install::index::query_index(
                     Channel::from_str(channel)?,
-                    Kind::from_str(kind)?,
+                    Os::from_str(os)?,
                     Variant::from_str(variant)?,
                     current_version,
                     PackageArchitecture::from_str(architecture)?,
@@ -767,7 +772,7 @@ impl DebugSubcommand {
 
                 let tmp_dir = TempDir::new()?;
 
-                let mut command = Command::new("cwterm");
+                let mut command = Command::new(CWTERM_BINARY_NAME);
                 command.env("CW_IN_TEST", "1").arg("--");
 
                 match Shell::current_shell() {
