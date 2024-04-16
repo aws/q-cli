@@ -1,16 +1,8 @@
-use muda::{
-    Menu,
-    MenuEvent,
-};
+use fig_util::consts::PRODUCT_NAME;
+use muda::{Menu, MenuEvent};
 
-use crate::event::{
-    Event,
-    WindowEvent,
-};
-use crate::{
-    EventLoopProxy,
-    DASHBOARD_ID,
-};
+use crate::event::{Event, WindowEvent};
+use crate::{EventLoopProxy, DASHBOARD_ID};
 
 const DASHBOARD_QUIT: &str = "dashboard-quit";
 const DASHBOARD_RELOAD: &str = "dashboard-reload";
@@ -19,15 +11,11 @@ const DASHBOARD_FORWARD: &str = "dashboard-forward";
 
 #[cfg(target_os = "macos")]
 pub fn menu_bar() -> Menu {
-    use muda::{
-        MenuItemBuilder,
-        PredefinedMenuItem,
-        Submenu,
-    };
+    use muda::{MenuItemBuilder, PredefinedMenuItem, Submenu};
 
     let menu_bar = Menu::new();
 
-    let app_submenu = Submenu::new("CodeWhisperer", true);
+    let app_submenu = Submenu::new(PRODUCT_NAME, true);
     app_submenu
         .append_items(&[
             &MenuItemBuilder::new()
@@ -59,7 +47,7 @@ pub fn menu_bar() -> Menu {
                 .unwrap()
                 .build(),
             &MenuItemBuilder::new()
-                .text("Quit CodeWhisperer (UI)")
+                .text(format!("Quit {PRODUCT_NAME} (UI)"))
                 .id(DASHBOARD_QUIT.into())
                 .enabled(true)
                 .acccelerator(Some("super+q"))
@@ -110,7 +98,7 @@ pub fn menu_bar() -> MenuBar {
     app_submenu.add_native_item(MenuItem::CloseWindow);
     app_submenu.add_native_item(MenuItem::Quit);
 
-    menu_bar.add_submenu("CodeWhisperer", true, app_submenu);
+    menu_bar.add_submenu(PRODUCT_NAME, true, app_submenu);
 
     let mut edit_submenu = MenuBar::new();
 

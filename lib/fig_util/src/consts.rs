@@ -10,3 +10,6 @@ pub const CLI_BINARY_NAME: &str = "cw";
 pub const PTY_BINARY_NAME: &str = "cwterm";
 
 pub const URL_SCHEMA: &str = "codewhisperer";
+
+pub const PRODUCT_NAME: &str = "CodeWhisperer";
+pub const PRODUCT_NAME_SHORT: &str = "CW";

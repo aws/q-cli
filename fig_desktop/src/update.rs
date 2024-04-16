@@ -4,6 +4,7 @@ pub async fn check_for_update(show_webview: bool, relaunch_dashboard: bool) -> b
         UpdateOptions,
         UpdateStatus,
     };
+    use fig_util::consts::PRODUCT_NAME;
     use tao::dpi::LogicalSize;
     use tao::event_loop::EventLoopBuilder;
     use tao::platform::macos::WindowBuilderExtMacOS;
@@ -31,7 +32,7 @@ pub async fn check_for_update(show_webview: bool, relaunch_dashboard: bool) -> b
 
             let event_loop: EventLoop<UpdateStatus> = EventLoopBuilder::with_user_event().build();
             let window = WindowBuilder::new()
-                .with_title("CodeWhisperer")
+                .with_title(PRODUCT_NAME)
                 .with_inner_size(LogicalSize::new(350, 350))
                 .with_resizable(false)
                 .with_titlebar_hidden(true)

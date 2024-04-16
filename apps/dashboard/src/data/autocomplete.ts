@@ -1,3 +1,5 @@
+import { PRODUCT_NAME } from "@/lib/constants";
+
 const autocompleteSettings = [
   {
     title: 'General',
@@ -16,7 +18,7 @@ const autocompleteSettings = [
       //   id: "autocomplete.disable",
       //   title: "Enable Autocomplete",
       //   description:
-      //     "CodeWhisperer will provide a list of subcommands and options for you to choose from.",
+      //     `${PRODUCT_NAME} will provide a list of subcommands and options for you to choose from.`,
       //   type: "boolean",
       //   default: false,
       //   inverted: true,
@@ -79,7 +81,7 @@ const autocompleteSettings = [
         id: "autocomplete.disableForCommands",
         title: "Disable CLIs",
         description:
-          "A comma separated list of CLI tools that CodeWhisperer should not autocomplete on.",
+          `A comma separated list of CLI tools that ${PRODUCT_NAME} should not autocomplete on.`,
         example: "e.g. `git,npm,cd,docker`",
         type: "textlist",
         default: [],
@@ -88,7 +90,7 @@ const autocompleteSettings = [
       {
         id: "autocomplete.sortMethod",
         title: "Sort suggestions",
-        description: "Specifies how CodeWhisperer should sort suggestions.",
+        description: `Specifies how ${PRODUCT_NAME} should sort suggestions.`,
         type: "select",
         default: "most recent",
         options: ["most recent", "alphabetical"],
@@ -225,7 +227,7 @@ const autocompleteSettings = [
       {
         id: "autocomplete.devCompletionsFolder",
         title: "Specs folder",
-        description: "When Developer Mode is enabled, CodeWhisperer loads completion specs from the specified directory.",
+        description: `When Developer Mode is enabled, ${PRODUCT_NAME} loads completion specs from the specified directory.`,
         type: "text",
         default: null,
         popular: false

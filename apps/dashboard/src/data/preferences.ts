@@ -1,3 +1,5 @@
+import { PRODUCT_NAME } from "@/lib/constants";
+
 const generalPreferences = [
   {
     title: "Startup",
@@ -6,7 +8,7 @@ const generalPreferences = [
         id: "app.launchOnStartup",
         title: "Launch on Start",
         description:
-          "Start CodeWhisperer automatically whenever you restart your computer.",
+          `Start ${PRODUCT_NAME} automatically whenever you restart your computer.`,
         type: "boolean",
         default: true,
         popular: false,
@@ -15,7 +17,7 @@ const generalPreferences = [
       //   id: "app.preferredTerminal",
       //   title: "Preferred Terminal",
       //   description:
-      //     "Choose your preferred terminal for CodeWhisperer to launch commands in.",
+      //     `Choose your preferred terminal for ${PRODUCT_NAME} to launch commands in.`,
       //   type: "select",
       //   options: [
       //     "VS Code",
@@ -51,7 +53,7 @@ const generalPreferences = [
         id: "app.hideMenubarIcon",
         title: "Display Menu Bar icon",
         description:
-          "CodeWhisperer icon will appear in the Menu Bar while CodeWhisperer is running.",
+          `${PRODUCT_NAME} icon will appear in the Menu Bar while ${PRODUCT_NAME} is running.`,
         type: "boolean",
         default: false,
         inverted: true,
@@ -83,7 +85,7 @@ const generalPreferences = [
         id: "telemetry.enabled",
         title: "Telemetry",
         description:
-          "Enable CodeWhisperer for command line to send usage data to AWS",
+          `Enable ${PRODUCT_NAME} for command line to send usage data to AWS`,
         example:
           "Learn more at https://docs.aws.amazon.com/codewhisperer/latest/userguide/sharing-data.html",
         type: "boolean",
@@ -92,9 +94,9 @@ const generalPreferences = [
       },
       {
         id: "codeWhisperer.shareCodeWhispererContentWithAWS",
-        title: "Share CodeWhisperer content with AWS",
+        title: `Share ${PRODUCT_NAME} content with AWS`,
         description:
-          "When checked, your content processed by CodeWhisperer may be used for service improvement (except for content processed by the Professional CodeWhisperer service tier). Unchecking this box will cause AWS to delete any of your content used for that purpose. The information used to provide the CodeWhisperer service to you will not be affected.",
+          `When checked, your content processed by ${PRODUCT_NAME} may be used for service improvement (except for content processed by the Professional ${PRODUCT_NAME} service tier). Unchecking this box will cause AWS to delete any of your content used for that purpose. The information used to provide the ${PRODUCT_NAME} service to you will not be affected.`,
         example:
           "Learn more at https://docs.aws.amazon.com/codewhisperer/latest/userguide/sharing-data.html",
         type: "boolean",

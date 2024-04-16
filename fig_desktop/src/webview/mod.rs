@@ -23,6 +23,7 @@ use fig_util::{
     directories,
     URL_SCHEMA,
 };
+use fig_util::consts::PRODUCT_NAME;
 use fnv::FnvBuildHasher;
 use muda::MenuEvent;
 use once_cell::sync::Lazy;
@@ -631,7 +632,7 @@ pub fn build_dashboard(
     }: DashboardOptions,
 ) -> anyhow::Result<(Window, WebView)> {
     let window = WindowBuilder::new()
-        .with_title("CodeWhisperer")
+        .with_title(PRODUCT_NAME)
         .with_inner_size(DASHBOARD_SIZE)
         .with_min_inner_size(DASHBOARD_MINIMUM_SIZE)
         .with_resizable(true)

@@ -20,41 +20,21 @@ use std::process::exit;
 use clap::Parser;
 use event::Event;
 use fig_log::Logger;
-use fig_util::consts::APP_PROCESS_NAME;
+use fig_util::consts::{APP_PROCESS_NAME, PRODUCT_NAME};
 use fig_util::URL_SCHEMA;
 use parking_lot::RwLock;
 use platform::PlatformState;
-use sysinfo::{
-    get_current_pid,
-    ProcessRefreshKind,
-    RefreshKind,
-    System,
-};
+use sysinfo::{get_current_pid, ProcessRefreshKind, RefreshKind, System};
 use tao::event_loop::{
-    EventLoop as WryEventLoop,
-    EventLoopProxy as WryEventLoopProxy,
-    EventLoopWindowTarget as WryEventLoopWindowTarget,
+    EventLoop as WryEventLoop, EventLoopProxy as WryEventLoopProxy, EventLoopWindowTarget as WryEventLoopWindowTarget,
 };
-use tracing::{
-    error,
-    warn,
-};
+use tracing::{error, warn};
 use url::Url;
 use webview::notification::WebviewNotificationsState;
 use webview::{
-    autocomplete,
-    build_autocomplete,
-    build_dashboard,
-    dashboard,
-    AutocompleteOptions,
-    DashboardOptions,
-    WebviewManager,
+    autocomplete, build_autocomplete, build_dashboard, dashboard, AutocompleteOptions, DashboardOptions, WebviewManager,
 };
-pub use webview::{
-    AUTOCOMPLETE_ID,
-    AUTOCOMPLETE_WINDOW_TITLE,
-    DASHBOARD_ID,
-};
+pub use webview::{AUTOCOMPLETE_ID, AUTOCOMPLETE_WINDOW_TITLE, DASHBOARD_ID};
 
 // #[global_allocator]
 // static GLOBAL: Jemalloc = Jemalloc;
@@ -165,14 +145,14 @@ async fn main() {
                                     extra.push(format!("gid={}", *group_id));
                                 }
 
-                                eprintln!("CodeWhisperer is already running: {exe} ({})", extra.join(" "),);
+                                eprintln!("{PRODUCT_NAME} is already running: {exe} ({})", extra.join(" "),);
                                 match &page {
                                     Some(page) => {
                                         eprintln!("Opening /{page}...");
                                         Some(page)
                                     },
                                     None => {
-                                        eprintln!("Opening CodeWhisperer Window...");
+                                        eprintln!("Opening {PRODUCT_NAME} Window...");
                                         None
                                     },
                                 };
@@ -211,7 +191,7 @@ async fn main() {
                 rfd::MessageDialog::new()
                     .set_title("Error")
                     .set_description(
-                        "Cannot execute CodeWhisperer from within a readonly volume. Please move CodeWhisperer to your applications folder and try again.",
+                        format!("Cannot execute {PRODUCT_NAME} from within a readonly volume. Please move {PRODUCT_NAME} to your applications folder and try again.")
                     )
                     .show();
 

@@ -1,5 +1,6 @@
 import { InstallCheckWithInstallKey } from "@/types/preferences";
 import accessibility_fig from "@assets/images/accessibility_fig.png?url"
+import { PRODUCT_NAME } from "@/lib/constants";
 
 const installChecks: InstallCheckWithInstallKey[] = [
   {
@@ -7,7 +8,7 @@ const installChecks: InstallCheckWithInstallKey[] = [
     installKey: "dotfiles",
     title: "Shell integrations",
     description: [
-      "Integrate CodeWhisperer with your local shell so we can run the necessary hooks.",
+      `Integrate ${PRODUCT_NAME} with your local shell so we can run the necessary hooks.`,
     ],
     action: "Install",
     explainer: {
@@ -16,7 +17,7 @@ const installChecks: InstallCheckWithInstallKey[] = [
         [
           {
             content:
-              "CodeWhisperer will add one line to the top and bottom of the following files (if they exist):",
+              `${PRODUCT_NAME} will add one line to the top and bottom of the following files (if they exist):`,
             tag: "span",
           },
           {
@@ -52,7 +53,7 @@ const installChecks: InstallCheckWithInstallKey[] = [
         ],
         [
           {
-            content: "Uninstalling CodeWhisperer will remove these lines.",
+            content: `Uninstalling ${PRODUCT_NAME} will remove these lines.`,
             tag: "span",
           },
         ],
@@ -64,8 +65,8 @@ const installChecks: InstallCheckWithInstallKey[] = [
     installKey: "accessibility",
     title: "Enable accessibility",
     description: [
-      "Grant accessibility permissions so CodeWhisperer can position the completion window and insert text on your behalf.",
-      "If enabling it isn't working, try toggling it off and on again or restarting CodeWhisperer.",
+      `Grant accessibility permissions so ${PRODUCT_NAME} can position the completion window and insert text on your behalf.`,
+      `If enabling it isn't working, try toggling it off and on again or restarting ${PRODUCT_NAME}.`,
     ],
     image: accessibility_fig,
     action: "Enable",
@@ -75,7 +76,7 @@ const installChecks: InstallCheckWithInstallKey[] = [
   //   installKey: "inputMethod",
   //   title: "Input methods",
   //   description:
-  //     ["Integrate CodeWhisperer with your local shell so we can run the necessary hooks."],
+  //     [`Integrate ${PRODUCT_NAME} with your local shell so we can run the necessary hooks.`],
   //   image: '/asdf',
   //     action: "Enable",
   // },

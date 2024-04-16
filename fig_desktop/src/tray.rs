@@ -1,44 +1,18 @@
 use std::borrow::Cow;
 
 use cfg_if::cfg_if;
-use fig_install::{
-    InstallComponents,
-    UpdateOptions,
-};
+use fig_install::{InstallComponents, UpdateOptions};
 use fig_remote_ipc::figterm::FigtermState;
+use fig_util::consts::{PRODUCT_NAME, PRODUCT_NAME_SHORT};
 use fig_util::manifest::Channel;
-use muda::{
-    Menu,
-    MenuEvent,
-    MenuId,
-    MenuItem,
-    MenuItemBuilder,
-    PredefinedMenuItem,
-    Submenu,
-};
+use muda::{Menu, MenuEvent, MenuId, MenuItem, MenuItemBuilder, PredefinedMenuItem, Submenu};
 use tao::event_loop::ControlFlow;
-use tracing::{
-    error,
-    trace,
-};
-use tray_icon::{
-    Icon,
-    TrayIcon,
-    TrayIconBuilder,
-};
+use tracing::{error, trace};
+use tray_icon::{Icon, TrayIcon, TrayIconBuilder};
 
-use crate::event::{
-    Event,
-    WindowEvent,
-};
+use crate::event::{Event, WindowEvent};
 use crate::webview::LOGIN_PATH;
-use crate::{
-    DebugState,
-    EventLoopProxy,
-    EventLoopWindowTarget,
-    AUTOCOMPLETE_ID,
-    DASHBOARD_ID,
-};
+use crate::{DebugState, EventLoopProxy, EventLoopWindowTarget, AUTOCOMPLETE_ID, DASHBOARD_ID};
 
 // macro_rules! icon {
 //     ($icon:literal) => {{
@@ -66,8 +40,8 @@ fn tray_update(proxy: &EventLoopProxy) {
             Some(Box::new(move |_| {
                 proxy_a
                     .send_event(Event::ShowMessageNotification {
-                        title: "CodeWhisperer is updating in the background".into(),
-                        body: "You can continue to use CodeWhisperer while it updates".into(),
+                        title: format!("{PRODUCT_NAME} is updating in the background").into(),
+                        body: format!("You can continue to use {PRODUCT_NAME} while it updates").into(),
                         parent: None,
                     })
                     .unwrap();
@@ -85,7 +59,7 @@ fn tray_update(proxy: &EventLoopProxy) {
                 // Didn't update, show a notification
                 proxy_b
                     .send_event(Event::ShowMessageNotification {
-                        title: "CodeWhisperer is already up to date".into(),
+                        title: format!("{PRODUCT_NAME} is already up to date").into(),
                         body: concat!("Version ", env!("CARGO_PKG_VERSION")).into(),
                         parent: None,
                     })
@@ -95,7 +69,7 @@ fn tray_update(proxy: &EventLoopProxy) {
                 // Error updating, show a notification
                 proxy_b
                     .send_event(Event::ShowMessageNotification {
-                        title: "Error Updating CodeWhisperer".into(),
+                        title: format!("Error Updating {PRODUCT_NAME}").into(),
                         body: err.to_string().into(),
                         parent: None,
                     })
@@ -410,11 +384,11 @@ fn menu() -> Vec<MenuElement> {
     // let logged_in = fig_request::auth::is_logged_in();
     let logged_in = true;
 
-    let not_working = MenuElement::entry(None, None, "CW not working?", "not-working");
+    let not_working = MenuElement::entry(None, None, format!("{PRODUCT_NAME_SHORT} not working?"), "not-working");
     let manual = MenuElement::entry(None, None, "User Guide", "user-manual");
     let version = MenuElement::Info(format!("Version: {}", env!("CARGO_PKG_VERSION")).into());
     let update = MenuElement::entry(None, None, "Check for updates...", "update");
-    let quit = MenuElement::entry(None, None, "Quit CodeWhisperer", "quit");
+    let quit = MenuElement::entry(None, None, format!("Quit {PRODUCT_NAME}"), "quit");
     // let dashboard = MenuElement::entry(None, None, "Dashboard", "dashboard");
     let settings = MenuElement::entry(None, None, "Settings", "settings");
     // let developer = MenuElement::sub_menu("Developer", vec![
@@ -425,7 +399,7 @@ fn menu() -> Vec<MenuElement> {
 
     let mut menu = if !logged_in {
         vec![
-            MenuElement::Info("CodeWhisperer hasn't been set up yet...".into()),
+            MenuElement::Info(format!("{PRODUCT_NAME} hasn't been set up yet...").into()),
             MenuElement::entry(None, None, "Get Started", "/"),
             MenuElement::Separator,
             manual,
@@ -457,7 +431,7 @@ fn menu() -> Vec<MenuElement> {
 
         // if accessibility_not_installed || shell_not_installed {
         //     menu.extend([
-        //         MenuElement::Info("CodeWhisperer hasn't been configured correctly".into()),
+        //         MenuElement::Info(format!("{PRODUCT_NAME} hasn't been configured correctly").into()),
         //         MenuElement::entry(None, None, "Fix Configuration Issues", "/help"),
         //         MenuElement::Separator,
         //     ]);
