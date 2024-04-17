@@ -18,6 +18,3 @@ app:
     Contents/MacOS/cwterm:
       :identifier: com.amazon.cwterm
       signing_args:
-    Contents/MacOS/cli:
-      :identifier: com.amazon.cli
-      signing_args:

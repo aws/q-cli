@@ -409,8 +409,9 @@ def build_desktop_app(
         info(f"Copying {package} into bundle")
         shutil.copytree(path, app_path / "Contents/Resources" / package)
 
-    # Add symlinks
-    os.symlink(f"./{CLI_BINARY_NAME}", app_path / "Contents/MacOS/cli")
+    # Add symlinks to Contents/Resources
+    os.symlink(f"../MacOS/{CLI_BINARY_NAME}", app_path / "Contents/Resources/cli")
+    os.symlink(f"../MacOS/{PTY_BINARY_NAME}", app_path / "Contents/Resources/pty")
 
     dmg_path = BUILD_DIR / "CodeWhisperer.dmg"
     dmg_path.unlink(missing_ok=True)

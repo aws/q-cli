@@ -238,7 +238,7 @@ pub(crate) async fn update(
     }
 
     // This points at the newly installed CLI via the cli symlink
-    let new_cli_path = installed_app_path.join("Contents").join("MacOS").join("cli");
+    let new_cli_path = installed_app_path.join("Contents/Resources/cli");
     if !new_cli_path.exists() {
         return Err(Error::UpdateFailed(format!(
             "the update succeeded, but the cli did not have the expected name or was missing, expected {CLI_BINARY_NAME}"
