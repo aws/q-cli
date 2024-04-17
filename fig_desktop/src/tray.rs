@@ -1,18 +1,48 @@
 use std::borrow::Cow;
 
 use cfg_if::cfg_if;
-use fig_install::{InstallComponents, UpdateOptions};
+use fig_install::{
+    InstallComponents,
+    UpdateOptions,
+};
 use fig_remote_ipc::figterm::FigtermState;
-use fig_util::consts::{PRODUCT_NAME, PRODUCT_NAME_SHORT};
+use fig_util::consts::{
+    PRODUCT_NAME,
+    PRODUCT_NAME_SHORT,
+};
 use fig_util::manifest::Channel;
-use muda::{Menu, MenuEvent, MenuId, MenuItem, MenuItemBuilder, PredefinedMenuItem, Submenu};
+use muda::{
+    Menu,
+    MenuEvent,
+    MenuId,
+    MenuItem,
+    MenuItemBuilder,
+    PredefinedMenuItem,
+    Submenu,
+};
 use tao::event_loop::ControlFlow;
-use tracing::{error, trace};
-use tray_icon::{Icon, TrayIcon, TrayIconBuilder};
+use tracing::{
+    error,
+    trace,
+};
+use tray_icon::{
+    Icon,
+    TrayIcon,
+    TrayIconBuilder,
+};
 
-use crate::event::{Event, WindowEvent};
+use crate::event::{
+    Event,
+    WindowEvent,
+};
 use crate::webview::LOGIN_PATH;
-use crate::{DebugState, EventLoopProxy, EventLoopWindowTarget, AUTOCOMPLETE_ID, DASHBOARD_ID};
+use crate::{
+    DebugState,
+    EventLoopProxy,
+    EventLoopWindowTarget,
+    AUTOCOMPLETE_ID,
+    DASHBOARD_ID,
+};
 
 // macro_rules! icon {
 //     ($icon:literal) => {{

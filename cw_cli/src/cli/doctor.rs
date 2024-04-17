@@ -54,6 +54,7 @@ use fig_util::directories::{
     remote_socket_path,
     settings_path,
 };
+use fig_util::macos::BUNDLE_CONTENTS_INFO_PLIST_PATH;
 use fig_util::system_info::SupportLevel;
 use fig_util::{
     directories,
@@ -271,7 +272,7 @@ pub fn app_version(app: impl AsRef<OsStr>) -> Option<Version> {
     let output = Command::new("defaults")
         .args([
             "read",
-            &format!("{app_path}/Contents/Info.plist"),
+            &format!("{app_path}/{BUNDLE_CONTENTS_INFO_PLIST_PATH}"),
             "CFBundleShortVersionString",
         ])
         .output()

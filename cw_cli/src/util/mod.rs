@@ -209,9 +209,10 @@ pub fn get_fig_version() -> Result<String> {
             use eyre::ContextCompat;
             use regex::Regex;
             use fig_util::codewhisperer_bundle;
+            use fig_util::macos::BUNDLE_CONTENTS_INFO_PLIST_PATH;
 
 
-            let plist = std::fs::read_to_string(codewhisperer_bundle().join("Contents/Info.plist"))?;
+            let plist = std::fs::read_to_string(codewhisperer_bundle().join(BUNDLE_CONTENTS_INFO_PLIST_PATH))?;
 
             let get_plist_field = |field: &str| -> Result<String> {
                 let regex =

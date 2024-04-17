@@ -475,6 +475,8 @@ mod tests {
             file_type: None
         });
 
+        assert_eq!(index.versions.len(), 4);
+
         // check the 1.0.0 entry matches
         assert_eq!(index.versions[2], RemoteVersion {
             version: Version::new(1, 0, 0),

@@ -2,6 +2,7 @@ use std::env::temp_dir;
 use std::path::PathBuf;
 
 use async_trait::async_trait;
+use fig_util::macos::BUNDLE_CONTENTS_RESOURCE_PATH;
 use macos_utils::url::path_for_application;
 use tokio::process::Command;
 use tracing::error;
@@ -152,7 +153,8 @@ impl Integration for VSCodeIntegration {
         }
 
         let cli_path = bundle_path
-            .join("Contents/Resources/app/bin")
+            .join(BUNDLE_CONTENTS_RESOURCE_PATH)
+            .join("app/bin")
             .join(self.variant.cli_executable_name);
 
         let extension_path = temp_dir().join("codewhisperer-for-command-line-helper.vsix");

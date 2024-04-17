@@ -19,11 +19,11 @@ use fig_desktop_api::kv::DashKVStore;
 use fig_proto::fig::client_originated_message::Submessage;
 use fig_proto::fig::ClientOriginatedMessage;
 use fig_remote_ipc::figterm::FigtermState;
+use fig_util::consts::PRODUCT_NAME;
 use fig_util::{
     directories,
     URL_SCHEMA,
 };
-use fig_util::consts::PRODUCT_NAME;
 use fnv::FnvBuildHasher;
 use muda::MenuEvent;
 use once_cell::sync::Lazy;

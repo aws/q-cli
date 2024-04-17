@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use async_trait::async_trait;
+use fig_util::macos::BUNDLE_CONTENTS_INFO_PLIST_PATH;
 use fig_util::terminal::IntelliJVariant;
 use macos_utils::url::path_for_application;
 use serde::Deserialize;
@@ -48,7 +49,7 @@ impl IntelliJIntegration {
     fn get_jvm_properties(&self) -> Result<HashMap<String, String>> {
         let plist_path = path_for_application(self.variant.bundle_identifier())
             .ok_or_else(|| Error::ApplicationNotInstalled(self.variant.application_name().into()))?
-            .join("Contents/Info.plist");
+            .join(BUNDLE_CONTENTS_INFO_PLIST_PATH);
 
         let contents: InfoPList = plist::from_file(plist_path)
             .map_err(|err| Error::Custom(format!("Could not read plist file: {err:?}").into()))?;

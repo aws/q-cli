@@ -49,6 +49,7 @@ use core_foundation::{
 use fig_settings::state;
 use fig_util::consts::CLI_BINARY_NAME;
 use fig_util::directories::home_dir;
+use fig_util::macos::BUNDLE_CONTENTS_HELPERS_PATH;
 use fig_util::Terminal;
 use macos_utils::applications;
 use objc::runtime::Object;
@@ -261,7 +262,9 @@ impl std::fmt::Debug for TISInputSource {
 impl std::default::Default for InputMethod {
     fn default() -> Self {
         let fig_app_path = fig_util::codewhisperer_bundle();
-        let bundle_path = fig_app_path.join("Contents/Helpers/CodeWhispererInputMethod.app");
+        let bundle_path = fig_app_path
+            .join(BUNDLE_CONTENTS_HELPERS_PATH)
+            .join("CodeWhispererInputMethod.app");
         Self { bundle_path }
     }
 }

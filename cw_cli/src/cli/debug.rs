@@ -29,6 +29,7 @@ use fig_ipc::local::{
 };
 use fig_util::consts::APP_BUNDLE_ID;
 use fig_util::desktop::LaunchArgs;
+use fig_util::macos::BUNDLE_CONTENTS_MACOS_PATH;
 use fig_util::{
     directories,
     Shell,
@@ -254,9 +255,13 @@ impl DebugSubcommand {
                 println!("Running the {APP_BUNDLE_NAME} executable directly from {fig_path}.");
                 println!("You will need to grant accessibility permissions to the current terminal{terminal_text}!");
 
-                Command::new(format!("{fig_path}/Contents/MacOS/{CLI_BINARY_NAME}"))
-                    .spawn()?
-                    .wait()?;
+                Command::new(
+                    Path::new(&fig_path)
+                        .join(BUNDLE_CONTENTS_MACOS_PATH)
+                        .join(CLI_BINARY_NAME),
+                )
+                .spawn()?
+                .wait()?;
             },
             DebugSubcommand::Build { build, app } => match build {
                 Some(build) => {
