@@ -1,6 +1,7 @@
 use std::process::Command;
 
 use assert_cmd::prelude::*;
+use fig_util::CLI_BINARY_NAME;
 use predicates::prelude::*;
 
 // Integrations tests for the CLI
@@ -11,7 +12,7 @@ use predicates::prelude::*;
 
 #[test]
 fn version_flag_has_status_code_zero() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("cw_cli")?;
+    let mut cmd = Command::cargo_bin(format!("{CLI_BINARY_NAME}_cli"))?;
 
     cmd.arg("--version");
     cmd.assert()

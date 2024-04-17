@@ -24,6 +24,7 @@ use fig_remote_ipc::figterm::{
     FigtermState,
 };
 use fig_remote_ipc::RemoteHookHandler;
+use fig_util::consts::CLI_BINARY_NAME;
 use portable_pty::{
     native_pty_system,
     Child,
@@ -124,7 +125,7 @@ impl Shell {
 
         let figterm_state = Arc::new(FigtermState::new());
 
-        let cwrun_dir = tempdir.path().join("cwrun");
+        let cwrun_dir = tempdir.path().join(format!("{CLI_BINARY_NAME}run"));
         tokio::fs::create_dir_all(&cwrun_dir).await?;
         tokio::fs::set_permissions(&cwrun_dir, std::fs::Permissions::from_mode(0o700)).await?;
 

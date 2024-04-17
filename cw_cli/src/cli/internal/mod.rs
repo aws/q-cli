@@ -62,6 +62,7 @@ use fig_util::directories::figterm_socket_path;
 use fig_util::{
     directories,
     get_parent_process_exe,
+    CLI_BINARY_NAME,
 };
 use rand::distributions::{
     Alphanumeric,
@@ -480,7 +481,7 @@ impl InternalSubcommand {
                     .filter(|line| !line.is_empty())
                 {
                     if let Ok(exit_status) = tokio::process::Command::new("runuser")
-                        .args(["-u", user, "--", "cw", "_", "open-uninstall-page"])
+                        .args(["-u", user, "--", CLI_BINARY_NAME, "_", "open-uninstall-page"])
                         .status()
                         .await
                     {
@@ -489,7 +490,16 @@ impl InternalSubcommand {
                         }
                     }
                     if let Ok(exit_status) = tokio::process::Command::new("runuser")
-                        .args(["-u", user, "--", "cw", "integrations", "uninstall", "--silent", "all"])
+                        .args([
+                            "-u",
+                            user,
+                            "--",
+                            CLI_BINARY_NAME,
+                            "integrations",
+                            "uninstall",
+                            "--silent",
+                            "all",
+                        ])
                         .status()
                         .await
                     {

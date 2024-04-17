@@ -15,12 +15,12 @@ use std::path::{
 use std::process::exit;
 
 use fig_util::consts::{
-    CODEWHISPERER_BUNDLE_ID,
-    CODEWHISPERER_CLI_BINARY_NAME,
+    APP_BUNDLE_ID,
+    CLI_BINARY_NAME,
 };
 use fig_util::{
     directories,
-    CODEWHISPERER_BUNDLE_NAME,
+    APP_BUNDLE_NAME,
 };
 use regex::Regex;
 use tokio::io::{
@@ -51,14 +51,14 @@ pub(crate) async fn update(
 
     // Get all of the paths up front so we can get an error early if something is wrong
     let temp_dir = tempfile::Builder::new()
-        .prefix(&format!("{CODEWHISPERER_CLI_BINARY_NAME}-download"))
+        .prefix(&format!("{CLI_BINARY_NAME}-download"))
         .tempdir()?;
 
     let dmg_name = update
         .download_url
         .path_segments()
         .and_then(|s| s.last())
-        .unwrap_or(CODEWHISPERER_BUNDLE_NAME);
+        .unwrap_or(APP_BUNDLE_NAME);
 
     let dmg_path = temp_dir.path().join(dmg_name);
 
@@ -156,15 +156,15 @@ pub(crate) async fn update(
     let cli_path = fig_util::codewhisperer_bundle()
         .join("Contents")
         .join("MacOS")
-        .join(CODEWHISPERER_CLI_BINARY_NAME);
+        .join(CLI_BINARY_NAME);
 
     if !cli_path.exists() {
         return Err(Error::UpdateFailed(format!(
-            "the current app bundle is missing the CLI with the correct name {CODEWHISPERER_CLI_BINARY_NAME}"
+            "the current app bundle is missing the CLI with the correct name {CLI_BINARY_NAME}"
         )));
     }
 
-    let same_bundle_name = app_name == Path::new(CODEWHISPERER_BUNDLE_NAME);
+    let same_bundle_name = app_name == Path::new(APP_BUNDLE_NAME);
 
     let installed_app_path = if same_bundle_name {
         fig_util::codewhisperer_bundle()
@@ -241,7 +241,7 @@ pub(crate) async fn update(
     let new_cli_path = installed_app_path.join("Contents").join("MacOS").join("cli");
     if !new_cli_path.exists() {
         return Err(Error::UpdateFailed(format!(
-            "the update succeeded, but the cli did not have the expected name or was missing, expected {CODEWHISPERER_CLI_BINARY_NAME}"
+            "the update succeeded, but the cli did not have the expected name or was missing, expected {CLI_BINARY_NAME}"
         )));
     }
 
@@ -297,7 +297,7 @@ pub(crate) async fn uninstall_desktop() -> Result<(), Error> {
 
     // Delete Fig defaults on macOS
     tokio::process::Command::new("defaults")
-        .args(["delete", CODEWHISPERER_BUNDLE_ID])
+        .args(["delete", APP_BUNDLE_ID])
         .output()
         .await
         .map_err(|err| warn!("Failed to delete defaults: {err}"))

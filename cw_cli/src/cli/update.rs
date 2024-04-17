@@ -3,6 +3,7 @@ use fig_install::{
     UpdateOptions,
     UpdateStatus,
 };
+use fig_util::CLI_BINARY_NAME;
 
 pub async fn update(non_interactive: bool, relaunch_dashboard: bool, rollout: bool) -> Result<()> {
     let res = fig_install::update(
@@ -40,7 +41,7 @@ pub async fn update(non_interactive: bool, relaunch_dashboard: bool, rollout: bo
 
     match res {
         Err(e) => Err(eyre::eyre!(
-            "{e}. If this is unexpected, try running `cw doctor` and then try again."
+            "{e}. If this is unexpected, try running `{CLI_BINARY_NAME} doctor` and then try again."
         )),
         Ok(false) => {
             println!(

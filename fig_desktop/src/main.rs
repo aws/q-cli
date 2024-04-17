@@ -20,7 +20,8 @@ use std::process::exit;
 use clap::Parser;
 use event::Event;
 use fig_log::Logger;
-use fig_util::consts::CODEWHISPERER_DESKTOP_PROCESS_NAME;
+use fig_util::consts::APP_PROCESS_NAME;
+use fig_util::URL_SCHEMA;
 use parking_lot::RwLock;
 use platform::PlatformState;
 use sysinfo::{
@@ -114,7 +115,7 @@ async fn main() {
             },
         })
         .and_then(|url| {
-            if url.scheme() != "codewhisperer" {
+            if url.scheme() != URL_SCHEMA {
                 error!(scheme = %url.scheme(), %url, "Invalid scheme");
                 exit(1)
             }
@@ -132,7 +133,7 @@ async fn main() {
         match get_current_pid() {
             Ok(current_pid) => {
                 let system = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
-                let processes = system.processes_by_name(CODEWHISPERER_DESKTOP_PROCESS_NAME);
+                let processes = system.processes_by_name(APP_PROCESS_NAME);
 
                 cfg_if::cfg_if! {
                     if #[cfg(unix)] {

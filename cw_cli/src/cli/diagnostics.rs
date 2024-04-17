@@ -44,13 +44,14 @@ pub struct DiagnosticArgs {
 impl DiagnosticArgs {
     pub async fn execute(&self) -> Result<()> {
         #[cfg(target_os = "macos")]
-        if !self.force && !fig_util::is_codewhisperer_desktop_running() {
+        if !self.force && !fig_util::is_desktop_running() {
+            use fig_util::CLI_BINARY_NAME;
             use owo_colors::OwoColorize;
 
             println!(
                 "\n→ CodeWhisperer is not running.\n  Please launch CodeWhisperer with {} or run {} to get limited diagnostics.",
-                "cw launch".magenta(),
-                "cw diagnostic --force".magenta()
+                format!("{CLI_BINARY_NAME} launch").magenta(),
+                format!("{CLI_BINARY_NAME} diagnostic --force").magenta()
             );
             return Ok(());
         }

@@ -6,6 +6,7 @@ use fig_integrations::Integration;
 use fig_util::{
     directories,
     Shell,
+    CLI_BINARY_NAME,
 };
 
 use crate::Error;
@@ -39,8 +40,14 @@ pub async fn uninstall(components: InstallComponents) -> Result<(), Error> {
     };
 
     if components.contains(InstallComponents::BINARY) {
-        let local_path = directories::home_dir()?.join(".local").join("bin").join("cw");
-        let binary_paths = [Path::new("/usr/local/bin/cw"), local_path.as_path()];
+        let local_path = directories::home_dir()?
+            .join(".local")
+            .join("bin")
+            .join(CLI_BINARY_NAME);
+        let binary_paths = [
+            Path::new("/usr/local/bin").join(CLI_BINARY_NAME),
+            local_path.as_path().into(),
+        ];
 
         for path in binary_paths {
             if path.exists() {
@@ -71,7 +78,7 @@ pub async fn uninstall(components: InstallComponents) -> Result<(), Error> {
         // Must be last -- this will kill the running desktop process if this is
         // called from the desktop app.
         let quit_res = tokio::process::Command::new("killall")
-            .args([fig_util::consts::CODEWHISPERER_DESKTOP_PROCESS_NAME])
+            .args([fig_util::consts::APP_PROCESS_NAME])
             .output()
             .await;
         if let Err(err) = quit_res {

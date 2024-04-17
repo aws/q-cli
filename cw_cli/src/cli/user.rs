@@ -18,6 +18,7 @@ use fig_ipc::local::{
     login_command,
     logout_command,
 };
+use fig_util::CLI_BINARY_NAME;
 use serde_json::json;
 use tracing::error;
 
@@ -65,7 +66,7 @@ impl RootUserSubcommand {
         match self {
             Self::Login => {
                 if auth::is_logged_in().await {
-                    eyre::bail!("Already logged in, please logout with `cw logout` first");
+                    eyre::bail!("Already logged in, please logout with `{CLI_BINARY_NAME} logout` first");
                 }
 
                 let options = [AuthMethod::Email, AuthMethod::IdentityCenter];
@@ -157,7 +158,10 @@ impl RootUserSubcommand {
                 let (_, _) = tokio::join!(logout_join, auth::logout());
 
                 println!("You are now logged out");
-                println!("Run {} to log back in to CodeWhisperer", "cw login".magenta());
+                println!(
+                    "Run {} to log back in to CodeWhisperer",
+                    format!("{CLI_BINARY_NAME} login").magenta()
+                );
                 Ok(())
             },
             Self::Whoami { format } => {

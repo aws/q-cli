@@ -7,7 +7,7 @@ use std::os::unix::fs::DirBuilderExt;
 use std::path::PathBuf;
 
 use async_trait::async_trait;
-use fig_util::consts::CODEWHISPERER_CLI_BINARY_NAME;
+use fig_util::consts::CLI_BINARY_NAME;
 use fig_util::directories::{
     self,
     fig_data_dir_utf8,
@@ -42,7 +42,7 @@ impl SshIntegration {
     }
 
     fn get_file_integration(&self) -> Result<FileIntegration> {
-        let bin_name = CODEWHISPERER_CLI_BINARY_NAME;
+        let bin_name = CLI_BINARY_NAME;
         let include_path = fig_data_dir_utf8()?.join("ssh_inner");
 
         Ok(FileIntegration {

@@ -21,8 +21,11 @@ use eyre::{
     Result,
 };
 use fig_ipc::local::quit_command;
-use fig_util::consts::CODEWHISPERER_BUNDLE_ID;
-use fig_util::is_codewhisperer_desktop_running;
+use fig_util::consts::APP_BUNDLE_ID;
+use fig_util::{
+    is_desktop_running,
+    CLI_BINARY_NAME,
+};
 use globset::{
     Glob,
     GlobSet,
@@ -106,7 +109,7 @@ pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
 }
 
 pub async fn quit_fig(verbose: bool) -> Result<()> {
-    if !is_codewhisperer_desktop_running() {
+    if !is_desktop_running() {
         if verbose {
             println!("CodeWhisperer is not running");
         }
@@ -137,8 +140,8 @@ pub async fn quit_fig(verbose: bool) -> Result<()> {
         if second_try.is_err() {
             cfg_if! {
                 if #[cfg(target_os = "linux")] {
-                    use fig_util::CODEWHISPERER_DESKTOP_PROCESS_NAME;
-                    if let Ok(output) = Command::new("killall").arg(CODEWHISPERER_DESKTOP_PROCESS_NAME).output() {
+                    use fig_util::APP_PROCESS_NAME;
+                    if let Ok(output) = Command::new("killall").arg(APP_PROCESS_NAME).output() {
                         if output.status.success() {
                             return Ok(());
                         }
@@ -188,7 +191,7 @@ pub fn app_not_running_message() -> String {
     format!(
         "\n{}\nCodeWhisperer might not be running, to launch CodeWhisperer run: {}\n",
         "Unable to connect to CodeWhisperer".bold(),
-        "cw launch".magenta()
+        format!("{CLI_BINARY_NAME} launch").magenta()
     )
 }
 
@@ -196,7 +199,7 @@ pub fn login_message() -> String {
     format!(
         "{}\nLooks like you aren't logged in to CodeWhisperer, to login run: {}",
         "Not logged in".bold(),
-        "cw login".magenta()
+        format!("{CLI_BINARY_NAME} login").magenta()
     )
 }
 
@@ -226,10 +229,10 @@ pub fn get_fig_version() -> Result<String> {
             let fig_version = get_plist_field("CFBundleShortVersionString")?;
            Ok(fig_version)
         } else {
-            use fig_util::CODEWHISPERER_DESKTOP_PROCESS_NAME;
+            use fig_util::APP_PROCESS_NAME;
             use std::process::Command;
-            Ok(String::from_utf8_lossy(&Command::new(CODEWHISPERER_DESKTOP_PROCESS_NAME).arg("--version").output()?.stdout)
-                .replace(CODEWHISPERER_DESKTOP_PROCESS_NAME, "").trim().into())
+            Ok(String::from_utf8_lossy(&Command::new(APP_PROCESS_NAME).arg("--version").output()?.stdout)
+                .replace(APP_PROCESS_NAME, "").trim().into())
         }
     }
 }
@@ -302,7 +305,7 @@ pub fn get_running_app_info(bundle_id: impl AsRef<str>, field: impl AsRef<str>) 
 
 pub fn get_app_info() -> Result<String> {
     let output = Command::new("lsappinfo")
-        .args(["info", "-app", CODEWHISPERER_BUNDLE_ID])
+        .args(["info", "-app", APP_BUNDLE_ID])
         .output()?;
     let result = String::from_utf8(output.stdout)?;
     Ok(result.trim().into())
@@ -328,7 +331,7 @@ pub async fn is_brew_reinstall() -> bool {
 
 #[cfg(test)]
 mod tests {
-    use fig_util::CODEWHISPERER_DESKTOP_PROCESS_NAME;
+    use fig_util::APP_PROCESS_NAME;
 
     use super::*;
 
@@ -372,10 +375,10 @@ mod tests {
         let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
         cfg_if! {
             if #[cfg(windows)] {
-                let mut processes = s.processes_by_name(CODEWHISPERER_DESKTOP_PROCESS_NAME);
+                let mut processes = s.processes_by_name(APP_PROCESS_NAME);
                 assert!(processes.next().is_some());
             } else {
-                let mut processes = s.processes_by_exact_name(CODEWHISPERER_DESKTOP_PROCESS_NAME);
+                let mut processes = s.processes_by_exact_name(APP_PROCESS_NAME);
                 assert!(processes.next().is_some());
             }
         }

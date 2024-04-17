@@ -47,7 +47,7 @@ use core_foundation::{
     impl_TCFType,
 };
 use fig_settings::state;
-use fig_util::consts::CODEWHISPERER_CLI_BINARY_NAME;
+use fig_util::consts::CLI_BINARY_NAME;
 use fig_util::directories::home_dir;
 use fig_util::Terminal;
 use macos_utils::applications;
@@ -482,14 +482,14 @@ impl Integration for InputMethod {
         let cw_cli_path = fig_util::codewhisperer_bundle()
             .join("Contents")
             .join("MacOS")
-            .join(CODEWHISPERER_CLI_BINARY_NAME);
+            .join(CLI_BINARY_NAME);
 
         let out = tokio::process::Command::new(cw_cli_path)
             .args(["_", "attempt-to-finish-input-method-installation"])
             .arg(&self.bundle_path)
             .output()
             .await
-            .context("Could not run cw cli")?;
+            .with_context(|err| format!("Could not run {CLI_BINARY_NAME} cli: {err}"))?;
 
         if out.status.code() == Some(0) {
             self.set_is_enabled(true);
@@ -544,7 +544,7 @@ impl Integration for InputMethod {
         let cw_cli_path = fig_util::codewhisperer_bundle()
             .join("Contents")
             .join("MacOS")
-            .join(CODEWHISPERER_CLI_BINARY_NAME);
+            .join(CLI_BINARY_NAME);
 
         loop {
             let out = tokio::process::Command::new(&cw_cli_path)
@@ -552,7 +552,7 @@ impl Integration for InputMethod {
                 .arg(&self.bundle_path)
                 .output()
                 .await
-                .context("Could not run cw cli")?;
+                .with_context(|err| format!("Could not run {CLI_BINARY_NAME} cli: {err}"))?;
 
             if out.status.code() == Some(0) {
                 info!("Input method installed successfully!");

@@ -28,7 +28,7 @@ pub use shell::Shell;
 pub use terminal::Terminal;
 use thiserror::Error;
 
-pub use crate::desktop::is_codewhisperer_desktop_running;
+pub use crate::desktop::is_desktop_running;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -91,7 +91,7 @@ fn codewhisperer_bundle_opt() -> Option<PathBuf> {
     let mut parts: PathBuf = current_exe.components().rev().skip(1).take(3).collect();
     parts = parts.iter().rev().collect();
 
-    if parts != PathBuf::from(CODEWHISPERER_BUNDLE_NAME).join("Contents/MacOS") {
+    if parts != PathBuf::from(APP_BUNDLE_NAME).join("Contents/MacOS") {
         return None;
     }
 
@@ -102,7 +102,7 @@ fn codewhisperer_bundle_opt() -> Option<PathBuf> {
 #[must_use]
 #[cfg(target_os = "macos")]
 pub fn codewhisperer_bundle() -> PathBuf {
-    codewhisperer_bundle_opt().unwrap_or_else(|| Path::new("/Applications").join(CODEWHISPERER_BUNDLE_NAME))
+    codewhisperer_bundle_opt().unwrap_or_else(|| Path::new("/Applications").join(APP_BUNDLE_NAME))
 }
 
 pub fn partitioned_compare(lhs: &str, rhs: &str, by: char) -> Ordering {

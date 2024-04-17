@@ -4,6 +4,7 @@ use dialoguer::Select;
 use eyre::Result;
 use fig_diagnostic::Diagnostics;
 use fig_util::system_info::is_remote;
+use fig_util::CLI_BINARY_NAME;
 use owo_colors::{
     OwoColorize,
     Rgb,
@@ -26,11 +27,11 @@ impl IssueArgs {
     #[allow(unreachable_code)]
     pub async fn execute(&self) -> Result<()> {
         // Check if fig is running
-        if !(self.force || fig_util::is_codewhisperer_desktop_running() || is_remote()) {
+        if !(self.force || fig_util::is_desktop_running() || is_remote()) {
             println!(
                 "\n→ CodeWhisperer is not running.\n  Please launch CodeWhisperer with {} or run {} to create the issue anyways",
-                "cw launch".magenta(),
-                "cw issue --force".magenta()
+                format!("{CLI_BINARY_NAME} launch").magenta(),
+                format!("{CLI_BINARY_NAME} issue --force").magenta()
             );
             return Ok(());
         }

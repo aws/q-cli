@@ -207,10 +207,10 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
 
     use fig_integrations::shell::ShellExt;
     use fig_util::consts::{
-        CODEWHISPERER_BUNDLE_ID,
-        CODEWHISPERER_CLI_BINARY_NAME,
-        CODEWHISPERER_DESKTOP_PROCESS_NAME,
-        CWTERM_BINARY_NAME,
+        APP_BUNDLE_ID,
+        APP_PROCESS_NAME,
+        CLI_BINARY_NAME,
+        PTY_BINARY_NAME,
     };
     use fig_util::directories::{
         fig_data_dir,
@@ -226,12 +226,12 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
     let local_bin = fig_util::directories::home_dir()?.join(".local").join("bin");
     fs::create_dir_all(&local_bin).ok();
 
-    if let Some(cwterm_path) = get_bundle_path_for_executable(CWTERM_BINARY_NAME) {
-        let link = local_bin.join(CWTERM_BINARY_NAME);
+    if let Some(cwterm_path) = get_bundle_path_for_executable(PTY_BINARY_NAME) {
+        let link = local_bin.join(PTY_BINARY_NAME);
         symlink(&cwterm_path, link).ok();
 
         for shell in Shell::all() {
-            let cwterm_shell_cpy = local_bin.join(format!("{shell} (cwterm)"));
+            let cwterm_shell_cpy = local_bin.join(format!("{shell} ({PTY_BINARY_NAME})"));
             let cwterm_path = cwterm_path.clone();
 
             tokio::spawn(async move {
@@ -248,7 +248,7 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
                         .as_ref()
                         .and_then(|output| std::str::from_utf8(&output.stdout).ok())
                         .map(|s| {
-                            match s.strip_prefix("cwterm") {
+                            match s.strip_prefix(PTY_BINARY_NAME) {
                                 Some(s) => s,
                                 None => s,
                             }
@@ -261,28 +261,25 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
                 }
 
                 if let Err(err) = tokio::fs::remove_file(&cwterm_shell_cpy).await {
-                    error!(%err, "Failed to remove cwterm shell {shell:?} copy");
+                    error!(%err, "Failed to remove {PTY_BINARY_NAME} shell {shell:?} copy");
                 }
                 if let Err(err) = tokio::fs::copy(&cwterm_path, &cwterm_shell_cpy).await {
-                    error!(%err, "Failed to copy cwterm to {}", cwterm_shell_cpy.display());
+                    error!(%err, "Failed to copy {PTY_BINARY_NAME} to {}", cwterm_shell_cpy.display());
                 }
             });
         }
     }
 
-    if let Some(cw_cli_path) = get_bundle_path_for_executable(CODEWHISPERER_CLI_BINARY_NAME) {
-        let dest = local_bin.join(CODEWHISPERER_CLI_BINARY_NAME);
+    if let Some(cw_cli_path) = get_bundle_path_for_executable(CLI_BINARY_NAME) {
+        let dest = local_bin.join(CLI_BINARY_NAME);
         symlink(cw_cli_path, dest).ok();
     }
 
     if let Some(bundle_path) = get_bundle_path() {
-        let exe = bundle_path
-            .join("Contents")
-            .join("MacOS")
-            .join(CODEWHISPERER_DESKTOP_PROCESS_NAME);
+        let exe = bundle_path.join("Contents").join("MacOS").join(APP_PROCESS_NAME);
         let startup_launch_agent = LaunchdPlist::new("com.amazon.codewhisperer.launcher")
             .program_arguments([&exe.to_string_lossy(), "--is-startup", "--no-dashboard"])
-            .associated_bundle_identifiers([CODEWHISPERER_BUNDLE_ID])
+            .associated_bundle_identifiers([APP_BUNDLE_ID])
             .run_at_load(true);
 
         create_launch_agent(&startup_launch_agent)?;

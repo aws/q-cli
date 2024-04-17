@@ -43,6 +43,7 @@ use fig_util::desktop::{
 use fig_util::{
     manifest,
     system_info,
+    CLI_BINARY_NAME,
 };
 use serde::Serialize;
 use tracing::debug;
@@ -230,7 +231,7 @@ impl CliRootCommands {
 }
 
 #[derive(Debug, Parser)]
-#[command(version, about, name = "cw")]
+#[command(version, about, name = CLI_BINARY_NAME)]
 #[command(help_template = "\x1B[1;95m
  cw\x1B[0m (Amazon CodeWhisperer CLI)
 
@@ -324,7 +325,10 @@ impl Cli {
                     //   ██║     ██║╚██████╔╝
                     //   ╚═╝     ╚═╝ ╚═════╝ CLI\x1B[0m\n"
                     //                     );
-                    println!("{}\n    cw [OPTIONS] [SUBCOMMAND]\n", "USAGE:".bold().underlined(),);
+                    println!(
+                        "{}\n    {CLI_BINARY_NAME} [OPTIONS] [SUBCOMMAND]\n",
+                        "USAGE:".bold().underlined(),
+                    );
                     cmd.print_long_help()?;
                     Ok(())
                 },
@@ -406,14 +410,14 @@ mod test {
     #[test]
     fn test_restart() {
         assert_eq!(
-            Cli::parse_from(["codewhisperer", "restart", "app"]).subcommand,
+            Cli::parse_from([CLI_BINARY_NAME, "restart", "app"]).subcommand,
             Some(CliRootCommands::Restart {
                 process: Processes::App
             })
         );
 
         assert_eq!(
-            Cli::parse_from(["codewhisperer", "restart", "daemon"]).subcommand,
+            Cli::parse_from([CLI_BINARY_NAME, "restart", "daemon"]).subcommand,
             Some(CliRootCommands::Restart {
                 process: Processes::Daemon
             })
@@ -431,7 +435,7 @@ mod test {
         use internal::InternalSubcommand;
         assert_eq!(
             Cli::parse_from([
-                "cw",
+                CLI_BINARY_NAME,
                 "_",
                 "attempt-to-finish-input-method-installation",
                 "/path/to/bundle.app"
@@ -450,35 +454,35 @@ mod test {
         use internal::InternalSubcommand;
 
         assert_eq!(
-            Cli::parse_from(["cw", "_", "inline-shell-completion", "--buffer", ""]).subcommand,
+            Cli::parse_from([CLI_BINARY_NAME, "_", "inline-shell-completion", "--buffer", ""]).subcommand,
             Some(CliRootCommands::Internal(InternalSubcommand::InlineShellCompletion {
                 buffer: "".to_string()
             }))
         );
 
         assert_eq!(
-            Cli::parse_from(["cw", "_", "inline-shell-completion", "--buffer", "foo"]).subcommand,
+            Cli::parse_from([CLI_BINARY_NAME, "_", "inline-shell-completion", "--buffer", "foo"]).subcommand,
             Some(CliRootCommands::Internal(InternalSubcommand::InlineShellCompletion {
                 buffer: "foo".to_string()
             }))
         );
 
         assert_eq!(
-            Cli::parse_from(["cw", "_", "inline-shell-completion", "--buffer", "-"]).subcommand,
+            Cli::parse_from([CLI_BINARY_NAME, "_", "inline-shell-completion", "--buffer", "-"]).subcommand,
             Some(CliRootCommands::Internal(InternalSubcommand::InlineShellCompletion {
                 buffer: "-".to_string()
             }))
         );
 
         assert_eq!(
-            Cli::parse_from(["cw", "_", "inline-shell-completion", "--buffer", "--"]).subcommand,
+            Cli::parse_from([CLI_BINARY_NAME, "_", "inline-shell-completion", "--buffer", "--"]).subcommand,
             Some(CliRootCommands::Internal(InternalSubcommand::InlineShellCompletion {
                 buffer: "--".to_string()
             }))
         );
 
         assert_eq!(
-            Cli::parse_from(["cw", "_", "inline-shell-completion", "--buffer", "--foo bar"]).subcommand,
+            Cli::parse_from([CLI_BINARY_NAME, "_", "inline-shell-completion", "--buffer", "--foo bar"]).subcommand,
             Some(CliRootCommands::Internal(InternalSubcommand::InlineShellCompletion {
                 buffer: "--foo bar".to_string()
             }))
@@ -486,7 +490,7 @@ mod test {
 
         assert_eq!(
             Cli::parse_from([
-                "cw",
+                CLI_BINARY_NAME,
                 "_",
                 "inline-shell-completion-accept",
                 "--buffer",

@@ -34,6 +34,7 @@ use fig_proto::remote::{
     Clientbound,
     Hostbound,
 };
+use fig_util::PTY_BINARY_NAME;
 use time::OffsetDateTime;
 use tokio::net::{
     UnixListener,
@@ -324,7 +325,7 @@ async fn handle_remote_ipc(
                     }
                 }
                 Ok(None) => {
-                    debug!("cwterm connection closed");
+                    debug!("{PTY_BINARY_NAME} connection closed");
                     break;
                 }
                 Err(err) => {

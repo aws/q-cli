@@ -26,6 +26,7 @@ use fig_ipc::{
     BufferedUnixStream,
     SendMessage,
 };
+use fig_util::CLI_BINARY_NAME;
 use once_cell::sync::Lazy;
 use regex::{
     Captures,
@@ -270,7 +271,7 @@ fn highlighter(s: &str) -> String {
 impl AiArgs {
     pub async fn execute(self) -> Result<()> {
         if !auth::is_logged_in().await {
-            bail!("You are not logged in. Run `cw login` to login.")
+            bail!("You are not logged in. Run `{CLI_BINARY_NAME} login` to login.")
         }
 
         let interactive = std::io::stdin().is_terminal();
@@ -550,7 +551,6 @@ mod test {
             "send ping to unix socket",
             "Using the kubectl config at ~/.kube/kubconfig2 list all pods",
             "List kubernetes pods Sorted by Restart Count",
-            "Delete the \"cw4t-test-bucket\" in s3",
             "List all ubuntu aws instances",
             "Install onepassword with brew",
             "what is my ip",

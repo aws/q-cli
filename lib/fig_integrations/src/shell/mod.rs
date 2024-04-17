@@ -35,6 +35,8 @@ pub mod inline_shell_completion_plugin {
 
     #[cfg(test)]
     mod tests {
+        use fig_util::CLI_BINARY_NAME;
+
         use super::*;
 
         #[test]
@@ -43,10 +45,12 @@ pub mod inline_shell_completion_plugin {
             assert!(ZSH_SCRIPT.contains("Copyright"));
 
             // Ensure script has _cw_autosuggest_strategy_inline_shell_completion()
-            assert!(ZSH_SCRIPT.contains("_cw_autosuggest_strategy_inline_shell_completion()"));
+            assert!(ZSH_SCRIPT.contains(&format!(
+                "_{CLI_BINARY_NAME}_autosuggest_strategy_inline_shell_completion()"
+            )));
 
             // Ensure script adds precmd hook
-            assert!(ZSH_SCRIPT.contains("add-zsh-hook precmd _cw_autosuggest_start"));
+            assert!(ZSH_SCRIPT.contains(&format!("add-zsh-hook precmd _{CLI_BINARY_NAME}_autosuggest_start")));
         }
     }
 }

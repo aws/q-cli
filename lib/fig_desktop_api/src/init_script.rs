@@ -5,7 +5,6 @@ use std::env::{
 };
 
 use camino::Utf8PathBuf;
-use fig_util::directories;
 #[cfg(target_os = "linux")]
 use fig_util::system_info::linux::{
     get_desktop_environment,
@@ -14,6 +13,10 @@ use fig_util::system_info::linux::{
     DesktopEnvironment,
     DisplayServer,
     OsRelease,
+};
+use fig_util::{
+    directories,
+    CLI_BINARY_NAME,
 };
 use serde::Serialize;
 use serde_json::json;
@@ -86,7 +89,9 @@ impl Default for Constants {
         Self {
             codewhisperer: true,
             version: env!("CARGO_PKG_VERSION"),
-            cli: which("cw").ok().and_then(|exe| Utf8PathBuf::try_from(exe).ok()),
+            cli: which(CLI_BINARY_NAME)
+                .ok()
+                .and_then(|exe| Utf8PathBuf::try_from(exe).ok()),
             bundle_path: None,
             remote: None,
             home: directories::home_dir_utf8().ok(),

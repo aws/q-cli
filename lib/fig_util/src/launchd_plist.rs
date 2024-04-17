@@ -310,7 +310,7 @@ pub fn create_launch_agent(launchd_plist: &LaunchdPlist) -> Result<(), super::Er
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::consts::CODEWHISPERER_BUNDLE_ID;
+    use crate::consts::APP_BUNDLE_ID;
 
     #[test]
     fn test_plist() {
@@ -324,7 +324,7 @@ mod test {
             .run_at_load(true)
             .keep_alive(false)
             .throttle_interval(10)
-            .associated_bundle_identifiers([CODEWHISPERER_BUNDLE_ID])
+            .associated_bundle_identifiers([APP_BUNDLE_ID])
             .plist();
 
         println!("{plist}");

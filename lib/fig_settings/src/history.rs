@@ -394,6 +394,8 @@ impl std::fmt::Display for WhereExpression {
 
 #[cfg(test)]
 mod tests {
+    use fig_util::CLI_BINARY_NAME;
+
     use super::*;
 
     #[test]
@@ -404,7 +406,7 @@ mod tests {
         history
             .insert_command_history(
                 &CommandInfo {
-                    command: Some("cw".into()),
+                    command: Some(CLI_BINARY_NAME.into()),
                     shell: Some("bash".into()),
                     pid: Some(123),
                     session_id: Some("session-id".into()),
@@ -455,7 +457,7 @@ mod tests {
         let rows = history.all_rows().unwrap();
         assert_eq!(rows.len(), 3);
 
-        assert_eq!(rows[0].command, Some("cw".into()));
+        assert_eq!(rows[0].command, Some(CLI_BINARY_NAME.into()));
         assert_eq!(rows[0].shell, Some("bash".into()));
         assert_eq!(rows[0].pid, Some(123));
         assert_eq!(rows[0].session_id, Some("session-id".into()));
@@ -526,7 +528,7 @@ mod tests {
             &row[0],
             serde_json::json!({
                 "id": 1,
-                "command": "cw",
+                "command": CLI_BINARY_NAME,
                 "shell": "bash",
                 "pid": 123,
                 "session_id": "session-id",

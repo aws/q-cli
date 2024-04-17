@@ -19,7 +19,10 @@ use fig_desktop_api::kv::DashKVStore;
 use fig_proto::fig::client_originated_message::Submessage;
 use fig_proto::fig::ClientOriginatedMessage;
 use fig_remote_ipc::figterm::FigtermState;
-use fig_util::directories;
+use fig_util::{
+    directories,
+    URL_SCHEMA,
+};
 use fnv::FnvBuildHasher;
 use muda::MenuEvent;
 use once_cell::sync::Lazy;
@@ -555,7 +558,7 @@ impl WebviewManager {
                 WryEvent::Opened { urls } => {
                     let mut events = Vec::new();
                     for url in urls {
-                        if url.scheme() == "codewhisperer" {
+                        if url.scheme() == URL_SCHEMA {
                             match url.host_str() {
                                 Some("dashboard") => {
                                     events.push(WindowEvent::NavigateRelative {

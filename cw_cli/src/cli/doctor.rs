@@ -57,10 +57,12 @@ use fig_util::directories::{
 use fig_util::system_info::SupportLevel;
 use fig_util::{
     directories,
-    is_codewhisperer_desktop_running,
+    is_desktop_running,
     Shell,
     Terminal,
-    CODEWHISPERER_BUNDLE_NAME,
+    APP_BUNDLE_NAME,
+    CLI_BINARY_NAME,
+    PTY_BINARY_NAME,
 };
 use futures::future::BoxFuture;
 use futures::FutureExt;
@@ -404,11 +406,11 @@ impl DoctorCheck for AppRunningCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        if !is_codewhisperer_desktop_running() {
+        if !is_desktop_running() {
             Err(DoctorError::Error {
                 reason: "CodeWhisperer app is not running".into(),
                 info: vec![],
-                fix: command_fix(vec!["cw", "launch"], Duration::from_secs(5)),
+                fix: command_fix(vec![CLI_BINARY_NAME, "launch"], Duration::from_secs(5)),
                 error: None,
             })
         } else {
@@ -653,7 +655,7 @@ impl DoctorCheck for FigIntegrationsCheck {
         match std::env::var("CW_TERM").as_deref() {
             Ok(env!("CARGO_PKG_VERSION")) => Ok(()),
             Ok(ver) if env!("CARGO_PKG_VERSION").ends_with("-dev") || ver.ends_with("-dev") => Err(doctor_warning!(
-                "cwterm is running with a different version than CodeWhisperer CLI, it looks like you are running a development version of CodeWhisperer however"
+                "{PTY_BINARY_NAME} is running with a different version than CodeWhisperer CLI, it looks like you are running a development version of CodeWhisperer however"
             )),
             Ok(_) => Err(DoctorError::Error {
                 reason: "This terminal is not running with the latest CodeWhisperer integration, please restart your terminal"
@@ -663,7 +665,7 @@ impl DoctorCheck for FigIntegrationsCheck {
                 error: None,
             }),
             Err(_) => Err(DoctorError::Error {
-                reason: "cwterm is not running in this terminal, please try restarting your terminal".into(),
+                reason: "{PTY_BINARY_NAME} is not running in this terminal, please try restarting your terminal".into(),
                 info: vec![format!("CW_TERM={}", std::env::var("CW_TERM").unwrap_or_default()).into()],
                 fix: None,
                 error: None,
@@ -697,7 +699,9 @@ impl DoctorCheck for MidwayCheck {
             Ok(_) => Ok(()),
             Err(err) => Err(DoctorError::Error {
                 reason: "Failed to make midway request".into(),
-                info: vec!["Try running `mwinit` and restarting the app with `cw restart`.".into()],
+                info: vec![
+                    format!("Try running `mwinit` and restarting the app with `{PTY_BINARY_NAME} restart`.").into(),
+                ],
                 fix: None,
                 error: Some(err.into()),
             }),
@@ -733,7 +737,10 @@ impl DoctorCheck for CwtermSocketCheck {
                 info: vec![
                     "CodeWhisperer uses the /tmp directory for sockets.".into(),
                     "Did you delete files in /tmp? The OS will clear it automatically.".into(),
-                    "Try making a new tab or window in your terminal, then run `cw doctor` again.".into(),
+                    format!(
+                        "Try making a new tab or window in your terminal, then run `{CLI_BINARY_NAME} doctor` again."
+                    )
+                    .into(),
                     format!("No file at path: {socket_path:?}").into(),
                 ],
                 fix: None,
@@ -786,14 +793,14 @@ impl DoctorCheck for CwtermSocketCheck {
                 } else {
                     Err(DoctorError::Warning(
                         format!(
-                            "cwterm socket did not read buffer correctly, don't press any keys while the checks are running: {buffer:?}"
+                            "{PTY_BINARY_NAME} socket did not read buffer correctly, don't press any keys while the checks are running: {buffer:?}"
                         )
                         .into(),
                     ))
                 }
             },
-            Ok(Err(err)) => Err(doctor_error!("cwterm socket err: {}", err)),
-            Err(_) => Err(doctor_error!("cwterm socket write timed out after 1s")),
+            Ok(Err(err)) => Err(doctor_error!("{PTY_BINARY_NAME} socket err: {}", err)),
+            Err(_) => Err(doctor_error!("{PTY_BINARY_NAME} socket write timed out after 1s")),
         };
 
         disable_raw_mode().context("Failed to disable raw mode")?;
@@ -903,7 +910,7 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
     async fn check(&self, _: &Option<Shell>) -> Result<(), DoctorError> {
         let fix_text = format!(
             "Run {} to reinstall shell integrations for {}",
-            "cw integrations install dotfiles".magenta(),
+            format!("{CLI_BINARY_NAME} integrations install dotfiles").magenta(),
             self.integration.get_shell()
         );
         match self.integration.is_installed().await {
@@ -938,8 +945,12 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                                         .magenta()
                                     )
                                     .into(),
-                                    format!("    2. {}", "cw integrations install dotfiles".magenta()).into(),
-                                    format!("    3. {}", "cw doctor".magenta()).into(),
+                                    format!(
+                                        "    2. {}",
+                                        format!("{CLI_BINARY_NAME} integrations install dotfiles").magenta()
+                                    )
+                                    .into(),
+                                    format!("    3. {}", format!("{CLI_BINARY_NAME} doctor").magenta()).into(),
                                     "".into(),
                                     format!("    Error: {err}").into(),
                                 ],
@@ -1158,9 +1169,9 @@ impl DoctorCheck<DiagnosticsResponse> for BundlePathCheck {
 
     async fn check(&self, diagnostics: &DiagnosticsResponse) -> Result<(), DoctorError> {
         let path = diagnostics.path_to_bundle.clone();
-        if path.contains(&format!("/Applications/{CODEWHISPERER_BUNDLE_NAME}")) {
+        if path.contains(&format!("/Applications/{APP_BUNDLE_NAME}")) {
             Ok(())
-        } else if path.contains(&format!("/Build/Products/Debug/{CODEWHISPERER_BUNDLE_NAME}")) {
+        } else if path.contains(&format!("/Build/Products/Debug/{APP_BUNDLE_NAME}")) {
             Err(DoctorError::Warning(
                 format!("Running debug build in {}", path.bold()).into(),
             ))
@@ -1193,7 +1204,13 @@ impl DoctorCheck<DiagnosticsResponse> for AutocompleteEnabledCheck {
         } else {
             Err(DoctorError::Error {
                 reason: "Autocomplete disabled.".into(),
-                info: vec![format!("To fix run: {}", "cw settings autocomplete.disable false".magenta()).into()],
+                info: vec![
+                    format!(
+                        "To fix run: {}",
+                        format!("{CLI_BINARY_NAME} settings autocomplete.disable false").magenta()
+                    )
+                    .into(),
+                ],
                 fix: None,
                 error: None,
             })
@@ -1241,15 +1258,21 @@ impl DoctorCheck<DiagnosticsResponse> for FigCLIPathCheck {
 
     async fn check(&self, _: &DiagnosticsResponse) -> Result<(), DoctorError> {
         let path = std::env::current_exe().context("Could not get executable path.")?;
-        let local_bin_path = directories::home_dir().unwrap().join(".local").join("bin").join("cw");
+        let local_bin_path = directories::home_dir()
+            .unwrap()
+            .join(".local")
+            .join("bin")
+            .join(CLI_BINARY_NAME);
 
-        if path == local_bin_path || path == Path::new("/usr/local/bin/cw") || path == Path::new("/opt/homebrew/bin/cw")
+        if path == local_bin_path
+            || path == Path::new("/usr/local/bin").join(CLI_BINARY_NAME)
+            || path == Path::new("/opt/homebrew/bin").join(CLI_BINARY_NAME)
         {
             Ok(())
-        } else if path.ends_with("target/debug/cw")
-            || path.ends_with("target/release/cw")
-            || path.ends_with("target/debug/cw_cli")
-            || path.ends_with("target/release/cw_cli")
+        } else if path.ends_with(Path::new("target/debug").join(CLI_BINARY_NAME))
+            || path.ends_with(Path::new("target/release").join(CLI_BINARY_NAME))
+            || path.ends_with(format!("target/debug/{CLI_BINARY_NAME}_cli"))
+            || path.ends_with(format!("target/release/{CLI_BINARY_NAME}_cli"))
         {
             Err(DoctorError::Warning(
                 "Running debug build in a non-standard location".into(),
@@ -1277,16 +1300,19 @@ impl DoctorCheck<DiagnosticsResponse> for AccessibilityCheck {
             Err(DoctorError::Error {
                 reason: "Accessibility is disabled".into(),
                 info: vec![],
-                fix: command_fix(vec!["cw", "debug", "prompt-accessibility"], Duration::from_secs(1)),
+                fix: command_fix(
+                    vec![CLI_BINARY_NAME, "debug", "prompt-accessibility"],
+                    Duration::from_secs(1),
+                ),
                 // fix: Some(DoctorFix::Sync(Box::new(move || {
                 //     println!("1. Try enabling accessibility in System Settings");
-                //     if !Command::new("cw")
+                //     if !Command::new(CLI_BINARY_NAME)
                 //         .args(["debug", "prompt-accessibility"])
                 //         .status()?
                 //         .success()
                 //     {
-                //         bail!("Failed to open accessibility in System Settings: cw debug prompt-accessibility");
-                //     }
+                //         bail!("Failed to open accessibility in System Settings: {CLI_BINARY_NAME} debug
+                // prompt-accessibility");     }
 
                 //     println!("2. Restarting CodeWhisperer");
                 //     println!("3. Reset accessibility");
@@ -1377,7 +1403,7 @@ impl DoctorCheck<Option<Terminal>> for SupportedTerminalCheck {
     async fn check(&self, terminal: &Option<Terminal>) -> Result<(), DoctorError> {
         if terminal.is_none() {
             Err(DoctorError::Error {
-                reason: "Unsupported terminal, if you believe this is a mistake or would like to see support for your terminal, run `cw issue`".into(),
+                reason: format!("Unsupported terminal, if you believe this is a mistake or would like to see support for your terminal, run `{CLI_BINARY_NAME} issue`").into(),
                 info: vec![
                     #[cfg(target_os = "macos")]
                     format!(
@@ -1661,7 +1687,9 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
                 InstallationError::InputMethod(_) => {
                     return Err(DoctorError::Error {
                         reason: e.to_string().into(),
-                        info: vec!["Run `cw integrations install input-method` to enable it".into()],
+                        info: vec![
+                            format!("Run `{CLI_BINARY_NAME} integrations install input-method` to enable it").into(),
+                        ],
                         fix: None,
                         error: Some(e.into()),
                     });
@@ -1669,7 +1697,9 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
                 _ => {
                     return Err(DoctorError::Error {
                         reason: "Input Method is not installed".into(),
-                        info: vec!["Run `cw integrations install input-method` to enable it".into()],
+                        info: vec![
+                            format!("Run `{CLI_BINARY_NAME} integrations install input-method` to enable it").into(),
+                        ],
                         fix: None,
                         error: Some(e.into()),
                     });
@@ -1895,7 +1925,7 @@ impl DoctorCheck for LoginStatusCheck {
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         // We reload the credentials here because we want to check if the user is logged in
         if !auth::is_logged_in().await {
-            return Err(doctor_error!("Not authenticated. Please run `cw login`"));
+            return Err(doctor_error!("Not authenticated. Please run `{CLI_BINARY_NAME} login`"));
         }
 
         Ok(())
@@ -2355,7 +2385,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         #[cfg(target_os = "macos")]
         {
             run_checks_with_context(
-                format!("Let's check {}...", "cw diagnostic".bold()),
+                format!("Let's check {}...", format!("{CLI_BINARY_NAME} diagnostic").bold()),
                 vec![
                     &ShellCompatibilityCheck,
                     &BundlePathCheck,
@@ -2375,7 +2405,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         {
             if fig_util::manifest::is_full() && !fig_util::system_info::is_remote() {
                 run_checks_with_context(
-                    format!("Let's check {}...", "cw diagnostic".bold()),
+                    format!("Let's check {}...", format!("{CLI_BINARY_NAME} diagnostic").bold()),
                     vec![&AutocompleteActiveCheck],
                     super::diagnostics::get_diagnostics,
                     config,
@@ -2438,7 +2468,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         println!();
         println!(
             "If you are not sure how to fix it, please open an issue with {} to let us know!",
-            "cw issue".magenta()
+            format!("{CLI_BINARY_NAME} issue").magenta()
         );
         println!();
     } else {
@@ -2449,7 +2479,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         println!();
         println!(
             "  CodeWhisperer still not working? Run {} to let us know!",
-            "cw issue".magenta()
+            format!("{CLI_BINARY_NAME} issue").magenta()
         );
         println!();
     }

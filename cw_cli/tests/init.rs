@@ -10,6 +10,7 @@ use std::process::{
 #[cfg(not(windows))]
 use assert_cmd::prelude::*;
 use eyre::Context;
+use fig_util::consts::CLI_BINARY_NAME;
 use paste::paste;
 
 macro_rules! init_test {
@@ -17,7 +18,7 @@ macro_rules! init_test {
         paste! {
             #[cfg(not(windows))]
             fn [<init_output_ $shell _ $stage _ $file>]() -> Result<String, Box<dyn std::error::Error>> {
-                let mut cmd = Command::cargo_bin("cw_cli")?;
+                let mut cmd = Command::cargo_bin(format!("{CLI_BINARY_NAME}_cli"))?;
                 cmd.arg("init").arg($shell).arg($stage).arg("--rcfile").arg($file);
                 cmd.env("CW_INIT_SNAPSHOT_TEST", "1");
                 let out = cmd.assert().success().get_output().stdout.clone();
@@ -73,7 +74,7 @@ macro_rules! init_test {
                     println!("Linter {} version: {}", $exe, String::from_utf8(out.stdout)?);
 
                     panic!(
-                        "linter returned {}. please run `cargo run -p cw_cli -- init {} {} --rcfile {} | {} {}`",
+                        "linter returned {}. please run `cargo run -p {CLI_BINARY_NAME}_cli -- init {} {} --rcfile {} | {} {}`",
                         output.status, $shell, $stage, $file, $exe, [$($arg),*].join(" ")
                     );
                 }

@@ -22,8 +22,9 @@ use fig_util::desktop::{
     LaunchArgs,
 };
 use fig_util::{
-    is_codewhisperer_desktop_running,
+    is_desktop_running,
     manifest,
+    CLI_BINARY_NAME,
 };
 use tracing::{
     info,
@@ -95,7 +96,7 @@ pub async fn restart_fig() -> Result<()> {
         bail!("Please restart CodeWhisperer from your host machine");
     }
 
-    if !is_codewhisperer_desktop_running() {
+    if !is_desktop_running() {
         launch_fig_desktop(LaunchArgs {
             wait_for_socket: true,
             open_dashboard: false,
@@ -154,8 +155,8 @@ impl AppSubcommand {
    * CodeWhisperer not working? Run {}
                                 ",
                                 "CodeWhisperer Autocomplete".bold(),
-                                "cw".bold().magenta(),
-                                "cw doctor".bold().magenta(),
+                                CLI_BINARY_NAME.bold().magenta(),
+                                format!("{CLI_BINARY_NAME} doctor").bold().magenta(),
                             );
                         }
                     } else if #[cfg(windows)] {
@@ -177,7 +178,7 @@ impl AppSubcommand {
 
 ",
                                 "\"cd \"".bold(),
-                                "cw doctor".bold().magenta()
+                                format!("{CLI_BINARY_NAME} doctor").bold().magenta()
                             );
                         }
                     }
@@ -185,7 +186,7 @@ impl AppSubcommand {
             },
             AppSubcommand::Prompts => {
                 if fig_util::manifest::is_minimal() {
-                } else if is_codewhisperer_desktop_running() {
+                } else if is_desktop_running() {
                     let new_version = state::get_string("NEW_VERSION_AVAILABLE").ok().flatten();
                     if let Some(version) = new_version {
                         info!("New version {} is available", version);
@@ -281,7 +282,7 @@ impl AppSubcommand {
             AppSubcommand::Restart => restart_fig().await?,
             AppSubcommand::Quit => crate::util::quit_fig(true).await?,
             AppSubcommand::Launch => {
-                if is_codewhisperer_desktop_running() {
+                if is_desktop_running() {
                     println!("CodeWhisperer is already running!");
                     return Ok(());
                 }
@@ -294,7 +295,7 @@ impl AppSubcommand {
                 })?;
             },
             AppSubcommand::Running => {
-                println!("{}", if is_codewhisperer_desktop_running() { "1" } else { "0" });
+                println!("{}", if is_desktop_running() { "1" } else { "0" });
             },
             #[allow(deprecated)]
             AppSubcommand::SetPath => {},

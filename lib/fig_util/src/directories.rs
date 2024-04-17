@@ -7,7 +7,7 @@ use thiserror::Error;
 use time::OffsetDateTime;
 
 #[cfg(target_os = "macos")]
-use crate::consts::CODEWHISPERER_CLI_BINARY_NAME;
+use crate::consts::CLI_BINARY_NAME;
 use crate::system_info::is_remote;
 
 macro_rules! utf8_dir {
@@ -143,7 +143,8 @@ fn runtime_dir() -> Result<PathBuf> {
 pub fn sockets_dir() -> Result<PathBuf> {
     cfg_if::cfg_if! {
         if #[cfg(unix)] {
-            Ok(runtime_dir()?.join("cwrun"))
+            use crate::CLI_BINARY_NAME;
+            Ok(runtime_dir()?.join(format!("{CLI_BINARY_NAME}run")))
         } else if #[cfg(windows)] {
             Ok(fig_dir()?.join("sockets"))
         }
@@ -199,7 +200,8 @@ pub fn autocomplete_specs_dir() -> Result<PathBuf> {
 pub fn logs_dir() -> Result<PathBuf> {
     cfg_if::cfg_if! {
         if #[cfg(unix)] {
-            Ok(runtime_dir()?.join("cwlog"))
+            use crate::CLI_BINARY_NAME;
+            Ok(runtime_dir()?.join(format!("{CLI_BINARY_NAME}log")))
         } else if #[cfg(windows)] {
             Ok(std::env::temp_dir().join("codewhisperer").join("logs"))
         }
@@ -327,14 +329,14 @@ pub fn credentials_path() -> Result<PathBuf> {
 pub fn relative_cli_path() -> Result<PathBuf> {
     cfg_if::cfg_if! {
         if #[cfg(target_os = "macos")] {
-            let path = crate::current_exe_origin().unwrap().parent().unwrap().join(CODEWHISPERER_CLI_BINARY_NAME);
+            let path = crate::current_exe_origin().unwrap().parent().unwrap().join(CLI_BINARY_NAME);
             if path.exists() {
                 Ok(path)
             } else {
                 Err(DirectoryError::FileDoesNotExist(path))
             }
         } else {
-            Ok(std::path::Path::new("cw").into())
+            Ok(std::path::Path::new(crate::CLI_BINARY_NAME).into())
         }
     }
 }
@@ -364,7 +366,10 @@ mod tests {
     /// own otherwise we will set permissions of directories we shouldn't
     #[test]
     fn test_socket_paths() {
-        assert_eq!(host_sockets_dir().unwrap().file_name().unwrap(), "cwrun");
+        assert_eq!(
+            host_sockets_dir().unwrap().file_name().unwrap().to_str().unwrap(),
+            format!("{CLI_BINARY_NAME}run")
+        );
         assert_eq!(
             figterm_socket_path("").unwrap().parent().unwrap().file_name().unwrap(),
             "t"

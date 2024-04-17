@@ -3017,6 +3017,7 @@ dependencies = [
  "fig_ipc",
  "fig_proto",
  "fig_remote_ipc",
+ "fig_util",
  "portable-pty",
  "tempfile",
  "tokio",

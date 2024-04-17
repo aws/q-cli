@@ -7,7 +7,10 @@ use std::os::unix::net::UnixStream;
 use clap::Args;
 use crossterm::style::Stylize;
 use eyre::Result;
-use fig_util::directories;
+use fig_util::{
+    directories,
+    CLI_BINARY_NAME,
+};
 use indoc::formatdoc;
 use uuid::Uuid;
 
@@ -97,7 +100,7 @@ impl GenerateSshArgs {
     fn ssh_config(&self, uuid: &Uuid, exe_path: &str, remote_socket: &str) -> String {
         let header = self.ssh_config_header();
         let uuid = uuid.simple();
-        let set_parent_socket_path = format!("/tmp/cw-parent-{uuid}.socket");
+        let set_parent_socket_path = format!("/tmp/{CLI_BINARY_NAME}-parent-{uuid}.socket");
 
         formatdoc! {"
             {header}
@@ -115,6 +118,9 @@ impl GenerateSshArgs {
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
+    use fig_util::CLI_BINARY_NAME;
     use uuid::Uuid;
 
     use super::*;
@@ -128,10 +134,10 @@ mod tests {
         };
 
         let uuid = Uuid::new_v4();
-        let exe_path = "/usr/bin/cw";
+        let exe_path = Path::new("/usr/bin").join(CLI_BINARY_NAME);
         let remote_socket = "/tmp/remote.socket";
 
-        let config = args.ssh_config(&uuid, exe_path, remote_socket);
+        let config = args.ssh_config(&uuid, exe_path.to_str().unwrap(), remote_socket);
         println!("{config}");
     }
 }

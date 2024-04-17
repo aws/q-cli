@@ -579,6 +579,8 @@ pub async fn send_chat_added_message(conversation_id: String, message_id: String
 
 #[cfg(test)]
 mod test {
+    use fig_util::CLI_BINARY_NAME;
+
     use super::*;
 
     #[tracing_test::traced_test]
@@ -623,7 +625,7 @@ mod test {
     #[ignore = "needs auth which is not in CI"]
     async fn test_all_telemetry() {
         send_user_logged_in().await;
-        send_completion_inserted("cw".to_owned(), None, None).await;
+        send_completion_inserted(CLI_BINARY_NAME.to_owned(), None, None).await;
         send_inline_shell_completion_actioned(true, 1, 2).await;
         send_translation_actioned(Duration::from_millis(10), SuggestionState::Accept).await;
         send_cli_subcommand_executed("doctor").await;

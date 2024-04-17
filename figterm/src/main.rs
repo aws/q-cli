@@ -53,12 +53,15 @@ use fig_proto::remote_hooks::{
     new_edit_buffer_hook,
 };
 use fig_settings::state;
-use fig_util::consts::CODEWHISPERER_CLI_BINARY_NAME;
+use fig_util::consts::CLI_BINARY_NAME;
 use fig_util::process_info::{
     Pid,
     PidExt,
 };
-use fig_util::Terminal as FigTerminal;
+use fig_util::{
+    Terminal as FigTerminal,
+    PTY_BINARY_NAME,
+};
 use flume::{
     Receiver,
     Sender,
@@ -466,14 +469,14 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
     let pty_name = pty.slave.get_name().unwrap_or_else(|| session_id.clone());
 
     let _logger_guard = match fig_log::Logger::new()
-        .with_file(format!("cwterm{pty_name}.log"))
+        .with_file(format!("{PTY_BINARY_NAME}{pty_name}.log"))
         .with_delete_old_log_file()
         .init()
         .context("Failed to init logger")
     {
         Ok(logger_guard) => Some(logger_guard),
         Err(err) => {
-            if !fig_settings::state::get_bool_or("cwterm.suppress_log_error", false) {
+            if !fig_settings::state::get_bool_or("pty.suppress_log_error", false) {
                 // let id = capture_anyhow(&err);
                 eprintln!("Fig failed to init logger: {err:?}");
             }
@@ -499,7 +502,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
     let (child_tx, mut child_rx) = oneshot::channel();
     std::thread::spawn(move || child_tx.send(child.wait()));
 
-    info!("Cwterm: {}", Pid::current());
+    info!("Pid: {}", Pid::current());
     info!("Pty name: {pty_name}");
 
     let runtime = runtime::Builder::new_multi_thread()
@@ -507,7 +510,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
         .thread_name_fn(|| {
             static ATOMIC_ID: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
             let id = ATOMIC_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-            format!("cwterm-runtime-worker-{id}")
+            format!("{PTY_BINARY_NAME}-runtime-worker-{id}")
         })
         .build()?;
 
@@ -725,7 +728,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                                                     write_buffer.extend(
                                                         format!(
                                                             "{} q '{}'\r",
-                                                            CODEWHISPERER_CLI_BINARY_NAME,
+                                                            CLI_BINARY_NAME,
                                                             buffer
                                                                 .trim_start_matches('#')
                                                                 .trim()

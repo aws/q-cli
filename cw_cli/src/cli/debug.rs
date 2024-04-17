@@ -27,13 +27,14 @@ use fig_ipc::local::{
     set_debug_mode,
     toggle_debug_mode,
 };
-use fig_util::consts::CODEWHISPERER_BUNDLE_ID;
+use fig_util::consts::APP_BUNDLE_ID;
 use fig_util::desktop::LaunchArgs;
 use fig_util::{
     directories,
     Shell,
-    CODEWHISPERER_BUNDLE_NAME,
-    CWTERM_BINARY_NAME,
+    APP_BUNDLE_NAME,
+    CLI_BINARY_NAME,
+    PTY_BINARY_NAME,
 };
 use owo_colors::OwoColorize;
 use serde_json::json;
@@ -231,7 +232,7 @@ impl DebugSubcommand {
                 if app_info.is_empty() {
                     println!("CodeWhisperer app is not currently running. Attempting to start...");
                     if Command::new("open")
-                        .args(["-g", "-b", CODEWHISPERER_BUNDLE_ID])
+                        .args(["-g", "-b", APP_BUNDLE_ID])
                         .spawn()?
                         .wait()
                         .is_err()
@@ -240,7 +241,7 @@ impl DebugSubcommand {
                         return Ok(());
                     }
                 }
-                let fig_path = crate::util::get_running_app_info(CODEWHISPERER_BUNDLE_ID, "bundlepath")?;
+                let fig_path = crate::util::get_running_app_info(APP_BUNDLE_ID, "bundlepath")?;
                 let front_app = Command::new("lsappinfo").arg("front").output()?;
                 let terminal_name = String::from_utf8(front_app.stdout)
                     .ok()
@@ -250,10 +251,12 @@ impl DebugSubcommand {
                     None => "".into(),
                 };
 
-                println!("Running the {CODEWHISPERER_BUNDLE_NAME} executable directly from {fig_path}.");
+                println!("Running the {APP_BUNDLE_NAME} executable directly from {fig_path}.");
                 println!("You will need to grant accessibility permissions to the current terminal{terminal_text}!");
 
-                Command::new(format!("{fig_path}/Contents/MacOS/cw")).spawn()?.wait()?;
+                Command::new(format!("{fig_path}/Contents/MacOS/{CLI_BINARY_NAME}"))
+                    .spawn()?
+                    .wait()?;
             },
             DebugSubcommand::Build { build, app } => match build {
                 Some(build) => {
@@ -327,12 +330,12 @@ impl DebugSubcommand {
                     let mut files = files.as_ref().clone();
                     let mut paths = Vec::new();
 
-                    if files.iter().any(|f| f == CWTERM_BINARY_NAME) {
+                    if files.iter().any(|f| f == PTY_BINARY_NAME) {
                         // Remove figterm from the list of files to open
-                        files.retain(|f| f != CWTERM_BINARY_NAME);
+                        files.retain(|f| f != PTY_BINARY_NAME);
 
                         // Add figterm*.log to the list of files to open
-                        let pattern = logs_dir.join(format!("{CWTERM_BINARY_NAME}*.log"));
+                        let pattern = logs_dir.join(format!("{PTY_BINARY_NAME}*.log"));
                         let globset = glob([pattern.to_str().unwrap()])?;
                         let cwterm_logs = glob_dir(&globset, &logs_dir)?;
                         paths.extend(cwterm_logs);
@@ -459,7 +462,7 @@ impl DebugSubcommand {
             },
             DebugSubcommand::Sample => {
                 let output = Command::new("lsappinfo")
-                    .args(["info", "-only", "-pid", "-app", CODEWHISPERER_BUNDLE_ID])
+                    .args(["info", "-only", "-pid", "-app", APP_BUNDLE_ID])
                     .output()?;
                 let pid_str = String::from_utf8(output.stdout)?;
                 let pid = pid_str
@@ -501,7 +504,7 @@ impl DebugSubcommand {
                     quit_fig(true).await?;
 
                     Command::new("tccutil")
-                        .args(["reset", "Accessibility", CODEWHISPERER_BUNDLE_ID])
+                        .args(["reset", "Accessibility", APP_BUNDLE_ID])
                         .spawn()?
                         .wait()?;
 
@@ -516,7 +519,7 @@ impl DebugSubcommand {
                     quit_fig(true).await?;
 
                     Command::new("tccutil")
-                        .args(["reset", "Accessibility", CODEWHISPERER_BUNDLE_ID])
+                        .args(["reset", "Accessibility", APP_BUNDLE_ID])
                         .spawn()?
                         .wait()?;
                 },
@@ -772,27 +775,36 @@ impl DebugSubcommand {
 
                 let tmp_dir = TempDir::new()?;
 
-                let mut command = Command::new(CWTERM_BINARY_NAME);
+                let mut command = Command::new(PTY_BINARY_NAME);
                 command.env("CW_IN_TEST", "1").arg("--");
 
                 match Shell::current_shell() {
                     Some(shell) => {
                         let mut command = match shell {
                             Shell::Bash => {
-                                writeln!(profile, "eval \"$(cw init bash post)\"")?;
+                                writeln!(profile, "eval \"$({CLI_BINARY_NAME} init bash post)\"")?;
                                 command
                                     .args(["bash", "--noprofile", "--norc", "--rcfile"])
                                     .arg(profile.path());
                                 command
                             },
                             Shell::Zsh => {
-                                std::fs::write(tmp_dir.path().join(".zshrc"), "eval \"$(cw init zsh post)\"").unwrap();
+                                std::fs::write(
+                                    tmp_dir.path().join(".zshrc"),
+                                    format!("eval \"$({CLI_BINARY_NAME} init zsh post)\""),
+                                )
+                                .unwrap();
 
                                 command.args(["zsh"]).env("ZDOTDIR", tmp_dir.path());
                                 command
                             },
                             Shell::Fish => {
-                                command.args(["fish", "--no-config", "-C", "cw init fish post | source"]);
+                                command.args([
+                                    "fish",
+                                    "--no-config",
+                                    "-C",
+                                    &format!("{CLI_BINARY_NAME} init fish post | source"),
+                                ]);
                                 command
                             },
                             Shell::Nu => eyre::bail!("Unsupported shell for debug"),

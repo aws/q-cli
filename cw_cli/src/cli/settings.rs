@@ -20,7 +20,7 @@ use fig_util::{
     directories,
     manifest,
     system_info,
-    CODEWHISPERER_CLI_BINARY_NAME,
+    CLI_BINARY_NAME,
 };
 use globset::Glob;
 use serde_json::json;
@@ -150,7 +150,7 @@ impl SettingsArgs {
                 },
                 None => {
                     if manifest::is_minimal() || system_info::is_remote() {
-                        Cli::parse_from([CODEWHISPERER_CLI_BINARY_NAME, "settings", "--help"]);
+                        Cli::parse_from([CLI_BINARY_NAME, "settings", "--help"]);
                         return Ok(());
                     }
 

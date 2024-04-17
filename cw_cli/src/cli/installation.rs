@@ -6,7 +6,7 @@ use fig_install::{
     install,
     InstallComponents,
 };
-use fig_util::CODEWHISPERER_CLI_BINARY_NAME;
+use fig_util::CLI_BINARY_NAME;
 
 use crate::util::dialoguer_theme;
 
@@ -38,7 +38,7 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
             !dialoguer::Confirm::with_theme(&dialoguer_theme())
                 .with_prompt(format!(
                     "Do you want {} to modify your shell config (you will have to manually do this otherwise)?",
-                    CODEWHISPERER_CLI_BINARY_NAME
+                    CLI_BINARY_NAME
                 ))
                 .interact()?
         };

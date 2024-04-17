@@ -6,7 +6,10 @@ use std::fs::{
 use clap::Subcommand;
 use crossterm::style::Stylize;
 use eyre::Result;
-use fig_util::directories;
+use fig_util::{
+    directories,
+    CLI_BINARY_NAME,
+};
 use serde::{
     Deserialize,
     Serialize,
@@ -183,7 +186,7 @@ impl TipsSubcommand {
                     if let Some(tip) = unsent {
                         if now - tips.time_last_sent > tip.wait_time {
                             println!(
-                                "\n{}\n\n{} cw tips disable\n{} cw issue\n",
+                                "\n{}\n\n{} {CLI_BINARY_NAME} tips disable\n{} {CLI_BINARY_NAME} issue\n",
                                 tip.text,
                                 "Disable Getting Started Tips:".underlined(),
                                 "Report a bug:".underlined(),

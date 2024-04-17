@@ -31,7 +31,7 @@ impl Default for LaunchArgs {
     }
 }
 
-pub fn is_codewhisperer_desktop_running() -> bool {
+pub fn is_desktop_running() -> bool {
     cfg_if::cfg_if! {
         if #[cfg(target_os = "macos")] {
             use appkit_nsworkspace_bindings::NSRunningApplication;
@@ -52,11 +52,11 @@ pub fn is_codewhisperer_desktop_running() -> bool {
             };
 
             use crate::consts::{
-                CODEWHISPERER_DESKTOP_PROCESS_NAME,
-                CODEWHISPERER_BUNDLE_ID
+                APP_PROCESS_NAME,
+                APP_BUNDLE_ID
             };
 
-            let bundle_id = NSString::from(CODEWHISPERER_BUNDLE_ID);
+            let bundle_id = NSString::from(APP_BUNDLE_ID);
             let running_applications: NSArray<NSRunningApplication> = unsafe {
                 msg_send![
                     class!(NSRunningApplication),
@@ -70,10 +70,10 @@ pub fn is_codewhisperer_desktop_running() -> bool {
 
             // Fallback to process name check
             let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
-            let mut processes = s.processes_by_exact_name(CODEWHISPERER_DESKTOP_PROCESS_NAME);
+            let mut processes = s.processes_by_exact_name(APP_PROCESS_NAME);
             processes.next().is_some()
         } else if #[cfg(target_os = "windows")] {
-            use crate::consts::CODEWHISPERER_DESKTOP_PROCESS_NAME;
+            use crate::consts::APP_PROCESS_NAME;
 
             let output = match std::process::Command::new("tasklist.exe")
                 .args(["/NH", "/FI", "IMAGENAME eq fig_desktop.exe"])
@@ -94,7 +94,7 @@ pub fn is_codewhisperer_desktop_running() -> bool {
                 System,
             };
 
-            use crate::consts::CODEWHISPERER_DESKTOP_PROCESS_NAME;
+            use crate::consts::APP_PROCESS_NAME;
 
             let process_name = match crate::system_info::in_wsl() {
                 true => {
@@ -107,7 +107,7 @@ pub fn is_codewhisperer_desktop_running() -> bool {
                     };
 
                     return match std::str::from_utf8(&output.stdout) {
-                        Ok(result) => result.contains(CODEWHISPERER_DESKTOP_PROCESS_NAME),
+                        Ok(result) => result.contains(APP_PROCESS_NAME),
                         Err(_) => false,
                     };
                 },
@@ -134,7 +134,7 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
         ));
     }
 
-    match is_codewhisperer_desktop_running() {
+    match is_desktop_running() {
         true => return Ok(()),
         false => {
             if args.verbose {
@@ -156,7 +156,7 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
     cfg_if::cfg_if! {
         if #[cfg(target_os = "macos")] {
             let output = Command::new("open")
-                .args(["-g", "-b", crate::consts::CODEWHISPERER_BUNDLE_ID, "--args"])
+                .args(["-g", "-b", crate::consts::APP_BUNDLE_ID, "--args"])
                 .args(common_args)
                 .output()?;
 
@@ -172,7 +172,7 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
                 .spawn()?;
         } else {
             if system_info::in_wsl() {
-                let output = Command::new(crate::consts::CODEWHISPERER_DESKTOP_PROCESS_NAME)
+                let output = Command::new(crate::consts::APP_PROCESS_NAME)
                     .output()?;
 
                 if !output.status.success() {
@@ -194,7 +194,7 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
         return Ok(());
     }
 
-    if !is_codewhisperer_desktop_running() {
+    if !is_desktop_running() {
         return Err(Error::LaunchError(
             "CodeWhisperer was unable launch successfully".to_owned(),
         ));

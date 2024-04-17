@@ -17,6 +17,7 @@ use fig_util::{
     get_parent_process_exe,
     Shell,
     Terminal,
+    CLI_BINARY_NAME,
 };
 use once_cell::sync::Lazy;
 
@@ -183,7 +184,7 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
         if fig_settings::state::get_bool_or("shell-integrations.immediateLogin", false)
             && fig_settings::state::set_value("shell-integrations.immediateLogin", false).is_ok()
         {
-            to_source.push("cw login".into());
+            to_source.push(format!("{CLI_BINARY_NAME} login"));
         }
     }
 
@@ -267,7 +268,7 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
                     format!(
                         "printf '\\n🚀 CodeWhisperer supports {terminal} Terminal!\\nEnable integrations with {terminal} by \
                          running:\\n  {}\\n\\n'\n",
-                        "cw integrations install input-method".magenta()
+                        format!("{CLI_BINARY_NAME} integrations install input-method").magenta()
                     ),
                 ));
             }

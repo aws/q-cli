@@ -11,7 +11,7 @@ use clap::error::ContextKind;
 use clap::Parser;
 use eyre::Result;
 use fig_log::get_max_fig_log_level;
-use fig_util::CODEWHISPERER_CLI_BINARY_NAME;
+use fig_util::CLI_BINARY_NAME;
 use owo_colors::OwoColorize;
 use tracing::metadata::LevelFilter;
 
@@ -41,7 +41,7 @@ fn main() -> Result<()> {
             writeln!(
                 stderr(),
                 "\nThis command may be valid in newer versions of the CodeWhisperer CLI. Try running {} {}.",
-                CODEWHISPERER_CLI_BINARY_NAME.magenta(),
+                CLI_BINARY_NAME.magenta(),
                 "update".magenta()
             )
             .ok();

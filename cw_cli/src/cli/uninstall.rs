@@ -1,20 +1,21 @@
 use cfg_if::cfg_if;
 use crossterm::style::Stylize;
 use eyre::Result;
+use fig_util::CLI_BINARY_NAME;
 
 use crate::util::dialoguer_theme;
 
 pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
     if fig_util::system_info::in_wsl() {
         println!("Refer to your package manager in order to uninstall CodeWhisperer from WSL");
-        println!("If you're having issues uninstalling fig, run `cw issue`");
+        println!("If you're having issues uninstalling fig, run `{CLI_BINARY_NAME} issue`");
         return Ok(());
     }
 
     if !no_confirm {
         println!(
             "\nIs CodeWhisperer not working? Try running {}\n",
-            "cw doctor".bold().magenta()
+            format!("{CLI_BINARY_NAME} doctor").bold().magenta()
         );
         let should_continue = dialoguer::Select::with_theme(&dialoguer_theme())
             .with_prompt("Are you sure want to continue uninstalling CodeWhisperer?")
@@ -41,7 +42,7 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
             uninstall().await?;
         } else if #[cfg(target_os = "windows")] {
             println!("Please uninstall fig from the `Add or remove programs` menu for now.");
-            println!("If you're having issues uninstalling fig, run `cw issue` to let us know, and use the tool at the following link to remove fig:");
+            println!("If you're having issues uninstalling fig, run `{CLI_BINARY_NAME} issue` to let us know, and use the tool at the following link to remove fig:");
             println!("https://support.microsoft.com/en-us/topic/fix-problems-that-block-programs-from-being-installed-or-removed-cca7d1b6-65a9-3d98-426b-e9f927e1eb4d")
         }
     }
