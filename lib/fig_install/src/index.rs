@@ -34,7 +34,7 @@ use crate::Error;
 
 const DEFAULT_RELEASE_URL: &str = "https://desktop-release.codewhisperer.us-east-1.amazonaws.com";
 
-/// The url to check for updates from, trys the following order:
+/// The url to check for updates from, tries the following order:
 /// - The env var `CW_DESKTOP_RELEASE_URL`
 /// - The setting `install.releaseUrl`
 /// - Falls back to the default or the build time env var `CW_BUILD_DESKTOP_RELEASE_URL`
@@ -94,7 +94,7 @@ impl Index {
 }
 
 #[allow(unused)]
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
 struct Support {
     #[serde(deserialize_with = "deser_enum_other")]
     architecture: PackageArchitecture,
@@ -106,20 +106,20 @@ struct Support {
     file_type: Option<FileType>,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub(crate) struct RemoteVersion {
     pub version: Version,
     pub rollout: Option<Rollout>,
     pub packages: Vec<Package>,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub(crate) struct Rollout {
     start: u64,
     end: u64,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Package {
     #[serde(deserialize_with = "deser_enum_other")]
@@ -133,6 +133,7 @@ pub struct Package {
     pub(crate) download: String,
     pub(crate) sha256: String,
     pub(crate) size: u64,
+    pub(crate) cli_path: Option<String>,
 }
 
 impl Package {
@@ -143,12 +144,18 @@ impl Package {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct UpdatePackage {
+    /// The version of the package
     pub version: Version,
+    /// The url to download the archive from
     pub download_url: Url,
+    /// The sha256 sum of the archive
     pub sha256: String,
+    /// Size of the package in bytes
     pub size: u64,
+    /// Path to the CLI in the bundle
+    pub cli_path: Option<String>,
 }
 
 #[derive(Deserialize, Serialize, PartialEq, Eq, EnumString, Debug)]
@@ -162,6 +169,8 @@ pub enum PackageArchitecture {
     #[strum(serialize = "aarch64")]
     AArch64,
     Universal,
+    #[strum(default)]
+    Other(String),
 }
 
 impl PackageArchitecture {
@@ -345,6 +354,7 @@ pub async fn query_index(
         download_url: package.download_url(),
         sha256: package.sha256,
         size: package.size,
+        cli_path: package.cli_path,
     }))
 }
 
@@ -383,15 +393,9 @@ mod tests {
                 {
                     "kind": "dmg",
                     "architecture": "universal",
-                    "variant": "full"
-                },
-                {
-                    "kind": "other",
+                    "variant": "full",
                     "os": "macos",
-                    "fileType": "dmg",
-                    "architecture": "universal",
-                    "variant": "full"
-                }
+                },
             ],
             "versions": [
                 {
@@ -417,7 +421,8 @@ mod tests {
                             "variant": "full",
                             "download": "0.15.3/CodeWhisperer.dmg",
                             "sha256": "87a311e493bb2b0e68a1b4b5d267c79628d23c1e39b0a62d1a80b0c2352f80a2",
-                            "size": 88174538
+                            "size": 88174538,
+                            "cliPath": "Contents/MacOS/cw"
                         }
                     ]
                 },
@@ -432,7 +437,26 @@ mod tests {
                             "variant": "full",
                             "download": "1.0.0/Q.dmg",
                             "sha256": "87a311e493bb2b0e68a1b4b5d267c79628d23c1e39b0a62d1a80b0c2352f80a2",
-                            "size": 88174538
+                            "size": 88174538,
+                            "cliPath": "Contents/MacOS/q",
+                        }
+                    ]
+                },
+                {
+                    "version": "2.0.0",
+                    "packages": [
+                        {
+                            // random values to ensure forawrd compat
+                            "kind": "abc",
+                            "fileType": "abc",
+                            "os": "abc",
+                            "architecture": "abc",
+                            "variant": "abc",
+                            "download": "abc",
+                            "sha256": "abc",
+                            "size": 123,
+                            "cliPath": "abc",
+                            "otherField": "abc"
                         }
                     ]
                 }
@@ -443,24 +467,28 @@ mod tests {
         let index = serde_json::from_str::<Index>(&json_str).unwrap();
         println!("{:#?}", index);
 
-        assert_eq!(index.supported.len(), 2);
-        assert_eq!(index.versions.len(), 3);
+        assert_eq!(index.supported.len(), 1);
+        assert_eq!(index.supported[0], Support {
+            architecture: PackageArchitecture::Universal,
+            variant: Variant::Full,
+            os: Some(Os::Macos),
+            file_type: None
+        });
 
-        // check the last entry matches
-        assert_eq!(index.versions[2].version, Version::new(1, 0, 0));
-        assert_eq!(index.versions[2].packages.len(), 1);
-        assert_eq!(index.versions[2].packages[0].file_type, Some(FileType::Dmg));
-        assert_eq!(index.versions[2].packages[0].os, Some(Os::Macos));
-        assert_eq!(
-            index.versions[2].packages[0].architecture,
-            PackageArchitecture::Universal
-        );
-        assert_eq!(index.versions[2].packages[0].variant, Variant::Full);
-        assert_eq!(index.versions[2].packages[0].download, "1.0.0/Q.dmg");
-        assert_eq!(
-            index.versions[2].packages[0].sha256,
-            "87a311e493bb2b0e68a1b4b5d267c79628d23c1e39b0a62d1a80b0c2352f80a2"
-        );
-        assert_eq!(index.versions[2].packages[0].size, 88174538);
+        // check the 1.0.0 entry matches
+        assert_eq!(index.versions[2], RemoteVersion {
+            version: Version::new(1, 0, 0),
+            rollout: None,
+            packages: vec![Package {
+                architecture: PackageArchitecture::Universal,
+                variant: Variant::Full,
+                os: Some(Os::Macos),
+                file_type: Some(FileType::Dmg),
+                download: "1.0.0/Q.dmg".into(),
+                sha256: "87a311e493bb2b0e68a1b4b5d267c79628d23c1e39b0a62d1a80b0c2352f80a2".into(),
+                size: 88174538,
+                cli_path: Some("Contents/MacOS/q".into()),
+            }],
+        });
     }
 }

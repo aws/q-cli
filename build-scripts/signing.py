@@ -193,6 +193,10 @@ def apple_notarize_file(file: pathlib.Path, signing_data: EcSigningData):
     file_to_notarize = file
 
     if file_type == "app":
+        # check the app is ready to be notarized
+        # TODO(grant): remove the check=False if this works
+        run_cmd(["syspolicy_check", "notary-submission", file], check=False)
+
         # We can submit dmg files as is, but we have to zip up app files in a specific way
         file_to_notarize = pathlib.Path(f"{name}.zip")
         run_cmd(["ditto", "-c", "-k", "--sequesterRsrc", "--keepParent", file, file_to_notarize])
@@ -221,6 +225,10 @@ def apple_notarize_file(file: pathlib.Path, signing_data: EcSigningData):
         # Verify notarization for .app
         run_cmd(["spctl", "-a", "-v", file])
         pathlib.Path(file_to_notarize).unlink()
+
+        # check the file is ready to be distributed
+        # TODO(grant): remove the check=False if this works
+        run_cmd(["syspolicy_check", "distribution", file], check=False)
     else:
         # Verify notarization for .dmg
         run_cmd(["spctl", "-a", "-t", "open", "--context", "context:primary-signature", "-v", file])

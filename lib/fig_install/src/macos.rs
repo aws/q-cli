@@ -154,8 +154,7 @@ pub(crate) async fn update(
 
     // This points at the currently installed CLI
     let cli_path = fig_util::codewhisperer_bundle()
-        .join("Contents")
-        .join("MacOS")
+        .join("Contents/MacOS")
         .join(CLI_BINARY_NAME);
 
     if !cli_path.exists() {
@@ -238,7 +237,10 @@ pub(crate) async fn update(
     }
 
     // This points at the newly installed CLI via the cli symlink
-    let new_cli_path = installed_app_path.join("Contents/Resources/cli");
+    let new_cli_path = match update.cli_path {
+        Some(path) => installed_app_path.join(path),
+        None => installed_app_path.join("Contents/MacOs").join(CLI_BINARY_NAME),
+    };
     if !new_cli_path.exists() {
         return Err(Error::UpdateFailed(format!(
             "the update succeeded, but the cli did not have the expected name or was missing, expected {CLI_BINARY_NAME}"

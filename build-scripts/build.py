@@ -409,10 +409,6 @@ def build_desktop_app(
         info(f"Copying {package} into bundle")
         shutil.copytree(path, app_path / "Contents/Resources" / package)
 
-    # Add symlinks to Contents/Resources
-    os.symlink(f"../MacOS/{CLI_BINARY_NAME}", app_path / "Contents/Resources/cli")
-    os.symlink(f"../MacOS/{PTY_BINARY_NAME}", app_path / "Contents/Resources/pty")
-
     dmg_path = BUILD_DIR / "CodeWhisperer.dmg"
     dmg_path.unlink(missing_ok=True)
 
@@ -458,6 +454,7 @@ def sign_and_rebundle_macos(app_path: pathlib.Path, dmg_path: pathlib.Path, sign
     ec_sign_file(app_path, EcSigningType.APP, signing_data)
 
     # Notarize the application
+
     apple_notarize_file(app_path, signing_data)
 
     # Rebundle the dmg file with the signed and notarized application
