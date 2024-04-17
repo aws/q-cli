@@ -30,10 +30,10 @@ For any client, you must install the protobuf compiler:
 
 ## Installation/Usage
 
-To compile protos and install artifacts, run:
+To compile protos, run:
 
 ```
-make
+./build-ts.sh
 ```
 
 ## Deprecating a CodeWhisperer API
