@@ -1,3 +1,5 @@
+import { CLI_BINARY_NAME } from "@/lib/constants";
+
 const translateSettings = [
   {
     title: "Settings",
@@ -6,7 +8,7 @@ const translateSettings = [
         id: "ai.terminal-hash-sub",
         title: "Hashtag Substitution",
         description:
-          "Comments in the shell will be substituted with the `cw ai` command.",
+          `Comments in the shell will be substituted with the \`${CLI_BINARY_NAME} ai\` command.`,
         type: "boolean",
         default: true,
       },
@@ -27,7 +29,7 @@ export default translateSettings;
 
 export const intro = {
   title: "Translation",
-  description: "Translate natural language-to-bash. Just run `cw ai`.",
+  description: `Translate natural language-to-bash. Just run \`${CLI_BINARY_NAME} ai\`.`,
   link: "https://fig.io/user-manual/ai",
   enable: {
     flag: "ai.disable",
