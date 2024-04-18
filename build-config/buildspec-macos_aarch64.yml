@@ -33,8 +33,6 @@ phases:
             sleep 30
         done
       - echo SSM command invocation status changed to $STATUS
-      - aws s3 cp --recursive s3://fig-io-desktop-builds-$AWS_ACCOUNT-$AWS_REGION/staging .
-      - aws s3 rm --recursive s3://fig-io-desktop-builds-$AWS_ACCOUNT-$AWS_REGION/staging
 
 artifacts:
   files:
