@@ -274,6 +274,8 @@ pub enum InternalSubcommand {
     SwapFiles {
         from: PathBuf,
         to: PathBuf,
+        #[arg(long)]
+        not_same_bundle_name: bool,
     },
     #[cfg(target_os = "macos")]
     BrewUninstall {
@@ -730,7 +732,11 @@ impl InternalSubcommand {
                 .ok();
             },
             #[cfg(target_os = "macos")]
-            InternalSubcommand::SwapFiles { from, to } => {
+            InternalSubcommand::SwapFiles {
+                from,
+                to,
+                not_same_bundle_name,
+            } => {
                 use std::io::stderr;
                 use std::os::unix::prelude::OsStrExt;
 
@@ -750,7 +756,7 @@ impl InternalSubcommand {
                     },
                 };
 
-                match fig_install::macos::swap(from_cstr, to_cstr) {
+                match fig_install::macos::install(from_cstr, to_cstr, !not_same_bundle_name) {
                     Ok(_) => {
                         writeln!(stdout(), "success").ok();
                     },

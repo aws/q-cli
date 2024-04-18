@@ -109,22 +109,35 @@ pub(crate) async fn update(
             .as_str(),
     );
 
-    // find `.app` file in the dmg
-    let app_entries = std::fs::read_dir(&mount_point)?
+    let all_entries = std::fs::read_dir(&mount_point)?
         .filter_map(|entry| entry.ok())
+        .collect::<Vec<_>>();
+
+    let all_entries_name = all_entries
+        .iter()
+        .map(|entry| entry.path().to_string_lossy().into_owned())
+        .collect::<Vec<_>>();
+
+    // find `.app` file in the dmg
+    let app_entries = all_entries
+        .iter()
         .filter(|entry| {
             let entry_path = entry.path();
-            entry_path.is_dir() && entry_path.ends_with(".app")
+            entry_path.is_dir() && entry_path.extension() == Some(OsStr::new("app"))
         })
         .collect::<Vec<_>>();
 
     if app_entries.is_empty() {
-        return Err(Error::UpdateFailed("the update dmg is missing a .app directory".into()));
+        return Err(Error::UpdateFailed(format!(
+            "the update dmg is missing a .app directory: {}",
+            all_entries_name.join(", ")
+        )));
     }
     if app_entries.len() > 1 {
-        return Err(Error::UpdateFailed(
-            "the update dmg has more than one .app directory".into(),
-        ));
+        return Err(Error::UpdateFailed(format!(
+            "the update dmg has more than one .app directory: {}",
+            all_entries_name.join(", ")
+        )));
     }
 
     let mount_app_path = app_entries[0].path();
@@ -132,7 +145,7 @@ pub(crate) async fn update(
     let app_name = match mount_app_path.file_name() {
         Some(name) => Path::new(name),
         None => {
-            return Err(Error::UpdateFailed("the update dmg is missing a .app directory".into()));
+            return Err(Error::UpdateFailed("No app name found in the update dmg".into()));
         },
     };
 
@@ -174,8 +187,7 @@ pub(crate) async fn update(
 
     let installed_app_path_cstr = CString::new(installed_app_path.as_os_str().as_bytes())?;
 
-    // Swap if same name
-    match swap(&temp_app_path_cstr, &installed_app_path_cstr) {
+    match install(&temp_app_path_cstr, &installed_app_path_cstr, same_bundle_name) {
         Ok(()) => debug!("swapped app bundle"),
         // Try to elevate permissions if we can't swap the app bundle and in interactive mode
         Err(err) if interactive => {
@@ -195,14 +207,17 @@ pub(crate) async fn update(
                         | security_framework::authorization::Flags::EXTEND_RIGHTS,
                 )?;
 
+                let mut arguments = vec![OsStr::new("_"), OsStr::new("swap-files")];
+
+                if !same_bundle_name {
+                    arguments.push(OsStr::new("not-same-bundle-name"));
+                }
+
+                arguments.extend([temp_app_path.as_os_str(), installed_app_path.as_os_str()]);
+
                 let file = auth.execute_with_privileges_piped(
                     &cli_path,
-                    [
-                        OsStr::new("_"),
-                        OsStr::new("swap-files"),
-                        temp_app_path.as_os_str(),
-                        installed_app_path.as_os_str(),
-                    ],
+                    arguments,
                     security_framework::authorization::Flags::DEFAULTS,
                 )?;
 
@@ -456,10 +471,16 @@ pub async fn uninstall_terminal_integrations() {
     }
 }
 
-pub fn swap(src: impl AsRef<CStr>, dst: impl AsRef<CStr>) -> Result<(), Error> {
+pub fn install(src: impl AsRef<CStr>, dst: impl AsRef<CStr>, same_bundle_name: bool) -> Result<(), Error> {
     // We want to swap the app bundles, like sparkle does
     // https://github.com/sparkle-project/Sparkle/blob/863f85b5f5398c03553f2544668b95816b2860db/Sparkle/SUFileManager.m#L235
-    let status = unsafe { libc::renamex_np(src.as_ref().as_ptr(), dst.as_ref().as_ptr(), libc::RENAME_SWAP) };
+    let status = unsafe {
+        libc::renamex_np(
+            src.as_ref().as_ptr(),
+            dst.as_ref().as_ptr(),
+            if same_bundle_name { libc::RENAME_SWAP } else { 0 },
+        )
+    };
 
     if status != 0 {
         let err = std::io::Error::last_os_error();

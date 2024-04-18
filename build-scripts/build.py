@@ -23,6 +23,10 @@ APP_NAME = "CodeWhisperer"
 CLI_BINARY_NAME = "cw"
 PTY_BINARY_NAME = "cwterm"
 
+CLI_PACKAGE_NAME = "cw_cli"
+PTY_PACKAGE_NAME = "figterm"
+DESKTOP_PACKAGE_NAME = "fig_desktop"
+
 BUILD_DIR_RELATIVE = pathlib.Path(os.environ.get("BUILD_DIR") or "build")
 BUILD_DIR = BUILD_DIR_RELATIVE.absolute()
 
@@ -159,7 +163,7 @@ def run_cargo_tests(features: Mapping[str, Sequence[str]] | None = None):
         args.extend(["--target", target])
 
     if isLinux():
-        args.extend(["--workspace", "--exclude", "fig_desktop"])
+        args.extend(["--workspace", "--exclude", DESKTOP_PACKAGE_NAME])
 
     if features:
         args.extend(
@@ -179,9 +183,9 @@ def run_cargo_tests(features: Mapping[str, Sequence[str]] | None = None):
 
     args = ["cargo", "test", "--release", "--locked"]
 
-    # disable fig_desktop tests for now
+    # disable desktop tests for now
     if isLinux():
-        args.extend(["--workspace", "--exclude", "fig_desktop"])
+        args.extend(["--workspace", "--exclude", DESKTOP_PACKAGE_NAME])
 
     if features:
         args.extend(
@@ -208,7 +212,7 @@ def run_clippy(features: Mapping[str, Sequence[str]] | None = None):
         args.extend(["--target", target])
 
     if isLinux():
-        args.extend(["--workspace", "--exclude", "fig_desktop"])
+        args.extend(["--workspace", "--exclude", DESKTOP_PACKAGE_NAME])
 
     if features:
         args.extend(
@@ -239,7 +243,7 @@ def version() -> str:
     )
     data = json.loads(output)
     for pkg in data["packages"]:
-        if pkg["name"] == "fig_desktop":
+        if pkg["name"] == DESKTOP_PACKAGE_NAME:
             return pkg["version"]
     raise ValueError("Version not found")
 
@@ -299,13 +303,13 @@ def build_macos_ime(signing_data: EcSigningData | None) -> pathlib.Path:
     return input_method_app
 
 
-def tauri_config(cw_cli_path: pathlib.Path, cwterm_path: pathlib.Path, target: str) -> str:
+def tauri_config(cli_path: pathlib.Path, pty_path: pathlib.Path, target: str) -> str:
     config = {
         "tauri": {
             "bundle": {
                 "externalBin": [
-                    str(cw_cli_path).removesuffix(f"-{target}"),
-                    str(cwterm_path).removesuffix(f"-{target}"),
+                    str(cli_path).removesuffix(f"-{target}"),
+                    str(pty_path).removesuffix(f"-{target}"),
                 ],
                 "resources": ["manifest.json"],
             }
@@ -315,8 +319,8 @@ def tauri_config(cw_cli_path: pathlib.Path, cwterm_path: pathlib.Path, target: s
 
 
 def build_desktop_app(
-    cwterm_path: pathlib.Path,
-    cw_cli_path: pathlib.Path,
+    pty_path: pathlib.Path,
+    cli_path: pathlib.Path,
     npm_packages: Dict[str, pathlib.Path],
     signing_data: EcSigningData | None,
     features: Mapping[str, Sequence[str]] | None = None,
@@ -327,14 +331,14 @@ def build_desktop_app(
     ime_app = build_macos_ime(signing_data)
 
     info("Writing manifest")
-    manifest_path = pathlib.Path("fig_desktop/manifest.json")
+    manifest_path = pathlib.Path(DESKTOP_PACKAGE_NAME) / "manifest.json"
     manifest_path.write_text(gen_manifest())
 
     info("Building tauri config")
-    tauri_config_path = pathlib.Path("fig_desktop/build-config.json")
-    tauri_config_path.write_text(tauri_config(cw_cli_path=cw_cli_path, cwterm_path=cwterm_path, target=target))
+    tauri_config_path = pathlib.Path(DESKTOP_PACKAGE_NAME) / "build-config.json"
+    tauri_config_path.write_text(tauri_config(cli_path=cli_path, pty_path=pty_path, target=target))
 
-    info("Building fig_desktop")
+    info("Building", DESKTOP_PACKAGE_NAME)
 
     cargo_tauri_args = [
         "cargo-tauri",
@@ -345,12 +349,12 @@ def build_desktop_app(
         target,
     ]
 
-    if features and features.get("fig_desktop"):
-        cargo_tauri_args.extend(["--features", ",".join(features["fig_desktop"])])
+    if features and features.get(DESKTOP_PACKAGE_NAME):
+        cargo_tauri_args.extend(["--features", ",".join(features[DESKTOP_PACKAGE_NAME])])
 
     run_cmd(
         cargo_tauri_args,
-        cwd="fig_desktop",
+        cwd=DESKTOP_PACKAGE_NAME,
         env={**os.environ, **rust_env(), "BUILD_DIR": BUILD_DIR},
     )
 
@@ -359,7 +363,7 @@ def build_desktop_app(
     tauri_config_path.unlink(missing_ok=True)
 
     target_bundle = pathlib.Path(f"target/{target}/release/bundle/macos/codewhisperer_desktop.app")
-    app_path = BUILD_DIR / "CodeWhisperer.app"
+    app_path = BUILD_DIR / f"{APP_NAME}.app"
     shutil.rmtree(app_path, ignore_errors=True)
     shutil.copytree(target_bundle, app_path)
 
@@ -409,7 +413,11 @@ def build_desktop_app(
         info(f"Copying {package} into bundle")
         shutil.copytree(path, app_path / "Contents/Resources" / package)
 
-    dmg_path = BUILD_DIR / "CodeWhisperer.dmg"
+    # Add symlinks
+    # os.symlink(f"./{CLI_BINARY_NAME}", app_path / "Contents/MacOS/cli")
+    # os.symlink(f"./{PTY_BINARY_NAME}", app_path / "Contents/MacOS/pty")
+
+    dmg_path = BUILD_DIR / f"{APP_NAME}.dmg"
     dmg_path.unlink(missing_ok=True)
 
     dmg_resources_dir = pathlib.Path("bundle/dmg")
@@ -470,27 +478,27 @@ def sign_and_rebundle_macos(app_path: pathlib.Path, dmg_path: pathlib.Path, sign
 
 
 def linux_bundle(
-    cwterm_path: pathlib.Path,
-    cw_cli_path: pathlib.Path,
-    codewhisperer_desktop_path: pathlib.Path,
+    pty_path: pathlib.Path,
+    cli_path: pathlib.Path,
+    desktop_app_path: pathlib.Path,
     is_minimal: bool,
 ):
     if not is_minimal:
         for res in [16, 22, 24, 32, 48, 64, 128, 256, 512]:
             shutil.copy2(
-                f"fig_desktop/icons/{res}x{res}.png",
+                f"{DESKTOP_PACKAGE_NAME}/icons/{res}x{res}.png",
                 f"build/usr/share/icons/hicolor/{res}x{res}/apps/fig.png",
             )
 
     info("Copying bundle files")
     bin_path = pathlib.Path("build/usr/bin")
     bin_path.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(cw_cli_path, bin_path)
-    shutil.copy2(cwterm_path, bin_path)
+    shutil.copy2(cli_path, bin_path)
+    shutil.copy2(pty_path, bin_path)
     shutil.copytree("bundle/linux/minimal", BUILD_DIR, dirs_exist_ok=True)
     if not is_minimal:
         shutil.copytree("bundle/linux/desktop", BUILD_DIR, dirs_exist_ok=True)
-        shutil.copy2(codewhisperer_desktop_path, bin_path)
+        shutil.copy2(desktop_app_path, bin_path)
 
 
 def generate_sha(path: pathlib.Path) -> pathlib.Path:
@@ -545,7 +553,10 @@ if __name__ == "__main__":
         info("Building for prod")
     elif stage_name == "gamma":
         info("Building for gamma")
-        cargo_features = {"cw_cli": ["cw_cli/gamma"], "fig_desktop": ["fig_desktop/gamma"]}
+        cargo_features = {
+            CLI_PACKAGE_NAME: [f"{CLI_PACKAGE_NAME}/gamma"],
+            DESKTOP_PACKAGE_NAME: [f"{DESKTOP_PACKAGE_NAME}/gamma"],
+        }
     else:
         raise ValueError(f"Unknown stage name: {stage_name}")
 
@@ -565,17 +576,17 @@ if __name__ == "__main__":
     if run_lints:
         run_clippy(features=cargo_features)
 
-    info("Building cw_cli")
-    cw_cli_path = build_cargo_bin("cw_cli", output_name=CLI_BINARY_NAME, features=cargo_features)
+    info("Building", CLI_PACKAGE_NAME)
+    cli_path = build_cargo_bin(CLI_PACKAGE_NAME, output_name=CLI_BINARY_NAME, features=cargo_features)
 
-    info("Building figterm")
-    cwterm_path = build_cargo_bin("figterm", output_name=PTY_BINARY_NAME, features=cargo_features)
+    info("Building", PTY_PACKAGE_NAME)
+    pty_path = build_cargo_bin(PTY_PACKAGE_NAME, output_name=PTY_BINARY_NAME, features=cargo_features)
 
     if isDarwin():
-        info("Building CodeWhisperer.dmg")
+        info(f"Building {APP_NAME}.dmg")
         dmg_path = build_desktop_app(
-            cw_cli_path=cw_cli_path,
-            cwterm_path=cwterm_path,
+            cli_path=cli_path,
+            pty_path=pty_path,
             npm_packages=npm_packages,
             signing_data=signing_data,
             features=cargo_features,
@@ -607,8 +618,8 @@ if __name__ == "__main__":
         archive_bin_path = archive_path / "bin"
         archive_bin_path.mkdir(parents=True, exist_ok=True)
 
-        shutil.copy2(cw_cli_path, archive_bin_path)
-        shutil.copy2(cwterm_path, archive_bin_path)
+        shutil.copy2(cli_path, archive_bin_path)
+        shutil.copy2(pty_path, archive_bin_path)
 
         signer = load_gpg_signer()
 

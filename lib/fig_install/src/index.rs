@@ -360,6 +360,11 @@ pub async fn query_index(
 
 #[cfg(test)]
 mod tests {
+    use fig_util::{
+        OLD_CLI_BINARY_NAME,
+        OLD_PRODUCT_NAME,
+    };
+
     use super::*;
 
     #[tokio::test]
@@ -406,7 +411,7 @@ mod tests {
                             "kind": "dmg",
                             "architecture": "universal",
                             "variant": "full",
-                            "download": "0.7.0/CodeWhisperer.dmg",
+                            "download": format!("0.7.0/{OLD_PRODUCT_NAME}.dmg"),
                             "sha256": "4213d7649e4b1a2ec50adc0266d32d3e1e1f952ed6a863c28d7538190dc92472",
                             "size": 82975504
                         }
@@ -419,10 +424,10 @@ mod tests {
                             "kind": "dmg",
                             "architecture": "universal",
                             "variant": "full",
-                            "download": "0.15.3/CodeWhisperer.dmg",
+                            "download": format!("0.15.3/{OLD_PRODUCT_NAME}.dmg"),
                             "sha256": "87a311e493bb2b0e68a1b4b5d267c79628d23c1e39b0a62d1a80b0c2352f80a2",
                             "size": 88174538,
-                            "cliPath": "Contents/MacOS/cw"
+                            "cliPath": format!("Contents/MacOS/{OLD_CLI_BINARY_NAME}")
                         }
                     ]
                 },
@@ -446,7 +451,7 @@ mod tests {
                     "version": "2.0.0",
                     "packages": [
                         {
-                            // random values to ensure forawrd compat
+                            // random values to ensure forward compat
                             "kind": "abc",
                             "fileType": "abc",
                             "os": "abc",

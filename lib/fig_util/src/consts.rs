@@ -14,6 +14,10 @@ pub const URL_SCHEMA: &str = "codewhisperer";
 pub const PRODUCT_NAME: &str = "CodeWhisperer";
 pub const PRODUCT_NAME_SHORT: &str = "CW";
 
+// These are the old "CodeWhisperer" branding, used anywhere we will not update to Q
+pub const OLD_PRODUCT_NAME: &str = "CodeWhisperer";
+pub const OLD_CLI_BINARY_NAME: &str = "cw";
+
 /// macOS specific constants
 pub mod macos {
     pub const BUNDLE_CONTENTS_MACOS_PATH: &str = "Contents/MacOS";
