@@ -4,10 +4,10 @@ import { PRODUCT_NAME } from "@/lib/constants";
 
 const onboardingSteps: InstallCheck[] = [
   {
-    id: 'welcome',
+    id: "welcome",
     title: `Welcome to ${PRODUCT_NAME}`,
-    description: [''],
-    action: 'Continue'
+    description: [""],
+    action: "Continue",
   },
   ...installChecks,
   {
@@ -17,7 +17,7 @@ const onboardingSteps: InstallCheck[] = [
       "AI features won't work if you're no longer signed into Builder ID.",
     ],
     action: "Sign in",
-  }
-]
+  },
+];
 
-export default onboardingSteps
+export default onboardingSteps;

@@ -2,7 +2,7 @@ import { PRODUCT_NAME } from "@/lib/constants";
 
 const autocompleteSettings = [
   {
-    title: 'General',
+    title: "General",
     properties: [
       {
         id: "autocomplete.insertSpaceAutomatically",
@@ -26,7 +26,8 @@ const autocompleteSettings = [
       {
         id: "autocomplete.immediatelyExecuteAfterSpace",
         title: "Allow instant execute after Space",
-        description: "Immediately execute commands after pressing [space]. This is helpful for users that habitually type a space before executing a command",
+        description:
+          "Immediately execute commands after pressing [space]. This is helpful for users that habitually type a space before executing a command",
         type: "boolean",
         default: false,
         popular: false,
@@ -61,7 +62,8 @@ const autocompleteSettings = [
       {
         id: "autocomplete.preferVerboseSuggestions",
         title: "Prefer verbose suggestions",
-        description: "Use the verbose version of the option/subcommand inserted.",
+        description:
+          "Use the verbose version of the option/subcommand inserted.",
         example:
           "e.g. selecting `-m, --message` suggestion will insert `--message` rather than `-m`.",
         type: "boolean",
@@ -80,8 +82,7 @@ const autocompleteSettings = [
       {
         id: "autocomplete.disableForCommands",
         title: "Disable CLIs",
-        description:
-          `A comma separated list of CLI tools that ${PRODUCT_NAME} should not autocomplete on.`,
+        description: `A comma separated list of CLI tools that ${PRODUCT_NAME} should not autocomplete on.`,
         example: "e.g. `git,npm,cd,docker`",
         type: "textlist",
         default: [],
@@ -127,7 +128,8 @@ const autocompleteSettings = [
       {
         id: "autocomplete.firstTokenCompletion",
         title: "First token completion",
-        description: "Offer completions for the CLI itself, not just its subcommand, options, and arguments.",
+        description:
+          "Offer completions for the CLI itself, not just its subcommand, options, and arguments.",
         example: "e.g. `cd`, `git`, etc.",
         type: "boolean",
         default: false,
@@ -136,7 +138,7 @@ const autocompleteSettings = [
     ],
   },
   {
-    title: 'Appearance',
+    title: "Appearance",
     withPreview: true,
     properties: [
       {
@@ -210,19 +212,20 @@ const autocompleteSettings = [
       //   default: null,
       //   popular: false
       // },
-    ]
+    ],
   },
   {
-    title: 'Developer',
+    title: "Developer",
     properties: [
       {
         id: "autocomplete.developerMode",
         title: "Dev mode",
-        description: "Turns off completion-spec caching and loads completion specs from the Specs Folder specified in the setting below.",
+        description:
+          "Turns off completion-spec caching and loads completion specs from the Specs Folder specified in the setting below.",
         example: "Developer Mode changes the way specs are loaded.",
         type: "boolean",
         default: false,
-        popular: false
+        popular: false,
       },
       {
         id: "autocomplete.devCompletionsFolder",
@@ -230,21 +233,21 @@ const autocompleteSettings = [
         description: `When Developer Mode is enabled, ${PRODUCT_NAME} loads completion specs from the specified directory.`,
         type: "text",
         default: null,
-        popular: false
-      }
-    ]
-  }
+        popular: false,
+      },
+    ],
+  },
 ];
 
 export default autocompleteSettings;
 
 export const intro = {
-    title: 'CLI Completions',
-    description: 'IDE-style autocomplete for 500+ CLIs.',
-    link: 'https://fig.io/user-manual/autocomplete',
-    enable: {
-      flag: 'autocomplete.disable',
-      inverted: true,
-      default: false
-    }
-}
+  title: "CLI Completions",
+  description: "IDE-style autocomplete for 500+ CLIs.",
+  link: "https://fig.io/user-manual/autocomplete",
+  enable: {
+    flag: "autocomplete.disable",
+    inverted: true,
+    default: false,
+  },
+};

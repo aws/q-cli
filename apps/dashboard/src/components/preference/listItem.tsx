@@ -32,7 +32,7 @@ export function Setting({
 }) {
   const [setting, setSetting] = useSetting(data.id);
   const [inputValue, setInputValue] = useState<PrefDefault>(
-    setting ?? data.default
+    setting ?? data.default,
   );
 
   // see if this specific setting is set in config file, then synchronize the initial state
@@ -193,7 +193,7 @@ export function Setting({
                   setSetting(
                     value === ""
                       ? undefined
-                      : value.split(",").map((v) => v.trim())
+                      : value.split(",").map((v) => v.trim()),
                   );
                 }}
               />

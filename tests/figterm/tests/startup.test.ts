@@ -11,7 +11,7 @@ const filterOutliers = (arr: number[]): number[] => {
   const maxValue = q3 + iqr * 1.5;
   const minValue = q1 - iqr * 1.5;
 
-  return values.filter(x => x <= maxValue && x >= minValue);
+  return values.filter((x) => x <= maxValue && x >= minValue);
 };
 
 const computeAverageStartupTime = async (opts: PTYOptions, n = 5) => {
@@ -32,17 +32,32 @@ test('zsh: fig startup time', async () => {
   const shell = 'zsh';
   const getEnv = (fig: boolean) => ({
     ...process.env,
-    ZDOTDIR: `/usr/home/with${fig ? '' : 'out'}fig`
+    ZDOTDIR: `/usr/home/with${fig ? '' : 'out'}fig`,
   });
-  const figMinimal = await computeAverageStartupTime({ shell, env: getEnv(true) }, 100);
-  const withoutFig = await computeAverageStartupTime({ shell, env: getEnv(false) }, 100);
+  const figMinimal = await computeAverageStartupTime(
+    { shell, env: getEnv(true) },
+    100
+  );
+  const withoutFig = await computeAverageStartupTime(
+    { shell, env: getEnv(false) },
+    100
+  );
   expect(figMinimal).toBeLessThan(withoutFig + 50);
 }, 20000);
 
 test('bash: fig startup time', async () => {
   const shell = 'bash';
-  const getArgs = (fig: boolean) => ['--init-file', `/usr/home/with${fig ? '' : 'out'}fig/.bashrc`];
-  const figMinimal = await computeAverageStartupTime({ shell, args: getArgs(true), }, 100);
-  const withoutFig = await computeAverageStartupTime({ shell, args: getArgs(false) }, 100);
+  const getArgs = (fig: boolean) => [
+    '--init-file',
+    `/usr/home/with${fig ? '' : 'out'}fig/.bashrc`,
+  ];
+  const figMinimal = await computeAverageStartupTime(
+    { shell, args: getArgs(true) },
+    100
+  );
+  const withoutFig = await computeAverageStartupTime(
+    { shell, args: getArgs(false) },
+    100
+  );
   expect(figMinimal).toBeLessThan(withoutFig + 50);
 }, 20000);

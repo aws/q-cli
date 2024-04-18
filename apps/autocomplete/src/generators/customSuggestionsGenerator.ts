@@ -10,7 +10,7 @@ import {
 
 export async function getCustomSuggestions(
   generator: Fig.Generator,
-  context: GeneratorContext
+  context: GeneratorContext,
 ): Promise<Fig.Suggestion[]> {
   if (!generator.custom) {
     return [];
@@ -44,9 +44,9 @@ export async function getCustomSuggestions(
             searchTerm,
             environmentVariables,
             isDangerous,
-          })
+          }),
         ),
-      generator.cache?.cacheKey
+      generator.cache?.cacheKey,
     );
 
     return result.map((name) => ({ ...name, type: name.type || "arg" }));

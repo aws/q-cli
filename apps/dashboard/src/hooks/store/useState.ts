@@ -4,7 +4,7 @@ import { useStore } from "zustand";
 import z from "zod";
 
 export function useLocalState(
-  key: string
+  key: string,
 ): readonly [unknown, (value: unknown) => void] {
   const store = useContext(StoreContext);
   if (!store) throw new Error("Missing StoreContext.Provider in the tree");
@@ -16,7 +16,7 @@ export function useLocalState(
 
 export function useLocalStateDefault(
   key: string,
-  defaultValue: unknown
+  defaultValue: unknown,
 ): readonly [unknown, (value: unknown) => void] {
   const [state, setState] = useLocalState(key);
   return [state === undefined ? defaultValue : state, setState];
@@ -24,7 +24,7 @@ export function useLocalStateDefault(
 
 export function useLocalStateZod<T>(
   key: string,
-  schema: z.Schema<T>
+  schema: z.Schema<T>,
 ): readonly [T | undefined, (value: T) => void] {
   const [state, setState] = useLocalState(key);
   return [
@@ -36,7 +36,7 @@ export function useLocalStateZod<T>(
 export function useLocalStateZodDefault<T>(
   key: string,
   schema: z.Schema<T>,
-  defaultValue: T
+  defaultValue: T,
 ): readonly [T, (value: T) => void] {
   const [state, setState] = useLocalState(key);
 

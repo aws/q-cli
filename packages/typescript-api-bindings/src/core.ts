@@ -15,7 +15,7 @@ const FigProtoMessageReceived = "FigProtoMessageReceived";
 type shouldKeepListening = boolean;
 
 export type APIResponseHandler = (
-  response: ServerOriginatedMessage["submessage"]
+  response: ServerOriginatedMessage["submessage"],
 ) => shouldKeepListening | void;
 
 let messageId = 0;
@@ -45,7 +45,7 @@ const receivedMessage = (response: ServerOriginatedMessage): void => {
 
 export function sendMessage(
   message: ClientOriginatedMessage["submessage"],
-  handler?: APIResponseHandler
+  handler?: APIResponseHandler,
 ) {
   const request: ClientOriginatedMessage = {
     id: (messageId += 1),
@@ -94,14 +94,14 @@ export function sendMessage(
   } else if (window.webkit) {
     if (!window.webkit?.messageHandlers?.proto) {
       console.error(
-        "This version of CodeWhisperer does not support using protocol buffers. Please update."
+        "This version of CodeWhisperer does not support using protocol buffers. Please update.",
       );
       return;
     }
     window.webkit.messageHandlers.proto.postMessage(b64);
   } else {
     console.error(
-      "Cannot send request. Fig.js is not supported in this browser."
+      "Cannot send request. Fig.js is not supported in this browser.",
     );
   }
 }

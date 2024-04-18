@@ -63,7 +63,7 @@ export const executeLoginShell = async ({
     executable: exe,
     args: [flags, command],
     terminalSessionId: window.globalTerminalSessionId,
-    timeout
+    timeout,
   });
 
   try {
@@ -98,4 +98,5 @@ export const executeLoginShell = async ({
   }
 };
 
-export const executeCommand: Fig.ExecuteCommandFunction = (args) => executeCommandTimeout(args);
+export const executeCommand: Fig.ExecuteCommandFunction = (args) =>
+  executeCommandTimeout(args);

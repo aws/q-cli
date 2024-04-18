@@ -7,8 +7,7 @@ const generalPreferences = [
       {
         id: "app.launchOnStartup",
         title: "Launch on Start",
-        description:
-          `Start ${PRODUCT_NAME} automatically whenever you restart your computer.`,
+        description: `Start ${PRODUCT_NAME} automatically whenever you restart your computer.`,
         type: "boolean",
         default: true,
         popular: false,
@@ -52,8 +51,7 @@ const generalPreferences = [
       {
         id: "app.hideMenubarIcon",
         title: "Display Menu Bar icon",
-        description:
-          `${PRODUCT_NAME} icon will appear in the Menu Bar while ${PRODUCT_NAME} is running.`,
+        description: `${PRODUCT_NAME} icon will appear in the Menu Bar while ${PRODUCT_NAME} is running.`,
         type: "boolean",
         default: false,
         inverted: true,
@@ -84,8 +82,7 @@ const generalPreferences = [
       {
         id: "telemetry.enabled",
         title: "Telemetry",
-        description:
-          `Enable ${PRODUCT_NAME} for command line to send usage data to AWS`,
+        description: `Enable ${PRODUCT_NAME} for command line to send usage data to AWS`,
         example:
           "Learn more at https://docs.aws.amazon.com/codewhisperer/latest/userguide/sharing-data.html",
         type: "boolean",
@@ -95,8 +92,7 @@ const generalPreferences = [
       {
         id: "codeWhisperer.shareCodeWhispererContentWithAWS",
         title: `Share ${PRODUCT_NAME} content with AWS`,
-        description:
-          `When checked, your content processed by ${PRODUCT_NAME} may be used for service improvement (except for content processed by the Professional ${PRODUCT_NAME} service tier). Unchecking this box will cause AWS to delete any of your content used for that purpose. The information used to provide the ${PRODUCT_NAME} service to you will not be affected.`,
+        description: `When checked, your content processed by ${PRODUCT_NAME} may be used for service improvement (except for content processed by the Professional ${PRODUCT_NAME} service tier). Unchecking this box will cause AWS to delete any of your content used for that purpose. The information used to provide the ${PRODUCT_NAME} service to you will not be affected.`,
         example:
           "Learn more at https://docs.aws.amazon.com/codewhisperer/latest/userguide/sharing-data.html",
         type: "boolean",

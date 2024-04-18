@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 // type Cargo = {
 //   authors: string
@@ -21,7 +21,7 @@ import { useEffect, useState } from 'react';
 // }
 
 export default function Page() {
-  const [license, setLicense] = useState<string | undefined>()
+  const [license, setLicense] = useState<string | undefined>();
   // const [npm, setNpm] = useState<Npm[]>([])
   // const [cargo, setCargo] = useState<Cargo[]>([])
 
@@ -47,21 +47,20 @@ export default function Page() {
   // }, [])
 
   useEffect(() => {
-    fetch('/assets/license/NOTICE.txt')
-  .then(response => {
-      if (!response.ok) {
+    fetch("/assets/license/NOTICE.txt")
+      .then((response) => {
+        if (!response.ok) {
           throw new Error("HTTP error " + response.status);
-      }
-      return response.text()
-  })
-  .then(text => {
-    
-    setLicense(text)
-  })
-  .catch((e) => {
-      console.error(e)
-  })
-  }, [])
+        }
+        return response.text();
+      })
+      .then((text) => {
+        setLicense(text);
+      })
+      .catch((e) => {
+        console.error(e);
+      });
+  }, []);
 
   return (
     <>

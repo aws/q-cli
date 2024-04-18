@@ -25,7 +25,7 @@ export default function Account() {
             res.stdout
               .trim()
               .split("\n")
-              .map((p) => p.trim())
+              .map((p) => p.trim()),
           );
         } else {
           console.error(res.stderr);

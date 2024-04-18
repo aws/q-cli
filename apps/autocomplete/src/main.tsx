@@ -14,7 +14,7 @@ setTimeout(
   () => {
     window.location.reload();
   },
-  1000 * 60 * 60 * 24
+  1000 * 60 * 60 * 24,
 );
 
 window.onerror = (message, source, lineno, colno, error) => {
@@ -37,5 +37,5 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <ErrorBoundary>
       <App />
     </ErrorBoundary>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

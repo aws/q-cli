@@ -10,7 +10,7 @@ import {
 export async function getScriptSuggestions(
   generator: Fig.Generator,
   context: GeneratorContext,
-  defaultTimeout: number
+  defaultTimeout: number,
 ): Promise<Fig.Suggestion[]> {
   const { script, postProcess, splitOn } = generator;
   if (!script) {
@@ -53,14 +53,14 @@ export async function getScriptSuggestions(
     const timeout = Math.max(
       defaultTimeout,
       generator.scriptTimeout ?? 0,
-      executeCommandInput.timeout ?? 0
+      executeCommandInput.timeout ?? 0,
     );
 
     const { stdout } = await runCachedGenerator(
       generator,
       context,
       () => executeCommandTimeout(executeCommandInput, timeout),
-      generator.cache?.cacheKey ?? JSON.stringify(executeCommandInput)
+      generator.cache?.cacheKey ?? JSON.stringify(executeCommandInput),
     );
 
     let result: Array<Fig.Suggestion | string> = [];
@@ -75,7 +75,7 @@ export async function getScriptSuggestions(
         result = postProcess(stdout, tokenArray);
       });
       result = result.filter(
-        (item) => item && (typeof item === "string" || !!item.name)
+        (item) => item && (typeof item === "string" || !!item.name),
       );
     }
 
@@ -83,7 +83,7 @@ export async function getScriptSuggestions(
     return result.map((item) =>
       typeof item === "string"
         ? { type: "arg", name: item, insertValue: item, isDangerous }
-        : { ...item, type: item.type || "arg" }
+        : { ...item, type: item.type || "arg" },
     );
   } catch (e) {
     logger.error("we had an error with the script generator", e);

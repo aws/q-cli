@@ -7,5 +7,6 @@ export default {
     "cd proto && buf lint && buf format --exit-code > /dev/null",
   ],
   "*.py": ["ruff format --check", "ruff check"],
+  "*.{ts,js,tsx,jsx,mjs}": "prettier --check",
   "*": "typos",
 };

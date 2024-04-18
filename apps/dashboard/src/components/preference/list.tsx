@@ -30,11 +30,11 @@ type Intro = {
 function FeatureIntro({ intro }: { intro: Intro }) {
   const [setting, setSetting] = useSetting(intro.enable.flag);
   const [inputValue, setInputValue] = useState<PrefDefault>(
-    intro.enable.default
+    intro.enable.default,
   );
   const localValue = interpolateSettingBoolean(
     inputValue as boolean,
-    intro.enable.inverted
+    intro.enable.inverted,
   );
 
   // see if this specific setting is set in config file, then synchronize the initial state
@@ -58,7 +58,7 @@ function FeatureIntro({ intro }: { intro: Intro }) {
             <p className="text-base">
               {parseBackticksToCode(
                 intro.description,
-                "!border-white !bg-white/20 !text-white py-[1px]"
+                "!border-white !bg-white/20 !text-white py-[1px]",
               )}
               <ExternalLink
                 href={intro.link}

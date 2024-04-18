@@ -57,7 +57,7 @@ export default function Page() {
                 className={cn(
                   "text-zinc-400 text-center p-1.5 hover:bg-zinc-800 hover:border-transparent transition-colors font-mono border-t border-zinc-950 select-none cursor-pointer",
                   activeTab == 0 &&
-                    "bg-zinc-700 hover:bg-zinc-700 border-transparent text-zinc-100"
+                    "bg-zinc-700 hover:bg-zinc-700 border-transparent text-zinc-100",
                 )}
                 onClick={() => setActiveTab(0)}
               >
@@ -67,7 +67,7 @@ export default function Page() {
                 className={cn(
                   "text-zinc-400 text-center p-1.5 hover:bg-zinc-800 hover:border-transparent transition-colors font-mono border-t border-zinc-950 select-none  cursor-pointer",
                   activeTab == 1 &&
-                    "bg-zinc-700 hover:bg-zinc-700 border-transparent text-zinc-100"
+                    "bg-zinc-700 hover:bg-zinc-700 border-transparent text-zinc-100",
                 )}
                 onClick={() => setActiveTab(1)}
               >

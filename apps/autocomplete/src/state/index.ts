@@ -67,14 +67,14 @@ const getEnvVarsMemoized = memoizeOne(
     Object.fromEntries(
       arr
         .map((pair) => [pair.key, pair.value])
-        .filter((pair) => pair[0] && pair[1])
+        .filter((pair) => pair[0] && pair[1]),
     ),
   ([a], [b]) =>
     a.length === b.length &&
     a.every(
       (elem, index) =>
-        elem.key === b[index].key && elem.value === b[index].value
-    )
+        elem.key === b[index].key && elem.value === b[index].value,
+    ),
 );
 
 const getAliasMemoized = memoizeOne(
@@ -94,12 +94,12 @@ const getAliasMemoized = memoizeOne(
       }, {} as AliasMap);
   },
   ([aliasA, shellPathA], [aliasB, shellPathB]) =>
-    aliasA === aliasB && shellPathA === shellPathB
+    aliasA === aliasB && shellPathA === shellPathB,
 );
 
 const computeSuggestions = (
   state: AutocompleteState,
-  settings: SettingsMap
+  settings: SettingsMap,
 ) => {
   const {
     parserResult,
@@ -111,7 +111,7 @@ const computeSuggestions = (
   const historySuggestions = getFullHistorySuggestions(
     buffer,
     command,
-    processUserIsIn || ""
+    processUserIsIn || "",
   );
 
   const specSuggestions = getAllSuggestions(
@@ -120,7 +120,7 @@ const computeSuggestions = (
     parserResult.passedOptions,
     parserResult.suggestionFlags,
     state.generatorStates,
-    annotations
+    annotations,
   );
 
   let suggestions = specSuggestions;
@@ -129,12 +129,12 @@ const computeSuggestions = (
     const existingNames = new Set();
     suggestions.forEach((suggestion) => {
       makeArray(suggestion.name || []).forEach((name) =>
-        existingNames.add(name || "")
+        existingNames.add(name || ""),
       );
     });
     // Remove suggestions whose names are already in fig's suggestions
     suggestions.push(
-      ...historySuggestions.filter((x) => !existingNames.has(x.name))
+      ...historySuggestions.filter((x) => !existingNames.has(x.name)),
     );
 
     const historyPriorities: Record<string, number> = {};
@@ -151,8 +151,8 @@ const computeSuggestions = (
       priority: Math.max(
         suggestion.priority || 0,
         ...makeArray(suggestion.name).map(
-          (name) => historyPriorities[name || ""] || 0
-        )
+          (name) => historyPriorities[name || ""] || 0,
+        ),
       ),
     }));
   } else if (historyMode === "history_only") {
@@ -163,7 +163,7 @@ const computeSuggestions = (
 
   suggestions = updatePriorities(
     suggestions,
-    command?.tokens[0]?.text ?? ""
+    command?.tokens[0]?.text ?? "",
   ).sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
   const filtered = filterSuggestions(
@@ -172,7 +172,7 @@ const computeSuggestions = (
     state.fuzzySearchEnabled,
     parserResult.currentArg?.suggestCurrentToken ??
       getSetting(SETTINGS.ALWAYS_SUGGEST_CURRENT_TOKEN, false),
-    settings
+    settings,
   );
 
   // Deduplication is relatively slow, so we only do it if there aren't
@@ -250,7 +250,7 @@ const updateSuggestions =
               "type",
               "insertValue",
               "description",
-            ])
+            ]),
           );
           if (newIndex !== -1) {
             selectedIndex = newIndex;
@@ -260,18 +260,18 @@ const updateSuggestions =
 
         set(
           { ...state, ...update, suggestions, selectedIndex, hasChangedIndex },
-          replace
+          replace,
         );
       },
       get,
-      api
+      api,
     );
 
 type Get<T, K, F> = K extends keyof T ? T[K] : F;
 type NamedStateCreator<T> = (
   setState: NamedSetState<T>,
   getState: Get<Mutate<StoreApi<T>, []>, "getState", never>,
-  store: Mutate<StoreApi<T>, []>
+  store: Mutate<StoreApi<T>, []>,
 ) => T;
 
 const log =
@@ -299,7 +299,7 @@ export const useAutocompleteStore = create<AutocompleteState>(
         setParserResult: (
           parserResult: ArgumentParserResult,
           hasBackspacedToNewToken: boolean,
-          largeBufferChange: boolean
+          largeBufferChange: boolean,
         ) =>
           setNamed("setParserResult", (state) => {
             let { visibleState, generatorStates } = state;
@@ -308,7 +308,7 @@ export const useAutocompleteStore = create<AutocompleteState>(
             const hasNewArg = !fieldsAreEqual(
               parserResult,
               state.parserResult,
-              ["currentArg", "completionObj"]
+              ["currentArg", "completionObj"],
             );
 
             console.log(parserResult);
@@ -334,7 +334,7 @@ export const useAutocompleteStore = create<AutocompleteState>(
                   (oldState, idx) =>
                     oldState.generator ===
                       state.lastInsertedSuggestion?.generator &&
-                    generatorStates[idx] !== oldState
+                    generatorStates[idx] !== oldState,
                 );
 
                 visibleState =
@@ -396,7 +396,7 @@ export const useAutocompleteStore = create<AutocompleteState>(
           setNamed("scroll", (state) => {
             const selectedIndex = Math.max(
               Math.min(index, state.suggestions.length - 1),
-              0
+              0,
             );
             return {
               selectedIndex,
@@ -409,7 +409,7 @@ export const useAutocompleteStore = create<AutocompleteState>(
           setNamed("setVisibleState", { visibleState }),
 
         setHistoryModeEnabled: (
-          historyModeEnabled: React.SetStateAction<boolean>
+          historyModeEnabled: React.SetStateAction<boolean>,
         ) =>
           setNamed("setHistoryModeEnabled", (state) => ({
             historyModeEnabled:
@@ -419,7 +419,7 @@ export const useAutocompleteStore = create<AutocompleteState>(
           })),
 
         setUserFuzzySearchEnabled: (
-          userFuzzySearchEnabled: React.SetStateAction<boolean>
+          userFuzzySearchEnabled: React.SetStateAction<boolean>,
         ) =>
           setNamed("setUserFuzzySearchEnabled", (state) => ({
             userFuzzySearchEnabled:
@@ -458,14 +458,14 @@ export const useAutocompleteStore = create<AutocompleteState>(
 
               if (shellContext.environmentVariables) {
                 figState.environmentVariables = getEnvVarsMemoized(
-                  shellContext.environmentVariables
+                  shellContext.environmentVariables,
                 );
               }
 
               if (shellContext.alias) {
                 figState.aliases = getAliasMemoized(
                   shellContext.alias,
-                  shellContext.shellPath
+                  shellContext.shellPath,
                 );
               }
             }
@@ -495,7 +495,7 @@ export const useAutocompleteStore = create<AutocompleteState>(
               const command = getCommandMemoized(
                 bufferSliced,
                 aliases,
-                cursorLocation
+                cursorLocation,
               );
               return { figState, command };
             } catch (err) {
@@ -529,6 +529,6 @@ export const useAutocompleteStore = create<AutocompleteState>(
                 : settings,
           })),
       };
-    })
-  )
+    }),
+  ),
 );

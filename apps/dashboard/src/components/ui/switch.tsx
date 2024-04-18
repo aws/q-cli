@@ -20,7 +20,7 @@ const variants = cva(
     defaultVariants: {
       variant: "default",
     },
-  }
+  },
 );
 
 const thumbVariants = cva(
@@ -37,7 +37,7 @@ const thumbVariants = cva(
     defaultVariants: {
       variant: "default",
     },
-  }
+  },
 );
 
 interface SwitchProps

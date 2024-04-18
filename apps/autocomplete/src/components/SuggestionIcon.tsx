@@ -53,8 +53,8 @@ function renderIcon(icon: URL, height: string | number) {
         type
           ? `Icon for ${type}`
           : isTemplate
-          ? "Template icon"
-          : `Icon for ${icon.pathname}`
+            ? "Template icon"
+            : `Icon for ${icon.pathname}`
       }
       className="grid overflow-hidden bg-contain bg-no-repeat"
       style={{

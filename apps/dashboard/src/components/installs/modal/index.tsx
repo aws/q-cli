@@ -37,7 +37,7 @@ export default function OnboardingModal() {
   const check = onboarding[step] as InstallCheck;
   const [migrationStarted] = useLocalState("desktop.migratedFromFig");
   const [migrationEnded, setMigrationEnded] = useLocalState(
-    "desktop.migratedFromFig.UiComplete"
+    "desktop.migratedFromFig.UiComplete",
   );
   const { setModal } = useContext(ModalContext);
   const [dotfilesCheck, refreshDotfiles] = useStatusCheck("dotfiles");

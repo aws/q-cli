@@ -6,15 +6,18 @@ const CONFIG_PATH = `${os.homedir()}/.fig/user/config`;
 const get = () => {
   const rawConfig = String(fs.readFileSync(CONFIG_PATH));
 
-  const vars = rawConfig.split('\n').reduce((dict, line) => {
-    const split = line.indexOf('=');
+  const vars = rawConfig.split('\n').reduce(
+    (dict, line) => {
+      const split = line.indexOf('=');
 
-    const key = line.substring(0, split);
-    const value = line.substring(split + 1);
-    // eslint-disable-next-line no-param-reassign
-    dict[key] = value;
-    return dict;
-  }, {} as Record<string, unknown>);
+      const key = line.substring(0, split);
+      const value = line.substring(split + 1);
+      // eslint-disable-next-line no-param-reassign
+      dict[key] = value;
+      return dict;
+    },
+    {} as Record<string, unknown>
+  );
   return vars;
 };
 

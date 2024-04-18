@@ -31,11 +31,11 @@ export function useInputMethodCheck() {
 
 /**
  * @param check The install method to check
- * @returns The status of the check is installed, if undefined it is is either loading 
+ * @returns The status of the check is installed, if undefined it is is either loading
  * or unable to get a status, the second part is a callback to refresh the status
  */
 export function useStatusCheck(
-  check: "accessibility" | "dotfiles" | "inputMethod"
+  check: "accessibility" | "dotfiles" | "inputMethod",
 ) {
   const [accessibilityIsInstalled, refreshAccessibilityIsInstalled] =
     useAccessibilityCheck();
@@ -51,7 +51,7 @@ export function useStatusCheck(
     return [inputMethodIsInstalled, refreshInputMethodIsInstalled] as const;
   } else {
     throw new Error(
-      `Invalid check, must be \`"accessibility" | "dotfiles" | "inputMethod"\`"`
+      `Invalid check, must be \`"accessibility" | "dotfiles" | "inputMethod"\`"`,
     );
   }
 }

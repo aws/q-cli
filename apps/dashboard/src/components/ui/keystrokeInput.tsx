@@ -21,7 +21,7 @@ export function Kbd({
     <kbd
       className={cn(
         "p-1 py-[2px] not-italic text-black dark:text-white border border-black dark:border-white rounded-sm shadow-[0_4px_0_black] dark:shadow-[0_4px_0_white] relative -top-[2px]",
-        className
+        className,
       )}
     >
       {children}
@@ -65,7 +65,7 @@ export function Input({
 }) {
   const joinedValue = value ? value.join("+") : null;
   const setSetting = useSetting(
-    `autocomplete.keybindings.${joinedValue}` ?? ""
+    `autocomplete.keybindings.${joinedValue}` ?? "",
   )[1];
 
   function handleNewKeystroke() {

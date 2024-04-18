@@ -1,15 +1,15 @@
 import { Dispatch, SetStateAction, createContext } from "react";
 
 type ModalProps = {
-  modal: React.ReactNode | null,
-  setModal: Dispatch<SetStateAction<React.ReactNode | null>>
-}
+  modal: React.ReactNode | null;
+  setModal: Dispatch<SetStateAction<React.ReactNode | null>>;
+};
 
 const modalObj: ModalProps = {
   modal: null,
-  setModal: () => {}
-}
+  setModal: () => {},
+};
 
-const ModalContext = createContext(modalObj)
+const ModalContext = createContext(modalObj);
 
-export default ModalContext
+export default ModalContext;

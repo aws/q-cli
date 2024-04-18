@@ -13,7 +13,7 @@ eval(
     .execSync("cargo run -p fig-api-mock -- init", {
       stdio: "pipe",
     })
-    .toString()
+    .toString(),
 );
 
 // Set up IPC
@@ -21,10 +21,10 @@ window.ipc = {
   postMessage: (message: string) => {
     let detail = childProcess.execSync(
       `cargo run -p fig-api-mock -q -- request --cwd ${tempDir} ${message}`,
-      { stdio: "pipe" }
+      { stdio: "pipe" },
     );
     document.dispatchEvent(
-      new CustomEvent("FigProtoMessageReceived", { detail })
+      new CustomEvent("FigProtoMessageReceived", { detail }),
     );
   },
 };

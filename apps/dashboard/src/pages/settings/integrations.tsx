@@ -4,8 +4,7 @@ import { parseBackticksToCode } from "@/lib/strings";
 import { CLI_BINARY_NAME } from "@/lib/constants";
 
 export default function Page() {
-  const setupString =
-    `Just run \`${CLI_BINARY_NAME} integrations install input-method\` then restart your computer to try it out.`;
+  const setupString = `Just run \`${CLI_BINARY_NAME} integrations install input-method\` then restart your computer to try it out.`;
 
   return (
     <>

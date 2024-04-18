@@ -31,7 +31,7 @@ function App() {
   const [modal, setModal] = useState<React.ReactNode | null>(null);
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(
-    null
+    null,
   );
 
   useEffect(() => {
@@ -220,7 +220,7 @@ function Layout() {
             >
               {item.name}
             </div>
-          )
+          ),
         )}
       </nav>
       <main className="flex flex-col overflow-y-auto p-4 w-full">

@@ -17,7 +17,7 @@ export default function StatusCheck({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [status, refreshStatus] = useStatusCheck(check.installKey);
-  const [err, setErr] = useState('');
+  const [err, setErr] = useState("");
 
   function fixInstall() {
     Install.install(check.installKey)
@@ -66,9 +66,11 @@ export default function StatusCheck({
           >
             {status ? "Enabled" : check.action}
           </Button>
-          {status !== undefined && status == false && err !== "" &&
-            <p className="text-zinc-200 bg-red-600 border-red-400 flex items-center justify-center leading-none p-2 px-2 rounded">{err}</p>
-          }
+          {status !== undefined && status == false && err !== "" && (
+            <p className="text-zinc-200 bg-red-600 border-red-400 flex items-center justify-center leading-none p-2 px-2 rounded">
+              {err}
+            </p>
+          )}
         </CollapsibleContent>
       </div>
     </Collapsible>

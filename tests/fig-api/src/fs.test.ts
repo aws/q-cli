@@ -59,5 +59,4 @@ describe("fs api tests", () => {
 
     expect(nodeFs.existsSync(dir)).toBe(true);
   });
-
 });

@@ -30,11 +30,12 @@ describe("constants", () => {
   });
 
   it("version", () => {
-    const workspaceToml = fs.readFileSync(__dirname + "/../../../Cargo.toml", "utf8");
+    const workspaceToml = fs.readFileSync(
+      __dirname + "/../../../Cargo.toml",
+      "utf8",
+    );
     const version = workspaceToml.match(/version = "([^"]+)"/)?.[1];
     expect(version).toBeTruthy();
     expect(window.fig.constants?.version).toBe(version);
   });
-
-  
 });

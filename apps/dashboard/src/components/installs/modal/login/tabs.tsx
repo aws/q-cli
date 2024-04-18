@@ -142,12 +142,12 @@ function IamTab({
   const [startUrl, setStartUrl] = useLocalStateZodDefault(
     "auth.idc.start-url",
     z.string(),
-    ""
+    "",
   );
   const [region, setRegion] = useLocalStateZodDefault(
     "auth.idc.region",
     z.string(),
-    DEFAULT_SSO_REGION
+    DEFAULT_SSO_REGION,
   );
 
   return (

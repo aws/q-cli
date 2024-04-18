@@ -45,7 +45,7 @@ export const initialFigState: FigState = {
 
 export const useFigSubscriptionEffect = (
   getSubscription: () => Promise<Subscription> | undefined,
-  deps?: React.DependencyList
+  deps?: React.DependencyList,
 ) => {
   useEffect(() => {
     let unsubscribe: () => void;
@@ -64,7 +64,7 @@ export const useFigSubscriptionEffect = (
 };
 
 export const useFigSettings = (
-  setSettings: React.Dispatch<React.SetStateAction<Record<string, unknown>>>
+  setSettings: React.Dispatch<React.SetStateAction<Record<string, unknown>>>,
 ) => {
   useEffect(() => {
     Settings.current().then((settings) => {
@@ -83,21 +83,21 @@ export const useFigSettings = (
         updateSelectSuggestionKeybindings(settings as SettingsMap);
         return { unsubscribe: false };
       }),
-    []
+    [],
   );
 };
 
 export const useFigKeypress = (
-  keypressCallback: Parameters<typeof Keybindings.pressed>[0]
+  keypressCallback: Parameters<typeof Keybindings.pressed>[0],
 ) => {
   useFigSubscriptionEffect(
     () => Keybindings.pressed(keypressCallback),
-    [keypressCallback]
+    [keypressCallback],
   );
 };
 
 export const useFigAutocomplete = (
-  setFigState: React.Dispatch<React.SetStateAction<FigState>>
+  setFigState: React.Dispatch<React.SetStateAction<FigState>>,
 ) => {
   useFigSubscriptionEffect(
     () =>
@@ -116,7 +116,7 @@ export const useFigAutocomplete = (
         }));
         return { unsubscribe: false };
       }),
-    []
+    [],
   );
 
   useFigSubscriptionEffect(
@@ -130,7 +130,7 @@ export const useFigAutocomplete = (
         }));
         return { unsubscribe: false };
       }),
-    []
+    [],
   );
 };
 
@@ -140,6 +140,6 @@ export const useFigClearCache = () => {
       window.resetCaches?.();
       generatorCache.clear();
       return { unsubscribe: false };
-    })
+    }),
   );
 };

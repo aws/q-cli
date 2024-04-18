@@ -25,7 +25,7 @@ describe("haveContextForGenerator", () => {
         ...context,
         currentWorkingDirectory: "/",
         currentProcess: "zsh",
-      })
+      }),
     ).toBe(true);
   });
 
@@ -35,7 +35,7 @@ describe("haveContextForGenerator", () => {
         ...context,
         currentWorkingDirectory: "/",
         currentProcess: "ssh",
-      })
+      }),
     ).toBe(true);
   });
 
@@ -44,7 +44,7 @@ describe("haveContextForGenerator", () => {
       haveContextForGenerator({
         ...context,
         currentWorkingDirectory: "",
-      })
+      }),
     ).toBe(false);
   });
 });
@@ -65,7 +65,7 @@ describe("runCachedGenerator", () => {
       initialRun.mockResolvedValue("result");
 
       expect(
-        await runCachedGenerator({}, context, initialRun, "command")
+        await runCachedGenerator({}, context, initialRun, "command"),
       ).toEqual("result");
       expect(initialRun).toHaveBeenCalled();
     });
@@ -177,7 +177,7 @@ describe("runCachedGenerator", () => {
           generators[i],
           contexts[i],
           initialRun,
-          JSON.stringify(generator.script)
+          JSON.stringify(generator.script),
         );
       }
 
@@ -204,7 +204,7 @@ describe("runCachedGenerator", () => {
           generators[i],
           contexts[i],
           initialRun,
-          JSON.stringify(generator.script)
+          JSON.stringify(generator.script),
         );
       }
 
@@ -248,16 +248,16 @@ describe("runCachedGenerator", () => {
           generator,
           context,
           () => Promise.resolve("stale-data"),
-          "command"
-        )
+          "command",
+        ),
       ).toEqual("stale-data");
       expect(
         await runCachedGenerator(
           generator,
           context,
           () => Promise.resolve("fresh-data"),
-          "command"
-        )
+          "command",
+        ),
       ).toEqual("stale-data");
       await sleep(1_500);
       expect(
@@ -265,8 +265,8 @@ describe("runCachedGenerator", () => {
           generator,
           context,
           () => Promise.resolve("fresher-data"),
-          "command"
-        )
+          "command",
+        ),
       ).toEqual("fresher-data");
     });
   });
@@ -286,16 +286,16 @@ describe("runCachedGenerator", () => {
           generator,
           context,
           () => Promise.resolve("stale-data"),
-          "command"
-        )
+          "command",
+        ),
       ).toEqual("stale-data");
       expect(
         await runCachedGenerator(
           generator,
           context,
           () => Promise.resolve("fresh-data"),
-          "command"
-        )
+          "command",
+        ),
       ).toEqual("stale-data");
       await sleep(1_500);
       expect(
@@ -303,8 +303,8 @@ describe("runCachedGenerator", () => {
           generator,
           context,
           () => Promise.resolve("fresher-data"),
-          "command"
-        )
+          "command",
+        ),
       ).toEqual("fresher-data");
     });
   });
@@ -324,8 +324,8 @@ describe("runCachedGenerator", () => {
           generator,
           context,
           () => Promise.resolve("stale-data"),
-          "command"
-        )
+          "command",
+        ),
       ).toEqual("stale-data");
       await sleep(1_500);
       expect(
@@ -333,16 +333,16 @@ describe("runCachedGenerator", () => {
           generator,
           context,
           () => Promise.resolve("fresh-data"),
-          "command"
-        )
+          "command",
+        ),
       ).toEqual("fresh-data");
       expect(
         await runCachedGenerator(
           generator,
           context,
           () => Promise.resolve("fresh-data"),
-          "command"
-        )
+          "command",
+        ),
       ).toEqual("fresh-data");
     });
   });

@@ -7,8 +7,7 @@ const translateSettings = [
       {
         id: "ai.terminal-hash-sub",
         title: "Hashtag Substitution",
-        description:
-          `Comments in the shell will be substituted with the \`${CLI_BINARY_NAME} ai\` command.`,
+        description: `Comments in the shell will be substituted with the \`${CLI_BINARY_NAME} ai\` command.`,
         type: "boolean",
         default: true,
       },

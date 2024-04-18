@@ -328,4 +328,3 @@ export function setFontSize(fontSize: number | undefined) {
     !fontSize || fontSize <= 0 ? "12.8px" : `${fontSize}px`,
   );
 }
-

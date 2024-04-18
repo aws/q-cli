@@ -96,25 +96,25 @@ export const getSummary = (aggregatedResults: AggregatedResult): string => {
   const testsTodo = aggregatedResults.numTodoTests;
   const testsTotal = aggregatedResults.numTotalTests;
 
-  const suites = `${chalk.bold('Test Suites: ') +
+  const suites = `${
+    chalk.bold('Test Suites: ') +
     (suitesFailed ? `${chalk.bold.red(`${suitesFailed} failed`)}, ` : '') +
     (suitesPending
       ? `${chalk.bold.yellow(`${suitesPending} skipped`)}, `
       : '') +
     (suitesPassed ? `${chalk.bold.green(`${suitesPassed} passed`)}, ` : '') +
-    (suitesRun !== suitesTotal
-      ? `${suitesRun} of ${suitesTotal}`
-      : suitesTotal)} total`;
+    (suitesRun !== suitesTotal ? `${suitesRun} of ${suitesTotal}` : suitesTotal)
+  } total`;
 
-  const tests = `${chalk.bold('Tests:       ') +
+  const tests = `${
+    chalk.bold('Tests:       ') +
     (testsFailed > 0 ? `${chalk.bold.red(`${testsFailed} failed`)}, ` : '') +
     (testsPending > 0
       ? `${chalk.bold.yellow(`${testsPending} skipped`)}, `
       : '') +
     (testsTodo > 0 ? `${chalk.bold.magenta(`${testsTodo} todo`)}, ` : '') +
-    (testsPassed > 0
-      ? `${chalk.bold.green(`${testsPassed} passed`)}, `
-      : '')}${testsTotal} total`;
+    (testsPassed > 0 ? `${chalk.bold.green(`${testsPassed} passed`)}, ` : '')
+  }${testsTotal} total`;
 
   const time = `${chalk.bold(`Time:`)}        ${formatTime(runTime, 0)}`;
   return [suites, tests, time].join('\n');
@@ -150,7 +150,7 @@ const getTestSummary = (
   let nameInfo = '';
 
   if (globalConfig.runTestsByPath) {
-    nameInfo = ` ${globalConfig.nonFlagArgs.map(p => `"${p}"`).join(', ')}`;
+    nameInfo = ` ${globalConfig.nonFlagArgs.map((p) => `"${p}"`).join(', ')}`;
   } else if (globalConfig.testNamePattern) {
     nameInfo = `${chalk.dim(' with tests matching ')}"${
       globalConfig.testNamePattern
@@ -172,7 +172,8 @@ const getTestSummary = (
 };
 
 export default class CustomReporter
-  implements Pick<Reporter, 'onTestResult' | 'onRunComplete'> {
+  implements Pick<Reporter, 'onTestResult' | 'onRunComplete'>
+{
   globalConfig: Config.GlobalConfig;
 
   results: { test: Test; result: TestResult }[] = [];
@@ -194,11 +195,8 @@ export default class CustomReporter
     contexts: Set<Test['context']>,
     aggregatedResults: AggregatedResult
   ) {
-    const {
-      numTotalTestSuites,
-      testResults,
-      wasInterrupted,
-    } = aggregatedResults;
+    const { numTotalTestSuites, testResults, wasInterrupted } =
+      aggregatedResults;
 
     this.results.forEach(({ test, result }) => {
       if (!result.skipped) {
@@ -238,7 +236,7 @@ export default class CustomReporter
         aggregatedResults.numTotalTestSuites > TEST_SUMMARY_THRESHOLD
       ) {
         console.log(chalk.bold('Summary of all failing tests'));
-        aggregatedResults.testResults.forEach(testResult => {
+        aggregatedResults.testResults.forEach((testResult) => {
           const { failureMessage } = testResult;
           if (failureMessage) {
             console.log(

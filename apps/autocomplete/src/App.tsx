@@ -144,12 +144,12 @@ function App() {
   // Info passed down to suggestions to render icons and underline.
   const iconPath = useMemo(
     () => getIconPath(getCWDForFilesAndFolders(cwd, searchTerm)),
-    [cwd, searchTerm]
+    [cwd, searchTerm],
   );
 
   const commonPrefix = useMemo(
     () => getCommonSuggestionPrefix(selectedIndex, suggestions),
-    [selectedIndex, suggestions]
+    [selectedIndex, suggestions],
   );
 
   useEffect(() => {
@@ -194,7 +194,7 @@ function App() {
   const keypressCallback = useAutocompleteKeypressCallback(
     toggleDescriptionPopout,
     shake,
-    changeSize
+    changeSize,
   );
 
   useEffect(() => {
@@ -253,7 +253,7 @@ function App() {
     setInterceptKeystrokes(
       interceptKeystrokes,
       suggestions.length > 0,
-      shellContext?.sessionId
+      shellContext?.sessionId,
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interceptKeystrokes, suggestions.length]);
@@ -306,7 +306,7 @@ function App() {
                       ? DescriptionPosition.LEFT
                       : DescriptionPosition.RIGHT,
                   }
-                : state
+                : state,
             );
           }
         })
@@ -362,7 +362,7 @@ function App() {
                       ? DescriptionPosition.LEFT
                       : DescriptionPosition.RIGHT,
                   }
-                : state
+                : state,
             );
           })
           .catch((err) => {
@@ -376,7 +376,7 @@ function App() {
         isHidden,
         // eslint-disable-next-line react-hooks/exhaustive-deps
         suggestions[selectedIndex]?.previewComponent,
-      ]
+      ],
     );
 
   useEffect(() => {

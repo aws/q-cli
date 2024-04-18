@@ -1,5 +1,5 @@
 import { InstallCheckWithInstallKey } from "@/types/preferences";
-import accessibility_fig from "@assets/images/accessibility_fig.png?url"
+import accessibility_fig from "@assets/images/accessibility_fig.png?url";
 import { PRODUCT_NAME } from "@/lib/constants";
 
 const installChecks: InstallCheckWithInstallKey[] = [
@@ -16,8 +16,7 @@ const installChecks: InstallCheckWithInstallKey[] = [
       steps: [
         [
           {
-            content:
-              `${PRODUCT_NAME} will add one line to the top and bottom of the following files (if they exist):`,
+            content: `${PRODUCT_NAME} will add one line to the top and bottom of the following files (if they exist):`,
             tag: "span",
           },
           {

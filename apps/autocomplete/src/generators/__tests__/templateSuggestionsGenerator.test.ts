@@ -130,8 +130,8 @@ describe("getTemplateSuggestions", () => {
       };
       expect(
         (await getTemplateSuggestions({ template: "help" }, context)).map(
-          (v) => v.name
-        )
+          (v) => v.name,
+        ),
       ).toEqual(["bar", "cat", "zar", "zarzar"]);
     });
 
@@ -158,8 +158,8 @@ describe("getTemplateSuggestions", () => {
       };
       expect(
         (await getTemplateSuggestions({ template: "help" }, context)).map(
-          (v) => v.name
-        )
+          (v) => v.name,
+        ),
       ).toEqual([]);
     });
 
@@ -189,8 +189,8 @@ describe("getTemplateSuggestions", () => {
       };
       expect(
         (await getTemplateSuggestions({ template: "help" }, context)).map(
-          (v) => v.name
-        )
+          (v) => v.name,
+        ),
       ).toEqual(["zoo"]);
     });
   });
