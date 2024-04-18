@@ -13,7 +13,7 @@ RUN cat recipe.json
 RUN cargo chef cook --recipe-path recipe.json
 # Build application
 COPY . .
-RUN cargo build --package cw_cli --package figterm
+RUN cargo build --package q_cli --package figterm
 
 # We do not need the Rust toolchain to run the binary!
 FROM node AS runtime
@@ -48,7 +48,7 @@ RUN npm install --global ts-proto
 
 WORKDIR /usr/home/app/
 
-RUN mkdir -p /Applications/CodeWhisperer.app/
+RUN mkdir -p /Applications/Q.app/
 
 # Set up test user
 RUN adduser --disabled-password --home /usr/home test 
@@ -59,7 +59,7 @@ RUN chown -R test:test /usr/home/
 USER test
 
 COPY --chown=test:test ./tests/figterm/package.json .
-COPY --chown=test:test ./cw_cli/ ./cw_cli/
+COPY --chown=test:test ./q_cli/ ./q_cli/
 COPY --chown=test:test ./figterm/ ./figterm/
 COPY --chown=test:test ./lib/ ./lib/
 COPY --chown=test:test ./build-scripts/ ./build-scripts/
@@ -70,10 +70,10 @@ ENV CARGO_INCREMENTAL=0
 ENV CARGO_PROFILE_RELEASE_LTO=thin
 ENV RUSTFLAGS="-C force-frame-pointers=yes -C link-arg=-Wl,--compress-debug-sections=zlib"
 
-RUN cd cw_cli && cargo build --release
+RUN cd q_cli && cargo build --release
 RUN cd figterm && cargo build --release
 
-RUN FIG_CLI=cw_cli/target/x86_64-unknown-linux-musl/release/cw_cli \
+RUN FIG_CLI=q_cli/target/x86_64-unknown-linux-musl/release/q_cli \
   FIGTERM=figterm/target/x86_64-unknown-linux-musl/release/figterm \
   IS_MINIMAL=1 \
   build-scripts/deb.sh

@@ -35,17 +35,17 @@ use crate::Error;
 const DEFAULT_RELEASE_URL: &str = "https://desktop-release.codewhisperer.us-east-1.amazonaws.com";
 
 /// The url to check for updates from, tries the following order:
-/// - The env var `CW_DESKTOP_RELEASE_URL`
+/// - The env var `Q_DESKTOP_RELEASE_URL`
 /// - The setting `install.releaseUrl`
-/// - Falls back to the default or the build time env var `CW_BUILD_DESKTOP_RELEASE_URL`
+/// - Falls back to the default or the build time env var `Q_BUILD_DESKTOP_RELEASE_URL`
 fn release_url() -> &'static Url {
     static RELEASE_URL: OnceLock<Url> = OnceLock::new();
     RELEASE_URL.get_or_init(|| {
-        match std::env::var("CW_DESKTOP_RELEASE_URL") {
+        match std::env::var("Q_DESKTOP_RELEASE_URL") {
             Ok(s) => Url::parse(&s),
             Err(_) => match fig_settings::settings::get_string("install.releaseUrl") {
                 Ok(Some(s)) => Url::parse(&s),
-                _ => Url::parse(option_env!("CW_BUILD_DESKTOP_RELEASE_URL").unwrap_or(DEFAULT_RELEASE_URL)),
+                _ => Url::parse(option_env!("Q_BUILD_DESKTOP_RELEASE_URL").unwrap_or(DEFAULT_RELEASE_URL)),
             },
         }
         .unwrap()
@@ -443,7 +443,7 @@ mod tests {
                             "download": "1.0.0/Q.dmg",
                             "sha256": "87a311e493bb2b0e68a1b4b5d267c79628d23c1e39b0a62d1a80b0c2352f80a2",
                             "size": 88174538,
-                            "cliPath": "Contents/MacOS/q",
+                            "cliPath": format!("Contents/MacOS/{OLD_CLI_BINARY_NAME}"),
                         }
                     ]
                 },
@@ -494,7 +494,7 @@ mod tests {
                 download: "1.0.0/Q.dmg".into(),
                 sha256: "87a311e493bb2b0e68a1b4b5d267c79628d23c1e39b0a62d1a80b0c2352f80a2".into(),
                 size: 88174538,
-                cli_path: Some("Contents/MacOS/q".into()),
+                cli_path: Some(format!("Contents/MacOS/{OLD_CLI_BINARY_NAME}")),
             }],
         });
     }

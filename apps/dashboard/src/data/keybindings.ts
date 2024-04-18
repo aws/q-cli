@@ -7,7 +7,7 @@ const keybindings = [
       {
         id: "autocomplete.toggleHistoryMode",
         title: "Toggle history mode",
-        description: `Toggle between history suggestions and ${PRODUCT_NAME} spec suggestions`,
+        description: `Toggle between history suggestions and autocomplete spec suggestions`,
         availability: "WHEN_FOCUSED",
         type: "keystrokes",
         default: ["control+r"],

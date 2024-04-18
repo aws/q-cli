@@ -167,7 +167,7 @@ pub(crate) async fn update(
     tx.send(UpdateStatus::Message("Installing update...".into())).await.ok();
 
     // This points at the currently installed CLI
-    let cli_path = fig_util::codewhisperer_bundle()
+    let cli_path = fig_util::app_bundle_path()
         .join(BUNDLE_CONTENTS_MACOS_PATH)
         .join(CLI_BINARY_NAME);
 
@@ -180,7 +180,7 @@ pub(crate) async fn update(
     let same_bundle_name = app_name == Path::new(APP_BUNDLE_NAME);
 
     let installed_app_path = if same_bundle_name {
-        fig_util::codewhisperer_bundle()
+        fig_util::app_bundle_path()
     } else {
         Path::new("/Applications").join(app_name)
     };
@@ -247,7 +247,7 @@ pub(crate) async fn update(
         .await?;
 
     if !output.status.success() {
-        error!(command =% String::from_utf8_lossy(&output.stderr).to_string(), "the update succeeded, but CodeWhisperer failed to unmount the dmg");
+        error!(command =% String::from_utf8_lossy(&output.stderr).to_string(), "the update succeeded, but unmounting the dmg failed");
     } else {
         debug!("unmounted dmg");
     }
@@ -269,13 +269,13 @@ pub(crate) async fn update(
 
     tx.send(UpdateStatus::Message("Relaunching...".into())).await.ok();
 
-    debug!("restarting CodeWhisperer");
+    debug!("restarting app");
     let mut cmd = std::process::Command::new(&new_cli_path);
     cmd.process_group(0).args(["_", "finish-update"]);
 
     // If the bundle name changed, delete the old bundle
     if !same_bundle_name {
-        cmd.arg("--delete-bundle").arg(fig_util::codewhisperer_bundle());
+        cmd.arg("--delete-bundle").arg(fig_util::app_bundle_path());
     }
 
     if relaunch_dashboard {
@@ -304,7 +304,7 @@ async fn remove_in_dir_with_prefix_unless(dir: &Path, prefix: &str, unless: impl
 
 pub(crate) async fn uninstall_desktop() -> Result<(), Error> {
     // TODO(sean)
-    // 1. Set title of running ttys "Restart this terminal to finish uninstalling CodeWhisperer..."
+    // 1. Set title of running ttys "Restart this terminal to finish uninstalling Q..."
     // 2. Delete webview cache
 
     // Remove launch agents
@@ -360,7 +360,7 @@ pub(crate) async fn uninstall_desktop() -> Result<(), Error> {
         }
     }
 
-    let app_path = fig_util::codewhisperer_bundle();
+    let app_path = fig_util::app_bundle_path();
     if app_path.exists() {
         tokio::fs::remove_dir_all(&app_path)
             .await
@@ -489,7 +489,7 @@ pub fn install(src: impl AsRef<CStr>, dst: impl AsRef<CStr>, same_bundle_name: b
 
         if matches!(err.kind(), std::io::ErrorKind::PermissionDenied) {
             return Err(Error::UpdateFailed(
-                "Failed to swap app bundle dur to permission denied. Try restarting CodeWhisperer.".into(),
+                "Failed to swap app bundle due to permission denied. Try restarting the app.".into(),
             ));
         } else {
             return Err(Error::UpdateFailed(format!("Failed to swap app bundle: {err}")));

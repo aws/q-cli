@@ -3,42 +3,42 @@
 # Async                                                              #
 #--------------------------------------------------------------------#
 
-_cw_autosuggest_async_request() {
+_q_autosuggest_async_request() {
 	zmodload zsh/system 2>/dev/null # For `$sysparams`
 
-	typeset -g _CW_AUTOSUGGEST_ASYNC_FD _CW_AUTOSUGGEST_CHILD_PID
+	typeset -g _Q_AUTOSUGGEST_ASYNC_FD _Q_AUTOSUGGEST_CHILD_PID
 
 	# If we've got a pending request, cancel it
-	if [[ -n "$_CW_AUTOSUGGEST_ASYNC_FD" ]] && { true <&$_CW_AUTOSUGGEST_ASYNC_FD } 2>/dev/null; then
+	if [[ -n "$_Q_AUTOSUGGEST_ASYNC_FD" ]] && { true <&$_Q_AUTOSUGGEST_ASYNC_FD } 2>/dev/null; then
 		# Close the file descriptor and remove the handler
-		exec {_CW_AUTOSUGGEST_ASYNC_FD}<&-
-		zle -F $_CW_AUTOSUGGEST_ASYNC_FD
+		exec {_Q_AUTOSUGGEST_ASYNC_FD}<&-
+		zle -F $_Q_AUTOSUGGEST_ASYNC_FD
 
 		# We won't know the pid unless the user has zsh/system module installed
-		if [[ -n "$_CW_AUTOSUGGEST_CHILD_PID" ]]; then
+		if [[ -n "$_Q_AUTOSUGGEST_CHILD_PID" ]]; then
 			# Zsh will make a new process group for the child process only if job
 			# control is enabled (MONITOR option)
 			if [[ -o MONITOR ]]; then
 				# Send the signal to the process group to kill any processes that may
 				# have been forked by the suggestion strategy
-				kill -TERM -$_CW_AUTOSUGGEST_CHILD_PID 2>/dev/null
+				kill -TERM -$_Q_AUTOSUGGEST_CHILD_PID 2>/dev/null
 			else
 				# Kill just the child process since it wasn't placed in a new process
 				# group. If the suggestion strategy forked any child processes they may
 				# be orphaned and left behind.
-				kill -TERM $_CW_AUTOSUGGEST_CHILD_PID 2>/dev/null
+				kill -TERM $_Q_AUTOSUGGEST_CHILD_PID 2>/dev/null
 			fi
 		fi
 	fi
 
 	# Fork a process to fetch a suggestion and open a pipe to read from it
-	exec {_CW_AUTOSUGGEST_ASYNC_FD}< <(
+	exec {_Q_AUTOSUGGEST_ASYNC_FD}< <(
 		# Tell parent process our pid
 		echo $sysparams[pid]
 
 		# Fetch and print the suggestion
 		local suggestion
-		_cw_autosuggest_fetch_suggestion "$1"
+		_q_autosuggest_fetch_suggestion "$1"
 		echo -nE "$suggestion"
 	)
 
@@ -48,16 +48,16 @@ _cw_autosuggest_async_request() {
 	is-at-least 5.8 || command true
 
 	# Read the pid from the child process
-	read _CW_AUTOSUGGEST_CHILD_PID <&$_CW_AUTOSUGGEST_ASYNC_FD
+	read _Q_AUTOSUGGEST_CHILD_PID <&$_Q_AUTOSUGGEST_ASYNC_FD
 
 	# When the fd is readable, call the response handler
-	zle -F "$_CW_AUTOSUGGEST_ASYNC_FD" _cw_autosuggest_async_response
+	zle -F "$_Q_AUTOSUGGEST_ASYNC_FD" _q_autosuggest_async_response
 }
 
 # Called when new data is ready to be read from the pipe
 # First arg will be fd ready for reading
 # Second arg will be passed in case of error
-_cw_autosuggest_async_response() {
+_q_autosuggest_async_response() {
 	emulate -L zsh
 
 	local suggestion

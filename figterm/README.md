@@ -2,6 +2,7 @@
 
 Figterm is how hook into the user's system to get information about the
 user's current shell session like:
+
 - What the user has typed
 - Environment variables
 - Working directory
@@ -12,8 +13,9 @@ changes, prompts (precmd), and right before a command is executed (preexec)
 
 ## Installation/Usage
 
-First, make sure shell integrations are installed. You can use the `cw_cli` to do
+First, make sure shell integrations are installed. You can use the `q_cli` to do
 this:
+
 ```
 fig integrations install dotfiles
 ```
@@ -23,20 +25,21 @@ The run `make install` to build the binary and move to the right location.
 The shell integrations will then launch figterm on each terminal session.
 
 You can verify figterm is running by:
+
 1. Running `pstree -p $$` and checking, e.g. for a `figterm` process
-with a child `zsh` process.
-2. Running `env | grep FIG` and checking the `CW_TERM` variable is set to
-1.
+   with a child `zsh` process.
+2. Running `env | grep FIG` and checking the `Q_TERM` variable is set to
+3.
 
 ## How does it work?
 
 When you spin up a terminal emulator like iTerm, it launches a shell. If
 our
 [shell
-integrations](https://github.com/withfig/macos/blob/develop/cw_cli/src/integrations/shell)
+integrations](https://github.com/withfig/macos/blob/develop/q_cli/src/integrations/shell)
 are properly installed into a user's dotfiles (.zshrc, .bashrc, etc.) then
 the shell will source the `pre` integration to
-[exec](https://github.com/withfig/macos/blob/develop/cw_cli/src/integrations/shell/pre.sh#L61)
+[exec](https://github.com/withfig/macos/blob/develop/q_cli/src/integrations/shell/pre.sh#L61)
 the figterm binary.
 
 Figterm launches a PTY, or pseudoterminal, (see
@@ -45,9 +48,10 @@ for an explanation of PTYs). In short, it forks a child process that execs
 a shell. The parent process, then, is responsible for acting as
 a "pseudoterminal", which is roughly a process that a shell
 reads from and writes to. In figterm, this parent process:
+
 1. Acts a pass through layer between shell and terminal emulator
 2. Creates a representation of the terminal screen state (it's a headless
-terminal emulator)
+   terminal emulator)
 3. Communicates events with shell context to the macOS app.
 
 **Figterm as a Shell & Terminal Intermediary**
@@ -78,10 +82,11 @@ This lives in `lib/alacritty_terminal/`.
 
 Our `post`
 [shell
-integrations](https://github.com/withfig/macos/blob/develop/cw_cli/src/integrations/shell)
+integrations](https://github.com/withfig/macos/blob/develop/q_cli/src/integrations/shell)
 add hooks that print custom OSC ANSI escape codes that `figterm` also
 parses. This is our mechanism for sending information from the shell to
 `figterm`. We send these codes to `figterm` to:
+
 1. Indicate the start/end of a prompt
 2. Indicate a command is about to run
 3. Update context about the shell (env variables, working directory, etc.)
@@ -93,6 +98,7 @@ typed, or command output.
 **Figterm as a Shell Context Provider**
 
 Figterm sends 3 types of hooks with shell context to the macOS app:
+
 - `prompt` or `precmd` events - sent right before a prompt is displayed
 - `preexec` events - sent right before a command is executed
 - `editBuffer` events - sent whenever the edit buffer is updated

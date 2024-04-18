@@ -46,7 +46,7 @@ impl EventHandler {
             socket_sender,
             history_sender,
             main_loop_sender,
-            csi_u_enabled: fig_settings::settings::get_bool_or("cwterm.csi-u.enabled", false),
+            csi_u_enabled: fig_settings::settings::get_bool_or("qterm.csi-u.enabled", false),
         }
     }
 }

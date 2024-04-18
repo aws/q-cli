@@ -7,7 +7,7 @@ def pathadd [path: string] {
 }
 
 let-env PATH = pathadd $"($env.HOME)/.local/bin"
-let-env CW_SHELL = (^cw _ get-shell)
+let-env Q_SHELL = (^q _ get-shell)
 
 let-env PATH = $env.PATH
 
@@ -33,90 +33,90 @@ def-env fig_reset_hooks [] {
 }
 
 def-env fig_pre_execution_hook [] {
-  if "CWTERM_SESSION_ID" in $env {
-    print_fig_osc $"OSCLock=($env.CWTERM_SESSION_ID)"
+  if "QTERM_SESSION_ID" in $env {
+    print_fig_osc $"OSCLock=($env.QTERM_SESSION_ID)"
   }
   print_fig_osc "PreExec"
 
   # let-env PROMPT_COMMAND = if "PROMPT_COMMAND" in $env {
-  #   if "CW_USER_PROMPT_COMMAND" in $env {
-  #       $env.CW_USER_PROMPT_COMMAND
+  #   if "Q_USER_PROMPT_COMMAND" in $env {
+  #       $env.Q_USER_PROMPT_COMMAND
   #   } else {
   #       $env.PROMPT_COMMAND
   #   }
   # } else { $nothing }
 
-  # if "PROMPT_COMMAND" in $env and "CW_USER_PROMPT_COMMAND" in $env {
-  #   let-env PROMPT_COMMAND = $env.CW_USER_PROMPT_COMMAND
+  # if "PROMPT_COMMAND" in $env and "Q_USER_PROMPT_COMMAND" in $env {
+  #   let-env PROMPT_COMMAND = $env.Q_USER_PROMPT_COMMAND
   # }
 
   # let-env PROMPT_COMMAND_RIGHT = if "PROMPT_COMMAND_RIGHT" in $env {
-  #   if "CW_USER_PROMPT_COMMAND_RIGHT" in $env {
-  #       $env.CW_USER_PROMPT_COMMAND_RIGHT
+  #   if "Q_USER_PROMPT_COMMAND_RIGHT" in $env {
+  #       $env.Q_USER_PROMPT_COMMAND_RIGHT
   #   } else {
   #       $env.PROMPT_COMMAND_RIGHT
   #   }
   # } else { $nothing }
   
-  # if "PROMPT_COMMAND_RIGHT" in $env and "CW_USER_PROMPT_COMMAND_RIGHT" in $env {
-  #   let-env PROMPT_COMMAND_RIGHT = $env.CW_USER_PROMPT_COMMAND_RIGHT
+  # if "PROMPT_COMMAND_RIGHT" in $env and "Q_USER_PROMPT_COMMAND_RIGHT" in $env {
+  #   let-env PROMPT_COMMAND_RIGHT = $env.Q_USER_PROMPT_COMMAND_RIGHT
   # }
 
   # let-env PROMPT_INDICATOR = if "PROMPT_INDICATOR" in $env {
-  #   if "CW_USER_PROMPT_INDICATOR" in $env {
-  #       $env.CW_USER_PROMPT_INDICATOR
+  #   if "Q_USER_PROMPT_INDICATOR" in $env {
+  #       $env.Q_USER_PROMPT_INDICATOR
   #   } else {
   #       $env.PROMPT_INDICATOR
   #   }
   # } else { $nothing }
   
-  # if "PROMPT_INDICATOR" in $env and "CW_USER_PROMPT_INDICATOR" in $env {
-  #   let-env PROMPT_INDICATOR = $env.CW_USER_PROMPT_INDICATOR
+  # if "PROMPT_INDICATOR" in $env and "Q_USER_PROMPT_INDICATOR" in $env {
+  #   let-env PROMPT_INDICATOR = $env.Q_USER_PROMPT_INDICATOR
   # }
 
   # let-env PROMPT_INDICATOR_VI_INSERT = if "PROMPT_INDICATOR_VI_INSERT" in $env {
-  #   if "CW_USER_PROMPT_INDICATOR_VI_INSERT" in $env {
-  #       $env.CW_USER_PROMPT_INDICATOR_VI_INSERT
+  #   if "Q_USER_PROMPT_INDICATOR_VI_INSERT" in $env {
+  #       $env.Q_USER_PROMPT_INDICATOR_VI_INSERT
   #   } else {
   #       $env.PROMPT_INDICATOR_VI_INSERT
   #   }
   # } else { $nothing }
   
-  # if "PROMPT_INDICATOR_VI_INSERT" in $env and "CW_USER_PROMPT_INDICATOR_VI_INSERT" in $env {
-  #   let-env PROMPT_INDICATOR_VI_INSERT = $env.CW_USER_PROMPT_INDICATOR_VI_INSERT
+  # if "PROMPT_INDICATOR_VI_INSERT" in $env and "Q_USER_PROMPT_INDICATOR_VI_INSERT" in $env {
+  #   let-env PROMPT_INDICATOR_VI_INSERT = $env.Q_USER_PROMPT_INDICATOR_VI_INSERT
   # }
 
   # let-env PROMPT_INDICATOR_VI_NORMAL = if "PROMPT_INDICATOR_VI_NORMAL" in $env {
-  #   if "CW_USER_PROMPT_INDICATOR_VI_NORMAL" in $env {
-  #       $env.CW_USER_PROMPT_INDICATOR_VI_NORMAL
+  #   if "Q_USER_PROMPT_INDICATOR_VI_NORMAL" in $env {
+  #       $env.Q_USER_PROMPT_INDICATOR_VI_NORMAL
   #   } else {
   #       $env.PROMPT_INDICATOR_VI_NORMAL
   #   }
   # } else { $nothing }
   
-  # if "PROMPT_INDICATOR_VI_NORMAL" in $env and "CW_USER_PROMPT_INDICATOR_VI_NORMAL" in $env {
-  #   let-env PROMPT_INDICATOR_VI_NORMAL = $env.CW_USER_PROMPT_INDICATOR_VI_NORMAL
+  # if "PROMPT_INDICATOR_VI_NORMAL" in $env and "Q_USER_PROMPT_INDICATOR_VI_NORMAL" in $env {
+  #   let-env PROMPT_INDICATOR_VI_NORMAL = $env.Q_USER_PROMPT_INDICATOR_VI_NORMAL
   # }
 
   # let-env PROMPT_MULTILINE_INDICATOR = if "PROMPT_MULTILINE_INDICATOR" in $env {
-  #   if "CW_USER_PROMPT_MULTILINE_INDICATOR" in $env {
-  #       $env.CW_USER_PROMPT_MULTILINE_INDICATOR
+  #   if "Q_USER_PROMPT_MULTILINE_INDICATOR" in $env {
+  #       $env.Q_USER_PROMPT_MULTILINE_INDICATOR
   #   } else {
   #       $env.PROMPT_MULTILINE_INDICATOR
   #   }
   # } else { $nothing }
   
-  # if "PROMPT_MULTILINE_INDICATOR" in $env and "CW_USER_PROMPT_MULTILINE_INDICATOR" in $env {
-  #   let-env PROMPT_MULTILINE_INDICATOR = $env.CW_USER_PROMPT_MULTILINE_INDICATOR
+  # if "PROMPT_MULTILINE_INDICATOR" in $env and "Q_USER_PROMPT_MULTILINE_INDICATOR" in $env {
+  #   let-env PROMPT_MULTILINE_INDICATOR = $env.Q_USER_PROMPT_MULTILINE_INDICATOR
   # }
 }
 
 def-env fig_pre_prompt_hook [] {
-    print_fig_osc $"OSCUnlock=($env.CWTERM_SESSION_ID)"
+    print_fig_osc $"OSCUnlock=($env.QTERM_SESSION_ID)"
     print_fig_osc $"Dir=($env.PWD)"
     print_fig_osc "Shell=nu"
-    if "CW_SHELL" in $env {
-      print_fig_osc $"ShellPath=($env.CW_SHELL)"
+    if "Q_SHELL" in $env {
+      print_fig_osc $"ShellPath=($env.Q_SHELL)"
     } 
     if "WSL_DISTRO_NAME" in $env {
       print_fig_osc $"WSLDistro=($env.WSL_DISTRO_NAME)"
@@ -126,8 +126,8 @@ def-env fig_pre_prompt_hook [] {
       print_fig_osc $"ExitCode=($env.LAST_EXIT_CODE)"
     }
     print_fig_osc $"TTY=(^tty)"
-    if "CW_LOG_LEVEL" in $env {
-      print_fig_osc $"Log=($env.CW_LOG_LEVEL)"
+    if "Q_LOG_LEVEL" in $env {
+      print_fig_osc $"Log=($env.Q_LOG_LEVEL)"
     }
 
     print_fig_osc $"NuHintColor=($env.config.color_config.hints)"
@@ -138,14 +138,14 @@ def-env fig_pre_prompt_hook [] {
       print_fig_osc "User=root"
     }
 
-    # if $env.CW_HAS_SET_PROMPT == 1 {
+    # if $env.Q_HAS_SET_PROMPT == 1 {
     #   fig_pre_execution_hook
     # }
   
     if (which fig | length) >= 1 {
-      let result = (cw _ pre-cmd | complete)
+      let result = (q _ pre-cmd | complete)
       if $result.stdout == "EXEC_NEW_SHELL" {
-        let-env CW_DOTFILES_SOURCED = $nothing
+        let-env Q_DOTFILES_SOURCED = $nothing
         exec nu
       } else if $result.stdout == "" {
         # do nothing
@@ -154,49 +154,49 @@ def-env fig_pre_prompt_hook [] {
       }
     }
 
-    let-env CW_HAS_SET_PROMPT = 1
+    let-env Q_HAS_SET_PROMPT = 1
 }
 
 def-env fig_set_prompt [] {
   if "PROMPT_COMMAND" in $env {
-    let-env CW_PROMPT_COMMAND = $env.PROMPT_COMMAND
+    let-env Q_PROMPT_COMMAND = $env.PROMPT_COMMAND
     let-env PROMPT_COMMAND = {
-      $"(fig_osc 'StartPrompt')(do $env.CW_PROMPT_COMMAND)"
+      $"(fig_osc 'StartPrompt')(do $env.Q_PROMPT_COMMAND)"
     }
   }
   
   if "PROMPT_COMMAND_RIGHT" in $env {
-    let-env CW_PROMPT_COMMAND_RIGHT = $env.PROMPT_COMMAND_RIGHT
+    let-env Q_PROMPT_COMMAND_RIGHT = $env.PROMPT_COMMAND_RIGHT
     let-env PROMPT_COMMAND_RIGHT = {
-      $"(fig_osc 'StartPrompt')(do $env.CW_PROMPT_COMMAND_RIGHT)(fig_osc 'EndPrompt')"
+      $"(fig_osc 'StartPrompt')(do $env.Q_PROMPT_COMMAND_RIGHT)(fig_osc 'EndPrompt')"
     }
   }
 
   if "PROMPT_INDICATOR" in $env {
-    let-env CW_PROMPT_INDICATOR = $env.PROMPT_INDICATOR
+    let-env Q_PROMPT_INDICATOR = $env.PROMPT_INDICATOR
     let-env PROMPT_INDICATOR = {
-      $"(do $env.CW_PROMPT_INDICATOR)(fig_osc 'EndPrompt')(fig_osc $"NewCmd=($env.CWTERM_SESSION_ID)")"
+      $"(do $env.Q_PROMPT_INDICATOR)(fig_osc 'EndPrompt')(fig_osc $"NewCmd=($env.QTERM_SESSION_ID)")"
     }
   }
 
   if "PROMPT_INDICATOR_VI_INSERT" in $env {
-    let-env CW_PROMPT_INDICATOR_VI_INSERT = $env.PROMPT_INDICATOR_VI_INSERT
+    let-env Q_PROMPT_INDICATOR_VI_INSERT = $env.PROMPT_INDICATOR_VI_INSERT
     let-env PROMPT_INDICATOR_VI_INSERT = {
-      $"(do $env.CW_PROMPT_INDICATOR_VI_INSERT)(fig_osc 'EndPrompt')(fig_osc $"NewCmd=($env.CWTERM_SESSION_ID)")"
+      $"(do $env.Q_PROMPT_INDICATOR_VI_INSERT)(fig_osc 'EndPrompt')(fig_osc $"NewCmd=($env.QTERM_SESSION_ID)")"
     }
   }
 
   if "PROMPT_INDICATOR_VI_NORMAL" in $env {
-    let-env CW_PROMPT_INDICATOR_VI_NORMAL = $env.PROMPT_INDICATOR_VI_NORMAL
+    let-env Q_PROMPT_INDICATOR_VI_NORMAL = $env.PROMPT_INDICATOR_VI_NORMAL
     let-env PROMPT_INDICATOR_VI_NORMAL = {
-      $"(do $env.CW_PROMPT_INDICATOR_VI_NORMAL)(fig_osc 'EndPrompt')(fig_osc $"NewCmd=($env.CWTERM_SESSION_ID)")"
+      $"(do $env.Q_PROMPT_INDICATOR_VI_NORMAL)(fig_osc 'EndPrompt')(fig_osc $"NewCmd=($env.QTERM_SESSION_ID)")"
     }
   }
 
   if "PROMPT_MULTILINE_INDICATOR" in $env {
-    let-env CW_PROMPT_MULTILINE_INDICATOR = $env.PROMPT_MULTILINE_INDICATOR
+    let-env Q_PROMPT_MULTILINE_INDICATOR = $env.PROMPT_MULTILINE_INDICATOR
     let-env PROMPT_MULTILINE_INDICATOR = {
-      $"(fig_osc 'StartPrompt')(do $env.CW_PROMPT_MULTILINE_INDICATOR)(fig_osc 'EndPrompt')"
+      $"(fig_osc 'StartPrompt')(do $env.Q_PROMPT_MULTILINE_INDICATOR)(fig_osc 'EndPrompt')"
     }
   }
 }
@@ -204,8 +204,8 @@ def-env fig_set_prompt [] {
 fig_set_prompt
 fig_reset_hooks
 
-if "PROCESS_LAUNCHED_BY_CW" in $env {
+if "PROCESS_LAUNCHED_BY_Q" in $env {
   print_fig_osc "DoneSourcing"
 }
 
-(^cw _ pre-cmd | complete | ignore)
+(^q _ pre-cmd | complete | ignore)

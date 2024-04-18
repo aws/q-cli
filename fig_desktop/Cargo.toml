@@ -1,6 +1,6 @@
 [package]
 name = "fig_desktop"
-authors = ["Amazon CodeWhisperer Devs"]
+authors = ["Amazon Q Devs"]
 edition.workspace = true
 homepage = "https://aws.amazon.com/codewhisperer"
 publish.workspace = true

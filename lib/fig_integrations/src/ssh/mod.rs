@@ -13,6 +13,7 @@ use fig_util::directories::{
     fig_data_dir_utf8,
     home_dir,
 };
+use fig_util::PRODUCT_NAME;
 use regex::Regex;
 
 use crate::error::{
@@ -58,7 +59,7 @@ impl SshIntegration {
 
     #[allow(clippy::unused_self)]
     fn description(&self) -> String {
-        "# CodeWhisperer SSH Integration. Keep at the bottom of this file.".into()
+        format!("# {PRODUCT_NAME} SSH Integration. Keep at the bottom of this file.")
     }
 
     fn source_text(&self) -> Result<String> {
@@ -151,7 +152,7 @@ impl Integration for SshIntegration {
         self.get_file_integration()?.is_installed().await?;
         if !self.source_regex()?.is_match(&filtered_contents) {
             let message = format!(
-                "{} does not source CodeWhisperer's ssh integration",
+                "{} does not source {PRODUCT_NAME}'s ssh integration",
                 self.path.display()
             );
             return Err(Error::NotInstalled(message.into()));

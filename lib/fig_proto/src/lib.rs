@@ -248,10 +248,10 @@ mod tests {
             shell_path: Some("/bin/bash".into()),
             wsl_distro: None,
             environment_variables: vec![],
-            cwterm_version: None,
+            qterm_version: None,
             preexec: Some(false),
             osc_lock: Some(true),
-            alias: Some("alias q='cw q'\n".into()),
+            alias: Some("alias abc='abc d'\n".into()),
         };
         let hook = hooks::new_edit_buffer_hook(Some(ctx), "test", 2, 3, None);
         hooks::hook_to_message(hook)

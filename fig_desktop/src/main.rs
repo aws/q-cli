@@ -238,7 +238,7 @@ async fn main() {
 
     #[cfg(target_os = "linux")]
     {
-        match std::env::var("CW_BACKEND").ok().as_deref() {
+        match std::env::var("Q_BACKEND").ok().as_deref() {
             Some("default") => {},
             Some(backend) => std::env::set_var("GDK_BACKEND", backend),
             None => std::env::set_var("GDK_BACKEND", "x11"),

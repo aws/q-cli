@@ -32,7 +32,7 @@ use crate::history::{
 
 static LAST_RECEIVED: Lazy<Mutex<Option<SystemTime>>> = Lazy::new(|| Mutex::new(None));
 
-static CACHE_ENABLED: Lazy<bool> = Lazy::new(|| std::env::var_os("CW_INLINE_SHELL_COMPLETION_CACHE_DISABLE").is_none());
+static CACHE_ENABLED: Lazy<bool> = Lazy::new(|| std::env::var_os("Q_INLINE_SHELL_COMPLETION_CACHE_DISABLE").is_none());
 pub static COMPLETION_CACHE: Lazy<Mutex<radix_trie::Trie<String, f64>>> =
     Lazy::new(|| Mutex::new(radix_trie::Trie::new()));
 
@@ -74,7 +74,7 @@ pub async fn handle_request(
 
     // debounce requests
     let debounce_duration = Duration::from_millis(
-        std::env::var("CW_INLINE_SHELL_COMPLETION_DEBOUNCE_MS")
+        std::env::var("Q_INLINE_SHELL_COMPLETION_DEBOUNCE_MS")
             .ok()
             .and_then(|s| s.parse().ok())
             .unwrap_or(300),
@@ -110,7 +110,7 @@ pub async fn handle_request(
         if let Err(err) = history_sender
             .send_async(history::HistoryCommand::Query(
                 HistoryQueryParams {
-                    limit: std::env::var("CW_INLINE_SHELL_COMPLETION_HISTORY_COUNT")
+                    limit: std::env::var("Q_INLINE_SHELL_COMPLETION_HISTORY_COUNT")
                         .ok()
                         .and_then(|s| s.parse().ok())
                         .unwrap_or(50),

@@ -11,32 +11,32 @@ def pathadd [path: string] {
 let-env PATH = pathadd $"($env.HOME)/.local/bin"
 let-env PATH = pathadd $"($env.HOME)/.local/bin"
 
-if "CW_NEW_SESSION" in $env {
-  let-env CWTERM_SESSION_ID = $nothing
-  let-env CW_TERM = $nothing
-  let-env CW_NEW_SESSION = $nothing
+if "Q_NEW_SESSION" in $env {
+  let-env QTERM_SESSION_ID = $nothing
+  let-env Q_TERM = $nothing
+  let-env Q_NEW_SESSION = $nothing
 }
 
-if "CW_SET_PARENT_CHECK" not-in $env {
-  if "CW_PARENT" not-in $env and "CW_SET_PARENT" in $env {
-    let-env CW_PARENT = $env.CW_SET_PARENT
-    let-env CW_SET_PARENT = $nothing
+if "Q_SET_PARENT_CHECK" not-in $env {
+  if "Q_PARENT" not-in $env and "Q_SET_PARENT" in $env {
+    let-env Q_PARENT = $env.Q_SET_PARENT
+    let-env Q_SET_PARENT = $nothing
   }
-  let-env CW_SET_PARENT_CHECK = 1
+  let-env Q_SET_PARENT_CHECK = 1
 }
 
 
-let result = (^cw _ should-figterm-launch | complete)
-let-env SHOULD_CWTERM_LAUNCH = $result.exit_code
+let result = (^q _ should-figterm-launch | complete)
+let-env SHOULD_QTERM_LAUNCH = $result.exit_code
 
 let should_launch = (
-    ("PROCESS_LAUNCHED_BY_CW" not-in $env or ($env.PROCESS_LAUNCHED_BY_CW | str length) == 0)
-    and ($env.SHOULD_CWTERM_LAUNCH == 0 or
-       ($env.SHOULD_CWTERM_LAUNCH == 2 and "CW_TERM" not-in $env))
+    ("PROCESS_LAUNCHED_BY_Q" not-in $env or ($env.PROCESS_LAUNCHED_BY_Q | str length) == 0)
+    and ($env.SHOULD_QTERM_LAUNCH == 0 or
+       ($env.SHOULD_QTERM_LAUNCH == 2 and "Q_TERM" not-in $env))
 )
 
 if $should_launch {
-  let CW_SHELL = (cw _ get-shell | complete).stdout
+  let Q_SHELL = (q _ get-shell | complete).stdout
   
   let fig_term_name = "nu (figterm)"
   let figterm_path = if ([$env.HOME ".fig" "bin" $fig_term_name] | path join | path exists) {
@@ -48,7 +48,7 @@ if $should_launch {
   }
 
   with-env {
-    CW_SHELL: $CW_SHELL
+    Q_SHELL: $Q_SHELL
   } {
     exec $figterm_path
   }

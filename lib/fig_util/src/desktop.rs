@@ -5,6 +5,7 @@ use crate::{
     manifest,
     system_info,
     Error,
+    PRODUCT_NAME,
 };
 
 pub struct LaunchArgs {
@@ -31,7 +32,7 @@ impl Default for LaunchArgs {
     }
 }
 
-pub fn is_desktop_running() -> bool {
+pub fn desktop_app_running() -> bool {
     cfg_if::cfg_if! {
         if #[cfg(target_os = "macos")] {
             use appkit_nsworkspace_bindings::NSRunningApplication;
@@ -123,22 +124,22 @@ pub fn is_desktop_running() -> bool {
 
 pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
     if manifest::is_minimal() {
-        return Err(Error::LaunchError(
-            "launching CodeWhisperer from minimal installs is not yet supported".to_owned(),
-        ));
+        return Err(Error::LaunchError(format!(
+            "launching {PRODUCT_NAME} from minimal installs is not yet supported"
+        )));
     }
 
     if system_info::is_remote() {
-        return Err(Error::LaunchError(
-            "launching CodeWhisperer from remote installs is not yet supported".to_owned(),
-        ));
+        return Err(Error::LaunchError(format!(
+            "launching {PRODUCT_NAME} from remote installs is not yet supported"
+        )));
     }
 
-    match is_desktop_running() {
+    match desktop_app_running() {
         true => return Ok(()),
         false => {
             if args.verbose {
-                println!("Launching CodeWhisperer...");
+                println!("Launching {PRODUCT_NAME}...");
             }
         },
     }
@@ -194,10 +195,10 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
         return Ok(());
     }
 
-    if !is_desktop_running() {
-        return Err(Error::LaunchError(
-            "CodeWhisperer was unable launch successfully".to_owned(),
-        ));
+    if !desktop_app_running() {
+        return Err(Error::LaunchError(format!(
+            "{PRODUCT_NAME} was unable launch successfully"
+        )));
     }
 
     // Wait for socket to exist

@@ -1,9 +1,9 @@
 type: :app # no need to change this for .pkg, .dmg and executables
 os: :osx
-name: CodeWhisperer.app
+name: Q.app
 outputs:
   - label: macos
-    path: CodeWhisperer.app
+    path: Q.app
 app:
   :identifier: com.amazon.codewhisperer # this has to be same as Bundle identifier value in info.plist
   signing_requirements:
@@ -13,8 +13,8 @@ app:
       entitlements_path: SIGNING_METADATA/entitlements.plist
   embedded_requirements:
     Contents/MacOS/cw:
-      :identifier: com.amazon.cw
+      :identifier: com.amazon.q
       signing_args:
     Contents/MacOS/cwterm:
-      :identifier: com.amazon.cwterm
+      :identifier: com.amazon.qterm
       signing_args:

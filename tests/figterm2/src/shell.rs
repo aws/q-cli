@@ -24,7 +24,7 @@ use fig_remote_ipc::figterm::{
     FigtermState,
 };
 use fig_remote_ipc::RemoteHookHandler;
-use fig_util::consts::CLI_BINARY_NAME;
+use fig_util::RUNTIME_DIR_NAME;
 use portable_pty::{
     native_pty_system,
     Child,
@@ -125,13 +125,13 @@ impl Shell {
 
         let figterm_state = Arc::new(FigtermState::new());
 
-        let cwrun_dir = tempdir.path().join(format!("{CLI_BINARY_NAME}run"));
-        tokio::fs::create_dir_all(&cwrun_dir).await?;
-        tokio::fs::set_permissions(&cwrun_dir, std::fs::Permissions::from_mode(0o700)).await?;
+        let runtime_dir = tempdir.path().join(RUNTIME_DIR_NAME);
+        tokio::fs::create_dir_all(&runtime_dir).await?;
+        tokio::fs::set_permissions(&runtime_dir, std::fs::Permissions::from_mode(0o700)).await?;
 
-        println!("{cwrun_dir:?} {}", cwrun_dir.to_str().unwrap().len());
+        println!("{runtime_dir:?} {}", runtime_dir.to_str().unwrap().len());
 
-        let path = cwrun_dir.join("remote.sock");
+        let path = runtime_dir.join("remote.sock");
         let buffer = Arc::new(Mutex::new(None));
         let shell_context = Arc::new(Mutex::new(None));
         tokio::spawn({
@@ -148,7 +148,7 @@ impl Shell {
         });
 
         let desktop_socket =
-            UnixListener::bind(cwrun_dir.join("desktop.sock")).context("Failed to make desktop.socket")?;
+            UnixListener::bind(runtime_dir.join("desktop.sock")).context("Failed to make desktop.socket")?;
 
         let pty_system = native_pty_system();
 
@@ -164,8 +164,8 @@ impl Shell {
         let mut cmd = CommandBuilder::new(shell);
 
         let session_id = "1234";
-        cmd.env("CW_NEW_SESSION", "1");
-        cmd.env("MOCK_CWTERM_SESSION_ID", session_id);
+        cmd.env("Q_NEW_SESSION", "1");
+        cmd.env("MOCK_QTERM_SESSION_ID", session_id);
         cmd.env("TMPDIR", tempdir.path());
         cmd.env("XDG_RUNTIME_DIR", tempdir.path());
 

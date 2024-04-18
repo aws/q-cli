@@ -23,7 +23,7 @@ pub fn init_sentry(
     sample_rate: f32,
     session_tracking: bool,
 ) -> Option<sentry::ClientInitGuard> {
-    match std::env::var_os("CW_DISABLE_SENTRY") {
+    match std::env::var_os("Q_DISABLE_SENTRY") {
         Some(_) => None,
         None => {
             let guard = sentry::init((project, sentry::ClientOptions {

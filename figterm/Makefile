@@ -45,7 +45,7 @@ else
 CARGO_BUILD := debug
 endif
 
-BINARY_NAME ?= cwterm
+BINARY_NAME ?= qterm
 CRATE_NAME  ?= figterm
 
 ### Build for each platform
@@ -112,7 +112,7 @@ build-native-release:
 
 install-native: build-native
 	mkdir -p $(HOME)/.local/bin/
-	rm -rf $(HOME)/.local/bin/*cwterm*
+	rm -rf $(HOME)/.local/bin/*qterm*
 	install $(TARGET_DIR)/debug/$(CRATE_NAME) $(HOME)/.local/bin/$(BINARY_NAME)
 
 install-native-release: build-native-release

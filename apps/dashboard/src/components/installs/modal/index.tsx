@@ -13,7 +13,7 @@ import migrate_dark from "@assets/images/fig-migration/dark.png?url";
 
 export function WelcomeModal({ next }: { next: () => void }) {
   return (
-    <div className="flex flex-col items-center gap-8 gradient-cw-secondary-light -m-10 p-4 pt-10 rounded-lg text-white">
+    <div className="flex flex-col items-center gap-8 gradient-q-secondary-light -m-10 p-4 pt-10 rounded-lg text-white">
       <div className="flex flex-col items-center gap-8">
         <Lockup />
         <div className="flex flex-col gap-2 items-center text-center">
@@ -109,7 +109,7 @@ export default function OnboardingModal() {
 
 export function FigMigrationModal({ next }: { next: () => void }) {
   return (
-    <div className="flex flex-col items-center gap-8 gradient-cw-secondary-light -m-10 p-4 pt-10 rounded-lg text-white">
+    <div className="flex flex-col items-center gap-8 gradient-q-secondary-light -m-10 p-4 pt-10 rounded-lg text-white">
       <div className="flex flex-col items-center gap-8">
         <img src={migrate_dark} className="w-40" />
         <div className="flex flex-col gap-2 items-center text-center">

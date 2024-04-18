@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
-    "cw_cli",
+    "q_cli",
     "fig_desktop",
     "fig_input_method",
     "figterm",
@@ -14,7 +14,7 @@ members = [
 ]
 
 [workspace.package]
-authors = ["Amazon CodeWhisperer Devs"]
+authors = ["AWS Engineers"]
 edition = "2021"
 homepage = "https://aws.amazon.com/codewhisperer"
 publish = false

@@ -226,19 +226,19 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
     let local_bin = fig_util::directories::home_dir()?.join(".local").join("bin");
     fs::create_dir_all(&local_bin).ok();
 
-    if let Some(cwterm_path) = get_bundle_path_for_executable(PTY_BINARY_NAME) {
+    if let Some(qterm_path) = get_bundle_path_for_executable(PTY_BINARY_NAME) {
         let link = local_bin.join(PTY_BINARY_NAME);
-        symlink(&cwterm_path, link).ok();
+        symlink(&qterm_path, link).ok();
 
         for shell in Shell::all() {
-            let cwterm_shell_cpy = local_bin.join(format!("{shell} ({PTY_BINARY_NAME})"));
-            let cwterm_path = cwterm_path.clone();
+            let qterm_shell_cpy = local_bin.join(format!("{shell} ({PTY_BINARY_NAME})"));
+            let qterm_path = qterm_path.clone();
 
             tokio::spawn(async move {
                 // Check version if copy already exists, this is because everytime a copy is made the first start is
                 // kinda slow and we want to avoid that
-                if cwterm_shell_cpy.exists() {
-                    let output = tokio::process::Command::new(&cwterm_shell_cpy)
+                if qterm_shell_cpy.exists() {
+                    let output = tokio::process::Command::new(&qterm_shell_cpy)
                         .arg("--version")
                         .output()
                         .await
@@ -260,11 +260,11 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
                     }
                 }
 
-                if let Err(err) = tokio::fs::remove_file(&cwterm_shell_cpy).await {
+                if let Err(err) = tokio::fs::remove_file(&qterm_shell_cpy).await {
                     error!(%err, "Failed to remove {PTY_BINARY_NAME} shell {shell:?} copy");
                 }
-                if let Err(err) = tokio::fs::copy(&cwterm_path, &cwterm_shell_cpy).await {
-                    error!(%err, "Failed to copy {PTY_BINARY_NAME} to {}", cwterm_shell_cpy.display());
+                if let Err(err) = tokio::fs::copy(&qterm_path, &qterm_shell_cpy).await {
+                    error!(%err, "Failed to copy {PTY_BINARY_NAME} to {}", qterm_shell_cpy.display());
                 }
             });
         }

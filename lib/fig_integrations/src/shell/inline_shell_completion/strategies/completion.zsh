@@ -5,7 +5,7 @@
 # Fetches a suggestion from the completion engine
 #
 
-_cw_autosuggest_capture_postcompletion() {
+_q_autosuggest_capture_postcompletion() {
 	# Always insert the first completion into the buffer
 	compstate[insert]=1
 
@@ -13,12 +13,12 @@ _cw_autosuggest_capture_postcompletion() {
 	unset 'compstate[list]'
 }
 
-_cw_autosuggest_capture_completion_widget() {
+_q_autosuggest_capture_completion_widget() {
 	# Add a post-completion hook to be called after all completions have been
 	# gathered. The hook can modify compstate to affect what is done with the
 	# gathered completions.
 	local -a +h comppostfuncs
-	comppostfuncs=(_cw_autosuggest_capture_postcompletion)
+	comppostfuncs=(_q_autosuggest_capture_postcompletion)
 
 	# Only capture completions at the end of the buffer
 	CURSOR=$#BUFFER
@@ -42,9 +42,9 @@ _cw_autosuggest_capture_completion_widget() {
 	echo -nE - $'\0'$BUFFER$'\0'
 }
 
-zle -N autosuggest-capture-completion _cw_autosuggest_capture_completion_widget
+zle -N autosuggest-capture-completion _q_autosuggest_capture_completion_widget
 
-_cw_autosuggest_capture_setup() {
+_q_autosuggest_capture_setup() {
 	# There is a bug in zpty module in older zsh versions by which a
 	# zpty that exits will kill all zpty processes that were forked
 	# before it. Here we set up a zsh exit hook to SIGKILL the zpty
@@ -69,14 +69,14 @@ _cw_autosuggest_capture_setup() {
 	bindkey '^I' autosuggest-capture-completion
 }
 
-_cw_autosuggest_capture_completion_sync() {
-	_cw_autosuggest_capture_setup
+_q_autosuggest_capture_completion_sync() {
+	_q_autosuggest_capture_setup
 
 	zle autosuggest-capture-completion
 }
 
-_cw_autosuggest_capture_completion_async() {
-	_cw_autosuggest_capture_setup
+_q_autosuggest_capture_completion_async() {
+	_q_autosuggest_capture_setup
 
 	zmodload zsh/parameter 2>/dev/null || return # For `$functions`
 
@@ -93,7 +93,7 @@ _cw_autosuggest_capture_completion_async() {
 	vared 1
 }
 
-_cw_autosuggest_strategy_completion() {
+_q_autosuggest_strategy_completion() {
 	# Reset options to defaults and enable LOCAL_OPTIONS
 	emulate -L zsh
 
@@ -110,20 +110,20 @@ _cw_autosuggest_strategy_completion() {
 	zmodload zsh/zpty 2>/dev/null || return
 
 	# Exit if our search string matches the ignore pattern
-	[[ -n "$CW_AUTOSUGGEST_COMPLETION_IGNORE" ]] && [[ "$1" == $~CW_AUTOSUGGEST_COMPLETION_IGNORE ]] && return
+	[[ -n "$Q_AUTOSUGGEST_COMPLETION_IGNORE" ]] && [[ "$1" == $~Q_AUTOSUGGEST_COMPLETION_IGNORE ]] && return
 
 	# Zle will be inactive if we are in async mode
 	if zle; then
-		zpty $CW_AUTOSUGGEST_COMPLETIONS_PTY_NAME _cw_autosuggest_capture_completion_sync
+		zpty $Q_AUTOSUGGEST_COMPLETIONS_PTY_NAME _q_autosuggest_capture_completion_sync
 	else
-		zpty $CW_AUTOSUGGEST_COMPLETIONS_PTY_NAME _cw_autosuggest_capture_completion_async "\$1"
-		zpty -w $CW_AUTOSUGGEST_COMPLETIONS_PTY_NAME $'\t'
+		zpty $Q_AUTOSUGGEST_COMPLETIONS_PTY_NAME _q_autosuggest_capture_completion_async "\$1"
+		zpty -w $Q_AUTOSUGGEST_COMPLETIONS_PTY_NAME $'\t'
 	fi
 
 	{
 		# The completion result is surrounded by null bytes, so read the
 		# content between the first two null bytes.
-		zpty -r $CW_AUTOSUGGEST_COMPLETIONS_PTY_NAME line '*'$'\0''*'$'\0'
+		zpty -r $Q_AUTOSUGGEST_COMPLETIONS_PTY_NAME line '*'$'\0''*'$'\0'
 
 		# Extract the suggestion from between the null bytes.  On older
 		# versions of zsh (older than 5.3), we sometimes get extra bytes after
@@ -132,6 +132,6 @@ _cw_autosuggest_strategy_completion() {
 		suggestion="${${(@0)line}[2]}"
 	} always {
 		# Destroy the pty
-		zpty -d $CW_AUTOSUGGEST_COMPLETIONS_PTY_NAME
+		zpty -d $Q_AUTOSUGGEST_COMPLETIONS_PTY_NAME
 	}
 }

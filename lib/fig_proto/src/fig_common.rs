@@ -46,7 +46,7 @@ impl Serialize for ShellContext {
         s.serialize_field("shell_path", &self.shell_path)?;
         s.serialize_field("wsl_distro", &self.wsl_distro)?;
         s.serialize_field("environment_variables", &self.environment_variables)?;
-        s.serialize_field("cwterm_version", &self.cwterm_version)?;
+        s.serialize_field("qterm_version", &self.qterm_version)?;
         s.serialize_field("preexec", &self.preexec)?;
         s.end()
     }

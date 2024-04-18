@@ -1,7 +1,7 @@
 export PATH="$HOME/.local/bin:$PATH"
 TTY=$(tty)
 precmd() {
-  cw hook prompt $$ $TTY
+  q hook prompt $$ $TTY
 }
 
 add-zsh-hook precmd precmd

@@ -5,7 +5,7 @@ export const MOST_USED_SPECS = [
   "rm",
   "brew",
   "ls",
-  "cw",
+  "q",
   "code",
   "cat",
   "node",

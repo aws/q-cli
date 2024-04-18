@@ -17,15 +17,13 @@ import io.fig.jetbrains.terminal.TerminalStatus;
 import io.fig.jetbrains.terminal.listeners.TerminalFocusListener;
 import org.jetbrains.plugins.terminal.TerminalView;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Timer;
 
 public class FigService implements ITerminalInstrumentation {
 
-    private final ITerminalEntry[] terminalEntries = new ITerminalEntry[]{
+    private final ITerminalEntry[] terminalEntries = new ITerminalEntry[] {
             new ExistingTerminalsEntry(this),
             new ListenTerminalsEntry(this),
     };
@@ -57,7 +55,7 @@ public class FigService implements ITerminalInstrumentation {
         switch (instrumentation) {
             case ADDED:
                 System.out.println("add " + id);
-                this.runCommand("cw", "hook", "keyboard-focus-changed", "jedi " + id);
+                this.runCommand("q", "hook", "keyboard-focus-changed", "jedi " + id);
                 this.terminals.put(id, new TerminalStatus(content, true, id));
 
                 JBTerminalWidget widget = TerminalView.getWidgetByContent(content);
@@ -76,7 +74,7 @@ public class FigService implements ITerminalInstrumentation {
 
             case FOCUSED:
                 System.out.println("focus " + id);
-                this.runCommand("cw", "hook", "keyboard-focus-changed", "jedi " + id);
+                this.runCommand("q", "hook", "keyboard-focus-changed", "jedi " + id);
                 this.setTerminalFocused(id, true);
                 break;
 
@@ -84,7 +82,7 @@ public class FigService implements ITerminalInstrumentation {
                 System.out.println("unfocus " + id);
                 this.setTerminalFocused(id, false);
 
-                this.runCommand("cw", "hook", "keyboard-focus-changed", "jedi " + id);
+                this.runCommand("q", "hook", "keyboard-focus-changed", "jedi " + id);
                 break;
 
             default:
@@ -109,7 +107,7 @@ public class FigService implements ITerminalInstrumentation {
         return this.terminals.values().stream().anyMatch(TerminalStatus::isFocused);
     }
 
-    public void runCommand(String ...command) {
+    public void runCommand(String... command) {
         try {
             new ProcessBuilder().command(command).start();
         } catch (IOException e) {

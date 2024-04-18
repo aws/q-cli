@@ -1,4 +1,4 @@
-# CodeWhisperer for Terminal Monorepo
+# Q for command line Monorepo
 
 [![Rust CI](https://github.com/withfig/macos/actions/workflows/rust-ci.yaml/badge.svg?branch=develop)](https://github.com/withfig/macos/actions/workflows/rust-ci.yaml)
 [![codecov](https://codecov.io/gh/withfig/macos/branch/develop/graph/badge.svg?token=EFRYMRH32O)](https://codecov.io/gh/withfig/macos)
@@ -23,7 +23,7 @@ flowchart LR
       click dashboard href "https://www.github.com/withfig/mission-control"
     end
     localCli[Fig CLI *]
-    click localCli href "https://github.com/withfig/macos/tree/HEAD/cw_cli"
+    click localCli href "https://github.com/withfig/macos/tree/HEAD/fig_cli"
     subgraph remote["Remote (SSH/WSL/Docker)"]
       style remote fill:transparent,stroke-dasharray: 5 5
       figterm[Figterm *]
@@ -31,7 +31,7 @@ flowchart LR
       shell["Shell (bash)"]
       click shell href "https://en.wikipedia.org/wiki/Unix_shell"
       remoteCli[Fig CLI *]
-      click remoteCli href "https://github.com/withfig/macos/tree/HEAD/cw_cli"
+      click remoteCli href "https://github.com/withfig/macos/tree/HEAD/fig_cli"
       subgraph kernel[Kernel]
         style kernel fill:transparent,stroke-dasharray: 5 5
         pseudo[Pseudoterminal]
@@ -58,7 +58,7 @@ CLI. Several projects live here:
   message specification for inter-process communication
 - `figterm/` - figterm, our headless terminal/pseudoterminal that intercepts the
   user’s terminal edit buffer.
-- `cw_cli/` - the `cw` CLI, allows users to interface with CodeWhisperer from
+- `q_cli/` - the `q` CLI, allows users to interface with Q from
   the command line
 - `fig_desktop/` - the Rust desktop app, uses
   [`tao`](https://docs.rs/tao/latest/tao/)/[`wry`](https://docs.rs/wry/latest/wry/)

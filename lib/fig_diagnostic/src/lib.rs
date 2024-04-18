@@ -67,25 +67,24 @@ impl EnvVarDiagnostic {
     fn new() -> EnvVarDiagnostic {
         let env_vars = std::env::vars()
             .filter(|(key, val)| {
-                (key.starts_with("CW_")
-                    || key == "SHELL"
-                    || key == "DISPLAY"
-                    || key == "PATH"
-                    || key == "CWTERM_SESSION_ID"
-                    || key == "TERM"
-                    || key == "XDG_CURRENT_DESKTOP"
-                    || key == "XDG_SESSION_DESKTOP"
-                    || key == "XDG_SESSION_TYPE"
-                    || key == "GLFW_IM_MODULE"
-                    || key == "GTK_IM_MODULE"
-                    || key == "QT_IM_MODULE"
-                    || key == "XMODIFIERS"
-                    || key == "__CFBundleIdentifier"
-                    || key == "ZDOTDIR")
-                    && !key.contains("TOKEN")
-                    && !key.contains("KEY")
-                    && !key.contains("SECRET")
-                    && !key.contains("PASSWORD")
+                [
+                    "SHELL",
+                    "DISPLAY",
+                    "PATH",
+                    "QTERM_SESSION_ID",
+                    "TERM",
+                    "XDG_CURRENT_DESKTOP",
+                    "XDG_SESSION_DESKTOP",
+                    "XDG_SESSION_TYPE",
+                    "GLFW_IM_MODULE",
+                    "GTK_IM_MODULE",
+                    "QT_IM_MODULE",
+                    "XMODIFIERS",
+                    "__CFBundleIdentifier",
+                    "ZDOTDIR",
+                ]
+                .contains(&key.as_str())
+                    && !["TOKEN", "KEY", "SECRET", "PASSWORD"].contains(&key.as_str())
                     && !val.starts_with("figapi_")
             })
             .collect();

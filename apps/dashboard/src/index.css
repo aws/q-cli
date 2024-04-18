@@ -126,7 +126,7 @@
 }
 
 @layer components {
-  .gradient-cw-secondary-light {
+  .gradient-q-secondary-light {
     background: radial-gradient(
         100% 95.37% at 0% 0%,
         rgba(37, 47, 61, 0.5) 0%,
@@ -160,7 +160,7 @@
       #6e3bf1;
   }
 
-  .gradient-cw-secondary-dark {
+  .gradient-q-secondary-dark {
     background: radial-gradient(
         122.5% 122.5% at 0% 0%,
         #000000 0%,

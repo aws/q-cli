@@ -158,7 +158,7 @@ fn create_command(executable: impl AsRef<Path>, working_directory: impl AsRef<Pa
     cmd.env_remove("CLICOLOR");
     cmd.env_remove("COLORTERM");
     cmd.envs([
-        ("PROCESS_LAUNCHED_BY_CW", "1"),
+        ("PROCESS_LAUNCHED_BY_Q", "1"),
         ("HISTFILE", ""),
         ("HISTCONTROL", "ignoreboth"),
         ("TERM", "xterm-256color"),
@@ -345,7 +345,7 @@ pub async fn process_figterm_message(
                 Err(err) => error!(%err, "Failed to process figterm message"),
             }
         },
-        None => warn!("Cwterm message with no request"),
+        None => warn!("Qterm message with no request"),
     }
     Ok(())
 }

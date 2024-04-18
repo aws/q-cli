@@ -60,6 +60,7 @@ use fig_util::process_info::{
 };
 use fig_util::{
     Terminal as FigTerminal,
+    PRODUCT_NAME,
     PTY_BINARY_NAME,
 };
 use flume::{
@@ -182,7 +183,7 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
             .as_deref()
             .and_then(|username| HOSTNAME.as_deref().map(|hostname| format!("{username}@{hostname}"))),
         environment_variables: SHELL_ENVIRONMENT_VARIABLES.lock().clone(),
-        cwterm_version: Some(env!("CARGO_PKG_VERSION").into()),
+        qterm_version: Some(env!("CARGO_PKG_VERSION").into()),
         preexec: Some(shell_state.preexec),
         osc_lock: Some(shell_state.osc_lock),
         alias: SHELL_ALIAS.lock().clone(),
@@ -358,12 +359,12 @@ where
 }
 
 fn get_parent_shell() -> Result<String> {
-    match env::var("CW_SHELL").ok().filter(|s| !s.is_empty()) {
+    match env::var("Q_SHELL").ok().filter(|s| !s.is_empty()) {
         Some(v) => Ok(v),
         None => match env::var("SHELL").ok().filter(|s| !s.is_empty()) {
             Some(shell) => Ok(shell),
             None => {
-                anyhow::bail!("No CW_SHELL or SHELL found");
+                anyhow::bail!("No Q_SHELL or SHELL found");
             },
         },
     }
@@ -384,15 +385,15 @@ fn build_shell_command(command: Option<&[String]>) -> Result<CommandBuilder> {
             let parent_shell = get_parent_shell()?;
             let mut builder = CommandBuilder::new(parent_shell);
 
-            if env::var("CW_IS_LOGIN_SHELL").ok().as_deref() == Some("1") {
+            if env::var("Q_IS_LOGIN_SHELL").ok().as_deref() == Some("1") {
                 builder.arg("--login");
             }
 
-            if let Some(execution_string) = env::var("CW_EXECUTION_STRING").ok().filter(|s| !s.is_empty()) {
+            if let Some(execution_string) = env::var("Q_EXECUTION_STRING").ok().filter(|s| !s.is_empty()) {
                 builder.args(["-c", &execution_string]);
             }
 
-            if let Some(extra_args) = env::var("CW_SHELL_EXTRA_ARGS").ok().filter(|s| !s.is_empty()) {
+            if let Some(extra_args) = env::var("Q_SHELL_EXTRA_ARGS").ok().filter(|s| !s.is_empty()) {
                 builder.args(extra_args.split_whitespace().filter(|arg| arg != &"--login"));
             }
 
@@ -400,17 +401,17 @@ fn build_shell_command(command: Option<&[String]>) -> Result<CommandBuilder> {
         },
     };
 
-    builder.env("CW_TERM", env!("CARGO_PKG_VERSION"));
+    builder.env("Q_TERM", env!("CARGO_PKG_VERSION"));
     if env::var_os("TMUX").is_some() {
-        builder.env("CW_TERM_TMUX", env!("CARGO_PKG_VERSION"));
+        builder.env("Q_TERM_TMUX", env!("CARGO_PKG_VERSION"));
     }
 
     // Clean up environment and launch shell.
-    builder.env_remove("CW_SHELL");
-    builder.env_remove("CW_IS_LOGIN_SHELL");
-    builder.env_remove("CW_START_TEXT");
-    builder.env_remove("CW_SHELL_EXTRA_ARGS");
-    builder.env_remove("CW_EXECUTION_STRING");
+    builder.env_remove("Q_SHELL");
+    builder.env_remove("Q_IS_LOGIN_SHELL");
+    builder.env_remove("Q_START_TEXT");
+    builder.env_remove("Q_SHELL_EXTRA_ARGS");
+    builder.env_remove("Q_EXECUTION_STRING");
 
     if let Ok(dir) = std::env::current_dir() {
         builder.cwd(dir);
@@ -445,13 +446,13 @@ fn launch_shell(command: Option<&[String]>) -> Result<()> {
 fn figterm_main(command: Option<&[String]>) -> Result<()> {
     fig_settings::settings::init_global().ok();
 
-    let session_id = match std::env::var("MOCK_CWTERM_SESSION_ID") {
+    let session_id = match std::env::var("MOCK_QTERM_SESSION_ID") {
         Ok(id) => id,
         Err(_) => uuid::Uuid::new_v4().simple().to_string(),
     };
-    std::env::set_var("CWTERM_SESSION_ID", &session_id);
+    std::env::set_var("QTERM_SESSION_ID", &session_id);
 
-    let parent_id = std::env::var("CW_PARENT").ok();
+    let parent_id = std::env::var("Q_PARENT").ok();
 
     let mut terminal = SystemTerminal::new_from_stdio()?;
     let screen_size = terminal.get_screen_size()?;
@@ -607,7 +608,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
         let result: Result<()> = 'select_loop: loop {
             if first_time && term.shell_state().has_seen_prompt {
                 trace!("Has seen prompt and first time");
-                let initial_command = env::var("CW_START_TEXT").ok().filter(|s| !s.is_empty());
+                let initial_command = env::var("Q_START_TEXT").ok().filter(|s| !s.is_empty());
                 if let Some(mut initial_command) = initial_command {
                     debug!("Sending initial text: {initial_command}");
                     initial_command.push('\n');
@@ -727,7 +728,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                                                     );
                                                     write_buffer.extend(
                                                         format!(
-                                                            "{} q '{}'\r",
+                                                            "{} translate '{}'\r",
                                                             CLI_BINARY_NAME,
                                                             buffer
                                                                 .trim_start_matches('#')
@@ -971,11 +972,11 @@ fn main() {
     let cli = Cli::parse();
     let command = cli.command.as_deref();
 
-    logger::stdio_debug_log(format!("CW_LOG_LEVEL={}", fig_log::get_fig_log_level()));
+    logger::stdio_debug_log(format!("Q_LOG_LEVEL={}", fig_log::get_fig_log_level()));
 
-    if !state::get_bool_or("cwterm.enabled", true) {
-        println!("[NOTE] cwterm is disabled. Autocomplete will not work.");
-        logger::stdio_debug_log("cwterm is disabled. `cwterm.enabled` == false");
+    if !state::get_bool_or("qterm.enabled", true) {
+        println!("[NOTE] qterm is disabled. Autocomplete will not work.");
+        logger::stdio_debug_log("qterm is disabled. `qterm.enabled` == false");
         return;
     }
 
@@ -985,7 +986,7 @@ fn main() {
         },
         Err(err) => {
             error!("Error in async runtime: {err}");
-            println!("CodeWhisperer had an Error!: {err:?}");
+            println!("{PRODUCT_NAME} had an Error!: {err:?}");
             // capture_anyhow(&err);
 
             // Fallback to normal shell

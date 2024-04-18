@@ -185,7 +185,7 @@
   {
     "identifier": "toggleHistoryMode",
     "name": "Toggle history mode",
-    "description": "Toggle between history suggestions and CodeWhisperer spec suggestions",
+    "description": "Toggle between history suggestions and autocomplete spec suggestions",
     "category": "General",
     "availability": "WHEN_FOCUSED",
     "defaultBindings": ["control+r"]

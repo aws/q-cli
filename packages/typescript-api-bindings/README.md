@@ -1,6 +1,6 @@
 # TS API Bindings
 
-The Typescript definitions for the CodeWhisperer API.
+The Typescript definitions for the Q API.
 
 Note: The protobuf definitions are updated automatically whenever withfig/proto-api is changed.
 

@@ -4,14 +4,12 @@ or set --append PATH $HOME/.local/bin
 builtin contains $HOME/.local/bin $PATH
 or set --append PATH $HOME/.local/bin
 
-alias q='cw q'
-
 set --query TTY; or set TTY (command tty)
 set --export TTY
 
 set --export SHELL_PID $fish_pid
 
-set --query CW_SHELL; or set CW_SHELL (cw _ get-shell)
+set --query Q_SHELL; or set Q_SHELL (q _ get-shell)
 
 function fig_osc
     builtin printf "\033]697;$argv[1]\007" $argv[2..-1]
@@ -39,7 +37,7 @@ function fig_wrap_prompt
 end
 
 function fig_preexec --on-event fish_preexec
-    fig_osc "OSCLock=%s" "$CWTERM_SESSION_ID"
+    fig_osc "OSCLock=%s" "$QTERM_SESSION_ID"
     fig_osc PreExec
 
     if fig_fn_defined fig_user_mode_prompt
@@ -58,17 +56,17 @@ end
 function fig_precmd --on-event fish_prompt
     set -l last_status $status
 
-    fig_osc "OSCUnlock=%s" "$CWTERM_SESSION_ID"
+    fig_osc "OSCUnlock=%s" "$QTERM_SESSION_ID"
     fig_osc "Dir=%s" "$PWD"
     fig_osc "Shell=fish"
-    fig_osc "ShellPath=%s" "$CW_SHELL"
+    fig_osc "ShellPath=%s" "$Q_SHELL"
     if test -n "$WSL_DISTRO_NAME"
         fig_osc "WSLDistro=%s" "$WSL_DISTRO_NAME"
     end
     fig_osc "PID=%d" "$fish_pid"
     fig_osc "ExitCode=%s" "$last_status"
     fig_osc "TTY=%s" "$TTY"
-    fig_osc "Log=%s" "$CW_LOG_LEVEL"
+    fig_osc "Log=%s" "$Q_LOG_LEVEL"
     fig_osc "FishSuggestionColor=%s" "$fish_color_autosuggestion"
 
     if test -n "$USER"
@@ -98,20 +96,20 @@ function fig_precmd --on-event fish_prompt
     fig_copy_fn fish_prompt fig_user_prompt
     function fish_prompt
         fig_wrap_prompt (fig_user_prompt)
-        fig_osc NewCmd=$CWTERM_SESSION_ID
+        fig_osc NewCmd=$QTERM_SESSION_ID
     end
 
     set fig_has_set_prompt 1
 
-    if command -v cw &>/dev/null
-        begin; command cw _ pre-cmd --alias (alias) &> /dev/null &; end
+    if command -v q &>/dev/null
+        begin; command q _ pre-cmd --alias (alias) &> /dev/null &; end
     end
 end
 
 set fig_has_set_prompt 0
 
-if test -n "$PROCESS_LAUNCHED_BY_CW"
+if test -n "$PROCESS_LAUNCHED_BY_Q"
     fig_osc DoneSourcing
 end
 
-begin; command cw _ pre-cmd --alias (alias) &> /dev/null &; end
+begin; command q _ pre-cmd --alias (alias) &> /dev/null &; end

@@ -14,9 +14,9 @@ else
     if [[ -n "${MOCKED_OUTPUT}" ]]; then
         echo $MOCKED_OUTPUT
     else
-        "$HOME/cw_cli/cw_cli" "$@"
+        "$HOME/q_cli/q_cli" "$@"
         EXIT_CODE=$?
     fi
 fi
 
-(echo mock "$EXIT_CODE" "$TERM_SESSION_ID" "$@" | base64 | /bin/nc -U /tmp/mock_cw_cli.socket &)
+(echo mock "$EXIT_CODE" "$TERM_SESSION_ID" "$@" | base64 | /bin/nc -U /tmp/mock_q_cli.socket &)

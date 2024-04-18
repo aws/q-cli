@@ -6,10 +6,10 @@ export const UpdateTerminalNotification = () => {
   const { figState } = useAutocompleteStore();
   const shellContext = figState.shellContext as ShellContext | undefined;
 
-  const cwtermVersion = shellContext?.cwtermVersion;
+  const qtermVersion = shellContext?.qtermVersion;
   const desktopVersion = window.fig.constants?.version;
 
-  const mismatchedVersions = cwtermVersion !== desktopVersion;
+  const mismatchedVersions = qtermVersion !== desktopVersion;
 
   const isLegacyVersion = parseInt((fig.constants?.version ?? "0")[0], 10) < 2;
 
@@ -19,7 +19,7 @@ export const UpdateTerminalNotification = () => {
         shellContext?.sessionId ?? "unknown"
       }`}
       show={
-        Boolean(cwtermVersion) &&
+        Boolean(qtermVersion) &&
         Boolean(desktopVersion) &&
         mismatchedVersions &&
         !isLegacyVersion
@@ -32,7 +32,7 @@ export const UpdateTerminalNotification = () => {
       description={
         <>
           This terminal is running integrations from <br />
-          an older version of CodeWhisperer, please restart it.
+          an older version of Q, please restart it.
         </>
       }
     />

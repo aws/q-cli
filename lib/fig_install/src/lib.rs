@@ -66,16 +66,16 @@ pub enum Error {
     SystemTime(#[from] SystemTimeError),
     #[error(transparent)]
     Strum(#[from] strum::ParseError),
-    #[error("could not determine CodeWhisperer version")]
+    #[error("could not determine app version")]
     UnclearVersion,
     #[error("please update from your package manager")]
     PackageManaged,
-    #[error("failed to update CodeWhisperer: `{0}`")]
+    #[error("failed to update: `{0}`")]
     UpdateFailed(String),
-    #[error("failed to update CodeWhisperer: `{0}`")]
+    #[error("failed to update: `{0}`")]
     UpdateFailedPermissions(String),
     #[cfg(target_os = "macos")]
-    #[error("failed to update CodeWhisperer due to auth error: `{0}`")]
+    #[error("failed to update due to auth error: `{0}`")]
     SecurityFramework(#[from] security_framework::base::Error),
     #[error("your system is not supported on this channel")]
     SystemNotOnChannel,
@@ -214,7 +214,7 @@ pub async fn update(
         });
 
         if let Some(on_update) = on_update {
-            info!("Updating CodeWhisperer...");
+            info!("Updating...");
             on_update(rx);
         } else {
             drop(rx);

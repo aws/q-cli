@@ -7,57 +7,57 @@ if [[ -d "${HOME}/.local/bin" ]] && [[ ":$PATH:" != *":${HOME}/.local/bin:"* ]];
   PATH="${PATH:+"$PATH:"}${HOME}/.local/bin"
 fi
 
-if [[ -n "${CW_NEW_SESSION}" ]]; then
-  unset CWTERM_SESSION_ID
-  unset CW_TERM
-  unset CW_NEW_SESSION
+if [[ -n "${Q_NEW_SESSION}" ]]; then
+  unset QTERM_SESSION_ID
+  unset Q_TERM
+  unset Q_NEW_SESSION
 fi
 
-if [[ -z "${CW_SET_PARENT_CHECK}" ]]; then
+if [[ -z "${Q_SET_PARENT_CHECK}" ]]; then
   # Load parent from env variables
-  if [[ -z "$CW_PARENT" && -n "$CW_SET_PARENT" ]]; then
-    export CW_PARENT="$CW_SET_PARENT"
-    unset -v CW_SET_PARENT
+  if [[ -z "$Q_PARENT" && -n "$Q_SET_PARENT" ]]; then
+    export Q_PARENT="$Q_SET_PARENT"
+    unset -v Q_SET_PARENT
   fi
-  export CW_SET_PARENT_CHECK=1
+  export Q_SET_PARENT_CHECK=1
 fi
 
-# 0 = Yes, 1 = No, 2 = Fallback to CW_TERM
-if [ -z "${SHOULD_CWTERM_LAUNCH}" ]; then
-  cw _ should-figterm-launch 1>/dev/null 2>&1
-  SHOULD_CWTERM_LAUNCH=$?
+# 0 = Yes, 1 = No, 2 = Fallback to Q_TERM
+if [ -z "${SHOULD_QTERM_LAUNCH}" ]; then
+  q _ should-figterm-launch 1>/dev/null 2>&1
+  SHOULD_QTERM_LAUNCH=$?
 fi
 
 # Only launch figterm if current session is not already inside PTY and command exists.
 # PWSH var is set when launched by `pwsh -Login`, in which case we don't want to init.
 # It is not necessary in Fish.
 if   [[ -t 1 ]] \
-  && [[ -z "${PROCESS_LAUNCHED_BY_CW}" ]] \
-  && command -v cwterm 1>/dev/null 2>&1 \
-  && [[ ("${SHOULD_CWTERM_LAUNCH}" -eq 0) || (("${SHOULD_CWTERM_LAUNCH}" -eq 2) && (-z "${CW_TERM}" || (-z "${CW_TERM_TMUX}" && -n "${TMUX}"))) ]]
+  && [[ -z "${PROCESS_LAUNCHED_BY_Q}" ]] \
+  && command -v qterm 1>/dev/null 2>&1 \
+  && [[ ("${SHOULD_QTERM_LAUNCH}" -eq 0) || (("${SHOULD_QTERM_LAUNCH}" -eq 2) && (-z "${Q_TERM}" || (-z "${Q_TERM_TMUX}" && -n "${TMUX}"))) ]]
 then
-  # Pty module sets CW_TERM or CW_TERM_TMUX to avoid running twice.
-  if [ -z "${CW_SHELL}" ]; then
-    CW_SHELL=$(cw _ get-shell)
+  # Pty module sets Q_TERM or Q_TERM_TMUX to avoid running twice.
+  if [ -z "${Q_SHELL}" ]; then
+    Q_SHELL=$(q _ get-shell)
   fi
-  CW_IS_LOGIN_SHELL="${CW_IS_LOGIN_SHELL:='0'}"
+  Q_IS_LOGIN_SHELL="${Q_IS_LOGIN_SHELL:='0'}"
 
   # shellcheck disable=SC2030
   if ([[ -n "$BASH" ]] && shopt -q login_shell) \
     || [[ -n "$ZSH_NAME" && -o login ]]; then
-    CW_IS_LOGIN_SHELL=1
+    Q_IS_LOGIN_SHELL=1
   fi
 
   # Do not launch figterm in non-interactive shells (like VSCode Tasks)
   if [[ $- == *i* ]]; then
-    CW_TERM_NAME="$(basename "${CW_SHELL}") (cwterm)"
-    if [[ -x "${HOME}/.local/bin/${CW_TERM_NAME}" ]]; then
-      CW_TERM_PATH="${HOME}/.local/bin/${CW_TERM_NAME}"
+    Q_TERM_NAME="$(basename "${Q_SHELL}") (qterm)"
+    if [[ -x "${HOME}/.local/bin/${Q_TERM_NAME}" ]]; then
+      Q_TERM_PATH="${HOME}/.local/bin/${Q_TERM_NAME}"
     else
-      CW_TERM_PATH="$(command -v cwterm || echo "${HOME}/.local/bin/cwterm")"
+      Q_TERM_PATH="$(command -v qterm || echo "${HOME}/.local/bin/qterm")"
     fi
 
-    CW_EXECUTION_STRING="${BASH_EXECUTION_STRING:=$ZSH_EXECUTION_STRING}"
+    Q_EXECUTION_STRING="${BASH_EXECUTION_STRING:=$ZSH_EXECUTION_STRING}"
 
     # Get initial text.
     INITIAL_TEXT=""
@@ -70,6 +70,6 @@ then
         INITIAL_TEXT="${INITIAL_TEXT}${REPLY}\n"
       done
     fi
-    CW_EXECUTION_STRING="${CW_EXECUTION_STRING}" CW_START_TEXT="$(printf "%b" "${INITIAL_TEXT}")" CW_SHELL="${CW_SHELL}" CW_IS_LOGIN_SHELL="${CW_IS_LOGIN_SHELL}" exec -a "${CW_TERM_NAME}" "${CW_TERM_PATH}"
+    Q_EXECUTION_STRING="${Q_EXECUTION_STRING}" Q_START_TEXT="$(printf "%b" "${INITIAL_TEXT}")" Q_SHELL="${Q_SHELL}" Q_IS_LOGIN_SHELL="${Q_IS_LOGIN_SHELL}" exec -a "${Q_TERM_NAME}" "${Q_TERM_PATH}"
   fi
 fi

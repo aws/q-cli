@@ -261,7 +261,7 @@ impl std::fmt::Debug for TISInputSource {
 
 impl std::default::Default for InputMethod {
     fn default() -> Self {
-        let fig_app_path = fig_util::codewhisperer_bundle();
+        let fig_app_path = fig_util::app_bundle_path();
         let bundle_path = fig_app_path
             .join(BUNDLE_CONTENTS_HELPERS_PATH)
             .join("CodeWhispererInputMethod.app");
@@ -482,12 +482,12 @@ impl Integration for InputMethod {
         // Can we load input source?
 
         // todo: pull this into a function in fig_directories
-        let cw_cli_path = fig_util::codewhisperer_bundle()
+        let cli_path = fig_util::app_bundle_path()
             .join("Contents")
             .join("MacOS")
             .join(CLI_BINARY_NAME);
 
-        let out = tokio::process::Command::new(cw_cli_path)
+        let out = tokio::process::Command::new(cli_path)
             .args(["_", "attempt-to-finish-input-method-installation"])
             .arg(&self.bundle_path)
             .output()
@@ -540,17 +540,17 @@ impl Integration for InputMethod {
 
             // The 'enabled' property of an input source is never updated for the process that
             // invokes `TISEnableInputSource` Unclear why this is, but we handle it by
-            // calling out to the cw_cli to finish the second half of the installation.
+            // calling out to the q_cli to finish the second half of the installation.
         }
 
         // todo: pull this into a function in fig_directories
-        let cw_cli_path = fig_util::codewhisperer_bundle()
+        let q_cli_path = fig_util::app_bundle_path()
             .join("Contents")
             .join("MacOS")
             .join(CLI_BINARY_NAME);
 
         loop {
-            let out = tokio::process::Command::new(&cw_cli_path)
+            let out = tokio::process::Command::new(&q_cli_path)
                 .args(["_", "attempt-to-finish-input-method-installation"])
                 .arg(&self.bundle_path)
                 .output()
@@ -721,8 +721,7 @@ mod tests {
     use super::*;
 
     const TEST_INPUT_METHOD_BUNDLE_ID: &str = "com.amazon.inputmethod.codewhisperer";
-    const TEST_INPUT_METHOD_BUNDLE_URL: &str =
-        "/Applications/CodeWhisperer.app/Contents/Helpers/CodeWhispererInputMethod.app";
+    const TEST_INPUT_METHOD_BUNDLE_URL: &str = "/Applications/Q.app/Contents/Helpers/CodeWhispererInputMethod.app";
 
     fn input_method() -> TISInputSource {
         let key: CFString = unsafe { CFString::wrap_under_create_rule(kTISPropertyBundleID) };

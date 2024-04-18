@@ -19,17 +19,16 @@ from signing import (
 )
 from importlib import import_module
 
-APP_NAME = "CodeWhisperer"
-CLI_BINARY_NAME = "cw"
-PTY_BINARY_NAME = "cwterm"
+APP_NAME = "Q"
+CLI_BINARY_NAME = "q"
+PTY_BINARY_NAME = "qterm"
 
-CLI_PACKAGE_NAME = "cw_cli"
+CLI_PACKAGE_NAME = "q_cli"
 PTY_PACKAGE_NAME = "figterm"
 DESKTOP_PACKAGE_NAME = "fig_desktop"
 
 BUILD_DIR_RELATIVE = pathlib.Path(os.environ.get("BUILD_DIR") or "build")
 BUILD_DIR = BUILD_DIR_RELATIVE.absolute()
-
 
 class Variant(Enum):
     FULL = 1
@@ -84,7 +83,7 @@ def rust_env(linker=None) -> Dict[str, str]:
         env["MACOSX_DEPLOYMENT_TARGET"] = "10.13"
 
     # TODO(grant): move Variant to be an arg of the functions
-    env["CW_BUILD_VARIANT"] = get_variant().name
+    env["Q_BUILD_VARIANT"] = get_variant().name
 
     return env
 
@@ -376,7 +375,7 @@ def build_desktop_app(
     # Specifies the app is an "agent app"
     run_cmd(["defaults", "write", info_plist_path, "LSUIElement", "-bool", "TRUE"])
 
-    # Add codewhisperer:// association to bundle
+    # Add q:// association to bundle
     run_cmd(
         [
             "plutil",
@@ -602,8 +601,8 @@ if __name__ == "__main__":
             run_cmd(["aws", "s3", "cp", sha_path, staging_location])
     elif isLinux():
         # create the archive structure:
-        #   archive/bin/cw
-        #   archive/bin/cwterm
+        #   archive/bin/q
+        #   archive/bin/qterm
         #   archive/install.sh
         #   archive/README
 

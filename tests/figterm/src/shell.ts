@@ -135,7 +135,7 @@ class FigCliListener {
 
   commands: string[] = [];
 
-  constructor(sessionId: string, path = '/tmp/mock_cw_cli.socket') {
+  constructor(sessionId: string, path = '/tmp/mock_q_cli.socket') {
     this.id = socketListen(path, (data) => {
       const message = String(Buffer.from(data.toString(), 'base64'));
       const tokens = message.slice(0, -1).split(' ');
@@ -151,7 +151,7 @@ class FigCliListener {
   }
 
   async stop() {
-    await removeListener('/tmp/mock_cw_cli.socket', this.id);
+    await removeListener('/tmp/mock_q_cli.socket', this.id);
   }
 
   reset() {

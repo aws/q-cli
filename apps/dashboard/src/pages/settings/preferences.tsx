@@ -83,7 +83,7 @@ export default function Page() {
           className="px-0 text-blue-500 hover:underline decoration-1 underline-offset-1 hover:text-blue-800 hover:underline-offset-4 transition-all duration-100 text-sm"
           onClick={() => {
             Native.open(
-              "file:///Applications/CodeWhisperer.app/Contents/Resources/dashboard/license/NOTICE.txt",
+              "file:///Applications/Q.app/Contents/Resources/dashboard/license/NOTICE.txt",
             );
           }}
         >

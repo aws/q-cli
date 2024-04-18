@@ -28,7 +28,7 @@ pub use shell::Shell;
 pub use terminal::Terminal;
 use thiserror::Error;
 
-pub use crate::desktop::is_desktop_running;
+pub use crate::desktop::desktop_app_running;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -52,7 +52,7 @@ pub enum Error {
     UnknownDisplayServer(String),
     #[error("unknown desktop `{0}`")]
     UnknownDesktop(String),
-    #[error("failed to launch CodeWhisperer: `{0}`")]
+    #[error("failed to launch: `{0}`")]
     LaunchError(String),
     #[error(transparent)]
     StrUtf8Error(#[from] std::str::Utf8Error),
@@ -84,7 +84,7 @@ pub fn current_exe_origin() -> Result<PathBuf, Error> {
 
 #[must_use]
 #[cfg(target_os = "macos")]
-fn codewhisperer_bundle_opt() -> Option<PathBuf> {
+fn app_bundle_path_opt() -> Option<PathBuf> {
     use consts::macos::BUNDLE_CONTENTS_MACOS_PATH;
 
     let current_exe = current_exe_origin().ok()?;
@@ -103,8 +103,8 @@ fn codewhisperer_bundle_opt() -> Option<PathBuf> {
 
 #[must_use]
 #[cfg(target_os = "macos")]
-pub fn codewhisperer_bundle() -> PathBuf {
-    codewhisperer_bundle_opt().unwrap_or_else(|| Path::new("/Applications").join(APP_BUNDLE_NAME))
+pub fn app_bundle_path() -> PathBuf {
+    app_bundle_path_opt().unwrap_or_else(|| Path::new("/Applications").join(APP_BUNDLE_NAME))
 }
 
 pub fn partitioned_compare(lhs: &str, rhs: &str, by: char) -> Ordering {

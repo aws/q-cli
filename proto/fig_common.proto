@@ -61,8 +61,8 @@ message ShellContext {
   optional string wsl_distro = 11;
   // environment variables in the shell
   repeated EnvironmentVariable environment_variables = 13;
-  // the version of cwterm
-  optional string cwterm_version = 14;
+  // the version of qterm
+  optional string qterm_version = 14;
   // true if a command is running
   optional bool preexec = 15;
   // true if OSCs are locked

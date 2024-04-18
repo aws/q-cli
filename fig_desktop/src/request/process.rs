@@ -44,8 +44,8 @@ fn shell_args(shell_path: &str) -> &'static [&'static str] {
 }
 
 fn set_fig_vars(cmd: &mut Command) {
-    cmd.env("CW_TERM", env!("CARGO_PKG_VERSION"));
-    cmd.env("PROCESS_LAUNCHED_BY_CW", "1");
+    cmd.env("Q_TERM", env!("CARGO_PKG_VERSION"));
+    cmd.env("PROCESS_LAUNCHED_BY_Q", "1");
 
     cmd.env("HISTFILE", "");
     cmd.env("HISTCONTROL", "ignoreboth");
@@ -82,8 +82,8 @@ pub async fn execute(request: PseudoterminalExecuteRequest, figterm_state: &Figt
 
         let response = timeout(Duration::from_secs(10), rx)
             .await
-            .map_err(|err| Error::from_std(err).wrap_err("Cwterm response timed out after 10 sec"))?
-            .map_err(|err| Error::from_std(err).wrap_err("CWterm response failed to receive from sender"))?;
+            .map_err(|err| Error::from_std(err).wrap_err("Qterm response timed out after 10 sec"))?
+            .map_err(|err| Error::from_std(err).wrap_err("Qterm response failed to receive from sender"))?;
 
         if let hostbound::response::Response::PseudoterminalExecute(response) = response {
             RequestResult::Ok(Box::new(ServerOriginatedSubMessage::PseudoterminalExecuteResponse(

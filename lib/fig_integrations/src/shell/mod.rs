@@ -8,6 +8,8 @@ use clap::ValueEnum;
 use fig_util::{
     directories,
     Shell,
+    CLI_BINARY_NAME,
+    PRODUCT_NAME,
 };
 use regex::{
     Regex,
@@ -44,7 +46,7 @@ pub mod inline_shell_completion_plugin {
             // Ensure script has license
             assert!(ZSH_SCRIPT.contains("Copyright"));
 
-            // Ensure script has _cw_autosuggest_strategy_inline_shell_completion()
+            // Ensure script has _q_autosuggest_strategy_inline_shell_completion()
             assert!(ZSH_SCRIPT.contains(&format!(
                 "_{CLI_BINARY_NAME}_autosuggest_strategy_inline_shell_completion()"
             )));
@@ -280,22 +282,22 @@ impl ShellScriptShellIntegration {
         cfg_if!(
             if #[cfg(target_os = "macos")] {
                 return match self.shell {
-                    // Check if ~/.local/bin/cw is executable before eval
-                    Shell::Bash | Shell::Zsh => format!("[ -x ~/.local/bin/cw ] && eval \"$(~/.local/bin/cw init {shell} {when}{rcfile})\""),
-                    Shell::Fish => format!("test -x ~/.local/bin/cw; and eval (~/.local/bin/cw init {shell} {when}{rcfile} | string split0)"),
+                    // Check if ~/.local/bin/{CLI_BINARY_NAME} is executable before eval
+                    Shell::Bash | Shell::Zsh => format!("[ -x ~/.local/bin/{CLI_BINARY_NAME} ] && eval \"$(~/.local/bin/{CLI_BINARY_NAME} init {shell} {when}{rcfile})\""),
+                    Shell::Fish => format!("test -x ~/.local/bin/{CLI_BINARY_NAME}; and eval (~/.local/bin/{CLI_BINARY_NAME} init {shell} {when}{rcfile} | string split0)"),
                     Shell::Nu => "".into(),
                 }
             } else {
                 let source_line = match self.shell {
-                    Shell::Fish => format!("command -qv cw; and eval (cw init {shell} {when}{rcfile} | string split0)"),
-                    Shell::Bash => format!("[ -n $BASH_VERSION ] && eval \"$(cw init {shell} {when}{rcfile})\""),
-                    Shell::Zsh => format!("eval \"$(cw init {shell} {when}{rcfile})\""),
+                    Shell::Fish => format!("command -qv {CLI_BINARY_NAME}; and eval ({CLI_BINARY_NAME} init {shell} {when}{rcfile} | string split0)"),
+                    Shell::Bash => format!("[ -n $BASH_VERSION ] && eval \"$({CLI_BINARY_NAME} init {shell} {when}{rcfile})\""),
+                    Shell::Zsh => format!("eval \"$({CLI_BINARY_NAME} init {shell} {when}{rcfile})\""),
                     Shell::Nu => "".into(),
                 };
                 let add_to_path_line = match self.shell {
-                    Shell::Bash | Shell::Zsh => "_CW_LOCAL_BIN=~/.local/bin \n\
-                        [[ \":$PATH:\" != *\":$_CW_LOCAL_BIN:\"* ]] && PATH=\"${PATH:+\"$PATH:\"}$_CW_LOCAL_BIN\" \n\
-                        unset _CW_LOCAL_BIN",
+                    Shell::Bash | Shell::Zsh => "_Q_LOCAL_BIN=~/.local/bin \n\
+                        [[ \":$PATH:\" != *\":$_Q_LOCAL_BIN:\"* ]] && PATH=\"${PATH:+\"$PATH:\"}$_Q_LOCAL_BIN\" \n\
+                        unset _Q_LOCAL_BIN",
                     Shell::Fish => "contains $HOME/.local/bin $PATH; or set -a PATH $HOME/.local/bin",
                     Shell::Nu => "",
                 };
@@ -372,8 +374,8 @@ impl DotfileShellIntegration {
     #[allow(clippy::unused_self)]
     fn description(&self, when: When) -> String {
         match when {
-            When::Pre => "# CodeWhisperer pre block. Keep at the top of this file.".into(),
-            When::Post => "# CodeWhisperer post block. Keep at the bottom of this file.".into(),
+            When::Pre => format!("# {PRODUCT_NAME} pre block. Keep at the top of this file."),
+            When::Post => format!("# {PRODUCT_NAME} post block. Keep at the bottom of this file."),
         }
     }
 
@@ -381,8 +383,8 @@ impl DotfileShellIntegration {
         let shell = self.shell;
 
         let eval_line = match shell {
-            Shell::Fish => format!("eval (cw init {shell} {when} | string split0)"),
-            _ => format!("eval \"$(cw init {shell} {when})\""),
+            Shell::Fish => format!("eval ({CLI_BINARY_NAME} init {shell} {when} | string split0)"),
+            _ => format!("eval \"$({CLI_BINARY_NAME} init {shell} {when})\""),
         };
 
         let old_eval_source = match when {
@@ -723,7 +725,7 @@ mod test {
 
     #[test]
     fn shellcheck_bash_pre() {
-        if var_os("CW_BUILD_SKIP_SHELL_TESTS").is_some() {
+        if var_os("Q_BUILD_SKIP_SHELL_TESTS").is_some() {
             return;
         }
         check_script(Shell::Bash, When::Pre);
@@ -731,7 +733,7 @@ mod test {
 
     #[test]
     fn shellcheck_bash_post() {
-        if var_os("CW_BUILD_SKIP_SHELL_TESTS").is_some() {
+        if var_os("Q_BUILD_SKIP_SHELL_TESTS").is_some() {
             return;
         }
         check_script(Shell::Bash, When::Post);

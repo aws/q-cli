@@ -15,7 +15,7 @@ use crate::{
     Error,
 };
 
-/// Shells supported by CodeWhisperer
+/// All supported shells
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, ValueEnum)]
 #[serde(rename_all = "camelCase")]
 pub enum Shell {
@@ -133,7 +133,7 @@ impl Shell {
         match self {
             Shell::Bash => Ok(directories::home_dir()?),
             Shell::Zsh => match std::env::var_os("ZDOTDIR")
-                .or_else(|| std::env::var_os("CW_ZDOTDIR"))
+                .or_else(|| std::env::var_os("Q_ZDOTDIR"))
                 .map(PathBuf::from)
             {
                 Some(dir) => Ok(dir),

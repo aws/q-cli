@@ -9,6 +9,7 @@ use time::OffsetDateTime;
 #[cfg(target_os = "macos")]
 use crate::consts::CLI_BINARY_NAME;
 use crate::system_info::is_remote;
+use crate::RUNTIME_DIR_NAME;
 
 macro_rules! utf8_dir {
     ($name:ident, $($arg:ident: $type:ty),*) => {
@@ -45,8 +46,8 @@ pub enum DirectoryError {
     FromVecWithNul(#[from] std::ffi::FromVecWithNulError),
     #[error(transparent)]
     IntoString(#[from] std::ffi::IntoStringError),
-    #[error("CW_PARENT env variable not set")]
-    CwParentNotSet,
+    #[error("Q_PARENT env variable not set")]
+    QParentNotSet,
 }
 
 type Result<T, E = DirectoryError> = std::result::Result<T, E>;
@@ -62,7 +63,7 @@ pub fn home_dir() -> Result<PathBuf> {
 
 /// The config directory
 ///
-/// - Linux: `$XDG_CONCW_HOME` or `$HOME/.config`
+/// - Linux: `$XDG_CONFIG_HOME` or `$HOME/.config`
 /// - MacOS: `$HOME/Library/Application Support`
 /// - Windows: `{FOLDERID_RoamingAppData}`
 pub fn config_dir() -> Result<PathBuf> {
@@ -138,13 +139,12 @@ fn runtime_dir() -> Result<PathBuf> {
 
 /// The codewhisperer sockets directory of the local codewhisperer installation
 ///
-/// - Linux: $XDG_RUNTIME_DIR/cwsock
-/// - MacOS: $TMPDIR/cwsock
+/// - Linux: $XDG_RUNTIME_DIR/cwrun
+/// - MacOS: $TMPDIR/cwrun
 pub fn sockets_dir() -> Result<PathBuf> {
     cfg_if::cfg_if! {
         if #[cfg(unix)] {
-            use crate::CLI_BINARY_NAME;
-            Ok(runtime_dir()?.join(format!("{CLI_BINARY_NAME}run")))
+            Ok(runtime_dir()?.join(RUNTIME_DIR_NAME))
         } else if #[cfg(windows)] {
             Ok(fig_dir()?.join("sockets"))
         }
@@ -156,8 +156,8 @@ pub fn sockets_dir() -> Result<PathBuf> {
 /// In WSL, this will correctly return the host machine socket path.
 /// In other remote environments, it returns the same as `sockets_dir`
 ///
-/// - Linux: $XDG_RUNTIME_DIR/cwsock
-/// - MacOS: $TMPDIR/cwsock
+/// - Linux: $XDG_RUNTIME_DIR/cwrun
+/// - MacOS: $TMPDIR/cwrun
 pub fn host_sockets_dir() -> Result<PathBuf> {
     // TODO: make this work again
     // #[cfg(target_os = "linux")]
@@ -245,7 +245,7 @@ pub fn desktop_socket_path() -> Result<PathBuf> {
 }
 
 /// The path to remote socket
-// - Linux/MacOS on ssh: At the value of `CW_PARENT`
+// - Linux/MacOS on ssh: At the value of `Q_PARENT`
 // - Linux/MacOS not on ssh:
 /// - MacOS: `$TMPDIR/cwrun/remote.sock`
 /// - Linux: `$XDG_RUNTIME_DIR/cwrun/remote.sock`
@@ -253,10 +253,10 @@ pub fn desktop_socket_path() -> Result<PathBuf> {
 pub fn remote_socket_path() -> Result<PathBuf> {
     // TODO(grant): This is only enabled on Linux for now to prevent public dist
     if is_remote() && cfg!(target_os = "linux") {
-        if let Some(parent_socket) = std::env::var_os("CW_PARENT") {
+        if let Some(parent_socket) = std::env::var_os("Q_PARENT") {
             Ok(PathBuf::from(parent_socket))
         } else {
-            Err(DirectoryError::CwParentNotSet)
+            Err(DirectoryError::QParentNotSet)
         }
     } else {
         local_remote_socket_path()
@@ -284,21 +284,21 @@ pub fn figterm_socket_path(session_id: impl Display) -> Result<PathBuf> {
 
 /// The path to the resources directory
 ///
-/// - MacOS: "/Applications/CodeWhisperer.app/Contents/Resources"
+/// - MacOS: "/Applications/Q.app/Contents/Resources"
 /// - Linux: "/usr/share/fig"
 pub fn resources_path() -> Result<PathBuf> {
     cfg_if::cfg_if! {
         if #[cfg(all(unix, not(target_os = "macos")))] {
             Ok(std::path::Path::new("/usr/share/fig").into())
         } else if #[cfg(target_os = "macos")] {
-            Ok(crate::codewhisperer_bundle().join(crate::macos::BUNDLE_CONTENTS_RESOURCE_PATH))
+            Ok(crate::app_bundle_path().join(crate::macos::BUNDLE_CONTENTS_RESOURCE_PATH))
         }
     }
 }
 
 /// The path to the fig install manifest
 ///
-/// - MacOS: "/Applications/CodeWhisperer.app/Contents/Resources/manifest.json"
+/// - MacOS: "/Applications/Q.app/Contents/Resources/manifest.json"
 /// - Linux: "/usr/share/fig/manifest.json"
 pub fn manifest_path() -> Result<PathBuf> {
     cfg_if::cfg_if! {
@@ -347,8 +347,6 @@ utf8_dir!(sockets_dir);
 utf8_dir!(remote_socket_path);
 utf8_dir!(figterm_socket_path, session_id: impl Display);
 utf8_dir!(manifest_path);
-// utf8_dir!(managed_binaries_dir);
-// utf8_dir!(managed_cw_cli_path);
 utf8_dir!(backups_dir);
 utf8_dir!(logs_dir);
 utf8_dir!(relative_cli_path);
@@ -368,7 +366,7 @@ mod tests {
     fn test_socket_paths() {
         assert_eq!(
             host_sockets_dir().unwrap().file_name().unwrap().to_str().unwrap(),
-            format!("{CLI_BINARY_NAME}run")
+            format!("cwrun")
         );
         assert_eq!(
             figterm_socket_path("").unwrap().parent().unwrap().file_name().unwrap(),
@@ -462,7 +460,7 @@ mod tests {
     #[test]
     fn snapshot_themes_dir() {
         linux!(themes_dir(), @"/usr/share/fig/themes");
-        macos!(themes_dir(), @"/Applications/CodeWhisperer.app/Contents/Resources/themes");
+        macos!(themes_dir(), @"/Applications/Q.app/Contents/Resources/themes");
         windows!(themes_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\themes\themes");
     }
 
@@ -489,8 +487,8 @@ mod tests {
 
     // #[test]
     // fn snapshot_parent_socket_path() {
-    //     linux!(parent_socket_path("$CW_PARENT"), @"/var/tmp/fig-parent-$CW_PARENT.sock");
-    //     macos!(parent_socket_path("$CW_PARENT"), @"/var/tmp/fig-parent-$CW_PARENT.sock");
+    //     linux!(parent_socket_path("$Q_PARENT"), @"/var/tmp/fig-parent-$Q_PARENT.sock");
+    //     macos!(parent_socket_path("$Q_PARENT"), @"/var/tmp/fig-parent-$Q_PARENT.sock");
     //     // windows does not have a parent socket
     // }
 
@@ -537,9 +535,9 @@ mod tests {
         const MAX_SOCKET_LEN: usize = 100;
 
         let uuid = uuid::Uuid::new_v4().simple().to_string();
-        let cwterm_socket = figterm_socket_path(uuid.clone()).unwrap();
-        let cwterm_socket_bytes = cwterm_socket.as_os_str().as_bytes().len();
-        assert!(cwterm_socket_bytes <= MAX_SOCKET_LEN);
+        let qterm_socket = figterm_socket_path(uuid.clone()).unwrap();
+        let qterm_socket_bytes = qterm_socket.as_os_str().as_bytes().len();
+        assert!(qterm_socket_bytes <= MAX_SOCKET_LEN);
 
         let fig_socket = desktop_socket_path().unwrap();
         let fig_socket_bytes = fig_socket.as_os_str().as_bytes().len();

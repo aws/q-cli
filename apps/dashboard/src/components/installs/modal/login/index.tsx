@@ -58,7 +58,7 @@ export default function LoginModal({ next }: { next: () => void }) {
   }, [loginState, next]);
 
   return (
-    <div className="flex flex-col items-center gap-8 gradient-cw-secondary-light -m-10 p-4 pt-10 rounded-lg text-white">
+    <div className="flex flex-col items-center gap-8 gradient-q-secondary-light -m-10 p-4 pt-10 rounded-lg text-white">
       <div className="flex flex-col items-center gap-8">
         <Lockup />
         <h2 className="text-xl text-white font-semibold select-none leading-none font-ember tracking-tight">

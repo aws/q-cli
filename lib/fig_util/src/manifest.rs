@@ -140,7 +140,7 @@ where
 
 static CACHED: Lazy<Manifest> = Lazy::new(|| Manifest {
     managed_by: ManagedBy::Other("aws".into()),
-    variant: match option_env!("CW_BUILD_VARIANT")
+    variant: match option_env!("Q_BUILD_VARIANT")
         .map(|s| s.to_ascii_lowercase())
         .as_deref()
     {
@@ -209,7 +209,10 @@ mod tests {
 
     #[test]
     fn test_file_type_serialize_deserialize() {
-        use serde_json::{to_string, from_str};
+        use serde_json::{
+            from_str,
+            to_string,
+        };
 
         assert_eq!("\"dmg\"", to_string(&FileType::Dmg).unwrap());
         assert_eq!("\"tar_gz\"", to_string(&FileType::TarGz).unwrap());

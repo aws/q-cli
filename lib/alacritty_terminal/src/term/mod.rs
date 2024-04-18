@@ -834,7 +834,7 @@ impl<T> Term<T> {
         trace!("New command cursor: {:?}", self.shell_state.cmd_cursor);
 
         // Add work around for emojis
-        if let Ok(cursor_offset) = std::env::var("CW_PROMPT_OFFSET_WORKAROUND") {
+        if let Ok(cursor_offset) = std::env::var("Q_PROMPT_OFFSET_WORKAROUND") {
             if let Ok(offset) = cursor_offset.parse::<i32>() {
                 self.shell_state.cmd_cursor = self.shell_state.cmd_cursor.map(|cursor| Point {
                     column: Column((cursor.column.0 as i32 - offset).max(0) as usize),

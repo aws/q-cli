@@ -5,7 +5,7 @@ import { PRODUCT_NAME } from "@/lib/constants";
 export default function WhatsNew() {
   return (
     <div className="flex flex-col gap-4">
-      <div className="w-full gradient-cw-secondary-light rounded-lg flex flex-col items-start gap-4 text-white p-6">
+      <div className="w-full gradient-q-secondary-light rounded-lg flex flex-col items-start gap-4 text-white p-6">
         <div className="flex flex-col">
           <h1 className="text-xl font-bold drop-shadow">
             {PRODUCT_NAME} brings AI to your favorite dev tools

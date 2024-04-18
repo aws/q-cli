@@ -53,7 +53,7 @@ use crate::{
     Result,
 };
 
-const CLIENT_NAME: &str = "CodeWhisperer";
+const CLIENT_NAME: &str = "Q";
 
 const OIDC_BUILDER_ID_REGION: Region = Region::from_static("us-east-1");
 
