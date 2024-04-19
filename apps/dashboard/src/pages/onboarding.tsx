@@ -2,7 +2,8 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import autocompleteDemo from "@assets/images/autocomplete_demo.gif";
-import aiDemo from "@assets/images/ai_demo.gif";
+import translateDemo from "@assets/images/translate_demo.gif";
+import chatDemo from "@assets/images/chat_demo.gif";
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState(0);
@@ -52,7 +53,7 @@ export default function Page() {
               <div className="flex items-center justify-center w-3 h-3 rounded-full bg-yellow-500"></div>
               <div className="flex items-center justify-center w-3 h-3 rounded-full bg-green-500"></div>
             </div>
-            <div className="grid grid-cols-2 border-b-zinc-900 border-b-2 gap-0.5">
+            <div className="grid grid-cols-3 border-b-zinc-900 border-b-2 gap-0.5">
               <div
                 className={cn(
                   "text-zinc-400 text-center p-1.5 hover:bg-zinc-800 hover:border-transparent transition-colors font-mono border-t border-zinc-950 select-none cursor-pointer",
@@ -71,14 +72,25 @@ export default function Page() {
                 )}
                 onClick={() => setActiveTab(1)}
               >
-                AI Translation
+                Translation
+              </div>
+              <div
+                className={cn(
+                  "text-zinc-400 text-center p-1.5 hover:bg-zinc-800 hover:border-transparent transition-colors font-mono border-t border-zinc-950 select-none  cursor-pointer",
+                  activeTab == 2 &&
+                    "bg-zinc-700 hover:bg-zinc-700 border-transparent text-zinc-100",
+                )}
+                onClick={() => setActiveTab(2)}
+              >
+                Chat
               </div>
             </div>
             <div className="p-2">
               {activeTab == 0 && (
                 <img src={autocompleteDemo} alt="autocomplete demo" />
               )}
-              {activeTab == 1 && <img src={aiDemo} alt="ai demo" />}
+              {activeTab == 1 && <img src={translateDemo} alt="translation demo" />}
+              {activeTab == 2 && <img src={chatDemo} alt="chat demo" />}
             </div>
           </div>
         </div>
