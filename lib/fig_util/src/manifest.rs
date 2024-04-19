@@ -74,6 +74,9 @@ impl Os {
 #[strum(serialize_all = "snake_case")]
 pub enum FileType {
     Dmg,
+    TarGz,
+    TarXz,
+    TarZst,
     Zip,
     #[strum(default)]
     Other(String),
@@ -198,4 +201,26 @@ pub fn is_minimal() -> bool {
 #[deprecated = "versions are unified, use env!(\"CARGO_PKG_VERSION\")"]
 pub fn version() -> Option<&'static str> {
     Some(env!("CARGO_PKG_VERSION"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_file_type_serialize_deserialize() {
+        use serde_json::{to_string, from_str};
+
+        assert_eq!("\"dmg\"", to_string(&FileType::Dmg).unwrap());
+        assert_eq!("\"tar_gz\"", to_string(&FileType::TarGz).unwrap());
+        assert_eq!("\"tar_xz\"", to_string(&FileType::TarXz).unwrap());
+        assert_eq!("\"tar_zst\"", to_string(&FileType::TarZst).unwrap());
+        assert_eq!("\"zip\"", to_string(&FileType::Zip).unwrap());
+
+        assert_eq!(FileType::Dmg, from_str("\"dmg\"").unwrap());
+        assert_eq!(FileType::TarGz, from_str("\"tar_gz\"").unwrap());
+        assert_eq!(FileType::TarXz, from_str("\"tar_xz\"").unwrap());
+        assert_eq!(FileType::TarZst, from_str("\"tar_zst\"").unwrap());
+        assert_eq!(FileType::Zip, from_str("\"zip\"").unwrap());
+    }
 }
