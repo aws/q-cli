@@ -10,7 +10,7 @@ version.workspace = true
 workspace = true
 
 [dependencies]
-bitflags = "2.4.0"
+bitflags.workspace = true
 nu-ansi-term = "0.50.0"
 nu-color-config = "0.91.0"
 

@@ -9,14 +9,14 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
-fig_ipc = { path = "../../lib/fig_ipc" }
-fig_util = { path = "../../lib/fig_util" }
+fig_ipc.workspace = true
+fig_util.workspace = true
 tempfile = "3.8.1"
-tokio = { version = "1.34.0", features = ["rt-multi-thread"] }
+tokio.workspace = true
 fig_proto = { version = "0.12.0", path = "../../lib/fig_proto", features = [
     "arbitrary",
 ] }
-once_cell = "1.18.0"
+once_cell.workspace = true
 
 # Prevent this from interfering with workspaces
 [workspace]

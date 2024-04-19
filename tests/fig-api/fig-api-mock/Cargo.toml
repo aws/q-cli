@@ -7,8 +7,8 @@ publish.workspace = true
 version.workspace = true
 
 [dependencies]
-async-trait = "0.1.73"
-clap = { version = "4.4.0", features = ["derive", "deprecated"] }
+async-trait.workspace = true
+clap.workspace = true
 fig_desktop_api = { path = "../../../lib/fig_desktop_api" }
-fig_proto = { path = "../../../lib/fig_proto" }
-tokio = { version = "1", features = ["full"] }
+fig_proto.workspace = true
+tokio.workspace = true

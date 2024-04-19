@@ -10,15 +10,15 @@ version.workspace = true
 workspace = true
 
 [dependencies]
-anyhow = "1.0.75"
-async-trait = "0.1.74"
-fig_ipc = { path = "../fig_ipc" }
-fig_proto = { path = "../fig_proto" }
-fig_util = { path = "../fig_util" }
+anyhow.workspace = true
+async-trait.workspace = true
+fig_ipc.workspace = true
+fig_proto.workspace = true
+fig_util.workspace = true
 flume = "0.11.0"
 parking_lot = { version = "0.12.1", features = ["serde"] }
-serde = { version = "1.0.193", features = ["derive"] }
-time = { version = "0.3.30", features = ["serde", "local-offset"] }
-tokio = { version = "1.34.0", features = ["sync", "time", "macros"] }
-tracing = "0.1.40"
+serde.workspace = true
+time.workspace = true
+tokio.workspace = true
+tracing.workspace = true
 uuid = { version = "1.6.1", features = ["serde"] }

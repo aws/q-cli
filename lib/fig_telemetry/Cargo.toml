@@ -12,7 +12,7 @@ workspace = true
 [dependencies]
 amzn-codewhisperer-client = { path = "../amzn-codewhisperer-client" }
 amzn-toolkit-telemetry = { path = "../amzn-toolkit-telemetry" }
-anyhow = "1.0.69"
+anyhow.workspace = true
 auth = { path = "../auth" }
 aws-credential-types = "1.1.6"
 aws-sdk-cognitoidentity = "1.14.0"
@@ -20,20 +20,19 @@ aws-sdk-cognitoidentityprovider = "1.16.0"
 aws-smithy-async = "1.1.7"
 aws-smithy-types = "1.1.7"
 aws-toolkit-telemetry-definitions = { path = "../aws-toolkit-telemetry-definitions" }
-fig_api_client = { path = "../fig_api_client" }
-fig_ipc = { path = "../fig_ipc" }
-fig_proto = { path = "../fig_proto" }
-fig_request = { path = "../fig_request" }
-fig_settings = { path = "../fig_settings" }
-fig_util = { path = "../fig_util" }
+fig_api_client.workspace = true
+fig_ipc.workspace = true
+fig_proto.workspace = true
+fig_request.workspace = true
+fig_settings.workspace = true
+fig_util.workspace = true
 macos-utils = { path = "../macos-utils" }
-once_cell = { version = "1.17.1", features = ["parking_lot"] }
-parking_lot = "0.12.1"
-serde = "1.0.185"
-serde_json = "1.0"
-thiserror = "1.0"
-tokio = { version = "1", features = ["full"] }
-tracing = "0.1"
+once_cell.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
 uuid = { version = "1.4.1", features = ["v4"] }
 
 [dev-dependencies]

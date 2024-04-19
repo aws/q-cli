@@ -16,11 +16,11 @@ homepage = "https://github.com/alacritty/alacritty"
 workspace = true
 
 [dependencies]
-bitflags = { version = "2.4", features = ["serde"] }
-camino = { version = "1.1", features = ["serde1"] }
-serde = { version = "1.0", features = ["derive"] }
+bitflags.workspace = true
+camino.workspace = true
+serde.workspace = true
 serde_yaml = "0.9"
-shell-color = { path = "../shell-color" }
-tracing = "0.1"
+shell-color.workspace = true
+tracing.workspace = true
 unicode-width = "0.1"
 vte = { version = "0.13.0", default-features = false }

@@ -14,37 +14,20 @@ midway = []
 workspace = true
 
 [dependencies]
-bytes = "1.4.0"
-cfg-if = "1.0.0"
+bytes.workspace = true
+cfg-if.workspace = true
 cookie = "0.18.0"
-fig_settings = { path = "../fig_settings" }
-fig_util = { path = "../fig_util" }
-once_cell = { version = "1.17.1", features = ["parking_lot"] }
-reqwest = { version = "0.12.2", default-features = false, features = [
-    # defaults except tls
-    "http2",
-    "charset",
-    # tls backend
-    "rustls-tls",
-    "rustls-tls-native-roots",
-    # other features
-    "gzip",
-    "json",
-    "socks",
-    "cookies",
-] }
+fig_settings.workspace = true
+fig_util.workspace = true
+once_cell.workspace = true
+reqwest.workspace = true
 reqwest_cookie_store = "0.7.0"
 rustls-pemfile = "2.1.0"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-thiserror = "1.0"
-time = { version = "0.3", features = [
-    "local-offset",
-    "serde",
-    "formatting",
-    "parsing",
-] }
-tracing = "0.1"
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+time.workspace = true
+tracing.workspace = true
 url = "2.3.1"
 
 # Keep these synced with reqwest
@@ -54,4 +37,4 @@ rustls-native-certs = "0.7.0"
 webpki-roots = "0.26.0"
 
 [dev-dependencies]
-tokio = { version = "1", features = ["full"] }
+tokio.workspace = true

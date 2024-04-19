@@ -7,13 +7,13 @@ publish.workspace = true
 version.workspace = true
 
 [dependencies]
-anyhow = "1.0.75"
-async-trait = "0.1.74"
-fig_ipc = { path = "../../lib/fig_ipc" }
-fig_proto = { path = "../../lib/fig_proto" }
+anyhow.workspace = true
+async-trait.workspace = true
+fig_ipc.workspace = true
+fig_proto.workspace = true
 fig_remote_ipc = { path = "../../lib/fig_remote_ipc" }
-fig_util = { version = "0.15.3", path = "../../lib/fig_util" }
+fig_util.workspace = true
 portable-pty = { version = "0.8.1" }
 tempfile = "3.8.1"
-tokio = { version = "1.34.0", features = ["full"] }
+tokio.workspace = true
 uuid = { version = "1.6.1", features = ["v4"] }
