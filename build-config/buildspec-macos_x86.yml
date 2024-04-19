@@ -31,6 +31,9 @@ phases:
             sleep 30
         done
       - echo SSM command invocation status changed to $STATUS
+      # TODO(grant): change bucket name to env var
+      - aws s3 cp --recursive s3://fig-io-desktop-build-output-$AWS_ACCOUNT/staging .
+      - aws s3 rm --recursive s3://fig-io-desktop-build-output-$AWS_ACCOUNT/staging
 
 artifacts:
   files:
