@@ -1,8 +1,8 @@
 {
   "name": "codewhisperer-for-command-line-companion",
-  "displayName": "CodeWhisperer for command line",
-  "description": "The IDE companion extension for the CodeWhisperer for command line desktop app",
-  "version": "0.1.0",
+  "displayName": "Q for command line",
+  "description": "The IDE companion extension for the Q for command line desktop app",
+  "version": "0.1.1",
   "icon": "images/icon.png",
   "engines": {
     "vscode": "^1.80.0"

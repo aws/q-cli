@@ -16,6 +16,7 @@ The service finally handles those two entries and processes the logic to run the
 ## Setup
 1. Clone this repo and import it to your IDE as a **Gradle** project.
 2. Run the plugin in a test IDE using `./gradlew runIde` (or `.\gradlew.bat runIde` on Windows)
+> Note: you may need to run `./gradlew clean` before this, or the plugin will be marked as incompatible with your IDE.
 3. Build the plugin using `./gradlew buildPlugin` (or `.\gradlew.bat buildPlugin` on Windows)
 4. You can see all tasks with `./gradlew tasks` (or `.\gradlew.bat tasks` on Windows)
 

@@ -116,7 +116,10 @@ icons:
 		convert -resize "$${res}x$${res}" "icons/icon.png" "icons/$${res}x$${res}.png" ; \
 	done
 	convert -resize "32x32" "icons/icon.png" "icons/icon.ico"
-
+	convert -resize "32x32" "icons/icon-monochrome.png" "icons/icon-monochrome-32x32.png"
+	cargo tauri icon icons/icon.png
+	# Clean up unused output from tauri icon cli.
+	rm icons/Square* icons/StoreLogo.png
 
 ### Clean the project
 

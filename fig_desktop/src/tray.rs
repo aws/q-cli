@@ -230,7 +230,7 @@ fn load_from_memory() -> Icon {
             .expect("Failed to open icon path")
             .into_rgba8();
         #[cfg(target_os = "macos")]
-        let image = image::load_from_memory(include_bytes!("../icons/macos-menubar-template-icon@2x-scaled.png"))
+        let image = image::load_from_memory(include_bytes!("../icons/icon-monochrome-32x32.png"))
             .expect("Failed to open icon path")
             .into_rgba8();
         let (width, height) = image.dimensions();

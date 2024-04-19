@@ -6,7 +6,7 @@
   <id>com.amazon.codewhisperer.jetbrains</id>
 
   <!-- Text to display as name on Preferences/Settings | Plugin page -->
-  <name>CodeWhisperer for command line</name>
+  <name>Q for command line</name>
 
   <!-- Product and plugin compatibility requirements -->
   <depends>org.jetbrains.plugins.terminal</depends>
@@ -14,12 +14,15 @@
   <!-- Text to display as description on Preferences/Settings | Plugin page -->
   <description>
     <![CDATA[
-      This is the CodeWhisperer for command line IDE extension. It only supports completions in your IDEs' terminal emulator. If you would like completions in your editor, please download the AWS Toolkit extension and set up CodeWhisperer
+      This is the Q for command line IDE extension. It only supports completions in your IDEs' terminal emulator. If you would like completions in your editor, please download the AWS Toolkit extension and set up Q
     ]]>
   </description>
   <change-notes>
     <![CDATA[
-      - [0.1.0]: Initial release
+      <ul>
+        <li>[1.0.2]: Rebrand to Q</li>
+        <li>[0.1.0]: Initial release</li>
+      </ul>
     ]]>
   </change-notes>
 
