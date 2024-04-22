@@ -30,6 +30,7 @@ DESKTOP_PACKAGE_NAME = "fig_desktop"
 BUILD_DIR_RELATIVE = pathlib.Path(os.environ.get("BUILD_DIR") or "build")
 BUILD_DIR = BUILD_DIR_RELATIVE.absolute()
 
+
 class Variant(Enum):
     FULL = 1
     MINIMAL = 2
@@ -248,28 +249,15 @@ def version() -> str:
 
 
 def gen_manifest() -> str:
-    variant = "full"
-
-    dc_output = run_cmd_output(
-        [
-            "cargo",
-            "metadata",
-            "--format-version",
-            "1",
-            "--no-deps",
-        ]
-    )
-    dc = json.loads(dc_output)["metadata"]["channel"]
-
     return json.dumps(
         {
             "managed_by": "dmg",
             "packaged_at": datetime.datetime.now().isoformat(),
             "packaged_by": "amazon",
-            "variant": variant,
+            "variant": "full",
             "version": version(),
             "kind": "dmg",
-            "default_channel": dc,
+            "default_channel": "stable",
         }
     )
 
