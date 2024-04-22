@@ -16,8 +16,8 @@ use crate::{
 const OLD_EXTENSION_PREFIX: &str = "withfig.fig-";
 const EXTENSION_PREFIX: &str = "amazonwebservices.codewhisperer-for-command-line-companion-";
 
-const EXTENSION_VERSION: &str = "0.1.0";
-static EXTENSION: &[u8] = include_bytes!("codewhisperer-for-command-line-companion-0.1.0.vsix");
+const EXTENSION_VERSION: &str = "0.1.1";
+static EXTENSION: &[u8] = include_bytes!("codewhisperer-for-command-line-companion-0.1.1.vsix");
 
 #[derive(Clone)]
 pub struct VSCodeVariant {
