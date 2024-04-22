@@ -12,9 +12,9 @@ app:
     signing_args:
       entitlements_path: SIGNING_METADATA/entitlements.plist
   embedded_requirements:
-    Contents/MacOS/cw:
+    Contents/MacOS/q:
       :identifier: com.amazon.q
       signing_args:
-    Contents/MacOS/cwterm:
+    Contents/MacOS/qterm:
       :identifier: com.amazon.qterm
       signing_args:

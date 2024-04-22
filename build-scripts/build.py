@@ -22,6 +22,7 @@ from importlib import import_module
 APP_NAME = "Q"
 CLI_BINARY_NAME = "q"
 PTY_BINARY_NAME = "qterm"
+URL_SCHEMA = "q"
 
 CLI_PACKAGE_NAME = "q_cli"
 PTY_PACKAGE_NAME = "figterm"
@@ -370,13 +371,13 @@ def build_desktop_app(
             "-insert",
             "CFBundleURLTypes",
             "-xml",
-            """<array>
+            f"""<array>
     <dict>
         <key>CFBundleURLName</key>
         <string>com.amazon.codewhisperer</string>
         <key>CFBundleURLSchemes</key>
         <array>
-        <string>codewhisperer</string>
+        <string>{URL_SCHEMA}</string>
         </array>
     </dict>
     </array>
