@@ -76,13 +76,18 @@ struct ContextModifiers {
 }
 
 impl ContextModifiers {
-    fn user_intent(&self) -> Option<UserIntent> {
-        if self.env || self.history || self.git {
-            // This disables RAG (it should)
-            return Some(UserIntent::ApplyCommonBestPractices);
-        }
+    /// Returns `true` if any context modifiers are set
+    fn any(&self) -> bool {
+        self.env || self.history || self.git
+    }
 
-        None
+    /// Returns a [`UserIntent`] that disables RAG if any context modifiers are set
+    fn user_intent(&self) -> Option<UserIntent> {
+        if self.any() {
+            Some(UserIntent::ApplyCommonBestPractices)
+        } else {
+            None
+        }
     }
 }
 
@@ -117,21 +122,23 @@ fn build_shell_history() -> Option<Vec<ShellHistoryEntry>> {
         0,
     ) {
         for command in commands.into_iter().filter(|c| c.command.is_some()).rev() {
-            shell_history.push(
-                ShellHistoryEntry::builder()
-                    .command(truncate_safe(
-                        &command.command.expect("command is filtered on"),
-                        MAX_SHELL_HISTORY_COMMAND_LEN,
-                    ))
-                    .set_directory(
-                        command
-                            .cwd
-                            .map(|cwd| truncate_safe(&cwd, MAX_SHELL_HISTORY_DIRECTORY_LEN).into()),
-                    )
-                    .set_exit_code(command.exit_code)
-                    .build()
-                    .expect("command is provided"),
-            );
+            let command_str = command.command.expect("command is filtered on");
+            if !command_str.is_empty() {
+                shell_history.push(
+                    ShellHistoryEntry::builder()
+                        .command(truncate_safe(&command_str, MAX_SHELL_HISTORY_COMMAND_LEN))
+                        .set_directory(command.cwd.and_then(|cwd| {
+                            if !cwd.is_empty() {
+                                Some(truncate_safe(&cwd, MAX_SHELL_HISTORY_DIRECTORY_LEN).into())
+                            } else {
+                                None
+                            }
+                        }))
+                        .set_exit_code(command.exit_code)
+                        .build()
+                        .expect("command is provided"),
+                );
+            }
         }
     }
 
@@ -163,22 +170,28 @@ fn build_shell_state(shell_history: bool) -> ShellState {
     shell_state_builder.build().expect("shell name is provided")
 }
 
-fn build_env_state(environment_variables: bool) -> EnvState {
-    let mut env_state_builder = EnvState::builder()
-        .current_working_directory(truncate_safe(
-            &env::current_dir().unwrap_or_default().to_string_lossy(),
-            MAX_CURRENT_WORKING_DIRECTORY_LEN,
-        ))
-        .operating_system(env::consts::OS);
+fn build_env_state(modifiers: &ContextModifiers) -> EnvState {
+    let mut env_state_builder = EnvState::builder().operating_system(env::consts::OS);
 
-    if environment_variables {
+    if modifiers.any() {
+        if let Ok(current_dir) = env::current_dir() {
+            env_state_builder = env_state_builder.current_working_directory(truncate_safe(
+                &current_dir.to_string_lossy(),
+                MAX_CURRENT_WORKING_DIRECTORY_LEN,
+            ));
+        }
+    }
+
+    if modifiers.env {
         for (key, value) in env::vars().take(MAX_ENV_VAR_LIST_LEN) {
-            env_state_builder = env_state_builder.environment_variables(
-                EnvironmentVariable::builder()
-                    .key(truncate_safe(&key, MAX_ENV_VAR_KEY_LEN))
-                    .value(truncate_safe(&value, MAX_ENV_VAR_VALUE_LEN))
-                    .build(),
-            );
+            if !key.is_empty() && !value.is_empty() {
+                env_state_builder = env_state_builder.environment_variables(
+                    EnvironmentVariable::builder()
+                        .key(truncate_safe(&key, MAX_ENV_VAR_KEY_LEN))
+                        .value(truncate_safe(&value, MAX_ENV_VAR_VALUE_LEN))
+                        .build(),
+                );
+            }
         }
     }
 
@@ -193,14 +206,18 @@ async fn build_git_state() -> Option<GitState> {
         .await
         .ok()?;
 
-    Some(
-        GitState::builder()
-            .status(truncate_safe(
-                &String::from_utf8_lossy(&output.stdout),
-                MAX_GIT_STATUS_LEN,
-            ))
-            .build(),
-    )
+    if output.status.success() && !output.stdout.is_empty() {
+        Some(
+            GitState::builder()
+                .status(truncate_safe(
+                    &String::from_utf8_lossy(&output.stdout),
+                    MAX_GIT_STATUS_LEN,
+                ))
+                .build(),
+        )
+    } else {
+        None
+    }
 }
 
 async fn try_send_message(
@@ -254,7 +271,7 @@ pub(super) async fn send_message(
 
     let mut context_builder = UserInputMessageContext::builder()
         .shell_state(build_shell_state(ctx.history))
-        .env_state(build_env_state(ctx.env));
+        .env_state(build_env_state(&ctx));
 
     if ctx.git {
         if let Some(git_state) = build_git_state().await {
@@ -382,17 +399,56 @@ mod tests {
 
     #[test]
     fn test_env_state() {
-        let env_state = build_env_state(true);
+        // env: true
+        let env_state = build_env_state(&ContextModifiers {
+            env: true,
+            history: false,
+            git: false,
+        });
         assert!(!env_state.environment_variables().is_empty());
         assert!(!env_state.current_working_directory().unwrap().is_empty());
         assert!(!env_state.operating_system().unwrap().is_empty());
         println!("{env_state:?}");
+
+        // env: false
+        let env_state = build_env_state(&ContextModifiers::default());
+        assert!(env_state.environment_variables().is_empty());
+        assert!(env_state.current_working_directory().is_none());
+        assert!(!env_state.operating_system().unwrap().is_empty());
+        println!("{env_state:?}");
+    }
+
+    async fn init_git_repo() {
+        // if there is no .git run git init
+        if !std::path::Path::new(".git").exists() {
+            let output = tokio::process::Command::new("git").arg("init").output().await.unwrap();
+            assert!(output.status.success());
+        }
+
+        // run git status to see in test logs
+        let output = tokio::process::Command::new("git")
+            .args(["status", "--porcelain=v1", "-b"])
+            .output()
+            .await
+            .unwrap();
+
+        println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+        println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+        println!("{}", output.status);
     }
 
     #[tokio::test]
     async fn test_git_state() {
+        // write a file to the repo to ensure git status has a change
+        let path = "test.txt";
+        std::fs::write(path, "test").unwrap();
+
+        init_git_repo().await;
+
         let git_state = build_git_state().await.unwrap();
         println!("{git_state:?}");
         println!("status: {:?}", git_state.status.unwrap());
+
+        let _ = std::fs::remove_file(path);
     }
 }
