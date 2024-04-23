@@ -2564,6 +2564,7 @@ dependencies = [
  "serde_json",
  "sysinfo",
  "time",
+ "whoami",
 ]
 
 [[package]]

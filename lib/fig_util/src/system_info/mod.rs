@@ -13,6 +13,7 @@ use sha2::{
     Sha256,
 };
 
+use crate::env_var::Q_PARENT;
 use crate::Error;
 
 static OS_VERSION: Lazy<Option<OSVersion>> = Lazy::new(|| {
@@ -110,7 +111,7 @@ static IN_SSH: Lazy<bool> = Lazy::new(|| {
         || std::env::var_os("SSH_TTY").is_some()
 });
 
-static HAS_PARENT: Lazy<bool> = Lazy::new(|| std::env::var_os("Q_PARENT").is_some());
+static HAS_PARENT: Lazy<bool> = Lazy::new(|| std::env::var_os(Q_PARENT).is_some());
 
 static IN_CODESPACES: Lazy<bool> =
     Lazy::new(|| std::env::var_os("CODESPACES").is_some() || std::env::var_os("Q_CODESPACES").is_some());

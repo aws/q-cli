@@ -28,3 +28,45 @@ pub mod macos {
     pub const BUNDLE_CONTENTS_HELPERS_PATH: &str = "Contents/Helpers";
     pub const BUNDLE_CONTENTS_INFO_PLIST_PATH: &str = "Contents/Info.plist";
 }
+
+pub mod env_var {
+    macro_rules! define_env_vars {
+        ($($(#[$meta:meta])* $ident:ident = $name:expr),*) => {
+            $(
+                $(#[$meta])*
+                pub const $ident: &str = $name;
+            )*
+
+            pub const ALL: &[&str] = &[$($ident),*];
+        }
+    }
+
+    define_env_vars! {
+        /// The UUID of the current parent qterm instance
+        QTERM_SESSION_ID = "QTERM_SESSION_ID",
+
+        /// The current parent socket to connect to
+        Q_PARENT = "Q_PARENT",
+
+        /// Set the [`Q_PARENT`] parent socket to connect to
+        Q_SET_PARENT = "Q_SET_PARENT",
+
+        /// Guard for the [`Q_SET_PARENT`] check
+        Q_SET_PARENT_CHECK = "Q_SET_PARENT_CHECK",
+
+        /// Set if qterm is running, contains the version
+        Q_TERM = "Q_TERM",
+
+        /// Sets the current log level
+        Q_LOG_LEVEL = "Q_LOG_LEVEL",
+
+        /// Overrides the ZDOTDIR environment variable
+        Q_ZDOTDIR = "Q_ZDOTDIR",
+
+        /// Indicates a process was launched by Q
+        PROCESS_LAUNCHED_BY_Q = "PROCESS_LAUNCHED_BY_Q",
+
+        /// The shell to use in qterm
+        Q_SHELL = "Q_SHELL"
+    }
+}

@@ -13,6 +13,7 @@ use fig_integrations::shell::{
     ShellExt,
     When,
 };
+use fig_util::env_var::Q_SHELL;
 use fig_util::{
     get_parent_process_exe,
     Shell,
@@ -130,7 +131,7 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
     if let Some(parent_process) = get_parent_process_exe() {
         to_source.push(assign_shell_variable(
             shell,
-            "Q_SHELL",
+            Q_SHELL,
             if *IS_SNAPSHOT_TEST {
                 Path::new("/bin/zsh").display()
             } else {
@@ -171,7 +172,7 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
             ));
         }
 
-        // if stdin().is_tty() && env::var_os("PROCESS_LAUNCHED_BY_Q").is_none() {
+        // if stdin().is_tty() && env::var_os(PROCESS_LAUNCHED_BY_Q).is_none() {
         //     // if no value, assume that we have seen onboarding already.
         //     // this is explicitly set in onboarding in macOS app.
         //     let has_seen_onboarding: bool = fig_settings::state::get_bool_or("user.onboarding", true);

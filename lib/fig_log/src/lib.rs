@@ -5,6 +5,7 @@ use std::fs::{
 use std::path::PathBuf;
 
 use fig_util::directories;
+use fig_util::env_var::Q_LOG_LEVEL;
 use parking_lot::Mutex;
 use thiserror::Error;
 use tracing::info;
@@ -21,7 +22,7 @@ use tracing_subscriber::{
 const DEFAULT_MAX_FILE_SIZE: u64 = 10 * 1024 * 1024;
 const DEFAULT_FILTER: LevelFilter = LevelFilter::ERROR;
 
-static Q_LOG_LEVEL: Mutex<Option<String>> = Mutex::new(None);
+static Q_LOG_LEVEL_GLOBAL: Mutex<Option<String>> = Mutex::new(None);
 static MAX_LEVEL: Mutex<Option<LevelFilter>> = Mutex::new(None);
 static ENV_FILTER_RELOADABLE_HANDLE: Mutex<Option<tracing_subscriber::reload::Handle<EnvFilter, Registry>>> =
     Mutex::new(None);
@@ -43,14 +44,17 @@ fn log_path(log_file_name: impl AsRef<str>) -> Result<PathBuf> {
 }
 
 fn try_fig_log_level() -> Option<String> {
-    Q_LOG_LEVEL.lock().clone().or_else(|| std::env::var("Q_LOG_LEVEL").ok())
+    Q_LOG_LEVEL_GLOBAL
+        .lock()
+        .clone()
+        .or_else(|| std::env::var(Q_LOG_LEVEL).ok())
 }
 
 fn fig_log_level() -> String {
-    Q_LOG_LEVEL
+    Q_LOG_LEVEL_GLOBAL
         .lock()
         .clone()
-        .unwrap_or_else(|| std::env::var("Q_LOG_LEVEL").unwrap_or_else(|_| DEFAULT_FILTER.to_string()))
+        .unwrap_or_else(|| std::env::var(Q_LOG_LEVEL).unwrap_or_else(|_| DEFAULT_FILTER.to_string()))
 }
 
 fn create_filter_layer() -> EnvFilter {
@@ -66,7 +70,7 @@ pub fn set_fig_log_level(level: String) -> Result<String> {
     info!("Setting log level to {level:?}");
 
     let old_level = fig_log_level();
-    *Q_LOG_LEVEL.lock() = Some(level);
+    *Q_LOG_LEVEL_GLOBAL.lock() = Some(level);
 
     let filter_layer = create_filter_layer();
     *MAX_LEVEL.lock() = filter_layer.max_level_hint();

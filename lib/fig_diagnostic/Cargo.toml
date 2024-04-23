@@ -20,3 +20,4 @@ serde.workspace = true
 serde_json.workspace = true
 sysinfo = "0.30.5"
 time.workspace = true
+whoami.workspace = true

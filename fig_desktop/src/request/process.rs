@@ -15,6 +15,10 @@ use fig_remote_ipc::figterm::{
     FigtermSessionId,
     FigtermState,
 };
+use fig_util::env_var::{
+    PROCESS_LAUNCHED_BY_Q,
+    Q_TERM,
+};
 use tokio::process::Command;
 use tokio::time::timeout;
 use tracing::{
@@ -44,8 +48,8 @@ fn shell_args(shell_path: &str) -> &'static [&'static str] {
 }
 
 fn set_fig_vars(cmd: &mut Command) {
-    cmd.env("Q_TERM", env!("CARGO_PKG_VERSION"));
-    cmd.env("PROCESS_LAUNCHED_BY_Q", "1");
+    cmd.env(Q_TERM, env!("CARGO_PKG_VERSION"));
+    cmd.env(PROCESS_LAUNCHED_BY_Q, "1");
 
     cmd.env("HISTFILE", "");
     cmd.env("HISTCONTROL", "ignoreboth");

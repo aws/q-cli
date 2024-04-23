@@ -59,6 +59,7 @@ use fig_util::desktop::{
     LaunchArgs,
 };
 use fig_util::directories::figterm_socket_path;
+use fig_util::env_var::QTERM_SESSION_ID;
 use fig_util::{
     directories,
     get_parent_process_exe,
@@ -661,7 +662,7 @@ impl InternalSubcommand {
                 })
                 .ok();
 
-                if let Ok(session_id) = std::env::var("QTERM_SESSION_ID") {
+                if let Ok(session_id) = std::env::var(QTERM_SESSION_ID) {
                     let mut conn =
                         BufferedUnixStream::connect(fig_util::directories::figterm_socket_path(&session_id)?).await?;
                     conn.send_message(FigtermRequestMessage {
@@ -789,7 +790,7 @@ impl InternalSubcommand {
                 args.execute()?;
             },
             InternalSubcommand::InlineShellCompletion { buffer } => {
-                let Ok(session_id) = std::env::var("QTERM_SESSION_ID") else {
+                let Ok(session_id) = std::env::var(QTERM_SESSION_ID) else {
                     exit(1);
                 };
 
@@ -857,7 +858,7 @@ pub fn get_shell() {
 }
 
 pub async fn pre_cmd(alias: Option<String>) {
-    let Ok(session_id) = std::env::var("QTERM_SESSION_ID") else {
+    let Ok(session_id) = std::env::var(QTERM_SESSION_ID) else {
         return;
     };
 

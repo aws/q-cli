@@ -5,6 +5,7 @@ use fig_util::system_info::OSVersion;
 use fig_util::{
     directories,
     Terminal,
+    CLI_BINARY_NAME,
 };
 use serde::{
     Deserialize,
@@ -66,13 +67,16 @@ pub struct EnvVarDiagnostic {
 impl EnvVarDiagnostic {
     fn new() -> EnvVarDiagnostic {
         let env_vars = std::env::vars()
-            .filter(|(key, val)| {
-                [
+            .filter(|(key, _)| {
+                let fig_var = fig_util::env_var::ALL.contains(&key.as_str());
+                let other_var = [
+                    // General env vars
                     "SHELL",
                     "DISPLAY",
                     "PATH",
-                    "QTERM_SESSION_ID",
                     "TERM",
+                    "ZDOTDIR",
+                    // Linux vars
                     "XDG_CURRENT_DESKTOP",
                     "XDG_SESSION_DESKTOP",
                     "XDG_SESSION_TYPE",
@@ -80,12 +84,17 @@ impl EnvVarDiagnostic {
                     "GTK_IM_MODULE",
                     "QT_IM_MODULE",
                     "XMODIFIERS",
+                    // Macos vars
                     "__CFBundleIdentifier",
-                    "ZDOTDIR",
                 ]
-                .contains(&key.as_str())
-                    && !["TOKEN", "KEY", "SECRET", "PASSWORD"].contains(&key.as_str())
-                    && !val.starts_with("figapi_")
+                .contains(&key.as_str());
+
+                fig_var || other_var
+            })
+            .map(|(key, value)| {
+                // sanitize username from values
+                let username = format!("/{}", whoami::username());
+                (key, value.replace(&username, "/USER"))
             })
             .collect();
 
@@ -149,8 +158,15 @@ impl CurrentEnvironment {
     }
 
     fn user_readable(&self) -> Vec<String> {
+        let username = format!("/{}", whoami::username());
         vec![
-            format!("shell: {}", self.shell_exe.as_deref().unwrap_or("<unknown>")),
+            format!(
+                "shell: {}",
+                self.shell_exe
+                    .as_deref()
+                    .unwrap_or("<unknown>")
+                    .replace(&username, "/USER")
+            ),
             format!(
                 "terminal: {}",
                 self.terminal
@@ -159,8 +175,8 @@ impl CurrentEnvironment {
                     .as_deref()
                     .unwrap_or("<unknown>")
             ),
-            format!("cwd: {}", self.current_dir),
-            format!("exe-path: {}", self.executable_location),
+            format!("cwd: {}", self.current_dir.replace(&username, "/USER")),
+            format!("exe-path: {}", self.executable_location.replace(&username, "/USER")),
             format!("install-method: {}", self.install_method),
         ]
     }
@@ -263,7 +279,7 @@ impl Diagnostics {
 
         let mut lines = vec![];
 
-        lines.push("CODEWHISPERER-details:".into());
+        lines.push(format!("{CLI_BINARY_NAME}-details:"));
         lines.extend(print_indent(&[self.version.clone()], "  ", 1));
         lines.push("hardware-info:".into());
         lines.extend(print_indent(&self.hardware.user_readable(), "  ", 1));

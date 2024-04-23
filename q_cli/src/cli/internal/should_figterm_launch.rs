@@ -44,6 +44,7 @@ impl Status {
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 fn parent_status(current_pid: fig_util::process_info::Pid) -> Status {
+    use fig_util::env_var::Q_TERM;
     use fig_util::process_info::PidExt;
 
     let parent_pid = match current_pid.parent() {
@@ -67,16 +68,16 @@ fn parent_status(current_pid: fig_util::process_info::Pid) -> Status {
     let valid_parent = ["zsh", "bash", "fish", "nu"].contains(&parent_name);
 
     if fig_util::system_info::in_ssh() {
-        return match std::env::var_os("Q_TERM") {
-            Some(_) => Status::DontLaunch("In SSH and Q_TERM is set".into()),
-            None => Status::Launch("In SSH and Q_TERM is not set".into()),
+        return match std::env::var_os(Q_TERM) {
+            Some(_) => Status::DontLaunch(format!("In SSH and {Q_TERM} is set").into()),
+            None => Status::Launch(format!("In SSH and {Q_TERM} is not set").into()),
         };
     }
 
     if fig_util::system_info::in_codespaces() {
-        return match std::env::var_os("Q_TERM") {
-            Some(_) => Status::DontLaunch("In Codespaces and Q_TERM is set".into()),
-            None => Status::Launch("In Codespaces and Q_TERM is not set".into()),
+        return match std::env::var_os(Q_TERM) {
+            Some(_) => Status::DontLaunch(format!("In Codespaces and {Q_TERM} is set").into()),
+            None => Status::Launch(format!("In Codespaces and {Q_TERM} is not set").into()),
         };
     }
 
@@ -194,9 +195,14 @@ fn should_launch(quiet: bool) -> i32 {
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub fn should_figterm_launch_exit_status(quiet: bool) -> i32 {
-    if std::env::var_os("PROCESS_LAUNCHED_BY_Q").is_some() {
+    use fig_util::env_var::{
+        PROCESS_LAUNCHED_BY_Q,
+        Q_PARENT,
+    };
+
+    if std::env::var_os(PROCESS_LAUNCHED_BY_Q).is_some() {
         if !quiet {
-            writeln!(stdout(), "❌ PROCESS_LAUNCHED_BY_Q").ok();
+            writeln!(stdout(), "❌ {PROCESS_LAUNCHED_BY_Q}").ok();
         }
         return 1;
     }
@@ -246,7 +252,7 @@ pub fn should_figterm_launch_exit_status(quiet: bool) -> i32 {
     }
 
     // If we are in SSH and there is no Q_PARENT dont launch
-    if fig_util::system_info::in_ssh() && std::env::var_os("Q_PARENT").is_none() {
+    if fig_util::system_info::in_ssh() && std::env::var_os(Q_PARENT).is_none() {
         if !quiet {
             writeln!(stdout(), "❌ In SSH without Q_PARENT").ok();
         }

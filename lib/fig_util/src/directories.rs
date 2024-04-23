@@ -8,6 +8,7 @@ use time::OffsetDateTime;
 
 #[cfg(target_os = "macos")]
 use crate::consts::CLI_BINARY_NAME;
+use crate::env_var::Q_PARENT;
 use crate::system_info::is_remote;
 use crate::RUNTIME_DIR_NAME;
 
@@ -46,7 +47,7 @@ pub enum DirectoryError {
     FromVecWithNul(#[from] std::ffi::FromVecWithNulError),
     #[error(transparent)]
     IntoString(#[from] std::ffi::IntoStringError),
-    #[error("Q_PARENT env variable not set")]
+    #[error("{Q_PARENT} env variable not set")]
     QParentNotSet,
 }
 
@@ -59,6 +60,16 @@ type Result<T, E = DirectoryError> = std::result::Result<T, E>;
 /// - Windows: C:\Users\Alice
 pub fn home_dir() -> Result<PathBuf> {
     dirs::home_dir().ok_or(DirectoryError::NoHomeDirectory)
+}
+
+/// The directory of the users `$HOME/.local/bin` directory
+///
+/// MacOS and Linux path: `$HOME/.local/bin``
+#[cfg(unix)]
+pub fn home_local_bin() -> Result<PathBuf> {
+    let mut path = home_dir()?;
+    path.push(".local/bin");
+    Ok(path)
 }
 
 /// The config directory
@@ -253,7 +264,7 @@ pub fn desktop_socket_path() -> Result<PathBuf> {
 pub fn remote_socket_path() -> Result<PathBuf> {
     // TODO(grant): This is only enabled on Linux for now to prevent public dist
     if is_remote() && cfg!(target_os = "linux") {
-        if let Some(parent_socket) = std::env::var_os("Q_PARENT") {
+        if let Some(parent_socket) = std::env::var_os(Q_PARENT) {
             Ok(PathBuf::from(parent_socket))
         } else {
             Err(DirectoryError::QParentNotSet)
@@ -342,6 +353,8 @@ pub fn relative_cli_path() -> Result<PathBuf> {
 }
 
 utf8_dir!(home_dir);
+#[cfg(unix)]
+utf8_dir!(home_local_bin);
 utf8_dir!(fig_data_dir);
 utf8_dir!(sockets_dir);
 utf8_dir!(remote_socket_path);
@@ -441,6 +454,13 @@ mod tests {
         }
 
         path
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn snapshot_home_local_bin() {
+        linux!(home_local_bin(), @"$HOME/.local/bin");
+        macos!(home_local_bin(), @"$HOME/.local/bin");
     }
 
     #[test]

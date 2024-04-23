@@ -26,6 +26,7 @@ use fig_ipc::{
     BufferedUnixStream,
     SendMessage,
 };
+use fig_util::env_var::QTERM_SESSION_ID;
 use fig_util::CLI_BINARY_NAME;
 use once_cell::sync::Lazy;
 use regex::{
@@ -133,7 +134,7 @@ fn theme() -> ColorfulTheme {
 }
 
 async fn send_figterm(text: String, execute: bool) -> Result<()> {
-    let session_id = std::env::var("QTERM_SESSION_ID")?;
+    let session_id = std::env::var(QTERM_SESSION_ID)?;
     let mut conn = BufferedUnixStream::connect(fig_util::directories::figterm_socket_path(&session_id)?).await?;
     conn.send_message(fig_proto::figterm::FigtermRequestMessage {
         request: Some(fig_proto::figterm::figterm_request_message::Request::InsertOnNewCmd(

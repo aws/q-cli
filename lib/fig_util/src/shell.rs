@@ -9,6 +9,7 @@ use serde::{
     Serialize,
 };
 
+use crate::env_var::Q_ZDOTDIR;
 use crate::process_info::get_parent_process_exe;
 use crate::{
     directories,
@@ -133,7 +134,7 @@ impl Shell {
         match self {
             Shell::Bash => Ok(directories::home_dir()?),
             Shell::Zsh => match std::env::var_os("ZDOTDIR")
-                .or_else(|| std::env::var_os("Q_ZDOTDIR"))
+                .or_else(|| std::env::var_os(Q_ZDOTDIR))
                 .map(PathBuf::from)
             {
                 Some(dir) => Ok(dir),

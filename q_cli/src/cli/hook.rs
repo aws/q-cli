@@ -7,6 +7,7 @@ use eyre::{
 };
 use fig_ipc::local::send_hook_to_socket;
 use fig_proto::hooks;
+use fig_util::env_var::QTERM_SESSION_ID;
 
 #[derive(Debug, PartialEq, Eq, Subcommand)]
 #[command(hide = true)]
@@ -64,7 +65,7 @@ impl HookSubcommand {
     }
 
     pub async fn execute_hook(&self) -> Result<()> {
-        let session_id = std::env::var("QTERM_SESSION_ID").ok();
+        let session_id = std::env::var(QTERM_SESSION_ID).ok();
 
         let hook = match self {
             HookSubcommand::Editbuffer {

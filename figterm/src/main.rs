@@ -54,6 +54,13 @@ use fig_proto::remote_hooks::{
 };
 use fig_settings::state;
 use fig_util::consts::CLI_BINARY_NAME;
+use fig_util::env_var::{
+    QTERM_SESSION_ID,
+    Q_LOG_LEVEL,
+    Q_PARENT,
+    Q_SHELL,
+    Q_TERM,
+};
 use fig_util::process_info::{
     Pid,
     PidExt,
@@ -359,7 +366,7 @@ where
 }
 
 fn get_parent_shell() -> Result<String> {
-    match env::var("Q_SHELL").ok().filter(|s| !s.is_empty()) {
+    match env::var(Q_SHELL).ok().filter(|s| !s.is_empty()) {
         Some(v) => Ok(v),
         None => match env::var("SHELL").ok().filter(|s| !s.is_empty()) {
             Some(shell) => Ok(shell),
@@ -401,13 +408,13 @@ fn build_shell_command(command: Option<&[String]>) -> Result<CommandBuilder> {
         },
     };
 
-    builder.env("Q_TERM", env!("CARGO_PKG_VERSION"));
+    builder.env(Q_TERM, env!("CARGO_PKG_VERSION"));
     if env::var_os("TMUX").is_some() {
         builder.env("Q_TERM_TMUX", env!("CARGO_PKG_VERSION"));
     }
 
     // Clean up environment and launch shell.
-    builder.env_remove("Q_SHELL");
+    builder.env_remove(Q_SHELL);
     builder.env_remove("Q_IS_LOGIN_SHELL");
     builder.env_remove("Q_START_TEXT");
     builder.env_remove("Q_SHELL_EXTRA_ARGS");
@@ -450,9 +457,9 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
         Ok(id) => id,
         Err(_) => uuid::Uuid::new_v4().simple().to_string(),
     };
-    std::env::set_var("QTERM_SESSION_ID", &session_id);
+    std::env::set_var(QTERM_SESSION_ID, &session_id);
 
-    let parent_id = std::env::var("Q_PARENT").ok();
+    let parent_id = std::env::var(Q_PARENT).ok();
 
     let mut terminal = SystemTerminal::new_from_stdio()?;
     let screen_size = terminal.get_screen_size()?;
@@ -587,23 +594,6 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
         }
 
         let mut csi_u_set = false;
-
-        // let (console_term_key_tx, console_term_key_rx) = flume::unbounded();
-        // let console_term = ConsoleTerm::stderr_with_read_key(Box::new(move || {
-        //     warn!("Waiting for a key on stdin....");
-        //     let mut terminal_inner = SystemTerminal::new_from_stdio();
-        //     if let Ok(ref mut terminal_inner) = terminal_inner {
-        //         terminal_inner.set_raw_mode().ok();
-        //     }
-        //     let key = console_term_key_rx.recv()
-        //         .map_err(|e| {
-        //             std::io::Error::new(std::io::ErrorKind::Other, e)
-        //         });
-        //     if let Ok(ref mut terminal_inner) = terminal_inner {
-        //         terminal_inner.set_cooked_mode().ok();
-        //     }
-        //     key
-        // }));
 
         let result: Result<()> = 'select_loop: loop {
             if first_time && term.shell_state().has_seen_prompt {
@@ -972,7 +962,7 @@ fn main() {
     let cli = Cli::parse();
     let command = cli.command.as_deref();
 
-    logger::stdio_debug_log(format!("Q_LOG_LEVEL={}", fig_log::get_fig_log_level()));
+    logger::stdio_debug_log(format!("{Q_LOG_LEVEL}={}", fig_log::get_fig_log_level()));
 
     if !state::get_bool_or("qterm.enabled", true) {
         println!("[NOTE] qterm is disabled. Autocomplete will not work.");
