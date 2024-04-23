@@ -171,7 +171,7 @@ pub enum StateComponent {
 #[command(hide = true, alias = "_")]
 pub enum InternalSubcommand {
     /// Command that is run during the PreCmd section of
-    /// the fig integrations.
+    /// the Q integrations.
     PreCmd {
         #[arg(long, allow_hyphen_values = true)]
         alias: Option<String>,
@@ -180,9 +180,9 @@ pub enum InternalSubcommand {
     LocalState(local_state::LocalStateArgs),
     /// Callback used for the internal pseudoterminal
     Callback(CallbackArgs),
-    /// Install CodeWhsiperer cli
+    /// Install Q cli
     Install(InstallArgs),
-    /// Uninstall CodeWhsiperer cli
+    /// Uninstall Q cli
     Uninstall {
         /// Uninstall only the shell integrations
         #[arg(long)]

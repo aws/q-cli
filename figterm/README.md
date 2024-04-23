@@ -17,7 +17,7 @@ First, make sure shell integrations are installed. You can use the `q_cli` to do
 this:
 
 ```
-fig integrations install dotfiles
+q integrations install dotfiles
 ```
 
 The run `make install` to build the binary and move to the right location.

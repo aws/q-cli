@@ -270,9 +270,9 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
         }
     }
 
-    if let Some(cw_cli_path) = get_bundle_path_for_executable(CLI_BINARY_NAME) {
+    if let Some(q_cli_path) = get_bundle_path_for_executable(CLI_BINARY_NAME) {
         let dest = local_bin.join(CLI_BINARY_NAME);
-        symlink(cw_cli_path, dest).ok();
+        symlink(q_cli_path, dest).ok();
     }
 
     if let Some(bundle_path) = get_bundle_path() {

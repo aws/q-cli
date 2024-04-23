@@ -45,6 +45,12 @@ use winnow::token::{
 };
 use winnow::Partial;
 
+const CODE_COLOR: Color = Color::Green;
+const HEADING_COLOR: Color = Color::Magenta;
+const BLOCKQUOTE_COLOR: Color = Color::DarkGrey;
+const URL_TEXT_COLOR: Color = Color::Blue;
+const URL_LINK_COLOR: Color = Color::DarkGrey;
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error<'a> {
     #[error(transparent)]
@@ -203,7 +209,7 @@ fn heading<'a, 'b>(
         let print = format!("{level} ");
 
         queue_newline_or_advance(&mut o, state, print.width())?;
-        queue(&mut o, style::SetForegroundColor(Color::Magenta))?;
+        queue(&mut o, style::SetForegroundColor(HEADING_COLOR))?;
         queue(&mut o, style::SetAttribute(Attribute::Bold))?;
         queue(&mut o, style::Print(print))
     }
@@ -218,12 +224,10 @@ fn bulleted_item<'a, 'b>(
             return Err(ErrMode::from_error_kind(i, ErrorKind::Fail));
         }
 
-        let ws = (space0, "-", space1).parse_next(i)?.0;
+        let ws = (space0, alt(("-", "*")), space1).parse_next(i)?.0;
         let print = format!("{ws}• ");
 
         queue_newline_or_advance(&mut o, state, print.width())?;
-        queue(&mut o, style::ResetColor)?;
-        queue(&mut o, style::SetAttribute(style::Attribute::Reset))?;
         queue(&mut o, style::Print(print))
     }
 }
@@ -241,8 +245,6 @@ fn numbered_item<'a, 'b>(
         let print = format!("{ws}{digits}. ");
 
         queue_newline_or_advance(&mut o, state, print.width())?;
-        queue(&mut o, style::ResetColor)?;
-        queue(&mut o, style::SetAttribute(style::Attribute::Reset))?;
         queue(&mut o, style::Print(print))
     }
 }
@@ -259,15 +261,12 @@ fn horizontal_rule<'a, 'b>(
         (
             space0,
             alt((take_while(3.., '-'), take_while(3.., '*'), take_while(3.., '_'))),
-            space0,
         )
             .parse_next(i)?;
 
         state.column = 0;
         state.set_newline = true;
 
-        queue(&mut o, style::ResetColor)?;
-        queue(&mut o, style::SetAttribute(style::Attribute::Reset))?;
         queue(&mut o, style::Print(format!("{}\n", "━".repeat(state.terminal_width))))
     }
 }
@@ -282,9 +281,9 @@ fn code<'a, 'b>(
         let out = code.replace("&amp;", "&").replace("&gt;", ">").replace("&lt;", "<");
 
         queue_newline_or_advance(&mut o, state, out.width())?;
-        queue(&mut o, style::Print(out.green()))?;
-
-        Ok(())
+        queue(&mut o, style::SetForegroundColor(Color::Green))?;
+        queue(&mut o, style::Print(out))?;
+        queue(&mut o, style::ResetColor)
     }
 }
 
@@ -302,7 +301,7 @@ fn blockquote<'a, 'b>(
             .len();
         let print = "│ ".repeat(level);
 
-        queue(&mut o, style::SetForegroundColor(Color::Grey))?;
+        queue(&mut o, style::SetForegroundColor(BLOCKQUOTE_COLOR))?;
         queue_newline_or_advance(&mut o, state, print.width())?;
         queue(&mut o, style::Print(print))
     }
@@ -391,9 +390,9 @@ fn citation<'a, 'b>(
         state.citations.push((num.to_owned(), link.to_owned()));
 
         queue_newline_or_advance(&mut o, state, num.width() + 1)?;
-        queue(&mut o, style::SetForegroundColor(Color::Blue))?;
+        queue(&mut o, style::SetForegroundColor(URL_TEXT_COLOR))?;
         queue(&mut o, style::Print(format!("[{num}]")))?;
-        queue(&mut o, style::SetForegroundColor(Color::Reset))
+        queue(&mut o, style::ResetColor)
     }
 }
 
@@ -406,12 +405,12 @@ fn url<'a, 'b>(
         let link = delimited("(", take_till(0.., ')'), ")").parse_next(i)?;
 
         queue_newline_or_advance(&mut o, state, display.width() + 1)?;
-        queue(&mut o, style::SetForegroundColor(Color::Blue))?;
+        queue(&mut o, style::SetForegroundColor(URL_TEXT_COLOR))?;
         queue(&mut o, style::Print(format!("{display} ")))?;
-        queue(&mut o, style::SetForegroundColor(Color::DarkGrey))?;
+        queue(&mut o, style::SetForegroundColor(URL_LINK_COLOR))?;
         state.column += link.width();
         queue(&mut o, style::Print(link))?;
-        queue(&mut o, style::SetForegroundColor(Color::Reset))
+        queue(&mut o, style::ResetColor)
     }
 }
 
@@ -533,7 +532,7 @@ fn codeblock_begin<'a, 'b>(
             queue(&mut o, style::Print(format!("{}\n", language).bold()))?;
         }
 
-        queue(&mut o, style::SetForegroundColor(Color::Green))?;
+        queue(&mut o, style::SetForegroundColor(CODE_COLOR))?;
 
         Ok(())
     }
@@ -546,7 +545,7 @@ fn codeblock_end<'a, 'b>(
     move |i| {
         "```".parse_next(i)?;
         state.in_codeblock = false;
-        queue(&mut o, style::SetForegroundColor(Color::Reset))
+        queue(&mut o, style::ResetColor)
     }
 }
 
@@ -618,93 +617,106 @@ mod tests {
 
     use super::*;
 
-    fn assert_parse_eq(input: &'static str, output: &'static str) {
-        let mut state = ParseState::new(1024);
-        let mut result = vec![];
-        let mut offset = 0;
+    macro_rules! validate {
+        ($test:ident, $input:literal, [$($commands:expr),+ $(,)?]) => {
+            #[test]
+            fn $test() -> eyre::Result<()> {
+                use crossterm::ExecutableCommand;
 
-        loop {
-            let input = Partial::new(&input[offset..]);
-            match interpret_markdown(input, &mut result, &mut state) {
-                Ok(parsed) => {
-                    offset += parsed.offset_from(&input);
-                    state.newline = state.set_newline;
-                    state.set_newline = false;
-                },
-                Err(err) => match err.into_inner() {
-                    Some(err) => panic!("{err}"),
-                    None => break, // Data was incomplete
-                },
+                let mut input = $input.trim().to_owned();
+                input.push(' ');
+                input.push(' ');
+
+                let mut state = ParseState::new(256);
+                let mut presult = vec![];
+                let mut offset = 0;
+
+                loop {
+                    let input = Partial::new(&input[offset..]);
+                    match interpret_markdown(input, &mut presult, &mut state) {
+                        Ok(parsed) => {
+                            offset += parsed.offset_from(&input);
+                            state.newline = state.set_newline;
+                            state.set_newline = false;
+                        },
+                        Err(err) => match err.into_inner() {
+                            Some(err) => panic!("{err}"),
+                            None => break, // Data was incomplete
+                        },
+                    }
+                }
+
+                presult.flush()?;
+                let presult = String::from_utf8(presult)?;
+
+                let mut wresult: Vec<u8> = vec![];
+                $(wresult.execute($commands)?;)+
+                let wresult = String::from_utf8(wresult)?;
+
+                assert_eq!(presult.trim(), wresult);
+
+                Ok(())
             }
-        }
-
-        result.flush().unwrap();
-        assert_eq!(String::from_utf8(result).unwrap(), output);
+        };
     }
 
-    #[test]
-    fn test_text() {
-        assert_parse_eq("hello, world :)", "hello, world :)");
-    }
-
-    // TODO
-    // blockquote,
-    // codeblock,
-    // horizontal_rule,
-    // heading,
-    // bulleted_item,
-    // numbered_item,
-
-    #[test]
-    fn code() {
-        assert_parse_eq("`print`", "\u{1b}[38;5;10mprint\u{1b}[39m");
-    }
-
-    #[test]
-    fn url() {
-        assert_parse_eq(
-            "[[google]](google.com)",
-            "\u{1b}[38;5;12m[google] \u{1b}[38;5;8mgoogle.com\u{1b}[39m",
-        );
-    }
-
-    #[test]
-    fn bold() {
-        assert_parse_eq("**hello** ", "\u{1b}[1mhello\u{1b}[22m");
-    }
-
-    #[test]
-    fn italic() {
-        assert_parse_eq("*hello* ", "\u{1b}[3mhello\u{1b}[23m");
-    }
-
-    #[test]
-    fn strikethrough() {
-        assert_parse_eq("~~hello~~", "\u{1b}[9mhello\u{1b}[29m");
-    }
-
-    #[test]
-    fn less_than() {
-        assert_parse_eq("&lt;", "<");
-    }
-
-    #[test]
-    fn greater_than() {
-        assert_parse_eq("1 &gt; 2 ", "1 > 2");
-    }
-
-    #[test]
-    fn ampersand() {
-        assert_parse_eq("&amp;", "&");
-    }
-
-    #[test]
-    fn line_ending() {
-        assert_parse_eq(".\n. ", ".\u{1b}[0m\u{1b}[0m\n.");
-    }
-
-    #[test]
-    fn test_fallback() {
-        assert_parse_eq("+ % @ . ? ", "+ % @ . ?");
-    }
+    validate!(text_1, "hello world!", [style::Print("hello world!")]);
+    validate!(linted_codeblock_1, "```java\nhello world!```", [
+        style::SetAttribute(Attribute::Bold),
+        style::Print("java\n"),
+        style::SetAttribute(Attribute::Reset),
+        style::SetForegroundColor(CODE_COLOR),
+        style::Print("hello world!"),
+        style::ResetColor,
+    ]);
+    validate!(code_1, "`print`", [
+        style::SetForegroundColor(CODE_COLOR),
+        style::Print("print"),
+        style::ResetColor,
+    ]);
+    validate!(url_1, "[google](google.com)", [
+        style::SetForegroundColor(URL_TEXT_COLOR),
+        style::Print("google "),
+        style::SetForegroundColor(URL_LINK_COLOR),
+        style::Print("google.com"),
+        style::ResetColor,
+    ]);
+    validate!(citation_1, "[[1]](google.com)", [
+        style::SetForegroundColor(URL_TEXT_COLOR),
+        style::Print("[1]"),
+        style::ResetColor,
+    ]);
+    validate!(bold_1, "**hello**", [
+        style::SetAttribute(Attribute::Bold),
+        style::Print("hello"),
+        style::SetAttribute(Attribute::NormalIntensity)
+    ]);
+    validate!(italic_1, "*hello*", [
+        style::SetAttribute(Attribute::Italic),
+        style::Print("hello"),
+        style::SetAttribute(Attribute::NoItalic)
+    ]);
+    validate!(strikethrough_1, "~~hello~~", [
+        style::SetAttribute(Attribute::CrossedOut),
+        style::Print("hello"),
+        style::SetAttribute(Attribute::NotCrossedOut)
+    ]);
+    validate!(less_than_1, "&lt;", [style::Print('<')]);
+    validate!(greater_than_1, ".&gt;.", [style::Print(".>.")]);
+    validate!(ampersand_1, "&amp;", [style::Print('&')]);
+    validate!(quote_1, "&quot;", [style::Print('"')]);
+    validate!(fallback_1, "+ % @ . ? ", [style::Print("+ % @ . ?")]);
+    validate!(horizontal_rule_1, "---", [style::Print("━".repeat(256))]);
+    validate!(heading_1, "# Hello World", [
+        style::SetForegroundColor(HEADING_COLOR),
+        style::SetAttribute(Attribute::Bold),
+        style::Print("# Hello World"),
+    ]);
+    validate!(bulleted_item_1, "- bullet", [style::Print("• bullet")]);
+    validate!(bulleted_item_2, "* bullet", [style::Print("• bullet")]);
+    validate!(numbered_item_1, "1. number", [style::Print("1. number")]);
+    validate!(blockquote_1, "&gt; hello", [
+        style::SetForegroundColor(BLOCKQUOTE_COLOR),
+        style::Print("│ hello"),
+    ]);
 }

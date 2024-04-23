@@ -117,7 +117,7 @@ You can include additional context by adding the following to your prompt:
         // Print response as we receive it
         if let Some(rx) = &mut rx {
             stderr.queue(cursor::Hide)?;
-            let mut spinner = Some(Spinner::new(spinners::Spinners::Aesthetic, "".to_owned()));
+            let mut spinner = Some(Spinner::new(spinners::Spinners::Dots, "".to_owned()));
 
             let mut buf = String::new();
             let mut offset = 0;

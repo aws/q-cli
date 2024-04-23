@@ -111,14 +111,14 @@ pub enum CliRootCommands {
     Settings(settings::SettingsArgs),
     /// Install cli components
     Install(internal::InstallArgs),
-    /// Uninstall fig
+    /// Uninstall Q
     #[command(hide = true)]
     Uninstall {
         /// Force uninstall
         #[arg(long, short = 'y')]
         no_confirm: bool,
     },
-    /// Update dotfiles
+    /// Update the Q application
     #[command(alias("upgrade"))]
     Update(update::UpdateArgs),
     /// Run diagnostic tests
