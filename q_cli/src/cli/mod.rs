@@ -227,7 +227,7 @@ impl CliRootCommands {
 
  \x1B[1;95mPopular Subcommands\x1B[0m                \x1B[1;90mUsage:\x1B[0;90m q [subcommand]\x1B[0m
 ╭────────────────────────────────────────────────────────╮
-│ \x1B[1mchat\x1B[0m             \x1B[0;90mNChat with Amazon Q\x1B[0m                   │
+│ \x1B[1mchat\x1B[0m             \x1B[0;90mChat with Amazon Q\x1B[0m                   │
 │ \x1B[1mtranslate\x1B[0m        \x1B[0;90mNatural Language to Shell translation\x1B[0m │
 │ \x1B[1mdoctor\x1B[0m           \x1B[0;90mDebug installation issues\x1B[0m             │ 
 │ \x1B[1msettings\x1B[0m         \x1B[0;90mCustomize appearance & behavior\x1B[0m       │

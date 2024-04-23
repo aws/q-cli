@@ -43,7 +43,7 @@ export default function Page() {
         </ol>
       </div>
       {!demoClosed && (
-        <div className="place-self-center border rounded-lg border-zinc-800 w-full max-w-2xl scale-75 relative -top-16">
+        <div className="place-self-center border rounded-lg border-zinc-800 w-full max-w-2xl scale-75 relative -top-16 overflow-hidden">
           <div className="w-full h-auto rounded-lg flex flex-col bg-[#161A1D]">
             <div className="flex flex-row gap-1.5 p-2 bg-zinc-700 rounded-t">
               <div
@@ -72,7 +72,7 @@ export default function Page() {
                 )}
                 onClick={() => setActiveTab(1)}
               >
-                Translation
+                Translate
               </div>
               <div
                 className={cn(

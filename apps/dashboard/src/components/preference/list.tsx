@@ -20,11 +20,19 @@ type Intro = {
   title: string;
   description: string;
   link: string;
+  /**
+   * Configuration settings for the feature flag. Only applies if `disabled`
+   * is not true.
+   */
   enable: {
     flag: string;
     inverted: boolean;
     default: boolean;
   };
+  /**
+   * Whether or not to allow the user to enable or disable the feature.
+   */
+  disabled?: boolean;
 };
 
 function FeatureIntro({ intro }: { intro: Intro }) {
@@ -69,14 +77,14 @@ function FeatureIntro({ intro }: { intro: Intro }) {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        {!intro.disabled && <div className="flex items-center gap-2">
           <span className="font-bold">{localValue ? "On" : "Off"}</span>
           <Switch
             onClick={toggleSwitch}
             checked={localValue as boolean}
             variant={"inverted"}
           />
-        </div>
+        </div>}
       </div>
     </section>
   );
@@ -112,9 +120,8 @@ export function UserPrefSection({
 
   return (
     <section
-      className={`flex flex-col gap-4 py-4 ${
-        disabled && "opacity-30 select-none"
-      }`}
+      className={`flex flex-col gap-4 py-4 ${disabled && "opacity-30 select-none"
+        }`}
     >
       <SectionHeading index={index}>{data.title}</SectionHeading>
 

@@ -5,6 +5,7 @@ import Help from "./pages/help";
 import SidebarLink from "./components/sidebar/link";
 import Autocomplete from "./pages/terminal/autocomplete";
 import Translate from "./pages/terminal/translate";
+import Chat from "./pages/terminal/chat";
 import Onboarding from "./pages/onboarding";
 import Preferences from "./pages/settings/preferences";
 import Integrations from "./pages/settings/integrations";
@@ -115,6 +116,7 @@ function App() {
               <Route path="autocomplete" element={<Autocomplete />} />
               {/* <Route path="predict" element={<Predict />} /> */}
               <Route path="translate" element={<Translate />} />
+              <Route path="chat" element={<Chat />} />
               <Route path="account" element={<Account />} />
               <Route path="keybindings" element={<Keybindings />} />
               <Route path="integrations" element={<Integrations />} />
@@ -160,8 +162,13 @@ const NAV_DATA = [
     link: "/autocomplete",
   },
   {
+  type: "link",
+        name: "Chat",
+        link: "/chat",
+  },
+  {
     type: "link",
-    name: "Translation",
+    name: "Translate",
     link: "/translate",
   },
   // {

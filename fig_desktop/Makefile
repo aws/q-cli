@@ -106,20 +106,25 @@ install-native-usr-release: build-native-release
 	sudo install $(TARGET_DIR)/release/$(CRATE_NAME) /usr/bin/$(BINARY_NAME)
 
 install-macos-bundle: build-native
-	mkdir -p /Applications/CodeWhisperer.app/Contents/MacOS/
-	install $(TARGET_DIR)/debug/$(CRATE_NAME) /Applications/CodeWhisperer.app/Contents/MacOS/fig_desktop
+	mkdir -p /Applications/Q.app/Contents/MacOS/
+	install $(TARGET_DIR)/debug/$(CRATE_NAME) /Applications/Q.app/Contents/MacOS/fig_desktop
 
 ### Convert icons
 
 icons:
+	echo $(MAKE_DIR)
 	for res in 16 22 24 32 48 64 128 256 512; do \
 		convert -resize "$${res}x$${res}" "icons/icon.png" "icons/$${res}x$${res}.png" ; \
 	done
 	convert -resize "32x32" "icons/icon.png" "icons/icon.ico"
 	convert -resize "32x32" "icons/icon-monochrome.png" "icons/icon-monochrome-32x32.png"
 	cargo tauri icon icons/icon.png
+	cargo tauri icon -o volume-icons icons/VolumeIcon.png
+	mv volume-icons/icon.icns $(MAKE_DIR)/../bundle/dmg/VolumeIcon.icns
+	mv icons/256x256.png $(MAKE_DIR)/../extensions/vscode/images/icon.png
 	# Clean up unused output from tauri icon cli.
 	rm icons/Square* icons/StoreLogo.png
+	rm -rf volume-icons
 
 ### Clean the project
 
