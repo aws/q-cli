@@ -1,4 +1,5 @@
 use std::env::temp_dir;
+use std::io::BufRead;
 use std::path::PathBuf;
 
 use async_trait::async_trait;
@@ -14,7 +15,7 @@ use crate::{
 };
 
 const OLD_EXTENSION_PREFIX: &str = "withfig.fig-";
-const EXTENSION_PREFIX: &str = "amazonwebservices.codewhisperer-for-command-line-companion-";
+const EXTENSION_PREFIX: &str = "amazonwebservices.codewhisperer-for-command-line-companion";
 
 const EXTENSION_VERSION: &str = "0.1.1";
 static EXTENSION: &[u8] = include_bytes!("codewhisperer-for-command-line-companion-0.1.1.vsix");
@@ -81,6 +82,15 @@ pub fn variants_installed() -> Vec<VSCodeVariant> {
         .collect()
 }
 
+/// Determines if the VSCode extension is installed by checking for the Q extension name in the
+/// stdout of `code --list-extensions --show-versions`.
+fn is_installed_from_stdout(stdout: &[u8]) -> bool {
+    let extension_name = format!("{EXTENSION_PREFIX}@{EXTENSION_VERSION}");
+    stdout
+        .lines()
+        .any(|line| if let Ok(l) = line { l == extension_name } else { false })
+}
+
 pub struct VSCodeIntegration {
     pub variant: VSCodeVariant,
 }
@@ -121,6 +131,16 @@ impl VSCodeIntegration {
             .join("extensions"))
     }
 
+    fn cli_path(&self) -> Result<PathBuf> {
+        let bundle_path = path_for_application(self.variant.bundle_identifier)
+            .ok_or_else(|| Error::ApplicationNotInstalled(self.variant.application_name.into()))?;
+
+        Ok(bundle_path
+            .join(BUNDLE_CONTENTS_RESOURCE_PATH)
+            .join("app/bin")
+            .join(self.variant.cli_executable_name))
+    }
+
     async fn remove_ext_by_prefix(&self, prefix: &str) -> Result<()> {
         let mut entries = tokio::fs::read_dir(self.extensions_dir()?).await?;
         while let Some(entry) = entries.next_entry().await? {
@@ -145,22 +165,14 @@ impl Integration for VSCodeIntegration {
 
         self.remove_ext_by_prefix(OLD_EXTENSION_PREFIX).await.ok();
 
-        let bundle_path = path_for_application(self.variant.bundle_identifier)
-            .ok_or_else(|| Error::ApplicationNotInstalled(self.variant.application_name.into()))?;
-
         if let Err(err) = self.update_settings().await {
             error!("error updating {} settings: {err:?}", self.variant.application_name);
         }
 
-        let cli_path = bundle_path
-            .join(BUNDLE_CONTENTS_RESOURCE_PATH)
-            .join("app/bin")
-            .join(self.variant.cli_executable_name);
-
         let extension_path = temp_dir().join("codewhisperer-for-command-line-helper.vsix");
         tokio::fs::write(&extension_path, &EXTENSION).await?;
 
-        let output = Command::new(cli_path)
+        let output = Command::new(self.cli_path()?)
             .arg("--install-extension")
             .arg(extension_path.as_os_str())
             .output()
@@ -184,14 +196,39 @@ impl Integration for VSCodeIntegration {
     }
 
     async fn is_installed(&self) -> Result<()> {
-        let extension_path = self
-            .extensions_dir()?
-            .join(format!("{EXTENSION_PREFIX}{EXTENSION_VERSION}"));
-
-        if !extension_path.exists() {
+        let output = Command::new(self.cli_path()?)
+            .arg("--list-extensions")
+            .arg("--show-versions")
+            .output()
+            .await?;
+        if !is_installed_from_stdout(&output.stdout) {
             return Err(Error::Custom("Extension not installed".into()));
         }
-
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_extension_is_installed_from_stdout() {
+        assert!(is_installed_from_stdout(
+            r#"\
+[0423/155310.304438:ERROR:codesign_util.cc(108)] SecCodeCheckValidity: Error Domain=NSOSStatusErrorDomain Code=-67062 "(null)" (-67062)
+amazonwebservices.codewhisperer-for-command-line-companion@0.1.0
+eamodio.gitlens@14.9.0
+mathiasfrohlich.kotlin@1.7.1
+"#.as_bytes(),
+        ));
+
+        assert!(!is_installed_from_stdout(
+            r#"\
+[0423/155310.304438:ERROR:codesign_util.cc(108)] SecCodeCheckValidity: Error Domain=NSOSStatusErrorDomain Code=-67062 "(null)" (-67062)
+eamodio.gitlens@14.9.0
+mathiasfrohlich.kotlin@1.7.1
+"#.as_bytes(),
+        ));
     }
 }
