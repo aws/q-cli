@@ -1,3 +1,5 @@
+use clap::Args;
+use crossterm::style::Stylize;
 use eyre::Result;
 use fig_install::{
     UpdateOptions,
@@ -5,51 +7,72 @@ use fig_install::{
 };
 use fig_util::CLI_BINARY_NAME;
 
-pub async fn update(non_interactive: bool, relaunch_dashboard: bool, rollout: bool) -> Result<()> {
-    let res = fig_install::update(
-        Some(Box::new(|mut recv| {
-            tokio::runtime::Handle::current().spawn(async move {
-                let progress_bar = indicatif::ProgressBar::new(100);
-                loop {
-                    match recv.recv().await {
-                        Some(UpdateStatus::Percent(p)) => {
-                            progress_bar.set_position(p as u64);
-                        },
-                        Some(UpdateStatus::Message(m)) => {
-                            progress_bar.set_message(m);
-                        },
-                        Some(UpdateStatus::Error(e)) => {
-                            progress_bar.abandon();
-                            return Err(eyre::eyre!(e));
-                        },
-                        Some(UpdateStatus::Exit) | None => {
-                            progress_bar.finish_with_message("Done!");
-                            break;
-                        },
-                    }
-                }
-                Ok(())
-            });
-        })),
-        UpdateOptions {
-            ignore_rollout: !rollout,
-            interactive: !non_interactive,
-            relaunch_dashboard,
-        },
-    )
-    .await;
+#[derive(Debug, PartialEq, Args)]
+pub struct UpdateArgs {
+    /// Don't prompt for confirmation
+    #[arg(long, short = 'y')]
+    non_interactive: bool,
+    /// Relaunch into dashboard after update (false will launch in background)
+    #[arg(long, default_value = "true")]
+    relaunch_dashboard: bool,
+    /// Uses rollout
+    #[arg(long)]
+    rollout: bool,
+}
 
-    match res {
-        Err(e) => Err(eyre::eyre!(
-            "{e}. If this is unexpected, try running `{CLI_BINARY_NAME} doctor` and then try again."
-        )),
-        Ok(false) => {
-            println!(
-                "No updates available, \n{} is the latest version.",
-                env!("CARGO_PKG_VERSION")
-            );
-            Ok(())
-        },
-        Ok(true) => Ok(()),
+impl UpdateArgs {
+    pub async fn execute(&self) -> Result<()> {
+        let UpdateArgs {
+            non_interactive,
+            relaunch_dashboard,
+            rollout,
+        } = &self;
+
+        let res = fig_install::update(
+            Some(Box::new(|mut recv| {
+                tokio::runtime::Handle::current().spawn(async move {
+                    let progress_bar = indicatif::ProgressBar::new(100);
+                    loop {
+                        match recv.recv().await {
+                            Some(UpdateStatus::Percent(p)) => {
+                                progress_bar.set_position(p as u64);
+                            },
+                            Some(UpdateStatus::Message(m)) => {
+                                progress_bar.set_message(m);
+                            },
+                            Some(UpdateStatus::Error(e)) => {
+                                progress_bar.abandon();
+                                return Err(eyre::eyre!(e));
+                            },
+                            Some(UpdateStatus::Exit) | None => {
+                                progress_bar.finish_with_message("Done!");
+                                break;
+                            },
+                        }
+                    }
+                    Ok(())
+                });
+            })),
+            UpdateOptions {
+                ignore_rollout: !rollout,
+                interactive: !non_interactive,
+                relaunch_dashboard: *relaunch_dashboard,
+            },
+        )
+        .await;
+
+        match res {
+            Err(e) => Err(eyre::eyre!(
+                "{e}. If this is unexpected, try running `{CLI_BINARY_NAME} doctor` and then try again."
+            )),
+            Ok(false) => {
+                println!(
+                    "No updates available, \n{} is the latest version.",
+                    env!("CARGO_PKG_VERSION").bold()
+                );
+                Ok(())
+            },
+            Ok(true) => Ok(()),
+        }
     }
 }

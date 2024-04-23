@@ -213,11 +213,13 @@ pub async fn check_for_updates(
 ) -> Result<Option<UpdatePackage>, Error> {
     const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
     const ARCHITECTURE: PackageArchitecture = PackageArchitecture::from_system();
+    const FILE_TYPE: FileType = FileType::from_system();
 
     query_index(
         channel,
         os,
         variant,
+        FILE_TYPE,
         CURRENT_VERSION,
         ARCHITECTURE,
         ignore_rollout,
@@ -226,10 +228,12 @@ pub async fn check_for_updates(
     .await
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn query_index(
     channel: Channel,
     os: Os,
     variant: Variant,
+    file_type: FileType,
     current_version: &str,
     architecture: PackageArchitecture,
     ignore_rollout: bool,
@@ -238,7 +242,10 @@ pub async fn query_index(
     let index = pull(&channel).await?;
 
     if !index.supported.iter().any(|support| {
-        support.os.as_ref() == Some(&os) && support.architecture == architecture && support.variant == variant
+        support.os.as_ref() == Some(&os)
+            && support.architecture == architecture
+            && support.variant == variant
+            && support.file_type.as_ref() == Some(&file_type)
     }) {
         return Err(Error::SystemNotOnChannel);
     }
@@ -250,7 +257,10 @@ pub async fn query_index(
         .into_iter()
         .filter(|version| {
             version.packages.iter().any(|package| {
-                package.os.as_ref() == Some(&os) && package.architecture == architecture && package.variant == variant
+                package.os.as_ref() == Some(&os)
+                    && package.architecture == architecture
+                    && package.variant == variant
+                    && package.file_type.as_ref() == Some(&file_type)
             })
         })
         .filter(|version| match &version.rollout {
@@ -335,7 +345,10 @@ pub async fn query_index(
         .packages
         .into_iter()
         .find(|package| {
-            package.os.as_ref() == Some(&os) && package.architecture == architecture && package.variant == variant
+            package.os.as_ref() == Some(&os)
+                && package.architecture == architecture
+                && package.variant == variant
+                && package.file_type.as_ref() == Some(&file_type)
         })
         .unwrap();
 
@@ -397,6 +410,7 @@ mod tests {
             "supported": [
                 {
                     "kind": "dmg",
+                    "os": "macos",
                     "architecture": "universal",
                     "variant": "full",
                     "os": "macos",
@@ -435,7 +449,7 @@ mod tests {
                     "version": "1.0.0",
                     "packages": [
                         {
-                            "kind": "other",
+                            "kind": "deb",
                             "fileType": "dmg",
                             "os": "macos",
                             "architecture": "universal",

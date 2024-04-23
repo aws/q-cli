@@ -10,6 +10,8 @@ pub const CLI_BINARY_NAME: &str = "q";
 pub const CLI_BINARY_NAME_MINIMAL: &str = "q-minimal";
 pub const PTY_BINARY_NAME: &str = "qterm";
 
+pub const CLI_CRATE_NAME: &str = "q_cli";
+
 pub const URL_SCHEMA: &str = "q";
 
 pub const PRODUCT_NAME: &str = "Q";

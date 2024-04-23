@@ -20,8 +20,11 @@ mod uninstall;
 mod update;
 mod user;
 
+use std::process::ExitCode;
+
 use auth::is_logged_in;
 use clap::{
+    ArgAction,
     CommandFactory,
     Parser,
     Subcommand,
@@ -45,8 +48,11 @@ use fig_util::{
     CLI_BINARY_NAME,
 };
 use serde::Serialize;
-use tracing::debug;
 use tracing::level_filters::LevelFilter;
+use tracing::{
+    debug,
+    Level,
+};
 
 use self::app::AppSubcommand;
 use self::integrations::IntegrationsSubcommands;
@@ -113,17 +119,8 @@ pub enum CliRootCommands {
         no_confirm: bool,
     },
     /// Update dotfiles
-    Update {
-        /// Don't prompt for confirmation
-        #[arg(long, short = 'y')]
-        non_interactive: bool,
-        /// Relaunch into dashboard after update (false will launch in background)
-        #[arg(long, default_value = "true")]
-        relaunch_dashboard: bool,
-        /// Uses rollout
-        #[arg(long)]
-        rollout: bool,
-    },
+    #[command(alias("upgrade"))]
+    Update(update::UpdateArgs),
     /// Run diagnostic tests
     #[command(alias("diagnostics"))]
     Diagnostic(diagnostics::DiagnosticArgs),
@@ -172,8 +169,6 @@ pub enum CliRootCommands {
     /// Version
     #[command(hide = true)]
     Version,
-    /// Print help for all subcommands
-    HelpAll,
     /// Open the dashboard
     Dashboard,
     /// AI assistant in your terminal
@@ -193,7 +188,7 @@ impl CliRootCommands {
             CliRootCommands::Settings(_) => "settings",
             CliRootCommands::Install(_) => "install",
             CliRootCommands::Uninstall { .. } => "uninstall",
-            CliRootCommands::Update { .. } => "update",
+            CliRootCommands::Update(_) => "update",
             CliRootCommands::Diagnostic(_) => "diagnostics",
             CliRootCommands::Init(_) => "init",
             CliRootCommands::Theme(_) => "theme",
@@ -213,50 +208,73 @@ impl CliRootCommands {
             CliRootCommands::Translate(_) => "translate",
             CliRootCommands::Telemetry(_) => "telemetry",
             CliRootCommands::Version => "version",
-            CliRootCommands::HelpAll => "help-all",
             CliRootCommands::Dashboard => "dashboard",
             CliRootCommands::Chat { .. } => "chat",
         }
     }
 }
 
-#[derive(Debug, Parser)]
-#[command(version, about, name = CLI_BINARY_NAME)]
-#[command(help_template = "\x1B[1;95m
- q\x1B[0m (Amazon Q CLI)
+const HELP_TEXT: &str = color_print::cstr! {"
 
- \x1B[1;95mPopular Subcommands\x1B[0m                \x1B[1;90mUsage:\x1B[0;90m q [subcommand]\x1B[0m
-╭────────────────────────────────────────────────────────╮
-│ \x1B[1mchat\x1B[0m             \x1B[0;90mChat with Amazon Q\x1B[0m                   │
-│ \x1B[1mtranslate\x1B[0m        \x1B[0;90mNatural Language to Shell translation\x1B[0m │
-│ \x1B[1mdoctor\x1B[0m           \x1B[0;90mDebug installation issues\x1B[0m             │ 
-│ \x1B[1msettings\x1B[0m         \x1B[0;90mCustomize appearance & behavior\x1B[0m       │
-│ \x1B[1mquit\x1B[0m             \x1B[0;90mQuit the app\x1B[0m                          │
-╰────────────────────────────────────────────────────────╯
+<magenta,em>q</magenta,em> (Amazon Q CLI)
 
- \x1B[0;90mTo see all subcommands, use:\x1B[0m
-  > q help-all
+<magenta,em>Popular Subcommands</magenta,em>              <black!><em>Usage:</em> q [subcommand]</black!>
+╭────────────────────────────────────────────────────╮
+│ <em>chat</em>         <black!>Chat with Amazon Q</black!>                    │
+│ <em>translate</em>    <black!>Natural Language to Shell translation</black!> │
+│ <em>doctor</em>       <black!>Debug installation issues</black!>             │ 
+│ <em>settings</em>     <black!>Customize appearance & behavior</black!>       │
+│ <em>quit</em>         <black!>Quit the app</black!>                          │
+╰────────────────────────────────────────────────────╯
 
-")]
+<black!>To see all subcommands, use:</black!>
+ <black!>❯</black!> q --help-all
+ㅤ
+"};
+
+#[derive(Debug, Parser, PartialEq, Default)]
+#[command(version, about, name = CLI_BINARY_NAME, help_template = HELP_TEXT)]
 pub struct Cli {
     #[command(subcommand)]
     pub subcommand: Option<CliRootCommands>,
+    /// Increase logging verbosity
+    #[arg(long, short = 'v', action = ArgAction::Count, global = true)]
+    pub verbose: u8,
+    /// Print help for all subcommands
+    #[arg(long)]
+    help_all: bool,
 }
 
 impl Cli {
-    pub async fn execute(self) -> Result<()> {
+    pub async fn execute(self) -> Result<ExitCode> {
         let mut logger = Logger::new();
         // All other cli commands print logs to ~/.fig/logs/cli.log
-        if std::env::var_os("Q_LOG_STDOUT").is_some() {
+        if std::env::var_os("Q_LOG_STDOUT").is_some() || self.verbose > 0 {
             logger = logger.with_file("cli.log").with_max_file_size(10_000_000).with_stdout();
         } else if fig_log::get_max_fig_log_level() >= LevelFilter::DEBUG {
             logger = logger.with_file("cli.log").with_max_file_size(10_000_000);
         }
 
         let _logger_guard = logger.init().expect("Failed to init logger");
+        if self.verbose > 0 {
+            let _ = fig_log::set_fig_log_level(
+                match self.verbose {
+                    1 => Level::WARN,
+                    2 => Level::INFO,
+                    3 => Level::DEBUG,
+                    _ => Level::TRACE,
+                }
+                .to_string(),
+            );
+        }
+
         debug!(command =? std::env::args().collect::<Vec<_>>(), "Command ran");
 
         self.send_telemetry().await;
+
+        if self.help_all {
+            return self.print_help_all();
+        }
 
         match self.subcommand {
             Some(subcommand) => match subcommand {
@@ -266,18 +284,12 @@ impl Cli {
                     installation::install_cli(args.into(), no_confirm, force).await
                 },
                 CliRootCommands::Uninstall { no_confirm } => uninstall::uninstall_command(no_confirm).await,
-                CliRootCommands::Update {
-                    non_interactive,
-                    relaunch_dashboard,
-                    rollout,
-                    ..
-                } => update::update(non_interactive, relaunch_dashboard, rollout).await,
+                CliRootCommands::Update(args) => args.execute().await,
                 CliRootCommands::Diagnostic(args) => args.execute().await,
                 CliRootCommands::Init(args) => args.execute().await,
                 CliRootCommands::User(user) => user.execute().await,
                 CliRootCommands::RootUser(root_user) => root_user.execute().await,
                 CliRootCommands::Doctor(args) => args.execute().await,
-                // CliRootCommands::Tweet => tweet::tweet_cli(),
                 CliRootCommands::App(app_subcommand) => app_subcommand.execute().await,
                 CliRootCommands::Hook(hook_subcommand) => hook_subcommand.execute().await,
                 CliRootCommands::Theme(theme_args) => theme_args.execute().await,
@@ -303,31 +315,13 @@ impl Cli {
                     print!("{}", Self::command().render_version());
                     Ok(())
                 },
-                CliRootCommands::HelpAll => {
-                    let mut cmd = Self::command().help_template("{all-args}");
-                    eprintln!();
-                    // TODO: maybe add back art :)
-                    //                     eprintln!(
-                    //                         "  \x1B[1m███████╗██╗ ██████╗
-                    //   ██╔════╝██║██╔════╝
-                    //   █████╗  ██║██║  ███╗
-                    //   ██╔══╝  ██║██║   ██║
-                    //   ██║     ██║╚██████╔╝
-                    //   ╚═╝     ╚═╝ ╚═════╝ CLI\x1B[0m\n"
-                    //                     );
-                    println!(
-                        "{}\n    {CLI_BINARY_NAME} [OPTIONS] [SUBCOMMAND]\n",
-                        "USAGE:".bold().underlined(),
-                    );
-                    cmd.print_long_help()?;
-                    Ok(())
-                },
                 CliRootCommands::Dashboard => launch_dashboard().await,
                 CliRootCommands::Chat { input } => chat::chat(input.unwrap_or_default()).await,
             },
             // Root command
             None => launch_dashboard().await,
         }
+        .map(|()| ExitCode::SUCCESS)
     }
 
     async fn send_telemetry(&self) {
@@ -343,6 +337,18 @@ impl Cli {
                 fig_telemetry::send_cli_subcommand_executed(subcommand.name()).await;
             },
         }
+    }
+
+    #[allow(clippy::unused_self)]
+    fn print_help_all(&self) -> Result<ExitCode> {
+        let mut cmd = Self::command().help_template("{all-args}");
+        eprintln!();
+        eprintln!(
+            "{}\n    {CLI_BINARY_NAME} [OPTIONS] [SUBCOMMAND]\n",
+            "USAGE:".bold().underlined(),
+        );
+        cmd.print_long_help()?;
+        Ok(ExitCode::SUCCESS)
     }
 }
 
@@ -380,25 +386,62 @@ mod test {
         Cli::command().debug_assert();
     }
 
+    macro_rules! assert_parse {
+        (
+            [ $($args:expr),+ ],
+            $subcommand:expr
+        ) => {
+            assert_eq!(
+                Cli::parse_from([CLI_BINARY_NAME, $($args),*]),
+                Cli {
+                    subcommand: Some($subcommand),
+                    ..Default::default()
+                }
+            );
+        };
+    }
+
+    /// Test flag parsing for the top level [Cli]
+    #[test]
+    fn test_flags() {
+        assert_eq!(Cli::parse_from([CLI_BINARY_NAME, "-v"]), Cli {
+            subcommand: None,
+            verbose: 1,
+            help_all: false,
+        });
+
+        assert_eq!(Cli::parse_from([CLI_BINARY_NAME, "-vvv"]), Cli {
+            subcommand: None,
+            verbose: 3,
+            help_all: false,
+        });
+
+        assert_eq!(Cli::parse_from([CLI_BINARY_NAME, "--help-all"]), Cli {
+            subcommand: None,
+            verbose: 0,
+            help_all: true,
+        });
+
+        assert_eq!(Cli::parse_from([CLI_BINARY_NAME, "chat", "-vv"]), Cli {
+            subcommand: Some(CliRootCommands::Chat { input: None },),
+            verbose: 2,
+            help_all: false,
+        });
+    }
+
     /// This test validates that the restart command maintains the same CLI facing definition
     ///
     /// If this changes, you must also change how it is called from within fig_install
     /// and (possibly) other locations as well
     #[test]
     fn test_restart() {
-        assert_eq!(
-            Cli::parse_from([CLI_BINARY_NAME, "restart", "app"]).subcommand,
-            Some(CliRootCommands::Restart {
-                process: Processes::App
-            })
-        );
+        assert_parse!(["restart", "app"], CliRootCommands::Restart {
+            process: Processes::App
+        });
 
-        assert_eq!(
-            Cli::parse_from([CLI_BINARY_NAME, "restart", "daemon"]).subcommand,
-            Some(CliRootCommands::Restart {
-                process: Processes::Daemon
-            })
-        );
+        assert_parse!(["restart", "daemon"], CliRootCommands::Restart {
+            process: Processes::Daemon
+        });
     }
 
     /// This test validates that the internal input method installation command maintains the same
@@ -410,19 +453,15 @@ mod test {
     #[test]
     fn test_input_method_installation() {
         use internal::InternalSubcommand;
-        assert_eq!(
-            Cli::parse_from([
-                CLI_BINARY_NAME,
+        assert_parse!(
+            [
                 "_",
                 "attempt-to-finish-input-method-installation",
                 "/path/to/bundle.app"
-            ])
-            .subcommand,
-            Some(CliRootCommands::Internal(
-                InternalSubcommand::AttemptToFinishInputMethodInstallation {
-                    bundle_path: Some(std::path::PathBuf::from("/path/to/bundle.app"))
-                }
-            ))
+            ],
+            CliRootCommands::Internal(InternalSubcommand::AttemptToFinishInputMethodInstallation {
+                bundle_path: Some(std::path::PathBuf::from("/path/to/bundle.app"))
+            })
         );
     }
 
@@ -430,58 +469,52 @@ mod test {
     fn test_inline_shell_completion() {
         use internal::InternalSubcommand;
 
-        assert_eq!(
-            Cli::parse_from([CLI_BINARY_NAME, "_", "inline-shell-completion", "--buffer", ""]).subcommand,
-            Some(CliRootCommands::Internal(InternalSubcommand::InlineShellCompletion {
-                buffer: "".to_string()
-            }))
+        assert_parse!(
+            ["_", "inline-shell-completion", "--buffer", ""],
+            CliRootCommands::Internal(InternalSubcommand::InlineShellCompletion { buffer: "".to_string() })
         );
 
-        assert_eq!(
-            Cli::parse_from([CLI_BINARY_NAME, "_", "inline-shell-completion", "--buffer", "foo"]).subcommand,
-            Some(CliRootCommands::Internal(InternalSubcommand::InlineShellCompletion {
+        assert_parse!(
+            ["_", "inline-shell-completion", "--buffer", "foo"],
+            CliRootCommands::Internal(InternalSubcommand::InlineShellCompletion {
                 buffer: "foo".to_string()
-            }))
+            })
         );
 
-        assert_eq!(
-            Cli::parse_from([CLI_BINARY_NAME, "_", "inline-shell-completion", "--buffer", "-"]).subcommand,
-            Some(CliRootCommands::Internal(InternalSubcommand::InlineShellCompletion {
+        assert_parse!(
+            ["_", "inline-shell-completion", "--buffer", "-"],
+            CliRootCommands::Internal(InternalSubcommand::InlineShellCompletion {
                 buffer: "-".to_string()
-            }))
+            })
         );
 
-        assert_eq!(
-            Cli::parse_from([CLI_BINARY_NAME, "_", "inline-shell-completion", "--buffer", "--"]).subcommand,
-            Some(CliRootCommands::Internal(InternalSubcommand::InlineShellCompletion {
+        assert_parse!(
+            ["_", "inline-shell-completion", "--buffer", "--"],
+            CliRootCommands::Internal(InternalSubcommand::InlineShellCompletion {
                 buffer: "--".to_string()
-            }))
+            })
         );
 
-        assert_eq!(
-            Cli::parse_from([CLI_BINARY_NAME, "_", "inline-shell-completion", "--buffer", "--foo bar"]).subcommand,
-            Some(CliRootCommands::Internal(InternalSubcommand::InlineShellCompletion {
+        assert_parse!(
+            ["_", "inline-shell-completion", "--buffer", "--foo bar"],
+            CliRootCommands::Internal(InternalSubcommand::InlineShellCompletion {
                 buffer: "--foo bar".to_string()
-            }))
+            })
         );
 
-        assert_eq!(
-            Cli::parse_from([
-                CLI_BINARY_NAME,
+        assert_parse!(
+            [
                 "_",
                 "inline-shell-completion-accept",
                 "--buffer",
                 "abc",
                 "--suggestion",
                 "def"
-            ])
-            .subcommand,
-            Some(CliRootCommands::Internal(
-                InternalSubcommand::InlineShellCompletionAccept {
-                    buffer: "abc".to_string(),
-                    suggestion: "def".to_string()
-                }
-            ))
+            ],
+            CliRootCommands::Internal(InternalSubcommand::InlineShellCompletionAccept {
+                buffer: "abc".to_string(),
+                suggestion: "def".to_string()
+            })
         );
     }
 }

@@ -43,3 +43,7 @@ url = "2.5.0"
 fig_ipc.workspace = true
 libc.workspace = true
 security-framework = "2.8.2"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+tar = "0.4.40"
+zstd = "0.13.1"

@@ -11,6 +11,7 @@ pub mod logger;
 mod message;
 pub mod pty;
 pub mod term;
+pub mod update;
 
 use std::env;
 #[cfg(unix)]
@@ -523,17 +524,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
         .build()?;
 
     let runtime_result = runtime.block_on(async {
-        // let tips_disabled = fig_settings::settings::get_bool_or("cli.tips.disabled", false);
-        // if !tips_disabled {
-        //     if let Some(mut campaign) = DripCampaign::load_local().ok().flatten() {
-        //         if let Some(message) = campaign.get_current_message() {
-        //             println!("\n{}\n\n(Run {} to disable occasional Fig tips)\n", message.text, "fig tips disable".bold().magenta());
-        //             tokio::spawn(async move {
-        //                 campaign.increment_drip().await.ok();
-        //             });
-        //         }
-        //     }
-        // }
+        update::check_for_update();
 
         terminal.set_raw_mode()?;
 

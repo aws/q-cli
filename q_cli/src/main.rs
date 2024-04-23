@@ -5,9 +5,12 @@ use std::io::{
     stderr,
     Write,
 };
-use std::process::exit;
+use std::process::ExitCode;
 
-use clap::error::ContextKind;
+use clap::error::{
+    ContextKind,
+    ErrorKind,
+};
 use clap::Parser;
 use eyre::Result;
 use fig_log::get_max_fig_log_level;
@@ -18,42 +21,41 @@ use fig_util::{
 use owo_colors::OwoColorize;
 use tracing::metadata::LevelFilter;
 
-fn main() -> Result<()> {
+fn main() -> Result<ExitCode> {
     color_eyre::install()?;
 
-    let args: Vec<_> = std::env::args().collect();
     let multithread = matches!(
-        args.get(1).map(String::as_str),
-        Some("init" | "_" | "internal" | "tips" | "completion" | "hook" | "bg:tmux" | "app:running")
+        std::env::args().nth(1).as_deref(),
+        Some("init" | "_" | "internal" | "completion" | "hook")
     );
 
     let parsed = match cli::Cli::try_parse() {
         Ok(cli) => cli,
-        Err(err)
-            if matches!(
-                err.kind(),
-                clap::error::ErrorKind::UnknownArgument | clap::error::ErrorKind::InvalidSubcommand
-            ) && !err.context().any(|(context_kind, _)| {
-                matches!(
-                    context_kind,
-                    ContextKind::SuggestedSubcommand | ContextKind::SuggestedArg
-                )
-            }) =>
-        {
-            err.print()?;
-            writeln!(
-                stderr(),
-                "\nThis command may be valid in newer versions of the {PRODUCT_NAME} CLI. Try running {} {}.",
-                CLI_BINARY_NAME.magenta(),
-                "update".magenta()
-            )
-            .ok();
-            exit(2);
-        },
         Err(err) => {
-            err.exit();
+            let _ = err.print();
+
+            let unknown_arg = matches!(err.kind(), ErrorKind::UnknownArgument | ErrorKind::InvalidSubcommand)
+                && !err.context().any(|(context_kind, _)| {
+                    matches!(
+                        context_kind,
+                        ContextKind::SuggestedSubcommand | ContextKind::SuggestedArg
+                    )
+                });
+
+            if unknown_arg {
+                let _ = writeln!(
+                    stderr(),
+                    "\nThis command may be valid in newer versions of the {PRODUCT_NAME} CLI. Try running {} {}.",
+                    CLI_BINARY_NAME.magenta(),
+                    "update".magenta()
+                );
+            }
+
+            return Ok(ExitCode::from(err.exit_code().try_into().unwrap_or(2)));
         },
     };
+
+    let verbose = parsed.verbose > 0;
 
     let runtime = if multithread {
         tokio::runtime::Builder::new_multi_thread()
@@ -69,14 +71,15 @@ fn main() -> Result<()> {
         result
     });
 
-    if let Err(err) = result {
-        if get_max_fig_log_level() > LevelFilter::INFO {
-            writeln!(stderr(), "{} {err:?}", "error:".bold().red()).ok();
-        } else {
-            writeln!(stderr(), "{} {err}", "error:".bold().red()).ok();
-        }
-        exit(1);
+    match result {
+        Ok(exit_code) => Ok(exit_code),
+        Err(err) => {
+            if verbose || get_max_fig_log_level() > LevelFilter::INFO {
+                let _ = writeln!(stderr(), "{} {err:?}", "error:".bold().red());
+            } else {
+                let _ = writeln!(stderr(), "{} {err}", "error:".bold().red());
+            }
+            Ok(ExitCode::FAILURE)
+        },
     }
-
-    Ok(())
 }

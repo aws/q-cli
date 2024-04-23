@@ -30,6 +30,7 @@ use fig_ipc::local::{
 use fig_util::consts::APP_BUNDLE_ID;
 use fig_util::desktop::LaunchArgs;
 use fig_util::macos::BUNDLE_CONTENTS_MACOS_PATH;
+use fig_util::manifest::FileType;
 use fig_util::{
     directories,
     Shell,
@@ -198,7 +199,7 @@ pub enum DebugSubcommand {
         channel: String,
         #[arg(short, long)]
         os: String,
-        #[arg(short, long)]
+        #[arg(short = 'V', long)]
         variant: String,
         #[arg(short = 'e', long)]
         version: String,
@@ -208,6 +209,8 @@ pub enum DebugSubcommand {
         enable_rollout: bool,
         #[arg(short = 't', long)]
         override_threshold: Option<u8>,
+        #[arg(short, long)]
+        file_type: String,
     },
     /// Open up the devtools of a specific webview
     Devtools { app: App },
@@ -718,6 +721,7 @@ impl DebugSubcommand {
                 architecture,
                 enable_rollout,
                 override_threshold,
+                file_type,
             } => {
                 use fig_install::index::PackageArchitecture;
                 use fig_util::manifest::{
@@ -730,6 +734,7 @@ impl DebugSubcommand {
                     Channel::from_str(channel)?,
                     Os::from_str(os)?,
                     Variant::from_str(variant)?,
+                    FileType::from_str(file_type)?,
                     current_version,
                     PackageArchitecture::from_str(architecture)?,
                     !enable_rollout,

@@ -1,7 +1,7 @@
 use std::process::Command;
 
 use assert_cmd::prelude::*;
-use fig_util::CLI_BINARY_NAME;
+use fig_util::CLI_CRATE_NAME;
 use predicates::prelude::*;
 
 // Integrations tests for the CLI
@@ -12,12 +12,22 @@ use predicates::prelude::*;
 
 #[test]
 fn version_flag_has_status_code_zero() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin(format!("{CLI_BINARY_NAME}_cli"))?;
-
-    cmd.arg("--version");
-    cmd.assert()
+    Command::cargo_bin(CLI_CRATE_NAME)?
+        .arg("--version")
+        .assert()
         .success()
         .stdout(predicate::str::contains(env!("CARGO_PKG_VERSION")));
+    Ok(())
+}
 
+#[test]
+fn help_flag_has_status_code_zero() -> Result<(), Box<dyn std::error::Error>> {
+    Command::cargo_bin(CLI_CRATE_NAME)?.arg("--help").assert().success();
+    Ok(())
+}
+
+#[test]
+fn help_all_flag_has_status_code_zero() -> Result<(), Box<dyn std::error::Error>> {
+    Command::cargo_bin(CLI_CRATE_NAME)?.arg("--help-all").assert().success();
     Ok(())
 }

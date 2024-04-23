@@ -14,6 +14,14 @@ use crate::{
     ConnectError,
 };
 
+struct OctalU32(u32);
+
+impl std::fmt::Display for OctalU32 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:o}", self.0)
+    }
+}
+
 pub async fn validate_socket(socket: impl AsRef<Path>) -> Result<(), ConnectError> {
     cfg_if::cfg_if! {
             if #[cfg(unix)] {
@@ -25,10 +33,10 @@ pub async fn validate_socket(socket: impl AsRef<Path>) -> Result<(), ConnectErro
                 Ok(metadata) => {
                     let mode = metadata.permissions().mode();
                     if validate_mode_bits(mode, 0o600) {
-                        debug!(?socket, mode, "Socket permissions are 0o600");
+                        debug!(?socket, mode =% OctalU32(mode), "Socket permissions are 0o600");
                         return Ok(());
                     }
-                    warn!(?socket, mode, "Socket permissions are not 0o600");
+                    warn!(?socket, mode =% OctalU32(mode), "Socket permissions are not 0o600");
                 },
                 Err(err) => {
                     warn!(%err, ?socket, "Failed to get socket metadata, checking parent folder permissions");
@@ -39,36 +47,52 @@ pub async fn validate_socket(socket: impl AsRef<Path>) -> Result<(), ConnectErro
                 let metadata = tokio::fs::metadata(parent_path).await?;
                 let mode = metadata.permissions().mode();
                 if validate_mode_bits(mode, 0o700) {
-                    debug!(?socket, mode, "Socket folder permissions are 0o700");
+                    debug!(?socket, mode =% OctalU32(mode), "Socket folder permissions are 0o700");
                     return Ok(());
                 }
-                warn!(?socket, mode, "Socket folder permissions are not 0o700");
+                warn!(?socket, mode =% OctalU32(mode), "Socket folder permissions are not 0o700");
             }
 
             error!(?socket, "Incorrect socket permissions, not connecting to socket");
             Err(ConnectError::IncorrectSocketPermissions)
         } else {
-            let _ = socket;
-            todo!()
+            compile_error!("Unsupported platform");
         }
     }
 }
 
 /// Connects to a unix socket
-pub async fn socket_connect(socket: impl AsRef<Path>) -> Result<UnixStream, ConnectError> {
-    let socket = socket.as_ref();
+pub async fn socket_connect(socket_path: impl AsRef<Path>) -> Result<UnixStream, ConnectError> {
+    let socket_path = socket_path.as_ref();
 
-    validate_socket(&socket).await?;
+    validate_socket(&socket_path).await?;
 
-    let stream = match UnixStream::connect(socket).await {
+    let stream = match UnixStream::connect(&socket_path).await {
         Ok(stream) => stream,
         Err(err) => {
-            error!(%err, ?socket, "Failed to connect");
+            error!(%err, ?socket_path, "Failed to connect");
             return Err(err.into());
         },
     };
 
-    trace!(?socket, "Connected");
+    // Set lower permissions bits to 0o600
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        if let Ok(metadata) = tokio::fs::metadata(&socket_path).await {
+            let mut permissions = metadata.permissions();
+            let new_mode = 0o600 | (permissions.mode() & !0o777);
+            if permissions.mode() != new_mode {
+                debug!(?socket_path, mode =% OctalU32(new_mode), "Setting socket permissions to 0o600");
+                permissions.set_mode(new_mode);
+                if let Err(err) = tokio::fs::set_permissions(&socket_path, permissions).await {
+                    warn!(%err, ?socket_path, "Failed to set socket permissions");
+                }
+            }
+        }
+    }
+
+    trace!(?socket_path, "Connected");
 
     Ok(stream)
 }

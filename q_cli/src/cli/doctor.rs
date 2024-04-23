@@ -69,6 +69,7 @@ use fig_util::{
     Terminal,
     APP_BUNDLE_NAME,
     CLI_BINARY_NAME,
+    CLI_CRATE_NAME,
     PRODUCT_NAME,
     PTY_BINARY_NAME,
 };
@@ -1277,8 +1278,8 @@ impl DoctorCheck<DiagnosticsResponse> for FigCLIPathCheck {
             Ok(())
         } else if path.ends_with(Path::new("target/debug").join(CLI_BINARY_NAME))
             || path.ends_with(Path::new("target/release").join(CLI_BINARY_NAME))
-            || path.ends_with(format!("target/debug/{CLI_BINARY_NAME}_cli"))
-            || path.ends_with(format!("target/release/{CLI_BINARY_NAME}_cli"))
+            || path.ends_with(format!("target/debug/{CLI_CRATE_NAME}"))
+            || path.ends_with(format!("target/release/{CLI_CRATE_NAME}"))
         {
             Err(DoctorError::Warning(
                 "Running debug build in a non-standard location".into(),
