@@ -42,7 +42,7 @@ pub enum ManagedBy {
 pub enum Variant {
     Full,
     #[serde(alias = "headless")]
-    #[strum(serialize = "minimal", serialize = "headless")]
+    #[strum(to_string = "minimal", serialize = "headless")]
     Minimal,
     #[strum(default)]
     Other(String),
@@ -235,6 +235,7 @@ mod tests {
             assert_eq!(quoted, to_string(&$variant).unwrap());
             assert_eq!($variant, from_str(&quoted).unwrap());
             assert_eq!($variant, $ty::from_str($text).unwrap());
+            assert_eq!($text, $variant.to_string());
         };
     }
 

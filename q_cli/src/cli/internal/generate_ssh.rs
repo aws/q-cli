@@ -36,11 +36,6 @@ impl GenerateSshArgs {
 
         let mut should_generate_config = true;
 
-        // TODO(grant): remove before public release
-        if !fig_settings::settings::get_bool_or("ssh.generate-inner.enabled", false) {
-            should_generate_config = false;
-        }
-
         if let Some(remote_username) = remote_username {
             for username in IGNORED_USERNAMES {
                 if remote_username == username {

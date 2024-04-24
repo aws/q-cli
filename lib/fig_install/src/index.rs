@@ -22,7 +22,10 @@ use serde::{
     Deserialize,
     Serialize,
 };
-use strum::EnumString;
+use strum::{
+    Display,
+    EnumString,
+};
 use tracing::{
     error,
     info,
@@ -159,7 +162,7 @@ pub struct UpdatePackage {
     pub cli_path: Option<String>,
 }
 
-#[derive(Deserialize, Serialize, PartialEq, Eq, EnumString, Debug)]
+#[derive(Deserialize, Serialize, PartialEq, Eq, EnumString, Debug, Display)]
 #[serde(rename_all = "camelCase")]
 #[strum(serialize_all = "camelCase")]
 pub enum PackageArchitecture {
@@ -389,6 +392,7 @@ mod tests {
             assert_eq!(quoted, serde_json::to_string(&$variant).unwrap());
             assert_eq!($variant, serde_json::from_str(&quoted).unwrap());
             assert_eq!($variant, $ty::from_str($text).unwrap());
+            assert_eq!($text, $variant.to_string());
         };
     }
 

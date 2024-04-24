@@ -35,7 +35,7 @@ phases:
     commands:
       # Disable tests that need fish/shellcheck
       - export Q_BUILD_SKIP_SHELL_TESTS=1
-      - python3.11 build-scripts/build.py
+      - python3.11 build-scripts/main.py build
 
 artifacts:
   discard-paths: "yes"

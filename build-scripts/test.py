@@ -64,7 +64,7 @@ def run_cargo_tests(features: Mapping[str, Sequence[str]] | None = None, targets
         },
     )
 
-    args = ["cargo", "test", "--release", "--locked"]
+    args = ["cargo", "test", "--locked"]
 
     # disable desktop tests for now
     if isLinux():
@@ -88,5 +88,5 @@ def run_cargo_tests(features: Mapping[str, Sequence[str]] | None = None, targets
 
 
 def all_tests(clippy_fail_on_warn: bool):
-    run_clippy(fail_on_warn=clippy_fail_on_warn)
     run_cargo_tests()
+    run_clippy(fail_on_warn=clippy_fail_on_warn)
