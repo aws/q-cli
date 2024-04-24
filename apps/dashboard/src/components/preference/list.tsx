@@ -55,7 +55,7 @@ function FeatureIntro({ intro }: { intro: Intro }) {
   }
 
   return (
-    <section className="flex flex-col p-6 gap-4 w-full gradient-q-secondary-light rounded-lg items-start text-white">
+    <section className="flex flex-col p-6 gap-4 w-full gradient-q-secondary-light-alt rounded-lg items-start text-white">
       <div className="flex gap-4 justify-between w-full">
         <div className="flex gap-4">
           {getIconFromName(intro.title, 48)}

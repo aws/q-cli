@@ -128,36 +128,21 @@
 @layer components {
   .gradient-q-secondary-light {
     background: radial-gradient(
-        100% 95.37% at 0% 0%,
-        rgba(37, 47, 61, 0.5) 0%,
-        rgba(37, 47, 61, 0) 100%
-      ),
-      radial-gradient(
-        100% 100% at 0% 0%,
-        rgba(48, 22, 115, 0.6) 0%,
-        rgba(48, 22, 115, 0) 100%
-      ),
-      radial-gradient(
-        100% 95.37% at 0% 0%,
-        rgba(110, 59, 241, 0.7) 0%,
-        rgba(110, 59, 241, 0) 100%
-      ),
-      radial-gradient(
-        100% 100% at 100% 100%,
-        #538bf7 0%,
-        rgba(83, 139, 247, 0) 100%
-      ),
-      radial-gradient(
-        100% 100% at 100% 100%,
-        rgba(200, 246, 254, 0.5) 0%,
-        rgba(200, 246, 254, 0) 100%
-      ),
-      radial-gradient(
-        100% 100% at 100% 0%,
-        #c8f6fe 0%,
-        rgba(200, 246, 254, 0) 100%
-      ),
-      #6e3bf1;
+        ellipse farthest-corner at 100% 0%,
+        #A7F8FF 0%,
+        #008DFF 40%,
+        #4A00C8 80%,
+        #39127D 100%
+      );
+  }
+
+  .gradient-q-secondary-light-alt {
+    background: radial-gradient(
+        ellipse farthest-corner at 100% 0%,
+        #008DFF 0%,
+        #4A00C8 50%,
+        #39127D 100%
+      );
   }
 
   .gradient-q-secondary-dark {
