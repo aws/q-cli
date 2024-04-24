@@ -160,8 +160,8 @@ pub struct UpdatePackage {
 }
 
 #[derive(Deserialize, Serialize, PartialEq, Eq, EnumString, Debug)]
-#[serde(rename_all = "snake_case")]
-#[strum(serialize_all = "snake_case")]
+#[serde(rename_all = "camelCase")]
+#[strum(serialize_all = "camelCase")]
 pub enum PackageArchitecture {
     #[serde(rename = "x86_64")]
     #[strum(serialize = "x86_64")]
@@ -374,12 +374,30 @@ pub async fn query_index(
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use fig_util::{
         OLD_CLI_BINARY_NAME,
         OLD_PRODUCT_NAME,
     };
 
     use super::*;
+
+    macro_rules! test_ser_deser {
+        ($ty:ident, $variant:expr, $text:expr) => {
+            let quoted = format!("\"{}\"", $text);
+            assert_eq!(quoted, serde_json::to_string(&$variant).unwrap());
+            assert_eq!($variant, serde_json::from_str(&quoted).unwrap());
+            assert_eq!($variant, $ty::from_str($text).unwrap());
+        };
+    }
+
+    #[test]
+    fn test_package_architecture_serialize_deserialize() {
+        test_ser_deser!(PackageArchitecture, PackageArchitecture::X86_64, "x86_64");
+        test_ser_deser!(PackageArchitecture, PackageArchitecture::AArch64, "aarch64");
+        test_ser_deser!(PackageArchitecture, PackageArchitecture::Universal, "universal");
+    }
 
     #[tokio::test]
     #[cfg(target_os = "macos")]
@@ -421,7 +439,7 @@ mod tests {
                     "os": "linux",
                     "architecture": "x86_64",
                     "variant": "headless",
-                    "fileType": "tar_zst"
+                    "fileType": "tarZst"
                 }
             ],
             "versions": [
@@ -469,7 +487,7 @@ mod tests {
                         },
                         {
                             "kind": "deb",
-                            "fileType": "tar_zst",
+                            "fileType": "tarZst",
                             "os": "linux",
                             "architecture": "x86_64",
                             "variant": "headless",
