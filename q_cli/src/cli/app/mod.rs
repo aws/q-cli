@@ -284,7 +284,7 @@ impl AppSubcommand {
             AppSubcommand::Quit => crate::util::quit_fig(true).await?,
             AppSubcommand::Launch => {
                 if desktop_app_running() {
-                    println!("CodeWhisperer is already running!");
+                    println!("{PRODUCT_NAME} app is already running!");
                     return Ok(());
                 }
 

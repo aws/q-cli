@@ -21,6 +21,7 @@ from const import (
     CLI_BINARY_NAME,
     CLI_PACKAGE_NAME,
     DESKTOP_PACKAGE_NAME,
+    MACOS_BUNDLE_ID,
     PTY_BINARY_NAME,
     PTY_PACKAGE_NAME,
     URL_SCHEMA,
@@ -238,7 +239,7 @@ def build_desktop_app(
             f"""<array>
     <dict>
         <key>CFBundleURLName</key>
-        <string>com.amazon.codewhisperer</string>
+        <string>{MACOS_BUNDLE_ID}</string>
         <key>CFBundleURLSchemes</key>
         <array>
         <string>{URL_SCHEMA}</string>

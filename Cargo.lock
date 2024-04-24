@@ -2852,6 +2852,7 @@ dependencies = [
  "dirs",
  "fig_test",
  "hex",
+ "indoc",
  "insta",
  "libc",
  "macos-utils",

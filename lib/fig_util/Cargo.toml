@@ -19,6 +19,7 @@ cfg-if.workspace = true
 clap.workspace = true
 dirs.workspace = true
 hex.workspace = true
+indoc.workspace = true
 libc.workspace = true
 once_cell.workspace = true
 paste = "1.0.11"

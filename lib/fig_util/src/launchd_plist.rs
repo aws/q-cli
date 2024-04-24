@@ -314,7 +314,7 @@ mod test {
 
     #[test]
     fn test_plist() {
-        let plist = LaunchdPlist::new("com.amazon.codewhisperer.test")
+        let plist = LaunchdPlist::new(format!("{APP_BUNDLE_ID}.test"))
             .program("hello")
             .program_arguments(["hello", "test"])
             .environment_variables([("TEST", "test"), ("TEST2", "test2")])
@@ -329,45 +329,46 @@ mod test {
 
         println!("{plist}");
 
-        let valid_plist = r#"<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-    <dict>
-        <key>Label</key>
-        <string>com.amazon.codewhisperer.test</string>
-        <key>Program</key>
-        <string>hello</string>
-        <key>ProgramArguments</key>
-        <array>
-            <string>hello</string>
-            <string>test</string>
-        </array>
-        <key>EnvironmentVariables</key>
-        <dict>
-            <key>TEST</key>
-            <string>test</string>
-            <key>TEST2</key>
-            <string>test2</string>
-        </dict>
-        <key>StandardInPath</key>
-        <string>/dev/null</string>
-        <key>StandardOutPath</key>
-        <string>/dev/null</string>
-        <key>StandardErrorPath</key>
-        <string>/dev/null</string>
-        <key>RunAtLoad</key>
-        <true/>
-        <key>KeepAlive</key>
-        <false/>
-        <key>ThrottleInterval</key>
-        <integer>10</integer>
-        <key>AssociatedBundleIdentifiers</key>
-        <array>
-            <string>com.amazon.codewhisperer</string>
-        </array>
-    </dict>
-</plist>
-"#;
+        let valid_plist = indoc::formatdoc! {"
+            <?xml version=\"1.0\" encoding=\"UTF-8\"?>
+            <!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+            <plist version=\"1.0\">
+                <dict>
+                    <key>Label</key>
+                    <string>{APP_BUNDLE_ID}.test</string>
+                    <key>Program</key>
+                    <string>hello</string>
+                    <key>ProgramArguments</key>
+                    <array>
+                        <string>hello</string>
+                        <string>test</string>
+                    </array>
+                    <key>EnvironmentVariables</key>
+                    <dict>
+                        <key>TEST</key>
+                        <string>test</string>
+                        <key>TEST2</key>
+                        <string>test2</string>
+                    </dict>
+                    <key>StandardInPath</key>
+                    <string>/dev/null</string>
+                    <key>StandardOutPath</key>
+                    <string>/dev/null</string>
+                    <key>StandardErrorPath</key>
+                    <string>/dev/null</string>
+                    <key>RunAtLoad</key>
+                    <true/>
+                    <key>KeepAlive</key>
+                    <false/>
+                    <key>ThrottleInterval</key>
+                    <integer>10</integer>
+                    <key>AssociatedBundleIdentifiers</key>
+                    <array>
+                        <string>{APP_BUNDLE_ID}</string>
+                    </array>
+                </dict>
+            </plist>
+        "};
 
         assert_eq!(plist, valid_plist);
     }

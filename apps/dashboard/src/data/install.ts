@@ -2,6 +2,23 @@ import { InstallCheckWithInstallKey } from "@/types/preferences";
 import accessibility_fig from "@assets/images/accessibility_fig.png?url";
 import { PRODUCT_NAME } from "@/lib/constants";
 
+const getBackupsDir = (): string => {
+  // @ts-ignore
+  const backupsDir = window?.fig?.backupsDir;
+  // @ts-ignore
+  const home = window?.fig?.home;
+  if (
+    backupsDir &&
+    typeof backupsDir === "string" &&
+    home &&
+    typeof home === "string"
+  ) {
+    return backupsDir.replace(home, "~") + "/";
+  } else {
+    return "~/.amazon-q.dotfiles.bak/";
+  }
+};
+
 const installChecks: InstallCheckWithInstallKey[] = [
   {
     id: "dotfiles",
@@ -46,7 +63,7 @@ const installChecks: InstallCheckWithInstallKey[] = [
             tag: "span",
           },
           {
-            content: "~/.codewhisperer.dotfiles.bak/",
+            content: getBackupsDir(),
             tag: "code",
           },
         ],

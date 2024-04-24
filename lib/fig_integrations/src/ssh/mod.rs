@@ -144,18 +144,21 @@ impl Integration for SshIntegration {
             // Remove comments and empty lines.
             Ok(contents) => Regex::new(r"^\s*(#.*)?\n").unwrap().replace_all(&contents, "").into(),
             _ => {
-                let message = format!("{} does not exist.", self.path.display());
-                return Err(Error::NotInstalled(message.into()));
+                return Err(Error::NotInstalled(
+                    format!("{} does not exist.", self.path.display()).into(),
+                ));
             },
         };
 
         self.get_file_integration()?.is_installed().await?;
         if !self.source_regex()?.is_match(&filtered_contents) {
-            let message = format!(
-                "{} does not source {PRODUCT_NAME}'s ssh integration",
-                self.path.display()
-            );
-            return Err(Error::NotInstalled(message.into()));
+            return Err(Error::NotInstalled(
+                format!(
+                    "{} does not source {PRODUCT_NAME}'s ssh integration",
+                    self.path.display()
+                )
+                .into(),
+            ));
         }
 
         Ok(())

@@ -373,7 +373,7 @@ struct FigBinCheck;
 #[async_trait]
 impl DoctorCheck for FigBinCheck {
     fn name(&self) -> Cow<'static, str> {
-        "Codewhisperer data dir exists".into()
+        format!("{PRODUCT_NAME} data dir exists").into()
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
@@ -441,7 +441,7 @@ struct DesktopSocketCheck;
 #[async_trait]
 impl DoctorCheck for DesktopSocketCheck {
     fn name(&self) -> Cow<'static, str> {
-        format!("{PRODUCT_NAME} desktop socket exists").into()
+        format!("{PRODUCT_NAME} app socket exists").into()
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
@@ -663,7 +663,7 @@ impl DoctorCheck for FigIntegrationsCheck {
         match std::env::var(Q_TERM).as_deref() {
             Ok(env!("CARGO_PKG_VERSION")) => Ok(()),
             Ok(ver) if env!("CARGO_PKG_VERSION").ends_with("-dev") || ver.ends_with("-dev") => Err(doctor_warning!(
-                "{PTY_BINARY_NAME} is running with a different version than CodeWhisperer CLI, it looks like you are running a development version of CodeWhisperer however"
+                "{PTY_BINARY_NAME} is running with a different version than {PRODUCT_NAME} CLI, it looks like you are running a development version of {PRODUCT_NAME} however"
             )),
             Ok(_) => Err(DoctorError::Error {
                 reason: "This terminal is not running with the latest integration, please restart your terminal".into(),
@@ -1457,7 +1457,7 @@ impl DoctorCheck<Option<Terminal>> for ItermIntegrationCheck {
         if let Some(version) = app_version("com.googlecode.iterm2") {
             if version < Version::new(3, 4, 0) {
                 return Err(doctor_error!(
-                    "iTerm version is incompatible with Codewhisperer for the command line. Please update iTerm to latest version"
+                    "iTerm version is incompatible with {PRODUCT_NAME}. Please update iTerm to latest version"
                 ));
             }
         }

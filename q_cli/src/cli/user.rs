@@ -18,7 +18,10 @@ use fig_ipc::local::{
     login_command,
     logout_command,
 };
-use fig_util::CLI_BINARY_NAME;
+use fig_util::{
+    CLI_BINARY_NAME,
+    PRODUCT_NAME,
+};
 use serde_json::json;
 use tracing::error;
 
@@ -159,7 +162,7 @@ impl RootUserSubcommand {
 
                 println!("You are now logged out");
                 println!(
-                    "Run {} to log back in to CodeWhisperer",
+                    "Run {} to log back in to {PRODUCT_NAME}",
                     format!("{CLI_BINARY_NAME} login").magenta()
                 );
                 Ok(())

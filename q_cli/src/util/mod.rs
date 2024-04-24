@@ -25,6 +25,7 @@ use fig_util::consts::APP_BUNDLE_ID;
 use fig_util::{
     desktop_app_running,
     CLI_BINARY_NAME,
+    PRODUCT_NAME,
 };
 use globset::{
     Glob,
@@ -111,14 +112,14 @@ pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
 pub async fn quit_fig(verbose: bool) -> Result<()> {
     if !desktop_app_running() {
         if verbose {
-            println!("CodeWhisperer is not running");
+            println!("{PRODUCT_NAME} app is not running");
         }
         return Ok(());
     }
 
     match verbose {
         true => {
-            println!("Quitting CodeWhisperer");
+            println!("Quitting {PRODUCT_NAME} app");
 
             // Some(tokio::spawn(async {
             //     fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
@@ -168,7 +169,7 @@ pub async fn quit_fig(verbose: bool) -> Result<()> {
                 }
             }
             if verbose {
-                println!("Unable to quit CodeWhisperer");
+                println!("Unable to quit {PRODUCT_NAME} app");
             }
 
             second_try?;
@@ -189,15 +190,15 @@ pub fn is_executable_in_path(program: impl AsRef<Path>) -> bool {
 
 pub fn app_not_running_message() -> String {
     format!(
-        "\n{}\nCodeWhisperer might not be running, to launch CodeWhisperer run: {}\n",
-        "Unable to connect to CodeWhisperer".bold(),
+        "\n{}\n{PRODUCT_NAME} app might not be running, to launch {PRODUCT_NAME} run: {}\n",
+        format!("Unable to connect to {PRODUCT_NAME} app").bold(),
         format!("{CLI_BINARY_NAME} launch").magenta()
     )
 }
 
 pub fn login_message() -> String {
     format!(
-        "{}\nLooks like you aren't logged in to CodeWhisperer, to login run: {}",
+        "{}\nLooks like you aren't logged in to {PRODUCT_NAME}, to login run: {}",
         "Not logged in".bold(),
         format!("{CLI_BINARY_NAME} login").magenta()
     )
