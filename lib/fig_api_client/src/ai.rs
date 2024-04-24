@@ -150,7 +150,7 @@ pub struct AiRequest {
 }
 
 pub async fn request_cw(
-    request: CodewhipererRequest,
+    request: CodeWhispererRequest,
 ) -> Result<
     GenerateCompletionsOutput,
     SdkError<GenerateCompletionsError, aws_smithy_runtime_api::client::orchestrator::HttpResponse>,
@@ -178,7 +178,7 @@ pub async fn request_cw(
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CodewhipererFileContext {
+pub struct CodeWhispererFileContext {
     pub left_file_content: String,
     pub right_file_content: String,
     pub filename: String,
@@ -214,7 +214,7 @@ pub enum LanguageName {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CodewhipererReferenceTrackerConfiguration {
+pub struct CodeWhispererReferenceTrackerConfiguration {
     pub recommendations_with_references: RecommendationsWithReferences,
 }
 
@@ -226,10 +226,10 @@ pub enum RecommendationsWithReferences {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CodewhipererRequest {
-    pub file_context: CodewhipererFileContext,
+pub struct CodeWhispererRequest {
+    pub file_context: CodeWhispererFileContext,
     pub max_results: i32,
-    // pub reference_tracker_configuration: CodewhipererReferenceTrackerConfiguration,
+    // pub reference_tracker_configuration: CodeWhispererReferenceTrackerConfiguration,
     pub next_token: Option<String>,
 }
 
@@ -263,8 +263,8 @@ mod tests {
 
     //     // dbg!(config.credentials_provider().unwrap().provide_credentials().await);
 
-    //     let codewhisperer_request = CodewhipererRequest {
-    //         file_context: CodewhipererFileContext {
+    //     let codewhisperer_request = CodeWhispererRequest {
+    //         file_context: CodeWhispererFileContext {
     //             left_file_content: "# List the files in the directory\n".into(),
     //             right_file_content: "".into(),
     //             filename: "history.sh".into(),
@@ -273,7 +273,7 @@ mod tests {
     //             },
     //         },
     //         max_results: 3,
-    //         reference_tracker_configuration: CodewhipererReferenceTrackerConfiguration {
+    //         reference_tracker_configuration: CodeWhispererReferenceTrackerConfiguration {
     //             recommendations_with_references: RecommendationsWithReferences::BLOCK,
     //         },
     //     };
@@ -376,8 +376,8 @@ mod tests {
 
         cw_client(cw_endpoint()).await;
 
-        let mut request = CodewhipererRequest {
-            file_context: CodewhipererFileContext {
+        let mut request = CodeWhispererRequest {
+            file_context: CodeWhispererFileContext {
                 left_file_content: history.into(),
                 right_file_content: "".into(),
                 filename: "history.sh".into(),
@@ -414,8 +414,8 @@ mod tests {
             }
         }
 
-        // let res2 = request_cw(CodewhipererRequest {
-        //     file_context: CodewhipererFileContext {
+        // let res2 = request_cw(CodeWhispererRequest {
+        //     file_context: CodeWhispererFileContext {
         //         left_file_content: "# List the files in the directory that have a p in
         // them\n".into(),         right_file_content: "".into(),
         //         filename: "history.sh".into(),
@@ -441,8 +441,8 @@ mod tests {
         //     language_name: Some("shell".into()),
         // }),
 
-        // let res = codewhisperer_raw_request(CodewhipererRequest {
-        //     file_context: CodewhipererFileContext {
+        // let res = codewhisperer_raw_request(CodeWhispererRequest {
+        //     file_context: CodeWhispererFileContext {
         //         left_file_content: "# List the files in the directory\n".into(),
         //         right_file_content: "".into(),
         //         filename: "history.sh".into(),

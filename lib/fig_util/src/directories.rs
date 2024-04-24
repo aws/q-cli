@@ -81,11 +81,10 @@ pub fn config_dir() -> Result<PathBuf> {
     dirs::config_dir().ok_or(DirectoryError::NoHomeDirectory)
 }
 
-/// The codewhisperer data directory
+/// The old codewhisperer data directory
 ///
-/// - Linux: `$XDG_DATA_HOME/codewhisperer` or `$HOME/.local/share/codewhisperer`
-/// - MacOS: `$HOME/Library/Application Support/codewhisperer`
-pub fn fig_data_dir() -> Result<PathBuf> {
+/// This should be removed at some point in the future, once all our users have migrated
+pub fn old_fig_data_dir() -> Result<PathBuf> {
     cfg_if::cfg_if! {
         if #[cfg(unix)] {
             Ok(dirs::data_local_dir()
@@ -97,16 +96,32 @@ pub fn fig_data_dir() -> Result<PathBuf> {
     }
 }
 
-/// The codewhisperer cache directory
+/// The q data directory
 ///
-/// - Linux: `$XDG_CACHE_HOME/codewhisperer` or `$HOME/.cache/codewhisperer`
-/// - MacOS: `$HOME/Library/Caches/codewhisperer`
+/// - Linux: `$XDG_DATA_HOME/amazon-q` or `$HOME/.local/share/amazon-q`
+/// - MacOS: `$HOME/Library/Application Support/amazon-q`
+pub fn fig_data_dir() -> Result<PathBuf> {
+    cfg_if::cfg_if! {
+        if #[cfg(unix)] {
+            Ok(dirs::data_local_dir()
+                .ok_or(DirectoryError::NoHomeDirectory)?
+                .join("amazon-q"))
+        } else if #[cfg(windows)] {
+            Ok(fig_dir()?.join("userdata"))
+        }
+    }
+}
+
+/// The q cache directory
+///
+/// - Linux: `$XDG_CACHE_HOME/amazon-q` or `$HOME/.cache/amazon-q`
+/// - MacOS: `$HOME/Library/Caches/amazon-q`
 pub fn cache_dir() -> Result<PathBuf> {
     cfg_if::cfg_if! {
         if #[cfg(unix)] {
             Ok(dirs::cache_dir()
                 .ok_or(DirectoryError::NoHomeDirectory)?
-                .join("codewhisperer"))
+                .join("amazon-q"))
         } else if #[cfg(windows)] {
             Ok(fig_dir()?.join("cache"))
         }
@@ -148,7 +163,7 @@ fn runtime_dir() -> Result<PathBuf> {
     dir.ok_or(DirectoryError::NoRuntimeDirectory)
 }
 
-/// The codewhisperer sockets directory of the local codewhisperer installation
+/// The q sockets directory of the local q installation
 ///
 /// - Linux: $XDG_RUNTIME_DIR/cwrun
 /// - MacOS: $TMPDIR/cwrun
@@ -214,7 +229,7 @@ pub fn logs_dir() -> Result<PathBuf> {
             use crate::CLI_BINARY_NAME;
             Ok(runtime_dir()?.join(format!("{CLI_BINARY_NAME}log")))
         } else if #[cfg(windows)] {
-            Ok(std::env::temp_dir().join("codewhisperer").join("logs"))
+            Ok(std::env::temp_dir().join("amazon-q").join("logs"))
         }
     }
 }
@@ -223,7 +238,7 @@ pub fn logs_dir() -> Result<PathBuf> {
 pub fn backups_dir() -> Result<PathBuf> {
     cfg_if::cfg_if! {
         if #[cfg(unix)] {
-            Ok(home_dir()?.join(".codewhisperer.dotfiles.bak"))
+            Ok(home_dir()?.join(".amazon-q.dotfiles.bak"))
         } else if #[cfg(windows)] {
             Ok(fig_data_dir()?.join("backups"))
         }
@@ -465,8 +480,8 @@ mod tests {
 
     #[test]
     fn snapshot_fig_data_dir() {
-        linux!(fig_data_dir(), @"$HOME/.local/share/codewhisperer");
-        macos!(fig_data_dir(), @"$HOME/Library/Application Support/codewhisperer");
+        linux!(fig_data_dir(), @"$HOME/.local/share/amazon-q");
+        macos!(fig_data_dir(), @"$HOME/Library/Application Support/amazon-q");
         windows!(fig_data_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata");
     }
 
@@ -486,8 +501,8 @@ mod tests {
 
     #[test]
     fn snapshot_backups_dir() {
-        linux!(backups_dir(), @"$HOME/.codewhisperer.dotfiles.bak");
-        macos!(backups_dir(), @"$HOME/.codewhisperer.dotfiles.bak");
+        linux!(backups_dir(), @"$HOME/.amazon-q.dotfiles.bak");
+        macos!(backups_dir(), @"$HOME/.amazon-q.dotfiles.bak");
         windows!(backups_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\backups");
     }
 
@@ -505,13 +520,6 @@ mod tests {
         windows!(remote_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\remote.sock");
     }
 
-    // #[test]
-    // fn snapshot_parent_socket_path() {
-    //     linux!(parent_socket_path("$Q_PARENT"), @"/var/tmp/fig-parent-$Q_PARENT.sock");
-    //     macos!(parent_socket_path("$Q_PARENT"), @"/var/tmp/fig-parent-$Q_PARENT.sock");
-    //     // windows does not have a parent socket
-    // }
-
     #[test]
     fn snapshot_local_remote_socket_path() {
         linux!(local_remote_socket_path(), @"$XDG_RUNTIME_DIR/cwrun/remote.sock");
@@ -528,22 +536,22 @@ mod tests {
 
     #[test]
     fn snapshot_settings_path() {
-        linux!(settings_path(), @"$HOME/.local/share/codewhisperer/settings.json");
-        macos!(settings_path(), @"$HOME/Library/Application Support/codewhisperer/settings.json");
+        linux!(settings_path(), @"$HOME/.local/share/amazon-q/settings.json");
+        macos!(settings_path(), @"$HOME/Library/Application Support/amazon-q/settings.json");
         windows!(settings_path(), @r"C:\Users\$USER\AppData\Lcoal\Fig\settings.json");
     }
 
     #[test]
     fn snapshot_update_lock_path() {
-        linux!(update_lock_path(), @"$HOME/.local/share/codewhisperer/update.lock");
-        macos!(update_lock_path(), @"$HOME/Library/Application Support/codewhisperer/update.lock");
+        linux!(update_lock_path(), @"$HOME/.local/share/amazon-q/update.lock");
+        macos!(update_lock_path(), @"$HOME/Library/Application Support/amazon-q/update.lock");
         windows!(update_lock_path(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\update.lock");
     }
 
     #[test]
     fn snapshot_credentials_path() {
-        linux!(credentials_path(), @"$HOME/.local/share/codewhisperer/credentials.json");
-        macos!(credentials_path(), @"$HOME/Library/Application Support/codewhisperer/credentials.json");
+        linux!(credentials_path(), @"$HOME/.local/share/amazon-q/credentials.json");
+        macos!(credentials_path(), @"$HOME/Library/Application Support/amazon-q/credentials.json");
         windows!(credentials_path(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\credentials.json");
     }
 

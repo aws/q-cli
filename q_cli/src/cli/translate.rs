@@ -17,8 +17,8 @@ use eyre::{
 };
 use fig_api_client::ai::{
     request_cw,
-    CodewhipererFileContext,
-    CodewhipererRequest,
+    CodeWhispererFileContext,
+    CodeWhispererRequest,
     LanguageName,
     ProgrammingLanguage,
 };
@@ -167,8 +167,8 @@ i=`wc -l $FILENAME|cut -d ' ' -f1`; cat $FILENAME| echo "scale=2;(`paste -sd+`)/
     
 #"#;
 
-    let mut request = CodewhipererRequest {
-        file_context: CodewhipererFileContext {
+    let mut request = CodeWhispererRequest {
+        file_context: CodeWhispererFileContext {
             left_file_content: format!("{prompt}{question}\n"),
             right_file_content: "".into(),
             filename: "commands.sh".into(),

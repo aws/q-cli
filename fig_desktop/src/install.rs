@@ -3,6 +3,10 @@ use cfg_if::cfg_if;
 use fig_install::check_for_updates;
 use fig_integrations::ssh::SshIntegration;
 use fig_integrations::Integration;
+use fig_util::directories::{
+    fig_data_dir,
+    old_fig_data_dir,
+};
 #[cfg(target_os = "macos")]
 use macos_utils::bundle::get_bundle_path_for_executable;
 use semver::Version;
@@ -52,6 +56,20 @@ pub async fn run_install(_ignore_immediate_update: bool) {
 
         #[cfg(target_os = "macos")]
         {
+            // Migrate the user data dir
+            if let (Ok(old), Ok(new)) = (old_fig_data_dir(), fig_data_dir()) {
+                if !old.is_symlink() {
+                    match tokio::fs::rename(&old, &new).await {
+                        Ok(_) => {
+                            if let Err(err) = tokio::fs::symlink(new, old).await {
+                                error!(%err, "Failed to symlink old user data dir");
+                            }
+                        },
+                        Err(err) => error!(%err, "Failed to migrate user data dir"),
+                    }
+                };
+            }
+
             let input_method = fig_integrations::input_method::InputMethod::default();
             match input_method.target_bundle_path() {
                 Ok(target_bundle_path) if target_bundle_path.exists() => {
@@ -212,10 +230,7 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
         CLI_BINARY_NAME,
         PTY_BINARY_NAME,
     };
-    use fig_util::directories::{
-        fig_data_dir,
-        home_dir,
-    };
+    use fig_util::directories::home_dir;
     use fig_util::launchd_plist::{
         create_launch_agent,
         LaunchdPlist,

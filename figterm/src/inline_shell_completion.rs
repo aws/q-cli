@@ -4,7 +4,7 @@ use std::time::{
 };
 
 use fig_api_client::ai::{
-    CodewhipererFileContext,
+    CodeWhispererFileContext,
     LanguageName,
     ProgrammingLanguage,
 };
@@ -133,8 +133,8 @@ pub async fn handle_request(
         let history: Vec<_> = history.iter().rev().filter_map(|c| c.command.clone()).collect();
         let prompt = format!("{}\n{}", history.join("\n"), figterm_request.buffer);
 
-        let request = fig_api_client::ai::CodewhipererRequest {
-            file_context: CodewhipererFileContext {
+        let request = fig_api_client::ai::CodeWhispererRequest {
+            file_context: CodeWhispererFileContext {
                 left_file_content: prompt,
                 right_file_content: "".into(),
                 filename: "history.sh".into(),
