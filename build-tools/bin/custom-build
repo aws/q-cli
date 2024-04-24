@@ -72,6 +72,4 @@ if [[ $# -gt 0 ]] && [[ "$1" = sync* ]]; then
     exit 0
 fi
 
-# python3.11 build-scripts/build.py
-cargo clippy --workspace --locked --exclude fig_desktop -- -D warnings
-cargo test --workspace --locked --exclude fig_desktop
+python3.11 build-scripts/main.py test --clippy-fail-on-warn

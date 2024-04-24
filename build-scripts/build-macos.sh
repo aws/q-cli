@@ -66,24 +66,12 @@ python3.11 -m venv .venv
 source .venv/bin/activate
 pip3 install dmgbuild==1.6.1
 
-build_params_json="$(
-    jq -n \
-        --arg output_bucket "${output_bucket:-}" \
-        --arg signing_bucket "${signing_bucket:-}" \
-        --arg signing_queue "${signing_queue:-}" \
-        --arg apple_id_secret "${apple_id_secret:-}" \
-        --arg aws_account_id "${aws_account_id:-}" \
-        --arg signing_role_name "${signing_role_name:-}" \
-        --arg stage_name "${stage_name:-}" \
-        '{
-            "output_bucket": (if $output_bucket == "" then null else $output_bucket end),
-            "signing_bucket": (if $signing_bucket == "" then null else $signing_bucket end),
-            "signing_queue": (if $signing_queue == "" then null else $signing_queue end),
-            "apple_id_secret": (if $apple_id_secret == "" then null else $apple_id_secret end),
-            "aws_account_id": (if $aws_account_id == "" then null else $aws_account_id end),
-            "signing_role_name": (if $signing_role_name == "" then null else $signing_role_name end),
-            "stage_name": (if $stage_name == "" then null else $stage_name end),
-        }'
-)"
-
-python3.11 build-scripts/build.py "${build_params_json}" 2>&1
+python3.11 build-scripts/main.py build \
+  --output-bucket "${output_bucket:-}" \
+  --signing-bucket "${signing_bucket:-}" \
+  --signing-queue "${signing_queue:-}" \
+  --apple-id-secret "${apple_id_secret:-}" \
+  --aws-account-id "${aws_account_id:-}" \
+  --signing-role-name "${signing_role_name:-}" \
+  --stage-name "${stage_name:-}" \
+  2>&1

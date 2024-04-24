@@ -1,14 +1,12 @@
-from enum import Enum
 import os
 import json
 import datetime
 import pathlib
-import platform
 import shutil
-import sys
-import itertools
-from typing import Dict, List, Mapping, Sequence
-from util import isDarwin, isLinux, run_cmd, run_cmd_output, info
+from typing import Dict, Mapping, Sequence
+from util import Variant, get_variant, isDarwin, isLinux, run_cmd, run_cmd_output, info
+from rust import rust_targets, rust_env
+from test import run_cargo_tests, run_clippy
 from signing import (
     EcSigningData,
     EcSigningType,
@@ -18,33 +16,18 @@ from signing import (
     apple_notarize_file,
 )
 from importlib import import_module
-
-APP_NAME = "Q"
-CLI_BINARY_NAME = "q"
-PTY_BINARY_NAME = "qterm"
-URL_SCHEMA = "q"
-
-CLI_PACKAGE_NAME = "q_cli"
-PTY_PACKAGE_NAME = "figterm"
-DESKTOP_PACKAGE_NAME = "fig_desktop"
+from const import (
+    APP_NAME,
+    CLI_BINARY_NAME,
+    CLI_PACKAGE_NAME,
+    DESKTOP_PACKAGE_NAME,
+    PTY_BINARY_NAME,
+    PTY_PACKAGE_NAME,
+    URL_SCHEMA,
+)
 
 BUILD_DIR_RELATIVE = pathlib.Path(os.environ.get("BUILD_DIR") or "build")
 BUILD_DIR = BUILD_DIR_RELATIVE.absolute()
-
-
-class Variant(Enum):
-    FULL = 1
-    MINIMAL = 2
-
-
-def get_variant() -> Variant:
-    match platform.system():
-        case "Darwin":
-            return Variant.FULL
-        case "Linux":
-            return Variant.MINIMAL
-        case other:
-            raise ValueError(f"Unsupported platform {other}")
 
 
 def build_npm_packages() -> Dict[str, pathlib.Path]:
@@ -61,49 +44,6 @@ def build_npm_packages() -> Dict[str, pathlib.Path]:
     shutil.copytree("apps/autocomplete/dist", autocomplete_path)
 
     return {"dashboard": dashboard_path, "autocomplete": autocomplete_path}
-
-
-def rust_env(linker=None) -> Dict[str, str]:
-    rustflags = [
-        "-C force-frame-pointers=yes",
-    ]
-
-    if linker:
-        rustflags.append(f"-C link-arg=-fuse-ld={linker}")
-
-    if isLinux():
-        rustflags.append("-C link-arg=-Wl,--compress-debug-sections=zlib")
-
-    env = {
-        "CARGO_INCREMENTAL": "0",
-        "CARGO_PROFILE_RELEASE_LTO": "thin",
-        "RUSTFLAGS": " ".join(rustflags),
-        "CARGO_NET_GIT_FETCH_WITH_CLI": "true",
-    }
-
-    if isDarwin():
-        env["MACOSX_DEPLOYMENT_TARGET"] = "10.13"
-
-    # TODO(grant): move Variant to be an arg of the functions
-    env["Q_BUILD_VARIANT"] = get_variant().name
-
-    return env
-
-
-def rust_targets() -> List[str]:
-    match platform.system():
-        case "Darwin":
-            return ["x86_64-apple-darwin", "aarch64-apple-darwin"]
-        case "Linux":
-            match platform.machine():
-                case "x86_64":
-                    return ["x86_64-unknown-linux-gnu"]
-                case "aarch64":
-                    return ["aarch64-unknown-linux-gnu"]
-                case other:
-                    raise ValueError(f"Unsupported machine {other}")
-        case other:
-            raise ValueError(f"Unsupported platform {other}")
 
 
 def build_cargo_bin(
@@ -124,7 +64,7 @@ def build_cargo_bin(
         args,
         env={
             **os.environ,
-            **rust_env(),
+            **rust_env(release=True),
         },
     )
 
@@ -154,82 +94,6 @@ def build_cargo_bin(
         out_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(target_path, out_path)
         return out_path
-
-
-def run_cargo_tests(features: Mapping[str, Sequence[str]] | None = None):
-    # build the tests using the same config as normal builds
-    args = ["cargo", "build", "--tests", "--release", "--locked"]
-
-    for target in rust_targets():
-        args.extend(["--target", target])
-
-    if isLinux():
-        args.extend(["--workspace", "--exclude", DESKTOP_PACKAGE_NAME])
-
-    if features:
-        args.extend(
-            [
-                "--features",
-                ",".join(set(itertools.chain.from_iterable(features.values()))),
-            ]
-        )
-
-    run_cmd(
-        args,
-        env={
-            **os.environ,
-            **rust_env(),
-        },
-    )
-
-    args = ["cargo", "test", "--release", "--locked"]
-
-    # disable desktop tests for now
-    if isLinux():
-        args.extend(["--workspace", "--exclude", DESKTOP_PACKAGE_NAME])
-
-    if features:
-        args.extend(
-            [
-                "--features",
-                ",".join(set(itertools.chain.from_iterable(features.values()))),
-            ]
-        )
-
-    run_cmd(
-        args,
-        env={
-            **os.environ,
-            **rust_env(),
-        },
-    )
-
-
-def run_clippy(features: Mapping[str, Sequence[str]] | None = None):
-    # run clippy using the same config as normal builds
-    args = ["cargo", "clippy", "--release", "--locked"]
-
-    for target in rust_targets():
-        args.extend(["--target", target])
-
-    if isLinux():
-        args.extend(["--workspace", "--exclude", DESKTOP_PACKAGE_NAME])
-
-    if features:
-        args.extend(
-            [
-                "--features",
-                ",".join(set(itertools.chain.from_iterable(features.values()))),
-            ]
-        )
-
-    run_cmd(
-        args,
-        env={
-            **os.environ,
-            **rust_env(),
-        },
-    )
 
 
 def version() -> str:
@@ -343,7 +207,7 @@ def build_desktop_app(
     run_cmd(
         cargo_tauri_args,
         cwd=DESKTOP_PACKAGE_NAME,
-        env={**os.environ, **rust_env(), "BUILD_DIR": BUILD_DIR},
+        env={**os.environ, **rust_env(release=True), "BUILD_DIR": BUILD_DIR},
     )
 
     # clean up
@@ -504,24 +368,16 @@ def generate_sha(path: pathlib.Path) -> pathlib.Path:
     return path
 
 
-if __name__ == "__main__":
-    # parse argv[1] for json and build into dict, then grab each known value
-    build_args = {
-        k: v
-        for (k, v) in json.loads(sys.argv[1] if len(sys.argv) > 1 else "{}").items()
-        if isinstance(k, str) and isinstance(v, str)
-    }
-
-    info(f"Build Args: {build_args}")
-
-    output_bucket = build_args.get("output_bucket")
-    signing_bucket = build_args.get("signing_bucket")
-    aws_account_id = build_args.get("aws_account_id")
-    apple_id_secret = build_args.get("apple_id_secret")
-    signing_queue = build_args.get("signing_queue")
-    signing_role_name = build_args.get("signing_role_name")
-    stage_name = build_args.get("stage_name")
-    run_lints = build_args.get("run_lints")
+def build(
+    output_bucket: str | None = None,
+    signing_bucket: str | None = None,
+    aws_account_id: str | None = None,
+    apple_id_secret: str | None = None,
+    signing_queue: str | None = None,
+    signing_role_name: str | None = None,
+    stage_name: str | None = None,
+    run_lints: str | None = None,
+):
     variant = get_variant()
 
     if signing_bucket and aws_account_id and apple_id_secret and signing_queue and signing_role_name:
@@ -583,7 +439,7 @@ if __name__ == "__main__":
         sha_path = generate_sha(dmg_path)
 
         if output_bucket:
-            staging_location = f"s3://{build_args['output_bucket']}/staging/"
+            staging_location = f"s3://{output_bucket}/staging/"
             info(f"Build complete, sending to {staging_location}")
 
             run_cmd(["aws", "s3", "cp", dmg_path, staging_location])

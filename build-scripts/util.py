@@ -1,3 +1,4 @@
+from enum import Enum
 import os
 import shlex
 import subprocess
@@ -63,3 +64,18 @@ def run_cmd_status(
 ) -> int:
     res = subprocess.run(args, env=env, cwd=cwd)
     return res.returncode
+
+
+class Variant(Enum):
+    FULL = 1
+    MINIMAL = 2
+
+
+def get_variant() -> Variant:
+    match platform.system():
+        case "Darwin":
+            return Variant.FULL
+        case "Linux":
+            return Variant.MINIMAL
+        case other:
+            raise ValueError(f"Unsupported platform {other}")

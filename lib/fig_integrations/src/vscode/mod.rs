@@ -84,9 +84,10 @@ pub fn variants_installed() -> Vec<VSCodeVariant> {
 
 /// Determines if the VSCode extension is installed by checking for the Q extension name in the
 /// stdout of `code --list-extensions --show-versions`.
-fn is_installed_from_stdout(stdout: &[u8]) -> bool {
+fn is_installed_from_stdout(stdout: impl AsRef<[u8]>) -> bool {
     let extension_name = format!("{EXTENSION_PREFIX}@{EXTENSION_VERSION}");
     stdout
+        .as_ref()
         .lines()
         .any(|line| if let Ok(l) = line { l == extension_name } else { false })
 }
@@ -201,7 +202,7 @@ impl Integration for VSCodeIntegration {
             .arg("--show-versions")
             .output()
             .await?;
-        if !is_installed_from_stdout(&output.stdout) {
+        if !is_installed_from_stdout(output.stdout) {
             return Err(Error::Custom("Extension not installed".into()));
         }
         Ok(())
@@ -214,21 +215,17 @@ mod tests {
 
     #[test]
     fn test_extension_is_installed_from_stdout() {
-        assert!(is_installed_from_stdout(
-            r#"\
-[0423/155310.304438:ERROR:codesign_util.cc(108)] SecCodeCheckValidity: Error Domain=NSOSStatusErrorDomain Code=-67062 "(null)" (-67062)
-amazonwebservices.codewhisperer-for-command-line-companion@0.1.0
-eamodio.gitlens@14.9.0
-mathiasfrohlich.kotlin@1.7.1
-"#.as_bytes(),
-        ));
+        assert!(is_installed_from_stdout(indoc::formatdoc! {"
+            [0423/155310.304438:ERROR:codesign_util.cc(108)] SecCodeCheckValidity: Error Domain=NSOSStatusErrorDomain Code=-67062 \"(null)\" (-67062)
+            amazonwebservices.codewhisperer-for-command-line-companion@{EXTENSION_VERSION}
+            eamodio.gitlens@14.9.0
+            mathiasfrohlich.kotlin@1.7.1
+        "}));
 
-        assert!(!is_installed_from_stdout(
-            r#"\
-[0423/155310.304438:ERROR:codesign_util.cc(108)] SecCodeCheckValidity: Error Domain=NSOSStatusErrorDomain Code=-67062 "(null)" (-67062)
-eamodio.gitlens@14.9.0
-mathiasfrohlich.kotlin@1.7.1
-"#.as_bytes(),
-        ));
+        assert!(!is_installed_from_stdout(indoc::indoc! {r#"
+            [0423/155310.304438:ERROR:codesign_util.cc(108)] SecCodeCheckValidity: Error Domain=NSOSStatusErrorDomain Code=-67062 "(null)" (-67062)
+            eamodio.gitlens@14.9.0
+            mathiasfrohlich.kotlin@1.7.1
+        "#}));
     }
 }
