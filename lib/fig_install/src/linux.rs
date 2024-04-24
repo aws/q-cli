@@ -74,7 +74,7 @@ async fn replace_bins(bin_dir: &Path) -> Result<(), Error> {
         let installed_bin_path = local_bin.join(bin.file_name());
 
         let _ = tokio::fs::remove_file(&installed_bin_path).await;
-        if let Err(err) = tokio::fs::rename(bin.path(), installed_bin_path).await {
+        if let Err(err) = tokio::fs::copy(bin.path(), installed_bin_path).await {
             if res.is_ok() {
                 res = Err(err.into());
             }

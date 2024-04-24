@@ -40,6 +40,8 @@ pub enum ManagedBy {
 #[strum(serialize_all = "snake_case")]
 pub enum Variant {
     Full,
+    #[serde(alias = "headless")]
+    #[strum(serialize = "minimal", serialize = "headless")]
     Minimal,
     #[strum(default)]
     Other(String),
@@ -219,25 +221,51 @@ pub fn version() -> Option<&'static str> {
 
 #[cfg(test)]
 mod tests {
+    use serde_json::{
+        from_str,
+        to_string,
+    };
+
     use super::*;
 
     #[test]
     fn test_file_type_serialize_deserialize() {
-        use serde_json::{
-            from_str,
-            to_string,
-        };
-
+        // serde serialize
         assert_eq!("\"dmg\"", to_string(&FileType::Dmg).unwrap());
         assert_eq!("\"tar_gz\"", to_string(&FileType::TarGz).unwrap());
         assert_eq!("\"tar_xz\"", to_string(&FileType::TarXz).unwrap());
         assert_eq!("\"tar_zst\"", to_string(&FileType::TarZst).unwrap());
         assert_eq!("\"zip\"", to_string(&FileType::Zip).unwrap());
 
+        // serde deserialize
         assert_eq!(FileType::Dmg, from_str("\"dmg\"").unwrap());
         assert_eq!(FileType::TarGz, from_str("\"tar_gz\"").unwrap());
         assert_eq!(FileType::TarXz, from_str("\"tar_xz\"").unwrap());
         assert_eq!(FileType::TarZst, from_str("\"tar_zst\"").unwrap());
         assert_eq!(FileType::Zip, from_str("\"zip\"").unwrap());
+
+        // strum from_str
+        assert_eq!(FileType::Dmg, FileType::from_str("dmg").unwrap());
+        assert_eq!(FileType::TarGz, FileType::from_str("tar_gz").unwrap());
+        assert_eq!(FileType::TarXz, FileType::from_str("tar_xz").unwrap());
+        assert_eq!(FileType::TarZst, FileType::from_str("tar_zst").unwrap());
+        assert_eq!(FileType::Zip, FileType::from_str("zip").unwrap());
+    }
+
+    #[test]
+    fn test_variant_serialize_deserialize() {
+        // serde serialize
+        assert_eq!("\"full\"", to_string(&Variant::Full).unwrap());
+        assert_eq!("\"minimal\"", to_string(&Variant::Minimal).unwrap());
+
+        // serde deserialize
+        assert_eq!(Variant::Full, from_str("\"full\"").unwrap());
+        assert_eq!(Variant::Minimal, from_str("\"minimal\"").unwrap());
+        assert_eq!(Variant::Minimal, from_str("\"headless\"").unwrap());
+
+        // strum from_str
+        assert_eq!(Variant::Full, Variant::from_str("full").unwrap());
+        assert_eq!(Variant::Minimal, Variant::from_str("minimal").unwrap());
+        assert_eq!(Variant::Minimal, Variant::from_str("headless").unwrap());
     }
 }

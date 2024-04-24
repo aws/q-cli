@@ -95,6 +95,7 @@ impl Index {
 
 #[allow(unused)]
 #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct Support {
     #[serde(deserialize_with = "deser_enum_other")]
     architecture: PackageArchitecture,
@@ -413,8 +414,15 @@ mod tests {
                     "os": "macos",
                     "architecture": "universal",
                     "variant": "full",
-                    "os": "macos",
+                    "fileType": "dmg"
                 },
+                {
+                    "kind": "deb",
+                    "os": "linux",
+                    "architecture": "x86_64",
+                    "variant": "headless",
+                    "fileType": "tar_zst"
+                }
             ],
             "versions": [
                 {
@@ -458,6 +466,16 @@ mod tests {
                             "sha256": "87a311e493bb2b0e68a1b4b5d267c79628d23c1e39b0a62d1a80b0c2352f80a2",
                             "size": 88174538,
                             "cliPath": format!("Contents/MacOS/{OLD_CLI_BINARY_NAME}"),
+                        },
+                        {
+                            "kind": "deb",
+                            "fileType": "tar_zst",
+                            "os": "linux",
+                            "architecture": "x86_64",
+                            "variant": "headless",
+                            "download": "1.0.0/q-x86_64-linux.tar.zst",
+                            "sha256": "5a6abea56bfa91bd58d49fe40322058d0efea825f7e19f7fb7db1c204ae625b6",
+                            "size": 76836772,
                         }
                     ]
                 },
@@ -486,12 +504,12 @@ mod tests {
         let index = serde_json::from_str::<Index>(&json_str).unwrap();
         println!("{:#?}", index);
 
-        assert_eq!(index.supported.len(), 1);
+        assert_eq!(index.supported.len(), 2);
         assert_eq!(index.supported[0], Support {
             architecture: PackageArchitecture::Universal,
             variant: Variant::Full,
             os: Some(Os::Macos),
-            file_type: None
+            file_type: Some(FileType::Dmg),
         });
 
         assert_eq!(index.versions.len(), 4);
@@ -500,16 +518,28 @@ mod tests {
         assert_eq!(index.versions[2], RemoteVersion {
             version: Version::new(1, 0, 0),
             rollout: None,
-            packages: vec![Package {
-                architecture: PackageArchitecture::Universal,
-                variant: Variant::Full,
-                os: Some(Os::Macos),
-                file_type: Some(FileType::Dmg),
-                download: "1.0.0/Q.dmg".into(),
-                sha256: "87a311e493bb2b0e68a1b4b5d267c79628d23c1e39b0a62d1a80b0c2352f80a2".into(),
-                size: 88174538,
-                cli_path: Some(format!("Contents/MacOS/{OLD_CLI_BINARY_NAME}")),
-            }],
+            packages: vec![
+                Package {
+                    architecture: PackageArchitecture::Universal,
+                    variant: Variant::Full,
+                    os: Some(Os::Macos),
+                    file_type: Some(FileType::Dmg),
+                    download: "1.0.0/Q.dmg".into(),
+                    sha256: "87a311e493bb2b0e68a1b4b5d267c79628d23c1e39b0a62d1a80b0c2352f80a2".into(),
+                    size: 88174538,
+                    cli_path: Some(format!("Contents/MacOS/{OLD_CLI_BINARY_NAME}")),
+                },
+                Package {
+                    architecture: PackageArchitecture::X86_64,
+                    variant: Variant::Minimal,
+                    os: Some(Os::Linux),
+                    file_type: Some(FileType::TarZst),
+                    download: "1.0.0/q-x86_64-linux.tar.zst".into(),
+                    sha256: "5a6abea56bfa91bd58d49fe40322058d0efea825f7e19f7fb7db1c204ae625b6".into(),
+                    size: 76836772,
+                    cli_path: None,
+                }
+            ],
         });
     }
 }
