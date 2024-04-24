@@ -245,10 +245,7 @@ pub enum InternalSubcommand {
     #[cfg(target_os = "linux")]
     /// Checks for sandboxing
     DetectSandbox,
-    OpenUninstallPage {
-        #[arg(long)]
-        verbose: bool,
-    },
+    OpenUninstallPage,
     /// Displays prompt to install remote shell integrations
     SshLocalCommand {
         remote_dest: String,
@@ -630,12 +627,10 @@ impl InternalSubcommand {
                     },
                 })
             },
-            InternalSubcommand::OpenUninstallPage { verbose } => {
+            InternalSubcommand::OpenUninstallPage => {
                 let url = fig_install::UNINSTALL_URL;
                 if let Err(err) = fig_util::open_url(url) {
-                    if verbose {
-                        eprintln!("Failed to open uninstall directly, trying daemon proxy: {err}");
-                    }
+                    info!("Failed to open uninstall directly, trying daemon proxy: {err}");
 
                     if let Err(err) =
                         fig_ipc::local::send_command_to_socket(fig_proto::local::command::Command::OpenBrowser(
@@ -643,9 +638,7 @@ impl InternalSubcommand {
                         ))
                         .await
                     {
-                        if verbose {
-                            eprintln!("Failed to open uninstall via desktop, no more options: {err}");
-                        }
+                        info!("Failed to open uninstall via desktop, no more options: {err}");
                         std::process::exit(1);
                     }
                 }

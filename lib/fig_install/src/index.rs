@@ -533,6 +533,12 @@ mod tests {
             os: Some(Os::Macos),
             file_type: Some(FileType::Dmg),
         });
+        assert_eq!(index.supported[1], Support {
+            architecture: PackageArchitecture::X86_64,
+            variant: Variant::Minimal,
+            os: Some(Os::Linux),
+            file_type: Some(FileType::TarZst),
+        });
 
         assert_eq!(index.versions.len(), 4);
 

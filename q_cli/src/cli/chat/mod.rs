@@ -50,11 +50,6 @@ enum ApiResponse {
 }
 
 pub async fn chat(input: String) -> Result<()> {
-    // check the user is using the amzn IdC instance
-    if !auth::is_amzn_user().await? {
-        eyre::bail!("chat is not currently implemented");
-    }
-
     let mut stderr = stderr();
     let result = try_chat(&mut stderr, input).await;
 

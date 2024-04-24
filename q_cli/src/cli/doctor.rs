@@ -100,16 +100,16 @@ use crate::util::{
 #[derive(Debug, Args, PartialEq, Eq)]
 pub struct DoctorArgs {
     /// Run all doctor tests, with no fixes
-    #[arg(long)]
-    verbose: bool,
+    #[arg(long, short = 'a')]
+    pub all: bool,
     /// Error on warnings
-    #[arg(long)]
-    strict: bool,
+    #[arg(long, short = 's')]
+    pub strict: bool,
 }
 
 impl DoctorArgs {
     pub async fn execute(self) -> Result<()> {
-        doctor_cli(self.verbose, self.strict).await
+        doctor_cli(self.all, self.strict).await
     }
 }
 
@@ -672,7 +672,10 @@ impl DoctorCheck for FigIntegrationsCheck {
                 error: None,
             }),
             Err(_) => Err(DoctorError::Error {
-                reason: "{PTY_BINARY_NAME} is not running in this terminal, please try restarting your terminal".into(),
+                reason: format!(
+                    "{PTY_BINARY_NAME} is not running in this terminal, please try restarting your terminal"
+                )
+                .into(),
                 info: vec![format!("{Q_TERM}={}", std::env::var(Q_TERM).unwrap_or_default()).into()],
                 fix: None,
                 error: None,
@@ -2132,7 +2135,7 @@ where
     T: Sync + Send,
     Fut: Future<Output = Result<T>>,
 {
-    if config.verbose {
+    if config.all {
         println!("{}", header.as_ref().dark_grey());
     }
     let mut context = match get_context().await {
@@ -2158,12 +2161,12 @@ where
             }
         }
 
-        if config.verbose || result.is_err() {
+        if config.all || result.is_err() {
             stop_spinner(spinner.take())?;
-            print_status_result(&name, &result, config.verbose);
+            print_status_result(&name, &result, config.all);
         }
 
-        if config.verbose {
+        if config.all {
             continue;
         }
 
@@ -2187,7 +2190,7 @@ where
                         context = new_context;
                     }
                     let fix_result = check.check(&context).await;
-                    print_status_result(&name, &fix_result, config.verbose);
+                    print_status_result(&name, &fix_result, config.all);
                     match fix_result {
                         Err(DoctorError::Error { .. }) => {},
                         _ => {
@@ -2204,7 +2207,7 @@ where
         }
     }
 
-    if config.verbose {
+    if config.all {
         println!();
     }
 
@@ -2244,31 +2247,31 @@ fn stop_spinner(spinner: Option<Spinner>) -> Result<()> {
 
 #[derive(Copy, Clone)]
 struct CheckConfiguration {
-    verbose: bool,
+    all: bool,
     strict: bool,
 }
 
 // Doctor
-pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
+pub async fn doctor_cli(all: bool, strict: bool) -> Result<()> {
     #[cfg(unix)]
     {
         use nix::unistd::geteuid;
         if geteuid().is_root() {
             eprintln!("{}", "Running doctor as root is not supported.".red().bold());
-            if !verbose {
+            if !all {
                 eprintln!(
                     "{}",
-                    "If you know what you're doing, run the command again with --verbose.".red()
+                    "If you know what you're doing, run the command again with --all.".red()
                 );
                 std::process::exit(1);
             }
         }
     }
 
-    let config = CheckConfiguration { verbose, strict };
+    let config = CheckConfiguration { all, strict };
 
     let mut spinner: Option<Spinner> = None;
-    if !config.verbose {
+    if !config.all {
         spinner = Some(Spinner::new(Spinners::Dots, "Running checks...".into()));
         execute!(std::io::stdout(), cursor::Hide)?;
 
@@ -2478,7 +2481,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         println!();
     } else {
         // If early exit is disabled, no errors are thrown
-        if !config.verbose {
+        if !config.all {
             println!("{} Everything looks good!", CHECKMARK.green());
         }
         println!();

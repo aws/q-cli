@@ -517,4 +517,36 @@ mod test {
             })
         );
     }
+
+    #[test]
+    fn test_doctor() {
+        assert_parse!(
+            ["doctor"],
+            CliRootCommands::Doctor(doctor::DoctorArgs {
+                all: false,
+                strict: false,
+            })
+        );
+        assert_parse!(
+            ["doctor", "--all"],
+            CliRootCommands::Doctor(doctor::DoctorArgs {
+                all: true,
+                strict: false,
+            })
+        );
+        assert_parse!(
+            ["doctor", "--strict"],
+            CliRootCommands::Doctor(doctor::DoctorArgs {
+                all: false,
+                strict: true,
+            })
+        );
+        assert_parse!(
+            ["doctor", "-a", "-s"],
+            CliRootCommands::Doctor(doctor::DoctorArgs {
+                all: true,
+                strict: true,
+            })
+        );
+    }
 }

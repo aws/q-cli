@@ -13,11 +13,11 @@ impl GridCell for usize {
     }
 
     fn flags(&self) -> &ShellFlags {
-        unimplemented!();
+        panic!("flags() is not implemented for usize");
     }
 
     fn flags_mut(&mut self) -> &mut ShellFlags {
-        unimplemented!();
+        panic!("flags_mut() is not implemented for usize");
     }
 }
 
