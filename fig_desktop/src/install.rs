@@ -235,59 +235,100 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
         create_launch_agent,
         LaunchdPlist,
     };
-    use fig_util::Shell;
+    use fig_util::{
+        Shell,
+        OLD_CLI_BINARY_NAME,
+        OLD_PTY_BINARY_NAME,
+    };
     use macos_utils::bundle::get_bundle_path;
+    use tracing::warn;
 
-    let local_bin = fig_util::directories::home_dir()?.join(".local").join("bin");
-    fs::create_dir_all(&local_bin).ok();
-
-    if let Some(qterm_path) = get_bundle_path_for_executable(PTY_BINARY_NAME) {
-        let link = local_bin.join(PTY_BINARY_NAME);
-        symlink(&qterm_path, link).ok();
-
-        for shell in Shell::all() {
-            let qterm_shell_cpy = local_bin.join(format!("{shell} ({PTY_BINARY_NAME})"));
-            let qterm_path = qterm_path.clone();
-
-            tokio::spawn(async move {
-                // Check version if copy already exists, this is because everytime a copy is made the first start is
-                // kinda slow and we want to avoid that
-                if qterm_shell_cpy.exists() {
-                    let output = tokio::process::Command::new(&qterm_shell_cpy)
-                        .arg("--version")
-                        .output()
-                        .await
-                        .ok();
-
-                    let version = output
-                        .as_ref()
-                        .and_then(|output| std::str::from_utf8(&output.stdout).ok())
-                        .map(|s| {
-                            match s.strip_prefix(PTY_BINARY_NAME) {
-                                Some(s) => s,
-                                None => s,
-                            }
-                            .trim()
-                        });
-
-                    if version == Some(env!("CARGO_PKG_VERSION")) {
-                        return;
-                    }
-                }
-
-                if let Err(err) = tokio::fs::remove_file(&qterm_shell_cpy).await {
-                    error!(%err, "Failed to remove {PTY_BINARY_NAME} shell {shell:?} copy");
-                }
-                if let Err(err) = tokio::fs::copy(&qterm_path, &qterm_shell_cpy).await {
-                    error!(%err, "Failed to copy {PTY_BINARY_NAME} to {}", qterm_shell_cpy.display());
-                }
-            });
-        }
+    let local_bin = fig_util::directories::home_local_bin()?;
+    if let Err(err) = fs::create_dir_all(&local_bin) {
+        error!(%err, "Failed to create {local_bin:?}");
     }
 
-    if let Some(q_cli_path) = get_bundle_path_for_executable(CLI_BINARY_NAME) {
-        let dest = local_bin.join(CLI_BINARY_NAME);
-        symlink(q_cli_path, dest).ok();
+    // Install figterm to ~/.local/bin
+    match get_bundle_path_for_executable(PTY_BINARY_NAME) {
+        Some(pty_path) => {
+            let link = local_bin.join(PTY_BINARY_NAME);
+            if let Err(err) = symlink(&pty_path, link) {
+                error!(%err, "Failed to symlink for {PTY_BINARY_NAME}: {pty_path:?}");
+            }
+
+            let legacy_pty_link = local_bin.join(OLD_PTY_BINARY_NAME);
+            if legacy_pty_link.exists() {
+                if let Err(err) = fs::remove_file(&legacy_pty_link) {
+                    warn!(%err, "Failed to remove {OLD_PTY_BINARY_NAME}: {legacy_pty_link:?}");
+                }
+            }
+
+            for shell in Shell::all() {
+                let pty_shell_cpy = local_bin.join(format!("{shell} ({PTY_BINARY_NAME})"));
+                let pty_path = pty_path.clone();
+
+                tokio::spawn(async move {
+                    // Check version if copy already exists, this is because everytime a copy is made the first start is
+                    // kinda slow and we want to avoid that
+                    if pty_shell_cpy.exists() {
+                        let output = tokio::process::Command::new(&pty_shell_cpy)
+                            .arg("--version")
+                            .output()
+                            .await
+                            .ok();
+
+                        let version = output
+                            .as_ref()
+                            .and_then(|output| std::str::from_utf8(&output.stdout).ok())
+                            .map(|s| {
+                                match s.strip_prefix(PTY_BINARY_NAME) {
+                                    Some(s) => s,
+                                    None => s,
+                                }
+                                .trim()
+                            });
+
+                        if version == Some(env!("CARGO_PKG_VERSION")) {
+                            return;
+                        }
+                    }
+
+                    if let Err(err) = tokio::fs::remove_file(&pty_shell_cpy).await {
+                        error!(%err, "Failed to remove {PTY_BINARY_NAME} shell {shell:?} copy");
+                    }
+                    if let Err(err) = tokio::fs::copy(&pty_path, &pty_shell_cpy).await {
+                        error!(%err, "Failed to copy {PTY_BINARY_NAME} to {}", pty_shell_cpy.display());
+                    }
+                });
+
+                // Remove legacy pty shell copies
+                let old_pty_cpy = local_bin.join(format!("{shell} ({OLD_PTY_BINARY_NAME})"));
+                if old_pty_cpy.exists() {
+                    if let Err(err) = tokio::fs::remove_file(&old_pty_cpy).await {
+                        warn!(%err, "Failed to remove legacy pty: {old_pty_cpy:?}");
+                    }
+                }
+            }
+        },
+        None => error!("Failed to find {PTY_BINARY_NAME} in bundle"),
+    }
+
+    // install the cli to ~/.local/bin
+    match get_bundle_path_for_executable(CLI_BINARY_NAME) {
+        Some(q_cli_path) => {
+            let dest = local_bin.join(CLI_BINARY_NAME);
+            if let Err(err) = symlink(&q_cli_path, dest) {
+                error!(%err, "Failed to symlink {CLI_BINARY_NAME}");
+            }
+
+            let legacy_cli_link = local_bin.join(OLD_CLI_BINARY_NAME);
+            if legacy_cli_link.exists() {
+                if let Err(err) = symlink(q_cli_path, &legacy_cli_link) {
+                    warn!(%err, "Failed to symlink legacy CLI: {legacy_cli_link:?}");
+                }
+            }
+        },
+        None => error!("Failed to find {CLI_BINARY_NAME} in bundle"),
     }
 
     if let Some(bundle_path) = get_bundle_path() {

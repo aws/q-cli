@@ -22,6 +22,7 @@ pub const RUNTIME_DIR_NAME: &str = "cwrun";
 // These are the old "CodeWhisperer" branding, used anywhere we will not update to Q
 pub const OLD_PRODUCT_NAME: &str = "CodeWhisperer";
 pub const OLD_CLI_BINARY_NAME: &str = "cw";
+pub const OLD_PTY_BINARY_NAME: &str = "cwterm";
 
 /// macOS specific constants
 pub mod macos {
