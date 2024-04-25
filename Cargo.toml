@@ -18,7 +18,7 @@ authors = ["AWS Engineers"]
 edition = "2021"
 homepage = "https://aws.amazon.com/codewhisperer"
 publish = false
-version = "0.15.4"
+version = "0.15.5"
 
 [workspace.dependencies]
 anyhow = "1.0.75"
