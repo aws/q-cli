@@ -325,6 +325,10 @@ impl Integration for ShellScriptShellIntegration {
     fn describe(&self) -> String {
         format!("{} {}", self.shell, self.when)
     }
+
+    async fn migrate(&self) -> Result<()> {
+        self.get_file_integration().install().await
+    }
 }
 
 impl ShellIntegration for ShellScriptShellIntegration {
@@ -556,25 +560,8 @@ impl DotfileShellIntegration {
             regex::escape(&self.legacy_source_text_3(when)?),
         ))
     }
-}
 
-#[async_trait]
-impl Integration for DotfileShellIntegration {
-    fn describe(&self) -> String {
-        format!(
-            "{}{}{} into {}",
-            self.shell,
-            if self.pre { " pre" } else { "" },
-            if self.post { " post" } else { "" },
-            self.dotfile_name,
-        )
-    }
-
-    async fn install(&self) -> Result<()> {
-        if self.is_installed().await.is_ok() {
-            return Ok(());
-        }
-
+    async fn install_inner(&self) -> Result<()> {
         let dotfile = self.dotfile_path();
         let mut contents = if dotfile.exists() {
             backup_file(&dotfile, fig_util::directories::utc_backup_dir().ok())?;
@@ -620,7 +607,27 @@ impl Integration for DotfileShellIntegration {
                 },
             }
         }
+        Ok(())
+    }
+}
 
+#[async_trait]
+impl Integration for DotfileShellIntegration {
+    fn describe(&self) -> String {
+        format!(
+            "{}{}{} into {}",
+            self.shell,
+            if self.pre { " pre" } else { "" },
+            if self.post { " post" } else { "" },
+            self.dotfile_name,
+        )
+    }
+
+    async fn install(&self) -> Result<()> {
+        if self.is_installed().await.is_ok() {
+            return Ok(());
+        }
+        self.install_inner().await?;
         Ok(())
     }
 
@@ -705,6 +712,17 @@ impl Integration for DotfileShellIntegration {
         }
 
         Ok(())
+    }
+
+    async fn migrate(&self) -> Result<()> {
+        match self.is_installed().await {
+            Ok(_) => Ok(()),
+            Err(Error::LegacyInstallation(_)) => {
+                self.install_inner().await?;
+                Ok(())
+            },
+            Err(err) => Err(err),
+        }
     }
 }
 

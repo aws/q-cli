@@ -23,4 +23,9 @@ pub trait Integration {
     async fn install(&self) -> Result<()>;
     async fn uninstall(&self) -> Result<()>;
     async fn is_installed(&self) -> Result<()>;
+
+    /// Apply any migrations, this can be called at any time so do not do anything too destructive
+    async fn migrate(&self) -> Result<()> {
+        Ok(())
+    }
 }

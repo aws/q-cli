@@ -364,12 +364,17 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
 
     // Init the shell directory
     std::fs::create_dir(fig_data_dir()?.join("shell")).ok();
-    for integration in fig_util::Shell::all()
-        .iter()
-        .flat_map(|s| s.get_script_integrations().unwrap_or_else(|_| vec![]))
-    {
-        if let Err(err) = integration.install().await {
-            error!(%err, "Failed installing shell integration {}", integration.describe());
+    for shell in fig_util::Shell::all().iter() {
+        for script_integration in shell.get_script_integrations().unwrap_or_default() {
+            if let Err(err) = script_integration.install().await {
+                error!(%err, "Failed installing shell integration {}", script_integration.describe());
+            }
+        }
+
+        for shell_integration in shell.get_shell_integrations().unwrap_or_default() {
+            if let Err(err) = shell_integration.migrate().await {
+                error!(%err, "Failed installing shell integration {}", shell_integration.describe());
+            }
         }
     }
 
