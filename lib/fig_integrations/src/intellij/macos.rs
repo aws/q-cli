@@ -13,12 +13,22 @@ use crate::{
     Integration,
 };
 
-const PLUGIN_PREFIX: &str = "codewhisperer-for-command-line-companion";
-const OLD_PLUGIN_SLUG: &str = "jetbrains-extension-2.0.0";
-const PLUGIN_SLUG: &str = "codewhisperer-for-command-line-companion";
-const PLUGIN_JAR: &str = "codewhisperer-for-command-line-companion.jar";
+const PLUGIN_PREFIX: &str = "q-for-command-line-companion";
+
+/// Version of the Q Intellij plugin. This should match the version in
+/// [build.gradle](../../../../extensions/jetbrains/build.gradle).
+const PLUGIN_VERSION: &str = "1.0.2";
+
+/// Legacy plugin names that should be removed on uninstall.
+const OLD_PLUGIN_SLUGS: [&str; 2] = ["codewhisperer-for-command-line-companion", "jetbrains-extension-2.0.0"];
 
 static PLUGIN_CONTENTS: &[u8] = include_bytes!("plugin.jar");
+
+/// Returns the identifier of the plugin - i.e., the directory name of the Q plugin stored under the
+/// Intellij `plugins/` directory.
+fn plugin_slug() -> String {
+    format!("{PLUGIN_PREFIX}-{PLUGIN_VERSION}")
+}
 
 pub async fn variants_installed() -> Result<Vec<IntelliJIntegration>> {
     Ok(IntelliJVariant::all()
@@ -92,8 +102,11 @@ impl Integration for IntelliJIntegration {
     }
 
     async fn install(&self) -> Result<()> {
-        let application_folder = self.application_folder()?;
+        if self.is_installed().await.is_ok() {
+            return Ok(());
+        }
 
+        let application_folder = self.application_folder()?;
         if !application_folder.exists() {
             return Err(Error::Custom(
                 format!(
@@ -107,26 +120,15 @@ impl Integration for IntelliJIntegration {
         let _ = self.uninstall().await;
 
         let plugins_folder = application_folder.join("plugins");
-
-        tokio::fs::remove_dir_all(plugins_folder.join(OLD_PLUGIN_SLUG))
-            .await
-            .ok();
         tokio::fs::create_dir_all(&plugins_folder).await?;
 
-        let destination_folder = plugins_folder.join(PLUGIN_SLUG);
-
-        if destination_folder.exists() {
-            tokio::fs::remove_dir_all(&destination_folder).await.map_err(|err| {
-                Error::Custom(format!("Failed removing destination folder {destination_folder:?}: {err:?}").into())
-            })?;
-        }
-
-        let lib_dir = destination_folder.join("lib");
+        let plugin_slug = plugin_slug();
+        let lib_dir = plugins_folder.join(&plugin_slug).join("lib");
         tokio::fs::create_dir_all(&lib_dir)
             .await
             .map_err(|err| Error::Custom(format!("Failed creating plugin lib folder: {err:?}").into()))?;
 
-        let jar_path = lib_dir.join(PLUGIN_JAR);
+        let jar_path = lib_dir.join(format!("{}.jar", &plugin_slug));
         tokio::fs::write(&jar_path, PLUGIN_CONTENTS)
             .await
             .map_err(|err| Error::Custom(format!("Failed writing plugin jar to {jar_path:?}: {err:?}").into()))?;
@@ -143,7 +145,8 @@ impl Integration for IntelliJIntegration {
         while let Some(entry) = entries.next_entry().await.map_err(|err| {
             Error::Custom(format!("Failed reading next entry in plugins folder dir {plugins_folder:?}: {err:?}").into())
         })? {
-            if entry.file_name().to_string_lossy().starts_with(PLUGIN_PREFIX) {
+            let fname = entry.file_name().to_string_lossy().into_owned();
+            if fname.starts_with(PLUGIN_PREFIX) || OLD_PLUGIN_SLUGS.iter().any(|slug| fname.starts_with(slug)) {
                 tokio::fs::remove_dir_all(entry.path()).await.map_err(|err| {
                     Error::Custom(
                         format!(
@@ -160,8 +163,7 @@ impl Integration for IntelliJIntegration {
     }
 
     async fn is_installed(&self) -> Result<()> {
-        let plugin_folder = self.application_folder()?.join("plugins").join(PLUGIN_SLUG);
-
+        let plugin_folder = self.application_folder()?.join("plugins").join(plugin_slug());
         if !plugin_folder.exists() {
             return Err(Error::Custom("Plugin not installed".into()));
         }
