@@ -53,7 +53,6 @@ pub enum Integration {
         #[arg(value_enum)]
         shell: Option<Shell>,
     },
-    Daemon,
     Ssh,
     InputMethod,
     #[command(name = "vscode")]
@@ -70,7 +69,6 @@ impl IntegrationsSubcommands {
             IntegrationsSubcommands::Install { integration, silent } => {
                 if let Integration::All = integration {
                     install(Integration::Dotfiles { shell: None }, silent).await?;
-                    install(Integration::Daemon, silent).await?;
                     install(Integration::Ssh, silent).await?;
                     #[cfg(target_os = "macos")]
                     install(Integration::InputMethod, silent).await?;
@@ -82,7 +80,6 @@ impl IntegrationsSubcommands {
             IntegrationsSubcommands::Uninstall { integration, silent } => {
                 if let Integration::All = integration {
                     uninstall(Integration::Dotfiles { shell: None }, silent).await?;
-                    uninstall(Integration::Daemon, silent).await?;
                     uninstall(Integration::Ssh, silent).await?;
                     #[cfg(target_os = "macos")]
                     uninstall(Integration::InputMethod, silent).await?;
@@ -95,12 +92,10 @@ impl IntegrationsSubcommands {
             IntegrationsSubcommands::Reinstall { integration, silent } => {
                 if let Integration::All = integration {
                     uninstall(Integration::Dotfiles { shell: None }, silent).await?;
-                    uninstall(Integration::Daemon, silent).await?;
                     uninstall(Integration::Ssh, silent).await?;
                     #[cfg(target_os = "macos")]
                     uninstall(Integration::InputMethod, silent).await?;
                     install(Integration::Dotfiles { shell: None }, silent).await?;
-                    install(Integration::Daemon, silent).await?;
                     install(Integration::Ssh, silent).await?;
                     #[cfg(target_os = "macos")]
                     install(Integration::InputMethod, silent).await?;
@@ -156,10 +151,6 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
             } else {
                 Err(eyre::eyre!(errs.join("\n\n")))
             }
-        },
-        Integration::Daemon => {
-            installed = true;
-            Ok(())
         },
         Integration::Ssh => {
             let ssh_integration = SshIntegration::new()?;
@@ -269,10 +260,6 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
                 Err(eyre::eyre!(errs.join("\n\n")))
             }
         },
-        Integration::Daemon => {
-            uninstalled = true;
-            Ok(())
-        },
         Integration::Ssh => {
             let ssh_integration = SshIntegration::new()?;
             if ssh_integration.is_installed().await.is_ok() {
@@ -355,7 +342,6 @@ async fn status(integration: Integration, format: OutputFormat) -> Result<()> {
             );
             Ok(())
         },
-        Integration::Daemon => Ok(()),
         Integration::Dotfiles { .. } => {
             let mut all_integrations = vec![];
             let mut errors = vec![];

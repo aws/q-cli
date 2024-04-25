@@ -69,6 +69,7 @@ args = parser.parse_args()
 match args.subparser:
     case "build":
         build(
+            release=True,
             output_bucket=args.output_bucket,
             signing_bucket=args.signing_bucket,
             aws_account_id=args.aws_account_id,

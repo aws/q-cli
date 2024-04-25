@@ -343,15 +343,11 @@ impl InternalSubcommand {
                 filename,
                 exit_code,
             }) => {
-                trace!("handlerId: {}", handler_id);
+                trace!("handlerId: {handler_id}");
 
                 let (filename, exit_code) = match (filename, exit_code) {
                     (Some(filename), Some(exit_code)) => {
-                        trace!(
-                            "callback specified filepath ({}) and exitCode ({}) to output!",
-                            filename,
-                            exit_code
-                        );
+                        trace!("callback specified filepath ({filename}) and exitCode ({exit_code}) to output!");
                         (filename, exit_code)
                     },
                     _ => {
@@ -369,7 +365,7 @@ impl InternalSubcommand {
                                 break;
                             }
                             tmp_file.write_all(&buffer[..size])?;
-                            trace!("Read {} bytes\n{}", size, std::str::from_utf8(&buffer[..size])?);
+                            trace!("Read {size} bytes\n{}", std::str::from_utf8(&buffer[..size])?);
                         }
 
                         let filename: String = tmp_path.to_str().context("invalid file path")?.into();
@@ -380,17 +376,12 @@ impl InternalSubcommand {
                 let hook = new_callback_hook(&handler_id, &filename, exit_code);
 
                 info!(
-                    "Sending 'handlerId: {}, filename: {}, exitcode: {}' over unix socket!\n",
-                    handler_id, filename, exit_code
+                    "Sending 'handlerId: {handler_id}, filename: {filename}, exitcode: {exit_code}' over unix socket!\n"
                 );
 
                 match send_hook_to_socket(hook).await {
-                    Ok(()) => {
-                        debug!("Successfully sent hook");
-                    },
-                    Err(e) => {
-                        debug!("Couldn't send hook {}", e);
-                    },
+                    Ok(()) => debug!("Successfully sent hook"),
+                    Err(e) => debug!("Couldn't send hook {e}"),
                 }
             },
             InternalSubcommand::GetShell => {},
@@ -460,6 +451,10 @@ impl InternalSubcommand {
                 .ok();
             },
             InternalSubcommand::UninstallForAllUsers => {
+                if !cfg!(target_os = "macos") {
+                    bail!("uninstall-for-all-users is only supported on macOS");
+                }
+
                 println!("Uninstalling additional components...");
 
                 let out = Command::new("users").output()?;
@@ -567,7 +562,7 @@ impl InternalSubcommand {
                 }
             },
             InternalSubcommand::Uuidgen => {
-                writeln!(stdout(), "{}", uuid::Uuid::new_v4()).ok();
+                let _ = writeln!(stdout(), "{}", uuid::Uuid::new_v4());
             },
             #[cfg(target_os = "linux")]
             InternalSubcommand::IbusBootstrap => {

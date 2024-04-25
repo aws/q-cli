@@ -110,6 +110,10 @@ pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
 }
 
 pub async fn quit_fig(verbose: bool) -> Result<()> {
+    if fig_util::system_info::is_remote() {
+        bail!("Please restart {PRODUCT_NAME} from your host machine");
+    }
+
     if !desktop_app_running() {
         if verbose {
             println!("{PRODUCT_NAME} app is not running");
@@ -204,40 +208,6 @@ pub fn login_message() -> String {
     )
 }
 
-pub fn get_fig_version() -> Result<String> {
-    cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            use eyre::ContextCompat;
-            use regex::Regex;
-            use fig_util::app_bundle_path;
-            use fig_util::macos::BUNDLE_CONTENTS_INFO_PLIST_PATH;
-
-            let plist = std::fs::read_to_string(app_bundle_path().join(BUNDLE_CONTENTS_INFO_PLIST_PATH))?;
-
-            let get_plist_field = |field: &str| -> Result<String> {
-                let regex =
-                    Regex::new(&format!("<key>{field}</key>\\s*<\\S+>(\\S+)</\\S+>")).unwrap();
-                let value = regex
-                    .captures(&plist)
-                    .context(format!("Could not find {field} in plist"))?
-                    .get(1)
-                    .context(format!("Could not find {field} in plist"))?
-                    .as_str();
-
-                Ok(value.into())
-            };
-
-            let fig_version = get_plist_field("CFBundleShortVersionString")?;
-           Ok(fig_version)
-        } else {
-            use fig_util::APP_PROCESS_NAME;
-            use std::process::Command;
-            Ok(String::from_utf8_lossy(&Command::new(APP_PROCESS_NAME).arg("--version").output()?.stdout)
-                .replace(APP_PROCESS_NAME, "").trim().into())
-        }
-    }
-}
-
 pub fn match_regex(regex: impl AsRef<str>, input: impl AsRef<str>) -> Option<String> {
     Some(
         Regex::new(regex.as_ref())
@@ -249,7 +219,7 @@ pub fn match_regex(regex: impl AsRef<str>, input: impl AsRef<str>) -> Option<Str
     )
 }
 
-static IS_TTY: Lazy<bool> = Lazy::new(|| std::env::var("TTY").is_ok());
+static IS_TTY: Lazy<bool> = Lazy::new(|| std::env::var_os("TTY").is_some());
 
 pub fn choose(prompt: impl Display, options: &[impl ToString]) -> Result<usize> {
     tokio::spawn(async {

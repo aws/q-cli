@@ -20,6 +20,7 @@ use fig_util::{
     Terminal,
     CLI_BINARY_NAME,
 };
+use indoc::formatdoc;
 use once_cell::sync::Lazy;
 
 use super::internal::should_figterm_launch::should_figterm_launch_exit_status;
@@ -214,18 +215,18 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
                 // In theory, they shouldn't both exist since they come with the app bundle itself.
                 // As of writing, the bash path change isn't live, but we source it anyway.
                 match shell {
-                    Shell::Bash => Some(format!("\
-[ -f '{bundle}/Contents/plugins/terminal/jediterm-bash.in' ] && source '{bundle}/Contents/plugins/terminal/jediterm-bash.in'
-[ -f '{bundle}/Contents/plugins/terminal/bash/jediterm-bash.in' ] && source '{bundle}/Contents/plugins/terminal/bash/jediterm-bash.in'",
-                    )),
-                    Shell::Zsh => Some(format!("\
-[ -f '{bundle}/Contents/plugins/terminal/.zshenv' ] && source '{bundle}/Contents/plugins/terminal/.zshenv'
-[ -f '{bundle}/Contents/plugins/terminal/zsh/.zshenv' ] && source '{bundle}/Contents/plugins/terminal/zsh/.zshenv'",
-                    )),
-                    Shell::Fish => Some(format!("\
-[ -f '{bundle}/Contents/plugins/terminal/fish/config.fish' ] && source '{bundle}/Contents/plugins/terminal/fish/config.fish'
-[ -f '{bundle}/Contents/plugins/terminal/fish/init.fish' ] && source '{bundle}/Contents/plugins/terminal/fish/init.fish'",
-                    )),
+                    Shell::Bash => Some(formatdoc! {"
+                        [ -f '{bundle}/Contents/plugins/terminal/jediterm-bash.in' ] && source '{bundle}/Contents/plugins/terminal/jediterm-bash.in'
+                        [ -f '{bundle}/Contents/plugins/terminal/bash/jediterm-bash.in' ] && source '{bundle}/Contents/plugins/terminal/bash/jediterm-bash.in'
+                    "}),
+                    Shell::Zsh => Some(formatdoc! {"
+                        [ -f '{bundle}/Contents/plugins/terminal/.zshenv' ] && source '{bundle}/Contents/plugins/terminal/.zshenv'
+                        [ -f '{bundle}/Contents/plugins/terminal/zsh/.zshenv' ] && source '{bundle}/Contents/plugins/terminal/zsh/.zshenv'
+                    "}),
+                    Shell::Fish => Some(formatdoc! {"
+                        [ -f '{bundle}/Contents/plugins/terminal/fish/config.fish' ] && source '{bundle}/Contents/plugins/terminal/fish/config.fish'
+                        [ -f '{bundle}/Contents/plugins/terminal/fish/init.fish' ] && source '{bundle}/Contents/plugins/terminal/fish/init.fish'
+                    "}),
                     Shell::Nu => None,
                 }
             } else {

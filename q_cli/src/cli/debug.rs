@@ -18,6 +18,7 @@ use crossterm::terminal::{
 };
 use crossterm::ExecutableCommand;
 use eyre::{
+    bail,
     ContextCompat,
     Result,
 };
@@ -40,7 +41,6 @@ use fig_util::{
     PTY_BINARY_NAME,
 };
 use owo_colors::OwoColorize;
-use serde_json::json;
 use tempfile::{
     NamedTempFile,
     TempDir,
@@ -233,6 +233,10 @@ impl DebugSubcommand {
     pub async fn execute(&self) -> Result<()> {
         match self {
             DebugSubcommand::App => {
+                if !cfg!(target_os = "macos") {
+                    bail!("app is only supported on macOS");
+                }
+
                 let app_info = get_app_info().unwrap_or_else(|_| "".into());
                 if app_info.is_empty() {
                     println!("{PRODUCT_NAME} is not currently running. Attempting to start...");
@@ -305,7 +309,7 @@ impl DebugSubcommand {
                 let level = std::sync::Arc::new(level.clone());
                 let files = std::sync::Arc::new(files.clone());
 
-                fig_settings::state::set_value("developer.logging", json!(true))?;
+                fig_settings::state::set_value("developer.logging", true)?;
 
                 if files.is_empty() || files.iter().any(|f| f == "fig_desktop") {
                     if let Err(err) =
@@ -317,7 +321,7 @@ impl DebugSubcommand {
 
                 tokio::spawn(async move {
                     tokio::signal::ctrl_c().await.unwrap();
-                    let code = match fig_settings::state::set_value("developer.logging", json!(false)) {
+                    let code = match fig_settings::state::set_value("developer.logging", false) {
                         Ok(_) => 0,
                         Err(_) => 1,
                     };
@@ -463,6 +467,10 @@ impl DebugSubcommand {
                 }
             },
             DebugSubcommand::PromptAccessibility => {
+                if !cfg!(target_os = "macos") {
+                    bail!("prompt-accessibility is only supported on macOS");
+                }
+
                 let result = prompt_accessibility_command().await;
                 if result.is_err() {
                     println!("Could not prompt for accessibility permissions.");
@@ -470,6 +478,10 @@ impl DebugSubcommand {
                 }
             },
             DebugSubcommand::Sample => {
+                if !cfg!(target_os = "macos") {
+                    bail!("sample is only supported on macOS");
+                }
+
                 let output = Command::new("lsappinfo")
                     .args(["info", "-only", "-pid", "-app", APP_BUNDLE_ID])
                     .output()?;
@@ -508,62 +520,68 @@ impl DebugSubcommand {
                     .spawn()?
                     .wait()?;
             },
-            DebugSubcommand::Accessibility { action } => match action {
-                Some(AccessibilityAction::Refresh) => {
-                    quit_fig(true).await?;
+            DebugSubcommand::Accessibility { action } => {
+                if !cfg!(target_os = "macos") {
+                    bail!("accessibility is only supported on macOS");
+                }
 
-                    Command::new("tccutil")
-                        .args(["reset", "Accessibility", APP_BUNDLE_ID])
-                        .spawn()?
-                        .wait()?;
+                match action {
+                    Some(AccessibilityAction::Refresh) => {
+                        quit_fig(true).await?;
 
-                    launch_fig_desktop(LaunchArgs {
-                        wait_for_socket: true,
-                        open_dashboard: false,
-                        immediate_update: true,
-                        verbose: true,
-                    })?;
-                },
-                Some(AccessibilityAction::Reset) => {
-                    quit_fig(true).await?;
+                        Command::new("tccutil")
+                            .args(["reset", "Accessibility", APP_BUNDLE_ID])
+                            .spawn()?
+                            .wait()?;
 
-                    Command::new("tccutil")
-                        .args(["reset", "Accessibility", APP_BUNDLE_ID])
-                        .spawn()?
-                        .wait()?;
-                },
-                Some(AccessibilityAction::Prompt) => {
-                    launch_fig_desktop(LaunchArgs {
-                        wait_for_socket: true,
-                        open_dashboard: false,
-                        immediate_update: true,
-                        verbose: true,
-                    })?;
+                        launch_fig_desktop(LaunchArgs {
+                            wait_for_socket: true,
+                            open_dashboard: false,
+                            immediate_update: true,
+                            verbose: true,
+                        })?;
+                    },
+                    Some(AccessibilityAction::Reset) => {
+                        quit_fig(true).await?;
 
-                    let result = prompt_accessibility_command().await;
-                    if result.is_err() {
-                        println!("Could not prompt for accessibility permissions.");
-                        return result.map_err(eyre::Report::from);
-                    }
-                },
-                Some(AccessibilityAction::Open) => {
-                    Command::new("open")
-                        .args(["x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"])
-                        .spawn()?
-                        .wait()?;
-                },
-                Some(AccessibilityAction::Status) | None => {
-                    cfg_if::cfg_if! {
-                        if #[cfg(target_os = "macos")] {
-                            let diagnostic = get_diagnostics().await?;
-                            println!("Accessibility Enabled: {}", diagnostic.accessibility);
-                        } else {
-                            println!("Unable to get accessibility status on this platform");
+                        Command::new("tccutil")
+                            .args(["reset", "Accessibility", APP_BUNDLE_ID])
+                            .spawn()?
+                            .wait()?;
+                    },
+                    Some(AccessibilityAction::Prompt) => {
+                        launch_fig_desktop(LaunchArgs {
+                            wait_for_socket: true,
+                            open_dashboard: false,
+                            immediate_update: true,
+                            verbose: true,
+                        })?;
+
+                        let result = prompt_accessibility_command().await;
+                        if result.is_err() {
+                            println!("Could not prompt for accessibility permissions.");
+                            return result.map_err(eyre::Report::from);
                         }
-                    }
-                },
+                    },
+                    Some(AccessibilityAction::Open) => {
+                        Command::new("open")
+                            .args(["x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"])
+                            .spawn()?
+                            .wait()?;
+                    },
+                    Some(AccessibilityAction::Status) | None => {
+                        cfg_if::cfg_if! {
+                            if #[cfg(target_os = "macos")] {
+                                let diagnostic = get_diagnostics().await?;
+                                println!("Accessibility Enabled: {}", diagnostic.accessibility);
+                            } else {
+                                println!("Unable to get accessibility status on this platform");
+                            }
+                        }
+                    },
+                }
             },
-            Self::KeyTester => {
+            DebugSubcommand::KeyTester => {
                 println!("{} (use {} to quit)", "Testing Key Input".bold(), "ctrl-d".magenta());
 
                 enable_raw_mode()?;
@@ -783,7 +801,6 @@ impl DebugSubcommand {
             },
             DebugSubcommand::Shell => {
                 let mut profile = NamedTempFile::new()?;
-
                 let tmp_dir = TempDir::new()?;
 
                 let mut command = Command::new(PTY_BINARY_NAME);
@@ -821,13 +838,18 @@ impl DebugSubcommand {
                             Shell::Nu => eyre::bail!("Unsupported shell for debug"),
                         };
 
+                        println!("Starting {PRODUCT_NAME} debug shell");
+                        println!();
+
                         profile.as_file().sync_all()?;
                         let mut output = command.spawn()?;
                         if !output.wait()?.success() {
                             panic!();
                         }
 
-                        println!("Ending");
+                        println!();
+                        println!("Ending {PRODUCT_NAME} debug shell");
+                        println!();
                     },
                     None => error!("Could not determine current shell or shell not supported"),
                 }

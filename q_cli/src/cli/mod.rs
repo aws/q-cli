@@ -46,6 +46,7 @@ use fig_util::{
     manifest,
     system_info,
     CLI_BINARY_NAME,
+    PRODUCT_NAME,
 };
 use serde::Serialize;
 use tracing::level_filters::LevelFilter;
@@ -87,8 +88,6 @@ impl OutputFormat {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 pub enum Processes {
-    /// Daemon process
-    Daemon,
     /// Desktop Process
     App,
 }
@@ -300,12 +299,9 @@ impl Cli {
                 CliRootCommands::Internal(internal_subcommand) => internal_subcommand.execute().await,
                 CliRootCommands::Launch => launch_dashboard().await,
                 CliRootCommands::Quit => crate::util::quit_fig(true).await,
-                CliRootCommands::Restart { process } => match process {
-                    Processes::App => {
-                        app::restart_fig().await?;
-                        launch_dashboard().await
-                    },
-                    Processes::Daemon => Ok(()),
+                CliRootCommands::Restart { .. } => {
+                    app::restart_fig().await?;
+                    launch_dashboard().await
                 },
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
                 CliRootCommands::Integrations(subcommand) => subcommand.execute().await,
@@ -369,6 +365,8 @@ async fn launch_dashboard() -> Result<()> {
         true => Some("/".into()),
         false => None,
     };
+
+    println!("Opening {PRODUCT_NAME} dashboard");
 
     open_ui_element(UiElement::MissionControl, route)
         .await
@@ -437,10 +435,6 @@ mod test {
     fn test_restart() {
         assert_parse!(["restart", "app"], CliRootCommands::Restart {
             process: Processes::App
-        });
-
-        assert_parse!(["restart", "daemon"], CliRootCommands::Restart {
-            process: Processes::Daemon
         });
     }
 

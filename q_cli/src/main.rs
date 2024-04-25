@@ -12,13 +12,13 @@ use clap::error::{
     ErrorKind,
 };
 use clap::Parser;
+use crossterm::style::Stylize;
 use eyre::Result;
 use fig_log::get_max_fig_log_level;
 use fig_util::{
     CLI_BINARY_NAME,
     PRODUCT_NAME,
 };
-use owo_colors::OwoColorize;
 use tracing::metadata::LevelFilter;
 
 fn main() -> Result<ExitCode> {

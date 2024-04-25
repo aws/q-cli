@@ -48,11 +48,15 @@ def build_npm_packages() -> Dict[str, pathlib.Path]:
 
 
 def build_cargo_bin(
+    release: bool,
     package: str,
     output_name: str | None = None,
     features: Mapping[str, Sequence[str]] | None = None,
 ) -> pathlib.Path:
-    args = ["cargo", "build", "--release", "--locked", "--package", package]
+    args = ["cargo", "build", "--locked", "--package", package]
+
+    if release:
+        args.append("--release")
 
     targets = rust_targets()
     for target in targets:
@@ -65,7 +69,7 @@ def build_cargo_bin(
         args,
         env={
             **os.environ,
-            **rust_env(release=True),
+            **rust_env(release=release),
         },
     )
 
@@ -128,8 +132,8 @@ def gen_manifest() -> str:
     )
 
 
-def build_macos_ime(signing_data: EcSigningData | None) -> pathlib.Path:
-    fig_input_method_bin = build_cargo_bin("fig_input_method")
+def build_macos_ime(release: bool, signing_data: EcSigningData | None) -> pathlib.Path:
+    fig_input_method_bin = build_cargo_bin(release=release, package="fig_input_method")
     input_method_app = pathlib.Path("build/CodeWhispererInputMethod.app")
 
     (input_method_app / "Contents/MacOS").mkdir(parents=True, exist_ok=True)
@@ -172,6 +176,7 @@ def tauri_config(cli_path: pathlib.Path, pty_path: pathlib.Path, target: str) ->
 
 
 def build_desktop_app(
+    release: bool,
     pty_path: pathlib.Path,
     cli_path: pathlib.Path,
     npm_packages: Dict[str, pathlib.Path],
@@ -181,7 +186,7 @@ def build_desktop_app(
     target = "universal-apple-darwin"
 
     info("Building macos ime")
-    ime_app = build_macos_ime(signing_data)
+    ime_app = build_macos_ime(release=release, signing_data=signing_data)
 
     info("Writing manifest")
     manifest_path = pathlib.Path(DESKTOP_PACKAGE_NAME) / "manifest.json"
@@ -208,14 +213,14 @@ def build_desktop_app(
     run_cmd(
         cargo_tauri_args,
         cwd=DESKTOP_PACKAGE_NAME,
-        env={**os.environ, **rust_env(release=True), "BUILD_DIR": BUILD_DIR},
+        env={**os.environ, **rust_env(release=release), "BUILD_DIR": BUILD_DIR},
     )
 
     # clean up
     manifest_path.unlink(missing_ok=True)
     tauri_config_path.unlink(missing_ok=True)
 
-    target_bundle = pathlib.Path(f"target/{target}/release/bundle/macos/codewhisperer_desktop.app")
+    target_bundle = pathlib.Path(f"target/{target}/release/bundle/macos/q_desktop.app")
     app_path = BUILD_DIR / f"{APP_NAME}.app"
     shutil.rmtree(app_path, ignore_errors=True)
     shutil.copytree(target_bundle, app_path)
@@ -370,6 +375,7 @@ def generate_sha(path: pathlib.Path) -> pathlib.Path:
 
 
 def build(
+    release: bool,
     output_bucket: str | None = None,
     signing_bucket: str | None = None,
     aws_account_id: str | None = None,
@@ -393,17 +399,17 @@ def build(
         signing_data = None
 
     cargo_features: Mapping[str, Sequence[str]] = {}
-
-    if stage_name == "prod" or stage_name is None:
-        info("Building for prod")
-    elif stage_name == "gamma":
-        info("Building for gamma")
-        cargo_features = {
-            CLI_PACKAGE_NAME: [f"{CLI_PACKAGE_NAME}/gamma"],
-            DESKTOP_PACKAGE_NAME: [f"{DESKTOP_PACKAGE_NAME}/gamma"],
-        }
-    else:
-        raise ValueError(f"Unknown stage name: {stage_name}")
+    match stage_name:
+        case "prod" | None:
+            info("Building for prod")
+        case "gamma":
+            info("Building for gamma")
+            cargo_features = {
+                CLI_PACKAGE_NAME: [f"{CLI_PACKAGE_NAME}/gamma"],
+                DESKTOP_PACKAGE_NAME: [f"{DESKTOP_PACKAGE_NAME}/gamma"],
+            }
+        case _:
+            raise ValueError(f"Unknown stage name: {stage_name}")
 
     info(f"Cargo features: {cargo_features}")
     info(f"Signing app: {signing_data is not None}")
@@ -422,14 +428,19 @@ def build(
         run_clippy(features=cargo_features)
 
     info("Building", CLI_PACKAGE_NAME)
-    cli_path = build_cargo_bin(CLI_PACKAGE_NAME, output_name=CLI_BINARY_NAME, features=cargo_features)
+    cli_path = build_cargo_bin(
+        release=release, package=CLI_PACKAGE_NAME, output_name=CLI_BINARY_NAME, features=cargo_features
+    )
 
     info("Building", PTY_PACKAGE_NAME)
-    pty_path = build_cargo_bin(PTY_PACKAGE_NAME, output_name=PTY_BINARY_NAME, features=cargo_features)
+    pty_path = build_cargo_bin(
+        release=release, package=PTY_PACKAGE_NAME, output_name=PTY_BINARY_NAME, features=cargo_features
+    )
 
     if isDarwin():
         info(f"Building {APP_NAME}.dmg")
         dmg_path = build_desktop_app(
+            release=release,
             cli_path=cli_path,
             pty_path=pty_path,
             npm_packages=npm_packages,

@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use cfg_if::cfg_if;
 use clap::{
     arg,
     Args,
@@ -56,8 +55,6 @@ pub struct UninstallArgs {
 
 #[derive(Debug, PartialEq, Eq, Subcommand)]
 pub enum AppSubcommand {
-    /// Install the app
-    Install,
     /// Run the tutorial again
     Onboarding,
     /// Check if the desktop app is running
@@ -68,9 +65,6 @@ pub enum AppSubcommand {
     Restart,
     /// Quit the desktop app
     Quit,
-    /// Set the internal pseudo-terminal path
-    #[deprecated]
-    SetPath,
     /// Uninstall the desktop app
     Uninstall(UninstallArgs),
     /// Prompts shown on terminal startup
@@ -123,26 +117,24 @@ pub async fn restart_fig() -> Result<()> {
 
 impl AppSubcommand {
     pub async fn execute(&self) -> Result<()> {
-        match self {
-            AppSubcommand::Install => {
-                // TODO(sean) install MacOS specific script
-            },
-            AppSubcommand::Onboarding => {
-                cfg_if! {
-                    if #[cfg(unix)] {
-                        launch_fig_desktop(LaunchArgs {
-                            wait_for_socket: true,
-                            open_dashboard: false,
-                            immediate_update: true,
-                            verbose: true,
-                        })?;
+        if !cfg!(target_os = "macos") {
+            bail!("app subcommands are only supported on macOS");
+        }
 
-                        if state::set_value("user.onboarding", true).is_ok() && state::set_value("doctor.prompt-restart-terminal", false).is_ok() {
-                            // Command::new("bash")
-                            //     .args(["-c", include_str!("onboarding.sh")])
-                            //     .exec();
-                            println!(
-                                "
+        match self {
+            AppSubcommand::Onboarding => {
+                launch_fig_desktop(LaunchArgs {
+                    wait_for_socket: true,
+                    open_dashboard: false,
+                    immediate_update: true,
+                    verbose: true,
+                })?;
+
+                if state::set_value("user.onboarding", true).is_ok()
+                    && state::set_value("doctor.prompt-restart-terminal", false).is_ok()
+                {
+                    println!(
+                        "
    ███████╗██╗ ██████╗
    ██╔════╝██║██╔════╝
    █████╗  ██║██║  ███╗
@@ -155,34 +147,10 @@ impl AppSubcommand {
    * Change settings? Run {}
    * {PRODUCT_NAME} not working? Run {}
                                 ",
-                                format!("{PRODUCT_NAME} Autocomplete").bold(),
-                                CLI_BINARY_NAME.bold().magenta(),
-                                format!("{CLI_BINARY_NAME} doctor").bold().magenta(),
-                            );
-                        }
-                    } else if #[cfg(windows)] {
-                        if state::set_value("user.onboarding", true).is_ok() &&
-                           state::set_value("doctor.prompt-restart-terminal", false).is_ok() {
-                            println!(
-                                "
-
-  \x1B[1m███████╗██╗ ██████╗
-  ██╔════╝██║██╔════╝
-  █████╗  ██║██║  ███╗
-  ██╔══╝  ██║██║   ██║
-  ██║     ██║╚██████╔╝
-  ╚═╝     ╚═╝ ╚═════╝ Autocomplete\x1B[0m
-
-1. Type {} and suggestions will appear.
-
-2. Run {} to check for common bugs.
-
-",
-                                "\"cd \"".bold(),
-                                format!("{CLI_BINARY_NAME} doctor").bold().magenta()
-                            );
-                        }
-                    }
+                        format!("{PRODUCT_NAME} Autocomplete").bold(),
+                        CLI_BINARY_NAME.bold().magenta(),
+                        format!("{CLI_BINARY_NAME} doctor").bold().magenta(),
+                    );
                 }
             },
             AppSubcommand::Prompts => {
@@ -253,33 +221,18 @@ impl AppSubcommand {
                     }
                 }
             },
+            #[cfg(target_os = "macos")]
             AppSubcommand::Uninstall(args) => {
-                cfg_if! {
-                    if #[cfg(target_os = "macos")] {
-                        // use fig_telemetry::{TrackSource, TrackEvent, TrackEventType};
+                if !args.no_open && !crate::util::is_brew_reinstall().await {
+                    fig_util::open_url_async(fig_install::UNINSTALL_URL).await.ok();
+                }
 
-                        // let telem_join = tokio::spawn(fig_telemetry::emit_track(TrackEvent::new(
-                        //     TrackEventType::UninstalledApp,
-                        //     TrackSource::Cli,
-                        //     env!("CARGO_PKG_VERSION").into(),
-                        //     [("source", "fig app uninstall")],
-                        // )));
-
-                        if !args.no_open && !crate::util::is_brew_reinstall().await {
-                            fig_util::open_url_async(fig_install::UNINSTALL_URL).await.ok();
-                        }
-
-                        // telem_join.await.ok();
-
-                        if !args.only_open {
-                            fig_install::uninstall(args.into()).await?;
-                        }
-                    } else {
-                        let _args = args;
-                        eyre::bail!("Unable to uninstall app via `fig app uninstall` on {}", std::env::consts::OS)
-                    }
+                if !args.only_open {
+                    fig_install::uninstall(args.into()).await?;
                 }
             },
+            #[cfg(not(target_os = "macos"))]
+            AppSubcommand::Uninstall(_) => {},
             AppSubcommand::Restart => restart_fig().await?,
             AppSubcommand::Quit => crate::util::quit_fig(true).await?,
             AppSubcommand::Launch => {
@@ -298,8 +251,6 @@ impl AppSubcommand {
             AppSubcommand::Running => {
                 println!("{}", if desktop_app_running() { "1" } else { "0" });
             },
-            #[allow(deprecated)]
-            AppSubcommand::SetPath => {},
         }
         Ok(())
     }

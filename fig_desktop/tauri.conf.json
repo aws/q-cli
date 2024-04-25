@@ -3,7 +3,7 @@
     "distDir": []
   },
   "package": {
-    "productName": "codewhisperer_desktop"
+    "productName": "q_desktop"
   },
   "tauri": {
     "bundle": {
