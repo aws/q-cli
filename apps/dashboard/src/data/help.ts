@@ -1,4 +1,4 @@
-import { CLI_BINARY_NAME } from "@/lib/constants";
+import { CLI_BINARY_NAME, USER_MANUAL_URL } from "@/lib/constants";
 
 const supportSteps = {
   steps: [
@@ -12,7 +12,7 @@ const supportSteps = {
     // },
     {
       text: "User manual",
-      url: "https://docs.aws.amazon.com/codewhisperer/latest/userguide/command-line.html",
+      url: USER_MANUAL_URL,
     },
   ],
 };

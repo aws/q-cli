@@ -1,4 +1,4 @@
-import { PRODUCT_NAME } from "@/lib/constants";
+import { PRODUCT_NAME, TELEMETRY_WIKI_URL } from "@/lib/constants";
 
 const generalPreferences = [
   {
@@ -84,7 +84,7 @@ const generalPreferences = [
         title: "Telemetry",
         description: `Enable ${PRODUCT_NAME} for command line to send usage data to AWS`,
         example:
-          "Learn more at https://docs.aws.amazon.com/codewhisperer/latest/userguide/sharing-data.html",
+          `Learn more at ${TELEMETRY_WIKI_URL}`,
         type: "boolean",
         default: true,
         popular: false,
@@ -94,7 +94,7 @@ const generalPreferences = [
         title: `Share ${PRODUCT_NAME} content with AWS`,
         description: `When checked, your content processed by ${PRODUCT_NAME} may be used for service improvement (except for content processed by the Professional ${PRODUCT_NAME} service tier). Unchecking this box will cause AWS to delete any of your content used for that purpose. The information used to provide the ${PRODUCT_NAME} service to you will not be affected.`,
         example:
-          "Learn more at https://docs.aws.amazon.com/codewhisperer/latest/userguide/sharing-data.html",
+          `Learn more at ${TELEMETRY_WIKI_URL}`,
         type: "boolean",
         default: true,
         popular: false,

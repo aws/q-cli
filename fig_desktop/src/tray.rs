@@ -11,6 +11,7 @@ use fig_util::consts::{
     PRODUCT_NAME_SHORT,
 };
 use fig_util::manifest::Channel;
+use fig_util::url::USER_MANUAL;
 use muda::{
     Menu,
     MenuEvent,
@@ -192,7 +193,7 @@ pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
         },
         "user-manual" => {
             if let Err(err) =
-                fig_util::open_url("https://docs.aws.amazon.com/codewhisperer/latest/userguide/command-line.html")
+                fig_util::open_url(USER_MANUAL)
             {
                 error!(%err, "Failed to open user manual url");
             }

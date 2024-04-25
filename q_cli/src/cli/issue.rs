@@ -6,6 +6,7 @@ use fig_diagnostic::Diagnostics;
 use fig_util::system_info::is_remote;
 use fig_util::{
     CLI_BINARY_NAME,
+    GITHUB_DISCUSSIONS_REPO_NAME,
     PRODUCT_NAME,
 };
 use owo_colors::{
@@ -174,7 +175,7 @@ impl IssueArgs {
         let env_string = environment.user_readable().join("\n");
 
         let url = url::Url::parse_with_params(
-            "https://github.com/aws/codewhisperer-command-line-discussions/discussions/new",
+            &format!("https://github.com/aws/{GITHUB_DISCUSSIONS_REPO_NAME}/discussions/new"),
             &[
                 ("category", "support-ticket"),
                 ("title", &issue_title),
@@ -198,8 +199,8 @@ async fn search_github_issues(query: &str) -> Option<Vec<(String, usize, String,
     let client = fig_request::reqwest_client::reqwest_client(true)?;
 
     let search_url = format!(
-        "https://api.github.com/search/issues?q={}+repo:aws/codewhisperer-command-line-discussion+type:issue",
-        query
+        "https://api.github.com/search/issues?q={}+repo:aws/{}+type:issue",
+        query, GITHUB_DISCUSSIONS_REPO_NAME
     );
 
     let Ok(response) = client

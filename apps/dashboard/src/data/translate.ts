@@ -1,4 +1,4 @@
-import { CLI_BINARY_NAME } from "@/lib/constants";
+import { CLI_BINARY_NAME, TRANSLATE_WIKI_URL } from "@/lib/constants";
 
 const translateSettings = [
   {
@@ -29,7 +29,7 @@ export default translateSettings;
 export const intro = {
   title: "Translate",
   description: `Translate natural language-to-bash. Just run \`${CLI_BINARY_NAME} translate\`.`,
-  link: "https://fig.io/user-manual/ai",
+  link: TRANSLATE_WIKI_URL,
   disabled: true,
   enable: {
     flag: "ai.disable",

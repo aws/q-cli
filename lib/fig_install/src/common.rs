@@ -46,7 +46,7 @@ pub async fn uninstall(components: InstallComponents) -> Result<(), Error> {
             local_bin_path.join(CLI_BINARY_NAME),
             local_bin_path.join(OLD_CLI_BINARY_NAME),
             Path::new("/usr/local/bin").join(CLI_BINARY_NAME),
-            Path::new("/usr/local/bin").join(CLI_BINARY_NAME),
+            Path::new("/usr/local/bin").join(OLD_CLI_BINARY_NAME),
         ];
 
         for path in binary_paths {

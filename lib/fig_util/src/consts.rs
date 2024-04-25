@@ -24,6 +24,17 @@ pub const OLD_PRODUCT_NAME: &str = "CodeWhisperer";
 pub const OLD_CLI_BINARY_NAME: &str = "cw";
 pub const OLD_PTY_BINARY_NAME: &str = "cwterm";
 
+pub const GITHUB_DISCUSSIONS_REPO_NAME: &str = "codewhisperer-command-line-discussions";
+
+pub mod url {
+    pub const USER_MANUAL: &str = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line.html";
+    pub const AUTOCOMPLETE_WIKI: &str = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/command-line-autocomplete.html";
+    pub const AUTOCOMPLETE_SSH_WIKI:&str = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line-ssh.html";
+    pub const CHAT_WIKI: &str = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line-chat.html";
+    pub const TRANSLATE_WIKI: &str = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line-conversation.html";
+    pub const TELEMETRY_WIKI: &str = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/sharing-data.html";
+}
+
 /// macOS specific constants
 pub mod macos {
     pub const BUNDLE_CONTENTS_MACOS_PATH: &str = "Contents/MacOS";

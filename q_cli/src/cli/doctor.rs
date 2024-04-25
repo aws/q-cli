@@ -46,6 +46,7 @@ use fig_ipc::{
 };
 use fig_proto::local::DiagnosticsResponse;
 use fig_settings::JsonStore;
+use fig_util::consts::url::AUTOCOMPLETE_SSH_WIKI;
 use fig_util::desktop::{
     launch_fig_desktop,
     LaunchArgs,
@@ -1114,9 +1115,8 @@ impl DoctorCheck<()> for SshdConfigCheck {
             "The /etc/ssh/sshd_config file needs to have the following line:".into(),
             "  AcceptEnv Q_SET_PARENT".magenta().to_string().into(),
             "  AllowStreamLocalForwarding yes".magenta().to_string().into(),
-            // TODO(grant): Add AWS docs
-            // "".into(),
-            // "See https://fig.io/user-manual/autocomplete/ssh for more info".into(),
+            "".into(),
+            format!("See {AUTOCOMPLETE_SSH_WIKI} for more info").into(),
         ];
 
         let sshd_config_path = "/etc/ssh/sshd_config";
