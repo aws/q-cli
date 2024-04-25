@@ -328,7 +328,9 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
 
 async fn status(integration: Integration, format: OutputFormat) -> Result<()> {
     match integration {
-        Integration::All => Err(eyre::eyre!("Cannot check status of all integrations")),
+        Integration::All => Err(eyre::eyre!(
+            "Checking the status for all integrations is currently not supported"
+        )),
         Integration::Ssh => {
             let ssh_integration = SshIntegration::new()?;
             let installed = ssh_integration.is_installed().await.is_ok();

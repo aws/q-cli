@@ -7,6 +7,7 @@ use fig_util::{
     directories,
     Shell,
     CLI_BINARY_NAME,
+    OLD_CLI_BINARY_NAME,
 };
 
 use crate::Error;
@@ -40,13 +41,12 @@ pub async fn uninstall(components: InstallComponents) -> Result<(), Error> {
     };
 
     if components.contains(InstallComponents::BINARY) {
-        let local_path = directories::home_dir()?
-            .join(".local")
-            .join("bin")
-            .join(CLI_BINARY_NAME);
+        let local_bin_path = directories::home_local_bin()?;
         let binary_paths = [
+            local_bin_path.join(CLI_BINARY_NAME),
+            local_bin_path.join(OLD_CLI_BINARY_NAME),
             Path::new("/usr/local/bin").join(CLI_BINARY_NAME),
-            local_path.as_path().into(),
+            Path::new("/usr/local/bin").join(CLI_BINARY_NAME),
         ];
 
         for path in binary_paths {
