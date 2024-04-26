@@ -26,6 +26,11 @@ use crate::{
     Integration,
 };
 
+const SSH_CONFIG_PATH: &[&str] = &[".ssh", "config"];
+
+const SSH_OUTER_NAME: &str = "ssh";
+const SSH_INNER_NAME: &str = "ssh_inner";
+
 #[derive(Debug, Clone)]
 pub struct SshIntegration {
     path: PathBuf,
@@ -33,18 +38,19 @@ pub struct SshIntegration {
 
 impl SshIntegration {
     pub fn new() -> Result<Self, Error> {
-        let path = home_dir()?.join(".ssh").join("config");
+        let mut path = home_dir()?;
+        path.extend(SSH_CONFIG_PATH);
         Ok(SshIntegration { path })
     }
 
     #[allow(clippy::unused_self)]
     fn get_integration_path(&self) -> Result<PathBuf> {
-        Ok(directories::fig_data_dir()?.join("ssh"))
+        Ok(directories::fig_data_dir()?.join(SSH_OUTER_NAME))
     }
 
     fn get_file_integration(&self) -> Result<FileIntegration> {
         let bin_name = CLI_BINARY_NAME;
-        let include_path = fig_data_dir_utf8()?.join("ssh_inner");
+        let include_path = fig_data_dir_utf8()?.join(SSH_INNER_NAME);
 
         Ok(FileIntegration {
             path: self.get_integration_path()?,
@@ -57,30 +63,69 @@ impl SshIntegration {
         })
     }
 
-    #[allow(clippy::unused_self)]
-    fn description(&self) -> String {
-        format!("# {PRODUCT_NAME} SSH Integration. Keep at the bottom of this file.")
-    }
-
-    fn source_text(&self) -> Result<String> {
+    fn path_text(&self) -> Result<String> {
         let home = home_dir()?;
         let integration_path = self.get_integration_path()?;
         let path = integration_path.strip_prefix(home)?;
-        Ok(format!("Match all\n  Include \"~/{}\"", path.display()))
+        Ok(format!(r#""~/{}""#, path.display()))
+    }
+
+    #[allow(clippy::unused_self)]
+    fn description_text(&self) -> String {
+        format!("# Amazon {PRODUCT_NAME} SSH Integration. Keep at the bottom of this file.")
+    }
+
+    fn match_text(&self) -> Result<String> {
+        Ok(format!("Match all\n  Include {}", self.path_text()?))
+    }
+
+    fn source_text(&self) -> Result<String> {
+        let description = self.description_text();
+        let match_text = self.match_text()?;
+        Ok(format!("{description}\n{match_text}\n"))
+    }
+
+    fn match_text_regex(&self) -> Result<String> {
+        Ok(format!(
+            r#"Match all\n\s+Include\s+{}"#,
+            regex::escape(&self.path_text()?)
+        ))
     }
 
     fn source_regex(&self) -> Result<Regex> {
         let regex = format!(
             r#"(?:{}\n)?{}\n{{0,2}}"#,
-            regex::escape(&self.description()),
-            regex::escape(&self.source_text()?)
+            regex::escape(&self.description_text()),
+            &self.match_text_regex()?
         );
         Ok(Regex::new(&regex)?)
+    }
+
+    fn check_regex_is_match(&self, contents: &str) -> Result<()> {
+        let filtered_contents = Regex::new(r"^\s*(#.*)?\n").unwrap().replace_all(contents, "");
+        if !self.source_regex()?.is_match(&filtered_contents) {
+            return Err(Error::NotInstalled(
+                format!("{:?} does not source {PRODUCT_NAME}'s ssh integration", self.path).into(),
+            ));
+        }
+        Ok(())
     }
 
     pub async fn reinstall(&self) -> Result<()> {
         if self.get_integration_path()?.exists() {
             self.get_file_integration()?.install().await?;
+        }
+        Ok(())
+    }
+
+    /// Uninstall `~/.ssh/config` integrations
+    async fn uninstall_ssh_config(&self) -> Result<()> {
+        if self.path.exists() {
+            let mut contents = std::fs::read_to_string(&self.path)?;
+            contents = self.source_regex()?.replace_all(&contents, "").into();
+            contents = contents.trim().to_string();
+            contents.push('\n');
+            std::fs::write(&self.path, contents.as_bytes())?;
         }
         Ok(())
     }
@@ -93,6 +138,7 @@ impl Integration for SshIntegration {
     }
 
     async fn install(&self) -> Result<()> {
+        // Always update the file integration, these are not user facing
         self.get_file_integration()?.install().await?;
 
         if self.is_installed().await.is_ok() {
@@ -110,56 +156,56 @@ impl Integration for SshIntegration {
             }
         }
 
-        let contents = if self.path.exists() {
+        let mut contents = if self.path.exists() {
             backup_file(&self.path, fig_util::directories::utc_backup_dir().ok())?;
-            self.uninstall().await?;
+            self.uninstall_ssh_config().await?;
             std::fs::read_to_string(&self.path)?
         } else {
             String::new()
         };
 
-        let new_contents = format!("{}\n{}\n{}\n", contents, self.description(), self.source_text()?);
+        let source_text = self.source_text()?;
+
+        if !contents.is_empty() {
+            contents.push('\n');
+        }
+        contents.push_str(&source_text);
+
         let mut file = File::create(&self.path)?;
-        file.write_all(new_contents.as_bytes())?;
+        file.write_all(contents.as_bytes())?;
 
         Ok(())
     }
 
     async fn uninstall(&self) -> Result<()> {
-        if self.path.exists() {
-            let mut contents = std::fs::read_to_string(&self.path)?;
-            contents = self.source_regex()?.replace_all(&contents, "").into();
-            contents = contents.trim().to_string();
-            contents.push('\n');
-            std::fs::write(&self.path, contents.as_bytes())?;
-        }
+        let file_integration = self.get_file_integration()?;
+        let (res_1, res_2, res_3) = tokio::join!(self.uninstall_ssh_config(), file_integration.uninstall(), async {
+            // delete inner ssh integration file, ignore the error
+            let _ = tokio::fs::remove_file(directories::fig_data_dir()?.join(SSH_INNER_NAME)).await;
+            Ok(())
+        });
 
-        self.get_file_integration()?.uninstall().await?;
-
-        Ok(())
+        res_1.and(res_2).and(res_3)
     }
 
     async fn is_installed(&self) -> Result<()> {
-        let filtered_contents: String = match std::fs::read_to_string(&self.path) {
-            // Remove comments and empty lines.
-            Ok(contents) => Regex::new(r"^\s*(#.*)?\n").unwrap().replace_all(&contents, "").into(),
-            _ => {
+        self.get_file_integration()?.is_installed().await?;
+
+        let contents = match std::fs::read_to_string(&self.path) {
+            Ok(contents) => contents,
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
                 return Err(Error::NotInstalled(
-                    format!("{} does not exist.", self.path.display()).into(),
+                    format!("{:?} does not exist: {err}", self.path).into(),
+                ));
+            },
+            Err(err) => {
+                return Err(Error::NotInstalled(
+                    format!("Error reading {:?}: {err}", self.path).into(),
                 ));
             },
         };
 
-        self.get_file_integration()?.is_installed().await?;
-        if !self.source_regex()?.is_match(&filtered_contents) {
-            return Err(Error::NotInstalled(
-                format!(
-                    "{} does not source {PRODUCT_NAME}'s ssh integration",
-                    self.path.display()
-                )
-                .into(),
-            ));
-        }
+        self.check_regex_is_match(&contents)?;
 
         Ok(())
     }
@@ -175,11 +221,78 @@ mod tests {
         let file_integration = integration.get_file_integration().unwrap();
 
         println!("=== source_text ===");
-        println!("{}", integration.source_text().unwrap());
+        println!("{}", integration.match_text().unwrap());
         println!("===================");
         println!();
         println!("=== file_integration ===");
         println!("{}", file_integration.contents);
         println!("========================");
+    }
+
+    #[test]
+    fn test_integration_regex() {
+        let integration = SshIntegration::new().unwrap();
+        let re = integration.source_regex().unwrap();
+        println!("{}", re.as_str());
+
+        // Replaces whole integration
+        let base = integration.source_text().unwrap();
+        assert!(integration.check_regex_is_match(&base).is_ok());
+        assert_eq!(re.replace_all(&base, ""), String::new());
+
+        // A more complex example
+        let path = integration.path_text().unwrap();
+        let description = integration.description_text();
+        let match_text = integration.match_text().unwrap();
+        let config_text = indoc::formatdoc! {"
+            {description}
+            {match_text}
+               
+            # Non Match
+            Match all 1
+                Include \"~/path/to/file\"
+
+            # Match 1
+            Match all
+                Include {path}
+
+            {match_text}
+
+            # Match 2
+            Match all
+            \t\tInclude {path}
+            # Match 3
+            Match all
+             Include   {path}
+            {description}
+            {match_text}
+            {match_text}
+            # Non match 2
+            {description}
+            Match all
+                Include \"~/path/to/file\"
+            {description}
+            {match_text}
+        "};
+
+        assert!(integration.check_regex_is_match(&config_text).is_ok());
+
+        // replace whole integration
+        let replaced_config_text = re.replace_all(&config_text, "");
+        println!("=== replaced_config_text ===");
+        println!("{replaced_config_text}");
+        println!("============================");
+
+        assert!(integration.check_regex_is_match(&replaced_config_text).is_err());
+
+        // count the number of "all" to ensure match is replaced
+        let all_re = Regex::new(r"Match all").unwrap();
+        let all_count = all_re.find_iter(&replaced_config_text).count();
+        assert_eq!(all_count, 2);
+
+        // count the number of "Amazon" to ensure match is replaced
+        let amazon_re = Regex::new(r"# Amazon").unwrap();
+        let amazon_count = amazon_re.find_iter(&replaced_config_text).count();
+        assert_eq!(amazon_count, 1);
     }
 }

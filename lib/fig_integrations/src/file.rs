@@ -3,6 +3,7 @@ use std::path::PathBuf;
 
 use async_trait::async_trait;
 use tokio::io::AsyncWriteExt;
+use tracing::debug;
 
 use crate::error::{
     Error,
@@ -49,7 +50,7 @@ impl Integration for FileIntegration {
         }
 
         let mut options = tokio::fs::File::options();
-        options.write(true).create(true).truncate(true);
+        options.write(true).create_new(true);
 
         #[cfg(unix)]
         if let Some(mode) = self.mode {
@@ -58,6 +59,7 @@ impl Integration for FileIntegration {
 
         match options.open(&self.path).await {
             Ok(mut file) => {
+                debug!(path =? self.path, "Writing file integrations");
                 file.write_all(self.contents.as_bytes()).await?;
                 Ok(())
             },

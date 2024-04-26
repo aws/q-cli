@@ -30,7 +30,10 @@ use fig_api_client::ai::{
     cw_endpoint,
     cw_streaming_client,
 };
-use spinners::Spinner;
+use spinners::{
+    Spinner,
+    Spinners,
+};
 use winnow::stream::Offset;
 use winnow::Partial;
 
@@ -112,7 +115,7 @@ You can include additional context by adding the following to your prompt:
         // Print response as we receive it
         if let Some(rx) = &mut rx {
             stderr.queue(cursor::Hide)?;
-            let mut spinner = Some(Spinner::new(spinners::Spinners::Dots, "".to_owned()));
+            let mut spinner = Some(Spinner::new(Spinners::Dots, "Generating your answer...".to_owned()));
 
             let mut buf = String::new();
             let mut offset = 0;

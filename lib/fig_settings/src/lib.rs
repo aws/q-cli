@@ -378,29 +378,6 @@ impl JsonStore for Settings {
     }
 }
 
-impl Settings {
-    pub fn product_gate(
-        &self,
-        product: impl std::fmt::Display,
-        namespace: Option<impl std::fmt::Display>,
-    ) -> Result<bool> {
-        match namespace {
-            Some(namespace) => Ok(self
-                .get(&format!("product-gate.{namespace}.{product}.enabled"))
-                .and_then(|val| val.as_bool())
-                .unwrap_or_default()),
-            None => Ok(self
-                .get(&format!("product-gate.{product}.enabled"))
-                .and_then(|val| val.as_bool())
-                .unwrap_or_default()
-                || self
-                    .get(&format!("{product}.beta"))
-                    .and_then(|val| val.as_bool())
-                    .unwrap_or_default()),
-        }
-    }
-}
-
 // #[cfg(test)]
 // mod test {
 //     use std::path::Path;

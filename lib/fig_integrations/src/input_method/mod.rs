@@ -1,14 +1,11 @@
 use std::borrow::Cow;
-use std::os::unix::fs::symlink;
+use std::io::ErrorKind;
 use std::path::{
     Path,
     PathBuf,
 };
 use std::process::Command;
-use std::{
-    fs,
-    ptr,
-};
+use std::ptr;
 
 use async_trait::async_trait;
 use core_foundation::array::{
@@ -63,6 +60,7 @@ use serde::{
     Deserialize,
     Serialize,
 };
+use tokio::fs;
 use tracing::{
     debug,
     info,
@@ -455,7 +453,7 @@ impl Integration for InputMethod {
         let destination = self.target_bundle_path()?;
 
         // check that symlink to input method exists in input_methods_directory
-        let symlink = fs::read_link(destination);
+        let symlink = fs::read_link(destination).await;
 
         match symlink {
             Ok(symlink) => {
@@ -464,13 +462,8 @@ impl Integration for InputMethod {
                     return Err(InputMethodError::InvalidBundle("Symbolic link is incorrect".into()).into());
                 }
             },
-            Err(err) => {
-                if err.kind() == std::io::ErrorKind::NotFound {
-                    return Err(InputMethodError::NotInstalled.into());
-                } else {
-                    return Err(err.into());
-                }
-            },
+            Err(err) if err.kind() == ErrorKind::NotFound => return Err(InputMethodError::NotInstalled.into()),
+            Err(err) => return Err(err.into()),
         }
 
         // check that the input method is running (NSRunning application)
@@ -512,16 +505,18 @@ impl Integration for InputMethod {
             let destination = self.target_bundle_path()?;
 
             // Attempt to emove existing symlink
-            fs::remove_file(&destination).ok();
+            fs::remove_file(&destination).await.ok();
 
             // Create the parent directory if it doesn't exist
             if let Some(parent) = destination.parent() {
                 fs::create_dir_all(parent)
+                    .await
                     .with_context(|_| format!("Could not create directory {}", parent.display()))?;
             }
 
             // Create new symlink
-            symlink(&self.bundle_path, &destination)
+            fs::symlink(&self.bundle_path, &destination)
+                .await
                 .with_context(|_| format!("Could not create symlink {}", destination.display()))?;
 
             // Register input source
@@ -625,13 +620,33 @@ impl Integration for InputMethod {
         }
 
         // Remove symbolic link
-        fs::remove_file(destination)?;
+        fs::remove_file(destination).await?;
 
         Ok(())
     }
 
     fn describe(&self) -> String {
         "Input Method".into()
+    }
+
+    async fn migrate(&self) -> Result<()> {
+        // Check the symlink, if it points at the wrong location update it
+        let destination = self.target_bundle_path()?;
+        let symlink = fs::read_link(&destination).await;
+
+        match symlink {
+            Ok(symlink) => {
+                // does it point to the correct location
+                if symlink != self.bundle_path {
+                    fs::remove_file(&destination).await?;
+                    fs::symlink(&self.bundle_path, destination).await?;
+                }
+            },
+            Err(err) if err.kind() == ErrorKind::NotFound => {},
+            Err(err) => return Err(err.into()),
+        }
+
+        Ok(())
     }
 }
 

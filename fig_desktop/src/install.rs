@@ -3,10 +3,7 @@ use cfg_if::cfg_if;
 use fig_install::check_for_updates;
 use fig_integrations::ssh::SshIntegration;
 use fig_integrations::Integration;
-use fig_util::directories::{
-    fig_data_dir,
-    old_fig_data_dir,
-};
+use fig_util::directories::fig_data_dir;
 #[cfg(target_os = "macos")]
 use macos_utils::bundle::get_bundle_path_for_executable;
 use semver::Version;
@@ -19,6 +16,52 @@ use crate::utils::is_cargo_debug_build;
 
 const PREVIOUS_VERSION_KEY: &str = "desktop.versionAtPreviousLaunch";
 const MIGRATED_KEY: &str = "desktop.migratedFromFig";
+
+#[cfg(target_os = "macos")]
+pub async fn migrate_data_dir() {
+    // Migrate the user data dir
+    if let (Ok(old), Ok(new)) = (fig_util::directories::old_fig_data_dir(), fig_data_dir()) {
+        if !old.is_symlink() && old.is_dir() && !new.is_dir() {
+            match tokio::fs::rename(&old, &new).await {
+                Ok(()) => {
+                    if let Err(err) = symlink(&new, &old).await {
+                        error!(%err, "Failed to symlink old user data dir");
+                    }
+                },
+                Err(err) => {
+                    error!(%err, "Failed to migrate user data dir");
+                },
+            }
+        }
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn run_input_method_migration() {
+    use fig_integrations::input_method::InputMethod;
+    use tokio::time::{
+        sleep,
+        Duration,
+    };
+    use tracing::warn;
+
+    let input_method = InputMethod::default();
+    match input_method.target_bundle_path() {
+        Ok(target_bundle_path) if target_bundle_path.exists() => {
+            tokio::spawn(async move {
+                input_method.terminate().ok();
+                if let Err(err) = input_method.migrate().await {
+                    warn!(%err, "Failed to migrate input method");
+                }
+
+                sleep(Duration::from_secs(1)).await;
+                input_method.launch();
+            });
+        },
+        Ok(_) => warn!("Input method bundle path does not exist"),
+        Err(err) => warn!(%err, "Failed to get input method bundle path"),
+    }
+}
 
 /// Run items at launch
 pub async fn run_install(_ignore_immediate_update: bool) {
@@ -41,53 +84,10 @@ pub async fn run_install(_ignore_immediate_update: bool) {
         }
     }
 
+    #[cfg(target_os = "macos")]
     // Add any items that are only once per version
     if should_run_install_script() {
-        // tokio::spawn(async {
-        //     fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
-        //         fig_telemetry::TrackEventType::UpdatedApp,
-        //         fig_telemetry::TrackSource::Desktop,
-        //         env!("CARGO_PKG_VERSION").into(),
-        //         empty::<(&str, &str)>(),
-        //     ))
-        //     .await
-        //     .ok()
-        // });
-
-        #[cfg(target_os = "macos")]
-        {
-            // Migrate the user data dir
-            if let (Ok(old), Ok(new)) = (old_fig_data_dir(), fig_data_dir()) {
-                if !old.is_symlink() {
-                    match tokio::fs::rename(&old, &new).await {
-                        Ok(_) => {
-                            if let Err(err) = tokio::fs::symlink(new, old).await {
-                                error!(%err, "Failed to symlink old user data dir");
-                            }
-                        },
-                        Err(err) => error!(%err, "Failed to migrate user data dir"),
-                    }
-                };
-            }
-
-            let input_method = fig_integrations::input_method::InputMethod::default();
-            match input_method.target_bundle_path() {
-                Ok(target_bundle_path) if target_bundle_path.exists() => {
-                    input_method.terminate().ok();
-
-                    use tokio::time::{
-                        sleep,
-                        Duration,
-                    };
-                    tokio::spawn(async move {
-                        sleep(Duration::from_secs(1)).await;
-                        input_method.launch();
-                    });
-                },
-                Ok(_) => tracing::warn!("Input method bundle path does not exist"),
-                Err(err) => tracing::warn!(%err, "Failed to get input method bundle path"),
-            }
-        }
+        run_input_method_migration();
     }
 
     if let Err(err) = set_previous_version(current_version()) {
@@ -201,22 +201,33 @@ pub async fn run_install(_ignore_immediate_update: bool) {
 
 /// Symlink, and overwrite if it already exists and is invalid or not a symlink
 #[cfg(target_os = "macos")]
-fn symlink(origin: impl AsRef<std::path::Path>, link: impl AsRef<std::path::Path>) -> Result<(), std::io::Error> {
-    let origin = origin.as_ref();
-    let link = link.as_ref();
+async fn symlink(src: impl AsRef<std::path::Path>, dst: impl AsRef<std::path::Path>) -> Result<(), std::io::Error> {
+    use std::io::ErrorKind;
+
+    let src = src.as_ref();
+    let dst = dst.as_ref();
 
     // Check if the link already exists
-    if link.exists() {
-        // If it's a symlink, check if it points to the right place
-        if link.symlink_metadata()?.file_type().is_symlink() && std::fs::read_link(link)? == origin {
-            return Ok(());
-        }
-        // If it's not a symlink or it points to the wrong place, delete it
-        std::fs::remove_file(link)?;
+    match tokio::fs::symlink_metadata(dst).await {
+        Ok(metadata) => {
+            // If it's a symlink, check if it points to the right place
+            if metadata.file_type().is_symlink() {
+                if let Ok(read_link) = tokio::fs::read_link(dst).await {
+                    if read_link == src {
+                        return Ok(());
+                    }
+                }
+            }
+
+            // If it's not a symlink or it points to the wrong place, delete it
+            tokio::fs::remove_file(dst).await?;
+        },
+        Err(err) if err.kind() == ErrorKind::NotFound => {},
+        Err(err) => return Err(err),
     }
 
     // Create the symlink
-    std::os::unix::fs::symlink(origin, link)
+    tokio::fs::symlink(src, dst).await
 }
 
 #[cfg(target_os = "macos")]
@@ -252,7 +263,7 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
     match get_bundle_path_for_executable(PTY_BINARY_NAME) {
         Some(pty_path) => {
             let link = local_bin.join(PTY_BINARY_NAME);
-            if let Err(err) = symlink(&pty_path, link) {
+            if let Err(err) = symlink(&pty_path, link).await {
                 error!(%err, "Failed to symlink for {PTY_BINARY_NAME}: {pty_path:?}");
             }
 
@@ -317,13 +328,13 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
     match get_bundle_path_for_executable(CLI_BINARY_NAME) {
         Some(q_cli_path) => {
             let dest = local_bin.join(CLI_BINARY_NAME);
-            if let Err(err) = symlink(&q_cli_path, dest) {
+            if let Err(err) = symlink(&q_cli_path, dest).await {
                 error!(%err, "Failed to symlink {CLI_BINARY_NAME}");
             }
 
             let legacy_cli_link = local_bin.join(OLD_CLI_BINARY_NAME);
-            if legacy_cli_link.exists() {
-                if let Err(err) = symlink(q_cli_path, &legacy_cli_link) {
+            if legacy_cli_link.is_symlink() {
+                if let Err(err) = symlink(q_cli_path, &legacy_cli_link).await {
                     warn!(%err, "Failed to symlink legacy CLI: {legacy_cli_link:?}");
                 }
             }
@@ -497,8 +508,56 @@ fn set_previous_version(version: Version) -> anyhow::Result<()> {
 
 #[cfg(test)]
 mod test {
+    use super::*;
+
     #[test]
-    fn current_version() {
-        super::current_version();
+    fn test_current_version() {
+        current_version();
+    }
+
+    #[tokio::test]
+    async fn test_symlink() {
+        use tempfile::tempdir;
+
+        let tmp_dir = tempdir().unwrap();
+        let tmp_dir = tmp_dir.path();
+
+        // folders
+        let src_dir_1 = tmp_dir.join("dir_1");
+        let src_dir_2 = tmp_dir.join("dir_2");
+        let dst_dir = tmp_dir.join("dst");
+
+        std::fs::create_dir_all(&src_dir_1).unwrap();
+        std::fs::create_dir_all(&src_dir_2).unwrap();
+
+        // Check that a new symlink is created
+        assert!(!dst_dir.exists());
+        symlink(&src_dir_1, &dst_dir).await.unwrap();
+        assert!(dst_dir.exists());
+        assert_eq!(dst_dir.read_link().unwrap(), src_dir_1);
+
+        // Check that the symlink is updated
+        symlink(&src_dir_2, &dst_dir).await.unwrap();
+        assert!(dst_dir.exists());
+        assert_eq!(dst_dir.read_link().unwrap(), src_dir_2);
+
+        // files
+        let src_file_1 = src_dir_1.join("file_1");
+        let src_file_2 = src_dir_2.join("file_2");
+        let dst_file = dst_dir.join("file");
+
+        std::fs::write(&src_file_1, "content 1").unwrap();
+        std::fs::write(&src_file_2, "content 2").unwrap();
+
+        // Check that a new symlink is created
+        assert!(!dst_file.exists());
+        symlink(&src_file_1, &dst_file).await.unwrap();
+        assert!(dst_file.exists());
+        assert_eq!(std::fs::read_to_string(&dst_file).unwrap(), "content 1");
+
+        // Check that the symlink is updated
+        symlink(&src_file_2, &dst_file).await.unwrap();
+        assert!(dst_file.exists());
+        assert_eq!(std::fs::read_to_string(&dst_file).unwrap(), "content 2");
     }
 }

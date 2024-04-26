@@ -69,11 +69,6 @@ pub fn get_int_or(key: impl AsRef<str>, default: i64) -> i64 {
     get_int(key).ok().flatten().unwrap_or(default)
 }
 
-pub fn product_gate(product: impl std::fmt::Display, namespace: Option<impl std::fmt::Display>) -> Result<bool> {
-    let settings = Settings::load()?;
-    settings.product_gate(product, namespace)
-}
-
 // #[cfg(test)]
 // mod test {
 //     use super::*;

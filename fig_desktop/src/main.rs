@@ -92,16 +92,11 @@ async fn main() {
         .init()
         .expect("Failed to init logger");
 
-    // let _sentry_guard = fig_telemetry::init_sentry(
-    //     release_name!(),
-    //     "https://4295cb4f204845958717e406b331948d@o436453.ingest.sentry.io/6432682",
-    //     1.0,
-    //     true,
-    // );
+    #[cfg(target_os = "macos")]
+    install::migrate_data_dir().await;
 
     if let Err(err) = fig_settings::settings::init_global() {
         error!(%err, "failed to init global settings");
-        // fig_telemetry::sentry::capture_error(&err);
     }
 
     if cli.is_startup && !fig_settings::settings::get_bool_or("app.launchOnStartup", true) {

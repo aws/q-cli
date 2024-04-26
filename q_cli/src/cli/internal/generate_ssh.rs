@@ -16,6 +16,7 @@ use indoc::formatdoc;
 use uuid::Uuid;
 
 const IGNORED_USERNAMES: &[&str] = &["git", "aur"];
+const SSH_INNER_NAME: &str = "ssh_inner";
 
 #[derive(Debug, PartialEq, Eq, Args)]
 pub struct GenerateSshArgs {
@@ -52,7 +53,7 @@ impl GenerateSshArgs {
         }
         drop(stream);
 
-        let config_path = directories::fig_data_dir()?.join("ssh_inner");
+        let config_path = directories::fig_data_dir()?.join(SSH_INNER_NAME);
 
         if should_generate_config {
             let uuid = uuid::Uuid::new_v4();

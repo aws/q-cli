@@ -84,6 +84,7 @@ pub fn config_dir() -> Result<PathBuf> {
 /// The old codewhisperer data directory
 ///
 /// This should be removed at some point in the future, once all our users have migrated
+/// - MacOS: `$HOME/Library/Application Support/codewhisperer`
 pub fn old_fig_data_dir() -> Result<PathBuf> {
     cfg_if::cfg_if! {
         if #[cfg(unix)] {
