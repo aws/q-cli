@@ -481,11 +481,14 @@ impl DotfileShellIntegration {
     fn legacy_source_text_3(&self, when: When) -> Result<String> {
         let home = directories::home_dir()?;
         let integration_path = self.legacy_script_integration(when)?.path;
-        let path = format!("\"${{HOME}}/{}\"", integration_path.strip_prefix(home)?.display());
+        let path = regex::escape(&format!(
+            "\"${{HOME}}/{}\"",
+            integration_path.strip_prefix(home)?.display()
+        ));
 
         match self.shell {
-            Shell::Fish => Ok(format!("test -f {path}; and builtin source {path}")),
-            _ => Ok(format!("[[ -f {path} ]] && builtin source {path}")),
+            Shell::Fish => Ok(format!(r"test\s*\-f\s*{path};\s*and\s+builtin\s+source\s+{path}")),
+            _ => Ok(format!(r"\[\[\s*\-f\s*{path}\s*\]\]\s*&&\s*builtin\s+source\s*{path}")),
         }
     }
 
@@ -563,7 +566,7 @@ impl DotfileShellIntegration {
         Ok(format!(
             r#"(?m)(?:\s*{}\s*\n)?^\s*{}\s*\n{{0,2}}"#,
             regex::escape(&DotfileShellIntegration::legacy_description(when)),
-            regex::escape(&self.legacy_source_text_3(when)?),
+            self.legacy_source_text_3(when)?,
         ))
     }
 
@@ -762,14 +765,6 @@ mod test {
 
     use super::*;
 
-    fn all_dotfile_shell_integrations() -> Vec<ShellScriptShellIntegration> {
-        Shell::all()
-            .iter()
-            .map(|shell| shell.get_script_integrations().unwrap())
-            .flatten()
-            .collect()
-    }
-
     fn check_script(shell: Shell, when: When) {
         let shell_arg = "--shell=bash";
         let mut child = Command::new("shellcheck")
@@ -823,13 +818,13 @@ mod test {
     }
 
     #[test]
-    fn test_legacy_regexes() {
-        let pat = regex::Regex::new(
+    fn test_legacy_codewhisperer_regex() {
+        let re = regex::Regex::new(
             &DotfileShellIntegration {
                 pre: true,
                 post: true,
                 shell: Shell::Zsh,
-                dotfile_directory: Shell::Zsh.get_config_directory().unwrap(),
+                dotfile_directory: "".into(),
                 dotfile_name: ".zshrc",
             }
             .old_brand_regex(When::Pre)
@@ -837,24 +832,63 @@ mod test {
         )
         .unwrap();
 
-        let dir = old_fig_data_dir().unwrap();
-        let dir = dir.strip_prefix(home_dir().unwrap()).unwrap().display();
-        println!("{dir}");
+        println!("re: {re}");
+
+        let data_dir = old_fig_data_dir().unwrap();
+        let dir = data_dir.strip_prefix(home_dir().unwrap()).unwrap().display();
 
         // base case
-        pat.captures(&format!(
-            "# CodeWhisperer pre block. Keep at the top of this file.
-[[ -f \"${{HOME}}/{dir}/shell/zshrc.pre.zsh\" ]] && builtin source \"${{HOME}}/{dir}/shell/zshrc.pre.zsh\""
-        ))
-        .unwrap();
+        let doc = &indoc::formatdoc! {r#"
+            # CodeWhisperer pre block. Keep at the top of this file.
+            [[ -f "${{HOME}}/{dir}/shell/zshrc.pre.zsh" ]] && builtin source "${{HOME}}/{dir}/shell/zshrc.pre.zsh"
+        "#};
+        let replaced = re.replace_all(&doc, "");
+        assert_eq!(replaced, "");
 
-        pat.captures_iter(&format!(
-            "# different comment
-                [[ -f \"${{HOME}}/{dir}/shell/zshrc.pre.zsh\" ]] && builtin source \"${{HOME}}/{dir}/shell/zshrc.pre.zsh\"
-        ",
-        ))
-        .next()
-        .unwrap();
+        // different comment case
+        let doc = indoc::formatdoc! {r#"
+            # different comment
+            [[ -f "${{HOME}}/{dir}/shell/zshrc.pre.zsh" ]] && builtin source "${{HOME}}/{dir}/shell/zshrc.pre.zsh"
+        "#};
+        let replaced = re.replace_all(&doc, "");
+        assert_eq!(replaced, "# different comment\n");
+
+        // spaces in command
+        let doc = indoc::formatdoc! {r#"
+            [[  -f  "${{HOME}}/{dir}/shell/zshrc.pre.zsh"  ]]  &&    builtin  source  "${{HOME}}/{dir}/shell/zshrc.pre.zsh" 
+        "#};
+        let replaced = re.replace_all(&doc, "");
+        assert_eq!(replaced, "");
+
+        // non match which looks similar
+        let doc = indoc::formatdoc! {r#"
+            [[ -f "${{HOME}}/{dir}/shell/zshrc.pre.zsh" ]] && source "${{HOME}}/{dir}/shell/zshrc.pre.zsh"
+            
+            # CodeWhisperer pre block. Keep at the top of this file.
+            [[ -f ${{HOME}}/shell/zshrc.pre.zsh" ]] && builtin source "${{HOME}}/shell/zshrc.pre.zsh"
+        "#};
+        let replaced = re.replace_all(&doc, "");
+        assert_eq!(replaced, doc);
+
+        // multiple lines
+        let doc = indoc::formatdoc! {r#"
+            # CodeWhisperer pre block. Keep at the top of this file.
+            [[ -f "${{HOME}}/{dir}/shell/zshrc.pre.zsh" ]] && builtin source "${{HOME}}/{dir}/shell/zshrc.pre.zsh"
+            [[ -f "${{HOME}}/{dir}/shell/zshrc.pre.zsh" ]] && builtin source "${{HOME}}/{dir}/shell/zshrc.pre.zsh"
+
+            [[ -f "${{HOME}}/{dir}/shell/zshrc.pre.zsh" ]] && builtin source "${{HOME}}/{dir}/shell/zshrc.pre.zsh"
+        "#};
+        let replaced = re.replace_all(&doc, "");
+        assert_eq!(replaced, "");
+    }
+
+    #[cfg(target_os = "linux")]
+    fn all_dotfile_shell_integrations() -> Vec<ShellScriptShellIntegration> {
+        Shell::all()
+            .iter()
+            .map(|shell| shell.get_script_integrations().unwrap())
+            .flatten()
+            .collect()
     }
 
     #[test]

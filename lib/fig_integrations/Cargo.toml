@@ -39,3 +39,6 @@ core-foundation = "0.9.3"
 plist = "1.4.0"
 objc = "0.2.7"
 fig_settings.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

@@ -27,4 +27,4 @@ uuid = { version = "1.3.0", features = ["v4"] }
 
 [dev-dependencies]
 fig_test = { path = "../fig_test" }
-tempfile = "3.4.0"
+tempfile.workspace = true

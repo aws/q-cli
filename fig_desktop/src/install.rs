@@ -248,8 +248,8 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
     };
     use fig_util::{
         Shell,
-        OLD_CLI_BINARY_NAME,
-        OLD_PTY_BINARY_NAME,
+        OLD_CLI_BINARY_NAMES,
+        OLD_PTY_BINARY_NAMES,
     };
     use macos_utils::bundle::get_bundle_path;
     use tracing::warn;
@@ -267,10 +267,12 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
                 error!(%err, "Failed to symlink for {PTY_BINARY_NAME}: {pty_path:?}");
             }
 
-            let legacy_pty_link = local_bin.join(OLD_PTY_BINARY_NAME);
-            if legacy_pty_link.exists() {
-                if let Err(err) = fs::remove_file(&legacy_pty_link) {
-                    warn!(%err, "Failed to remove {OLD_PTY_BINARY_NAME}: {legacy_pty_link:?}");
+            for old_pty_binary_name in OLD_PTY_BINARY_NAMES {
+                let old_pty_binary_path = local_bin.join(old_pty_binary_name);
+                if old_pty_binary_path.exists() {
+                    if let Err(err) = tokio::fs::remove_file(&old_pty_binary_path).await {
+                        warn!(%err, "Failed to remove {old_pty_binary_name}: {old_pty_binary_path:?}");
+                    }
                 }
             }
 
@@ -312,11 +314,13 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
                     }
                 });
 
-                // Remove legacy pty shell copies
-                let old_pty_cpy = local_bin.join(format!("{shell} ({OLD_PTY_BINARY_NAME})"));
-                if old_pty_cpy.exists() {
-                    if let Err(err) = tokio::fs::remove_file(&old_pty_cpy).await {
-                        warn!(%err, "Failed to remove legacy pty: {old_pty_cpy:?}");
+                for old_pty_binary_name in OLD_PTY_BINARY_NAMES {
+                    // Remove legacy pty shell copies
+                    let old_pty_binary_path = local_bin.join(format!("{shell} ({old_pty_binary_name})"));
+                    if old_pty_binary_path.exists() {
+                        if let Err(err) = tokio::fs::remove_file(&old_pty_binary_path).await {
+                            warn!(%err, "Failed to remove legacy pty: {old_pty_binary_path:?}");
+                        }
                     }
                 }
             }
@@ -332,10 +336,12 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
                 error!(%err, "Failed to symlink {CLI_BINARY_NAME}");
             }
 
-            let legacy_cli_link = local_bin.join(OLD_CLI_BINARY_NAME);
-            if legacy_cli_link.is_symlink() {
-                if let Err(err) = symlink(q_cli_path, &legacy_cli_link).await {
-                    warn!(%err, "Failed to symlink legacy CLI: {legacy_cli_link:?}");
+            for old_cli_binary_name in OLD_CLI_BINARY_NAMES {
+                let old_cli_binary_path = local_bin.join(old_cli_binary_name);
+                if old_cli_binary_path.is_symlink() {
+                    if let Err(err) = symlink(&q_cli_path, &old_cli_binary_path).await {
+                        warn!(%err, "Failed to symlink legacy CLI: {old_cli_binary_path:?}");
+                    }
                 }
             }
         },

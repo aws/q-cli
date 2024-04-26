@@ -11,7 +11,7 @@ cargo-fuzz = true
 libfuzzer-sys = "0.4"
 fig_ipc.workspace = true
 fig_util.workspace = true
-tempfile = "3.8.1"
+tempfile.workspace = true
 tokio.workspace = true
 fig_proto = { version = "0.12.0", path = "../../lib/fig_proto", features = [
     "arbitrary",
