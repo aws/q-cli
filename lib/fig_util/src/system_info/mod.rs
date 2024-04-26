@@ -14,6 +14,7 @@ use sha2::{
 };
 
 use crate::env_var::Q_PARENT;
+use crate::manifest::is_minimal;
 use crate::Error;
 
 static OS_VERSION: Lazy<Option<OSVersion>> = Lazy::new(|| {
@@ -164,17 +165,19 @@ impl OSVersion {
                 }
             },
             OSVersion::Linux { .. } => {
-                if crate::manifest::is_full() {
+                if is_remote() {
+                    SupportLevel::Supported
+                } else if is_minimal() {
+                    SupportLevel::SupportedWithCaveat {
+                        info: "Autocomplete is not yet available on Linux, but other products should work as expected."
+                            .into(),
+                    }
+                } else {
                     SupportLevel::InDevelopment {
                         info: Some(
                             "Autocomplete is currently in alpha for Linux, other products should work as expected."
                                 .into(),
                         ),
-                    }
-                } else {
-                    SupportLevel::SupportedWithCaveat {
-                        info: "Autocomplete is not yet available on Linux, but other products should work as expected."
-                            .into(),
                     }
                 }
             },
