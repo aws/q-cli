@@ -1,6 +1,11 @@
 {
   "types": [
     {
+      "name": "amazonqConversationId",
+      "type": "string",
+      "description": "Uniquely identifies a message with which the user interacts."
+    },
+    {
       "name": "codewhispererterminal_command",
       "type": "string",
       "description": "The CLI tool a completion was for"
@@ -77,6 +82,22 @@
     }
   ],
   "metrics": [
+    {
+      "name": "amazonq_startChat",
+      "description": "Captures start of the conversation with amazonq /dev",
+      "metadata": [
+        { "type": "amazonqConversationId" },
+        { "type": "credentialStartUrl", "required": false }
+      ]
+    },
+    {
+      "name": "amazonq_endChat",
+      "description": "Captures end of the conversation with amazonq /dev",
+      "metadata": [
+        { "type": "amazonqConversationId" },
+        { "type": "credentialStartUrl", "required": false }
+      ]
+    },
     {
       "name": "codewhispererterminal_userLoggedIn",
       "description": "Emitted when users log in",

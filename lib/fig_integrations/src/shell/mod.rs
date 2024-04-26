@@ -842,7 +842,7 @@ mod test {
             # CodeWhisperer pre block. Keep at the top of this file.
             [[ -f "${{HOME}}/{dir}/shell/zshrc.pre.zsh" ]] && builtin source "${{HOME}}/{dir}/shell/zshrc.pre.zsh"
         "#};
-        let replaced = re.replace_all(&doc, "");
+        let replaced = re.replace_all(doc, "");
         assert_eq!(replaced, "");
 
         // different comment case

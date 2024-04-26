@@ -29,6 +29,8 @@ use amzn_toolkit_telemetry::types::AwsProduct;
 use amzn_toolkit_telemetry::Config;
 use aws_credential_types::provider::SharedCredentialsProvider;
 use aws_toolkit_telemetry_definitions::metrics::{
+    AmazonqEndChat,
+    AmazonqStartChat,
     CodewhispererterminalCliSubcommandExecuted,
     CodewhispererterminalDashboardPageViewed,
     CodewhispererterminalDoctorCheckFailed,
@@ -37,6 +39,7 @@ use aws_toolkit_telemetry_definitions::metrics::{
     CodewhispererterminalTranslationActioned,
 };
 use aws_toolkit_telemetry_definitions::types::{
+    AmazonqConversationId,
     CodewhispererterminalAccepted,
     CodewhispererterminalCommand,
     CodewhispererterminalDoctorCheck,
@@ -568,6 +571,30 @@ pub async fn send_fig_user_migrated() {
         .post_metric(CodewhispererterminalFigUserMigrated {
             create_time: None,
             value: None,
+            credential_start_url: start_url().await,
+        })
+        .await;
+}
+
+pub async fn send_start_chat(conversation_id: String) {
+    client()
+        .await
+        .post_metric(AmazonqStartChat {
+            create_time: None,
+            value: None,
+            amazonq_conversation_id: Some(AmazonqConversationId(conversation_id)),
+            credential_start_url: start_url().await,
+        })
+        .await;
+}
+
+pub async fn send_end_chat(conversation_id: String) {
+    client()
+        .await
+        .post_metric(AmazonqEndChat {
+            create_time: None,
+            value: None,
+            amazonq_conversation_id: Some(AmazonqConversationId(conversation_id)),
             credential_start_url: start_url().await,
         })
         .await;

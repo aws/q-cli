@@ -194,7 +194,6 @@ pub async fn login(proxy: &EventLoopProxy) -> LocalResult {
         .send_event(Event::WindowEvent {
             window_id: DASHBOARD_ID,
             window_event: WindowEvent::Batch(vec![
-                WindowEvent::NavigateRelative { path: "/".into() },
                 WindowEvent::UpdateWindowGeometry {
                     size: Some(DASHBOARD_SIZE),
                     position: None,
@@ -202,10 +201,8 @@ pub async fn login(proxy: &EventLoopProxy) -> LocalResult {
                     tx: None,
                     dry_run: false,
                 },
-                WindowEvent::Show,
-                // We need to reload here because dashboard caches a lot of stuff and we dont delete it
-                // by just navigating to the login path
                 WindowEvent::Reload,
+                WindowEvent::Show,
             ]),
         })
         .ok();

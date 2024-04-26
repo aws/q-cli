@@ -3,9 +3,11 @@ mod parse;
 
 use std::io::{
     stderr,
+    ErrorKind,
     Stderr,
     Write,
 };
+use std::process::exit;
 use std::time::Duration;
 
 use color_eyre::owo_colors::OwoColorize;
@@ -78,12 +80,16 @@ pub async fn chat(input: String) -> Result<()> {
 async fn try_chat(stderr: &mut Stderr, mut input: String) -> Result<()> {
     let client = cw_streaming_client(cw_endpoint()).await;
     let mut rx = None;
-    let mut conversation_id = None;
+    let mut conversation_id: Option<String> = None;
     let mut message_id = None;
 
     loop {
         // Make request with input
         if input.trim() == "exit" {
+            if let Some(conversation_id) = conversation_id {
+                fig_telemetry::send_end_chat(conversation_id.clone()).await;
+            }
+
             return Ok(());
         }
 
@@ -141,14 +147,34 @@ You can include additional context by adding the following to your prompt:
                             true => buf.push_str(content.trim_start()),
                             false => buf.push_str(&content),
                         },
-                        ApiResponse::ConversationId(id) => conversation_id = Some(id),
+                        ApiResponse::ConversationId(id) => {
+                            if conversation_id.is_none() {
+                                fig_telemetry::send_start_chat(id.clone()).await;
+
+                                tokio::task::spawn(async move {
+                                    tokio::signal::ctrl_c().await.unwrap();
+                                    if let Some(conversation_id) = &conversation_id {
+                                        fig_telemetry::send_end_chat(conversation_id.clone()).await;
+                                        fig_telemetry::finish_telemetry().await;
+                                        exit(0);
+                                    }
+                                });
+                            }
+
+                            conversation_id = Some(id);
+                        },
                         ApiResponse::MessageId(id) => message_id = Some(id),
-                        ApiResponse::End => ended = true,
+                        ApiResponse::End => {
+                            ended = true;
+                        },
                         ApiResponse::Error => {
                             drop(spinner.take());
-                            stderr.execute(style::Print(
-                                "Q is having trouble responding right now. Try again later.",
-                            ))?;
+                            stderr
+                                .queue(cursor::MoveToColumn(0))?
+                                .queue(style::Print(
+                                    "Q is having trouble responding right now. Try again later.",
+                                ))?
+                                .flush()?;
                             ended = true;
                         },
                     }
@@ -215,12 +241,17 @@ You can include additional context by adding the following to your prompt:
 
         // Prompt user for input
         const PROMPT: &str = ">";
-        input = Input::with_theme(&ColorfulTheme {
+        input = match Input::with_theme(&ColorfulTheme {
             prompt_suffix: dialoguer::console::style(PROMPT.into()).magenta().bright(),
             ..ColorfulTheme::default()
         })
         .report(false)
-        .interact_text()?;
+        .interact_text()
+        {
+            Ok(input) => input,
+            Err(dialoguer::Error::IO(err)) if err.kind() == ErrorKind::Interrupted => return Ok(()),
+            Err(err) => return Err(err.into()),
+        };
 
         let lines = (input.len() + 3) / usize::from(crossterm::terminal::window_size()?.columns);
         if let Ok(lines) = u16::try_from(lines) {
