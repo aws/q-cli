@@ -17,12 +17,14 @@ use crossterm::style::{
 use crossterm::{
     cursor,
     style,
+    terminal,
     ExecutableCommand,
     QueueableCommand,
 };
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Input;
 use eyre::{
+    bail,
     eyre,
     Result,
 };
@@ -30,6 +32,7 @@ use fig_api_client::ai::{
     cw_endpoint,
     cw_streaming_client,
 };
+use fig_util::CLI_BINARY_NAME;
 use spinners::{
     Spinner,
     Spinners,
@@ -53,6 +56,13 @@ enum ApiResponse {
 }
 
 pub async fn chat(input: String) -> Result<()> {
+    if !auth::is_logged_in().await {
+        bail!(
+            "You are not logged in, please log in with {}",
+            format!("{CLI_BINARY_NAME} login",).bold()
+        );
+    }
+
     let mut stderr = stderr();
     let result = try_chat(&mut stderr, input).await;
 
@@ -135,6 +145,7 @@ You can include additional context by adding the following to your prompt:
                         ApiResponse::MessageId(id) => message_id = Some(id),
                         ApiResponse::End => ended = true,
                         ApiResponse::Error => {
+                            drop(spinner.take());
                             stderr.execute(style::Print(
                                 "Q is having trouble responding right now. Try again later.",
                             ))?;
@@ -150,7 +161,10 @@ You can include additional context by adding the following to your prompt:
                 }
 
                 if !buf.is_empty() && spinner.take().is_some() {
-                    stderr.queue(cursor::MoveToColumn(0))?.queue(cursor::Show)?;
+                    stderr
+                        .queue(terminal::Clear(terminal::ClearType::CurrentLine))?
+                        .queue(cursor::MoveToColumn(0))?
+                        .queue(cursor::Show)?;
                 }
 
                 loop {
