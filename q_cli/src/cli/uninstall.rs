@@ -1,4 +1,3 @@
-use cfg_if::cfg_if;
 use crossterm::style::Stylize;
 use eyre::Result;
 use fig_util::{
@@ -9,12 +8,6 @@ use fig_util::{
 use crate::util::dialoguer_theme;
 
 pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
-    if fig_util::system_info::in_wsl() {
-        println!("Refer to your package manager in order to uninstall {PRODUCT_NAME} from WSL");
-        println!("If you're having issues uninstalling fig, run `{CLI_BINARY_NAME} issue`");
-        return Ok(());
-    }
-
     if !no_confirm {
         println!(
             "\nIs {PRODUCT_NAME} not working? Try running {}\n",
@@ -34,21 +27,7 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
         }
     };
 
-    cfg_if! {
-        if #[cfg(unix)] {
-            // fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
-            //     fig_telemetry::TrackEventType::UninstalledApp,
-            //     fig_telemetry::TrackSource::Cli,
-            //     env!("CARGO_PKG_VERSION").into(),
-            //     std::iter::empty::<(&str, &str)>(),
-            // )).await.ok();
-            uninstall().await?;
-        } else if #[cfg(target_os = "windows")] {
-            println!("Please uninstall {PRODUCT_NAME} from the `Add or remove programs` menu for now.");
-            println!("If you're having issues uninstalling {PRODUCT_NAME}, run `{CLI_BINARY_NAME} issue` to let us know, and use the tool at the following link to remove {PRODUCT_NAME}:");
-            println!("https://support.microsoft.com/en-us/topic/fix-problems-that-block-programs-from-being-installed-or-removed-cca7d1b6-65a9-3d98-426b-e9f927e1eb4d")
-        }
-    }
+    uninstall().await?;
 
     Ok(())
 }
@@ -64,48 +43,32 @@ async fn uninstall() -> Result<()> {
 
 #[cfg(target_os = "linux")]
 async fn uninstall() -> Result<()> {
-    use std::env;
-    use std::process::Command;
+    use eyre::bail;
+    use tracing::error;
 
-    use fig_util::manifest::{
-        self,
-        ManagedBy,
+    let exe_path = std::env::current_exe()?;
+    let Some(exe_name) = exe_path.file_name().and_then(|s| s.to_str()) else {
+        bail!("Failed to get name of current executable: {exe_path:?}")
     };
-    use fig_util::CLI_BINARY_NAME_MINIMAL;
+    let Some(exe_parent) = exe_path.parent() else {
+        bail!("Failed to get parent of current executable: {exe_path:?}")
+    };
+    let local_bin = fig_util::directories::home_local_bin()?;
 
-    if nix::unistd::getuid().is_root() {
-        let package_name = env::var("Q_PACKAGE_NAME").unwrap_or_else(|_| {
-            match manifest::is_minimal() {
-                true => CLI_BINARY_NAME_MINIMAL,
-                false => CLI_BINARY_NAME,
-            }
-            .to_owned()
-        });
-
-        let package_manager = &manifest::manifest().managed_by;
-
-        Command::new("killall").arg("fig_desktop").status()?;
-
-        match package_manager {
-            ManagedBy::Apt => linux::uninstall_apt(package_name).await?,
-            ManagedBy::Dnf => linux::uninstall_dnf(package_name).await?,
-            ManagedBy::Pacman => linux::uninstall_pacman(package_name).await?,
-            ManagedBy::Other(mgr) => {
-                eyre::bail!("Unknown package manager {mgr}");
-            },
-        }
-    } else if which::which("sudo").is_ok() {
-        // note: this does not trigger a race condition because any user that can replace q_cli could just
-        // replace it with a malicious executable before we are even run
-        Command::new("sudo")
-            .arg(std::env::current_exe()?)
-            .arg("uninstall")
-            .arg("-y")
-            .status()?;
-    } else {
-        eyre::bail!("This command must be run as root");
+    if exe_parent != local_bin {
+        bail!(
+            "Uninstall is only supported for binaries installed in {local_bin:?}, the current executable is in {exe_parent:?}"
+        );
     }
 
+    if exe_name != CLI_BINARY_NAME {
+        bail!("Uninstall is only supported for {CLI_BINARY_NAME:?}, the current executable is {exe_name:?}");
+    }
+
+    if let Err(err) = auth::logout().await {
+        error!(%err, "Failed to logout");
+    }
+    fig_install::uninstall(fig_install::InstallComponents::all_linux()).await?;
     Ok(())
 }
 
@@ -114,42 +77,42 @@ async fn uninstall() -> Result<()> {
     eyre::bail!("Guided uninstallation is not supported on this platform. Please uninstall manually.");
 }
 
-#[cfg(target_os = "linux")]
-mod linux {
-    use eyre::Result;
-
-    pub async fn uninstall_apt(pkg: String) -> Result<()> {
-        tokio::process::Command::new("apt")
-            .arg("remove")
-            .arg("-y")
-            .arg(pkg)
-            .status()
-            .await?;
-        std::fs::remove_file("/etc/apt/sources.list.d/fig.list")?;
-        std::fs::remove_file("/etc/apt/keyrings/fig.gpg")?;
-
-        Ok(())
-    }
-
-    pub async fn uninstall_dnf(pkg: String) -> Result<()> {
-        tokio::process::Command::new("dnf")
-            .arg("remove")
-            .arg("-y")
-            .arg(pkg)
-            .status()
-            .await?;
-        std::fs::remove_file("/etc/yum.repos.d/fig.repo")?;
-
-        Ok(())
-    }
-
-    pub async fn uninstall_pacman(pkg: String) -> Result<()> {
-        tokio::process::Command::new("pacman")
-            .arg("-Rs")
-            .arg(pkg)
-            .status()
-            .await?;
-
-        Ok(())
-    }
-}
+// #[cfg(target_os = "linux")]
+// mod linux {
+//     use eyre::Result;
+//
+//     pub async fn uninstall_apt(pkg: String) -> Result<()> {
+//         tokio::process::Command::new("apt")
+//             .arg("remove")
+//             .arg("-y")
+//             .arg(pkg)
+//             .status()
+//             .await?;
+//         std::fs::remove_file("/etc/apt/sources.list.d/fig.list")?;
+//         std::fs::remove_file("/etc/apt/keyrings/fig.gpg")?;
+//
+//         Ok(())
+//     }
+//
+//     pub async fn uninstall_dnf(pkg: String) -> Result<()> {
+//         tokio::process::Command::new("dnf")
+//             .arg("remove")
+//             .arg("-y")
+//             .arg(pkg)
+//             .status()
+//             .await?;
+//         std::fs::remove_file("/etc/yum.repos.d/fig.repo")?;
+//
+//         Ok(())
+//     }
+//
+//     pub async fn uninstall_pacman(pkg: String) -> Result<()> {
+//         tokio::process::Command::new("pacman")
+//             .arg("-Rs")
+//             .arg(pkg)
+//             .status()
+//             .await?;
+//
+//         Ok(())
+//     }
+// }

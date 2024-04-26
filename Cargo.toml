@@ -49,6 +49,7 @@ fig_telemetry = { path = "lib/fig_telemetry" }
 fig_util = { path = "lib/fig_util" }
 hex = "0.4.3"
 indoc = "2.0.5"
+insta = "1.38.0"
 libc = "0.2.150"
 nix = { version = "0.28.0", features = [
     "feature",

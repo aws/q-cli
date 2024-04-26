@@ -288,21 +288,27 @@ impl ShellScriptShellIntegration {
                     Shell::Nu => "".into(),
                 }
             } else {
-                let source_line = match self.shell {
-                    Shell::Fish => format!("command -qv {CLI_BINARY_NAME}; and eval ({CLI_BINARY_NAME} init {shell} {when}{rcfile} | string split0)"),
-                    Shell::Bash => format!("[ -n $BASH_VERSION ] && eval \"$({CLI_BINARY_NAME} init {shell} {when}{rcfile})\""),
-                    Shell::Zsh => format!("eval \"$({CLI_BINARY_NAME} init {shell} {when}{rcfile})\""),
-                    Shell::Nu => "".into(),
-                };
                 let add_to_path_line = match self.shell {
-                    Shell::Bash | Shell::Zsh => "_Q_LOCAL_BIN=~/.local/bin \n\
-                        [[ \":$PATH:\" != *\":$_Q_LOCAL_BIN:\"* ]] && PATH=\"${PATH:+\"$PATH:\"}$_Q_LOCAL_BIN\" \n\
-                        unset _Q_LOCAL_BIN",
+                    Shell::Bash | Shell::Zsh => indoc::indoc! {r#"
+                        _Q_LOCAL_BIN="$HOME/.local/bin"
+                        [[ ":$PATH:" != *":$_Q_LOCAL_BIN:"* ]] && PATH="${PATH:+"$PATH:"}$_Q_LOCAL_BIN"
+                        unset _Q_LOCAL_BIN
+                    "#},
                     Shell::Fish => "contains $HOME/.local/bin $PATH; or set -a PATH $HOME/.local/bin",
                     Shell::Nu => "",
                 };
 
-                return format!("{add_to_path_line}\n{source_line}");
+                let source_line = match self.shell {
+                    Shell::Fish => format!("command -qv {CLI_BINARY_NAME}; and eval ({CLI_BINARY_NAME} init {shell} {when}{rcfile} | string split0)"),
+                    Shell::Bash | Shell::Zsh => {
+                        // Check that the current shell is bash
+                        let bash_pre = if self.shell.is_bash() { "[ -n $BASH_VERSION ] && " } else { "" };
+                        format!("{bash_pre}command -v {CLI_BINARY_NAME} 2&>1 >/dev/null && eval \"$({CLI_BINARY_NAME} init {shell} {when}{rcfile})\"")
+                    }
+                    Shell::Nu => "".into(),
+                };
+
+                return format!("{add_to_path_line}\n{source_line}\n");
             }
         );
     }
@@ -345,8 +351,8 @@ impl ShellIntegration for ShellScriptShellIntegration {
     }
 }
 
-// zsh and bash integration where we modify a dotfile with pre/post hooks that reference
-// script files.
+/// zsh and bash integration where we modify a dotfile with pre/post hooks that reference script
+/// files.
 #[derive(Debug, Clone)]
 pub struct DotfileShellIntegration {
     pub shell: Shell,
@@ -756,6 +762,14 @@ mod test {
 
     use super::*;
 
+    fn all_dotfile_shell_integrations() -> Vec<ShellScriptShellIntegration> {
+        Shell::all()
+            .iter()
+            .map(|shell| shell.get_script_integrations().unwrap())
+            .flatten()
+            .collect()
+    }
+
     fn check_script(shell: Shell, when: When) {
         let shell_arg = "--shell=bash";
         let mut child = Command::new("shellcheck")
@@ -841,5 +855,19 @@ mod test {
         ))
         .next()
         .unwrap();
+    }
+
+    #[test]
+    #[cfg(target_os = "linux")]
+    fn dotfile_shell_integrations_snapshot() {
+        for integration in all_dotfile_shell_integrations() {
+            let integration_name = format!(
+                "{} {}",
+                integration.describe(),
+                integration.path.file_name().unwrap().to_str().unwrap()
+            )
+            .replace(' ', "_");
+            insta::assert_snapshot!(integration_name, integration.get_contents());
+        }
     }
 }

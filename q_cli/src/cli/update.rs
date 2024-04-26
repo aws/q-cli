@@ -62,9 +62,7 @@ impl UpdateArgs {
         .await;
 
         match res {
-            Err(e) => Err(eyre::eyre!(
-                "{e}. If this is unexpected, try running `{CLI_BINARY_NAME} doctor` and then try again."
-            )),
+            Ok(true) => Ok(()),
             Ok(false) => {
                 println!(
                     "No updates available, \n{} is the latest version.",
@@ -72,7 +70,10 @@ impl UpdateArgs {
                 );
                 Ok(())
             },
-            Ok(true) => Ok(()),
+            Err(err) => eyre::bail!(
+                "{err}\n\nIf this is unexpected, try running {} and then try again.\n",
+                format!("{CLI_BINARY_NAME} doctor").bold()
+            ),
         }
     }
 }

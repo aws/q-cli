@@ -380,7 +380,7 @@ mod tests {
     use std::str::FromStr;
 
     use fig_util::{
-        OLD_CLI_BINARY_NAME,
+        OLD_CLI_BINARY_NAMES,
         OLD_PRODUCT_NAME,
     };
 
@@ -429,6 +429,7 @@ mod tests {
 
     #[test]
     fn index_serde_test() {
+        let old_cli_name = OLD_CLI_BINARY_NAMES[1];
         let json_str = serde_json::json!({
             "supported": [
                 {
@@ -455,7 +456,7 @@ mod tests {
                             "kind": "dmg",
                             "architecture": "universal",
                             "variant": "full",
-                            "download": format!("0.7.0/{OLD_PRODUCT_NAME}.dmg"),
+                            "download": format!("0.7.0/{old_cli_name}.dmg"),
                             "sha256": "4213d7649e4b1a2ec50adc0266d32d3e1e1f952ed6a863c28d7538190dc92472",
                             "size": 82975504
                         }
@@ -471,7 +472,7 @@ mod tests {
                             "download": format!("0.15.3/{OLD_PRODUCT_NAME}.dmg"),
                             "sha256": "87a311e493bb2b0e68a1b4b5d267c79628d23c1e39b0a62d1a80b0c2352f80a2",
                             "size": 88174538,
-                            "cliPath": format!("Contents/MacOS/{OLD_CLI_BINARY_NAME}")
+                            "cliPath": format!("Contents/MacOS/{old_cli_name}")
                         }
                     ]
                 },
@@ -487,7 +488,7 @@ mod tests {
                             "download": "1.0.0/Q.dmg",
                             "sha256": "87a311e493bb2b0e68a1b4b5d267c79628d23c1e39b0a62d1a80b0c2352f80a2",
                             "size": 88174538,
-                            "cliPath": format!("Contents/MacOS/{OLD_CLI_BINARY_NAME}"),
+                            "cliPath": format!("Contents/MacOS/{old_cli_name}"),
                         },
                         {
                             "kind": "deb",
@@ -555,7 +556,7 @@ mod tests {
                     download: "1.0.0/Q.dmg".into(),
                     sha256: "87a311e493bb2b0e68a1b4b5d267c79628d23c1e39b0a62d1a80b0c2352f80a2".into(),
                     size: 88174538,
-                    cli_path: Some(format!("Contents/MacOS/{OLD_CLI_BINARY_NAME}")),
+                    cli_path: Some(format!("Contents/MacOS/{old_cli_name}")),
                 },
                 Package {
                     architecture: PackageArchitecture::X86_64,

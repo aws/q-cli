@@ -26,4 +26,4 @@ tokio.workspace = true
 tracing.workspace = true
 
 [dev-dependencies]
-insta = "1.34.0"
+insta.workspace = true

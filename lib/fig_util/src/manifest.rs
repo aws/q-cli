@@ -29,9 +29,7 @@ pub struct Manifest {
 #[serde(rename_all = "camelCase")]
 #[strum(serialize_all = "camelCase")]
 pub enum ManagedBy {
-    Apt,
-    Dnf,
-    Pacman,
+    None,
     #[strum(default)]
     Other(String),
 }
@@ -156,7 +154,7 @@ where
 }
 
 static CACHED: Lazy<Manifest> = Lazy::new(|| Manifest {
-    managed_by: ManagedBy::Other("aws".into()),
+    managed_by: ManagedBy::None,
     variant: match option_env!("Q_BUILD_VARIANT")
         .map(|s| s.to_ascii_lowercase())
         .as_deref()
@@ -246,6 +244,11 @@ mod tests {
         test_ser_deser!(FileType, FileType::TarXz, "tarXz");
         test_ser_deser!(FileType, FileType::TarZst, "tarZst");
         test_ser_deser!(FileType, FileType::Zip, "zip");
+    }
+
+    #[test]
+    fn test_managed_by_serialize_deserialize() {
+        test_ser_deser!(ManagedBy, ManagedBy::None, "none");
     }
 
     #[test]

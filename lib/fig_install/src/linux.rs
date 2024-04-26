@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use fig_util::CLI_BINARY_NAME;
 use tokio::sync::mpsc::Sender;
 use url::Url;
 
@@ -9,6 +10,12 @@ use crate::{
     Error,
     UpdateStatus,
 };
+
+macro_rules! bail {
+    ($($arg:tt)*) => {
+        return Err(Error::UpdateFailed(format!($($arg)*)))
+    };
+}
 
 #[derive(Debug, PartialEq, Eq)]
 struct ArchiveParser<'a> {
@@ -94,6 +101,26 @@ pub(crate) async fn update(
     _interactive: bool,
     _relaunch_dashboard: bool,
 ) -> Result<(), Error> {
+    // check if the current exe can update
+    let exe_path = std::env::current_exe()?;
+    let Some(exe_name) = exe_path.file_name().and_then(|s| s.to_str()) else {
+        bail!("Failed to get name of current executable: {exe_path:?}")
+    };
+    let Some(exe_parent) = exe_path.parent() else {
+        bail!("Failed to get parent of current executable: {exe_path:?}")
+    };
+    let local_bin = fig_util::directories::home_local_bin()?;
+
+    if exe_parent != local_bin {
+        bail!(
+            "Update is only supported for binaries installed in {local_bin:?}, the current executable is in {exe_parent:?}"
+        );
+    }
+
+    if exe_name != CLI_BINARY_NAME {
+        bail!("Update is only supported for {CLI_BINARY_NAME:?}, the current executable is {exe_name:?}");
+    }
+
     let tempdir = tempfile::tempdir()?;
 
     let archive = ArchiveParser::from_url(&download_url)?;

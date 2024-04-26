@@ -1,0 +1,9 @@
+---
+source: lib/fig_integrations/src/shell/mod.rs
+expression: integration.get_contents()
+---
+_Q_LOCAL_BIN="$HOME/.local/bin"
+[[ ":$PATH:" != *":$_Q_LOCAL_BIN:"* ]] && PATH="${PATH:+"$PATH:"}$_Q_LOCAL_BIN"
+unset _Q_LOCAL_BIN
+
+[ -n $BASH_VERSION ] && command -v q 2&>1 >/dev/null && eval "$(q init bash post --rcfile bash_login)"

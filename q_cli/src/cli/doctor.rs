@@ -1126,11 +1126,7 @@ impl DoctorCheck<()> for SshdConfigCheck {
             .map_err(|err| {
                 if std::env::var_os(Q_PARENT).is_some() {
                     // We will assume the integration is correct if Q_PARENT is set
-                    doctor_warning!(
-                        "Could not read sshd_config"
-                        // TODO(grant): Add AWS docs
-                        // "Could not read sshd_config, check https://fig.io/user-manual/autocomplete/ssh for more info"
-                    )
+                    doctor_warning!("Could not read sshd_config, check {AUTOCOMPLETE_SSH_WIKI} for more info")
                 } else {
                     DoctorError::Error {
                         reason: err.to_string().into(),
@@ -1933,11 +1929,12 @@ impl DoctorCheck for LoginStatusCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        // We reload the credentials here because we want to check if the user is logged in
         if !auth::is_logged_in().await {
-            return Err(doctor_error!("Not authenticated. Please run `{CLI_BINARY_NAME} login`"));
+            return Err(doctor_error!(
+                "Not authenticated. Please run {}",
+                format!("{CLI_BINARY_NAME} login").bold()
+            ));
         }
-
         Ok(())
     }
 }

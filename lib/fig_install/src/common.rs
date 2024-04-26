@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::PathBuf;
 
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
@@ -7,7 +7,9 @@ use fig_util::{
     directories,
     Shell,
     CLI_BINARY_NAME,
-    OLD_CLI_BINARY_NAME,
+    OLD_CLI_BINARY_NAMES,
+    OLD_PTY_BINARY_NAMES,
+    PTY_BINARY_NAME,
 };
 
 use crate::Error;
@@ -16,11 +18,21 @@ bitflags::bitflags! {
     /// The different components that can be installed.
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct InstallComponents: u64 {
+        /// Removal of the integrations from user's dotfiles
         const SHELL_INTEGRATIONS = 0b00000001;
+        /// This handles the removal of the CLI and pty binaries as well as legacy copies
         const BINARY             = 0b00000010;
+        /// Removal of the ssh integration from the ~/.ssh/config file
         const SSH                = 0b00000100;
         const DESKTOP_APP        = 0b00001000;
         const INPUT_METHOD       = 0b00010000;
+    }
+}
+
+#[cfg(target_os = "linux")]
+impl InstallComponents {
+    pub fn all_linux() -> Self {
+        Self::SHELL_INTEGRATIONS | Self::BINARY | Self::SSH
     }
 }
 
@@ -41,17 +53,35 @@ pub async fn uninstall(components: InstallComponents) -> Result<(), Error> {
     };
 
     if components.contains(InstallComponents::BINARY) {
-        let local_bin_path = directories::home_local_bin()?;
-        let binary_paths = [
-            local_bin_path.join(CLI_BINARY_NAME),
-            local_bin_path.join(OLD_CLI_BINARY_NAME),
-            Path::new("/usr/local/bin").join(CLI_BINARY_NAME),
-            Path::new("/usr/local/bin").join(OLD_CLI_BINARY_NAME),
-        ];
+        let remove_binary = |path: PathBuf| async move {
+            match tokio::fs::remove_file(&path).await {
+                Ok(_) => tracing::info!("Removed binary: {path:?}"),
+                Err(err) if err.kind() == std::io::ErrorKind::NotFound => {},
+                Err(err) => tracing::warn!(%err, "Failed to remove binary: {path:?}"),
+            }
+        };
 
-        for path in binary_paths {
-            if path.exists() {
-                std::fs::remove_file(path)?;
+        // let folders = [directories::home_local_bin()?, Path::new("/usr/local/bin").into()];
+        let folders = [directories::home_local_bin()?];
+
+        let mut all_binary_names = vec![CLI_BINARY_NAME, PTY_BINARY_NAME];
+        all_binary_names.extend(OLD_CLI_BINARY_NAMES);
+        all_binary_names.extend(OLD_PTY_BINARY_NAMES);
+
+        let mut pty_names = vec![PTY_BINARY_NAME];
+        pty_names.extend(OLD_PTY_BINARY_NAMES);
+
+        for folder in folders {
+            for binary_name in &all_binary_names {
+                let binary_path = folder.join(binary_name);
+                remove_binary(binary_path).await;
+            }
+
+            for shell in Shell::all() {
+                for pty_name in &pty_names {
+                    let pty_path = folder.join(format!("{shell} ({pty_name})"));
+                    remove_binary(pty_path).await;
+                }
             }
         }
     }

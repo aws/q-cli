@@ -151,4 +151,20 @@ impl Shell {
     pub fn get_data_path(&self) -> Result<PathBuf, directories::DirectoryError> {
         Ok(directories::fig_data_dir()?.join("shell").join(format!("{self}.json")))
     }
+
+    pub fn is_bash(&self) -> bool {
+        matches!(self, Shell::Bash)
+    }
+
+    pub fn is_zsh(&self) -> bool {
+        matches!(self, Shell::Zsh)
+    }
+
+    pub fn is_fish(&self) -> bool {
+        matches!(self, Shell::Fish)
+    }
+
+    pub fn is_nu(&self) -> bool {
+        matches!(self, Shell::Nu)
+    }
 }

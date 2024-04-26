@@ -19,6 +19,7 @@ clap.workspace = true
 dirs.workspace = true
 fig_util.workspace = true
 indoc.workspace = true
+insta.workspace = true
 regex.workspace = true
 serde.workspace = true
 serde_json.workspace = true
