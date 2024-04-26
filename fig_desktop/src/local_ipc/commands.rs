@@ -29,10 +29,7 @@ use crate::event::{
     WindowEvent,
 };
 use crate::webview::notification::WebviewNotificationsState;
-use crate::webview::{
-    DASHBOARD_SIZE,
-    LOGIN_PATH,
-};
+use crate::webview::DASHBOARD_SIZE;
 use crate::{
     platform,
     EventLoopProxy,
@@ -222,15 +219,7 @@ pub async fn logout(proxy: &EventLoopProxy) -> LocalResult {
     proxy
         .send_event(Event::WindowEvent {
             window_id: DASHBOARD_ID,
-            window_event: WindowEvent::Batch(vec![
-                WindowEvent::NavigateRelative {
-                    path: LOGIN_PATH.into(),
-                },
-                WindowEvent::Show,
-                // We need to reload here because dashboard caches a lot of stuff and we dont delete it
-                // by just navigating to the login path
-                WindowEvent::Reload,
-            ]),
+            window_event: WindowEvent::Batch(vec![WindowEvent::Reload, WindowEvent::Show]),
         })
         .ok();
 

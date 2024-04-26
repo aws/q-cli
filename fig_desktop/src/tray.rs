@@ -192,9 +192,7 @@ pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
             });
         },
         "user-manual" => {
-            if let Err(err) =
-                fig_util::open_url(USER_MANUAL)
-            {
+            if let Err(err) = fig_util::open_url(USER_MANUAL) {
                 error!(%err, "Failed to open user manual url");
             }
         },

@@ -149,13 +149,6 @@ impl RootUserSubcommand {
                 Ok(())
             },
             Self::Logout => {
-                // let telem_join = tokio::spawn(fig_telemetry::emit_track(TrackEvent::new(
-                //     TrackEventType::Logout,
-                //     TrackSource::Cli,
-                //     env!("CARGO_PKG_VERSION").into(),
-                //     empty::<(&str, &str)>(),
-                // )));
-
                 let logout_join = logout_command();
 
                 let (_, _) = tokio::join!(logout_join, auth::logout());
