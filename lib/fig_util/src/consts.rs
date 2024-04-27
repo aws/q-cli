@@ -21,8 +21,8 @@ pub const RUNTIME_DIR_NAME: &str = "cwrun";
 
 // These are the old "CodeWhisperer" branding, used anywhere we will not update to Q
 pub const OLD_PRODUCT_NAME: &str = "CodeWhisperer";
-pub const OLD_CLI_BINARY_NAMES: &[&str] = &["fig", "cw"];
-pub const OLD_PTY_BINARY_NAMES: &[&str] = &["figterm", "cwterm"];
+pub const OLD_CLI_BINARY_NAMES: &[&str] = &["cw"];
+pub const OLD_PTY_BINARY_NAMES: &[&str] = &["cwterm"];
 
 pub const GITHUB_DISCUSSIONS_REPO_NAME: &str = "codewhisperer-command-line-discussions";
 

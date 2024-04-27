@@ -429,7 +429,7 @@ mod tests {
 
     #[test]
     fn index_serde_test() {
-        let old_cli_name = OLD_CLI_BINARY_NAMES[1];
+        let old_cli_name = OLD_CLI_BINARY_NAMES[0];
         let json_str = serde_json::json!({
             "supported": [
                 {
