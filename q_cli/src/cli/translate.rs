@@ -3,6 +3,7 @@ use std::io::{
     stdout,
     IsTerminal,
 };
+use std::process::ExitCode;
 use std::time::Instant;
 
 use amzn_codewhisperer_client::types::SuggestionState;
@@ -270,7 +271,7 @@ fn highlighter(s: &str) -> String {
 }
 
 impl TranslateArgs {
-    pub async fn execute(self) -> Result<()> {
+    pub async fn execute(self) -> Result<ExitCode> {
         if !auth::is_logged_in().await {
             bail!("You are not logged in. Run `{CLI_BINARY_NAME} login` to login.")
         }
@@ -320,7 +321,7 @@ impl TranslateArgs {
                 [] => eyre::bail!("no valid completions were generated"),
                 [res, ..] => {
                     println!("{res}");
-                    return Ok(());
+                    return Ok(ExitCode::SUCCESS);
                 },
             };
         }
@@ -496,7 +497,7 @@ impl TranslateArgs {
             }
         }
 
-        Ok(())
+        Ok(ExitCode::SUCCESS)
     }
 }
 

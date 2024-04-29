@@ -1,3 +1,5 @@
+use std::process::ExitCode;
+
 use clap::Subcommand;
 use crossterm::style::Stylize;
 use eyre::Result;
@@ -19,15 +21,15 @@ pub enum TelemetrySubcommand {
 }
 
 impl TelemetrySubcommand {
-    pub async fn execute(&self) -> Result<()> {
+    pub async fn execute(&self) -> Result<ExitCode> {
         match self {
             TelemetrySubcommand::Enable => {
                 fig_settings::settings::set_value(TELEMETRY_ENABLED_KEY, true)?;
-                Ok(())
+                Ok(ExitCode::SUCCESS)
             },
             TelemetrySubcommand::Disable => {
                 fig_settings::settings::set_value(TELEMETRY_ENABLED_KEY, false)?;
-                Ok(())
+                Ok(ExitCode::SUCCESS)
             },
             TelemetrySubcommand::Status { format } => {
                 let status = fig_settings::settings::get_bool_or(TELEMETRY_ENABLED_KEY, true);
@@ -44,7 +46,7 @@ impl TelemetrySubcommand {
                         })
                     },
                 );
-                Ok(())
+                Ok(ExitCode::SUCCESS)
             },
         }
     }

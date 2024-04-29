@@ -5,6 +5,7 @@ use std::io::{
     Write,
 };
 use std::path::Path;
+use std::process::ExitCode;
 
 use auth::AMZN_START_URL;
 use clap::Args;
@@ -41,14 +42,14 @@ pub struct InitArgs {
 }
 
 impl InitArgs {
-    pub async fn execute(&self) -> Result<()> {
+    pub async fn execute(&self) -> Result<ExitCode> {
         let InitArgs { shell, when, rcfile } = self;
         match shell_init(shell, when, rcfile).await {
             Ok(source) => writeln!(stdout(), "{source}"),
             Err(err) => writeln!(stdout(), "# Could not load source: {err}"),
         }
         .ok();
-        Ok(())
+        Ok(ExitCode::SUCCESS)
     }
 }
 

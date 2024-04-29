@@ -1,5 +1,3 @@
-use std::process::exit;
-
 use fig_proto::local::command_response::Response as CommandResponseTypes;
 use fig_proto::local::dump_state_command::Type as DumpStateType;
 use fig_proto::local::{
@@ -69,7 +67,10 @@ pub async fn quit(_: QuitCommand, proxy: &EventLoopProxy) -> LocalResult {
     proxy
         .send_event(Event::ControlFlow(ControlFlow::Exit))
         .map(|_| LocalResponse::Success(None))
-        .map_err(|_err| exit(0))
+        .map_err(|_err| {
+            #[allow(clippy::exit)]
+            std::process::exit(0)
+        })
 }
 
 pub async fn diagnostic(_: DiagnosticsCommand, figterm_state: &FigtermState) -> LocalResult {

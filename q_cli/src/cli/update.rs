@@ -1,3 +1,5 @@
+use std::process::ExitCode;
+
 use clap::Args;
 use crossterm::style::Stylize;
 use eyre::Result;
@@ -21,7 +23,7 @@ pub struct UpdateArgs {
 }
 
 impl UpdateArgs {
-    pub async fn execute(&self) -> Result<()> {
+    pub async fn execute(&self) -> Result<ExitCode> {
         let UpdateArgs {
             non_interactive,
             relaunch_dashboard,
@@ -62,13 +64,13 @@ impl UpdateArgs {
         .await;
 
         match res {
-            Ok(true) => Ok(()),
+            Ok(true) => Ok(ExitCode::SUCCESS),
             Ok(false) => {
                 println!(
                     "No updates available, \n{} is the latest version.",
                     env!("CARGO_PKG_VERSION").bold()
                 );
-                Ok(())
+                Ok(ExitCode::SUCCESS)
             },
             Err(err) => eyre::bail!(
                 "{err}\n\nIf this is unexpected, try running {} and then try again.\n",

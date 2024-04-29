@@ -1,3 +1,5 @@
+use std::process::ExitCode;
+
 use crossterm::style::Stylize;
 use eyre::Result;
 use fig_util::{
@@ -7,7 +9,7 @@ use fig_util::{
 
 use crate::util::dialoguer_theme;
 
-pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
+pub async fn uninstall_command(no_confirm: bool) -> Result<ExitCode> {
     if !no_confirm {
         println!(
             "\nIs {PRODUCT_NAME} not working? Try running {}\n",
@@ -23,13 +25,13 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
             println!("Uninstalling {PRODUCT_NAME}");
         } else {
             println!("Cancelled");
-            return Ok(());
+            return Ok(ExitCode::FAILURE);
         }
     };
 
     uninstall().await?;
 
-    Ok(())
+    Ok(ExitCode::SUCCESS)
 }
 
 #[cfg(target_os = "macos")]

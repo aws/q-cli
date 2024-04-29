@@ -1,5 +1,6 @@
 use std::fmt::Write;
 use std::fs;
+use std::process::ExitCode;
 
 use clap::Args;
 use crossterm::style::{
@@ -45,12 +46,12 @@ pub struct ThemeArgs {
 }
 
 impl ThemeArgs {
-    pub async fn execute(&self) -> Result<()> {
+    pub async fn execute(&self) -> Result<ExitCode> {
         let theme_dir = directories::themes_dir().context("Could not get theme directory")?;
 
         if self.folder {
             println!("{}", theme_dir.display());
-            return Ok(());
+            return Ok(ExitCode::SUCCESS);
         }
 
         if self.list {
@@ -61,7 +62,7 @@ impl ThemeArgs {
                     }
                 }
             }
-            return Ok(());
+            return Ok(ExitCode::SUCCESS);
         }
 
         match &self.theme {
@@ -96,13 +97,13 @@ impl ThemeArgs {
                         println!();
 
                         fig_settings::settings::set_value("autocomplete.theme", theme_str)?;
-                        Ok(())
+                        Ok(ExitCode::SUCCESS)
                     },
                     Err(_) => {
                         if BUILT_IN_THEMES.contains(&theme_str) {
                             println!("› Switching to theme '{}'", theme_str.bold());
                             fig_settings::settings::set_value("autocomplete.theme", theme_str)?;
-                            Ok(())
+                            Ok(ExitCode::SUCCESS)
                         } else {
                             eyre::bail!("'{theme_str}' does not exist in {}", theme_dir.display())
                         }
@@ -119,7 +120,7 @@ impl ThemeArgs {
                 );
 
                 println!("{theme_str}");
-                Ok(())
+                Ok(ExitCode::SUCCESS)
             },
         }
     }

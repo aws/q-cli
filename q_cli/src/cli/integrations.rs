@@ -1,3 +1,5 @@
+use std::process::ExitCode;
+
 use clap::Subcommand;
 use crossterm::style::Stylize;
 use eyre::Result;
@@ -64,7 +66,7 @@ pub enum Integration {
 }
 
 impl IntegrationsSubcommands {
-    pub async fn execute(self) -> Result<()> {
+    pub async fn execute(self) -> Result<ExitCode> {
         match self {
             IntegrationsSubcommands::Install { integration, silent } => {
                 if let Integration::All = integration {
@@ -75,7 +77,7 @@ impl IntegrationsSubcommands {
                 } else {
                     install(integration, silent).await?;
                 }
-                Ok(())
+                Ok(ExitCode::SUCCESS)
             },
             IntegrationsSubcommands::Uninstall { integration, silent } => {
                 if let Integration::All = integration {
@@ -86,7 +88,7 @@ impl IntegrationsSubcommands {
                 } else {
                     uninstall(integration, silent).await?;
                 }
-                Ok(())
+                Ok(ExitCode::SUCCESS)
             },
             IntegrationsSubcommands::Status { integration, format } => status(integration, format).await,
             IntegrationsSubcommands::Reinstall { integration, silent } => {
@@ -103,7 +105,7 @@ impl IntegrationsSubcommands {
                     uninstall(integration, silent).await?;
                     install(integration, silent).await?;
                 }
-                Ok(())
+                Ok(ExitCode::SUCCESS)
             },
         }
     }
@@ -326,7 +328,7 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
     result
 }
 
-async fn status(integration: Integration, format: OutputFormat) -> Result<()> {
+async fn status(integration: Integration, format: OutputFormat) -> Result<ExitCode> {
     match integration {
         Integration::All => Err(eyre::eyre!(
             "Checking the status for all integrations is currently not supported"
@@ -342,7 +344,7 @@ async fn status(integration: Integration, format: OutputFormat) -> Result<()> {
                     })
                 },
             );
-            Ok(())
+            Ok(ExitCode::SUCCESS)
         },
         Integration::Dotfiles { .. } => {
             let mut all_integrations = vec![];
@@ -415,7 +417,7 @@ async fn status(integration: Integration, format: OutputFormat) -> Result<()> {
                 },
             );
 
-            Ok(())
+            Ok(ExitCode::SUCCESS)
         },
         Integration::InputMethod => {
             cfg_if::cfg_if! {
@@ -428,7 +430,7 @@ async fn status(integration: Integration, format: OutputFormat) -> Result<()> {
                             "installed": installed,
                         })
                     );
-                    Ok(())
+                    Ok(ExitCode::SUCCESS)
                 } else {
                     Err(eyre::eyre!("Input method integration is only supported on macOS"))
                 }
@@ -449,7 +451,7 @@ async fn status(integration: Integration, format: OutputFormat) -> Result<()> {
                             }
                         }
                     }
-                    Ok(())
+                    Ok(ExitCode::SUCCESS)
                 } else {
                     Err(eyre::eyre!("VSCode integration is only supported on macOS"))
                 }
@@ -469,7 +471,7 @@ async fn status(integration: Integration, format: OutputFormat) -> Result<()> {
                             }
                         }
                     }
-                    Ok(())
+                    Ok(ExitCode::SUCCESS)
                 } else {
                     Err(eyre::eyre!("IntelliJ integration is only supported on macOS and Linux"))
                 }

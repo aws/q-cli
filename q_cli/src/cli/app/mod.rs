@@ -1,3 +1,4 @@
+use std::process::ExitCode;
 use std::time::Duration;
 
 use clap::{
@@ -116,7 +117,7 @@ pub async fn restart_fig() -> Result<()> {
 }
 
 impl AppSubcommand {
-    pub async fn execute(&self) -> Result<()> {
+    pub async fn execute(&self) -> Result<ExitCode> {
         if !cfg!(target_os = "macos") {
             bail!("app subcommands are only supported on macOS");
         }
@@ -234,11 +235,13 @@ impl AppSubcommand {
             #[cfg(not(target_os = "macos"))]
             AppSubcommand::Uninstall(_) => {},
             AppSubcommand::Restart => restart_fig().await?,
-            AppSubcommand::Quit => crate::util::quit_fig(true).await?,
+            AppSubcommand::Quit => {
+                crate::util::quit_fig(true).await?;
+            },
             AppSubcommand::Launch => {
                 if desktop_app_running() {
                     println!("{PRODUCT_NAME} app is already running!");
-                    return Ok(());
+                    return Ok(ExitCode::FAILURE);
                 }
 
                 launch_fig_desktop(LaunchArgs {
@@ -252,6 +255,6 @@ impl AppSubcommand {
                 println!("{}", if desktop_app_running() { "1" } else { "0" });
             },
         }
-        Ok(())
+        Ok(ExitCode::SUCCESS)
     }
 }

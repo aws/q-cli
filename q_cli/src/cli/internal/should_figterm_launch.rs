@@ -4,6 +4,7 @@ use std::io::{
     stdout,
     Write,
 };
+use std::process::ExitCode;
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 #[allow(dead_code)]
@@ -23,7 +24,7 @@ enum Status {
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 impl Status {
-    fn exit_status(self, quiet: bool) -> Result<ProcessInfo, i32> {
+    fn exit_status(self, quiet: bool) -> Result<ProcessInfo, u8> {
         match self {
             Status::Process(info) => Ok(info),
             Status::Launch(s) => {
@@ -153,7 +154,7 @@ fn grandparent_status(parent_pid: fig_util::process_info::Pid) -> Status {
 }
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
-fn should_launch(quiet: bool) -> i32 {
+fn should_launch(quiet: bool) -> u8 {
     use fig_util::process_info::PidExt;
 
     let current_pid = fig_util::process_info::Pid::current();
@@ -190,15 +191,22 @@ fn should_launch(quiet: bool) -> i32 {
         }
     }
 
-    i32::from(!(grandparent_info.is_valid && parent_info.is_valid))
+    u8::from(!(grandparent_info.is_valid && parent_info.is_valid))
 }
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
-pub fn should_figterm_launch_exit_status(quiet: bool) -> i32 {
+pub fn should_figterm_launch_exit_status(quiet: bool) -> u8 {
     use fig_util::env_var::{
         PROCESS_LAUNCHED_BY_Q,
         Q_PARENT,
     };
+
+    if std::env::var_os("Q_FORCE_FIGTERM_LAUNCH").is_some() {
+        if !quiet {
+            writeln!(stdout(), "✅ Q_FORCE_FIGTERM_LAUNCH").ok();
+        }
+        return 0;
+    }
 
     if std::env::var_os(PROCESS_LAUNCHED_BY_Q).is_some() {
         if !quiet {
@@ -270,22 +278,22 @@ pub fn should_figterm_launch_exit_status(quiet: bool) -> i32 {
 }
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
-pub fn should_figterm_launch() -> ! {
-    std::process::exit(should_figterm_launch_exit_status(false))
+pub fn should_figterm_launch() -> ExitCode {
+    ExitCode::from(should_figterm_launch_exit_status(false))
 }
 
 #[cfg(target_os = "windows")]
-pub fn should_qterm_launch() {
+pub fn should_qterm_launch() -> ExitCode {
     use std::os::windows::io::AsRawHandle;
 
     use winapi::um::consoleapi::GetConsoleMode;
 
     let mut mode = 0;
     let stdin_ok = unsafe { GetConsoleMode(std::io::stdin().as_raw_handle() as *mut _, &mut mode) };
-    std::process::exit(if stdin_ok == 1 { 2 } else { 1 });
+    ExitCode::from(if stdin_ok == 1 { 2 } else { 1 });
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
-pub fn should_qterm_launch() {
-    std::process::exit(2);
+pub fn should_qterm_launch() -> ExitCode {
+    ExitCode::from(2);
 }

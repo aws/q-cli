@@ -7,7 +7,7 @@ use std::io::{
     Stderr,
     Write,
 };
-use std::process::exit;
+use std::process::ExitCode;
 use std::time::Duration;
 
 use color_eyre::owo_colors::OwoColorize;
@@ -57,7 +57,7 @@ enum ApiResponse {
     Error,
 }
 
-pub async fn chat(input: String) -> Result<()> {
+pub async fn chat(input: String) -> Result<ExitCode> {
     if !auth::is_logged_in().await {
         bail!(
             "You are not logged in, please log in with {}",
@@ -74,7 +74,7 @@ pub async fn chat(input: String) -> Result<()> {
         .flush()
         .ok();
 
-    result
+    result.map(|_| ExitCode::SUCCESS)
 }
 
 async fn try_chat(stderr: &mut Stderr, mut input: String) -> Result<()> {
@@ -156,7 +156,8 @@ You can include additional context by adding the following to your prompt:
                                     if let Some(conversation_id) = &conversation_id {
                                         fig_telemetry::send_end_chat(conversation_id.clone()).await;
                                         fig_telemetry::finish_telemetry().await;
-                                        exit(0);
+                                        #[allow(clippy::exit)]
+                                        std::process::exit(0);
                                     }
                                 });
                             }

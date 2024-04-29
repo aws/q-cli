@@ -165,7 +165,7 @@ impl SlavePty for UnixSlavePty {
                     // type::from(), but the size and potentially signedness
                     // are system dependent, which is why we're using `as _`.
                     // Suppress this lint for this section of code.
-                    #[cfg_attr(feature = "cargo-clippy", allow(clippy::cast_lossless))]
+                    #[cfg_attr(feature = "clippy", allow(clippy::cast_lossless))]
                     {
                         // Set the pty as the controlling terminal.
                         // Failure to do this means that delivery of

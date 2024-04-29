@@ -66,6 +66,7 @@ pub struct WindowGeometryState {
 }
 
 // TODO: Add state for the active terminal window
+#[allow(dead_code)]
 pub struct WindowState {
     pub window: Window,
     pub webview: WebView,

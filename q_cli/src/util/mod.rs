@@ -8,7 +8,10 @@ use std::path::{
     Path,
     PathBuf,
 };
-use std::process::Command;
+use std::process::{
+    Command,
+    ExitCode,
+};
 use std::time::Duration;
 
 use cfg_if::cfg_if;
@@ -109,7 +112,7 @@ pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
     }
 }
 
-pub async fn quit_fig(verbose: bool) -> Result<()> {
+pub async fn quit_fig(verbose: bool) -> Result<ExitCode> {
     if fig_util::system_info::is_remote() {
         bail!("Please restart {PRODUCT_NAME} from your host machine");
     }
@@ -118,26 +121,12 @@ pub async fn quit_fig(verbose: bool) -> Result<()> {
         if verbose {
             println!("{PRODUCT_NAME} app is not running");
         }
-        return Ok(());
+        return Ok(ExitCode::SUCCESS);
     }
 
-    match verbose {
-        true => {
-            println!("Quitting {PRODUCT_NAME} app");
-
-            // Some(tokio::spawn(async {
-            //     fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
-            //         fig_telemetry::TrackEventType::QuitApp,
-            //         fig_telemetry::TrackSource::Cli,
-            //         env!("CARGO_PKG_VERSION").into(),
-            //         empty::<(&str, &str)>(),
-            //     ))
-            //     .await
-            //     .ok();
-            // }))
-        },
-        false => {},
-    };
+    if verbose {
+        println!("Quitting {PRODUCT_NAME} app");
+    }
 
     if quit_command().await.is_err() {
         tokio::time::sleep(Duration::from_millis(500)).await;
@@ -148,7 +137,7 @@ pub async fn quit_fig(verbose: bool) -> Result<()> {
                     use fig_util::APP_PROCESS_NAME;
                     if let Ok(output) = Command::new("killall").arg(APP_PROCESS_NAME).output() {
                         if output.status.success() {
-                            return Ok(());
+                            return Ok(ExitCode::SUCCESS);
                         }
                     }
                 } else if #[cfg(target_os = "macos")] {
@@ -164,7 +153,7 @@ pub async fn quit_fig(verbose: bool) -> Result<()> {
                                 .status()
                                 .map(|res| res.success());
                             if let Ok(true) = success {
-                                return Ok(());
+                                return Ok(ExitCode::SUCCESS);
                             }
                         }
                     }
@@ -182,7 +171,7 @@ pub async fn quit_fig(verbose: bool) -> Result<()> {
 
     // telem_join.map(|f| async { f.await.ok() });
 
-    Ok(())
+    Ok(ExitCode::SUCCESS)
 }
 
 pub fn is_executable_in_path(program: impl AsRef<Path>) -> bool {
@@ -225,6 +214,7 @@ pub fn choose(prompt: impl Display, options: &[impl ToString]) -> Result<usize> 
     tokio::spawn(async {
         tokio::signal::ctrl_c().await.unwrap();
         crossterm::execute!(stdout(), crossterm::cursor::Show).unwrap();
+        #[allow(clippy::exit)]
         std::process::exit(0);
     });
 

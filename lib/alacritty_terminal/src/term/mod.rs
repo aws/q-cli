@@ -109,7 +109,7 @@ bitflags! {
         const ALTERNATE_SCROLL    = 0b0000_1000_0000_0000_0000;
         const VI                  = 0b0001_0000_0000_0000_0000;
         const URGENCY_HINTS       = 0b0010_0000_0000_0000_0000;
-        const ANY                 = std::u32::MAX;
+        const ANY                 = u32::MAX;
     }
 }
 

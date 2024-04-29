@@ -36,6 +36,7 @@ cfg_if::cfg_if! {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct PlatformWindow {
     pub rect: Rect,
     pub inner: PlatformWindowImpl,

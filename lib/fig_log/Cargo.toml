@@ -11,7 +11,7 @@ workspace = true
 
 [features]
 default = []
-console = ["dep:console-subscriber"]
+# console = ["dep:console-subscriber"]
 # sentry = ["dep:sentry-tracing"]
 
 [dependencies]

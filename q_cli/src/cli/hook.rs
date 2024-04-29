@@ -1,4 +1,4 @@
-use std::process::exit;
+use std::process::ExitCode;
 
 use clap::Subcommand;
 use eyre::{
@@ -56,11 +56,11 @@ pub enum HookSubcommand {
 }
 
 impl HookSubcommand {
-    pub async fn execute(&self) -> Result<()> {
+    pub async fn execute(&self) -> Result<ExitCode> {
         // Hooks should exit silently on failure.
         match self.execute_hook().await {
-            Ok(()) => Ok(()),
-            Err(_) => exit(1),
+            Ok(()) => Ok(ExitCode::SUCCESS),
+            Err(_) => Ok(ExitCode::FAILURE),
         }
     }
 

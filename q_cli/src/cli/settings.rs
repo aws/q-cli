@@ -1,3 +1,5 @@
+use std::process::ExitCode;
+
 use auth::is_logged_in;
 use clap::{
     ArgGroup,
@@ -61,7 +63,7 @@ pub struct SettingsArgs {
 }
 
 impl SettingsArgs {
-    pub async fn execute(&self) -> Result<()> {
+    pub async fn execute(&self) -> Result<ExitCode> {
         macro_rules! print_connection_error {
             () => {
                 println!("{}", app_not_running_message());
@@ -72,7 +74,7 @@ impl SettingsArgs {
             Some(SettingsSubcommands::Open) => {
                 let file = directories::settings_path().context("Could not get settings path")?;
                 tokio::process::Command::new("open").arg(file).output().await?;
-                Ok(())
+                Ok(ExitCode::SUCCESS)
             },
             Some(SettingsSubcommands::All { format }) => {
                 let settings = fig_settings::Settings::load()?.map().clone();
@@ -89,7 +91,7 @@ impl SettingsArgs {
                     },
                 }
 
-                Ok(())
+                Ok(ExitCode::SUCCESS)
             },
             None => match &self.key {
                 Some(key) => match (&self.value, self.delete) {
@@ -103,20 +105,20 @@ impl SettingsArgs {
                                 OutputFormat::Json => println!("{value}"),
                                 OutputFormat::JsonPretty => println!("{value:#}"),
                             }
-                            Ok(())
+                            Ok(ExitCode::SUCCESS)
                         },
                         None => match self.format {
                             OutputFormat::Plain => Err(eyre::eyre!("No value associated with {key}")),
                             OutputFormat::Json | OutputFormat::JsonPretty => {
                                 println!("null");
-                                Ok(())
+                                Ok(ExitCode::SUCCESS)
                             },
                         },
                     },
                     (Some(value_str), false) => {
                         let value = serde_json::from_str(value_str).unwrap_or_else(|_| json!(value_str));
                         fig_settings::settings::set_value(key, value)?;
-                        Ok(())
+                        Ok(ExitCode::SUCCESS)
                     },
                     (None, true) => {
                         let glob = Glob::new(key).context("Could not create glob")?.compile_matcher();
@@ -144,14 +146,14 @@ impl SettingsArgs {
                             },
                         }
 
-                        Ok(())
+                        Ok(ExitCode::SUCCESS)
                     },
-                    _ => Ok(()),
+                    _ => Ok(ExitCode::SUCCESS),
                 },
                 None => {
                     if manifest::is_minimal() || system_info::is_remote() {
                         Cli::parse_from([CLI_BINARY_NAME, "settings", "--help"]);
-                        return Ok(());
+                        return Ok(ExitCode::SUCCESS);
                     }
 
                     launch_fig_desktop(LaunchArgs {
@@ -163,14 +165,14 @@ impl SettingsArgs {
 
                     if is_logged_in().await {
                         match open_ui_element(UiElement::Settings, None).await {
-                            Ok(()) => Ok(()),
+                            Ok(()) => Ok(ExitCode::SUCCESS),
                             Err(err) => {
                                 print_connection_error!();
                                 Err(err.into())
                             },
                         }
                     } else {
-                        Ok(())
+                        Ok(ExitCode::SUCCESS)
                     }
                 },
             },

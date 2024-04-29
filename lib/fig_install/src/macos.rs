@@ -12,7 +12,6 @@ use std::path::{
     Path,
     PathBuf,
 };
-use std::process::exit;
 
 use fig_util::consts::{
     APP_BUNDLE_ID,
@@ -286,7 +285,8 @@ pub(crate) async fn update(
 
     tx.send(UpdateStatus::Exit).await.ok();
 
-    exit(0);
+    #[allow(clippy::exit)]
+    std::process::exit(0);
 }
 
 async fn remove_in_dir_with_prefix_unless(dir: &Path, prefix: &str, unless: impl Fn(&str) -> bool) {

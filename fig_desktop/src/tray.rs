@@ -188,6 +188,7 @@ pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
         "uninstall" => {
             tokio::runtime::Handle::current().spawn(async {
                 fig_install::uninstall(InstallComponents::all()).await.ok();
+                #[allow(clippy::exit)]
                 std::process::exit(0);
             });
         },

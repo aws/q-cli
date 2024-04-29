@@ -300,8 +300,6 @@ impl IndexMut<NamedColor> for Colors {
 
 #[cfg(test)]
 mod tests {
-    use std::f64::EPSILON;
-
     use super::*;
 
     #[test]
@@ -316,14 +314,14 @@ mod tests {
             g: 0x00,
             b: 0x00,
         };
-        assert!((rgb1.contrast(rgb2) - 21.).abs() < EPSILON);
+        assert!((rgb1.contrast(rgb2) - 21.).abs() < f64::EPSILON);
 
         let rgb1 = Rgb {
             r: 0xff,
             g: 0xff,
             b: 0xff,
         };
-        assert!((rgb1.contrast(rgb1) - 1.).abs() < EPSILON);
+        assert!((rgb1.contrast(rgb1) - 1.).abs() < f64::EPSILON);
 
         let rgb1 = Rgb {
             r: 0xff,
@@ -335,7 +333,7 @@ mod tests {
             g: 0xff,
             b: 0x00,
         };
-        assert!((rgb1.contrast(rgb2) - 2.285_543_608_124_253_3).abs() < EPSILON);
+        assert!((rgb1.contrast(rgb2) - 2.285_543_608_124_253_3).abs() < f64::EPSILON);
 
         let rgb1 = Rgb {
             r: 0x12,
@@ -347,6 +345,6 @@ mod tests {
             g: 0xdc,
             b: 0xba,
         };
-        assert!((rgb1.contrast(rgb2) - 9.786_558_997_257_74).abs() < EPSILON);
+        assert!((rgb1.contrast(rgb2) - 9.786_558_997_257_74).abs() < f64::EPSILON);
     }
 }

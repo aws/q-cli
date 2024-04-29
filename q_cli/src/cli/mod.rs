@@ -20,6 +20,10 @@ mod uninstall;
 mod update;
 mod user;
 
+use std::io::{
+    stdout,
+    Write as _,
+};
 use std::process::ExitCode;
 
 use auth::is_logged_in;
@@ -32,6 +36,7 @@ use clap::{
 };
 use crossterm::style::Stylize;
 use eyre::{
+    bail,
     Result,
     WrapErr,
 };
@@ -297,27 +302,23 @@ impl Cli {
                 CliRootCommands::Issue(args) => args.execute().await,
                 CliRootCommands::Completion(args) => args.execute(),
                 CliRootCommands::Internal(internal_subcommand) => internal_subcommand.execute().await,
-                CliRootCommands::Launch => launch_dashboard().await,
+                CliRootCommands::Launch => launch_dashboard(false).await,
                 CliRootCommands::Quit => crate::util::quit_fig(true).await,
                 CliRootCommands::Restart { .. } => {
                     app::restart_fig().await?;
-                    launch_dashboard().await
+                    launch_dashboard(false).await
                 },
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
                 CliRootCommands::Integrations(subcommand) => subcommand.execute().await,
                 CliRootCommands::Translate(args) => args.execute().await,
                 CliRootCommands::Telemetry(subcommand) => subcommand.execute().await,
-                CliRootCommands::Version => {
-                    print!("{}", Self::command().render_version());
-                    Ok(())
-                },
-                CliRootCommands::Dashboard => launch_dashboard().await,
+                CliRootCommands::Version => Self::print_version(),
+                CliRootCommands::Dashboard => launch_dashboard(false).await,
                 CliRootCommands::Chat { input } => chat::chat(input.unwrap_or_default()).await,
             },
             // Root command
-            None => launch_dashboard().await,
+            None => launch_dashboard(true).await,
         }
-        .map(|()| ExitCode::SUCCESS)
     }
 
     async fn send_telemetry(&self) {
@@ -346,12 +347,22 @@ impl Cli {
         cmd.print_long_help()?;
         Ok(ExitCode::SUCCESS)
     }
+
+    #[allow(clippy::unused_self)]
+    fn print_version() -> Result<ExitCode> {
+        let _ = writeln!(stdout(), "{}", Self::command().render_version());
+        Ok(ExitCode::SUCCESS)
+    }
 }
 
-async fn launch_dashboard() -> Result<()> {
+async fn launch_dashboard(help_fallback: bool) -> Result<ExitCode> {
     if manifest::is_minimal() || system_info::is_remote() {
-        Cli::command().print_help()?;
-        return Ok(());
+        if help_fallback {
+            Cli::command().print_help()?;
+            return Ok(ExitCode::SUCCESS);
+        } else {
+            bail!("Launching the dashboard is not supported in minimal mode");
+        }
     }
 
     launch_fig_desktop(LaunchArgs {
@@ -372,7 +383,7 @@ async fn launch_dashboard() -> Result<()> {
         .await
         .context("Failed to open dashboard")?;
 
-    Ok(())
+    Ok(ExitCode::SUCCESS)
 }
 
 #[cfg(test)]

@@ -805,16 +805,6 @@ pub fn build_autocomplete(
     Ok((window, webview))
 }
 
-pub trait WebviewBuilder {
-    type Options;
-
-    fn build_webview(
-        web_context: &mut WebContext,
-        event_loop: &EventLoop,
-        options: Self::Options,
-    ) -> wry::Result<WebView>;
-}
-
 async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
     macro_rules! watcher {
         ($type:ident, $name:expr, $on_update:expr) => {{

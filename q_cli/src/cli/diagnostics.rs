@@ -2,6 +2,7 @@ use std::io::{
     stdout,
     IsTerminal,
 };
+use std::process::ExitCode;
 
 use clap::Args;
 use color_eyre::Result;
@@ -42,7 +43,7 @@ pub struct DiagnosticArgs {
 }
 
 impl DiagnosticArgs {
-    pub async fn execute(&self) -> Result<()> {
+    pub async fn execute(&self) -> Result<ExitCode> {
         #[cfg(target_os = "macos")]
         if !self.force && !fig_util::desktop_app_running() {
             use fig_util::{
@@ -56,7 +57,7 @@ impl DiagnosticArgs {
                 format!("{CLI_BINARY_NAME} launch").magenta(),
                 format!("{CLI_BINARY_NAME} diagnostic --force").magenta()
             );
-            return Ok(());
+            return Ok(ExitCode::FAILURE);
         }
 
         let spinner = if stdout().is_terminal() {
@@ -85,7 +86,7 @@ impl DiagnosticArgs {
         self.format
             .print(|| diagnostics.user_readable().join("\n"), || &diagnostics);
 
-        Ok(())
+        Ok(ExitCode::SUCCESS)
     }
 }
 

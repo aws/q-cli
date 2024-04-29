@@ -7,7 +7,10 @@ use std::path::{
     Path,
     PathBuf,
 };
-use std::process::Command;
+use std::process::{
+    Command,
+    ExitCode,
+};
 use std::time::Duration;
 
 use async_trait::async_trait;
@@ -109,7 +112,7 @@ pub struct DoctorArgs {
 }
 
 impl DoctorArgs {
-    pub async fn execute(self) -> Result<()> {
+    pub async fn execute(self) -> Result<ExitCode> {
         doctor_cli(self.all, self.strict).await
     }
 }
@@ -2249,7 +2252,7 @@ struct CheckConfiguration {
 }
 
 // Doctor
-pub async fn doctor_cli(all: bool, strict: bool) -> Result<()> {
+pub async fn doctor_cli(all: bool, strict: bool) -> Result<ExitCode> {
     #[cfg(unix)]
     {
         use nix::unistd::geteuid;
@@ -2260,7 +2263,7 @@ pub async fn doctor_cli(all: bool, strict: bool) -> Result<()> {
                     "{}",
                     "If you know what you're doing, run the command again with --all.".red()
                 );
-                std::process::exit(1);
+                return Ok(ExitCode::FAILURE);
             }
         }
     }
@@ -2274,6 +2277,7 @@ pub async fn doctor_cli(all: bool, strict: bool) -> Result<()> {
 
         ctrlc::set_handler(move || {
             execute!(std::io::stdout(), cursor::Show).ok();
+            #[allow(clippy::exit)]
             std::process::exit(1);
         })?;
     }
@@ -2498,5 +2502,6 @@ pub async fn doctor_cli(all: bool, strict: bool) -> Result<()> {
         println!("  (You might want to restart your terminal emulator)");
         fig_settings::state::set_value("doctor.prompt-restart-terminal", false)?;
     }
-    Ok(())
+
+    Ok(ExitCode::SUCCESS)
 }

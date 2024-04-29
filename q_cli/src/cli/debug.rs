@@ -4,7 +4,10 @@ use std::io::{
     Write as _,
 };
 use std::path::Path;
-use std::process::Command;
+use std::process::{
+    Command,
+    ExitCode,
+};
 use std::str::FromStr;
 
 use clap::{
@@ -19,6 +22,7 @@ use crossterm::terminal::{
 use crossterm::ExecutableCommand;
 use eyre::{
     bail,
+    Context,
     ContextCompat,
     Result,
 };
@@ -230,7 +234,7 @@ pub enum DebugSubcommand {
 }
 
 impl DebugSubcommand {
-    pub async fn execute(&self) -> Result<()> {
+    pub async fn execute(&self) -> Result<ExitCode> {
         match self {
             DebugSubcommand::App => {
                 if !cfg!(target_os = "macos") {
@@ -246,8 +250,7 @@ impl DebugSubcommand {
                         .wait()
                         .is_err()
                     {
-                        println!("Could not start fig");
-                        return Ok(());
+                        bail!("Could not start {PRODUCT_NAME}");
                     }
                 }
                 let fig_path = crate::util::get_running_app_info(APP_BUNDLE_ID, "bundlepath")?;
@@ -302,7 +305,7 @@ impl DebugSubcommand {
                 };
                 if result.is_err() {
                     println!("Could not update debug mode");
-                    return result.map(|_| ()).map_err(eyre::Report::from);
+                    return result.map(|_| ExitCode::SUCCESS).map_err(eyre::Report::from);
                 }
             },
             DebugSubcommand::Logs { level, files } => {
@@ -459,7 +462,7 @@ impl DebugSubcommand {
                                         TISAction::Deselect => source.deselect(),
                                     })
                                     .collect::<Result<Vec<()>, fig_integrations::input_method::InputMethodError>>()?;
-                                Ok(())
+                                Ok(ExitCode::SUCCESS)
                             },
                             None => return Err(eyre::eyre!("Could not find an input source with this identifier")),
                         };
@@ -471,11 +474,9 @@ impl DebugSubcommand {
                     bail!("prompt-accessibility is only supported on macOS");
                 }
 
-                let result = prompt_accessibility_command().await;
-                if result.is_err() {
-                    println!("Could not prompt for accessibility permissions.");
-                    return result.map_err(eyre::Report::from);
-                }
+                prompt_accessibility_command()
+                    .await
+                    .context("Could not prompt for accessibility permissions.")?;
             },
             DebugSubcommand::Sample => {
                 if !cfg!(target_os = "macos") {
@@ -557,11 +558,9 @@ impl DebugSubcommand {
                             verbose: true,
                         })?;
 
-                        let result = prompt_accessibility_command().await;
-                        if result.is_err() {
-                            println!("Could not prompt for accessibility permissions.");
-                            return result.map_err(eyre::Report::from);
-                        }
+                        prompt_accessibility_command()
+                            .await
+                            .context("Could not prompt for accessibility permissions.")?;
                     },
                     Some(AccessibilityAction::Open) => {
                         Command::new("open")
@@ -770,16 +769,12 @@ impl DebugSubcommand {
                     verbose: true,
                 })?;
 
-                let result = devtools_command(match app {
+                devtools_command(match app {
                     App::Dashboard => fig_proto::local::devtools_command::Window::DevtoolsDashboard,
                     App::Autocomplete => fig_proto::local::devtools_command::Window::DevtoolsAutocomplete,
                 })
-                .await;
-
-                if result.is_err() {
-                    println!("Could not open devtools window");
-                    return result.map_err(eyre::Report::from);
-                }
+                .await
+                .context("Could not open devtools window")?;
             },
             DebugSubcommand::GetIndex { channel, debug } => {
                 use fig_util::manifest::Channel;
@@ -855,6 +850,6 @@ impl DebugSubcommand {
                 }
             },
         }
-        Ok(())
+        Ok(ExitCode::SUCCESS)
     }
 }

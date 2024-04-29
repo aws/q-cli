@@ -69,10 +69,12 @@ impl fig_remote_ipc::RemoteHookHandler for RemoteHook {
         // proxy: &EventLoopProxy,
     ) -> Result<Option<clientbound::response::Response>> {
         let _old_metrics = figterm_state.with_update(session_id.clone(), |session| {
-            session.edit_buffer.text = hook.text.clone();
-            session.edit_buffer.cursor = hook.cursor;
-            session.terminal_cursor_coordinates = hook.terminal_cursor_coordinates.clone();
-            session.context = hook.context.clone();
+            session.edit_buffer.text.clone_from(&hook.text);
+            session.edit_buffer.cursor.clone_from(&hook.cursor);
+            session
+                .terminal_cursor_coordinates
+                .clone_from(&hook.terminal_cursor_coordinates);
+            session.context.clone_from(&hook.context);
 
             let received_at = OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc());
             let current_session_expired = session
@@ -193,10 +195,10 @@ impl fig_remote_ipc::RemoteHookHandler for RemoteHook {
         figterm_state.with(session_id, |session| {
             if let (Some(old_context), Some(new_context)) = (&session.context, &hook.context) {
                 cwd_changed = old_context.current_working_directory != new_context.current_working_directory;
-                new_cwd = new_context.current_working_directory.clone();
+                new_cwd.clone_from(&new_context.current_working_directory);
             }
 
-            session.context = hook.context.clone();
+            session.context.clone_from(&hook.context);
         });
 
         if cwd_changed {
@@ -256,7 +258,7 @@ impl fig_remote_ipc::RemoteHookHandler for RemoteHook {
         figterm_state: &Arc<FigtermState>,
     ) -> Result<Option<clientbound::response::Response>> {
         figterm_state.with_update(session_id.clone(), |session| {
-            session.context = hook.context.clone();
+            session.context.clone_from(&hook.context);
         });
 
         self.proxy.send_event(Event::WindowEvent {
@@ -295,7 +297,7 @@ impl fig_remote_ipc::RemoteHookHandler for RemoteHook {
         figterm_state: &Arc<FigtermState>,
     ) -> Result<Option<clientbound::response::Response>> {
         figterm_state.with_update(session_id.clone(), |session| {
-            session.context = hook.context.clone();
+            session.context.clone_from(&hook.context);
         });
 
         self.notifications_state

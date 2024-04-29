@@ -2,6 +2,7 @@ use std::io::{
     stdout,
     Write,
 };
+use std::process::ExitCode;
 
 use clap::{
     Args,
@@ -9,6 +10,7 @@ use clap::{
     ValueEnum,
 };
 use eyre::Result;
+use fig_util::CLI_BINARY_NAME;
 
 use crate::cli::Cli;
 
@@ -32,7 +34,7 @@ pub struct CompletionArgs {
 }
 
 impl CompletionArgs {
-    pub fn execute(&self) -> Result<()> {
+    pub fn execute(&self) -> Result<ExitCode> {
         writeln!(stdout(), "{}", match self.shell {
             Shells::Bash => generation_completions(clap_complete::shells::Bash),
             Shells::Fish => generation_completions(clap_complete::shells::Fish),
@@ -40,7 +42,7 @@ impl CompletionArgs {
             Shells::Fig => generation_completions(clap_complete_fig::Fig),
         })
         .ok();
-        Ok(())
+        Ok(ExitCode::SUCCESS)
     }
 }
 
@@ -48,7 +50,7 @@ fn generation_completions(gen: impl clap_complete::Generator) -> String {
     let mut cli = Cli::command();
     let mut buffer = Vec::new();
 
-    clap_complete::generate(gen, &mut cli, env!("CARGO_PKG_NAME"), &mut buffer);
+    clap_complete::generate(gen, &mut cli, CLI_BINARY_NAME, &mut buffer);
 
     String::from_utf8_lossy(&buffer).into()
 }

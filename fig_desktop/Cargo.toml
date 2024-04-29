@@ -28,7 +28,7 @@ resource = "./autocomplete-icons/*"
 [features]
 default = []
 gamma = ["fig_install/gamma"]
-console = ["tokio/tracing", "fig_log/console"]
+# console = ["tokio/tracing", "fig_log/console"]
 # Required for cargo-tauri CLI
 custom-protocol = []
 

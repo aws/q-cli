@@ -1,6 +1,6 @@
 use std::fmt;
 use std::fmt::Display;
-use std::process::exit;
+use std::process::ExitCode;
 use std::time::Duration;
 
 use auth::builder_id::{
@@ -65,7 +65,7 @@ impl Display for AuthMethod {
 }
 
 impl RootUserSubcommand {
-    pub async fn execute(self) -> Result<()> {
+    pub async fn execute(self) -> Result<ExitCode> {
         match self {
             Self::Login => {
                 if auth::is_logged_in().await {
@@ -146,7 +146,7 @@ impl RootUserSubcommand {
                     error!(%err, "Failed to send login command");
                 }
 
-                Ok(())
+                Ok(ExitCode::SUCCESS)
             },
             Self::Logout => {
                 let logout_join = logout_command();
@@ -158,7 +158,7 @@ impl RootUserSubcommand {
                     "Run {} to log back in to {PRODUCT_NAME}",
                     format!("{CLI_BINARY_NAME} login").magenta()
                 );
-                Ok(())
+                Ok(ExitCode::SUCCESS)
             },
             Self::Whoami { format } => {
                 let secret_store = SecretStore::new().await?;
@@ -187,11 +187,11 @@ impl RootUserSubcommand {
                                 })
                             },
                         );
-                        Ok(())
+                        Ok(ExitCode::SUCCESS)
                     },
                     _ => {
                         format.print(|| "Not logged in", || json!({ "account": null }));
-                        exit(1);
+                        Ok(ExitCode::FAILURE)
                     },
                 }
             },
@@ -206,7 +206,7 @@ pub enum UserSubcommand {
 }
 
 impl UserSubcommand {
-    pub async fn execute(self) -> Result<()> {
+    pub async fn execute(self) -> Result<ExitCode> {
         match self {
             Self::Root(cmd) => cmd.execute().await,
         }

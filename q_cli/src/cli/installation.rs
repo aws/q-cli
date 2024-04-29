@@ -1,5 +1,7 @@
 //! Installation, uninstallation, and update of the CLI.
 
+use std::process::ExitCode;
+
 use crossterm::style::Stylize;
 use eyre::Result;
 use fig_install::{
@@ -11,7 +13,7 @@ use fig_util::CLI_BINARY_NAME;
 use crate::util::dialoguer_theme;
 
 #[cfg_attr(windows, allow(unused_variables))]
-pub async fn install_cli(install_components: InstallComponents, no_confirm: bool, force: bool) -> Result<()> {
+pub async fn install_cli(install_components: InstallComponents, no_confirm: bool, force: bool) -> Result<ExitCode> {
     #[cfg(unix)]
     {
         use nix::unistd::geteuid;
@@ -22,7 +24,7 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
                     "{}",
                     "If you know what you're doing, run the command again with --force.".red()
                 );
-                std::process::exit(1);
+                return Ok(ExitCode::FAILURE);
             }
         }
     }
@@ -100,5 +102,5 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
         }
     }
 
-    Ok(())
+    Ok(ExitCode::SUCCESS)
 }

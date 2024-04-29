@@ -1,3 +1,5 @@
+use std::process::ExitCode;
+
 use clap::Args;
 use crossterm::style::Stylize;
 use dialoguer::Select;
@@ -29,7 +31,7 @@ pub struct IssueArgs {
 
 impl IssueArgs {
     #[allow(unreachable_code)]
-    pub async fn execute(&self) -> Result<()> {
+    pub async fn execute(&self) -> Result<ExitCode> {
         // Check if fig is running
         if !(self.force || fig_util::desktop_app_running() || is_remote()) {
             println!(
@@ -37,7 +39,7 @@ impl IssueArgs {
                 format!("{CLI_BINARY_NAME} launch").magenta(),
                 format!("{CLI_BINARY_NAME} issue --force").magenta()
             );
-            return Ok(());
+            return Ok(ExitCode::FAILURE);
         }
 
         let joined_description = self.description.join(" ").trim().to_owned();
@@ -128,7 +130,7 @@ impl IssueArgs {
                     if fig_util::open_url(url.as_str()).is_err() {
                         println!("Issue Url: {}", url.as_str().underlined());
                     }
-                    return Ok(());
+                    return Ok(ExitCode::SUCCESS);
                 }
             }
         }
@@ -191,7 +193,7 @@ impl IssueArgs {
             println!("Issue Url: {}", url.as_str().underlined());
         }
 
-        Ok(())
+        Ok(ExitCode::SUCCESS)
     }
 }
 

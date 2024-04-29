@@ -10,8 +10,8 @@ use std::io::{
 };
 use std::path::PathBuf;
 use std::process::{
-    exit,
     Command,
+    ExitCode,
 };
 use std::time::Duration;
 
@@ -62,7 +62,6 @@ use fig_util::directories::figterm_socket_path;
 use fig_util::env_var::QTERM_SESSION_ID;
 use fig_util::{
     directories,
-    get_parent_process_exe,
     CLI_BINARY_NAME,
 };
 use rand::distributions::{
@@ -300,7 +299,7 @@ pub enum InternalSubcommand {
 const BUFFER_SIZE: usize = 1024;
 
 impl InternalSubcommand {
-    pub async fn execute(self) -> Result<()> {
+    pub async fn execute(self) -> Result<ExitCode> {
         match self {
             InternalSubcommand::Install(args) => {
                 let no_confirm = args.no_confirm;
@@ -388,12 +387,12 @@ impl InternalSubcommand {
             InternalSubcommand::Hostname => {
                 if let Some(hostname) = System::host_name() {
                     if write!(stdout(), "{hostname}").is_ok() {
-                        return Ok(());
+                        return Ok(ExitCode::SUCCESS);
                     }
                 }
-                exit(1);
+                return Ok(ExitCode::FAILURE);
             },
-            InternalSubcommand::ShouldFigtermLaunch => should_figterm_launch::should_figterm_launch(),
+            InternalSubcommand::ShouldFigtermLaunch => return Ok(should_figterm_launch::should_figterm_launch()),
             InternalSubcommand::Event { payload, apps, name } => {
                 let hook = new_event_hook(name, payload, apps);
                 send_hook_to_socket(hook).await?;
@@ -595,7 +594,7 @@ impl InternalSubcommand {
             #[cfg(target_os = "linux")]
             InternalSubcommand::DetectSandbox => {
                 use fig_util::system_info::linux::SandboxKind;
-                exit(match fig_util::system_info::linux::detect_sandbox() {
+                let exit_code = match fig_util::system_info::linux::detect_sandbox() {
                     SandboxKind::None => {
                         println!("No sandbox detected");
                         0
@@ -620,7 +619,8 @@ impl InternalSubcommand {
                         println!("You are in a {engine} container");
                         1
                     },
-                })
+                };
+                return Ok(ExitCode::from(exit_code));
             },
             InternalSubcommand::OpenUninstallPage => {
                 let url = fig_install::UNINSTALL_URL;
@@ -634,7 +634,7 @@ impl InternalSubcommand {
                         .await
                     {
                         info!("Failed to open uninstall via desktop, no more options: {err}");
-                        std::process::exit(1);
+                        return Ok(ExitCode::FAILURE);
                     }
                 }
             },
@@ -667,13 +667,15 @@ impl InternalSubcommand {
             #[cfg(target_os = "macos")]
             InternalSubcommand::AttemptToFinishInputMethodInstallation { bundle_path } => {
                 match InputMethod::finish_input_method_installation(bundle_path) {
-                    Ok(_) => exit(0),
+                    Ok(_) => {
+                        return Ok(ExitCode::FAILURE);
+                    },
                     Err(err) => {
                         println!(
                             "{}",
                             serde_json::to_string(&err).expect("InputMethodError should be serializable")
                         );
-                        exit(1)
+                        return Ok(ExitCode::FAILURE);
                     },
                 }
             },
@@ -733,7 +735,7 @@ impl InternalSubcommand {
                     Ok(cstr) => cstr,
                     Err(err) => {
                         writeln!(stderr(), "Invalid from path: {err}").ok();
-                        std::process::exit(1);
+                        return Ok(ExitCode::FAILURE);
                     },
                 };
 
@@ -741,7 +743,7 @@ impl InternalSubcommand {
                     Ok(cstr) => cstr,
                     Err(err) => {
                         writeln!(stderr(), "Invalid to path: {err}").ok();
-                        std::process::exit(1);
+                        return Ok(ExitCode::FAILURE);
                     },
                 };
 
@@ -751,7 +753,7 @@ impl InternalSubcommand {
                     },
                     Err(err) => {
                         writeln!(stderr(), "Failed to swap files: {err}").ok();
-                        std::process::exit(1);
+                        return Ok(ExitCode::FAILURE);
                     },
                 }
             },
@@ -761,7 +763,7 @@ impl InternalSubcommand {
 
                 if brew_is_reinstalling {
                     // If we're reinstalling, we don't want to uninstall
-                    return Ok(());
+                    return Ok(ExitCode::SUCCESS);
                 } else {
                     fig_util::open_url_async(fig_install::UNINSTALL_URL).await.ok();
                 }
@@ -779,13 +781,13 @@ impl InternalSubcommand {
             },
             InternalSubcommand::InlineShellCompletion { buffer } => {
                 let Ok(session_id) = std::env::var(QTERM_SESSION_ID) else {
-                    exit(1);
+                    return Ok(ExitCode::FAILURE);
                 };
 
                 let Ok(mut conn) =
                     BufferedUnixStream::connect(fig_util::directories::figterm_socket_path(&session_id)?).await
                 else {
-                    exit(1);
+                    return Ok(ExitCode::FAILURE);
                 };
 
                 let Ok(Some(FigtermResponseMessage {
@@ -808,7 +810,7 @@ impl InternalSubcommand {
                     )
                     .await
                 else {
-                    exit(1);
+                    return Ok(ExitCode::FAILURE);
                 };
 
                 writeln!(stdout(), "{buffer}{insert_text}").ok();
@@ -818,31 +820,8 @@ impl InternalSubcommand {
             },
         }
 
-        Ok(())
+        Ok(ExitCode::SUCCESS)
     }
-}
-
-pub fn get_shell() {
-    if let Some(exe) = get_parent_process_exe() {
-        #[cfg(windows)]
-        let exe = if exe.file_name().unwrap() == "bash.exe" {
-            exe.parent()
-                .context("No parent")?
-                .parent()
-                .context("No parent")?
-                .parent()
-                .context("No parent")?
-                .join("bin")
-                .join("bash.exe")
-        } else {
-            exe
-        };
-
-        if write!(stdout(), "{}", exe.display()).is_ok() {
-            return;
-        }
-    }
-    exit(1);
 }
 
 pub async fn pre_cmd(alias: Option<String>) {
