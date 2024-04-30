@@ -97,7 +97,7 @@ pub enum Processes {
     App,
 }
 
-/// Top level cli commands
+/// The Amazon Q CLI
 #[deny(missing_docs)]
 #[derive(Debug, PartialEq, Subcommand)]
 pub enum CliRootCommands {
