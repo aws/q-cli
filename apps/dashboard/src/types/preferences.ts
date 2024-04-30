@@ -4,7 +4,7 @@ export type Pref = {
   id: string;
   title: string;
   description?: string;
-  example?: string;
+  example?: React.ReactNode;
   type: string;
   inverted?: boolean;
   default: PrefDefault;

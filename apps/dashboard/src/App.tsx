@@ -162,9 +162,9 @@ const NAV_DATA = [
     link: "/autocomplete",
   },
   {
-  type: "link",
-        name: "Chat",
-        link: "/chat",
+    type: "link",
+    name: "Chat",
+    link: "/chat",
   },
   {
     type: "link",

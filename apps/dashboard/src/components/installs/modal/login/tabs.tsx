@@ -15,9 +15,11 @@ import { z } from "zod";
 function BuilderIdTab({
   handleLogin,
   toggleTab,
+  signInText,
 }: {
   handleLogin: () => void;
   toggleTab: () => void;
+  signInText: string;
 }) {
   return (
     <div className="flex flex-col items-center gap-1">
@@ -27,7 +29,7 @@ function BuilderIdTab({
         className="flex gap-4 pl-2 self-center"
       >
         <AwsLogo />
-        Sign in
+        {signInText}
       </Button>
       <Button
         className="h-auto p-1 px-2 hover:bg-white/20 hover:text-white"
@@ -45,9 +47,11 @@ function BuilderIdTab({
 function IamTab({
   handleLogin,
   toggleTab,
+  signInText,
 }: {
   handleLogin: (startUrl: string, region: string) => void;
   toggleTab: () => void;
+  signInText: string;
 }) {
   // TODO: this should be fetched from https://idetoolkits.amazonwebservices.com/endpoints.json
   const REGIONS = {
@@ -192,7 +196,7 @@ function IamTab({
           className="flex gap-4 pl-2 self-center"
         >
           <AwsLogo />
-          Sign in
+          {signInText}
         </Button>
         <Button
           className="h-auto p-1 px-2 hover:bg-white/20 hover:text-white"
@@ -210,15 +214,29 @@ export default function Tab({
   tab,
   handleLogin,
   toggleTab,
+  signInText,
 }: {
   tab: "builderId" | "iam";
   handleLogin: () => void;
   toggleTab: () => void;
+  signInText: string;
 }) {
   switch (tab) {
     case "builderId":
-      return <BuilderIdTab handleLogin={handleLogin} toggleTab={toggleTab} />;
+      return (
+        <BuilderIdTab
+          handleLogin={handleLogin}
+          toggleTab={toggleTab}
+          signInText={signInText}
+        />
+      );
     case "iam":
-      return <IamTab handleLogin={handleLogin} toggleTab={toggleTab} />;
+      return (
+        <IamTab
+          handleLogin={handleLogin}
+          toggleTab={toggleTab}
+          signInText={signInText}
+        />
+      );
   }
 }

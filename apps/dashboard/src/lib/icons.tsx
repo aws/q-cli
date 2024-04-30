@@ -17,7 +17,7 @@ export function getIconFromName(name: string, size?: number) {
     case "translation":
       return <Icon.Translate size={size} />;
     case "chat":
-        return <Icon.Chat size={size} />;
+      return <Icon.Chat size={size} />;
     case "account":
       return <Icon.User size={size} />;
     case "integrations":

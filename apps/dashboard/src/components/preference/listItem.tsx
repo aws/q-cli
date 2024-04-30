@@ -105,7 +105,9 @@ export function Setting({
         )}
         {data.example && (
           <p className="font-light leading-tight text-sm">
-            {parseBackticksToCode(data.example, "py-[1px]")}
+            {typeof data.example === "string"
+              ? parseBackticksToCode(data.example, "py-[1px]")
+              : data.example}
           </p>
         )}
         {data.type !== "boolean" && (

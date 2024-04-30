@@ -1,3 +1,4 @@
+import { Link } from "@/components/ui/link";
 import { PRODUCT_NAME, TELEMETRY_WIKI_URL } from "@/lib/constants";
 
 const generalPreferences = [
@@ -83,8 +84,12 @@ const generalPreferences = [
         id: "telemetry.enabled",
         title: "Telemetry",
         description: `Enable ${PRODUCT_NAME} for command line to send usage data to AWS`,
-        example:
-          `Learn more at ${TELEMETRY_WIKI_URL}`,
+        example: (
+          <>
+            Learn more at{" "}
+            <Link href={TELEMETRY_WIKI_URL}>{TELEMETRY_WIKI_URL}</Link>
+          </>
+        ),
         type: "boolean",
         default: true,
         popular: false,
@@ -93,8 +98,12 @@ const generalPreferences = [
         id: "codeWhisperer.shareCodeWhispererContentWithAWS",
         title: `Share ${PRODUCT_NAME} content with AWS`,
         description: `When checked, your content processed by ${PRODUCT_NAME} may be used for service improvement (except for content processed by the Professional ${PRODUCT_NAME} service tier). Unchecking this box will cause AWS to delete any of your content used for that purpose. The information used to provide the ${PRODUCT_NAME} service to you will not be affected.`,
-        example:
-          `Learn more at ${TELEMETRY_WIKI_URL}`,
+        example: (
+          <>
+            Learn more at{" "}
+            <Link href={TELEMETRY_WIKI_URL}>{TELEMETRY_WIKI_URL}</Link>
+          </>
+        ),
         type: "boolean",
         default: true,
         popular: false,

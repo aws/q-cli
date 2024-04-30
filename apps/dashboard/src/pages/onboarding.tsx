@@ -1,9 +1,13 @@
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+// import { Link } from "react-router-dom";
 import autocompleteDemo from "@assets/images/autocomplete_demo.gif";
 import translateDemo from "@assets/images/translate_demo.gif";
 import chatDemo from "@assets/images/chat_demo.gif";
+import ExternalLink from "@/components/util/external-link";
+import { Link } from "@/components/ui/link";
+import Lockup from "@/components/svg/logo";
+import { QLogo } from "@/components/svg/icons";
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState(0);
@@ -12,24 +16,39 @@ export default function Page() {
   return (
     <div className="flex flex-col items-start gap-4">
       <div className="flex flex-col">
-        <h1 className="text-2xl font-bold select-none dark:text-zinc-400">
+        <h1 className="text-2xl font-bold dark:text-zinc-400">
           Getting started
         </h1>
       </div>
+      <section className="flex flex-col p-6 gap-4 w-full gradient-q-secondary-light-alt rounded-lg items-start text-white">
+        <div className="flex flex-row gap-4 w-full items-center">
+          <QLogo size={42} />
+          <div className="flex flex-col gap-1">
+            <h1 className="font-bold text-xl font-ember leading-none">
+              CodeWhisperer is now Amazon Q
+            </h1>
+            <p className="text-base leading-tight">
+              <Link
+                href="https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/what-is.html"
+                className="font-medium"
+                variant="primary"
+              >
+                Read the announcement blog post
+              </Link>
+            </p>
+          </div>
+        </div>
+      </section>
       <div className="flex flex-col gap-2 w-full border bg-zinc-50 border-zinc-200 dark:bg-zinc-900 dark:border-zinc-600 rounded-lg p-4 mb-4">
         <h2 className="font-bold font-ember tracking-tight text-lg dark:text-zinc-400">
           Launch a new shell session to start using autocomplete!
         </h2>
-
         <ol className="flex flex-col text-zinc-600 dark:text-zinc-500">
           <li>
             <span className="text-sm flex items-baseline gap-1">
               <span className="font-semibold">Not working?</span>
               <span>Check out</span>
-              <Link
-                to={"/help"}
-                className="text-blue-500 underline decoration-1 underline-offset-1 hover:text-blue-800 hover:underline-offset-4 transition-all duration-100"
-              >
+              <Link to="/help" variant="blue">
                 Help & support
               </Link>
             </span>
@@ -89,7 +108,9 @@ export default function Page() {
               {activeTab == 0 && (
                 <img src={autocompleteDemo} alt="autocomplete demo" />
               )}
-              {activeTab == 1 && <img src={translateDemo} alt="translation demo" />}
+              {activeTab == 1 && (
+                <img src={translateDemo} alt="translation demo" />
+              )}
               {activeTab == 2 && <img src={chatDemo} alt="chat demo" />}
             </div>
           </div>

@@ -9,6 +9,7 @@ import { cn, interpolateSettingBoolean } from "@/lib/utils";
 import { useSetting } from "@/hooks/store/useSetting";
 import { Switch } from "../ui/switch";
 import { parseBackticksToCode } from "@/lib/strings";
+import { Link } from "../ui/link";
 
 type PrefSection = {
   title: string;
@@ -68,23 +69,26 @@ function FeatureIntro({ intro }: { intro: Intro }) {
                 intro.description,
                 "!border-white !bg-white/20 !text-white py-[1px]",
               )}
-              <ExternalLink
+              <Link
                 href={intro.link}
-                className="pl-1 text-white font-medium underline underline-offset-4 "
+                className="pl-1 font-medium"
+                variant="primary"
               >
                 Learn more
-              </ExternalLink>
+              </Link>
             </p>
           </div>
         </div>
-        {!intro.disabled && <div className="flex items-center gap-2">
-          <span className="font-bold">{localValue ? "On" : "Off"}</span>
-          <Switch
-            onClick={toggleSwitch}
-            checked={localValue as boolean}
-            variant={"inverted"}
-          />
-        </div>}
+        {!intro.disabled && (
+          <div className="flex items-center gap-2">
+            <span className="font-bold">{localValue ? "On" : "Off"}</span>
+            <Switch
+              onClick={toggleSwitch}
+              checked={localValue as boolean}
+              variant={"inverted"}
+            />
+          </div>
+        )}
       </div>
     </section>
   );
@@ -120,8 +124,9 @@ export function UserPrefSection({
 
   return (
     <section
-      className={`flex flex-col gap-4 py-4 ${disabled && "opacity-30 select-none"
-        }`}
+      className={`flex flex-col gap-4 py-4 ${
+        disabled && "opacity-30 select-none"
+      }`}
     >
       <SectionHeading index={index}>{data.title}</SectionHeading>
 

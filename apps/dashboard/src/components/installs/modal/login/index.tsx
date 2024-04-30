@@ -3,6 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Auth, Internal, Native } from "@withfig/api-bindings";
 import { useEffect, useState } from "react";
 import Tab from "./tabs";
+import { useLocalStateZodDefault } from "@/hooks/store/useState";
+import { z } from "zod";
+import { Link } from "@/components/ui/link";
+import { cn } from "@/lib/utils";
 
 export default function LoginModal({ next }: { next: () => void }) {
   const [loginState, setLoginState] = useState<
@@ -11,6 +15,11 @@ export default function LoginModal({ next }: { next: () => void }) {
   const [loginCode, setLoginCode] = useState<string | null>(null);
   const [tab, setTab] = useState<"builderId" | "iam">("builderId");
   const [error, setError] = useState<string | null>(null);
+  const [completedOnboarding] = useLocalStateZodDefault(
+    "desktop.completedOnboarding",
+    z.boolean(),
+    false,
+  );
 
   async function handleLogin(startUrl?: string, region?: string) {
     setLoginState("loading");
@@ -58,12 +67,27 @@ export default function LoginModal({ next }: { next: () => void }) {
   }, [loginState, next]);
 
   return (
-    <div className="flex flex-col items-center gap-8 gradient-q-secondary-light -m-10 p-4 pt-10 rounded-lg text-white">
+    <div className="flex flex-col items-center gap-8 gradient-q-secondary-light -m-10 pt-10 p-4 rounded-lg text-white">
       <div className="flex flex-col items-center gap-8">
         <Lockup />
-        <h2 className="text-xl text-white font-semibold select-none leading-none font-ember tracking-tight">
-          Sign in to get started
-        </h2>
+        {!completedOnboarding && (
+          <h2 className="text-xl text-white font-semibold select-none leading-none font-ember tracking-tight">
+            Sign in to get started
+          </h2>
+        )}
+        {completedOnboarding && tab == "builderId" && (
+          <div className="text-center flex flex-col">
+            <div className="font-ember font-bold">
+              CodeWhisperer is now Amazon Q
+            </div>
+            <Link
+              href="https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/what-is.html"
+              className="text-sm"
+            >
+              Read the announcement blog post
+            </Link>
+          </div>
+        )}
       </div>
       {error && (
         <div className="w-full bg-red-200 border border-red-600 rounded py-1 px-1">
@@ -100,6 +124,7 @@ export default function LoginModal({ next }: { next: () => void }) {
                 ? () => setTab("iam")
                 : () => setTab("builderId")
             }
+            signInText={completedOnboarding ? "Log back in" : "Sign in"}
           />
         )}
       </div>

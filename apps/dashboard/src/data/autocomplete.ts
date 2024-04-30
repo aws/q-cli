@@ -9,7 +9,8 @@ const autocompleteSettings = [
         title:
           "Automatically insert a space after selecting a subcommand/option that takes a mandatory argument",
         description:
-          "Autocomplete will insert a space after you select a suggestion that contains a mandatory argument (e.g. selecting `clone` in `git clone`)",
+          "Autocomplete will insert a space after you select a suggestion that contains a mandatory argument",
+        example: "e.g. selecting `clone` in `git clone`",
         type: "boolean",
         default: true,
         popular: true,
@@ -111,7 +112,7 @@ const autocompleteSettings = [
         title: "Allow instant execute of dangerous suggestions",
         description:
           'If true, users will be able to immediately run suggestions that completion specs have marked as "dangerous" rather than having to hit [enter] twice.',
-        example: "(e.g. `rm -rf`)",
+        example: "e.g. `rm -rf`",
         type: "boolean",
         default: false,
         popular: false,
