@@ -1,5 +1,3 @@
-import { PRODUCT_NAME } from "@/lib/constants";
-
 const keybindings = [
   {
     title: "General",

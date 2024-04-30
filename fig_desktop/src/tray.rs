@@ -6,10 +6,7 @@ use fig_install::{
     UpdateOptions,
 };
 use fig_remote_ipc::figterm::FigtermState;
-use fig_util::consts::{
-    PRODUCT_NAME,
-    PRODUCT_NAME_SHORT,
-};
+use fig_util::consts::PRODUCT_NAME;
 use fig_util::manifest::Channel;
 use fig_util::url::USER_MANUAL;
 use muda::{
@@ -414,7 +411,7 @@ fn menu() -> Vec<MenuElement> {
     // let logged_in = fig_request::auth::is_logged_in();
     let logged_in = true;
 
-    let not_working = MenuElement::entry(None, None, format!("{PRODUCT_NAME_SHORT} not working?"), "not-working");
+    let not_working = MenuElement::entry(None, None, format!("{PRODUCT_NAME} not working?"), "not-working");
     let manual = MenuElement::entry(None, None, "User Guide", "user-manual");
     let version = MenuElement::Info(format!("Version: {}", env!("CARGO_PKG_VERSION")).into());
     let update = MenuElement::entry(None, None, "Check for updates...", "update");

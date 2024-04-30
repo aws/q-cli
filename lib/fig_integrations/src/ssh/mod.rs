@@ -72,7 +72,7 @@ impl SshIntegration {
 
     #[allow(clippy::unused_self)]
     fn description_text(&self) -> String {
-        format!("# Amazon {PRODUCT_NAME} SSH Integration. Keep at the bottom of this file.")
+        format!("# {PRODUCT_NAME} SSH Integration. Keep at the bottom of this file.")
     }
 
     fn match_text(&self) -> Result<String> {

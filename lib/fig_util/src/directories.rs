@@ -311,7 +311,7 @@ pub fn figterm_socket_path(session_id: impl Display) -> Result<PathBuf> {
 
 /// The path to the resources directory
 ///
-/// - MacOS: "/Applications/Q.app/Contents/Resources"
+/// - MacOS: "/Applications/Amazon Q.app/Contents/Resources"
 /// - Linux: "/usr/share/fig"
 pub fn resources_path() -> Result<PathBuf> {
     cfg_if::cfg_if! {
@@ -325,7 +325,7 @@ pub fn resources_path() -> Result<PathBuf> {
 
 /// The path to the fig install manifest
 ///
-/// - MacOS: "/Applications/Q.app/Contents/Resources/manifest.json"
+/// - MacOS: "/Applications/Amazon Q.app/Contents/Resources/manifest.json"
 /// - Linux: "/usr/share/fig/manifest.json"
 pub fn manifest_path() -> Result<PathBuf> {
     cfg_if::cfg_if! {
@@ -496,7 +496,7 @@ mod tests {
     #[test]
     fn snapshot_themes_dir() {
         linux!(themes_dir(), @"/usr/share/fig/themes");
-        macos!(themes_dir(), @"/Applications/Q.app/Contents/Resources/themes");
+        macos!(themes_dir(), @"/Applications/Amazon Q.app/Contents/Resources/themes");
         windows!(themes_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\themes\themes");
     }
 

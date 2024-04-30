@@ -170,7 +170,7 @@ pub enum StateComponent {
 #[command(hide = true, alias = "_")]
 pub enum InternalSubcommand {
     /// Command that is run during the PreCmd section of
-    /// the Q integrations.
+    /// the Amazon Q integrations.
     PreCmd {
         #[arg(long, allow_hyphen_values = true)]
         alias: Option<String>,
@@ -179,9 +179,9 @@ pub enum InternalSubcommand {
     LocalState(local_state::LocalStateArgs),
     /// Callback used for the internal pseudoterminal
     Callback(CallbackArgs),
-    /// Install Q cli
+    /// Install the Amazon Q cli
     Install(InstallArgs),
-    /// Uninstall Q cli
+    /// Uninstall the Amazon Q cli
     Uninstall {
         /// Uninstall only the shell integrations
         #[arg(long)]

@@ -106,8 +106,8 @@ install-native-usr-release: build-native-release
 	sudo install $(TARGET_DIR)/release/$(CRATE_NAME) /usr/bin/$(BINARY_NAME)
 
 install-macos-bundle: build-native
-	mkdir -p /Applications/Q.app/Contents/MacOS/
-	install $(TARGET_DIR)/debug/$(CRATE_NAME) /Applications/Q.app/Contents/MacOS/fig_desktop
+	mkdir -p /Applications/Amazon\ Q.app/Contents/MacOS/
+	install $(TARGET_DIR)/debug/$(CRATE_NAME) /Applications/Amazon\ Q.app/Contents/MacOS/fig_desktop
 
 ### Convert icons
 

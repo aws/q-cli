@@ -82,8 +82,8 @@ pub fn variants_installed() -> Vec<VSCodeVariant> {
         .collect()
 }
 
-/// Determines if the VSCode extension is installed by checking for the Q extension name in the
-/// stdout of `code --list-extensions --show-versions`.
+/// Determines if the VSCode extension is installed by checking for the Amazon Q extension name in
+/// the stdout of `code --list-extensions --show-versions`.
 fn is_installed_from_stdout(stdout: impl AsRef<[u8]>) -> bool {
     let extension_name = format!("{EXTENSION_PREFIX}@{EXTENSION_VERSION}");
     stdout

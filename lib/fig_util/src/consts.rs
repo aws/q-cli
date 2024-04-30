@@ -1,5 +1,5 @@
 pub const APP_BUNDLE_ID: &str = "com.amazon.codewhisperer";
-pub const APP_BUNDLE_NAME: &str = "Q.app";
+pub const APP_BUNDLE_NAME: &str = "Amazon Q.app";
 
 #[cfg(not(target_os = "windows"))]
 pub const APP_PROCESS_NAME: &str = "q_desktop";
@@ -14,12 +14,11 @@ pub const CLI_CRATE_NAME: &str = "q_cli";
 
 pub const URL_SCHEMA: &str = "q";
 
-pub const PRODUCT_NAME: &str = "Q";
-pub const PRODUCT_NAME_SHORT: &str = "Q";
+pub const PRODUCT_NAME: &str = "Amazon Q";
 
 pub const RUNTIME_DIR_NAME: &str = "cwrun";
 
-// These are the old "CodeWhisperer" branding, used anywhere we will not update to Q
+// These are the old "CodeWhisperer" branding, used anywhere we will not update to Amazon Q
 pub const OLD_PRODUCT_NAME: &str = "CodeWhisperer";
 pub const OLD_CLI_BINARY_NAMES: &[&str] = &["cw"];
 pub const OLD_PTY_BINARY_NAMES: &[&str] = &["cwterm"];
@@ -80,7 +79,7 @@ pub mod env_var {
         /// Overrides the ZDOTDIR environment variable
         Q_ZDOTDIR = "Q_ZDOTDIR",
 
-        /// Indicates a process was launched by Q
+        /// Indicates a process was launched by Amazon Q
         PROCESS_LAUNCHED_BY_Q = "PROCESS_LAUNCHED_BY_Q",
 
         /// The shell to use in qterm

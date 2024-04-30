@@ -42,7 +42,7 @@ pub use common::{
     InstallComponents,
 };
 
-pub const UNINSTALL_URL: &str = "https://pulse.aws/survey/NOMBDSG4";
+pub const UNINSTALL_URL: &str = "https://pulse.aws/survey/QYFVDA5H";
 
 #[derive(Debug, Error)]
 pub enum Error {

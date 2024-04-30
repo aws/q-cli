@@ -1,4 +1,4 @@
-APP_NAME = "Q"
+APP_NAME = "Amazon Q"
 CLI_BINARY_NAME = "q"
 PTY_BINARY_NAME = "qterm"
 URL_SCHEMA = "q"

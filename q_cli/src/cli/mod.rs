@@ -115,14 +115,14 @@ pub enum CliRootCommands {
     Settings(settings::SettingsArgs),
     /// Install cli components
     Install(internal::InstallArgs),
-    /// Uninstall Q
+    /// Uninstall Amazon Q
     #[command(hide = true)]
     Uninstall {
         /// Force uninstall
         #[arg(long, short = 'y')]
         no_confirm: bool,
     },
-    /// Update the Q application
+    /// Update the Amazon Q application
     #[command(alias("upgrade"))]
     Update(update::UpdateArgs),
     /// Run diagnostic tests

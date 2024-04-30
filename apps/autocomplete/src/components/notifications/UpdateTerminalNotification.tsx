@@ -32,7 +32,7 @@ export const UpdateTerminalNotification = () => {
       description={
         <>
           This terminal is running integrations from <br />
-          an older version of Q, please restart it.
+          an older version of Amazon Q, please restart it.
         </>
       }
     />

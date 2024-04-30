@@ -2,7 +2,7 @@
 
 ## [0.1.1]
 
-- Rebrand to Q
+- Rebrand to Amazon Q
 
 ## [0.1.0]
 

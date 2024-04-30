@@ -736,7 +736,8 @@ mod tests {
     use super::*;
 
     const TEST_INPUT_METHOD_BUNDLE_ID: &str = "com.amazon.inputmethod.codewhisperer";
-    const TEST_INPUT_METHOD_BUNDLE_URL: &str = "/Applications/Q.app/Contents/Helpers/CodeWhispererInputMethod.app";
+    const TEST_INPUT_METHOD_BUNDLE_URL: &str =
+        "/Applications/Amazon Q.app/Contents/Helpers/CodeWhispererInputMethod.app";
 
     fn input_method() -> TISInputSource {
         let key: CFString = unsafe { CFString::wrap_under_create_rule(kTISPropertyBundleID) };

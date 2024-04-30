@@ -173,7 +173,7 @@ You can include additional context by adding the following to your prompt:
                             stderr
                                 .queue(cursor::MoveToColumn(0))?
                                 .queue(style::Print(
-                                    "Q is having trouble responding right now. Try again later.",
+                                    "Amazon Q is having trouble responding right now. Try again later.",
                                 ))?
                                 .flush()?;
                             ended = true;
