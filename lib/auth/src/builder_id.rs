@@ -53,7 +53,7 @@ use crate::{
     Result,
 };
 
-const CLIENT_NAME: &str = "Amazon Q for CLI";
+const CLIENT_NAME: &str = "Amazon Q Developer for command line";
 
 const OIDC_BUILDER_ID_REGION: Region = Region::from_static("us-east-1");
 

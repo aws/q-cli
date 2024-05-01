@@ -158,7 +158,7 @@ def ec_sign_file(file: pathlib.Path, type: EcSigningType, signing_data: EcSignin
 
 
 def rebundle_dmg(dmg_path: pathlib.Path, app_path: pathlib.Path):
-    mounting_path = pathlib.Path("/Volumes/Q")
+    mounting_path = pathlib.Path("/Volumes") / dmg_path.name.replace(".dmg", "")
 
     info(f"Rebunding {dmg_path}")
 
