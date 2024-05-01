@@ -209,7 +209,7 @@ pub(crate) async fn update(
                 let mut arguments = vec![OsStr::new("_"), OsStr::new("swap-files")];
 
                 if !same_bundle_name {
-                    arguments.push(OsStr::new("not-same-bundle-name"));
+                    arguments.push(OsStr::new("--not-same-bundle-name"));
                 }
 
                 arguments.extend([temp_app_path.as_os_str(), installed_app_path.as_os_str()]);

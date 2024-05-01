@@ -21,6 +21,7 @@ from const import (
     CLI_BINARY_NAME,
     CLI_PACKAGE_NAME,
     DESKTOP_PACKAGE_NAME,
+    DMG_NAME,
     MACOS_BUNDLE_ID,
     PTY_BINARY_NAME,
     PTY_PACKAGE_NAME,
@@ -275,7 +276,7 @@ def build_desktop_app(
     # os.symlink(f"./{CLI_BINARY_NAME}", app_path / "Contents/MacOS/cli")
     # os.symlink(f"./{PTY_BINARY_NAME}", app_path / "Contents/MacOS/pty")
 
-    dmg_path = BUILD_DIR / f"{APP_NAME}.dmg"
+    dmg_path = BUILD_DIR / f"{DMG_NAME}.dmg"
     dmg_path.unlink(missing_ok=True)
 
     dmg_resources_dir = pathlib.Path("bundle/dmg")
@@ -438,7 +439,7 @@ def build(
     )
 
     if isDarwin():
-        info(f"Building {APP_NAME}.dmg")
+        info(f"Building {DMG_NAME}.dmg")
         dmg_path = build_desktop_app(
             release=release,
             cli_path=cli_path,

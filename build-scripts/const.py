@@ -5,6 +5,7 @@ URL_SCHEMA = "q"
 
 # macos specific
 MACOS_BUNDLE_ID = "com.amazon.codewhisperer"
+DMG_NAME = "Q"
 
 # cargo packages
 CLI_PACKAGE_NAME = "q_cli"
