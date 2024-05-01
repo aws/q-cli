@@ -15,7 +15,7 @@ use crate::{
 
 const PLUGIN_SLUG: &str = "jetbrains-extension";
 const PLUGIN_JAR: &str = "jetbrains-extension-2.0.0.jar";
-static PLUGIN_CONTENTS: &[u8] = include_bytes!("plugin.jar");
+static PLUGIN_CONTENTS: &[u8] = include_bytes!("instrumented-codewhisperer-for-command-line-companion-1.0.3.jar");
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]

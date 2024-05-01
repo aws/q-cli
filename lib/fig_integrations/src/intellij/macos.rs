@@ -17,12 +17,12 @@ const PLUGIN_PREFIX: &str = "q-for-command-line-companion";
 
 /// Version of the Amazon Q Intellij plugin. This should match the version in
 /// [build.gradle](../../../../extensions/jetbrains/build.gradle).
-const PLUGIN_VERSION: &str = "1.0.2";
+const PLUGIN_VERSION: &str = "1.0.3";
 
 /// Legacy plugin names that should be removed on uninstall.
 const OLD_PLUGIN_SLUGS: [&str; 2] = ["codewhisperer-for-command-line-companion", "jetbrains-extension-2.0.0"];
 
-static PLUGIN_CONTENTS: &[u8] = include_bytes!("plugin.jar");
+static PLUGIN_CONTENTS: &[u8] = include_bytes!("instrumented-codewhisperer-for-command-line-companion-1.0.3.jar");
 
 /// Returns the identifier of the plugin - i.e., the directory name of the Amazon Q plugin stored
 /// under the Intellij `plugins/` directory.
