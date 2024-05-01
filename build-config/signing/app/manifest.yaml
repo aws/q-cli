@@ -1,9 +1,9 @@
 type: :app # no need to change this for .pkg, .dmg and executables
 os: :osx
-name: Q.app
+name: Amazon Q.app
 outputs:
   - label: macos
-    path: Q.app
+    path: Amazon Q.app
 app:
   :identifier: com.amazon.codewhisperer # this has to be same as Bundle identifier value in info.plist
   signing_requirements:

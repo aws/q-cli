@@ -1,4 +1,4 @@
-# Q for command line Monorepo
+# Amazon Q for command line Monorepo
 
 [![Rust CI](https://github.com/withfig/macos/actions/workflows/rust-ci.yaml/badge.svg?branch=develop)](https://github.com/withfig/macos/actions/workflows/rust-ci.yaml)
 [![codecov](https://codecov.io/gh/withfig/macos/branch/develop/graph/badge.svg?token=EFRYMRH32O)](https://codecov.io/gh/withfig/macos)
@@ -58,7 +58,7 @@ CLI. Several projects live here:
   message specification for inter-process communication
 - `figterm/` - figterm, our headless terminal/pseudoterminal that intercepts the
   user’s terminal edit buffer.
-- `q_cli/` - the `q` CLI, allows users to interface with Q from
+- `q_cli/` - the `q` CLI, allows users to interface with Amazon Q from
   the command line
 - `fig_desktop/` - the Rust desktop app, uses
   [`tao`](https://docs.rs/tao/latest/tao/)/[`wry`](https://docs.rs/wry/latest/wry/)
