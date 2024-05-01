@@ -668,7 +668,7 @@ impl InternalSubcommand {
             InternalSubcommand::AttemptToFinishInputMethodInstallation { bundle_path } => {
                 match InputMethod::finish_input_method_installation(bundle_path) {
                     Ok(_) => {
-                        return Ok(ExitCode::FAILURE);
+                        return Ok(ExitCode::SUCCESS);
                     },
                     Err(err) => {
                         println!(

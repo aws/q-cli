@@ -1,5 +1,8 @@
 use std::fmt::Display;
-use std::path::PathBuf;
+use std::path::{
+    Path,
+    PathBuf,
+};
 use std::str::FromStr;
 
 use clap::ValueEnum;
@@ -8,6 +11,7 @@ use serde::{
     Deserialize,
     Serialize,
 };
+use tokio::process::Command;
 
 use crate::env_var::Q_ZDOTDIR;
 use crate::process_info::get_parent_process_exe;
@@ -61,7 +65,8 @@ impl Shell {
     }
 
     /// Try to find the name of common shells in the input
-    pub fn try_find_shell(input: &str) -> Option<Self> {
+    pub fn try_find_shell(input: impl AsRef<Path>) -> Option<Self> {
+        let input = input.as_ref().file_name()?.to_str()?;
         if input.contains("bash") {
             Some(Shell::Bash)
         } else if input.contains("zsh") {
@@ -84,49 +89,11 @@ impl Shell {
 
     pub async fn current_shell_version() -> Result<(Self, String), Error> {
         let parent_exe = get_parent_process_exe().ok_or(Error::NoParentProcess)?;
-        let parent_exe_name = parent_exe
-            .to_str()
-            .ok_or_else(|| Error::UnknownShell(parent_exe.to_string_lossy().into()))?;
-        if parent_exe_name.contains("bash") {
-            let version_output = tokio::process::Command::new(parent_exe)
-                .arg("--version")
-                .output()
-                .await?;
+        let Some(shell) = Self::try_find_shell(&parent_exe) else {
+            return Err(Error::UnknownShell(parent_exe.to_string_lossy().into()));
+        };
 
-            let re = Regex::new(r"GNU bash, version (\d+\.\d+\.\d+)").unwrap();
-            let version_capture = re.captures(std::str::from_utf8(&version_output.stdout)?);
-            let version = version_capture.unwrap().get(1).unwrap().as_str();
-            Ok((Shell::Bash, version.into()))
-        } else if parent_exe_name.contains("zsh") {
-            let version_output = tokio::process::Command::new(parent_exe)
-                .arg("--version")
-                .output()
-                .await?;
-
-            let re = Regex::new(r"(\d+\.\d+)").unwrap();
-            let version_capture = re.captures(std::str::from_utf8(&version_output.stdout)?);
-            let version = version_capture.unwrap().get(1).unwrap().as_str();
-            Ok((Shell::Zsh, format!("{version}.0")))
-        } else if parent_exe_name.contains("fish") {
-            let version_output = tokio::process::Command::new(parent_exe)
-                .arg("--version")
-                .output()
-                .await?;
-
-            let re = Regex::new(r"(\d+\.\d+\.\d+)").unwrap();
-            let version_capture = re.captures(std::str::from_utf8(&version_output.stdout)?);
-            let version = version_capture.unwrap().get(1).unwrap().as_str();
-            Ok((Shell::Fish, version.into()))
-        } else if parent_exe_name == "nu" || parent_exe_name == "nushell" {
-            let version_output = tokio::process::Command::new(parent_exe)
-                .arg("--version")
-                .output()
-                .await?;
-            let version = std::str::from_utf8(&version_output.stdout)?.trim();
-            Ok((Shell::Nu, version.into()))
-        } else {
-            Err(Error::UnknownShell(parent_exe_name.into()))
-        }
+        Ok((shell, shell_version(&shell, &parent_exe).await?))
     }
 
     /// Get the directory for the shell that contains the dotfiles
@@ -166,5 +133,100 @@ impl Shell {
 
     pub fn is_nu(&self) -> bool {
         matches!(self, Shell::Nu)
+    }
+}
+
+const BASH_RE: &str = r"GNU bash, version (\d+\.\d+\.\d+)";
+const ZSH_RE: &str = r"(\d+\.\d+)";
+const FISH_RE: &str = r"(\d+\.\d+\.\d+)";
+
+async fn shell_version(shell: &Shell, exe_path: &Path) -> Result<String, Error> {
+    let err = || Error::ShellVersion(*shell);
+    match shell {
+        Shell::Bash => {
+            let re = Regex::new(BASH_RE).unwrap();
+            let version_output = Command::new(exe_path).arg("--version").output().await?;
+            let version_capture = re.captures(std::str::from_utf8(&version_output.stdout)?);
+            Ok(version_capture.ok_or_else(err)?.get(1).ok_or_else(err)?.as_str().into())
+        },
+        Shell::Zsh => {
+            let re = Regex::new(ZSH_RE).unwrap();
+            let version_output = Command::new(exe_path).arg("--version").output().await?;
+            let version_capture = re.captures(std::str::from_utf8(&version_output.stdout)?);
+            Ok(version_capture.ok_or_else(err)?.get(1).ok_or_else(err)?.as_str().into())
+        },
+        Shell::Fish => {
+            let re = Regex::new(FISH_RE).unwrap();
+            let version_output = Command::new(exe_path).arg("--version").output().await?;
+            let version_capture = re.captures(std::str::from_utf8(&version_output.stdout)?);
+            Ok(version_capture.ok_or_else(err)?.get(1).ok_or_else(err)?.as_str().into())
+        },
+        Shell::Nu => {
+            let version_output = Command::new(exe_path).arg("--version").output().await?;
+            Ok(std::str::from_utf8(&version_output.stdout)?.trim().into())
+        },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_shell_version() {
+        // Ignore all fish in brazil
+        let skip_fish = std::env::var_os("BRAZIL_BUILD_HOME").is_some();
+
+        let tests = [
+            (Shell::Bash, "/bin/bash", false),
+            (Shell::Bash, "bash", false),
+            (Shell::Zsh, "/bin/zsh", false),
+            (Shell::Fish, "fish", skip_fish),
+        ];
+
+        for (shell, exe_path, skip) in tests {
+            if skip {
+                continue;
+            }
+
+            let exe_path = Path::new(exe_path);
+            let version: String = shell_version(&shell, &exe_path).await.unwrap();
+            println!("{}: {version:?}\n", exe_path.display());
+        }
+    }
+
+    #[test]
+    fn test_bash_re() {
+        let re = Regex::new(BASH_RE).unwrap();
+
+        let bash_3_version = indoc::indoc! {r"
+            GNU bash, version 3.2.57(1)-release (x86_64-apple-darwin23)
+            Copyright (C) 2007 Free Software Foundation, Inc.
+        "};
+        assert_eq!(re.captures(bash_3_version).unwrap().get(1).unwrap().as_str(), "3.2.57");
+
+        let bash_5_version = indoc::indoc! {r"
+            GNU bash, version 5.2.26(1)-release (aarch64-apple-darwin23.2.0)
+            Copyright (C) 2022 Free Software Foundation, Inc.
+            License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+
+            This is free software; you are free to change and redistribute it.
+            There is NO WARRANTY, to the extent permitted by law.
+        "};
+        assert_eq!(re.captures(bash_5_version).unwrap().get(1).unwrap().as_str(), "5.2.26");
+    }
+
+    #[test]
+    fn test_zsh_re() {
+        let re = Regex::new(ZSH_RE).unwrap();
+        let zsh_version = "zsh 5.9 (arm-apple-darwin22.1.0)";
+        assert_eq!(re.captures(zsh_version).unwrap().get(1).unwrap().as_str(), "5.9");
+    }
+
+    #[test]
+    fn test_fish_re() {
+        let re = Regex::new(FISH_RE).unwrap();
+        let fish_version = "fish 3.6.1";
+        assert_eq!(re.captures(fish_version).unwrap().get(1).unwrap().as_str(), "3.6.1");
     }
 }

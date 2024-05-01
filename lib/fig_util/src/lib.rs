@@ -56,6 +56,8 @@ pub enum Error {
     LaunchError(String),
     #[error(transparent)]
     StrUtf8Error(#[from] std::str::Utf8Error),
+    #[error("Failed to parse shell {0} version")]
+    ShellVersion(Shell),
 }
 
 pub fn gen_hex_string() -> String {

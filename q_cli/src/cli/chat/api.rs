@@ -157,7 +157,7 @@ fn build_shell_state(shell_history: bool) -> ShellState {
     let shell = Shell::current_shell()
         .or_else(|| {
             let shell_name = env::var("SHELL").ok()?;
-            Shell::try_find_shell(&shell_name)
+            Shell::try_find_shell(shell_name)
         })
         .unwrap_or(Shell::Bash);
 

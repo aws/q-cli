@@ -125,20 +125,18 @@ pub struct InputMethod {
 
 use thiserror::Error;
 
-#[derive(Error, Debug, Serialize, Deserialize)]
+#[derive(Error, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum InputMethodError {
     #[error("Could not list input sources")]
     CouldNotListInputSources,
-    #[error("No input sources for bundle identifier '{0}'")]
-    NoInputSourcesForBundleIdentifier(Cow<'static, str>),
-    #[error("Found {0} input sources for bundle identifier")]
-    MultipleInputSourcesForBundleIdentifier(usize),
+    #[error("No input sources for bundle identifier {:?}", .identifier)]
+    NoInputSourcesForBundleIdentifier { identifier: Cow<'static, str> },
     #[error("Invalid input method bundle destination")]
     InvalidDestination,
     #[error("Invalid path to bundle. Perhaps use an absolute path instead?")]
     InvalidBundlePath,
-    #[error("Invalid input method bundle: {0}")]
-    InvalidBundle(Cow<'static, str>),
+    #[error("Invalid input method bundle: {}", .inner)]
+    InvalidBundle { inner: Cow<'static, str> },
     #[error("OSStatus error code: {0}")]
     OSStatusError(OSStatus),
     #[error("Input source is not enabled")]
@@ -356,11 +354,13 @@ impl InputMethod {
                 Some(sources) => {
                     let len = sources.len();
                     match len {
-                        0 => Err(InputMethodError::NoInputSourcesForBundleIdentifier(
-                            bundle_identifier.to_string().into(),
-                        )),
+                        0 => Err(InputMethodError::NoInputSourcesForBundleIdentifier {
+                            identifier: bundle_identifier.to_string().into(),
+                        }),
                         _ => sources.into_iter().next().ok_or_else(|| {
-                            InputMethodError::NoInputSourcesForBundleIdentifier(bundle_identifier.to_string().into())
+                            InputMethodError::NoInputSourcesForBundleIdentifier {
+                                identifier: bundle_identifier.to_string().into(),
+                            }
                         }),
                     }
                 },
@@ -372,9 +372,9 @@ impl InputMethod {
         let input_method_name = match self.bundle_path.components().last() {
             Some(name) => name.as_os_str(),
             None => {
-                return Err(InputMethodError::InvalidBundle(
-                    "Input method bundle name cannot be determined".into(),
-                ));
+                return Err(InputMethodError::InvalidBundle {
+                    inner: "Input method bundle name cannot be determined".into(),
+                });
             },
         };
 
@@ -385,25 +385,27 @@ impl InputMethod {
         let url = match CFURL::from_path(&self.bundle_path, true) {
             Some(url) => url,
             None => {
-                return Err(InputMethodError::InvalidBundle(
-                    "Could not get URL for input method bundle".into(),
-                ));
+                return Err(InputMethodError::InvalidBundle {
+                    inner: "Could not get URL for input method bundle".into(),
+                });
             },
         };
 
         let bundle = match CFBundle::new(url) {
             Some(bundle) => bundle,
             None => {
-                return Err(InputMethodError::InvalidBundle(
-                    format!("Could not load bundle for URL {}", self.bundle_path.display()).into(),
-                ));
+                return Err(InputMethodError::InvalidBundle {
+                    inner: format!("Could not load bundle for URL {}", self.bundle_path.display()).into(),
+                });
             },
         };
 
         let identifier = unsafe { CFBundleGetIdentifier(bundle.as_concrete_TypeRef()) };
 
         if identifier.is_null() {
-            return Err(InputMethodError::InvalidBundle("Could find bundle identifier".into()));
+            return Err(InputMethodError::InvalidBundle {
+                inner: "Could find bundle identifier".into(),
+            });
         }
 
         let bundle_identifier = unsafe { CFString::wrap_under_get_rule(identifier) };
@@ -459,7 +461,10 @@ impl Integration for InputMethod {
             Ok(symlink) => {
                 // does it point to the correct location
                 if symlink != self.bundle_path {
-                    return Err(InputMethodError::InvalidBundle("Symbolic link is incorrect".into()).into());
+                    return Err(InputMethodError::InvalidBundle {
+                        inner: "Symbolic link is incorrect".into(),
+                    }
+                    .into());
                 }
             },
             Err(err) if err.kind() == ErrorKind::NotFound => return Err(InputMethodError::NotInstalled.into()),
@@ -601,7 +606,9 @@ impl Integration for InputMethod {
             Ok::<_, InputMethodError>(input_source.bundle_id())
         })?;
 
-        let binding = binding.ok_or_else(|| InputMethodError::InvalidBundle("Could not get bundle id".into()))?;
+        let binding = binding.ok_or_else(|| InputMethodError::InvalidBundle {
+            inner: "Could not get bundle id".into(),
+        })?;
 
         // todo(mschrage): Terminate input method binary using Cocoa APIs
         unsafe {
@@ -856,5 +863,22 @@ mod tests {
         for source in sources.iter() {
             println!("{source:?}");
         }
+    }
+
+    #[test]
+    fn serialize_deserialize_error() {
+        let error = InputMethodError::InvalidBundle {
+            inner: "Invalid bundle".into(),
+        };
+        let serialized = serde_json::to_string(&error).unwrap();
+        println!("invalid_bundle: {serialized}");
+        let deserialized: InputMethodError = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(error, deserialized);
+
+        let error = InputMethodError::UnknownError;
+        let serialized = serde_json::to_string(&error).unwrap();
+        println!("unknown_error: {serialized}");
+        let deserialized: InputMethodError = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(error, deserialized);
     }
 }
