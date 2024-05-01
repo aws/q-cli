@@ -24,7 +24,7 @@
     "lint:fix": "eslint --fix src && prettier --write src",
     "precommit": "lint-staged",
     "prepublishOnly": "npm run build",
-    "generate-requests": "tsx codegen/generate-requests.ts"
+    "generate-requests": "tsx codegen/generate-requests.ts && prettier -w src/requests.ts"
   },
   "author": "The Fig Team",
   "dependencies": {
