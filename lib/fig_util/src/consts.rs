@@ -23,18 +23,18 @@ pub const OLD_PRODUCT_NAME: &str = "CodeWhisperer";
 pub const OLD_CLI_BINARY_NAMES: &[&str] = &["cw"];
 pub const OLD_PTY_BINARY_NAMES: &[&str] = &["cwterm"];
 
-pub const GITHUB_DISCUSSIONS_REPO_NAME: &str = "codewhisperer-command-line-discussions";
+pub const GITHUB_DISCUSSIONS_REPO_NAME: &str = "q-command-line-discussions";
 
 pub mod url {
     pub const USER_MANUAL: &str = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line.html";
     pub const AUTOCOMPLETE_WIKI: &str =
-        "https://docs.aws.amazon.com/codewhisperer/latest/userguide/command-line-autocomplete.html";
+        "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line-autocomplete.html";
     pub const AUTOCOMPLETE_SSH_WIKI: &str =
-        "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line-ssh.html";
+        "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line-autocomplete-ssh.html";
     pub const CHAT_WIKI: &str = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line-chat.html";
     pub const TRANSLATE_WIKI: &str =
         "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line-conversation.html";
-    pub const TELEMETRY_WIKI: &str = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/sharing-data.html";
+    pub const TELEMETRY_WIKI: &str = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/opt-out-IDE.html";
 }
 
 /// macOS specific constants

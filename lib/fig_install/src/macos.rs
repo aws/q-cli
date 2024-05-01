@@ -23,6 +23,12 @@ use fig_util::{
     APP_BUNDLE_NAME,
 };
 use regex::Regex;
+use security_framework::authorization::{
+    Authorization,
+    AuthorizationItemSetBuilder,
+    Flags as AuthorizationFlags,
+};
+use tokio::fs;
 use tokio::io::{
     AsyncReadExt,
     AsyncWriteExt,
@@ -193,17 +199,17 @@ pub(crate) async fn update(
             error!(?err, "failed to swap app bundle, trying to elevate permissions");
 
             let mut file = {
-                let rights = security_framework::authorization::AuthorizationItemSetBuilder::new()
+                let rights = AuthorizationItemSetBuilder::new()
                     .add_right("system.privilege.admin")?
                     .build();
 
-                let auth = security_framework::authorization::Authorization::new(
+                let auth = Authorization::new(
                     Some(rights),
                     None,
-                    security_framework::authorization::Flags::DEFAULTS
-                        | security_framework::authorization::Flags::INTERACTION_ALLOWED
-                        | security_framework::authorization::Flags::PREAUTHORIZE
-                        | security_framework::authorization::Flags::EXTEND_RIGHTS,
+                    AuthorizationFlags::DEFAULTS
+                        | AuthorizationFlags::INTERACTION_ALLOWED
+                        | AuthorizationFlags::PREAUTHORIZE
+                        | AuthorizationFlags::EXTEND_RIGHTS,
                 )?;
 
                 let mut arguments = vec![OsStr::new("_"), OsStr::new("swap-files")];
@@ -214,13 +220,9 @@ pub(crate) async fn update(
 
                 arguments.extend([temp_app_path.as_os_str(), installed_app_path.as_os_str()]);
 
-                let file = auth.execute_with_privileges_piped(
-                    &cli_path,
-                    arguments,
-                    security_framework::authorization::Flags::DEFAULTS,
-                )?;
+                let file = auth.execute_with_privileges_piped(&cli_path, arguments, AuthorizationFlags::DEFAULTS)?;
 
-                tokio::fs::File::from_std(file)
+                fs::File::from_std(file)
             };
 
             let mut out = String::new();
@@ -290,12 +292,12 @@ pub(crate) async fn update(
 }
 
 async fn remove_in_dir_with_prefix_unless(dir: &Path, prefix: &str, unless: impl Fn(&str) -> bool) {
-    if let Ok(mut entries) = tokio::fs::read_dir(dir).await {
+    if let Ok(mut entries) = fs::read_dir(dir).await {
         while let Ok(Some(entry)) = entries.next_entry().await {
             if let Some(name) = entry.file_name().to_str() {
                 if name.starts_with(prefix) && !unless(name) {
-                    tokio::fs::remove_file(entry.path()).await.ok();
-                    tokio::fs::remove_dir_all(entry.path()).await.ok();
+                    fs::remove_file(entry.path()).await.ok();
+                    fs::remove_dir_all(entry.path()).await.ok();
                 }
             }
         }
@@ -345,12 +347,12 @@ pub(crate) async fn uninstall_desktop() -> Result<(), Error> {
                         .ok();
                 } else if let Ok(metadata) = file.metadata() {
                     if metadata.is_dir() {
-                        tokio::fs::remove_dir_all(file.path())
+                        fs::remove_dir_all(file.path())
                             .await
                             .map_err(|err| warn!("Failed to remove data dir: {err}"))
                             .ok();
                     } else {
-                        tokio::fs::remove_file(file.path())
+                        fs::remove_file(file.path())
                             .await
                             .map_err(|err| warn!("Failed to remove data dir: {err}"))
                             .ok();
@@ -362,7 +364,7 @@ pub(crate) async fn uninstall_desktop() -> Result<(), Error> {
 
     let app_path = fig_util::app_bundle_path();
     if app_path.exists() {
-        tokio::fs::remove_dir_all(&app_path)
+        fs::remove_dir_all(&app_path)
             .await
             .map_err(|err| warn!("Failed to remove {app_path:?}: {err}"))
             .ok();
@@ -371,9 +373,9 @@ pub(crate) async fn uninstall_desktop() -> Result<(), Error> {
     // Remove the previous codewhisperer data dir only if it is a symlink.
     if let Ok(old_fig_data_dir) = directories::old_fig_data_dir() {
         if old_fig_data_dir.exists() {
-            if let Ok(metadata) = tokio::fs::symlink_metadata(&old_fig_data_dir).await {
+            if let Ok(metadata) = fs::symlink_metadata(&old_fig_data_dir).await {
                 if metadata.is_symlink() {
-                    tokio::fs::remove_file(&old_fig_data_dir)
+                    fs::remove_file(&old_fig_data_dir)
                         .await
                         .map_err(|err| error!("Failed to remove the old fig data dir {old_fig_data_dir:?}: {err}"))
                         .ok();
@@ -394,7 +396,7 @@ pub async fn uninstall_terminal_integrations() {
             ".config/iterm2/AppSupport/Scripts/AutoLaunch/fig-iterm-integration.py",
             "Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.scpt",
         ] {
-            tokio::fs::remove_file(home.join(path))
+            fs::remove_file(home.join(path))
                 .await
                 .map_err(|err| warn!("Could not remove iTerm integration {path}: {err}"))
                 .ok();
@@ -416,7 +418,7 @@ pub async fn uninstall_terminal_integrations() {
         let hyper_path = home.join(".hyper.js");
         if hyper_path.exists() {
             // Read the config file
-            match tokio::fs::File::open(&hyper_path).await {
+            match fs::File::open(&hyper_path).await {
                 Ok(mut file) => {
                     let mut contents = String::new();
                     match file.read_to_string(&mut contents).await {
@@ -425,7 +427,7 @@ pub async fn uninstall_terminal_integrations() {
                             contents = contents.replace("\"fig-hyper-integration\"", "");
 
                             // Write the config file
-                            match tokio::fs::File::create(&hyper_path).await {
+                            match fs::File::create(&hyper_path).await {
                                 Ok(mut file) => {
                                     file.write_all(contents.as_bytes())
                                         .await
@@ -452,14 +454,14 @@ pub async fn uninstall_terminal_integrations() {
         let kitty_path = home.join(".config").join("kitty").join("kitty.conf");
         if kitty_path.exists() {
             // Read the config file
-            match tokio::fs::File::open(&kitty_path).await {
+            match fs::File::open(&kitty_path).await {
                 Ok(mut file) => {
                     let mut contents = String::new();
                     match file.read_to_string(&mut contents).await {
                         Ok(_) => {
                             contents = contents.replace("watcher ${HOME}/.fig/tools/kitty-integration.py", "");
                             // Write the config file
-                            match tokio::fs::File::create(&kitty_path).await {
+                            match fs::File::create(&kitty_path).await {
                                 Ok(mut file) => {
                                     file.write_all(contents.as_bytes())
                                         .await
