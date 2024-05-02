@@ -16,7 +16,7 @@ use image::imageops::FilterType;
 use image::{
     GenericImage,
     GenericImageView,
-    ImageOutputFormat,
+    ImageFormat,
     Rgba,
 };
 use moka::future::Cache;
@@ -110,7 +110,7 @@ pub async fn process_asset(path: PathBuf) -> Result<ProcessedAsset> {
             let icon = image::open(path)?;
             let icon = icon.resize(32, 32, FilterType::CatmullRom);
             let mut cursor = Cursor::new(Vec::new());
-            icon.write_to(&mut cursor, ImageOutputFormat::Png)?;
+            icon.write_to(&mut cursor, ImageFormat::Png)?;
             let buffer = cursor.into_inner();
             anyhow::Ok((Arc::new(buffer.into()), AssetKind::Png))
         })

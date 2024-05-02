@@ -49,6 +49,8 @@ if [[ $# -gt 0 ]] && [[ "$1" = clean ]]; then
     exit 0
 fi
 
+
+
 # Interact directly with pnpm with the proxy
 # if [[ $# -gt 0 ]] && [[ "$1" = pnpm ]]; then
 #     npm_registry
@@ -65,11 +67,16 @@ PACKAGE_DIR=$(brazil-path package-src-root)
 echo "BUILD_DIR: $BUILD_DIR"
 echo "PACKAGE_DIR: $PACKAGE_DIR"
 
-# npm_registry
-
 # Fast-path for IDE integration
 if [[ $# -gt 0 ]] && [[ "$1" = sync* ]]; then
     exit 0
 fi
+
+if [[ $# -gt 0 ]] && [[ "$1" = update ]]; then
+    cargo update
+    exit 0
+fi
+
+# npm_registry
 
 python3.11 build-scripts/main.py test --clippy-fail-on-warn

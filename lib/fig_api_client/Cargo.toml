@@ -32,7 +32,7 @@ bytes.workspace = true
 amzn-codewhisperer-client = { path = "../amzn-codewhisperer-client" }
 once_cell.workspace = true
 strum = { version = "0.26.1", features = ["derive"] }
-auth = { path = "../auth" }
+auth.workspace = true
 amzn-codewhisperer-streaming-client = { path = "../amzn-codewhisperer-streaming-client" }
 
 [dev-dependencies]

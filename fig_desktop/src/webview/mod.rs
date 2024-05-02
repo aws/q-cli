@@ -675,7 +675,7 @@ pub fn build_dashboard(
                 .send_event(Event::WindowEvent {
                     window_id: DASHBOARD_ID.clone(),
                     window_event: WindowEvent::Api {
-                        payload: payload.into(),
+                        payload: payload.into_body().into(),
                     },
                 })
                 .unwrap();
@@ -764,7 +764,7 @@ pub fn build_autocomplete(
                 .send_event(Event::WindowEvent {
                     window_id: AUTOCOMPLETE_ID.clone(),
                     window_event: WindowEvent::Api {
-                        payload: payload.into(),
+                        payload: payload.into_body().into(),
                     },
                 })
                 .unwrap();

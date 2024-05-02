@@ -13,7 +13,7 @@ workspace = true
 amzn-codewhisperer-client = { path = "../amzn-codewhisperer-client" }
 amzn-toolkit-telemetry = { path = "../amzn-toolkit-telemetry" }
 anyhow.workspace = true
-auth = { path = "../auth" }
+auth.workspace = true
 aws-credential-types = "1.1.6"
 aws-sdk-cognitoidentity = "1.14.0"
 aws-sdk-cognitoidentityprovider = "1.16.0"
