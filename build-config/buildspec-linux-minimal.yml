@@ -34,7 +34,8 @@ phases:
   build:
     commands:
       # Disable tests that need fish/shellcheck
-      - export Q_BUILD_SKIP_SHELL_TESTS=1
+      - export AMAZON_Q_BUILD_SKIP_FISH_TESTS=1
+      - export AMAZON_Q_BUILD_SKIP_SHELLCHECK_TESTS=1
       - python3.11 build-scripts/main.py build
 
 artifacts:

@@ -1,5 +1,9 @@
 import argparse
+import os
+import subprocess
 from build import build
+from const import CLI_PACKAGE_NAME
+from rust import rust_env
 from test import all_tests
 
 
@@ -56,6 +60,11 @@ build_subparser.add_argument(
     action=StoreIfNotEmptyAction,
     help="Run lints",
 )
+build_subparser.add_argument(
+    "--not-release",
+    action="store_true",
+    help="Build a non-release version",
+)
 
 test_subparser = subparsers.add_parser(name="test")
 test_subparser.add_argument(
@@ -64,12 +73,20 @@ test_subparser.add_argument(
     help="Fail on clippy warnings",
 )
 
+# runs CLI with the given arguments
+cli_subparser = subparsers.add_parser(name="cli")
+cli_subparser.add_argument(
+    "args",
+    nargs=argparse.REMAINDER,
+    help="Arguments to pass to the CLI",
+)
+
 args = parser.parse_args()
 
 match args.subparser:
     case "build":
         build(
-            release=True,
+            release=not args.not_release,
             output_bucket=args.output_bucket,
             signing_bucket=args.signing_bucket,
             aws_account_id=args.aws_account_id,
@@ -82,6 +99,19 @@ match args.subparser:
     case "test":
         all_tests(
             clippy_fail_on_warn=args.clippy_fail_on_warn,
+        )
+    case "cli":
+        subprocess.run(
+            [
+                "cargo",
+                "run",
+                f"--bin={CLI_PACKAGE_NAME}",
+                *args.args,
+            ],
+            env={
+                **os.environ,
+                **rust_env(release=False),
+            },
         )
     case _:
         raise ValueError(f"Unsupported subparser {args.subparser}")

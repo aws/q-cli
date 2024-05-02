@@ -13,6 +13,8 @@ use strum::{
     EnumString,
 };
 
+use crate::consts::build::VARIANT;
+
 #[derive(Deserialize)]
 pub struct Manifest {
     #[serde(deserialize_with = "deser_enum_other")]
@@ -155,10 +157,7 @@ where
 
 static CACHED: Lazy<Manifest> = Lazy::new(|| Manifest {
     managed_by: ManagedBy::None,
-    variant: match option_env!("Q_BUILD_VARIANT")
-        .map(|s| s.to_ascii_lowercase())
-        .as_deref()
-    {
+    variant: match VARIANT.map(|s| s.to_ascii_lowercase()).as_deref() {
         Some("minimal") => Variant::Minimal,
         _ => Variant::Full,
     },

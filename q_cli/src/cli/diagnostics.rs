@@ -75,7 +75,7 @@ impl DiagnosticArgs {
             })?;
         }
 
-        let diagnostics = Diagnostics::new();
+        let diagnostics = Diagnostics::new().await;
 
         if let Some(mut sp) = spinner {
             sp.stop();

@@ -85,6 +85,7 @@ strum = { version = "0.26.1", features = ["derive"] }
 thiserror = "1.0.58"
 tempfile = "3.10.1"
 time = { version = "0.3.34", features = [
+    "parsing",
     "formatting",
     "local-offset",
     "macros",

@@ -412,6 +412,7 @@ def build(
         case _:
             raise ValueError(f"Unknown stage name: {stage_name}")
 
+    info(f"Release: {release}")
     info(f"Cargo features: {cargo_features}")
     info(f"Signing app: {signing_data is not None}")
     info(f"Variant: {variant.name}")

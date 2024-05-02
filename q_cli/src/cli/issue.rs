@@ -167,7 +167,7 @@ impl IssueArgs {
             labels.push("integration:ssh".into());
         }
 
-        let environment = Diagnostics::new();
+        let environment = Diagnostics::new().await;
 
         let os = match &environment.os {
             Some(os) => os.to_string(),

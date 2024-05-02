@@ -1,4 +1,3 @@
-use std::env::var_os;
 #[cfg(not(windows))]
 use std::io::Write;
 #[cfg(not(windows))]
@@ -10,6 +9,10 @@ use std::process::{
 #[cfg(not(windows))]
 use assert_cmd::prelude::*;
 use eyre::Context;
+use fig_util::consts::build::{
+    SKIP_FISH_TESTS,
+    SKIP_SHELLCHECK_TESTS,
+};
 use fig_util::consts::CLI_CRATE_NAME;
 use paste::paste;
 
@@ -43,12 +46,11 @@ macro_rules! init_test {
                     return Ok(());
                 }
 
-                // Ignore all fish in brazil
-                if $exe == "fish" && var_os("BRAZIL_BUILD_HOME").is_some() {
+                if $exe == "fish" && SKIP_FISH_TESTS {
                     return Ok(());
                 }
 
-                if var_os("Q_BUILD_SKIP_SHELL_TESTS").is_some() {
+                if $exe == "shellcheck" && SKIP_SHELLCHECK_TESTS {
                     return Ok(());
                 }
 

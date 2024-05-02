@@ -1,4 +1,5 @@
 from enum import Enum
+from functools import cache
 import os
 import shlex
 import subprocess
@@ -6,35 +7,44 @@ import platform
 from typing import Mapping, Sequence
 
 
-INFO = "\033[95m"
-FAIL = "\033[91m"
+INFO = "\033[92;1m"
+WARN = "\033[93;1m"
+FAIL = "\033[91;1m"
 ENDC = "\033[0m"
 
 
+@cache
 def isCi() -> bool:
     return os.environ.get("CI") is not None
 
 
+@cache
 def isDarwin() -> bool:
     return platform.system() == "Darwin"
 
 
+@cache
 def isLinux() -> bool:
     return platform.system() == "Linux"
 
 
-def info(*s: str):
-    if isCi():
-        print(f"INFO: {' '.join(s)}")
+def log(*value: object, title: str, color: str | None):
+    if isCi() or color is None:
+        print(f"{title}:", *value)
     else:
-        print(f"{INFO}INFO:{ENDC} {' '.join(s)}")
+        print(f"{color}{title}:{ENDC}", *value)
 
 
-def fail(*s: str):
-    if isCi():
-        print(f"FAIL: {' '.join(s)}")
-    else:
-        print(f"{FAIL}FAIL:{ENDC} {' '.join(s)}")
+def info(*value: object):
+    log(*value, title="INFO", color=INFO)
+
+
+def warn(*value: object):
+    log(*value, title="WARN", color=WARN)
+
+
+def fail(*value: object):
+    log(*value, title="FAIL", color=FAIL)
 
 
 Args = Sequence[str | os.PathLike]
@@ -71,6 +81,7 @@ class Variant(Enum):
     MINIMAL = 2
 
 
+@cache
 def get_variant() -> Variant:
     match platform.system():
         case "Darwin":

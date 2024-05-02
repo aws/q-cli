@@ -1,9 +1,11 @@
 use std::fmt::Display;
 
 use fig_telemetry::InstallMethod;
+use fig_util::consts::build::HASH;
 use fig_util::system_info::OSVersion;
 use fig_util::{
     directories,
+    Shell,
     Terminal,
     CLI_BINARY_NAME,
 };
@@ -12,6 +14,7 @@ use serde::{
     Serialize,
 };
 use time::format_description::well_known::Rfc3339;
+use time::OffsetDateTime;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HardwareInfo {
@@ -49,13 +52,23 @@ impl HardwareInfo {
     }
 
     fn user_readable(&self) -> Vec<String> {
-        vec![
-            format!("model: {}", self.model_name.as_deref().unwrap_or_default()),
-            format!("model-id: {}", self.model_identifier.as_deref().unwrap_or_default()),
-            format!("chip-id: {}", self.chip.as_deref().unwrap_or_default()),
-            format!("cores: {}", self.total_cores.as_deref().unwrap_or_default()),
-            format!("mem: {}", self.memory.as_deref().unwrap_or_default()),
-        ]
+        let mut info = vec![];
+        if let Some(model) = &self.model_name {
+            info.push(format!("model: {model}"));
+        }
+        if let Some(model_id) = &self.model_identifier {
+            info.push(format!("model-id: {model_id}"));
+        }
+        if let Some(chip) = &self.chip {
+            info.push(format!("chip-id: {chip}"));
+        }
+        if let Some(cores) = &self.total_cores {
+            info.push(format!("cores: {cores}"));
+        }
+        if let Some(mem) = &self.memory {
+            info.push(format!("mem: {mem}"));
+        }
+        info
     }
 }
 
@@ -114,6 +127,7 @@ impl EnvVarDiagnostic {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CurrentEnvironment {
     pub shell_exe: Option<String>,
+    pub shell_version: Option<String>,
     pub figterm_exe: Option<String>,
     pub terminal_exe: Option<String>,
     pub current_dir: String,
@@ -123,7 +137,7 @@ pub struct CurrentEnvironment {
 }
 
 impl CurrentEnvironment {
-    fn new() -> CurrentEnvironment {
+    async fn new() -> CurrentEnvironment {
         use fig_util::process_info::{
             Pid,
             PidExt,
@@ -133,6 +147,8 @@ impl CurrentEnvironment {
 
         let shell_pid = self_pid.parent();
         let shell_exe = shell_pid.and_then(|pid| pid.exe()).map(|p| p.display().to_string());
+
+        let shell_version = Shell::current_shell_version().await.map(|(_, v)| v).ok();
 
         let current_dir = std::env::current_dir().map_or_else(
             |_| "Could not get working directory".into(),
@@ -148,6 +164,7 @@ impl CurrentEnvironment {
 
         CurrentEnvironment {
             shell_exe,
+            shell_version,
             figterm_exe: None,
             terminal_exe: None,
             current_dir,
@@ -159,14 +176,19 @@ impl CurrentEnvironment {
 
     fn user_readable(&self) -> Vec<String> {
         let username = format!("/{}", whoami::username());
-        vec![
-            format!(
-                "shell: {}",
-                self.shell_exe
-                    .as_deref()
-                    .unwrap_or("<unknown>")
-                    .replace(&username, "/USER")
-            ),
+
+        let mut items = Vec::new();
+        items.push(format!(
+            "shell: {}",
+            self.shell_exe
+                .as_deref()
+                .unwrap_or("<unknown>")
+                .replace(&username, "/USER")
+        ));
+        if let Some(version) = &self.shell_version {
+            items.push(format!("shell-version: {version}"));
+        }
+        items.extend([
             format!(
                 "terminal: {}",
                 self.terminal
@@ -178,7 +200,9 @@ impl CurrentEnvironment {
             format!("cwd: {}", self.current_dir.replace(&username, "/USER")),
             format!("exe-path: {}", self.executable_location.replace(&username, "/USER")),
             format!("install-method: {}", self.install_method),
-        ]
+        ]);
+
+        items
     }
 }
 
@@ -246,6 +270,8 @@ impl DotfilesDiagnostics {
 pub struct Diagnostics {
     pub time: String,
     pub version: String,
+    pub build_hash: Option<&'static str>,
+    pub build_datetime: Option<String>,
     pub hardware: HardwareInfo,
     pub os: Option<OSVersion>,
     pub user_env: CurrentEnvironment,
@@ -254,15 +280,24 @@ pub struct Diagnostics {
 }
 
 impl Diagnostics {
-    pub fn new() -> Diagnostics {
-        let time = time::OffsetDateTime::now_utc().format(&Rfc3339).unwrap_or_default();
+    pub async fn new() -> Diagnostics {
+        let time = OffsetDateTime::now_utc().format(&Rfc3339).unwrap_or_default();
+
+        let build_datetime = fig_util::consts::build::DATETIME
+            .and_then(|d| OffsetDateTime::parse(d, &Rfc3339).ok())
+            .and_then(|d| {
+                let time_since = d - OffsetDateTime::now_utc();
+                Some(format!("{} ({:.3} ago)", d.format(&Rfc3339).ok()?, time_since))
+            });
 
         Diagnostics {
             time,
             version: env!("CARGO_PKG_VERSION").to_owned(),
+            build_hash: HASH,
+            build_datetime,
             hardware: HardwareInfo::new(),
             os: fig_util::system_info::os_version().cloned(),
-            user_env: CurrentEnvironment::new(),
+            user_env: CurrentEnvironment::new().await,
             env_var: EnvVarDiagnostic::new(),
             dotfiles: DotfilesDiagnostics::new(),
         }
@@ -277,31 +312,38 @@ impl Diagnostics {
             new_lines
         };
 
+        let indent = "  ";
         let mut lines = vec![];
 
         lines.push(format!("{CLI_BINARY_NAME}-details:"));
-        lines.extend(print_indent(&[self.version.clone()], "  ", 1));
+        lines.extend(print_indent(&[format!("version: {}", self.version)], indent, 1));
+        if let Some(hash) = &self.build_hash {
+            lines.extend(print_indent(&[format!("hash: {}", hash)], indent, 1));
+        }
+        if let Some(build_datetime) = &self.build_datetime {
+            lines.extend(print_indent(&[format!("build-date: {}", build_datetime)], indent, 1));
+        }
         lines.push("hardware-info:".into());
-        lines.extend(print_indent(&self.hardware.user_readable(), "  ", 1));
+        lines.extend(print_indent(&self.hardware.user_readable(), indent, 1));
         lines.push("os-info:".into());
         match self.os {
-            Some(ref os) => lines.extend(print_indent(&os.user_readable(), "  ", 1)),
+            Some(ref os) => lines.extend(print_indent(&os.user_readable(), indent, 1)),
             None => lines.push(format!("  - os: {}", std::env::consts::OS)),
         }
         lines.push("environment:".into());
-        lines.extend(print_indent(&self.user_env.user_readable(), "  ", 1));
+        lines.extend(print_indent(&self.user_env.user_readable(), indent, 1));
         lines.push("  - env-vars:".into());
-        lines.extend(print_indent(&self.env_var.user_readable(), "  ", 2));
+        lines.extend(print_indent(&self.env_var.user_readable(), indent, 2));
 
         lines
     }
 }
 
-impl Default for Diagnostics {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+// impl Default for Diagnostics {
+//     fn default() -> Self {
+//         Self::new()
+//     }
+// }
 
 // mod legacy_diagnostics {
 //    TODO(sean) add back integration information once we have a better

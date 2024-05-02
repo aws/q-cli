@@ -751,13 +751,13 @@ impl ShellIntegration for DotfileShellIntegration {
 
 #[cfg(test)]
 mod test {
-    use std::env::var_os;
     use std::io::Write;
     use std::process::{
         Command,
         Stdio,
     };
 
+    use fig_util::build::SKIP_SHELLCHECK_TESTS;
     use fig_util::directories::{
         home_dir,
         old_fig_data_dir,
@@ -803,7 +803,7 @@ mod test {
 
     #[test]
     fn shellcheck_bash_pre() {
-        if var_os("Q_BUILD_SKIP_SHELL_TESTS").is_some() {
+        if SKIP_SHELLCHECK_TESTS {
             return;
         }
         check_script(Shell::Bash, When::Pre);
@@ -811,7 +811,7 @@ mod test {
 
     #[test]
     fn shellcheck_bash_post() {
-        if var_os("Q_BUILD_SKIP_SHELL_TESTS").is_some() {
+        if SKIP_SHELLCHECK_TESTS {
             return;
         }
         check_script(Shell::Bash, When::Post);

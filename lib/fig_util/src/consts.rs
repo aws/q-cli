@@ -37,6 +37,25 @@ pub mod url {
     pub const TELEMETRY_WIKI: &str = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/opt-out-IDE.html";
 }
 
+/// Build time env vars
+pub mod build {
+
+    /// The variant of the current build
+    pub const VARIANT: Option<&str> = option_env!("AMAZON_Q_BUILD_VARIANT");
+
+    /// A git full sha hash of the current build
+    pub const HASH: Option<&str> = option_env!("AMAZON_Q_BUILD_HASH");
+
+    /// The datetime in rfc3339 format of the current build
+    pub const DATETIME: Option<&str> = option_env!("AMAZON_Q_BUILD_DATETIME");
+
+    /// If `fish` tests should be skipped
+    pub const SKIP_FISH_TESTS: bool = option_env!("AMAZON_Q_BUILD_SKIP_FISH_TESTS").is_some();
+
+    /// If `shellcheck` tests should be skipped
+    pub const SKIP_SHELLCHECK_TESTS: bool = option_env!("AMAZON_Q_BUILD_SKIP_SHELLCHECK_TESTS").is_some();
+}
+
 /// macOS specific constants
 pub mod macos {
     pub const BUNDLE_CONTENTS_MACOS_PATH: &str = "Contents/MacOS";
@@ -84,5 +103,32 @@ pub mod env_var {
 
         /// The shell to use in qterm
         Q_SHELL = "Q_SHELL"
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use time::format_description::well_known::Rfc3339;
+    use time::OffsetDateTime;
+
+    use super::*;
+
+    #[test]
+    fn test_build_envs() {
+        if let Some(build_variant) = build::VARIANT {
+            println!("build_variant: {build_variant}");
+            assert!(build_variant.len() > 0);
+        }
+
+        if let Some(build_hash) = build::HASH {
+            println!("build_hash: {build_hash}");
+            assert!(build_hash.len() > 0);
+        }
+
+        if let Some(build_datetime) = build::DATETIME {
+            println!("build_datetime: {build_datetime}");
+            println!("{}", OffsetDateTime::parse(build_datetime, &Rfc3339).unwrap());
+            assert!(build_datetime.len() > 0);
+        }
     }
 }

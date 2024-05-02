@@ -171,17 +171,15 @@ async fn shell_version(shell: &Shell, exe_path: &Path) -> Result<String, Error> 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::build::SKIP_FISH_TESTS;
 
     #[tokio::test]
     async fn test_shell_version() {
-        // Ignore all fish in brazil
-        let skip_fish = std::env::var_os("BRAZIL_BUILD_HOME").is_some();
-
         let tests = [
             (Shell::Bash, "/bin/bash", false),
             (Shell::Bash, "bash", false),
             (Shell::Zsh, "/bin/zsh", false),
-            (Shell::Fish, "fish", skip_fish),
+            (Shell::Fish, "fish", SKIP_FISH_TESTS),
         ];
 
         for (shell, exe_path, skip) in tests {
