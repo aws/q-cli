@@ -8,6 +8,7 @@ import ExternalLink from "@/components/util/external-link";
 import { Link } from "@/components/ui/link";
 import Lockup from "@/components/svg/logo";
 import { QLogo } from "@/components/svg/icons";
+import { Q_MIGRATION_URL } from "@/lib/constants";
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState(0);
@@ -29,7 +30,7 @@ export default function Page() {
             </h1>
             <p className="text-base leading-tight">
               <Link
-                href="https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/what-is.html"
+                href={Q_MIGRATION_URL}
                 className="font-medium"
                 variant="primary"
               >

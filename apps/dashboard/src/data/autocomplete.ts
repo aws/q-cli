@@ -1,4 +1,4 @@
-import { PRODUCT_NAME } from "@/lib/constants";
+import { AUTOCOMPLETE_WIKI_URL, PRODUCT_NAME } from "@/lib/constants";
 
 const autocompleteSettings = [
   {
@@ -245,7 +245,7 @@ export default autocompleteSettings;
 export const intro = {
   title: "CLI Completions",
   description: "IDE-style autocomplete for 500+ CLIs.",
-  link: "https://fig.io/user-manual/autocomplete",
+  link: AUTOCOMPLETE_WIKI_URL,
   enable: {
     flag: "autocomplete.disable",
     inverted: true,

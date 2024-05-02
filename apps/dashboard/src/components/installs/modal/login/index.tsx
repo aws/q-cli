@@ -6,7 +6,7 @@ import Tab from "./tabs";
 import { useLocalStateZodDefault } from "@/hooks/store/useState";
 import { z } from "zod";
 import { Link } from "@/components/ui/link";
-import { cn } from "@/lib/utils";
+import { Q_MIGRATION_URL } from "@/lib/constants";
 
 export default function LoginModal({ next }: { next: () => void }) {
   const [loginState, setLoginState] = useState<
@@ -80,10 +80,7 @@ export default function LoginModal({ next }: { next: () => void }) {
             <div className="font-ember font-bold">
               CodeWhisperer is now Amazon Q
             </div>
-            <Link
-              href="https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/what-is.html"
-              className="text-sm"
-            >
+            <Link href={Q_MIGRATION_URL} className="text-sm">
               Read the announcement blog post
             </Link>
           </div>
