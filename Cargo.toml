@@ -23,6 +23,7 @@ version = "1.0.1"
 [workspace.dependencies]
 anyhow = "1.0.75"
 async-trait = "0.1.74"
+base64 = "0.22.0"
 bytes = "1.5.0"
 bitflags = { version = "2.4.0", features = ["serde"] }
 bstr = "1.1.0"
@@ -82,6 +83,7 @@ serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.115"
 sha2 = "0.10.6"
 strum = { version = "0.26.1", features = ["derive"] }
+sysinfo = "0.30.11"
 thiserror = "1.0.58"
 tempfile = "3.10.1"
 time = { version = "0.3.34", features = [
@@ -92,7 +94,9 @@ time = { version = "0.3.34", features = [
     "serde",
 ] }
 tokio = { version = "1.37.0", features = ["full"] }
+toml = "0.8.12"
 tracing = { version = "0.1.40", features = ["log"] }
+uuid = { version = "1.8.0", features = ["v4", "serde"] }
 whoami = "1.5.1"
 
 [workspace.lints.rust]

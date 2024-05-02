@@ -13,7 +13,7 @@ fig_ipc.workspace = true
 fig_proto.workspace = true
 fig_remote_ipc = { path = "../../lib/fig_remote_ipc" }
 fig_util.workspace = true
-portable-pty = { version = "0.8.1" }
+portable-pty = "0.8.1"
 tempfile.workspace = true
 tokio.workspace = true
-uuid = { version = "1.6.1", features = ["v4"] }
+uuid.workspace = true

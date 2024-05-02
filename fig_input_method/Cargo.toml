@@ -19,7 +19,7 @@ input_method_type = "palette"
 [build-dependencies]
 plist = "1.4.0"
 serde.workspace = true
-toml = "0.8.5"
+toml.workspace = true
 apple-bundle = "*"
 
 [target.'cfg(target_os = "macos")'.dependencies]

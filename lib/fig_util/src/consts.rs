@@ -39,7 +39,6 @@ pub mod url {
 
 /// Build time env vars
 pub mod build {
-
     /// The variant of the current build
     pub const VARIANT: Option<&str> = option_env!("AMAZON_Q_BUILD_VARIANT");
 
@@ -117,7 +116,7 @@ mod tests {
     fn test_build_envs() {
         if let Some(build_variant) = build::VARIANT {
             println!("build_variant: {build_variant}");
-            assert!(build_variant.len() > 0);
+            assert!(["full", "minimal"].contains(&&&*build_variant.to_ascii_lowercase()));
         }
 
         if let Some(build_hash) = build::HASH {
@@ -128,7 +127,6 @@ mod tests {
         if let Some(build_datetime) = build::DATETIME {
             println!("build_datetime: {build_datetime}");
             println!("{}", OffsetDateTime::parse(build_datetime, &Rfc3339).unwrap());
-            assert!(build_datetime.len() > 0);
         }
     }
 }

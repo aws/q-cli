@@ -11,9 +11,4 @@ workspace = true
 
 [dependencies]
 fig_test_macro = { path = "../fig_test_macro" }
-tokio = { version = "1", features = [
-    "macros",
-    "rt-multi-thread",
-    "sync",
-    "parking_lot",
-] }
+tokio.workspace = true

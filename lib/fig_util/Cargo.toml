@@ -54,10 +54,10 @@ windows = { version = "0.54.0", features = [
 winreg = "0.52.0"
 
 [target.'cfg(unix)'.dependencies]
-sysinfo = "0.30.5"
+sysinfo.workspace = true
 nix.workspace = true
 
 [dev-dependencies]
 fig_test = { path = "../fig_test" }
 insta.workspace = true
-uuid = { version = "1.5.0", features = ["v4"] }
+uuid.workspace = true

@@ -30,8 +30,10 @@ def build_time() -> str:
 
 @cache
 def skip_fish_tests() -> bool:
-    warn("Skipping fish tests in brazil")
-    return shutil.which("fish") is None and environ.get("BRAZIL_BUILD_HOME") is not None
+    skip_fish_tests = shutil.which("fish") is None and environ.get("BRAZIL_BUILD_HOME") is not None
+    if skip_fish_tests:
+        warn("Skipping fish tests in brazil")
+    return skip_fish_tests
 
 
 def rust_env(release: bool, linker=None) -> Dict[str, str]:

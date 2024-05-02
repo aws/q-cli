@@ -62,7 +62,7 @@ serde.workspace = true
 serde_json.workspace = true
 spinners = "4.1.0"
 supports-color = "3.0.0"
-sysinfo = "0.30.5"
+sysinfo.workspace = true
 tempfile.workspace = true
 thiserror.workspace = true
 time.workspace = true
@@ -75,7 +75,7 @@ tracing-subscriber = { version = "0.3.16", features = [
 ] }
 unicode-width = "0.1.11"
 url = "2.3.1"
-uuid = { version = "1.3.0", features = ["v4", "fast-rng"] }
+uuid.workspace = true
 which = "6.0.0"
 winnow = "0.6.2"
 

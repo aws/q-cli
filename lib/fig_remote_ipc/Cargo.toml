@@ -21,4 +21,4 @@ serde.workspace = true
 time.workspace = true
 tokio.workspace = true
 tracing.workspace = true
-uuid = { version = "1.6.1", features = ["serde"] }
+uuid.workspace = true

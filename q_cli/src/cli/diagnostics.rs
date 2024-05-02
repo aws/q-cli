@@ -83,8 +83,10 @@ impl DiagnosticArgs {
             println!();
         }
 
-        self.format
-            .print(|| diagnostics.user_readable().join("\n"), || &diagnostics);
+        self.format.print(
+            || diagnostics.user_readable().expect("Failed to run user_readable()"),
+            || &diagnostics,
+        );
 
         Ok(ExitCode::SUCCESS)
     }
