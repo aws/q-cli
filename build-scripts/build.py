@@ -22,6 +22,7 @@ from const import (
     CLI_PACKAGE_NAME,
     DESKTOP_PACKAGE_NAME,
     DMG_NAME,
+    LINUX_ARCHIVE_NAME,
     MACOS_BUNDLE_ID,
     PTY_BINARY_NAME,
     PTY_PACKAGE_NAME,
@@ -465,7 +466,7 @@ def build(
         #   archive/install.sh
         #   archive/README
 
-        archive_name = APP_NAME.lower()
+        archive_name = LINUX_ARCHIVE_NAME
 
         archive_path = pathlib.Path(archive_name)
         archive_path.mkdir(parents=True, exist_ok=True)
