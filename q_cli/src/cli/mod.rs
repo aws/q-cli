@@ -26,6 +26,10 @@ use std::io::{
 };
 use std::process::ExitCode;
 
+use anstream::{
+    eprintln,
+    println,
+};
 use auth::is_logged_in;
 use clap::{
     ArgAction,

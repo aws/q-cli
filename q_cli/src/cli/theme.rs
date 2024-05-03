@@ -2,6 +2,7 @@ use std::fmt::Write;
 use std::fs;
 use std::process::ExitCode;
 
+use anstream::println;
 use clap::Args;
 use crossterm::style::{
     Color,

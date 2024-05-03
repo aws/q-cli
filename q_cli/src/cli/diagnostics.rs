@@ -4,6 +4,7 @@ use std::io::{
 };
 use std::process::ExitCode;
 
+use anstream::println;
 use clap::Args;
 use color_eyre::Result;
 use crossterm::terminal::{

@@ -2,6 +2,10 @@
 
 use std::process::ExitCode;
 
+use anstream::{
+    eprintln,
+    println,
+};
 use crossterm::style::Stylize;
 use eyre::Result;
 use fig_install::{

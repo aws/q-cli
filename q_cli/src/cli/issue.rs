@@ -1,5 +1,9 @@
 use std::process::ExitCode;
 
+use anstream::{
+    eprintln,
+    println,
+};
 use clap::Args;
 use crossterm::style::Stylize;
 use eyre::Result;

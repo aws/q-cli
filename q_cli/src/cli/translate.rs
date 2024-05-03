@@ -7,6 +7,10 @@ use std::process::ExitCode;
 use std::time::Instant;
 
 use amzn_codewhisperer_client::types::SuggestionState;
+use anstream::{
+    eprintln,
+    println,
+};
 use arboard::Clipboard;
 use clap::Args;
 use color_eyre::owo_colors::OwoColorize;
@@ -273,7 +277,10 @@ fn highlighter(s: &str) -> String {
 impl TranslateArgs {
     pub async fn execute(self) -> Result<ExitCode> {
         if !auth::is_logged_in().await {
-            bail!("You are not logged in. Run `{CLI_BINARY_NAME} login` to login.")
+            bail!(
+                "You are not logged in. Run {} to login.",
+                format!("{CLI_BINARY_NAME} login").magenta()
+            )
         }
 
         let interactive = std::io::stdin().is_terminal();
@@ -566,7 +573,7 @@ mod test {
         for prompt in prompts {
             let res = generate_response(prompt, 1).await.unwrap();
             let first = res.completions.first().unwrap();
-            println!("{prompt},{first}");
+            std::println!("{prompt},{first}");
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
     }
@@ -578,6 +585,6 @@ mod test {
 
     #[test]
     fn test_highlighter() {
-        println!("{}", highlighter("echo $PATH $ABC $USER $HOME $DEF"));
+        std::println!("{}", highlighter("echo $PATH $ABC $USER $HOME $DEF"));
     }
 }

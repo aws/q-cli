@@ -1,12 +1,9 @@
 pub mod cli;
 pub mod util;
 
-use std::io::{
-    stderr,
-    Write,
-};
 use std::process::ExitCode;
 
+use anstream::eprintln;
 use clap::error::{
     ContextKind,
     ErrorKind,
@@ -43,8 +40,7 @@ fn main() -> Result<ExitCode> {
                 });
 
             if unknown_arg {
-                let _ = writeln!(
-                    stderr(),
+                eprintln!(
                     "\nThis command may be valid in newer versions of the {PRODUCT_NAME} CLI. Try running {} {}.",
                     CLI_BINARY_NAME.magenta(),
                     "update".magenta()
@@ -75,9 +71,9 @@ fn main() -> Result<ExitCode> {
         Ok(exit_code) => Ok(exit_code),
         Err(err) => {
             if verbose || get_max_fig_log_level() > LevelFilter::INFO {
-                let _ = writeln!(stderr(), "{} {err:?}", "error:".bold().red());
+                eprintln!("{} {err:?}", "error:".bold().red());
             } else {
-                let _ = writeln!(stderr(), "{} {err}", "error:".bold().red());
+                eprintln!("{} {err}", "error:".bold().red());
             }
             Ok(ExitCode::FAILURE)
         },

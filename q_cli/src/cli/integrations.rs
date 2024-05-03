@@ -1,5 +1,6 @@
 use std::process::ExitCode;
 
+use anstream::println;
 use clap::Subcommand;
 use crossterm::style::Stylize;
 use eyre::Result;

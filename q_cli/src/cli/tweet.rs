@@ -1,3 +1,4 @@
+use anstream::println;
 use crossterm::style::Stylize;
 use eyre::Result;
 use rand::prelude::*;

@@ -5949,6 +5949,7 @@ version = "1.0.1"
 dependencies = [
  "amzn-codewhisperer-client",
  "amzn-codewhisperer-streaming-client",
+ "anstream",
  "arboard",
  "assert_cmd",
  "async-trait",
@@ -5999,7 +6000,6 @@ dependencies = [
  "serde",
  "serde_json",
  "spinners",
- "supports-color",
  "sysinfo",
  "tempfile",
  "thiserror",

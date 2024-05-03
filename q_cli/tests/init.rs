@@ -6,6 +6,7 @@ use std::process::{
     Stdio,
 };
 
+use anstream::println;
 #[cfg(not(windows))]
 use assert_cmd::prelude::*;
 use eyre::Context;

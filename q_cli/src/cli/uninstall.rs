@@ -1,5 +1,6 @@
 use std::process::ExitCode;
 
+use anstream::println;
 use crossterm::style::Stylize;
 use eyre::Result;
 use fig_util::{

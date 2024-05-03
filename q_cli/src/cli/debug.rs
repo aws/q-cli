@@ -10,6 +10,7 @@ use std::process::{
 };
 use std::str::FromStr;
 
+use anstream::println;
 use clap::{
     Subcommand,
     ValueEnum,

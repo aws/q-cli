@@ -1,5 +1,6 @@
 use std::process::ExitCode;
 
+use anstream::println;
 use auth::is_logged_in;
 use clap::{
     ArgGroup,

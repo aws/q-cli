@@ -14,6 +14,7 @@ use std::process::{
 };
 use std::time::Duration;
 
+use anstream::println;
 use cfg_if::cfg_if;
 use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;

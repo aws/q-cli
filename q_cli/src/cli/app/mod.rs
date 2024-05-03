@@ -1,6 +1,7 @@
 use std::process::ExitCode;
 use std::time::Duration;
 
+use anstream::println;
 use clap::{
     arg,
     Args,

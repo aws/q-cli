@@ -13,6 +13,10 @@ use std::process::{
 };
 use std::time::Duration;
 
+use anstream::{
+    eprintln,
+    println,
+};
 use async_trait::async_trait;
 use clap::Args;
 use crossterm::style::Stylize;
@@ -715,7 +719,11 @@ impl DoctorCheck for MidwayCheck {
             Err(err) => Err(DoctorError::Error {
                 reason: "Failed to make midway request".into(),
                 info: vec![
-                    format!("Try running `mwinit` and restarting the app with `{PTY_BINARY_NAME} restart`.").into(),
+                    format!(
+                        "Try running `mwinit` and restarting the app with {}.",
+                        format!("{PTY_BINARY_NAME} restart").magenta()
+                    )
+                    .into(),
                 ],
                 fix: None,
                 error: Some(err.into()),
@@ -753,7 +761,8 @@ impl DoctorCheck for PtySocketCheck {
                     format!("{PRODUCT_NAME} uses the /tmp directory for sockets.").into(),
                     "Did you delete files in /tmp? The OS will clear it automatically.".into(),
                     format!(
-                        "Try making a new tab or window in your terminal, then run `{CLI_BINARY_NAME} doctor` again."
+                        "Try making a new tab or window in your terminal, then run {} again.",
+                        format!("{CLI_BINARY_NAME} doctor").magenta()
                     )
                     .into(),
                     format!("No file at path: {socket_path:?}").into(),
@@ -1424,7 +1433,10 @@ impl DoctorCheck<Option<Terminal>> for SupportedTerminalCheck {
     async fn check(&self, terminal: &Option<Terminal>) -> Result<(), DoctorError> {
         if terminal.is_none() {
             Err(DoctorError::Error {
-                reason: format!("Unsupported terminal, if you believe this is a mistake or would like to see support for your terminal, run `{CLI_BINARY_NAME} issue`").into(),
+                reason: format!(
+                    "Unsupported terminal, if you believe this is a mistake or would like to see support for your terminal, run {}", 
+                    format!("{CLI_BINARY_NAME} issue").magenta()
+                ).into(),
                 info: vec![
                     #[cfg(target_os = "macos")]
                     format!(
@@ -1709,7 +1721,11 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
                     return Err(DoctorError::Error {
                         reason: e.to_string().into(),
                         info: vec![
-                            format!("Run `{CLI_BINARY_NAME} integrations install input-method` to enable it").into(),
+                            format!(
+                                "Run {} to enable it",
+                                format!("{CLI_BINARY_NAME} integrations install input-method").magenta()
+                            )
+                            .into(),
                         ],
                         fix: None,
                         error: Some(e.into()),
@@ -1719,7 +1735,11 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
                     return Err(DoctorError::Error {
                         reason: "Input Method is not installed".into(),
                         info: vec![
-                            format!("Run `{CLI_BINARY_NAME} integrations install input-method` to enable it").into(),
+                            format!(
+                                "Run {} to enable it",
+                                format!("{CLI_BINARY_NAME} integrations install input-method").magenta()
+                            )
+                            .into(),
                         ],
                         fix: None,
                         error: Some(e.into()),

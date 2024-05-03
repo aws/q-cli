@@ -11,6 +11,10 @@ use std::thread;
 use std::thread::JoinHandle;
 use std::time::Duration;
 
+use anstream::{
+    print,
+    println,
+};
 use crossterm::ExecutableCommand;
 
 const FRAMES: &[&str] = &[

@@ -3,6 +3,7 @@ use std::fmt::Display;
 use std::process::ExitCode;
 use std::time::Duration;
 
+use anstream::println;
 use auth::builder_id::{
     poll_create_token,
     start_device_authorization,
@@ -69,7 +70,10 @@ impl RootUserSubcommand {
         match self {
             Self::Login => {
                 if auth::is_logged_in().await {
-                    eyre::bail!("Already logged in, please logout with `{CLI_BINARY_NAME} logout` first");
+                    eyre::bail!(
+                        "Already logged in, please logout with {} first",
+                        format!("{CLI_BINARY_NAME} logout").magenta()
+                    );
                 }
 
                 let options = [AuthMethod::Email, AuthMethod::IdentityCenter];

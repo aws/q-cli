@@ -1,9 +1,6 @@
-use std::io::{
-    stdout,
-    Write,
-};
 use std::os::unix::net::UnixStream;
 
+use anstream::println;
 use clap::Args;
 use crossterm::style::Stylize;
 use eyre::Result;
@@ -63,14 +60,10 @@ impl GenerateSshArgs {
             let config = self.ssh_config(&uuid, &exe_path, remote_socket.as_str());
 
             std::fs::write(&config_path, config)?;
-            let _ = writeln!(stdout(), "Wrote config at {}", config_path.display().to_string().bold());
+            println!("Wrote config at {}", config_path.display().to_string().bold());
         } else {
             std::fs::write(&config_path, self.ssh_config_header())?;
-            let _ = writeln!(
-                stdout(),
-                "Cleared config at {}",
-                config_path.display().to_string().bold()
-            );
+            println!("Cleared config at {}", config_path.display().to_string().bold());
         }
 
         Ok(())
@@ -120,6 +113,7 @@ impl GenerateSshArgs {
 #[cfg(test)]
 mod tests {
     use std::path::Path;
+    use std::println;
 
     use fig_util::CLI_BINARY_NAME;
     use uuid::Uuid;
