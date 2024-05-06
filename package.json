@@ -13,6 +13,8 @@
     "dev": "pnpm -r dev",
     "dev:autocomplete": "pnpm -C apps/autocomplete dev",
     "dev:dashboard": "pnpm -C apps/dashboard dev",
+    "preview:autocomplete": "pnpm -C apps/autocomplete preview",
+    "preview:dashboard": "pnpm -C apps/dashboard preview",
     "clean": "pnpm -r clean",
     "prepare": "husky install",
     "precommit": "lint-staged --config .lintstagedrc.mjs"

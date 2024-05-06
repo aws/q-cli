@@ -100,10 +100,28 @@ module.exports = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: 0 },
         },
+        shimmer: {
+          "100%": {
+            transform: "translateX(100%)",
+          },
+        },
+        shine: {
+          "0%": {
+            filter: "brightness(100%)",
+          },
+          "50%": {
+            filter: "brightness(150%)",
+          },
+          "100%": {
+            filter: "brightness(100%)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        shimmer: "shimmer 4s ease-in-out infinite",
+        shine: "shine 4s ease-in-out infinite",
       },
       fontFamily: {
         ember: ["Ember", "sans-serif"],

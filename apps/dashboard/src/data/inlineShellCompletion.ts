@@ -1,19 +1,29 @@
-const inlineShellCompletionSettings = [
+import { Intro, PrefSection } from "@/components/preference/list";
+
+const inlineShellCompletionSettings: PrefSection[] = [
   {
     title: "Settings",
-    properties: [],
+    properties: [
+      {
+        id: "inline-shell-completion.enabled",
+        title: "Enable inline shell completions",
+        description: "This setting only applies in new shell sessions.",
+        type: "boolean",
+        default: true,
+      },
+    ],
   },
 ];
 
 export default inlineShellCompletionSettings;
 
-export const intro = {
+export const intro: Intro = {
   title: "Inline shell completions",
   description: "AI-generated command suggestions.",
-  link: "https://aws.amazon.com/codewhisperer/",
+  disabled: true,
   enable: {
     flag: "inline-shell-completion.enabled",
     inverted: false,
-    default: false,
+    default: true,
   },
 };

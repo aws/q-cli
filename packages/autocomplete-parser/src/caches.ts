@@ -19,3 +19,10 @@ window.resetCaches = resetCaches;
 
 export const mixinCache = createCache<SpecMixin | undefined>();
 export const specCache = createCache<Subcommand>();
+export const generateSpecCache = createCache<Subcommand>();
+
+window.listCache = () => {
+  console.log(mixinCache);
+  console.log(specCache);
+  console.log(generateSpecCache);
+};

@@ -10,8 +10,8 @@ export function getIconFromName(name: string, size?: number) {
     case "autocomplete":
     case "cli completions":
       return <Icon.Autocomplete size={size} />;
-    case "predict":
-    case "ghosttext":
+    case "inline":
+    case "inline shell completions":
       return <Icon.InlineShell size={size} />;
     case "translate":
     case "translation":

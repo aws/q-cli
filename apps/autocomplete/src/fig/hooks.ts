@@ -14,6 +14,7 @@ import {
 } from "@amzn/fig-io-api-bindings-wrappers";
 import { updateSelectSuggestionKeybindings } from "../actions";
 import { generatorCache } from "../generators/helpers";
+import { clearSpecIndex } from "@amzn/fig-io-autocomplete-parser";
 
 // TODO(sean) expose Subscription type from API binding library
 type Unwrap<T> = T extends Promise<infer U> ? U : T;
@@ -137,8 +138,10 @@ export const useFigAutocomplete = (
 export const useFigClearCache = () => {
   useFigSubscriptionEffect(() =>
     Event.subscribe("clear-cache", () => {
+      console.log("clearing cache");
       window.resetCaches?.();
       generatorCache.clear();
+      clearSpecIndex();
       return { unsubscribe: false };
     }),
   );

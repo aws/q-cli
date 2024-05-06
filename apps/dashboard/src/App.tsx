@@ -1,20 +1,20 @@
 import { Routes, Route, Outlet, useNavigate } from "react-router-dom";
-// import WhatsNew from "./pages/whats-new";
 import Account from "./pages/settings/account";
 import Help from "./pages/help";
 import SidebarLink from "./components/sidebar/link";
 import Autocomplete from "./pages/terminal/autocomplete";
 import Translate from "./pages/terminal/translate";
 import Chat from "./pages/terminal/chat";
+import Inline from "./pages/terminal/inline";
 import Onboarding from "./pages/onboarding";
 import Preferences from "./pages/settings/preferences";
 import Integrations from "./pages/settings/integrations";
 import Keybindings from "./pages/settings/keybindings";
 import Licenses from "./pages/licenses";
 import ModalContext from "./context/modal";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useContext, useEffect, useRef, useState } from "react";
 import Modal from "./components/modal";
-import { Auth, State, Telemetry, Event } from "@withfig/api-bindings";
+import { Telemetry, Event } from "@withfig/api-bindings";
 import InstallModal from "./components/installs/modal";
 import LoginModal from "./components/installs/modal/login";
 import { getIconFromName } from "./lib/icons";
@@ -23,17 +23,69 @@ import { createStore } from "./lib/store";
 import ListenerContext from "./context/input";
 import { useLocation } from "react-router-dom";
 import { useAccessibilityCheck, useDotfilesCheck } from "./hooks/store";
+import { useLocalStateZodDefault } from "./hooks/store/useState";
+import { z } from "zod";
+import { useAuth } from "./hooks/store/useAuth";
+import { AMZN_START_URL } from "./lib/constants";
 
 function App() {
+  const store = useRef(createStore()).current;
+  const [modal, setModal] = useState<React.ReactNode | null>(null);
+  const [listening, setListening] = useState<string | null>(null);
+
+  return (
+    <StoreContext.Provider value={store}>
+      <ListenerContext.Provider value={{ listening, setListening }}>
+        <ModalContext.Provider value={{ modal, setModal }}>
+          <AppLoading />
+        </ModalContext.Provider>
+      </ListenerContext.Provider>
+    </StoreContext.Provider>
+  );
+}
+
+function AppLoading() {
+  const store = useContext(StoreContext);
+  if (store === null || store().isLoading()) {
+    return <div className="w-screen h-screen bg-white dark:bg-zinc-800"></div>;
+  } else {
+    return <Router />;
+  }
+}
+
+function ActiveModal() {
+  const auth = useAuth();
+  const [onboardingComplete] = useLocalStateZodDefault(
+    "desktop.completedOnboarding",
+    z.boolean(),
+    false,
+  );
+  const [closed, setClosed] = useState(false);
+
+  if (closed) return null;
+
+  if (onboardingComplete === false) {
+    return (
+      <Modal>
+        <InstallModal />
+      </Modal>
+    );
+  }
+
+  if (onboardingComplete && auth.authed === false) {
+    return (
+      <Modal>
+        <LoginModal next={() => setClosed(true)} />
+      </Modal>
+    );
+  }
+
+  return null;
+}
+
+function Router() {
   const navigate = useNavigate();
   const location = useLocation();
-  const store = useRef(createStore()).current;
-  const [listening, setListening] = useState<string | null>(null);
-  const [modal, setModal] = useState<React.ReactNode | null>(null);
-  const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
-  const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(
-    null,
-  );
 
   useEffect(() => {
     try {
@@ -42,39 +94,6 @@ function App() {
       console.error(e);
     }
   }, [location]);
-
-  useEffect(() => {
-    function close() {
-      setLoggedIn(true);
-      setModal(null);
-    }
-
-    if (onboardingComplete === null) {
-      State.get("desktop.completedOnboarding")
-        .then((r) => {
-          if (!r) {
-            setOnboardingComplete(false);
-          }
-          setOnboardingComplete(r);
-        })
-        .catch(() => {
-          setOnboardingComplete(false);
-        });
-    } else {
-      if (onboardingComplete === false) {
-        setModal(<InstallModal />);
-      }
-
-      if (onboardingComplete && loggedIn === false) {
-        setModal(<LoginModal next={close} />);
-      }
-    }
-  }, [onboardingComplete, loggedIn]);
-
-  useEffect(() => {
-    if (loggedIn) return;
-    Auth.status().then((r) => setLoggedIn(r.authed));
-  }, [loggedIn]);
 
   useEffect(() => {
     let unsubscribe: () => void;
@@ -103,114 +122,118 @@ function App() {
   }, [navigate]);
 
   return (
-    <StoreContext.Provider value={store}>
-      <ListenerContext.Provider value={{ listening, setListening }}>
-        <ModalContext.Provider value={{ modal, setModal }}>
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Onboarding />} />
-              {/* TODO make What's New the default view again once it's ready... */}
-              {/* <Route path="onboarding" element={<FinishOnboarding />} /> */}
-              {/* <Route index element={<WhatsNew />} /> */}
-              <Route path="help" element={<Help />} />
-              <Route path="autocomplete" element={<Autocomplete />} />
-              {/* <Route path="predict" element={<Predict />} /> */}
-              <Route path="translate" element={<Translate />} />
-              <Route path="chat" element={<Chat />} />
-              <Route path="account" element={<Account />} />
-              <Route path="keybindings" element={<Keybindings />} />
-              <Route path="integrations" element={<Integrations />} />
-              <Route path="preferences" element={<Preferences />} />
-              <Route path="licenses" element={<Licenses />} />
-            </Route>
-          </Routes>
-          {modal && <Modal>{modal}</Modal>}
-        </ModalContext.Provider>
-      </ListenerContext.Provider>
-    </StoreContext.Provider>
+    <>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Onboarding />} />
+          <Route path="help" element={<Help />} />
+          <Route path="autocomplete" element={<Autocomplete />} />
+          <Route path="translate" element={<Translate />} />
+          <Route path="chat" element={<Chat />} />
+          <Route path="inline" element={<Inline />} />
+          <Route path="account" element={<Account />} />
+          <Route path="keybindings" element={<Keybindings />} />
+          <Route path="integrations" element={<Integrations />} />
+          <Route path="preferences" element={<Preferences />} />
+          <Route path="licenses" element={<Licenses />} />
+        </Route>
+      </Routes>
+      <Suspense fallback={<></>}>
+        <ActiveModal />
+      </Suspense>
+    </>
   );
 }
 
-const NAV_DATA = [
-  {
-    type: "link",
-    name: "Getting started",
-    link: "/",
-  },
-  // {
-  //   type: "link",
-  //   name: "Getting started",
-  //   link: "/onboarding",
-  // },
-  // {
-  //   type: "link",
-  //   name: "What's new?",
-  //   link: "/",
-  // },
-  {
-    type: "link",
-    name: "Help & support",
-    link: "/help",
-  },
-  {
-    type: "header",
-    name: "Features",
-  },
-  {
-    type: "link",
-    name: "CLI Completions",
-    link: "/autocomplete",
-  },
-  {
-    type: "link",
-    name: "Chat",
-    link: "/chat",
-  },
-  {
-    type: "link",
-    name: "Translate",
-    link: "/translate",
-  },
-  // {
-  //   type: "link",
-  //   name: "InlineShell",
-  //   link: "/predict",
-  // },
-  {
-    type: "header",
-    name: "Settings",
-  },
-  // {
-  //   type: "link",
-  //   name: "Account",
-  //   link: "/account",
-  // },
-  {
-    type: "link",
-    name: "Keybindings",
-    link: "/keybindings",
-  },
-  {
-    type: "link",
-    name: "Integrations",
-    link: "/integrations",
-  },
-  {
-    type: "link",
-    name: "Preferences",
-    link: "/preferences",
-  },
-] as const;
+const useNavData = () => {
+  const auth = useAuth();
+  const isAmzn = auth.startUrl === AMZN_START_URL;
+  return [
+    {
+      type: "link",
+      name: "Getting started",
+      link: "/",
+    },
+    // {
+    //   type: "link",
+    //   name: "Getting started",
+    //   link: "/onboarding",
+    // },
+    // {
+    //   type: "link",
+    //   name: "What's new?",
+    //   link: "/",
+    // },
+    {
+      type: "link",
+      name: "Help & support",
+      link: "/help",
+    },
+    {
+      type: "header",
+      name: "Features",
+    },
+    {
+      type: "link",
+      name: "CLI Completions",
+      link: "/autocomplete",
+    },
+    {
+      type: "link",
+      name: "Chat",
+      link: "/chat",
+    },
+    {
+      type: "link",
+      name: "Translate",
+      link: "/translate",
+    },
+    ...(isAmzn
+      ? [
+          {
+            type: "link",
+            name: "Inline",
+            link: "/inline",
+          },
+        ]
+      : []),
+    {
+      type: "header",
+      name: "Settings",
+    },
+    // {
+    //   type: "link",
+    //   name: "Account",
+    //   link: "/account",
+    // },
+    {
+      type: "link",
+      name: "Keybindings",
+      link: "/keybindings",
+    },
+    {
+      type: "link",
+      name: "Integrations",
+      link: "/integrations",
+    },
+    {
+      type: "link",
+      name: "Preferences",
+      link: "/preferences",
+    },
+  ];
+};
 
 function Layout() {
   const [accessibilityCheck] = useAccessibilityCheck();
   const [dotfilesCheck] = useDotfilesCheck();
+  const navData = useNavData();
   const error = accessibilityCheck === false || dotfilesCheck === false;
 
   return (
     <div className="flex flex-row h-screen w-full overflow-hidden bg-white dark:bg-zinc-800 text-black dark:text-zinc-200">
       <nav className="w-[240px] flex-none h-full flex flex-col items-center gap-1 p-4">
-        {NAV_DATA.map((item) =>
+        {navData.map((item) =>
           item.type === "link" ? (
             <SidebarLink
               key={item.name}

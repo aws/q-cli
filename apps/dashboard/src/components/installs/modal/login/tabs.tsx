@@ -6,11 +6,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../../ui/select";
-import { Input } from "../../../ui/input";
-import { useState } from "react";
-import { useLocalState, useLocalStateZodDefault } from "@/hooks/store/useState";
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { useLocalStateZodDefault } from "@/hooks/store/useState";
 import { z } from "zod";
+import { AMZN_START_URL } from "@/lib/constants";
 
 function BuilderIdTab({
   handleLogin,
@@ -44,6 +44,24 @@ function BuilderIdTab({
   );
 }
 
+function IamInput({
+  title,
+  description,
+  input,
+}: {
+  title: string;
+  description: string;
+  input: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <p className="font-bold leading-tight">{title}</p>
+      <p className="text-xs mb-1 text-zinc-100">{description}</p>
+      {input}
+    </div>
+  );
+}
+
 function IamTab({
   handleLogin,
   toggleTab,
@@ -53,6 +71,8 @@ function IamTab({
   toggleTab: () => void;
   signInText: string;
 }) {
+  const midway = window?.fig?.constants?.midway;
+
   // TODO: this should be fetched from https://idetoolkits.amazonwebservices.com/endpoints.json
   const REGIONS = {
     "af-south-1": {
@@ -90,6 +110,9 @@ function IamTab({
     },
     "ca-central-1": {
       description: "Canada (Central)",
+    },
+    "ca-west-1": {
+      description: "Canada West (Calgary)",
     },
     "eu-central-1": {
       description: "Europe (Frankfurt)",
@@ -146,7 +169,7 @@ function IamTab({
   const [startUrl, setStartUrl] = useLocalStateZodDefault(
     "auth.idc.start-url",
     z.string(),
-    "",
+    midway ? AMZN_START_URL : "",
   );
   const [region, setRegion] = useLocalStateZodDefault(
     "auth.idc.region",
@@ -160,36 +183,40 @@ function IamTab({
         <p className="font-bold text-lg">IAM Identity Center</p>
         <p>Successor to AWS Single Sign-on</p>
       </div>
-      <div className="flex flex-col gap-1">
-        <p className="font-bold">Start URL</p>
-        <p>URL for your organization, provided by an admin or help desk.</p>
-        <Input
-          value={startUrl}
-          onChange={(e) => setStartUrl(e.target.value)}
-          className="text-black dark:text-white"
-          type="url"
-        />
-      </div>
-      <div className="flex flex-col gap-1">
-        <p className="font-bold">Region</p>
-        <p>AWS Region that hosts Identity directory</p>
-        <Select onValueChange={(value) => setRegion(value)} value={region}>
-          <SelectTrigger className="w-full text-black dark:text-white">
-            <SelectValue placeholder="Theme" />
-          </SelectTrigger>
-          <SelectContent className="h-96">
-            {Object.entries(REGIONS).map(([key, value]) => (
-              <SelectItem key={key} value={key}>
-                <span className="font-mono mr-2">{key}</span>
-                <span className="text-xs text-zinc-600">
-                  {value.description}
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="flex flex-col items-center gap-1">
+      <IamInput
+        title="Start URL"
+        description="URL for your organization, provided by an admin or help desk."
+        input={
+          <Input
+            value={startUrl}
+            onChange={(e) => setStartUrl(e.target.value)}
+            className="text-black dark:text-white"
+            type="url"
+          />
+        }
+      />
+      <IamInput
+        title="Region"
+        description="AWS Region that hosts Identity directory."
+        input={
+          <Select onValueChange={(value) => setRegion(value)} value={region}>
+            <SelectTrigger className="w-full text-black dark:text-white">
+              <SelectValue placeholder="Theme" />
+            </SelectTrigger>
+            <SelectContent className="h-96">
+              {Object.entries(REGIONS).map(([key, value]) => (
+                <SelectItem key={key} value={key}>
+                  <span className="font-mono mr-2">{key}</span>
+                  <span className="text-xs opacity-70">
+                    {value.description}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        }
+      />
+      <div className="flex flex-col items-center gap-1 mt-2">
         <Button
           variant="glass"
           onClick={() => handleLogin(startUrl, region)}

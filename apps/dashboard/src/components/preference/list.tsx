@@ -11,16 +11,16 @@ import { Switch } from "../ui/switch";
 import { parseBackticksToCode } from "@/lib/strings";
 import { Link } from "../ui/link";
 
-type PrefSection = {
+export type PrefSection = {
   title: string;
   properties?: Pref[];
   actions?: Action[];
 };
 
-type Intro = {
+export type Intro = {
   title: string;
   description: string;
-  link: string;
+  link?: string;
   /**
    * Configuration settings for the feature flag. Only applies if `disabled`
    * is not true.
@@ -69,13 +69,15 @@ function FeatureIntro({ intro }: { intro: Intro }) {
                 intro.description,
                 "!border-white !bg-white/20 !text-white py-[1px]",
               )}
-              <Link
-                href={intro.link}
-                className="pl-1 font-medium"
-                variant="primary"
-              >
-                Learn more
-              </Link>
+              {intro.link && (
+                <Link
+                  href={intro.link}
+                  className="pl-1 font-medium"
+                  variant="primary"
+                >
+                  Learn more
+                </Link>
+              )}
             </p>
           </div>
         </div>

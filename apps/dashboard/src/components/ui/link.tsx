@@ -5,7 +5,7 @@ import ExternalLink from "../util/external-link";
 import { cva, type VariantProps } from "class-variance-authority";
 
 const variants = cva(
-  "inline-flex items-center justify-center text-left underline decoration-1 underline-offset-1 hover:underline-offset-4 transition-all duration-100 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center text-left underline decoration-1 underline-offset-1 motion-safe:hover:underline-offset-4 transition-all duration-100 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {

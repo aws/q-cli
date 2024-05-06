@@ -26,6 +26,7 @@ declare global {
           macosVersion?: string;
           // TODO: add actual types
           linux?: unknown;
+          midway?: boolean;
         }
       | undefined;
     let settings: Record<string, unknown>;
@@ -56,6 +57,7 @@ declare global {
     globalSSHString: string | undefined;
     logger: unknown;
     resetCaches?: () => void;
+    listCache?: () => void;
   }
 
   const __APP_VERSION__: string;

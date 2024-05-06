@@ -11,7 +11,7 @@ export function useSetting(key: string) {
   if (!store) throw new Error("Missing StoreContext.Provider in the tree");
 
   return [
-    useStore(store, (state) => state.settings[key]),
+    useStore(store, (state) => state.settings![key]),
     useStore(
       store,
       (state) => (value: unknown) => state.setSetting(key, value),

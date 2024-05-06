@@ -2,5 +2,8 @@
   "name": "@internal/types",
   "private": true,
   "version": "1.0.0",
-  "types": "global.d.ts"
+  "types": "global.d.ts",
+  "files": [
+    "global.d.ts"
+  ]
 }

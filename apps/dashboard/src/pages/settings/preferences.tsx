@@ -1,32 +1,21 @@
 import { UserPrefView } from "@/components/preference/list";
 import { Button } from "@/components/ui/button";
 import settings from "@/data/preferences";
-import { Auth, Native, User } from "@withfig/api-bindings";
-import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/store/useAuth";
+import { Native, User } from "@withfig/api-bindings";
 
 export default function Page() {
-  const [authed, setAuthed] = useState<boolean>(false);
-  const [accountType, setAccountType] = useState<string | undefined>();
+  const auth = useAuth();
 
-  useEffect(() => {
-    Auth.status().then((s) => {
-      setAuthed(s.authed);
-      if (!s.authed) return;
-
-      if (s.authKind === "BuilderId") {
-        setAccountType("Builder ID");
-        return;
-      }
-
-      if (s.authKind === "IamIdentityCenter") {
-        setAccountType("IAM Identity Center");
-        return;
-      }
-
-      setAccountType(s.authKind);
-      return;
-    });
-  }, []);
+  let authKind;
+  switch (auth.authKind) {
+    case "BuilderId":
+      authKind = "Builder ID";
+      break;
+    case "IamIdentityCenter":
+      authKind = "AWS IAM Identity Center";
+      break;
+  }
 
   function logout() {
     User.logout().then(() => {
@@ -53,9 +42,9 @@ export default function Page() {
               Center
             </p>
             <p className="font-light leading-tight text-sm text-black/50 dark:text-white/50">
-              {authed
-                ? accountType
-                  ? `Logged in with ${accountType}`
+              {auth.authed
+                ? authKind
+                  ? `Logged in with ${authKind}`
                   : "Logged in"
                 : "Not logged in"}
             </p>
@@ -63,7 +52,7 @@ export default function Page() {
               <Button
                 variant="outline"
                 onClick={() => logout()}
-                disabled={!authed}
+                disabled={!auth.authed}
               >
                 Log out
               </Button>
@@ -83,7 +72,7 @@ export default function Page() {
           className="px-0 text-blue-500 hover:underline decoration-1 underline-offset-1 hover:text-blue-800 hover:underline-offset-4 transition-all duration-100 text-sm"
           onClick={() => {
             Native.open(
-              "file:///Applications/Amazon Q.app/Contents/Resources/dashboard/license/NOTICE.txt"
+              "file:///Applications/Amazon Q.app/Contents/Resources/dashboard/license/NOTICE.txt",
             );
           }}
         >

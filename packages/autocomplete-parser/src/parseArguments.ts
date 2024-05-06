@@ -28,7 +28,7 @@ import {
   ParsingHistoryError,
   UpdateStateError,
 } from "./errors.js";
-import { createCache } from "./caches.js";
+import { createCache, generateSpecCache } from "./caches.js";
 
 type ArgArrayState = {
   args: Array<Internal.Arg> | null;
@@ -599,6 +599,20 @@ const historyExecuteShellCommand: Fig.ExecuteCommandFunction = async () => {
 const getExecuteShellCommandFunction = (isParsingHistory = false) =>
   isParsingHistory ? historyExecuteShellCommand : executeCommand;
 
+const getGenerateSpecCacheKey = (
+  completionObj: Internal.Subcommand,
+  tokenArray: string[],
+): string | undefined => {
+  // TODO(grant): remove this after the mechanic spec is updated to use generateSpecCacheKey
+  if (
+    completionObj.name?.[0] === "mechanic" &&
+    tokenArray?.[0] === "mechanic"
+  ) {
+    return "mechanic";
+  }
+  return undefined;
+};
+
 const generateSpecForState = async (
   state: ArgumentParserState,
   tokenArray: string[],
@@ -612,13 +626,20 @@ const generateSpecForState = async (
     return state;
   }
 
-  const exec = getExecuteShellCommandFunction(isParsingHistory);
-
   try {
-    const newSpec = convertSubcommand(
-      await generateSpec(tokenArray, exec),
-      initializeDefault,
-    );
+    const cacheKey = getGenerateSpecCacheKey(completionObj, tokenArray);
+    let newSpec;
+    if (cacheKey && generateSpecCache.has(cacheKey)) {
+      newSpec = generateSpecCache.get(cacheKey)!;
+    } else {
+      const exec = getExecuteShellCommandFunction(isParsingHistory);
+      newSpec = convertSubcommand(
+        await generateSpec(tokenArray, exec),
+        initializeDefault,
+      );
+      if (cacheKey) generateSpecCache.set(cacheKey, newSpec);
+    }
+
     const keepArgs = completionObj.args.length > 0;
 
     return {
@@ -725,13 +746,14 @@ const getCacheKey = (
   tokenArray: string[],
   context: Fig.ShellContext,
   specLocation: Internal.SpecLocation,
-): string =>
-  [
+): string => {
+  return [
     tokenArray.slice(0, -1).join(" "),
     serializeSpecLocation(specLocation),
     context.currentWorkingDirectory,
     context.currentProcess,
   ].join(",");
+};
 
 // Parse all arguments in tokenArray.
 const parseArgumentsCached = async (

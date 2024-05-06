@@ -67,9 +67,9 @@ export default function StatusCheck({
             {status ? "Enabled" : check.action}
           </Button>
           {status !== undefined && status == false && err !== "" && (
-            <p className="text-zinc-200 bg-red-600 border-red-400 flex items-center justify-center leading-none p-2 px-2 rounded">
+            <pre className="text-sm text-zinc-900 dark:text-zinc-200 bg-red-100 dark:bg-red-950 border-red-400 border flex items-center justify-center leading-none p-2 px-2 rounded overflow-x-auto max-w-full whitespace-pre-wrap">
               {err}
-            </p>
+            </pre>
           )}
         </CollapsibleContent>
       </div>

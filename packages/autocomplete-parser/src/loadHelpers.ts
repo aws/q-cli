@@ -260,6 +260,10 @@ let publicSpecsRequest:
     }>
   | undefined;
 
+export function clearSpecIndex() {
+  publicSpecsRequest = undefined;
+}
+
 const INDEX_ZOD = z.object({
   completions: z.array(z.string()),
   diffVersionedCompletions: z.array(z.string()),

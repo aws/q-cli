@@ -29,6 +29,8 @@ export function status() {
     return {
       authed: res.authed,
       authKind,
+      startUrl: res.startUrl,
+      region: res.region,
     };
   });
 }

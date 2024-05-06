@@ -10,7 +10,7 @@ export function useKeybindings(command: string, defaults: string[]) {
   const store = useContext(StoreContext);
   if (!store) throw new Error("Missing StoreContext.Provider in the tree");
 
-  const settings = useStore(store, (state) => state.settings);
+  const settings = useStore(store, (state) => state.settings!);
 
   // Check every entry in settings to see if its value is the command being passed down as the first arg
   // If it is, return the key (format: `autocomplete.keybindings.${keystroke}`).

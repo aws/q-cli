@@ -7,19 +7,31 @@ import { useLocalStateZodDefault } from "@/hooks/store/useState";
 import { z } from "zod";
 import { Link } from "@/components/ui/link";
 import { Q_MIGRATION_URL } from "@/lib/constants";
+import { useAuth, useRefreshAuth } from "@/hooks/store/useAuth";
 
 export default function LoginModal({ next }: { next: () => void }) {
+  const midway = window?.fig?.constants?.midway ?? false;
+
   const [loginState, setLoginState] = useState<
     "not started" | "loading" | "logged in"
   >("not started");
   const [loginCode, setLoginCode] = useState<string | null>(null);
-  const [tab, setTab] = useState<"builderId" | "iam">("builderId");
+  const [tab, setTab] = useLocalStateZodDefault<"builderId" | "iam">(
+    "dashboard.loginTab",
+    z.enum(["builderId", "iam"]),
+    midway ? "iam" : "builderId",
+  );
+
+  // console.log(tab);
+
   const [error, setError] = useState<string | null>(null);
   const [completedOnboarding] = useLocalStateZodDefault(
     "desktop.completedOnboarding",
     z.boolean(),
     false,
   );
+  const auth = useAuth();
+  const refreshAuth = useRefreshAuth();
 
   async function handleLogin(startUrl?: string, region?: string) {
     setLoginState("loading");
@@ -45,6 +57,7 @@ export default function LoginModal({ next }: { next: () => void }) {
       .then(() => {
         setLoginState("logged in");
         Internal.sendWindowFocusRequest({});
+        refreshAuth();
         next();
       })
       .catch((err) => {
@@ -56,10 +69,8 @@ export default function LoginModal({ next }: { next: () => void }) {
   }
 
   useEffect(() => {
-    Auth.status().then((r) => {
-      setLoginState(r.authed ? "logged in" : "not started");
-    });
-  }, []);
+    setLoginState(auth.authed ? "logged in" : "not started");
+  }, [auth]);
 
   useEffect(() => {
     if (loginState !== "logged in") return;
