@@ -18,7 +18,7 @@ authors = ["AWS Engineers"]
 edition = "2021"
 homepage = "https://aws.amazon.com/q/"
 publish = false
-version = "1.0.1"
+version = "1.0.2"
 
 [workspace.dependencies]
 anstream = "0.6.13"
