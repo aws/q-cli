@@ -298,9 +298,9 @@ pub fn app_version(app: impl AsRef<OsStr>) -> Option<Version> {
     Version::parse(version.trim()).ok()
 }
 
-static CHECKMARK: &str = "✔";
-static DOT: &str = "●";
-static CROSS: &str = "✘";
+const CHECKMARK: &str = "✔";
+const DOT: &str = "●";
+const CROSS: &str = "✘";
 
 fn print_status_result(name: impl Display, status: &Result<(), DoctorError>, verbose: bool) {
     match status {
@@ -779,9 +779,12 @@ impl DoctorCheck for PtySocketCheck {
         };
 
         // Try sending an insert event and ensure it inserts what is expected
-        enable_raw_mode().context(
-            "Your terminal doesn't support raw mode, which is required to verify that the figterm socket works",
+        enable_raw_mode().with_context(
+            || "Your terminal doesn't support raw mode, which is required to verify that the {PTY_BINARY_NAME} socket works",
         )?;
+
+        let test_message = format!("Testing {PTY_BINARY_NAME}...\n");
+        let test_message_ = test_message.clone();
 
         let write_handle: tokio::task::JoinHandle<Result<BufferedUnixStream, DoctorError>> = tokio::spawn(async move {
             tokio::time::sleep(Duration::from_secs_f32(0.2)).await;
@@ -789,7 +792,7 @@ impl DoctorCheck for PtySocketCheck {
             let message = fig_proto::figterm::FigtermRequestMessage {
                 request: Some(fig_proto::figterm::figterm_request_message::Request::InsertText(
                     fig_proto::figterm::InsertTextRequest {
-                        insertion: Some("Testing figterm...\n".into()),
+                        insertion: Some(test_message_),
                         deletion: None,
                         offset: None,
                         immediate: Some(true),
@@ -805,14 +808,13 @@ impl DoctorCheck for PtySocketCheck {
         });
 
         let mut buffer = String::new();
-
         let mut stdin = tokio::io::BufReader::new(tokio::io::stdin());
 
         let timeout = tokio::time::timeout(Duration::from_secs_f32(1.2), stdin.read_line(&mut buffer));
 
         let timeout_result: Result<(), DoctorError> = match timeout.await {
             Ok(Ok(_)) => {
-                if buffer.trim() == "Testing figterm..." {
+                if buffer.trim() == test_message.trim() {
                     Ok(())
                 } else {
                     Err(DoctorError::Warning(
@@ -831,8 +833,8 @@ impl DoctorCheck for PtySocketCheck {
 
         let mut conn = match write_handle.await {
             Ok(Ok(conn)) => conn,
-            Ok(Err(err)) => return Err(doctor_error!("Failed to write to figterm socket: {err}")),
-            Err(err) => return Err(doctor_error!("Failed to write to figterm socket: {err}")),
+            Ok(Err(err)) => return Err(doctor_error!("Failed to write to {PTY_BINARY_NAME} socket: {err}")),
+            Err(err) => return Err(doctor_error!("Failed to write to {PTY_BINARY_NAME} socket: {err}")),
         };
 
         timeout_result?;
@@ -883,10 +885,18 @@ impl DoctorCheck for PtySocketCheck {
                         }
                     }
                 },
-                _ => return Err(doctor_error!("Failed to receive expected message from figterm")),
+                _ => {
+                    return Err(doctor_error!(
+                        "Failed to receive expected message from {PTY_BINARY_NAME}"
+                    ));
+                },
             },
-            Ok(None) => return Err(doctor_error!("Received EOF when trying to receive figterm diagnostics")),
-            Err(err) => return Err(doctor_error!("Failed to receive figterm diagnostics: {err}")),
+            Ok(None) => {
+                return Err(doctor_error!(
+                    "Received EOF when trying to receive {PTY_BINARY_NAME} diagnostics"
+                ));
+            },
+            Err(err) => return Err(doctor_error!("Failed to receive {PTY_BINARY_NAME} diagnostics: {err}")),
         }
 
         Ok(())
@@ -897,19 +907,23 @@ struct DotfileCheck {
     integration: Box<dyn ShellIntegration>,
 }
 
-#[async_trait]
-impl DoctorCheck<Option<Shell>> for DotfileCheck {
-    fn name(&self) -> Cow<'static, str> {
-        let path = directories::home_dir()
+impl DotfileCheck {
+    fn short_path(&self) -> String {
+        directories::home_dir()
             .ok()
             .and_then(|home_dir| self.integration.path().strip_prefix(&home_dir).ok().map(PathBuf::from))
             .map_or_else(
                 || self.integration.path().display().to_string(),
                 |path| format!("~/{}", path.display()),
-            );
+            )
+    }
+}
 
+#[async_trait]
+impl DoctorCheck<Option<Shell>> for DotfileCheck {
+    fn name(&self) -> Cow<'static, str> {
+        let path = self.short_path();
         let shell = self.integration.get_shell();
-
         format!("{shell} {path} integration check").into()
     }
 
@@ -944,47 +958,6 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                 | InstallationError::NotInstalled(msg)
                 | InstallationError::ImproperInstallation(msg),
             ) => {
-                // Check permissions of the file
-                #[cfg(unix)]
-                {
-                    use nix::unistd::{
-                        access,
-                        AccessFlags,
-                    };
-
-                    let path = self.integration.path();
-                    if path.exists() {
-                        access(&self.integration.path(), AccessFlags::R_OK | AccessFlags::W_OK).map_err(|err| {
-                            DoctorError::Error {
-                                reason: format!("{} is not read or writable", path.display()).into(),
-                                info: vec![
-                                    "To fix run the following commands:".into(),
-                                    format!(
-                                        "    1. {}",
-                                        format!(
-                                            "sudo chown $USER {} && sudo chmod 644 {}",
-                                            path.display(),
-                                            path.display()
-                                        )
-                                        .magenta()
-                                    )
-                                    .into(),
-                                    format!(
-                                        "    2. {}",
-                                        format!("{CLI_BINARY_NAME} integrations install dotfiles").magenta()
-                                    )
-                                    .into(),
-                                    format!("    3. {}", format!("{CLI_BINARY_NAME} doctor").magenta()).into(),
-                                    "".into(),
-                                    format!("    Error: {err}").into(),
-                                ],
-                                fix: None,
-                                error: None,
-                            }
-                        })?;
-                    }
-                }
-
                 let fix_integration = self.integration.clone();
                 Err(DoctorError::Error {
                     reason: msg,
@@ -1012,6 +985,15 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                         .boxed(),
                     )),
                     error: Some(eyre::Report::new(err)),
+                })
+            },
+            Err(err @ InstallationError::PermissionDenied { .. }) => {
+                let message = err.verbose_message();
+                Err(DoctorError::Error {
+                    reason: message.title.into(),
+                    info: vec![message.message.unwrap().into(), "".into()],
+                    fix: None,
+                    error: None,
                 })
             },
             Err(err) => Err(DoctorError::Error {
@@ -1304,8 +1286,9 @@ impl DoctorCheck<DiagnosticsResponse> for FigCLIPathCheck {
             || path.ends_with(format!("target/debug/{CLI_CRATE_NAME}"))
             || path.ends_with(format!("target/release/{CLI_CRATE_NAME}"))
         {
-            Err(DoctorError::Warning(
-                "Running debug build in a non-standard location".into(),
+            Err(doctor_warning!(
+                "Running debug build in a non-standard location: {}",
+                path.display().bold()
             ))
         } else {
             Err(doctor_error!(

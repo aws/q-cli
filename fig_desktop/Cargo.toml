@@ -41,7 +41,7 @@ bytes.workspace = true
 camino.workspace = true
 cfg-if.workspace = true
 clap.workspace = true
-dashmap = "5.3.4"
+dashmap.workspace = true
 fig_api_client.workspace = true
 fig_desktop_api = { path = "../lib/fig_desktop_api" }
 fig_install.workspace = true
@@ -85,7 +85,7 @@ tracing.workspace = true
 tray-icon = "0.13.0"
 url = "2.3.1"
 uuid.workspace = true
-which = "6.0.0"
+which.workspace = true
 whoami = "1.3.0"
 wry = { version = "0.39.0", default-features = false, features = [
     # "tao",

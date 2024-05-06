@@ -3,10 +3,10 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt;
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use cookie::CookieBuilder;
+use fig_util::directories::DirectoryError;
 use once_cell::sync::Lazy;
 use reqwest::cookie::Jar;
 use reqwest::redirect::Policy;
@@ -55,6 +55,9 @@ impl fmt::Display for MidwayError {
                 write!(f, "no Host header set for request. This is a bug in smithy-rs.")
             },
             ErrorKind::MidwayError(err) => {
+                write!(f, "{err}")
+            },
+            ErrorKind::Directories(err) => {
                 write!(f, "{err}")
             },
         }
@@ -145,6 +148,7 @@ enum ErrorKind {
     NoHostSet,
     ParseError(Cow<'static, str>),
     StreamingBodyUnsupported,
+    Directories(DirectoryError),
 }
 
 impl ErrorKind {
@@ -160,8 +164,7 @@ struct MidwayCookies {
 
 impl MidwayCookies {
     fn load() -> Result<Self, MidwayError> {
-        let midway_cookie =
-            PathBuf::from(std::env::var("HOME").map_err(|_err| ErrorKind::HomeNotSet)?).join(".midway/cookie");
+        let midway_cookie = fig_util::directories::midway_cookie_path().map_err(ErrorKind::Directories)?;
         if !midway_cookie.exists() {
             return Err(ErrorKind::NoCookieFound.into());
         }

@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use anstream::adapter::strip_str;
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
 use fig_integrations::Integration;
@@ -67,12 +68,15 @@ pub async fn install(request: InstallRequest) -> RequestResult {
                             };
 
                             if let Err(err) = res {
-                                errs.push(format!("{integration}: {}", err.verbose_message()));
+                                errs.push(format!(
+                                    "{integration}: {}",
+                                    strip_str(&err.verbose_message().to_string())
+                                ));
                             }
                         }
                     },
                     Err(err) => {
-                        errs.push(format!("{shell}: {}", err.verbose_message()));
+                        errs.push(format!("{shell}: {}", strip_str(&err.verbose_message().to_string())));
                     },
                 }
             }

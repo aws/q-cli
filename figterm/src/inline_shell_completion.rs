@@ -1,3 +1,4 @@
+use std::fmt::Write;
 use std::time::{
     Duration,
     SystemTime,
@@ -14,6 +15,7 @@ use fig_proto::figterm::{
     InlineShellCompletionRequest,
     InlineShellCompletionResponse,
 };
+use fig_settings::history::CommandInfo;
 use flume::Sender;
 use once_cell::sync::Lazy;
 use radix_trie::TrieCommon;
@@ -30,7 +32,7 @@ use crate::history::{
     HistorySender,
 };
 
-static LAST_RECEIVED: Lazy<Mutex<Option<SystemTime>>> = Lazy::new(|| Mutex::new(None));
+static LAST_RECEIVED: Mutex<Option<SystemTime>> = Mutex::const_new(None);
 
 static CACHE_ENABLED: Lazy<bool> = Lazy::new(|| std::env::var_os("Q_INLINE_SHELL_COMPLETION_CACHE_DISABLE").is_none());
 pub static COMPLETION_CACHE: Lazy<Mutex<radix_trie::Trie<String, f64>>> =
@@ -42,20 +44,18 @@ pub async fn handle_request(
     response_tx: Sender<FigtermResponseMessage>,
     history_sender: HistorySender,
 ) {
+    let buffer = figterm_request.buffer.trim_start();
+
     if *CACHE_ENABLED {
         // use cached completion if available
-        if let Some(descendant) = COMPLETION_CACHE
-            .lock()
-            .await
-            .get_raw_descendant(&figterm_request.buffer)
-        {
+        if let Some(descendant) = COMPLETION_CACHE.lock().await.get_raw_descendant(buffer) {
             let insert_text = descendant
                 .iter()
                 .min_by(|(_, a), (_, b)| a.total_cmp(b))
                 .map(|(k, _)| k);
 
             if let Some(insert_text) = insert_text {
-                let trimmed_insert = insert_text.strip_prefix(&figterm_request.buffer).unwrap_or(insert_text);
+                let trimmed_insert = insert_text.strip_prefix(buffer).unwrap_or(insert_text);
 
                 if let Err(err) = response_tx
                     .send_async(FigtermResponseMessage {
@@ -130,8 +130,7 @@ pub async fn handle_request(
             },
         };
 
-        let history: Vec<_> = history.iter().rev().filter_map(|c| c.command.clone()).collect();
-        let prompt = format!("{}\n{}", history.join("\n"), figterm_request.buffer);
+        let prompt = prompt(&history, buffer);
 
         let request = fig_api_client::ai::CodeWhispererRequest {
             file_context: CodeWhispererFileContext {
@@ -163,21 +162,24 @@ pub async fn handle_request(
                 let recommendations = response.completions.unwrap_or_default();
                 let mut completion_cache = COMPLETION_CACHE.lock().await;
 
-                for choice in &recommendations {
-                    let content = choice
-                        .content
-                        .split_once('\n')
-                        .map_or(&*choice.content, |(l, _)| l)
-                        .trim_end();
+                let mut recommendations = recommendations
+                    .into_iter()
+                    .map(|choice| {
+                        choice
+                            .content
+                            .split_once('\n')
+                            .map_or(&*choice.content, |(l, _)| l)
+                            .trim_end()
+                            .to_owned()
+                    })
+                    .collect::<Vec<_>>();
 
-                    let full_text = format!("{}{}", figterm_request.buffer, content);
-
+                for recommendation in &recommendations {
+                    let full_text = format!("{buffer}{recommendation}");
                     completion_cache.insert(full_text, 1.0);
                 }
 
-                recommendations
-                    .first()
-                    .map(|choice| choice.content.trim_end().to_owned())
+                recommendations.first_mut().map(std::mem::take)
             },
             Err(err) => {
                 error!(%err, "Failed to get inline_shell_completion completion");
@@ -205,5 +207,45 @@ pub async fn handle_request(
         }
 
         break;
+    }
+}
+
+fn prompt(history: &[CommandInfo], buffer: &str) -> String {
+    history
+        .iter()
+        .rev()
+        .filter_map(|c| c.command.clone())
+        .chain([buffer.into()])
+        .enumerate()
+        .fold(String::new(), |mut acc, (i, c)| {
+            if i > 0 {
+                acc.push('\n');
+            }
+            let _ = write!(acc, "{:>5}  {c}", i + 1);
+            acc
+        })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_prompt() {
+        let history = vec![
+            CommandInfo {
+                command: Some("echo world".into()),
+                ..Default::default()
+            },
+            CommandInfo {
+                command: Some("echo hello".into()),
+                ..Default::default()
+            },
+        ];
+
+        let prompt = prompt(&history, "echo ");
+        println!("{prompt}");
+
+        assert_eq!(prompt, "    1  echo hello\n    2  echo world\n    3  echo ");
     }
 }

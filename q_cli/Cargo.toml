@@ -16,7 +16,7 @@ gamma = ["fig_install/gamma"]
 [dependencies]
 amzn-codewhisperer-client = { path = "../lib/amzn-codewhisperer-client" }
 amzn-codewhisperer-streaming-client = { path = "../lib/amzn-codewhisperer-streaming-client" }
-anstream = "0.6.13"
+anstream.workspace = true
 arboard = { version = "3.1.1", default-features = false, features = [
     "wayland-data-control",
 ] }
@@ -76,7 +76,9 @@ tracing-subscriber = { version = "0.3.16", features = [
 unicode-width = "0.1.11"
 url = "2.3.1"
 uuid.workspace = true
-which = "6.0.0"
+walkdir = "2.5.0"
+which.workspace = true
+whoami.workspace = true
 winnow = "0.6.2"
 
 [target.'cfg(unix)'.dependencies]

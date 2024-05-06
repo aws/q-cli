@@ -31,11 +31,19 @@ pub async fn status(_request: AuthStatusRequest) -> RequestResult {
 
     Ok(ServerOriginatedSubMessage::AuthStatusResponse(AuthStatusResponse {
         authed: matches!(token, Ok(Some(_))),
-        auth_kind: match token {
+        auth_kind: match &token {
             Ok(Some(auth)) => match auth.token_type() {
                 TokenType::BuilderId => Some(AuthKind::BuilderId.into()),
                 TokenType::IamIdentityCenter => Some(AuthKind::IamIdentityCenter.into()),
             },
+            _ => None,
+        },
+        start_url: match &token {
+            Ok(Some(auth)) => auth.start_url.clone(),
+            _ => None,
+        },
+        region: match &token {
+            Ok(Some(auth)) => auth.region.clone(),
             _ => None,
         },
     })

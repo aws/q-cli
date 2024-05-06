@@ -20,7 +20,7 @@ time.workspace = true
 url = { version = "2.3.1", features = ["serde"] }
 tokio.workspace = true
 tracing.workspace = true
-which = "6.0.0"
+which.workspace = true
 aws-smithy-types = "1.0.3"
 aws-smithy-async = "1.0.3"
 aws-smithy-runtime-api = "1.0.3"

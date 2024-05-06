@@ -21,6 +21,7 @@ publish = false
 version = "1.0.1"
 
 [workspace.dependencies]
+anstream = "0.6.13"
 anyhow = "1.0.75"
 async-trait = "0.1.74"
 auth = { path = "lib/auth" }
@@ -37,6 +38,8 @@ clap = { version = "4.4.0", features = [
     "unicode",
     "wrap_help",
 ] }
+crossterm = "0.27.0"
+dashmap = "5.5.0"
 dirs = "5.0.0"
 fig_api_client = { path = "lib/fig_api_client" }
 fig_diagnostic = { path = "lib/fig_diagnostic" }
@@ -98,6 +101,7 @@ tokio = { version = "1.37.0", features = ["full"] }
 toml = "0.8.12"
 tracing = { version = "0.1.40", features = ["log"] }
 uuid = { version = "1.8.0", features = ["v4", "serde"] }
+which = "6.0.0"
 whoami = "1.5.1"
 
 [workspace.lints.rust]

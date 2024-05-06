@@ -20,7 +20,10 @@ use serde::{
     Serialize,
 };
 
-use crate::error::Result;
+use crate::error::{
+    ErrorExt,
+    Result,
+};
 use crate::{
     backup_file,
     Error,
@@ -603,18 +606,8 @@ impl DotfileShellIntegration {
         }
 
         if contents.ne(&original_contents) {
-            match File::create(&dotfile) {
-                Ok(mut file) => {
-                    file.write_all(contents.as_bytes())?;
-                },
-                Err(e) => {
-                    if e.kind() == std::io::ErrorKind::PermissionDenied {
-                        return Err(Error::PermissionDenied { path: self.path() });
-                    } else {
-                        return Err(e.into());
-                    }
-                },
-            }
+            let mut file = File::create(&dotfile).with_path(self.path())?;
+            file.write_all(contents.as_bytes())?;
         }
         Ok(())
     }
@@ -665,13 +658,7 @@ impl Integration for DotfileShellIntegration {
             contents = contents.trim().to_string();
             contents.push('\n');
 
-            if let Err(e) = std::fs::write(&dotfile, contents.as_bytes()) {
-                if e.kind() == std::io::ErrorKind::PermissionDenied {
-                    return Err(Error::PermissionDenied { path: self.path() });
-                } else {
-                    return Err(e.into());
-                }
-            }
+            std::fs::write(&dotfile, contents.as_bytes()).with_path(self.path())?;
         }
 
         if self.pre {

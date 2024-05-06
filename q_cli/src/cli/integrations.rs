@@ -137,7 +137,11 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
                                 Err(_) => {
                                     installed = true;
                                     if let Err(e) = integration.install().await {
-                                        errs.push(format!("{}: {}", integration.describe(), e.verbose_message()));
+                                        errs.push(format!(
+                                            "{}: {}",
+                                            integration.describe().bold(),
+                                            e.verbose_message()
+                                        ));
                                     }
                                 },
                             }
@@ -152,7 +156,7 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
             if errs.is_empty() {
                 Ok(())
             } else {
-                Err(eyre::eyre!(errs.join("\n\n")))
+                Err(eyre::eyre!("\n\n{}", errs.join("\n\n")))
             }
         },
         Integration::Ssh => {
@@ -242,7 +246,11 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
                                 Ok(_) => {
                                     uninstalled = true;
                                     if let Err(e) = integration.uninstall().await {
-                                        errs.push(format!("{}: {}", integration.describe(), e.verbose_message()));
+                                        errs.push(format!(
+                                            "{}: {}",
+                                            integration.describe().bold(),
+                                            e.verbose_message()
+                                        ));
                                     }
                                 },
                                 Err(_) => {
@@ -260,7 +268,7 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
             if errs.is_empty() {
                 Ok(())
             } else {
-                Err(eyre::eyre!(errs.join("\n\n")))
+                Err(eyre::eyre!("\n\n{}", errs.join("\n\n")))
             }
         },
         Integration::Ssh => {

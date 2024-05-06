@@ -655,6 +655,9 @@ message AuthStatusResponse {
 
   bool authed = 1;
   optional AuthKind auth_kind = 2;
+
+  optional string start_url = 3;
+  optional string region = 4;
 }
 
 message PingRequest {}

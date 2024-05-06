@@ -11,6 +11,7 @@ use tracing::debug;
 
 use crate::error::{
     Error,
+    ErrorExt,
     Result,
 };
 use crate::Integration;
@@ -30,12 +31,47 @@ impl Integration for FileIntegration {
     }
 
     async fn is_installed(&self) -> Result<()> {
-        let current_contents = match fs::read_to_string(&self.path).await {
+        // Check for parent folder permissions issues
+        #[cfg(unix)]
+        {
+            use nix::unistd::{
+                access,
+                AccessFlags,
+            };
+
+            let mut path = self.path.as_path();
+            let mut res = Ok(());
+            loop {
+                if let Some(parent) = path.parent() {
+                    match access(parent, AccessFlags::R_OK | AccessFlags::W_OK | AccessFlags::X_OK) {
+                        Ok(_) => {
+                            break;
+                        },
+                        Err(err) => {
+                            res = Err(Error::PermissionDenied {
+                                path: parent.into(),
+                                inner: err.into(),
+                            });
+                            path = parent;
+                        },
+                    }
+                }
+            }
+            res?;
+        }
+
+        let current_contents = match fs::read_to_string(&self.path).await.with_path(&self.path) {
             Ok(contents) => contents,
-            Err(err) if err.kind() == ErrorKind::NotFound => {
+            Err(Error::Io(err)) if err.kind() == ErrorKind::PermissionDenied => {
+                return Err(Error::PermissionDenied {
+                    path: self.path.clone(),
+                    inner: err,
+                });
+            },
+            Err(Error::Io(err)) if err.kind() == ErrorKind::NotFound => {
                 return Err(Error::FileDoesNotExist(self.path.clone().into()));
             },
-            Err(err) => return Err(err.into()),
+            Err(err) => return Err(err),
         };
         if current_contents.ne(&self.contents) {
             let message = format!("{} should contain:\n{}", self.path.display(), self.contents);
@@ -53,8 +89,9 @@ impl Integration for FileIntegration {
             .path
             .parent()
             .ok_or_else(|| Error::Custom("Could not get integration file directory".into()))?;
+
         if !parent_dir.is_dir() {
-            fs::create_dir_all(parent_dir).await?;
+            fs::create_dir_all(&parent_dir).await.with_path(parent_dir)?;
         }
 
         let mut options = File::options();
@@ -65,27 +102,19 @@ impl Integration for FileIntegration {
             options.mode(mode);
         }
 
-        match options.open(&self.path).await {
-            Ok(mut file) => {
-                debug!(path =? self.path, "Writing file integrations");
-                file.write_all(self.contents.as_bytes()).await?;
-                Ok(())
-            },
-            Err(err) if err.kind() == ErrorKind::PermissionDenied => Err(Error::PermissionDenied {
-                path: self.path.clone(),
-            }),
-            Err(err) => Err(err.into()),
-        }
+        let mut file = options.open(&self.path).await.with_path(&self.path)?;
+
+        debug!(path =? self.path, "Writing file integrations");
+        file.write_all(self.contents.as_bytes()).await?;
+
+        Ok(())
     }
 
     async fn uninstall(&self) -> Result<()> {
-        match fs::remove_file(&self.path).await {
+        match fs::remove_file(&self.path).await.with_path(&self.path) {
             Ok(_) => Ok(()),
-            Err(err) if err.kind() == ErrorKind::NotFound => Ok(()),
-            Err(err) if err.kind() == ErrorKind::PermissionDenied => Err(Error::PermissionDenied {
-                path: self.path.clone(),
-            }),
-            Err(err) => Err(err.into()),
+            Err(Error::Io(err)) if err.kind() == ErrorKind::NotFound => Ok(()),
+            Err(err) => Err(err),
         }
     }
 }

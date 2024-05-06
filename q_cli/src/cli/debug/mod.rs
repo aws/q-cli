@@ -1,3 +1,5 @@
+mod fix_permissions;
+
 use std::fmt::Write as _;
 use std::io::{
     Read,
@@ -218,7 +220,9 @@ pub enum DebugSubcommand {
         file_type: String,
     },
     /// Open up the devtools of a specific webview
-    Devtools { app: App },
+    Devtools {
+        app: App,
+    },
     /// Displays remote index
     GetIndex {
         channel: String,
@@ -232,6 +236,7 @@ pub enum DebugSubcommand {
     ListIntelliJVariants,
     /// Disables sourcing of user shell config and instead uses a minimal shell config
     Shell,
+    FixPermissions,
 }
 
 impl DebugSubcommand {
@@ -849,6 +854,9 @@ impl DebugSubcommand {
                     },
                     None => error!("Could not determine current shell or shell not supported"),
                 }
+            },
+            DebugSubcommand::FixPermissions => {
+                fix_permissions::fix_permissions()?;
             },
         }
         Ok(ExitCode::SUCCESS)

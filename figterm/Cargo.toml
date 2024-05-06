@@ -23,8 +23,8 @@ bstr.workspace = true
 bytes.workspace = true
 cfg-if.workspace = true
 clap.workspace = true
-crossterm = "0.27.0"
-dashmap = "5.3.4"
+crossterm.workspace = true
+dashmap.workspace = true
 fig_api_client.workspace = true
 fig_install.workspace = true
 fig_ipc.workspace = true
@@ -37,6 +37,7 @@ fig_util.workspace = true
 filedescriptor = "0.8"
 flume = "0.11.0"
 fnv = "1.0.7"
+indoc.workspace = true
 memmem = "0.1.1"
 num-traits = "0.2"
 once_cell.workspace = true
@@ -50,6 +51,8 @@ serde.workspace = true
 serde_json.workspace = true
 shell-color.workspace = true
 shell-words = "1.1"
+shellexpand = "3.1.0"
+shlex = "1.3.0"
 sysinfo.workspace = true
 time.workspace = true
 tokio.workspace = true
@@ -60,7 +63,7 @@ tracing-subscriber = { version = "0.3.16", features = [
     "parking_lot",
 ] }
 uuid.workspace = true
-which = "6.0.0"
+which.workspace = true
 
 [target.'cfg(unix)'.dependencies]
 nix.workspace = true

@@ -7,7 +7,7 @@ use tokio::sync::broadcast::{
     Sender,
 };
 
-const CHANNEL_SIZE: usize = 16;
+const CHANNEL_SIZE: usize = 8;
 
 pub static NOTIFICATION_BUS: Lazy<NotificationBus> = Lazy::new(NotificationBus::new);
 
@@ -47,7 +47,7 @@ impl JsonNotification {
 pub struct NotificationBus {
     state_channels: DashMap<String, Sender<JsonNotification>, FnvBuildHasher>,
     settings_channels: DashMap<String, Sender<JsonNotification>, FnvBuildHasher>,
-    user_email_channel: Sender<Option<String>>,
+    midway_channel: Sender<()>,
 }
 
 impl std::default::Default for NotificationBus {
@@ -55,7 +55,7 @@ impl std::default::Default for NotificationBus {
         Self {
             state_channels: DashMap::default(),
             settings_channels: DashMap::default(),
-            user_email_channel: broadcast::channel(CHANNEL_SIZE).0,
+            midway_channel: broadcast::channel(CHANNEL_SIZE).0,
         }
     }
 }
@@ -85,8 +85,8 @@ impl NotificationBus {
             .subscribe()
     }
 
-    pub fn subscribe_user_email(&self) -> Receiver<Option<String>> {
-        self.user_email_channel.subscribe()
+    pub fn subscribe_midway(&self) -> Receiver<()> {
+        self.midway_channel.subscribe()
     }
 
     pub fn send_state(&self, key: impl AsRef<str>, value: JsonNotification) {
@@ -101,8 +101,8 @@ impl NotificationBus {
         }
     }
 
-    pub fn send_user_email(&self, value: Option<String>) {
-        self.user_email_channel.send(value).ok();
+    pub fn send_midway(&self) {
+        self.midway_channel.send(()).ok();
     }
 
     pub fn send_state_new(&self, key: impl AsRef<str>, value: &serde_json::Value) {

@@ -814,7 +814,7 @@ impl InternalSubcommand {
                     return Ok(ExitCode::FAILURE);
                 };
 
-                writeln!(stdout(), "{buffer}{insert_text}").ok();
+                let _ = writeln!(stdout(), "{buffer}{insert_text}");
             },
             InternalSubcommand::InlineShellCompletionAccept { buffer, suggestion } => {
                 fig_telemetry::send_inline_shell_completion_actioned(true, buffer.len(), suggestion.len()).await;

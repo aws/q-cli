@@ -1,9 +1,12 @@
 use std::borrow::Cow;
+use std::io;
 use std::path::{
     Path,
     PathBuf,
 };
 
+use fig_util::CLI_BINARY_NAME;
+use owo_colors::OwoColorize as _;
 use thiserror::Error;
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -41,7 +44,9 @@ pub enum Error {
     #[error(transparent)]
     PList(#[from] plist::Error),
     #[error("Permission denied: {}", .path.display())]
-    PermissionDenied { path: PathBuf },
+    PermissionDenied { path: PathBuf, inner: io::Error },
+    #[error("nix: {}", .0)]
+    Nix(#[from] nix::Error),
 
     #[error("{context}: {error}")]
     Context {
@@ -51,16 +56,45 @@ pub enum Error {
     },
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+
+pub struct VerboseMessage {
+    pub title: String,
+    pub message: Option<String>,
+}
+
+impl std::fmt::Display for VerboseMessage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}", self.title)?;
+        if let Some(message) = &self.message {
+            writeln!(f, "\n{}\n", message)?;
+        }
+        Ok(())
+    }
+}
+
 impl Error {
-    pub fn verbose_message(&self) -> String {
+    /// Returns a verbose message with ansii colors
+    pub fn verbose_message(&self) -> VerboseMessage {
         match self {
-            Self::PermissionDenied { path } => {
-                format!(
-                    "Permission denied to write to {path}\nTry running: sudo chown $USER '{path}' && sudo chmod 644 '{path}'",
-                    path = path.display()
-                )
+            Self::PermissionDenied { path, inner } => VerboseMessage {
+                title: format!("Permissions denied for {}", path.display().bold()),
+                message: Some(
+                    [
+                        format!(
+                            "To fix run try following command: {}",
+                            format!("sudo {CLI_BINARY_NAME} debug fix-permissions").magenta()
+                        ),
+                        "".into(),
+                        format!("    Error: {}", inner.red()),
+                    ]
+                    .join("\n"),
+                ),
             },
-            err => err.to_string(),
+            err => VerboseMessage {
+                title: err.to_string(),
+                message: None,
+            },
         }
     }
 }
@@ -69,6 +103,10 @@ pub(crate) trait ErrorExt<T, E> {
     #[allow(dead_code)]
     fn context(self, context: impl Into<Cow<'static, str>>) -> Result<T, Error>;
     fn with_context(self, context_fn: impl FnOnce(&E) -> String) -> Result<T, Error>;
+
+    /// If this is an [`io::Error`] and is [`io::ErrorKind::PermissionDenied`] map to
+    /// [`Error::PermissionDenied`]
+    fn with_path(self, path: impl AsRef<Path>) -> Result<T, Error>;
 }
 
 impl<T, E: Into<Error>> ErrorExt<T, E> for Result<T, E> {
@@ -90,6 +128,21 @@ impl<T, E: Into<Error>> ErrorExt<T, E> for Result<T, E> {
             Error::Context {
                 error: Box::new(error),
                 context: context.into(),
+            }
+        })
+    }
+
+    /// Add a path to the error if this is an [`io::Error`] and is
+    /// [`io::ErrorKind::PermissionDenied`] map to [`Error::PermissionDenied`]
+    fn with_path(self, path: impl AsRef<Path>) -> Result<T, Error> {
+        self.map_err(|err| {
+            let error = err.into();
+            match error {
+                Error::Io(err) if err.kind() == io::ErrorKind::PermissionDenied => Error::PermissionDenied {
+                    path: path.as_ref().to_path_buf(),
+                    inner: err,
+                },
+                _ => error,
             }
         })
     }

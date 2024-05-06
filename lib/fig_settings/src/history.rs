@@ -34,7 +34,7 @@ fn escape_string(s: impl AsRef<str>) -> String {
         .replace('\x0c', "\\f")
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct CommandInfo {
     pub command: Option<String>,
     pub shell: Option<String>,

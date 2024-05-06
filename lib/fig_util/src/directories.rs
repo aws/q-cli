@@ -6,8 +6,6 @@ use camino::Utf8PathBuf;
 use thiserror::Error;
 use time::OffsetDateTime;
 
-#[cfg(target_os = "macos")]
-use crate::consts::CLI_BINARY_NAME;
 use crate::env_var::Q_PARENT;
 use crate::system_info::is_remote;
 use crate::RUNTIME_DIR_NAME;
@@ -257,11 +255,6 @@ pub fn utc_backup_dir() -> Result<PathBuf> {
     Ok(backups_dir()?.join(now))
 }
 
-/// The directory where cached scripts are stored
-pub fn scripts_cache_dir() -> Result<PathBuf> {
-    Ok(cache_dir()?.join("scripts"))
-}
-
 /// The desktop app socket path
 ///
 /// - MacOS: `$TMPDIR/cwrun/desktop.sock`
@@ -347,25 +340,11 @@ pub fn update_lock_path() -> Result<PathBuf> {
     Ok(fig_data_dir()?.join("update.lock"))
 }
 
-/// Path to the main credentials file
-pub fn credentials_path() -> Result<PathBuf> {
-    Ok(fig_data_dir()?.join("credentials.json"))
-}
-
-/// The path to the cli, relative to the running binary
-pub fn relative_cli_path() -> Result<PathBuf> {
-    cfg_if::cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            let path = crate::current_exe_origin().unwrap().parent().unwrap().join(CLI_BINARY_NAME);
-            if path.exists() {
-                Ok(path)
-            } else {
-                Err(DirectoryError::FileDoesNotExist(path))
-            }
-        } else {
-            Ok(std::path::Path::new(crate::CLI_BINARY_NAME).into())
-        }
-    }
+/// The path to the midway cookie
+///
+/// Path: `$HOME/.midway/cookie`
+pub fn midway_cookie_path() -> Result<PathBuf> {
+    Ok(home_dir()?.join(".midway").join("cookie"))
 }
 
 utf8_dir!(home_dir);
@@ -378,7 +357,6 @@ utf8_dir!(figterm_socket_path, session_id: impl Display);
 utf8_dir!(manifest_path);
 utf8_dir!(backups_dir);
 utf8_dir!(logs_dir);
-utf8_dir!(relative_cli_path);
 
 // TODO(grant): Add back path tests on linux
 #[cfg(all(test, not(target_os = "linux")))]
@@ -550,10 +528,10 @@ mod tests {
     }
 
     #[test]
-    fn snapshot_credentials_path() {
-        linux!(credentials_path(), @"$HOME/.local/share/amazon-q/credentials.json");
-        macos!(credentials_path(), @"$HOME/Library/Application Support/amazon-q/credentials.json");
-        windows!(credentials_path(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\credentials.json");
+    fn snapshot_midway_cookie_path() {
+        linux!(midway_cookie_path(), @"$HOME/.midway/cookie");
+        macos!(midway_cookie_path(), @"$HOME/.midway/cookie");
+        windows!(midway_cookie_path(), @r"C:\Users\$USER\.midway\cookie");
     }
 
     #[test]

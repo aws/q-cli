@@ -11,6 +11,11 @@ use serde::{
     Deserialize,
     Serialize,
 };
+use tokio::sync::{
+    MappedMutexGuard,
+    Mutex,
+    MutexGuard,
+};
 use tracing::error;
 use url::Url;
 use wry::http::header::CONTENT_TYPE;
@@ -93,10 +98,17 @@ struct SpecIndex {
     diff_versioned_completions: Vec<String>,
 }
 
-async fn remote_index_json(client: &Client) -> &Vec<Result<SpecIndexMeta>> {
-    static INDEX_CACHE: tokio::sync::OnceCell<Vec<Result<SpecIndexMeta>>> = tokio::sync::OnceCell::const_new();
-    INDEX_CACHE
-        .get_or_init(|| async {
+static INDEX_CACHE: Mutex<Option<Vec<Result<SpecIndexMeta>>>> = Mutex::const_new(None);
+
+pub async fn clear_index_cache() {
+    *INDEX_CACHE.lock().await = None;
+}
+
+async fn remote_index_json(client: &Client) -> MappedMutexGuard<'_, Vec<Result<SpecIndexMeta>>> {
+    let mut cache = INDEX_CACHE.lock().await;
+
+    if cache.is_none() {
+        *cache = Some(
             future::join_all(CDNS.iter().map(|cdn_source| async move {
                 if AuthType::Midway == cdn_source.auth_type {
                     let secret_store = match SecretStore::new().await {
@@ -150,16 +162,18 @@ async fn remote_index_json(client: &Client) -> &Vec<Result<SpecIndexMeta>> {
             .await
             .into_iter()
             .flatten()
-            .collect::<Vec<_>>()
-        })
-        .await
+            .collect::<Vec<_>>(),
+        );
+    }
+
+    MutexGuard::map(cache, |cache| cache.as_mut().unwrap())
 }
 
 async fn merged_index_json(client: &Client) -> Result<SpecIndex> {
     let mut completions = FnvHashSet::default();
     let mut diff_versioned_completions = FnvHashSet::default();
 
-    for res in remote_index_json(client).await {
+    for res in remote_index_json(client).await.iter() {
         match res {
             Ok(meta) => {
                 completions.extend(meta.spec_index.completions.clone());
@@ -199,7 +213,7 @@ pub async fn handle(request: Request<Vec<u8>>, _: WindowId) -> anyhow::Result<Re
         ))
     } else {
         // default to trying the first cdn
-        let mut cdn_source = &CDNS[0];
+        let mut cdn_source = CDNS[0].clone();
 
         let spec_name = path.strip_prefix('/').unwrap_or(path);
         let spec_name = spec_name.strip_suffix(".js").unwrap_or(spec_name);
@@ -211,7 +225,7 @@ pub async fn handle(request: Request<Vec<u8>>, _: WindowId) -> anyhow::Result<Re
                 .binary_search_by(|name| name.as_str().cmp(spec_name))
                 .is_ok()
             {
-                cdn_source = &meta.cdn_source;
+                cdn_source = meta.cdn_source.clone();
                 break;
             }
         }
