@@ -3,7 +3,7 @@ from os import environ
 import platform
 import shutil
 from typing import Dict, List
-from util import info, isDarwin, isLinux, get_variant, run_cmd_output, warn
+from util import info, isBrazil, isDarwin, isLinux, get_variant, run_cmd_output, warn
 from datetime import datetime, timezone
 
 
@@ -30,7 +30,7 @@ def build_time() -> str:
 
 @cache
 def skip_fish_tests() -> bool:
-    skip_fish_tests = shutil.which("fish") is None and environ.get("BRAZIL_BUILD_HOME") is not None
+    skip_fish_tests = shutil.which("fish") is None and isBrazil()
     if skip_fish_tests:
         warn("Skipping fish tests in brazil")
     return skip_fish_tests

@@ -3,6 +3,7 @@ import os
 import subprocess
 from build import build
 from const import CLI_PACKAGE_NAME
+from doc import run_doc
 from rust import rust_env
 from test import all_tests
 
@@ -81,6 +82,9 @@ cli_subparser.add_argument(
     help="Arguments to pass to the CLI",
 )
 
+# run the docs command
+subparsers.add_parser(name="doc")
+
 args = parser.parse_args()
 
 match args.subparser:
@@ -100,6 +104,8 @@ match args.subparser:
         all_tests(
             clippy_fail_on_warn=args.clippy_fail_on_warn,
         )
+    case "doc":
+        run_doc()
     case "cli":
         subprocess.run(
             [

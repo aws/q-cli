@@ -23,10 +23,10 @@ phases:
       # Create fish config dir to prevent rustup from failing
       - mkdir -p "$HOME/.config/fish/conf.d"
       # Install cargo
-      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - curl --retry 5 --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
       - . "$HOME/.cargo/env"
       # Install python/node via mise (https://mise.jdx.dev/continuous-integration.html)
-      - curl --proto '=https' --tlsv1.2 -sSf https://mise.run | sh
+      - curl --retry 5 --proto '=https' --tlsv1.2 -sSf https://mise.run | sh
       - mise install
       - eval "$(mise activate bash --shims)"
       # Enable corepack for pnpm

@@ -49,8 +49,6 @@ if [[ $# -gt 0 ]] && [[ "$1" = clean ]]; then
     exit 0
 fi
 
-
-
 # Interact directly with pnpm with the proxy
 # if [[ $# -gt 0 ]] && [[ "$1" = pnpm ]]; then
 #     npm_registry
@@ -58,8 +56,40 @@ fi
 #     exit 0
 # fi
 
-cargo brazil configure
-cargo brazil fetch
+# Generate the necessary Cargo configuration so that idiomatic commands work.
+# This produces two things:
+#
+# 1. rust-toolchain.toml that sets a Rustup override to a Brazil-managed
+#    toolchain that lives in build/private/cargo-brazil-toolchain. It's only
+#    purpose is to apply environment variables from
+#    build/private/cargo-home/brazil.toml, which primarily means setting
+#    CARGO_HOME to build/private/cargo-home and PATH to include the appropriate
+#    Brazil dependencies (like Rustup).
+# 2. A Cargo configuration file in CARGO_HOME that sets the various bits and
+#    pieces needed to make Cargo work right in the context of Brazil.
+#
+# Once this command has been run, standard Cargo commands _and_ `cargo brazil`
+# should be executable directly on the command-line.
+#
+# Note that the CARGO_HOME=$() + export here is only needed to also support
+# non-Rustup-based RustLang1x builds. If you're writing a custom build script
+# and copy-pasting this and don't need that (you probably don't), then just
+# make this a simple call to `cargo brazil configure`.
+CARGO_HOME=$(
+    # Work around https://github.com/rust-lang/cargo/issues/7431,
+    # which makes rustup prepend ~/.rustup/bin to `$PATH`, which makes
+    # CargoBrazil think it's forced to _not_ use Brazil artifacts.
+    #
+    # Can be removed once upstream fix from
+    # https://github.com/rust-lang/rustup/pull/2978 is merged and released.
+    env CARGO_HOME=/rust-lang/cargo/issues/7431 \
+    cargo brazil configure
+)
+export CARGO_HOME
+
+cargo brazil fetch --workspace
+
+rustup +stable component add llvm-tools-preview
 
 BUILD_DIR=$(brazil-path package-build-root)
 PACKAGE_DIR=$(brazil-path package-src-root)
@@ -80,3 +110,4 @@ fi
 # npm_registry
 
 python3.11 build-scripts/main.py test --clippy-fail-on-warn
+python3.11 build-scripts/main.py doc

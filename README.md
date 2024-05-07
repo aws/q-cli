@@ -76,16 +76,12 @@ CLI. Several projects live here:
 
 ### 1. Clone repo
 
-Using GitHub CLI:
-
 ```bash
-gh repo clone withfig/macos
-```
-
-Using Git SSH:
-
-```bash
-git clone git@github.com:withfig/macos
+brazil ws create --name fig-io \
+  --root "$HOME/workplace/fig-io" \
+  --versionset fig-io/development
+cd "$HOME/workplace/fig-io"
+brazil ws use -p FigIoDesktop
 ```
 
 ### 2. Install platform dependencies
