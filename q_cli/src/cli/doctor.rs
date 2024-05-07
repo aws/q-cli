@@ -720,8 +720,9 @@ impl DoctorCheck for MidwayCheck {
                 reason: "Failed to make midway request".into(),
                 info: vec![
                     format!(
-                        "Try running `mwinit` and restarting the app with {}.",
-                        format!("{PTY_BINARY_NAME} restart").magenta()
+                        "Try running {} and restarting the app with {}.",
+                        "mwinit".magenta(),
+                        format!("{CLI_BINARY_NAME} restart").magenta()
                     )
                     .into(),
                 ],

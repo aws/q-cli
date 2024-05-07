@@ -209,7 +209,7 @@ You can include additional context by adding the following to your prompt:
                         },
                     }
 
-                    tokio::time::sleep(Duration::from_millis(5)).await;
+                    tokio::time::sleep(Duration::from_millis(2)).await;
                 }
 
                 if ended {
