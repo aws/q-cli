@@ -1,5 +1,8 @@
 use std::borrow::Cow;
-use std::io;
+use std::io::{
+    self,
+    ErrorKind,
+};
 use std::path::{
     Path,
     PathBuf,
@@ -82,11 +85,11 @@ impl Error {
                 message: Some(
                     [
                         format!(
-                            "To fix run try following command: {}",
+                            "To automatically fix the permissions run: {}",
                             format!("sudo {CLI_BINARY_NAME} debug fix-permissions").magenta()
                         ),
                         "".into(),
-                        format!("    Error: {}", inner.red()),
+                        format!("  Error: {}", inner.red()),
                     ]
                     .join("\n"),
                 ),
@@ -138,7 +141,7 @@ impl<T, E: Into<Error>> ErrorExt<T, E> for Result<T, E> {
         self.map_err(|err| {
             let error = err.into();
             match error {
-                Error::Io(err) if err.kind() == io::ErrorKind::PermissionDenied => Error::PermissionDenied {
+                Error::Io(err) if err.kind() == ErrorKind::PermissionDenied => Error::PermissionDenied {
                     path: path.as_ref().to_path_buf(),
                     inner: err,
                 },

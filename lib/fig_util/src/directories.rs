@@ -31,8 +31,6 @@ pub enum DirectoryError {
     NoRuntimeDirectory,
     #[error("non absolute path: {0:?}")]
     NonAbsolutePath(PathBuf),
-    #[error("file does not exist: {0:?}")]
-    FileDoesNotExist(PathBuf),
     #[error("IO Error: {0}")]
     Io(#[from] std::io::Error),
     #[error(transparent)]

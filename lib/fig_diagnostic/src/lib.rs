@@ -38,14 +38,13 @@ where
 #[serde(rename_all = "kebab-case")]
 pub struct BuildDetails {
     pub version: String,
-    #[serde(rename = "hash")]
-    pub build_hash: Option<&'static str>,
-    pub build_datetime: Option<String>,
+    pub hash: Option<&'static str>,
+    pub date: Option<String>,
 }
 
 impl BuildDetails {
     pub fn new() -> BuildDetails {
-        let build_datetime = fig_util::consts::build::DATETIME
+        let date = fig_util::consts::build::DATETIME
             .and_then(|input| OffsetDateTime::parse(input, &Rfc3339).ok())
             .and_then(|time| {
                 let rfc3339 = time.format(&Rfc3339).ok()?;
@@ -55,8 +54,8 @@ impl BuildDetails {
 
         BuildDetails {
             version: env!("CARGO_PKG_VERSION").to_owned(),
-            build_hash: HASH,
-            build_datetime,
+            hash: HASH,
+            date,
         }
     }
 }

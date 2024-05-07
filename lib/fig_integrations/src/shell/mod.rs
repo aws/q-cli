@@ -1,5 +1,8 @@
 use std::fs::File;
-use std::io::Write;
+use std::io::{
+    ErrorKind,
+    Write,
+};
 use std::path::PathBuf;
 
 use async_trait::async_trait;
@@ -675,7 +678,7 @@ impl Integration for DotfileShellIntegration {
     async fn is_installed(&self) -> Result<()> {
         let dotfile = self.dotfile_path();
 
-        let filtered_contents: String = match std::fs::read_to_string(&dotfile) {
+        let filtered_contents: String = match std::fs::read_to_string(&dotfile).with_path(&dotfile) {
             // Remove comments and empty lines.
             Ok(contents) => {
                 // Check for existence of ignore flag
@@ -691,10 +694,12 @@ impl Integration for DotfileShellIntegration {
                     .replace_all(&contents, "")
                     .into()
             },
-            _ => {
+            Err(Error::Io(err)) if err.kind() == ErrorKind::NotFound => {
                 return Err(Error::FileDoesNotExist(dotfile.into()));
             },
+            Err(err) => return Err(err),
         };
+
         let filtered_contents = filtered_contents.trim();
 
         if self.pre {

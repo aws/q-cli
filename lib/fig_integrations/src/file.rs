@@ -62,12 +62,6 @@ impl Integration for FileIntegration {
 
         let current_contents = match fs::read_to_string(&self.path).await.with_path(&self.path) {
             Ok(contents) => contents,
-            Err(Error::Io(err)) if err.kind() == ErrorKind::PermissionDenied => {
-                return Err(Error::PermissionDenied {
-                    path: self.path.clone(),
-                    inner: err,
-                });
-            },
             Err(Error::Io(err)) if err.kind() == ErrorKind::NotFound => {
                 return Err(Error::FileDoesNotExist(self.path.clone().into()));
             },

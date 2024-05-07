@@ -220,9 +220,7 @@ pub enum DebugSubcommand {
         file_type: String,
     },
     /// Open up the devtools of a specific webview
-    Devtools {
-        app: App,
-    },
+    Devtools { app: App },
     /// Displays remote index
     GetIndex {
         channel: String,
@@ -236,6 +234,7 @@ pub enum DebugSubcommand {
     ListIntelliJVariants,
     /// Disables sourcing of user shell config and instead uses a minimal shell config
     Shell,
+    /// Update the shell config permissions to have the correct owner and access rights
     FixPermissions,
 }
 
