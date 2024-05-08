@@ -603,14 +603,38 @@ const getGenerateSpecCacheKey = (
   completionObj: Internal.Subcommand,
   tokenArray: string[],
 ): string | undefined => {
+  let cacheKey: string | undefined;
+
   // TODO(grant): remove this after the mechanic spec is updated to use generateSpecCacheKey
   if (
     completionObj.name?.[0] === "mechanic" &&
     tokenArray?.[0] === "mechanic"
   ) {
-    return "mechanic";
+    cacheKey = "mechanic";
   }
-  return undefined;
+
+  const generateSpecCacheKey = completionObj.generateSpecCacheKey;
+  if (generateSpecCacheKey) {
+    if (typeof generateSpecCacheKey === "string") {
+      cacheKey = generateSpecCacheKey;
+    } else if (typeof generateSpecCacheKey === "function") {
+      cacheKey = generateSpecCacheKey({
+        tokens: tokenArray,
+      });
+    } else {
+      logger.error(
+        "generateSpecCacheKey must be a string or function",
+        generateSpecCacheKey,
+      );
+    }
+  }
+
+  if (typeof cacheKey === "string") {
+    // Prepend the spec name to the cacheKey to avoid collisions between specs.
+    return `${tokenArray[0]}:${cacheKey}`;
+  } else {
+    return undefined;
+  }
 };
 
 const generateSpecForState = async (
