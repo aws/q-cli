@@ -10,7 +10,6 @@ const DEFAULT_CONSOLE = {
 };
 
 export const LOG_DIR = window.fig.constants?.logsDir;
-export const DATA_DIR = window.fig.constants?.figDataDir;
 
 const NEW_LOG_FN = (...content: unknown[]) => {
   fs.append(

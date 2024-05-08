@@ -11,7 +11,6 @@ import React, {
 
 import logger from "loglevel";
 import { getCWDForFilesAndFolders } from "@internal/shared/utils";
-import { canLoadSpecProtocol } from "@amzn/fig-io-autocomplete-parser";
 import * as jsxRuntime from "react/jsx-runtime";
 import * as figApiBindings from "@withfig/api-bindings";
 import { getMaxHeight, getMaxWidth, POPOUT_WIDTH } from "./window";
@@ -210,11 +209,6 @@ function App() {
   useFigClearCache();
 
   useEffect(() => {
-    // Dont preload if we can load the locally cached figspec
-    if (canLoadSpecProtocol()) {
-      return;
-    }
-
     Settings.get(SETTINGS.DISABLE_HISTORY_LOADING)
       .catch(() => undefined)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

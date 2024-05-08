@@ -19,12 +19,12 @@ import { SpecLocationSource } from "@internal/shared/utils";
 import { Suggestion } from "@internal/shared/internal";
 import {
   executeCommand,
-  fread,
   executeLoginShell,
   SETTINGS,
   getSetting,
 } from "@amzn/fig-io-api-bindings-wrappers";
 import { captureError } from "../sentry";
+import { History } from "@withfig/api-bindings";
 import {
   AnnotatedCommand,
   HistoryEntry,
@@ -34,7 +34,6 @@ import {
   HistoryContext,
 } from "./helpers";
 import { MissingSpecError } from "./errors";
-import { DATA_DIR } from "../utils";
 
 const historyLogger = getLogger("history");
 historyLogger.setDefaultLevel("warn");
@@ -236,50 +235,25 @@ export const loadHistorySource = async (
   return { entries, historyValueIndex };
 };
 
-const loadFigHistory = async (): Promise<HistoryEntry[]> => {
-  const hist = await fread(`${DATA_DIR}/history`);
-  return hist.split("\n").reduce(
-    (acc, line) => {
-      if (line.startsWith("- command: ")) {
-        const text = line.slice("- command: ".length);
-        acc.items.push({ text, context: {}, commands: [] });
-        acc.valid = true;
-        return acc;
-      }
-
-      const currentItem = acc.items[acc.items.length - 1];
-      if (acc.valid && currentItem) {
-        const [key, ...remaining] = line.split(/: /);
-        const value = remaining.join(": ");
-        if (!currentItem.context) {
-          currentItem.context = {};
-        }
-        switch (key.trim()) {
-          case "exit_code":
-            currentItem.context.exitCode = parseInt(value, 10);
-            break;
-          case "session_id":
-            currentItem.context.terminalSession = value;
-            break;
-          case "shell":
-            currentItem.context.shell = value;
-            break;
-          case "cwd":
-            currentItem.context.cwd = value;
-            break;
-          case "time":
-            currentItem.context.time = parseInt(value, 10);
-            break;
-          default:
-            acc.valid = false;
-            break;
-        }
-      }
-      return acc;
-    },
-    { valid: true, items: [] } as { valid: boolean; items: HistoryEntry[] },
-  ).items;
-};
+const loadFigHistory = async (): Promise<HistoryEntry[]> =>
+  History.query(
+    "SELECT command, shell, session_id, cwd, start_time, exit_code FROM history",
+    [],
+  ).then((history) =>
+    history.map((entry) => {
+      return {
+        text: entry.command,
+        context: {
+          cwd: entry.cwd,
+          shell: entry.shell,
+          exitCode: entry.exit_code,
+          terminalSession: entry.session_id,
+          time: entry.start_time,
+        },
+        commands: [],
+      } as HistoryEntry;
+    }),
+  );
 
 export const loadHistory = async (aliases: AliasMap) => {
   const loadHistoryCommand = async (
