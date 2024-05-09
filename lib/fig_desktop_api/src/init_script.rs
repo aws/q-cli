@@ -64,8 +64,8 @@ pub struct Constants {
     linux: LinuxConstants,
 }
 
-impl Default for Constants {
-    fn default() -> Self {
+impl Constants {
+    fn new(support_api_proto: bool) -> Self {
         let themes_folder = directories::themes_dir()
             .ok()
             .and_then(|dir| Utf8PathBuf::try_from(dir).ok());
@@ -109,7 +109,7 @@ impl Default for Constants {
             arch: consts::ARCH,
             env: std::env::vars().collect(),
             new_uri_format: true,
-            support_api_proto: true,
+            support_api_proto,
             api_proto_url: "api://localhost".to_string(),
             midway: midway_cookie_path().map_or(false, |p| p.is_file()),
             #[cfg(target_os = "macos")]
@@ -130,12 +130,12 @@ impl Constants {
     }
 }
 
-pub fn javascript_init() -> String {
+pub fn javascript_init(support_api_proto: bool) -> String {
     [
         r#"if (!window.fig || !window.fig.quiet) console.log("[fig] declaring constants...");"#.into(),
         "if (!window.fig) window.fig = {};".into(),
         "if (!window.fig.constants) fig.constants = {};".into(),
-        Constants::default().script(),
+        Constants::new(support_api_proto).script(),
     ]
     .join("\n")
 }

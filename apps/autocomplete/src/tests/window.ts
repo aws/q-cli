@@ -5,6 +5,7 @@ import {
   MAX_WIDTH,
   AUTOCOMPLETE_HEIGHT,
 } from "../window";
+import { beforeEach, describe, expect, it } from "vitest";
 
 describe("getMaxWidth", () => {
   beforeEach(() => {

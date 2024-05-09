@@ -9,7 +9,7 @@ const DEFAULT_CONSOLE = {
   error: console.error,
 };
 
-export const LOG_DIR = window.fig.constants?.logsDir;
+export const LOG_DIR = window.fig?.constants?.logsDir;
 
 const NEW_LOG_FN = (...content: unknown[]) => {
   fs.append(

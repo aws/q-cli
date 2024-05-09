@@ -202,13 +202,13 @@ export const getCWDForFilesAndFolders = (
 
 export function localProtocol(domain: string, path: string) {
   let modifiedDomain;
-  if (domain === "path" && !window.fig.constants?.newUriFormat) {
+  if (domain === "path" && !window.fig?.constants?.newUriFormat) {
     modifiedDomain = "";
   } else {
     modifiedDomain = domain;
   }
 
-  if (window.fig.constants?.os === "windows") {
+  if (window.fig?.constants?.os === "windows") {
     return `https://fig.${modifiedDomain}/${path}`;
   }
   return `fig://${modifiedDomain}/${path}`;
@@ -241,7 +241,7 @@ export async function exponentialBackoff<T>(
     try {
       return await withTimeout(options.attemptTimeout, fn());
     } catch (error) {
-      retries++;
+      retries += 1;
       delay *= 2;
       delay += Math.floor(Math.random() * options.jitter);
 

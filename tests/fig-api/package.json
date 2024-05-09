@@ -2,18 +2,17 @@
   "name": "fig-api-tests",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "license": "MIT",
-  "dependencies": {
-    "@types/jest": "^29.5.11",
-    "@withfig/api-bindings": "workspace:^",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
-    "jsdom": "^23.0.1",
-    "ts-jest": "^29.1.1",
-    "typescript": "^5.3.3"
-  },
   "scripts": {
-    "test": "jest",
+    "test": "vitest",
     "precommit": "exit 0"
+  },
+  "devDependencies": {
+    "@internal/types": "link:../../packages/types",
+    "@types/node": "^20.10.4",
+    "@withfig/api-bindings": "workspace:^",
+    "typescript": "^5.3.3",
+    "vitest": "^1.6.0"
   }
 }

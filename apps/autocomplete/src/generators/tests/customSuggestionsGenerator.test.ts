@@ -2,6 +2,15 @@ import { Annotation } from "@amzn/fig-io-autocomplete-parser";
 import { getCustomSuggestions } from "../customSuggestionsGenerator";
 import * as helpers from "../helpers";
 import { GeneratorContext } from "../helpers";
+import {
+  SpyInstance,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 const context: GeneratorContext = {
   annotations: [] as Annotation[],
@@ -14,10 +23,10 @@ const context: GeneratorContext = {
 };
 
 describe("getCustomSuggestions", () => {
-  let runCachedGenerator: jest.SpyInstance;
+  let runCachedGenerator: SpyInstance;
 
   beforeAll(() => {
-    runCachedGenerator = jest.spyOn(helpers, "runCachedGenerator");
+    runCachedGenerator = vi.spyOn(helpers, "runCachedGenerator");
   });
 
   afterEach(() => {
@@ -68,7 +77,7 @@ describe("getCustomSuggestions", () => {
   });
 
   it("should call runCachedGenerator and the custom function", async () => {
-    const custom = jest
+    const custom = vi
       .fn()
       .mockResolvedValue([{ name: "hello" }, { name: "world" }]);
 

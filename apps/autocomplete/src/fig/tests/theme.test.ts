@@ -1,3 +1,4 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { isBuiltInTheme, setTheme, builtInThemes, mapColor } from "../themes";
 
 describe("isBuiltInTheme", () => {
@@ -12,7 +13,7 @@ describe("isBuiltInTheme", () => {
 });
 
 describe("setTheme", () => {
-  const spy = jest.spyOn(document.documentElement.style, "setProperty");
+  const spy = vi.spyOn(document.documentElement.style, "setProperty");
 
   afterEach(() => {
     spy.mockReset();

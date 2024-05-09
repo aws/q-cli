@@ -697,7 +697,7 @@ pub fn build_dashboard(
             utils::wrap_custom_protocol("api", DashboardId, api::handle),
         )
         .with_navigation_handler(navigation_handler(DASHBOARD_ID, &[r"^localhost$", r"^127\.0\.0\.1$"]))
-        .with_initialization_script(&javascript_init())
+        .with_initialization_script(&javascript_init(true))
         .with_clipboard(true)
         .with_hotkeys_zoom(true)
         .build()?;
@@ -798,7 +798,7 @@ pub fn build_autocomplete(
         )
         .with_devtools(true)
         .with_transparent(true)
-        .with_initialization_script(&javascript_init())
+        .with_initialization_script(&javascript_init(true))
         .with_navigation_handler(navigation_handler(AUTOCOMPLETE_ID, &[r"localhost$", r"^127\.0\.0\.1$"]))
         .with_clipboard(true)
         .with_hotkeys_zoom(true)

@@ -14,6 +14,7 @@ import {
   getQueryTermForSuggestion,
   bestScoreMatch,
 } from "../helpers";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 const foo: Suggestion = {
   name: "foo",

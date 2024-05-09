@@ -1,4 +1,3 @@
-import { when } from "jest-when";
 import { Suggestion } from "@internal/shared/internal";
 import { SETTINGS } from "@amzn/fig-io-api-bindings-wrappers";
 import * as settings from "@amzn/fig-io-api-bindings-wrappers";
@@ -8,6 +7,16 @@ import {
   deduplicateSuggestions,
   isTemplateSuggestion,
 } from "..";
+import {
+  MockInstance,
+  SpyInstance,
+  afterAll,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 describe("isTemplateSuggestion", () => {
   it("should return true when object has context", () => {
@@ -22,6 +31,7 @@ describe("isTemplateSuggestion", () => {
     expect(isTemplateSuggestion(suggestion)).toBe(false);
   });
 });
+
 describe("getStaticArgSuggestions", () => {
   it("handles string arg suggestions", () => {
     expect(
@@ -178,12 +188,17 @@ describe("filterSuggestions", () => {
   });
 
   describe("should not add auto-execute when setting disables it", () => {
-    let spy: jest.SpyInstance;
+    // export declare const getSetting: <T = unknown>(
+    //   key: SETTINGS,
+    //   defaultValue?: any,
+    // ) => T;
+    let spy: MockInstance<[key: SETTINGS, defaultValue?: any], unknown>;
     beforeAll(() => {
-      spy = jest.spyOn(settings, "getSetting");
-      when(spy)
-        .calledWith(SETTINGS.HIDE_AUTO_EXECUTE_SUGGESTION, false)
-        .mockReturnValue(true);
+      spy = vi.spyOn(settings, "getSetting");
+      spy.mockImplementation((arg) => {
+        if (arg == SETTINGS.HIDE_AUTO_EXECUTE_SUGGESTION) return true;
+        return undefined;
+      });
     });
 
     afterAll(() => {

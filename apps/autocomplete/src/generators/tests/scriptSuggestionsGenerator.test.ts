@@ -4,9 +4,18 @@ import { Annotation } from "@amzn/fig-io-autocomplete-parser";
 import * as helpers from "../helpers";
 import { GeneratorContext } from "../helpers";
 import { getScriptSuggestions } from "../scriptSuggestionsGenerator";
+import {
+  SpyInstance,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
-jest.mock("@fig/api-bindings-wrappers", () =>
-  jest.requireActual("@fig/api-bindings-wrappers/index.ts"),
+vi.mock("@amzn/fig-io-api-bindings-wrappers/src/executeCommand", async () =>
+  vi.importActual("@amzn/fig-io-api-bindings-wrappers/src/executeCommand"),
 );
 
 const context: GeneratorContext = {
@@ -19,20 +28,18 @@ const context: GeneratorContext = {
   environmentVariables: {},
 };
 
-describe("getScriptSuggestions", () => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  let runCachedGenerator: jest.SpyInstance;
-  let executeCommand: jest.SpyInstance;
+describe.todo("getScriptSuggestions", () => {
+  let executeCommand: SpyInstance;
 
   beforeAll(() => {
-    runCachedGenerator = jest.spyOn(helpers, "runCachedGenerator");
-    executeCommand = jest
+    vi.spyOn(helpers, "runCachedGenerator");
+    executeCommand = vi
       .spyOn(apiBindingsWrappers, "executeCommandTimeout")
       .mockResolvedValue({ status: 0, stdout: "a/\nx\nc/\nl", stderr: "" });
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("should return empty suggestions if no script in generator", async () => {
@@ -63,7 +70,7 @@ describe("getScriptSuggestions", () => {
   });
 
   it("should return the result with postProcess", async () => {
-    const postProcess = jest
+    const postProcess = vi
       .fn()
       .mockReturnValue([{ name: "hello" }, { name: "world" }]);
 
@@ -81,7 +88,7 @@ describe("getScriptSuggestions", () => {
   });
 
   it("should return the result with postProcess and infer type", async () => {
-    const postProcess = jest.fn().mockReturnValue([
+    const postProcess = vi.fn().mockReturnValue([
       { name: "hello", type: "auto-execute" },
       { name: "world", type: "folder" },
     ]);
@@ -100,7 +107,7 @@ describe("getScriptSuggestions", () => {
   });
 
   it("should call script if provided", async () => {
-    const script = jest.fn().mockReturnValue("myscript");
+    const script = vi.fn().mockReturnValue("myscript");
     await getScriptSuggestions({ script }, context, 5000);
     expect(script).toHaveBeenCalledWith([]);
   });

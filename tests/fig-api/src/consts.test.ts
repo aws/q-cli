@@ -1,5 +1,6 @@
 import os from "node:os";
 import fs from "node:fs";
+import { describe, expect, it } from "vitest";
 
 describe("constants", () => {
   it("os", () => {

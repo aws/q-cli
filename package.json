@@ -8,6 +8,9 @@
   "scripts": {
     "build": "pnpm -r build",
     "b": "pnpm build",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "coverage": "vitest run --coverage",
     "lint": "pnpm -r lint",
     "lint:fix": "pnpm -r lint:fix",
     "dev": "pnpm -r dev",
@@ -20,8 +23,12 @@
     "precommit": "lint-staged --config .lintstagedrc.mjs"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^1.6.0",
+    "@vitest/ui": "^1.6.0",
     "husky": "^8.0.3",
     "lint-staged": "^15.2.2",
-    "prettier": "^3.2.5"
+    "prettier": "^3.2.5",
+    "tsx": "^4.6.2",
+    "vitest": "^1.6.0"
   }
 }

@@ -47,7 +47,7 @@ async fn main() {
             println!("{response_b64}");
         },
         Cli::Init => {
-            println!("{}", fig_desktop_api::init_script::javascript_init());
+            println!("{}", fig_desktop_api::init_script::javascript_init(false));
         },
     }
 }

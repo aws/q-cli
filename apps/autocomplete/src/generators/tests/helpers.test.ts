@@ -7,6 +7,7 @@ import {
   haveContextForGenerator,
   GeneratorContext,
 } from "../helpers";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const context: GeneratorContext = {
   annotations: [] as Annotation[],
@@ -51,7 +52,7 @@ describe("haveContextForGenerator", () => {
 
 describe("runCachedGenerator", () => {
   describe("no cache object", () => {
-    const initialRun = jest.fn();
+    const initialRun = vi.fn();
 
     beforeEach(() => {
       generatorCache.clear();
@@ -80,7 +81,7 @@ describe("runCachedGenerator", () => {
   });
 
   describe("should respect cacheByDirectory key when cache is specified", () => {
-    const initialRun = jest.fn();
+    const initialRun = vi.fn();
 
     beforeEach(() => {
       generatorCache.clear();
@@ -148,7 +149,7 @@ describe("runCachedGenerator", () => {
   });
 
   describe("should attempt to cache based on `script` field", () => {
-    const initialRun = jest.fn();
+    const initialRun = vi.fn();
 
     beforeEach(() => {
       generatorCache.clear();

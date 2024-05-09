@@ -1,6 +1,7 @@
 import { fs as figFs } from "@withfig/api-bindings";
 import nodeFs from "node:fs";
 import { tempDir } from "./util";
+import { describe, it, expect } from "vitest";
 
 describe("fs api tests", () => {
   it("writes file", async () => {

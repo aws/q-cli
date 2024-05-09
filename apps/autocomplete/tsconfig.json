@@ -20,7 +20,7 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
 
-    "types": ["@withfig/autocomplete-types", "@internal/types", "node", "jest"]
+    "types": ["@withfig/autocomplete-types", "@internal/types", "node"]
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]

@@ -5,7 +5,7 @@
     "sourceMap": true,
     "esModuleInterop": true,
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "types": ["jest", "node"],
+    "types": ["@internal/types", "node"],
     "outDir": "dist"
   },
   "include": ["src/**/*.ts"],
