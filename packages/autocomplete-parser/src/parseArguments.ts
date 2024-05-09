@@ -613,7 +613,7 @@ const getGenerateSpecCacheKey = (
     cacheKey = "mechanic";
   }
 
-  const generateSpecCacheKey = completionObj.generateSpecCacheKey;
+  const generateSpecCacheKey = completionObj?.generateSpecCacheKey;
   if (generateSpecCacheKey) {
     if (typeof generateSpecCacheKey === "string") {
       cacheKey = generateSpecCacheKey;
@@ -629,7 +629,10 @@ const getGenerateSpecCacheKey = (
     }
   }
 
-  if (typeof cacheKey === "string") {
+  // Return this late to ensure any generateSpecCacheKey side effects still happen
+  if (isInDevMode()) {
+    return undefined;
+  } else if (typeof cacheKey === "string") {
     // Prepend the spec name to the cacheKey to avoid collisions between specs.
     return `${tokenArray[0]}:${cacheKey}`;
   } else {
