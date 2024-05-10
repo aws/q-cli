@@ -93,6 +93,8 @@ pub enum Error {
 }
 
 const APP_NAME: &str = "codewhisperer-terminal";
+const PRODUCT: &str = "CodeWhisperer";
+const PRODUCT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 async fn client() -> &'static Client {
     static CLIENT: OnceCell<Client> = OnceCell::const_new();
@@ -204,8 +206,6 @@ impl Client {
     }
 
     fn user_context(&self) -> Option<UserContext> {
-        let product_version = env!("CARGO_PKG_VERSION");
-
         let operating_system = match std::env::consts::OS {
             "linux" => OperatingSystem::Linux,
             "macos" => OperatingSystem::Mac,
@@ -219,9 +219,9 @@ impl Client {
         match UserContext::builder()
             .client_id(self.client_id.hyphenated().to_string())
             .operating_system(operating_system)
-            .product("CodeWhisperer")
-            .ide_category(IdeCategory::VsCode)
-            .ide_version(product_version)
+            .product(PRODUCT)
+            .ide_category(IdeCategory::Cli)
+            .ide_version(PRODUCT_VERSION)
             .build()
         {
             Ok(user_context) => Some(user_context),
@@ -607,8 +607,27 @@ pub async fn send_chat_added_message(conversation_id: String, message_id: String
 #[cfg(test)]
 mod test {
     use fig_util::CLI_BINARY_NAME;
+    use uuid::uuid;
 
     use super::*;
+
+    #[tokio::test]
+    async fn client_context() {
+        let client = client().await;
+        let context = client.user_context().unwrap();
+
+        assert_eq!(context.ide_category, IdeCategory::Cli);
+        assert!(matches!(
+            context.operating_system,
+            OperatingSystem::Linux | OperatingSystem::Mac | OperatingSystem::Windows
+        ));
+        assert_eq!(context.product, PRODUCT);
+        assert_eq!(
+            context.client_id,
+            Some(uuid!("ffffffff-ffff-ffff-ffff-ffffffffffff").hyphenated().to_string())
+        );
+        assert_eq!(context.ide_version.as_deref(), Some(PRODUCT_VERSION));
+    }
 
     #[tracing_test::traced_test]
     #[tokio::test]
