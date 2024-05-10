@@ -4,7 +4,7 @@
 //!    1. Get a client id (SSO-OIDC identifier, formatted per RFC6749).
 //!       - Code: [DeviceRegistration::register]
 //!          - Calls [Client::register_client]
-//!       - RETURNS: [RegisterClientResponse]
+//!       - RETURNS: [DeviceRegistration]
 //!       - Client registration is valid for potentially months and creates state server-side, so
 //!         the client SHOULD cache them to disk.
 //!    2. Start device authorization.
@@ -15,11 +15,11 @@
 //!    3. Poll for the access token
 //!       - Code: [poll_create_token]
 //!          - Calls [Client::create_token]
-//!       - RETURNS: [CreateTokenResponse]
+//!       - RETURNS: [PollCreateToken]
 //!    4. (Repeat) Tokens SHOULD be refreshed if expired and a refresh token is available.
-//!        - Code: [refresh_token]
+//!        - Code: [BuilderIdToken::refresh_token]
 //!          - Calls [Client::create_token]
-//!        - RETURNS: [CreateTokenResponse]
+//!        - RETURNS: [BuilderIdToken]
 
 use aws_sdk_ssooidc::client::Client;
 use aws_sdk_ssooidc::config::retry::RetryConfig;

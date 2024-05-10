@@ -60,6 +60,16 @@ pub enum Error {
     ShellVersion(Shell),
 }
 
+/// Returns a random 64 character hex string
+///
+/// # Example
+///
+/// ```
+/// use fig_util::gen_hex_string;
+///
+/// let hex = gen_hex_string();
+/// assert_eq!(hex.len(), 64);
+/// ```
 pub fn gen_hex_string() -> String {
     let mut buf = [0u8; 32];
     rand::thread_rng().fill(&mut buf);

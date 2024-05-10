@@ -26,6 +26,19 @@ pub fn resolve_filepath<'a>(file_path: &'a FilePath) -> Cow<'a, Utf8Path> {
     }
 }
 
+/// Builds a [`FilePath`] with the given path.
+///
+/// # Example
+///
+/// ```
+/// use fig_desktop_api::util::build_filepath;
+/// use fig_proto::fig::FilePath;
+///
+/// let path = build_filepath("foo/bar");
+/// assert_eq!(path.path, "foo/bar");
+/// assert_eq!(path.relative_to, None);
+/// assert_eq!(path.expand_tilde_in_path, Some(false));
+/// ```
 pub fn build_filepath(path: impl Into<String>) -> FilePath {
     FilePath {
         path: path.into(),

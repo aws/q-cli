@@ -22,7 +22,7 @@ use tracing::{
 };
 use url::Url;
 
-/// Error type for [`MidwayAuthRuntimePlugin`] & [`MidwayAuthHttpClient`]
+/// Error type for [`midway_request`]
 #[derive(Debug)]
 pub struct MidwayError {
     kind: ErrorKind,

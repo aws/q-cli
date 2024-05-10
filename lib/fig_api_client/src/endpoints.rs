@@ -43,6 +43,15 @@ mod tests {
 
     #[test]
     fn test_endpoints() {
-        Url::parse(Endpoint::Prod.url()).unwrap();
+        let prod = Endpoint::Prod;
+        Url::parse(prod.url()).unwrap();
+        assert_eq!(prod.region(), PROD_REGION);
+
+        let custom = Endpoint::Custom {
+            region: "us-west-2".into(),
+            url: "https://example.com".into(),
+        };
+        Url::parse(custom.url()).unwrap();
+        assert_eq!(custom.region(), Region::new("us-west-2"));
     }
 }

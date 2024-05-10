@@ -15,3 +15,18 @@ impl ResolveEndpoint for StaticEndpoint {
         EndpointFuture::ready(Ok(endpoint))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_static_endpoint() {
+        let endpoint = StaticEndpoint("https://example.com");
+        let params = Params::builder().build().unwrap();
+        let endpoint = endpoint.resolve_endpoint(&params).await.unwrap();
+        assert_eq!(endpoint.url(), "https://example.com");
+        assert!(endpoint.properties().len() == 0);
+        assert!(endpoint.headers().count() == 0);
+    }
+}
