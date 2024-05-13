@@ -239,12 +239,14 @@ export async function exponentialBackoff<T>(
 
   while (retries < options.maxRetries) {
     try {
+      // eslint-disable-next-line no-await-in-loop
       return await withTimeout(options.attemptTimeout, fn());
     } catch (error) {
       retries += 1;
       delay *= 2;
       delay += Math.floor(Math.random() * options.jitter);
 
+      // eslint-disable-next-line no-await-in-loop, no-loop-func
       await new Promise((resolve) => {
         setTimeout(resolve, delay);
       });

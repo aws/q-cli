@@ -25,10 +25,10 @@
   "devDependencies": {
     "@vitest/coverage-v8": "^1.6.0",
     "@vitest/ui": "^1.6.0",
-    "husky": "^8.0.3",
+    "husky": "^9.0.11",
     "lint-staged": "^15.2.2",
     "prettier": "^3.2.5",
-    "tsx": "^4.6.2",
+    "tsx": "^4.10.2",
     "vitest": "^1.6.0"
   }
 }

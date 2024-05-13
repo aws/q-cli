@@ -1,5 +1,5 @@
-import { getCommand, Command } from "../src/command";
 import { describe, expect, it } from "vitest";
+import { getCommand, Command } from "../src/command";
 
 describe("getCommand", () => {
   const aliases = {

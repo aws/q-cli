@@ -1,13 +1,13 @@
 /* eslint-disable no-await-in-loop */
 import { sleep } from "@internal/shared/utils";
 import { Annotation } from "@amzn/fig-io-autocomplete-parser";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   generatorCache,
   runCachedGenerator,
   haveContextForGenerator,
   GeneratorContext,
 } from "../helpers";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const context: GeneratorContext = {
   annotations: [] as Annotation[],

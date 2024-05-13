@@ -4,7 +4,6 @@ import { Setting } from "./listItem";
 import { useEffect, useState } from "react";
 import { Settings } from "@withfig/api-bindings";
 import { getIconFromName } from "@/lib/icons";
-import ExternalLink from "../util/external-link";
 import { cn, interpolateSettingBoolean } from "@/lib/utils";
 import { useSetting } from "@/hooks/store/useSetting";
 import { Switch } from "../ui/switch";

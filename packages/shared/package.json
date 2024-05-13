@@ -20,10 +20,10 @@
     "@amzn/fig-io-eslint-config": "workspace:^",
     "@internal/fuzzysort": "workspace:^",
     "@internal/types": "workspace:^",
-    "@typescript-eslint/eslint-plugin": "^6.13.2",
+    "@typescript-eslint/eslint-plugin": "^7.9.0",
     "@withfig/autocomplete-types": "^1.31.0",
-    "eslint": "^8.55.0",
-    "typescript": "^5.3.3",
+    "eslint": "^8.57.0",
+    "typescript": "^5.4.5",
     "vitest": "^1.6.0"
   }
 }

@@ -211,7 +211,6 @@ function App() {
   useEffect(() => {
     Settings.get(SETTINGS.DISABLE_HISTORY_LOADING)
       .catch(() => undefined)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .then((res) => {
         if (!JSON.parse(res?.jsonBlob ?? "false")) {
           loadHistory({});

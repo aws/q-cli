@@ -22,10 +22,10 @@
     "@internal/shared": "workspace:^",
     "@internal/tsconfig": "workspace:^",
     "@internal/types": "workspace:^",
-    "@types/semver": "^7.5.6",
+    "@types/semver": "^7.5.8",
     "@withfig/autocomplete-types": "^1.31.0",
-    "eslint": "^8.55.0",
-    "typescript": "^5.3.3",
+    "eslint": "^8.57.0",
+    "typescript": "^5.4.5",
     "vitest": "^1.6.0"
   },
   "dependencies": {
@@ -36,8 +36,8 @@
     "@fig/autocomplete-helpers": "^1.0.7",
     "@fig/autocomplete-shared": "^1.1.2",
     "@withfig/api-bindings": "workspace:~",
-    "loglevel": "^1.8.1",
-    "semver": "^7.5.4",
-    "zod": "^3.22.4"
+    "loglevel": "^1.9.1",
+    "semver": "^7.6.2",
+    "zod": "^3.23.8"
   }
 }

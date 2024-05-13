@@ -2,12 +2,6 @@ import { Suggestion } from "@internal/shared/internal";
 import { SETTINGS } from "@amzn/fig-io-api-bindings-wrappers";
 import * as settings from "@amzn/fig-io-api-bindings-wrappers";
 import {
-  getStaticArgSuggestions,
-  filterSuggestions,
-  deduplicateSuggestions,
-  isTemplateSuggestion,
-} from "..";
-import {
   MockInstance,
   SpyInstance,
   afterAll,
@@ -17,6 +11,12 @@ import {
   it,
   vi,
 } from "vitest";
+import {
+  getStaticArgSuggestions,
+  filterSuggestions,
+  deduplicateSuggestions,
+  isTemplateSuggestion,
+} from "..";
 
 describe("isTemplateSuggestion", () => {
   it("should return true when object has context", () => {

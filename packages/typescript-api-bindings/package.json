@@ -32,22 +32,22 @@
   },
   "devDependencies": {
     "@amzn/fig-io-eslint-config": "workspace:^",
-    "@tsconfig/recommended": "^1.0.3",
-    "@types/node": "^20.10.4",
-    "@typescript-eslint/eslint-plugin": "^6.13.2",
-    "@typescript-eslint/parser": "^6.13.2",
+    "@tsconfig/recommended": "^1.0.6",
+    "@types/node": "^20.12.11",
+    "@typescript-eslint/eslint-plugin": "^7.9.0",
+    "@typescript-eslint/parser": "^7.9.0",
     "@typescript/analyze-trace": "^0.10.1",
-    "eslint": "^8.55.0",
+    "eslint": "^8.57.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-import": "^2.29.0",
-    "lint-staged": "^15.2.0",
+    "eslint-plugin-import": "^2.29.1",
+    "lint-staged": "^15.2.2",
     "prettier": "^3.2.5",
-    "ts-morph": "^21.0.1",
-    "ts-proto": "~1.165.2",
+    "ts-morph": "^22.0.0",
+    "ts-proto": "~1.174.0",
     "tslib": "^2.6.2",
-    "tsx": "^4.6.2",
-    "typescript": "^5.3.3"
+    "tsx": "^4.10.2",
+    "typescript": "^5.4.5"
   },
   "lint-staged": {
     "*.{ts,tsx}": "npx eslint --cache --fix"

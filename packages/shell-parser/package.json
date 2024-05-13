@@ -14,8 +14,8 @@
     "build": "tsc",
     "test": "vitest",
     "coverage": "vitest run --coverage",
-    "lint": "eslint src __tests__ && prettier --check src __tests__",
-    "lint:fix": "eslint --fix src __tests__ && prettier --write src __tests__",
+    "lint": "eslint src tests && prettier --check src tests",
+    "lint:fix": "eslint --fix src tests && prettier --write src tests",
     "clean": "rm -rf dist"
   },
   "devDependencies": {
@@ -23,9 +23,9 @@
     "@internal/shared": "workspace:^",
     "@internal/tsconfig": "workspace:^",
     "@vitest/coverage-v8": "^1.6.0",
-    "eslint": "^8.55.0",
+    "eslint": "^8.57.0",
     "prettier": "^3.2.5",
-    "typescript": "^5.3.3",
+    "typescript": "^5.4.5",
     "vitest": "^1.6.0"
   },
   "publishConfig": {

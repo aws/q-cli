@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
-import { parse } from "../src/parser";
 import { describe, it, expect } from "vitest";
+import { parse } from "../src/parser";
 
 function parseCommand(command: string): string {
   return JSON.stringify(parse(command), null, "  ");

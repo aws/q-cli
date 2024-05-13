@@ -632,12 +632,12 @@ const getGenerateSpecCacheKey = (
   // Return this late to ensure any generateSpecCacheKey side effects still happen
   if (isInDevMode()) {
     return undefined;
-  } else if (typeof cacheKey === "string") {
+  }
+  if (typeof cacheKey === "string") {
     // Prepend the spec name to the cacheKey to avoid collisions between specs.
     return `${tokenArray[0]}:${cacheKey}`;
-  } else {
-    return undefined;
   }
+  return undefined;
 };
 
 const generateSpecForState = async (
@@ -773,14 +773,13 @@ const getCacheKey = (
   tokenArray: string[],
   context: Fig.ShellContext,
   specLocation: Internal.SpecLocation,
-): string => {
-  return [
+): string =>
+  [
     tokenArray.slice(0, -1).join(" "),
     serializeSpecLocation(specLocation),
     context.currentWorkingDirectory,
     context.currentProcess,
   ].join(",");
-};
 
 // Parse all arguments in tokenArray.
 const parseArgumentsCached = async (

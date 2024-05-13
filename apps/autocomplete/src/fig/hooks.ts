@@ -12,9 +12,9 @@ import {
   SettingsMap,
   updateSettings,
 } from "@amzn/fig-io-api-bindings-wrappers";
+import { clearSpecIndex } from "@amzn/fig-io-autocomplete-parser";
 import { updateSelectSuggestionKeybindings } from "../actions";
 import { generatorCache } from "../generators/helpers";
-import { clearSpecIndex } from "@amzn/fig-io-autocomplete-parser";
 
 // TODO(sean) expose Subscription type from API binding library
 type Unwrap<T> = T extends Promise<infer U> ? U : T;

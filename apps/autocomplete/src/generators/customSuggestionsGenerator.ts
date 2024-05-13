@@ -36,7 +36,6 @@ export async function getCustomSuggestions(
       context,
       () =>
         runPipingConsoleMethods(() =>
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           generator.custom!(tokenArray, executeCommand, {
             currentWorkingDirectory,
             currentProcess,

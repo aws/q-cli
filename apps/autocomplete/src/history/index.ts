@@ -23,8 +23,8 @@ import {
   SETTINGS,
   getSetting,
 } from "@amzn/fig-io-api-bindings-wrappers";
-import { captureError } from "../sentry";
 import { History } from "@withfig/api-bindings";
+import { captureError } from "../sentry";
 import {
   AnnotatedCommand,
   HistoryEntry,
@@ -240,19 +240,20 @@ const loadFigHistory = async (): Promise<HistoryEntry[]> =>
     "SELECT command, shell, session_id, cwd, start_time, exit_code FROM history",
     [],
   ).then((history) =>
-    history.map((entry) => {
-      return {
-        text: entry.command,
-        context: {
-          cwd: entry.cwd,
-          shell: entry.shell,
-          exitCode: entry.exit_code,
-          terminalSession: entry.session_id,
-          time: entry.start_time,
-        },
-        commands: [],
-      } as HistoryEntry;
-    }),
+    history.map(
+      (entry) =>
+        ({
+          text: entry.command,
+          context: {
+            cwd: entry.cwd,
+            shell: entry.shell,
+            exitCode: entry.exit_code,
+            terminalSession: entry.session_id,
+            time: entry.start_time,
+          },
+          commands: [],
+        }) as HistoryEntry,
+    ),
   );
 
 export const loadHistory = async (aliases: AliasMap) => {

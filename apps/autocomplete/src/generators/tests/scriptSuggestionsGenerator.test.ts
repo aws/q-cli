@@ -1,9 +1,6 @@
 import * as apiBindingsWrappers from "@amzn/fig-io-api-bindings-wrappers/src/executeCommand";
 
 import { Annotation } from "@amzn/fig-io-autocomplete-parser";
-import * as helpers from "../helpers";
-import { GeneratorContext } from "../helpers";
-import { getScriptSuggestions } from "../scriptSuggestionsGenerator";
 import {
   SpyInstance,
   afterEach,
@@ -13,6 +10,9 @@ import {
   it,
   vi,
 } from "vitest";
+import * as helpers from "../helpers";
+import { GeneratorContext } from "../helpers";
+import { getScriptSuggestions } from "../scriptSuggestionsGenerator";
 
 vi.mock("@amzn/fig-io-api-bindings-wrappers/src/executeCommand", async () =>
   vi.importActual("@amzn/fig-io-api-bindings-wrappers/src/executeCommand"),

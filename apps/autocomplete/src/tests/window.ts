@@ -1,11 +1,11 @@
 import { SETTINGS, updateSettings } from "@amzn/fig-io-api-bindings-wrappers";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
   getMaxWidth,
   getMaxHeight,
   MAX_WIDTH,
   AUTOCOMPLETE_HEIGHT,
 } from "../window";
-import { beforeEach, describe, expect, it } from "vitest";
 
 describe("getMaxWidth", () => {
   beforeEach(() => {

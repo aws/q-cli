@@ -1,6 +1,6 @@
 [files]
 extend-exclude = [
-  "__tests__",
+  "tests",
   "lib/amzn-codewhisperer-client",
   "lib/amzn-codewhisperer-streaming-client",
   "lib/amzn-consolas-client",

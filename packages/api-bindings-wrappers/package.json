@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@withfig/api-bindings": "workspace:~",
-    "loglevel": "^1.8.1"
+    "loglevel": "^1.9.1"
   },
   "devDependencies": {
     "@amzn/fig-io-eslint-config": "workspace:^",
@@ -25,9 +25,9 @@
     "@internal/tsconfig": "workspace:^",
     "@internal/types": "workspace:^",
     "@withfig/autocomplete-types": "^1.31.0",
-    "eslint": "^8.55.0",
+    "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.2.5",
-    "typescript": "^5.3.3"
+    "typescript": "^5.4.5"
   }
 }

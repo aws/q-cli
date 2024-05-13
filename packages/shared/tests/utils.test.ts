@@ -1,3 +1,4 @@
+import { describe, expect, it } from "vitest";
 import {
   makeArray,
   makeArrayIfExists,
@@ -5,7 +6,6 @@ import {
   compareNamedObjectsAlphabetically,
   fieldsAreEqual,
 } from "../src/utils";
-import { describe, expect, it } from "vitest";
 
 describe("fieldsAreEqual", () => {
   it("should return immediately if two values are the same", () => {

@@ -2,10 +2,10 @@ import React from "react";
 import logger from "loglevel";
 import ReactDOM from "react-dom/client";
 import { State } from "@amzn/fig-io-api-bindings-wrappers";
+import { preloadSpecs } from "@amzn/fig-io-autocomplete-parser";
 import App from "./App";
 import { captureError } from "./sentry";
 import ErrorBoundary from "./components/ErrorBoundary";
-import { preloadSpecs } from "@amzn/fig-io-autocomplete-parser";
 
 State.watch();
 

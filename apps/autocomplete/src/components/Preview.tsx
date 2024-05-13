@@ -43,7 +43,7 @@ const useLoadComponent = (componentPath: string) => {
     });
 
     return newComponent;
-  }, [componentPath, isDevMode, devPort, aeState]);
+  }, [componentPath, devPort, aeState]);
 };
 
 const useCssUrl = () => {

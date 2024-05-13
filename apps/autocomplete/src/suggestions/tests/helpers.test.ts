@@ -7,6 +7,7 @@ global.fig = {
 const originalGlobalFig = global.fig;
 
 import { Suggestion } from "@internal/shared/internal";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   getNameMatch,
   getExactNameMatch,
@@ -14,7 +15,6 @@ import {
   getQueryTermForSuggestion,
   bestScoreMatch,
 } from "../helpers";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 const foo: Suggestion = {
   name: "foo",

@@ -1,7 +1,6 @@
 import StatusCheck from "@/components/installs/statusCheck";
 import { Code } from "@/components/text/code";
 import { Link } from "@/components/ui/link";
-import ExternalLink from "@/components/util/external-link";
 import support from "@/data/help";
 import installChecks from "@/data/install";
 

@@ -1,7 +1,4 @@
 import { Annotation } from "@amzn/fig-io-autocomplete-parser";
-import { getCustomSuggestions } from "../customSuggestionsGenerator";
-import * as helpers from "../helpers";
-import { GeneratorContext } from "../helpers";
 import {
   SpyInstance,
   afterEach,
@@ -11,6 +8,9 @@ import {
   it,
   vi,
 } from "vitest";
+import { getCustomSuggestions } from "../customSuggestionsGenerator";
+import * as helpers from "../helpers";
+import { GeneratorContext } from "../helpers";
 
 const context: GeneratorContext = {
   annotations: [] as Annotation[],
