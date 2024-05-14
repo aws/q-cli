@@ -924,7 +924,9 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                 break 'select_loop Err(err);
             }
         };
+
         let _ = stop_ipc_tx.send(());
+        fig_telemetry::finish_telemetry().await;
 
         result
     });

@@ -1,8 +1,10 @@
 import argparse
 import os
+from pathlib import Path
+import shutil
 import subprocess
 from build import build
-from const import CLI_PACKAGE_NAME
+from const import CLI_BINARY_NAME, CLI_PACKAGE_NAME, PTY_BINARY_NAME
 from doc import run_doc
 from rust import rust_env
 from test import all_tests
@@ -57,11 +59,6 @@ build_subparser.add_argument(
     help="The name of the stage",
 )
 build_subparser.add_argument(
-    "--run-lints",
-    action=StoreIfNotEmptyAction,
-    help="Run lints",
-)
-build_subparser.add_argument(
     "--not-release",
     action="store_true",
     help="Build a non-release version",
@@ -82,6 +79,13 @@ cli_subparser.add_argument(
     help="Arguments to pass to the CLI",
 )
 
+install_cli = subparsers.add_parser(name="install-cli")
+install_cli.add_argument(
+    "--release",
+    action="store_true",
+    help="Build a release version",
+)
+
 # run the docs command
 subparsers.add_parser(name="doc")
 
@@ -98,7 +102,6 @@ match args.subparser:
             signing_queue=args.signing_queue,
             signing_role_name=args.signing_role_name,
             stage_name=args.stage_name,
-            run_lints=args.run_lints,
         )
     case "test":
         all_tests(
@@ -119,5 +122,15 @@ match args.subparser:
                 **rust_env(release=False),
             },
         )
+    case "install-cli":
+        output = build(release=args.release, run_lints=False, run_test=False)
+
+        pty_path = Path.home() / ".local" / "bin" / PTY_BINARY_NAME
+        pty_path.unlink(missing_ok=True)
+        shutil.copy2(output.pty_path, pty_path)
+
+        cli_path = Path.home() / ".local" / "bin" / CLI_BINARY_NAME
+        cli_path.unlink(missing_ok=True)
+        shutil.copy2(output.cli_path, cli_path)
     case _:
         raise ValueError(f"Unsupported subparser {args.subparser}")

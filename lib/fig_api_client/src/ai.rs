@@ -1,3 +1,7 @@
+use std::sync::{
+    Arc,
+    Mutex,
+};
 use std::time::Duration;
 
 use amzn_codewhisperer_client::config::interceptors::BeforeTransmitInterceptorContextMut;
@@ -28,7 +32,10 @@ static APP_NAME: Lazy<AppName> = Lazy::new(|| AppName::new("codewhisperer-termin
 
 // Opt out constants
 const SHARE_CODEWHISPERER_CONTENT_SETTINGS_KEY: &str = "codeWhisperer.shareCodeWhispererContentWithAWS";
-static X_AMZN_CODEWHISPERER_OPT_OUT_HEADER: &str = "x-amzn-codewhisperer-optout";
+const X_AMZN_CODEWHISPERER_OPT_OUT_HEADER: &str = "x-amzn-codewhisperer-optout";
+
+// Session ID constants
+const X_AMZN_SESSIONID_HEADER: &str = "x-amzn-sessionid";
 
 fn is_codewhisperer_content_optout() -> bool {
     !fig_settings::settings::get_bool_or(SHARE_CODEWHISPERER_CONTENT_SETTINGS_KEY, true)
@@ -149,14 +156,41 @@ pub struct AiRequest {
     pub session_id: Option<String>,
 }
 
-pub async fn request_cw(
+pub struct CwResponse {
+    pub output: GenerateCompletionsOutput,
+    pub session_id: Option<String>,
+}
+
+async fn request_cw_inner(
+    client: amzn_codewhisperer_client::Client,
     request: CodeWhispererRequest,
-) -> Result<
-    GenerateCompletionsOutput,
-    SdkError<GenerateCompletionsError, aws_smithy_runtime_api::client::orchestrator::HttpResponse>,
-> {
-    cw_client(cw_endpoint())
-        .await
+) -> Result<CwResponse, SdkError<GenerateCompletionsError, aws_smithy_runtime_api::client::orchestrator::HttpResponse>>
+{
+    #[derive(Debug, Clone)]
+    struct SessionIdInterceptor(Arc<Mutex<Option<String>>>);
+
+    impl Intercept for SessionIdInterceptor {
+        fn name(&self) -> &'static str {
+            "SessionIdInterceptor"
+        }
+
+        fn read_after_deserialization(
+            &self,
+            context: &amzn_codewhisperer_client::config::interceptors::AfterDeserializationInterceptorContextRef<'_>,
+            _runtime_components: &RuntimeComponents,
+            _cfg: &mut ConfigBag,
+        ) -> Result<(), amzn_codewhisperer_client::error::BoxError> {
+            *self.0.lock().expect("Failed to write to SessionIdInterceptor mutex") = context
+                .response()
+                .headers()
+                .get(X_AMZN_SESSIONID_HEADER)
+                .map(Into::into);
+            Ok(())
+        }
+    }
+
+    let session_id_lock = Arc::new(Mutex::new(None));
+    let output = client
         .generate_completions()
         .file_context(
             amzn_codewhisperer_client::types::FileContext::builder()
@@ -172,8 +206,23 @@ pub async fn request_cw(
         )
         .max_results(request.max_results)
         .set_next_token(request.next_token)
+        .customize()
+        .interceptor(SessionIdInterceptor(session_id_lock.clone()))
         .send()
-        .await
+        .await?;
+
+    let session_id = session_id_lock
+        .lock()
+        .expect("Failed to read from SessionIdInterceptor mutex")
+        .clone();
+    Ok(CwResponse { output, session_id })
+}
+
+pub async fn request_cw(
+    request: CodeWhispererRequest,
+) -> Result<CwResponse, SdkError<GenerateCompletionsError, aws_smithy_runtime_api::client::orchestrator::HttpResponse>>
+{
+    request_cw_inner(cw_client(cw_endpoint()).await, request).await
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -253,81 +302,6 @@ mod tests {
 
     use super::*;
 
-    // #[tokio::test]
-    // async fn test_request() {
-    //     // let config = aws_config::from_env()
-    //     //     .profile_name("personal")
-    //     //     .region("us-east-1")
-    //     //     .load()
-    //     //     .await;
-
-    //     // dbg!(config.credentials_provider().unwrap().provide_credentials().await);
-
-    //     let codewhisperer_request = CodeWhispererRequest {
-    //         file_context: CodeWhispererFileContext {
-    //             left_file_content: "# List the files in the directory\n".into(),
-    //             right_file_content: "".into(),
-    //             filename: "history.sh".into(),
-    //             programming_language: ProgrammingLanguage {
-    //                 language_name: LanguageName::Shell,
-    //             },
-    //         },
-    //         max_results: 3,
-    //         reference_tracker_configuration: CodeWhispererReferenceTrackerConfiguration {
-    //             recommendations_with_references: RecommendationsWithReferences::BLOCK,
-    //         },
-    //     };
-
-    //     let json = serde_json::to_string(&codewhisperer_request).unwrap();
-
-    //     let client = aws_smithy_client::Client::builder()
-    //         .dyn_https_connector(Default::default())
-    //         .middleware(tower::layer::util::Identity::default())
-    //         .build();
-
-    //     let request = http::Request::builder()
-    //         .uri("https://codewhisperer.us-east-1.amazonaws.com")
-    //         .body(SdkBody::from(json))
-    //         .unwrap();
-
-    //     println!("{:?}", request);
-
-    //     #[derive(Debug, Clone)]
-    //     struct Error;
-    //     impl ProvideErrorKind for Error {
-    //         fn retryable_error_kind(&self) -> Option<aws_smithy_types::retry::ErrorKind> {
-    //             todo!()
-    //         }
-
-    //         fn code(&self) -> Option<&str> {
-    //             todo!()
-    //         }
-    //     }
-
-    //     impl std::error::Error for Error {}
-
-    //     impl std::fmt::Display for Error {
-    //         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    //             todo!()
-    //         }
-    //     }
-
-    //     #[derive(Debug, Clone)]
-    //     struct TestParseResponse;
-    //     impl ParseStrictResponse for TestParseResponse {
-    //         type Output = Result<String, Error>;
-
-    //         fn parse(&self, response: &http::Response<Bytes>) -> Self::Output {
-    //             Ok(String::from_utf8(response.body().to_vec()).unwrap())
-    //         }
-    //     }
-
-    //     let op = Operation::new(Request::new(request), TestParseResponse);
-    //     let res = client.call(op).await.unwrap();
-
-    //     println!("{:#?}", res);
-    // }
-
     #[tokio::test]
     #[ignore]
     async fn test_request() {
@@ -390,7 +364,7 @@ mod tests {
         };
 
         let time = std::time::Instant::now();
-        let mut res = request_cw(request.clone()).await.unwrap();
+        let mut res = request_cw(request.clone()).await.unwrap().output;
 
         println!("{res:?}");
         println!("time: {:?}", time.elapsed());
@@ -405,7 +379,7 @@ mod tests {
                 break;
             } else {
                 request.next_token = Some(token.clone());
-                res = request_cw(request.clone()).await.unwrap();
+                res = request_cw(request.clone()).await.unwrap().output;
                 println!("{res:?}");
                 println!("time: {:?}", time.elapsed());
                 for (i, a) in res.completions.unwrap_or_default().iter().enumerate() {

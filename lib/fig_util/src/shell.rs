@@ -36,12 +36,7 @@ pub enum Shell {
 
 impl Display for Shell {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(match self {
-            Shell::Bash => "bash",
-            Shell::Zsh => "zsh",
-            Shell::Fish => "fish",
-            Shell::Nu => "nu",
-        })
+        f.write_str(self.as_str())
     }
 }
 
@@ -117,6 +112,15 @@ impl Shell {
 
     pub fn get_data_path(&self) -> Result<PathBuf, directories::DirectoryError> {
         Ok(directories::fig_data_dir()?.join("shell").join(format!("{self}.json")))
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Shell::Bash => "bash",
+            Shell::Zsh => "zsh",
+            Shell::Fish => "fish",
+            Shell::Nu => "nu",
+        }
     }
 
     pub fn is_bash(&self) -> bool {

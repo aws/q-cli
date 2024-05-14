@@ -22,7 +22,7 @@ use crate::history::{
     HistoryCommand,
     HistorySender,
 };
-use crate::inline_shell_completion::COMPLETION_CACHE;
+use crate::inline_shell_completion::on_prompt;
 use crate::{
     shell_state_to_context,
     MainLoopEvent,
@@ -114,7 +114,7 @@ impl EventListener for EventHandler {
                 }
             },
             Event::CommandInfo(command_info) => {
-                tokio::spawn(async { *COMPLETION_CACHE.lock().await = radix_trie::Trie::new() });
+                tokio::spawn(on_prompt());
 
                 let context = shell_state_to_context(shell_state);
                 let hook = new_postexec_hook(context, command_info.command.clone(), command_info.exit_code);

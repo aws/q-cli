@@ -188,11 +188,11 @@ i=`wc -l $FILENAME|cut -d ' ' -f1`; cat $FILENAME| echo "scale=2;(`paste -sd+`)/
     let mut completions = vec![];
 
     loop {
-        let response = request_cw(request.clone()).await?;
-        for comp in response.completions() {
+        let output = request_cw(request.clone()).await?.output;
+        for comp in output.completions() {
             completions.push(comp.content.clone());
         }
-        if let Some(next_token) = response.next_token() {
+        if let Some(next_token) = output.next_token() {
             if !next_token.is_empty() {
                 request.next_token = Some(next_token.into());
             } else {

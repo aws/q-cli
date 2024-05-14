@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import os
 import json
 import datetime
@@ -75,10 +76,14 @@ def build_cargo_bin(
         },
     )
 
+    if release:
+        target_subdir = "release"
+    else:
+        target_subdir = "debug"
+
     # create "universal" binary for macos
     if isDarwin():
         out_path = BUILD_DIR / f"{output_name or package}-universal-apple-darwin"
-
         args = [
             "lipo",
             "-create",
@@ -86,17 +91,13 @@ def build_cargo_bin(
             out_path,
         ]
         for target in targets:
-            args.extend(
-                [
-                    f"target/{target}/release/{package}",
-                ]
-            )
+            args.append(pathlib.Path("target") / target / target_subdir / package)
         run_cmd(args)
         return out_path
     else:
         # linux does not cross compile arch
         target = targets[0]
-        target_path = pathlib.Path("target") / target / "release" / package
+        target_path = pathlib.Path("target") / target / target_subdir / package
         out_path = BUILD_DIR / "bin" / (output_name or package)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(target_path, out_path)
@@ -376,6 +377,12 @@ def generate_sha(path: pathlib.Path) -> pathlib.Path:
     return path
 
 
+@dataclass
+class BuildOutput:
+    cli_path: pathlib.Path
+    pty_path: pathlib.Path
+
+
 def build(
     release: bool,
     output_bucket: str | None = None,
@@ -385,7 +392,8 @@ def build(
     signing_queue: str | None = None,
     signing_role_name: str | None = None,
     stage_name: str | None = None,
-    run_lints: str | None = None,
+    run_lints: bool = True,
+    run_test: bool = True,
 ):
     variant = get_variant()
 
@@ -424,8 +432,9 @@ def build(
         info("Building npm packages")
         npm_packages = build_npm_packages()
 
-    info("Running cargo tests")
-    run_cargo_tests(features=cargo_features)
+    if run_test:
+        info("Running cargo tests")
+        run_cargo_tests(features=cargo_features)
 
     if run_lints:
         run_clippy(features=cargo_features)
@@ -514,3 +523,8 @@ def build(
         shutil.rmtree(archive_path)
         if signer:
             signer.clean()
+
+    return BuildOutput(
+        cli_path=cli_path,
+        pty_path=pty_path,
+    )

@@ -1,4 +1,5 @@
 pub mod cognito;
+mod dispatch;
 pub mod endpoint;
 mod event;
 mod install_method;
@@ -32,13 +33,19 @@ use amzn_toolkit_telemetry::types::AwsProduct;
 use amzn_toolkit_telemetry::Config;
 use aws_credential_types::provider::SharedCredentialsProvider;
 use aws_smithy_types::DateTime;
-use aws_toolkit_telemetry_definitions::IntoMetricDatum;
 use cognito::CognitoProvider;
+use dispatch::dispatch;
+pub use dispatch::{
+    dispatch_mode,
+    set_dispatch_mode,
+    DispatchMode,
+};
 use endpoint::StaticEndpoint;
-pub use event::SuggestionState;
-use event::{
+pub use event::{
     Event,
     EventType,
+    InlineShellCompletionActionedOptions,
+    SuggestionState,
 };
 use fig_api_client::ai::{
     cw_client,
@@ -189,6 +196,105 @@ impl Client {
         }
     }
 
+    async fn send_event(&self, event: Event) {
+        self.send_cw_telemetry_event(&event).await;
+        self.send_telemetry_toolkit_metric(event).await;
+    }
+
+    async fn send_telemetry_toolkit_metric(&self, event: Event) {
+        if telemetry_is_disabled() {
+            return;
+        }
+
+        let toolkit_telemetry_client = self.toolkit_telemetry_client.clone();
+        let client_id = self.client_id;
+        let Some(metric_datum) = event.into_metric_datum() else {
+            return;
+        };
+
+        let mut set = JOIN_SET.lock().await;
+        set.spawn({
+            async move {
+                let product = AwsProduct::CodewhispererTerminal;
+                let product_version = env!("CARGO_PKG_VERSION");
+                let os = std::env::consts::OS;
+                let os_architecture = std::env::consts::ARCH;
+                let os_version = os_version().map(|v| v.to_string()).unwrap_or_default();
+                let metric_name = metric_datum.metric_name().to_owned();
+
+                if let Err(err) = toolkit_telemetry_client
+                    .post_metrics()
+                    .aws_product(product)
+                    .aws_product_version(product_version)
+                    .client_id(client_id)
+                    .os(os)
+                    .os_architecture(os_architecture)
+                    .os_version(os_version)
+                    .metric_data(metric_datum)
+                    .send()
+                    .await
+                    .map_err(DisplayErrorContext)
+                {
+                    error!(%err, ?metric_name, "Failed to post metric");
+                }
+            }
+        });
+    }
+
+    async fn send_cw_telemetry_event(&self, event: &Event) {
+        match &event.ty {
+            EventType::TranslationActioned {
+                latency,
+                suggestion_state,
+                terminal,
+                terminal_version,
+                shell,
+                shell_version,
+            } => {
+                self.send_cw_telemetry_translation_action(
+                    *latency,
+                    *suggestion_state,
+                    terminal.clone(),
+                    terminal_version.clone(),
+                    shell.clone(),
+                    shell_version.clone(),
+                )
+                .await;
+            },
+            EventType::CompletionInserted {
+                command,
+                terminal,
+                shell,
+            } => {
+                self.send_cw_telemetry_completion_inserted(command.clone(), terminal.clone(), shell.clone())
+                    .await;
+            },
+            EventType::ChatAddedMessage {
+                conversation_id,
+                message_id,
+            } => {
+                self.send_cw_telemetry_chat_add_message_event(conversation_id.clone(), message_id.clone())
+                    .await;
+            },
+            EventType::InlineShellCompletionActioned {
+                session_id,
+                request_id,
+                latency,
+                suggestion_state,
+                ..
+            } => {
+                self.send_cw_telemetry_user_trigger_decision_event(
+                    session_id.clone(),
+                    request_id.clone(),
+                    *latency,
+                    suggestion_state.is_accepted(),
+                )
+                .await;
+            },
+            _ => {},
+        }
+    }
+
     fn user_context(&self) -> Option<UserContext> {
         let operating_system = match std::env::consts::OS {
             "linux" => OperatingSystem::Linux,
@@ -216,49 +322,17 @@ impl Client {
         }
     }
 
-    async fn post_metric(&self, inner: Event) {
-        if telemetry_is_disabled() {
-            return;
-        }
-
-        let toolkit_telemetry_client = self.toolkit_telemetry_client.clone();
-        let client_id = self.client_id;
-
-        let mut set = JOIN_SET.lock().await;
-        set.spawn({
-            let inner = inner.clone();
-            async move {
-                let inner = inner.into_metric_datum();
-                let product = AwsProduct::CodewhispererTerminal;
-                let product_version = env!("CARGO_PKG_VERSION");
-                let os = std::env::consts::OS;
-                let os_architecture = std::env::consts::ARCH;
-                let os_version = os_version().map(|v| v.to_string()).unwrap_or_default();
-                let metric_name = inner.metric_name().to_owned();
-
-                if let Err(err) = toolkit_telemetry_client
-                    .post_metrics()
-                    .aws_product(product)
-                    .aws_product_version(product_version)
-                    .client_id(client_id)
-                    .os(os)
-                    .os_architecture(os_architecture)
-                    .os_version(os_version)
-                    .metric_data(inner)
-                    .send()
-                    .await
-                    .map_err(DisplayErrorContext)
-                {
-                    error!(%err, ?metric_name, "Failed to post metric");
-                }
-            }
-        });
-    }
-
-    async fn translation_actioned_event(&self, latency: Duration, suggestion_state: SuggestionState) {
+    async fn send_cw_telemetry_translation_action(
+        &self,
+        latency: Duration,
+        suggestion_state: SuggestionState,
+        terminal: Option<String>,
+        terminal_version: Option<String>,
+        shell: Option<String>,
+        shell_version: Option<String>,
+    ) {
         let codewhisperer_client = self.codewhisperer_client.clone();
         let user_context = self.user_context().unwrap();
-
         let opt_out_preference = opt_out_preference();
 
         let mut set = JOIN_SET.lock().await;
@@ -270,19 +344,22 @@ impl Client {
                 .time_to_suggestion(latency.as_millis() as i32)
                 .is_completion_accepted(suggestion_state == SuggestionState::Accept);
 
-            if let Some(terminal) = &*CURRENT_TERMINAL {
-                terminal_user_interaction_event_builder =
-                    terminal_user_interaction_event_builder.terminal(terminal.to_string());
+            if let Some(terminal) = terminal {
+                terminal_user_interaction_event_builder = terminal_user_interaction_event_builder.terminal(terminal);
             }
 
-            if let Some(terminal_version) = &*CURRENT_TERMINAL_VERSION {
+            if let Some(terminal_version) = terminal_version {
                 terminal_user_interaction_event_builder =
-                    terminal_user_interaction_event_builder.terminal_version(terminal_version.to_string());
+                    terminal_user_interaction_event_builder.terminal_version(terminal_version);
             }
 
-            if let Some(shell) = Shell::current_shell() {
+            if let Some(shell) = shell {
+                terminal_user_interaction_event_builder = terminal_user_interaction_event_builder.shell(shell);
+            }
+
+            if let Some(shell_version) = shell_version {
                 terminal_user_interaction_event_builder =
-                    terminal_user_interaction_event_builder.shell(shell.to_string());
+                    terminal_user_interaction_event_builder.shell_version(shell_version);
             }
 
             let terminal_user_interaction_event = terminal_user_interaction_event_builder.build();
@@ -302,7 +379,12 @@ impl Client {
         });
     }
 
-    async fn completion_inserted_event(&self, command: String, terminal: Option<String>, shell: Option<String>) {
+    async fn send_cw_telemetry_completion_inserted(
+        &self,
+        command: String,
+        terminal: Option<String>,
+        shell: Option<String>,
+    ) {
         let codewhisperer_client = self.codewhisperer_client.clone();
         let user_context = self.user_context().unwrap();
         let opt_out_preference = opt_out_preference();
@@ -340,7 +422,7 @@ impl Client {
         });
     }
 
-    async fn chat_add_message_event(&self, conversation_id: String, message_id: String) {
+    async fn send_cw_telemetry_chat_add_message_event(&self, conversation_id: String, message_id: String) {
         let codewhisperer_client = self.codewhisperer_client.clone();
         let user_context = self.user_context().unwrap();
         let opt_out_preference = opt_out_preference();
@@ -373,7 +455,7 @@ impl Client {
     }
 
     /// This is the user decision to accept a suggestion for inline suggestions
-    async fn user_trigger_decision_event(
+    async fn send_cw_telemetry_user_trigger_decision_event(
         &self,
         session_id: String,
         request_id: String,
@@ -431,77 +513,33 @@ impl Client {
     }
 }
 
+pub async fn send_event(event: Event) {
+    client().await.send_event(event).await;
+}
+
+pub async fn dispatch_or_send_event(event: Event) {
+    if dispatch(&event).await.should_fallback() {
+        send_event(event).await;
+    }
+}
+
 pub async fn send_user_logged_in() {
-    client()
-        .await
-        .post_metric(Event::new(EventType::UserLoggedIn {}).await)
-        .await;
+    let event = Event::new(EventType::UserLoggedIn {}).await;
+    dispatch_or_send_event(event).await;
 }
 
 pub async fn send_completion_inserted(command: String, terminal: Option<String>, shell: Option<String>) {
-    let client = client().await;
-    client
-        .completion_inserted_event(command.clone(), terminal.clone(), shell.clone())
-        .await;
-
     let event = Event::new(EventType::CompletionInserted {
         command,
         terminal,
         shell,
     })
     .await;
-
-    client.post_metric(event).await;
-}
-
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct InlineShellCompletionActionedOptions {
-    pub session_id: String,
-    pub request_id: String,
-    pub accepted: bool,
-    pub edit_buffer_len: i64,
-    pub suggested_chars_len: i64,
-    pub latency: Duration,
-}
-
-pub async fn send_inline_shell_completion_actioned(options: InlineShellCompletionActionedOptions) {
-    let client = client().await;
-
-    let (shell, shell_version) = Shell::current_shell_version()
-        .await
-        .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
-        .unwrap_or((None, None));
-
-    let event = Event::new(EventType::InlineShellCompletionActioned {
-        options: options.clone(),
-        terminal: CURRENT_TERMINAL.as_ref().map(|t| t.internal_id().to_string()),
-        terminal_version: CURRENT_TERMINAL_VERSION.clone(),
-        shell: shell.map(|s| s.to_string()),
-        shell_version,
-    })
-    .await;
-
-    client
-        .user_trigger_decision_event(
-            options.session_id,
-            options.request_id,
-            options.latency,
-            options.accepted,
-        )
-        .await;
-
-    client.post_metric(event).await;
+    dispatch_or_send_event(event).await;
 }
 
 pub async fn send_translation_actioned(latency: Duration, suggestion_state: SuggestionState) {
-    let (shell, shell_version) = Shell::current_shell_version()
-        .await
-        .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
-        .unwrap_or((None, None));
-
-    let client = client().await;
-
+    let (shell, shell_version) = shell().await;
     let event = Event::new(EventType::TranslationActioned {
         latency,
         suggestion_state,
@@ -511,18 +549,11 @@ pub async fn send_translation_actioned(latency: Duration, suggestion_state: Sugg
         shell_version,
     })
     .await;
-
-    client.translation_actioned_event(latency, suggestion_state).await;
-
-    client.post_metric(event).await;
+    dispatch_or_send_event(event).await;
 }
 
 pub async fn send_cli_subcommand_executed(subcommand: impl Into<String>) {
-    let (shell, shell_version) = Shell::current_shell_version()
-        .await
-        .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
-        .unwrap_or((None, None));
-
+    let (shell, shell_version) = shell().await;
     let event = Event::new(EventType::CliSubcommandExecuted {
         subcommand: subcommand.into(),
         terminal: CURRENT_TERMINAL.as_ref().map(|t| t.internal_id().to_string()),
@@ -531,16 +562,11 @@ pub async fn send_cli_subcommand_executed(subcommand: impl Into<String>) {
         shell_version,
     })
     .await;
-
-    client().await.post_metric(event).await;
+    dispatch_or_send_event(event).await;
 }
 
 pub async fn send_doctor_check_failed(failed_check: impl Into<String>) {
-    let (shell, shell_version) = Shell::current_shell_version()
-        .await
-        .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
-        .unwrap_or((None, None));
-
+    let (shell, shell_version) = shell().await;
     let event = Event::new(EventType::DoctorCheckFailed {
         doctor_check: failed_check.into(),
         terminal: CURRENT_TERMINAL.as_ref().map(|t| t.internal_id().to_string()),
@@ -549,13 +575,12 @@ pub async fn send_doctor_check_failed(failed_check: impl Into<String>) {
         shell_version,
     })
     .await;
-
-    client().await.post_metric(event).await;
+    dispatch_or_send_event(event).await;
 }
 
 pub async fn send_dashboard_page_viewed(route: impl Into<String>) {
     let event = Event::new(EventType::DashboardPageViewed { route: route.into() }).await;
-    client().await.post_metric(event).await;
+    dispatch_or_send_event(event).await;
 }
 
 pub async fn send_menu_bar_actioned(menu_bar_item: Option<impl Into<String>>) {
@@ -563,26 +588,38 @@ pub async fn send_menu_bar_actioned(menu_bar_item: Option<impl Into<String>>) {
         menu_bar_item: menu_bar_item.map(|i| i.into()),
     })
     .await;
-    client().await.post_metric(event).await;
+    dispatch_or_send_event(event).await;
 }
 
 pub async fn send_fig_user_migrated() {
     let event = Event::new(EventType::FigUserMigrated {}).await;
-    client().await.post_metric(event).await;
+    dispatch_or_send_event(event).await;
 }
 
 pub async fn send_start_chat(conversation_id: String) {
-    let event = Event::new(EventType::AmazonqStartChat { conversation_id }).await;
-    client().await.post_metric(event).await;
+    let event = Event::new(EventType::ChatStart { conversation_id }).await;
+    dispatch_or_send_event(event).await;
 }
 
 pub async fn send_end_chat(conversation_id: String) {
-    let event = Event::new(EventType::AmazonqEndChat { conversation_id }).await;
-    client().await.post_metric(event).await;
+    let event = Event::new(EventType::ChatEnd { conversation_id }).await;
+    dispatch_or_send_event(event).await;
 }
 
 pub async fn send_chat_added_message(conversation_id: String, message_id: String) {
-    client().await.chat_add_message_event(conversation_id, message_id).await;
+    let event = Event::new(EventType::ChatAddedMessage {
+        conversation_id,
+        message_id,
+    })
+    .await;
+    dispatch_or_send_event(event).await;
+}
+
+async fn shell() -> (Option<Shell>, Option<String>) {
+    Shell::current_shell_version()
+        .await
+        .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
+        .unwrap_or((None, None))
 }
 
 #[cfg(test)]
@@ -654,15 +691,6 @@ mod test {
     async fn test_all_telemetry() {
         send_user_logged_in().await;
         send_completion_inserted(CLI_BINARY_NAME.to_owned(), None, None).await;
-        send_inline_shell_completion_actioned(InlineShellCompletionActionedOptions {
-            session_id: "".into(),
-            request_id: "".into(),
-            accepted: true,
-            edit_buffer_len: 0,
-            suggested_chars_len: 0,
-            latency: Duration::from_secs(1),
-        })
-        .await;
         send_translation_actioned(Duration::from_millis(10), SuggestionState::Accept).await;
         send_cli_subcommand_executed("doctor").await;
         send_doctor_check_failed("").await;

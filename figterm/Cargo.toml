@@ -18,6 +18,8 @@ profiling_early_exit = []
 alacritty_terminal = { path = "../lib/alacritty_terminal" }
 anyhow.workspace = true
 async-trait.workspace = true
+auth.workspace = true
+aws-types.workspace = true
 bitflags.workspace = true
 bstr.workspace = true
 bytes.workspace = true

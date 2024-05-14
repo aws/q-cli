@@ -1,21 +1,34 @@
 use std::fmt::Write;
 use std::time::{
     Duration,
+    Instant,
     SystemTime,
 };
 
+use aws_types::request_id::RequestId;
 use fig_api_client::ai::{
     CodeWhispererFileContext,
+    CwResponse,
     LanguageName,
     ProgrammingLanguage,
 };
 use fig_proto::figterm::figterm_response_message::Response as FigtermResponse;
 use fig_proto::figterm::{
     FigtermResponseMessage,
+    InlineShellCompletionAcceptRequest,
     InlineShellCompletionRequest,
     InlineShellCompletionResponse,
 };
 use fig_settings::history::CommandInfo;
+use fig_telemetry::{
+    Event,
+    SuggestionState,
+};
+use fig_util::terminal::{
+    CURRENT_TERMINAL,
+    CURRENT_TERMINAL_VERSION,
+};
+use fig_util::Shell;
 use flume::Sender;
 use once_cell::sync::Lazy;
 use radix_trie::TrieCommon;
@@ -35,8 +48,73 @@ use crate::history::{
 static LAST_RECEIVED: Mutex<Option<SystemTime>> = Mutex::const_new(None);
 
 static CACHE_ENABLED: Lazy<bool> = Lazy::new(|| std::env::var_os("Q_INLINE_SHELL_COMPLETION_CACHE_DISABLE").is_none());
-pub static COMPLETION_CACHE: Lazy<Mutex<radix_trie::Trie<String, f64>>> =
-    Lazy::new(|| Mutex::new(radix_trie::Trie::new()));
+static COMPLETION_CACHE: Lazy<Mutex<radix_trie::Trie<String, f64>>> = Lazy::new(|| Mutex::new(radix_trie::Trie::new()));
+
+static TELEMETRY_QUEUE: Lazy<Mutex<TelemetryQueue>> = Lazy::new(|| Mutex::new(TelemetryQueue::new()));
+
+pub async fn on_prompt() {
+    *COMPLETION_CACHE.lock().await = radix_trie::Trie::new();
+    TELEMETRY_QUEUE.lock().await.send_all_items().await;
+}
+
+struct TelemetryQueue {
+    items: Vec<TelemetryQueueItem>,
+}
+
+impl TelemetryQueue {
+    fn new() -> Self {
+        Self { items: Vec::new() }
+    }
+
+    async fn send_all_items(&mut self) {
+        let start_url = auth::builder_id_token().await.ok().flatten().and_then(|t| t.start_url);
+        for item in self.items.drain(..) {
+            let TelemetryQueueItem {
+                timestamp,
+                session_id,
+                request_id,
+                suggestion_state,
+                edit_buffer_len,
+                suggested_chars_len,
+                latency,
+                ..
+            } = item;
+
+            fig_telemetry::send_event(Event {
+                created_time: Some(timestamp),
+                credential_start_url: start_url.clone(),
+                ty: fig_telemetry::EventType::InlineShellCompletionActioned {
+                    session_id,
+                    request_id,
+                    suggestion_state,
+                    edit_buffer_len,
+                    suggested_chars_len,
+                    latency,
+                    terminal: CURRENT_TERMINAL.as_ref().map(|s| s.internal_id().into_owned()),
+                    terminal_version: CURRENT_TERMINAL_VERSION.as_ref().map(|s| s.clone()),
+                    // The only supported shell currently is Zsh
+                    shell: Some(Shell::Zsh.as_str().into()),
+                    shell_version: None,
+                },
+            })
+            .await;
+        }
+    }
+}
+
+struct TelemetryQueueItem {
+    buffer: String,
+    suggestion: String,
+
+    timestamp: SystemTime,
+
+    session_id: String,
+    request_id: String,
+    suggestion_state: SuggestionState,
+    edit_buffer_len: Option<i64>,
+    suggested_chars_len: Option<i64>,
+    latency: Duration,
+}
 
 pub async fn handle_request(
     figterm_request: InlineShellCompletionRequest,
@@ -145,6 +223,8 @@ pub async fn handle_request(
             next_token: None,
         };
 
+        let start_instant = Instant::now();
+
         let response = match fig_api_client::ai::request_cw(request)
             .await
             .map_err(|err| err.into_service_error())
@@ -158,11 +238,12 @@ pub async fn handle_request(
         };
 
         let insert_text = match response {
-            Ok(response) => {
-                let recommendations = response.completions.unwrap_or_default();
+            Ok(CwResponse { output, session_id }) => {
+                let request_id = output.request_id().unwrap().to_owned();
+                let completions = output.completions.unwrap_or_default();
                 let mut completion_cache = COMPLETION_CACHE.lock().await;
 
-                let mut recommendations = recommendations
+                let mut completions = completions
                     .into_iter()
                     .map(|choice| {
                         choice
@@ -174,12 +255,34 @@ pub async fn handle_request(
                     })
                     .collect::<Vec<_>>();
 
-                for recommendation in &recommendations {
+                for recommendation in &completions {
                     let full_text = format!("{buffer}{recommendation}");
                     completion_cache.insert(full_text, 1.0);
                 }
 
-                recommendations.first_mut().map(std::mem::take)
+                if let Some(suggestion) = completions.first() {
+                    let buffer = buffer.to_owned();
+                    let suggestion = suggestion.clone();
+                    tokio::spawn(async move {
+                        TELEMETRY_QUEUE.lock().await.items.push(TelemetryQueueItem {
+                            suggestion: suggestion.clone(),
+                            timestamp: SystemTime::now(),
+                            session_id: session_id.unwrap_or_default(),
+                            request_id,
+                            latency: start_instant.elapsed(),
+                            suggestion_state: if suggestion.is_empty() {
+                                SuggestionState::Empty
+                            } else {
+                                SuggestionState::Accept
+                            },
+                            edit_buffer_len: buffer.chars().count().try_into().ok(),
+                            suggested_chars_len: suggestion.chars().count().try_into().ok(),
+                            buffer,
+                        });
+                    });
+                }
+
+                completions.first_mut().map(std::mem::take)
             },
             Err(err) => {
                 error!(%err, "Failed to get inline_shell_completion completion");
@@ -208,6 +311,16 @@ pub async fn handle_request(
 
         break;
     }
+}
+
+pub async fn handle_accept(figterm_request: InlineShellCompletionAcceptRequest, _session_id: String) {
+    let mut queue = TELEMETRY_QUEUE.lock().await;
+    for item in queue.items.iter_mut() {
+        if item.buffer == figterm_request.buffer.trim_start() && item.suggestion == figterm_request.suggestion {
+            item.suggestion_state = SuggestionState::Accept;
+        }
+    }
+    queue.send_all_items().await;
 }
 
 fn prompt(history: &[CommandInfo], buffer: &str) -> String {

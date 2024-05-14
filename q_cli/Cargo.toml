@@ -22,7 +22,7 @@ arboard = { version = "3.1.1", default-features = false, features = [
 ] }
 async-trait.workspace = true
 auth.workspace = true
-aws-types = "1.1.8"
+aws-types.workspace = true
 bitflags.workspace = true
 bstr.workspace = true
 bytes.workspace = true

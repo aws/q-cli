@@ -63,6 +63,7 @@ def rust_env(release: bool, linker=None) -> Dict[str, str]:
     env["AMAZON_Q_BUILD_VARIANT"] = get_variant().name
     env["AMAZON_Q_BUILD_HASH"] = build_hash()
     env["AMAZON_Q_BUILD_DATETIME"] = build_time()
+    env["Q_TELEMETRY_CLIENT_ID"] = "ffffffff-ffff-ffff-ffff-ffffffffffff"
 
     if skip_fish_tests():
         env["AMAZON_Q_BUILD_SKIP_FISH_TESTS"] = "1"

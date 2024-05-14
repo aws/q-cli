@@ -14,7 +14,8 @@ message FigtermRequestMessage {
     UpdateShellContextRequest update_shell_context = 6;
     NotifySSHSessionStartedRequest notify_ssh_session_started = 7;
     InlineShellCompletionRequest inline_shell_completion = 8;
-    InlineShellCompletionTelemetryRequest inline_shell_completion_telemetry = 9;
+    InlineShellCompletionAcceptRequest inline_shell_completion_accept = 9;
+    TelemetryRequest telemtety = 10;
   }
 }
 
@@ -23,7 +24,6 @@ message FigtermResponseMessage {
   oneof response {
     DiagnosticsResponse diagnostics = 1;
     InlineShellCompletionResponse inline_shell_completion = 2;
-    InlineShellCompletionTelemetryResponse inline_shell_completion_telemetry = 9;
   }
 }
 
@@ -162,9 +162,12 @@ message InlineShellCompletionResponse {
   optional string insert_text = 1;
 }
 
-message InlineShellCompletionTelemetryRequest {
+message InlineShellCompletionAcceptRequest {
   string buffer = 1;
   string suggestion = 2;
 }
 
-message InlineShellCompletionTelemetryResponse {}
+message TelemetryRequest {
+  // A json blob containing the event
+  string event_blob = 1;
+}

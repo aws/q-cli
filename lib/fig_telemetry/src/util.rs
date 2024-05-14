@@ -30,6 +30,12 @@ pub(crate) fn get_client_id() -> Uuid {
         return uuid!("11111111-1111-1111-1111-111111111111");
     }
 
+    if let Ok(client_id) = std::env::var("Q_TELEMETRY_CLIENT_ID") {
+        if let Ok(uuid) = Uuid::from_str(&client_id) {
+            return uuid;
+        }
+    }
+
     match fig_settings::state::get_string("telemetryClientId")
         .ok()
         .flatten()

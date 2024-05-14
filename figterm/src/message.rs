@@ -25,6 +25,7 @@ use fig_proto::figterm::{
     self,
     FigtermRequestMessage,
     FigtermResponseMessage,
+    TelemetryRequest,
 };
 use fig_proto::remote::{
     clientbound,
@@ -305,9 +306,10 @@ pub async fn process_figterm_request(
             Ok(None)
         },
         FigtermRequest::InlineShellCompletion(_) => anyhow::bail!("InlineShellCompletion is not supported over remote"),
-        FigtermRequest::InlineShellCompletionTelemetry(_) => {
-            anyhow::bail!("InlineShellCompletionTelemetry is not supported over remote")
+        FigtermRequest::InlineShellCompletionAccept(_) => {
+            anyhow::bail!("InlineShellCompletionAccept is not supported over remote")
         },
+        FigtermRequest::Telemtety(_) => anyhow::bail!("Telemetry is not supported over remote"),
     }
 }
 
@@ -334,6 +336,17 @@ pub async fn process_figterm_message(
                 response_tx,
                 history_sender,
             ));
+        },
+        Some(FigtermRequest::InlineShellCompletionAccept(request)) => {
+            tokio::spawn(inline_shell_completion::handle_accept(request, session_id.to_owned()));
+        },
+        Some(FigtermRequest::Telemtety(TelemetryRequest { event_blob })) => {
+            match fig_telemetry::Event::from_json(&event_blob) {
+                Ok(event) => {
+                    tokio::spawn(fig_telemetry::send_event(event));
+                },
+                Err(err) => error!(%err, "Failed to parse telemetry event"),
+            }
         },
         Some(request) => {
             match process_figterm_request(request, main_loop_tx, term, pty_master, key_interceptor).await {
@@ -367,9 +380,7 @@ async fn send_figterm_response_hostbound(
                 nonce,
                 response: Some(match response {
                     FigtermResponse::Diagnostics(diagnostics) => Response::Diagnostics(diagnostics),
-                    FigtermResponse::InlineShellCompletion(_) | FigtermResponse::InlineShellCompletionTelemetry(_) => {
-                        unreachable!()
-                    },
+                    FigtermResponse::InlineShellCompletion(_) => unreachable!(),
                 }),
             })),
         };
