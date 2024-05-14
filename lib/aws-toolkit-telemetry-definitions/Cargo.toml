@@ -17,3 +17,7 @@ syn = "2.0.38"
 
 [dependencies]
 amzn-toolkit-telemetry = { path = "../amzn-toolkit-telemetry" }
+serde.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

@@ -14,6 +14,7 @@ message FigtermRequestMessage {
     UpdateShellContextRequest update_shell_context = 6;
     NotifySSHSessionStartedRequest notify_ssh_session_started = 7;
     InlineShellCompletionRequest inline_shell_completion = 8;
+    InlineShellCompletionTelemetryRequest inline_shell_completion_telemetry = 9;
   }
 }
 
@@ -22,6 +23,7 @@ message FigtermResponseMessage {
   oneof response {
     DiagnosticsResponse diagnostics = 1;
     InlineShellCompletionResponse inline_shell_completion = 2;
+    InlineShellCompletionTelemetryResponse inline_shell_completion_telemetry = 9;
   }
 }
 
@@ -159,3 +161,10 @@ message InlineShellCompletionResponse {
   // The text to insert
   optional string insert_text = 1;
 }
+
+message InlineShellCompletionTelemetryRequest {
+  string buffer = 1;
+  string suggestion = 2;
+}
+
+message InlineShellCompletionTelemetryResponse {}

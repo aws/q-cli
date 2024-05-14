@@ -6,7 +6,6 @@ use std::io::{
 use std::process::ExitCode;
 use std::time::Instant;
 
-use amzn_codewhisperer_client::types::SuggestionState;
 use anstream::{
     eprintln,
     println,
@@ -31,6 +30,7 @@ use fig_ipc::{
     BufferedUnixStream,
     SendMessage,
 };
+use fig_telemetry::SuggestionState;
 use fig_util::env_var::QTERM_SESSION_ID;
 use fig_util::CLI_BINARY_NAME;
 use once_cell::sync::Lazy;

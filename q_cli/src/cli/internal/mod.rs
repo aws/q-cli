@@ -1,4 +1,5 @@
 mod generate_ssh;
+mod inline_shell_completion;
 pub mod local_state;
 pub mod should_figterm_launch;
 
@@ -45,7 +46,6 @@ use fig_ipc::{
 use fig_proto::figterm::figterm_request_message::Request as FigtermRequest;
 use fig_proto::figterm::{
     FigtermRequestMessage,
-    FigtermResponseMessage,
     NotifySshSessionStartedRequest,
     UpdateShellContextRequest,
 };
@@ -54,6 +54,7 @@ use fig_proto::hooks::{
     new_event_hook,
 };
 use fig_proto::local::EnvironmentVariable;
+use fig_proto::util::get_shell;
 use fig_proto::ReflectMessage;
 use fig_util::desktop::{
     launch_fig_desktop,
@@ -82,6 +83,10 @@ use tracing::{
     trace,
 };
 
+use self::inline_shell_completion::{
+    inline_shell_completion,
+    inline_shell_completion_accept,
+};
 use crate::cli::installation::install_cli;
 
 #[derive(Debug, Args, PartialEq, Eq)]
@@ -305,7 +310,7 @@ impl InternalSubcommand {
             InternalSubcommand::Install(args) => {
                 let no_confirm = args.no_confirm;
                 let force = args.force;
-                install_cli(args.into(), no_confirm, force).await?;
+                install_cli(args.into(), no_confirm, force).await
             },
             InternalSubcommand::Uninstall {
                 dotfiles,
@@ -335,9 +340,13 @@ impl InternalSubcommand {
                 let mut components = components;
                 components.set(InstallComponents::BINARY, false);
                 fig_install::uninstall(components).await?;
+                Ok(ExitCode::SUCCESS)
             },
-            InternalSubcommand::PreCmd { alias } => pre_cmd(alias).await,
-            InternalSubcommand::LocalState(local_state) => local_state.execute().await?,
+            InternalSubcommand::PreCmd { alias } => Ok(pre_cmd(alias).await),
+            InternalSubcommand::LocalState(local_state) => {
+                local_state.execute().await?;
+                Ok(ExitCode::SUCCESS)
+            },
             InternalSubcommand::Callback(CallbackArgs {
                 handler_id,
                 filename,
@@ -383,20 +392,31 @@ impl InternalSubcommand {
                     Ok(()) => debug!("Successfully sent hook"),
                     Err(e) => debug!("Couldn't send hook {e}"),
                 }
+
+                Ok(ExitCode::SUCCESS)
             },
-            InternalSubcommand::GetShell => {},
+            InternalSubcommand::GetShell => match get_shell() {
+                Ok(shell) => {
+                    if write!(stdout(), "{shell}").is_ok() {
+                        return Ok(ExitCode::SUCCESS);
+                    }
+                    Ok(ExitCode::FAILURE)
+                },
+                Err(_) => Ok(ExitCode::FAILURE),
+            },
             InternalSubcommand::Hostname => {
                 if let Some(hostname) = System::host_name() {
                     if write!(stdout(), "{hostname}").is_ok() {
                         return Ok(ExitCode::SUCCESS);
                     }
                 }
-                return Ok(ExitCode::FAILURE);
+                Ok(ExitCode::FAILURE)
             },
-            InternalSubcommand::ShouldFigtermLaunch => return Ok(should_figterm_launch::should_figterm_launch()),
+            InternalSubcommand::ShouldFigtermLaunch => Ok(should_figterm_launch::should_figterm_launch()),
             InternalSubcommand::Event { payload, apps, name } => {
                 let hook = new_event_hook(name, payload, apps);
                 send_hook_to_socket(hook).await?;
+                Ok(ExitCode::SUCCESS)
             },
             InternalSubcommand::Ipc {
                 app,
@@ -438,9 +458,12 @@ impl InternalSubcommand {
                 } else {
                     conn.send_message(message).await?;
                 }
+
+                Ok(ExitCode::SUCCESS)
             },
             InternalSubcommand::SocketsDir => {
                 writeln!(stdout(), "{}", directories::sockets_dir_utf8()?).ok();
+                Ok(ExitCode::SUCCESS)
             },
             InternalSubcommand::FigtermSocketPath { session_id } => {
                 writeln!(
@@ -449,6 +472,7 @@ impl InternalSubcommand {
                     directories::figterm_socket_path(session_id)?.to_string_lossy()
                 )
                 .ok();
+                Ok(ExitCode::SUCCESS)
             },
             InternalSubcommand::UninstallForAllUsers => {
                 if !cfg!(target_os = "macos") {
@@ -513,6 +537,8 @@ impl InternalSubcommand {
                 if !open_page_success {
                     bail!("Failed to uninstall completely");
                 }
+
+                Ok(ExitCode::SUCCESS)
             },
             InternalSubcommand::StreamFromSocket => {
                 let mut stdout = tokio::io::stdout();
@@ -560,9 +586,11 @@ impl InternalSubcommand {
                         }
                     }
                 }
+                Ok(ExitCode::SUCCESS)
             },
             InternalSubcommand::Uuidgen => {
                 let _ = writeln!(stdout(), "{}", uuid::Uuid::new_v4());
+                Ok(ExitCode::SUCCESS)
             },
             #[cfg(target_os = "linux")]
             InternalSubcommand::IbusBootstrap => {
@@ -591,6 +619,7 @@ impl InternalSubcommand {
                 } else {
                     writeln!(stdout(), "ibus-daemon is already running").ok();
                 }
+                Ok(ExitCode::SUCCESS)
             },
             #[cfg(target_os = "linux")]
             InternalSubcommand::DetectSandbox => {
@@ -621,25 +650,30 @@ impl InternalSubcommand {
                         1
                     },
                 };
-                return Ok(ExitCode::from(exit_code));
+                Ok(ExitCode::from(exit_code))
             },
             InternalSubcommand::OpenUninstallPage => {
                 let url = fig_install::UNINSTALL_URL;
-                if let Err(err) = fig_util::open_url(url) {
-                    info!("Failed to open uninstall directly, trying daemon proxy: {err}");
+                match fig_util::open_url(url) {
+                    Ok(_) => Ok(ExitCode::SUCCESS),
+                    Err(err) => {
+                        info!("Failed to open uninstall directly, trying daemon proxy: {err}");
 
-                    if let Err(err) =
-                        fig_ipc::local::send_command_to_socket(fig_proto::local::command::Command::OpenBrowser(
+                        match fig_ipc::local::send_command_to_socket(fig_proto::local::command::Command::OpenBrowser(
                             fig_proto::local::OpenBrowserCommand { url: url.into() },
                         ))
                         .await
-                    {
-                        info!("Failed to open uninstall via desktop, no more options: {err}");
-                        return Ok(ExitCode::FAILURE);
-                    }
+                        {
+                            Ok(_) => Ok(ExitCode::SUCCESS),
+                            Err(err) => {
+                                info!("Failed to open uninstall via desktop, no more options: {err}");
+                                Ok(ExitCode::FAILURE)
+                            },
+                        }
+                    },
                 }
             },
-            InternalSubcommand::PromptSsh { .. } => {},
+            InternalSubcommand::PromptSsh { .. } => Ok(ExitCode::SUCCESS),
             InternalSubcommand::SshLocalCommand { remote_dest, uuid } => {
                 // Ensure desktop app is running to avoid SSH errors on stdout when local side of
                 // RemoteForward isn't listening
@@ -663,20 +697,20 @@ impl InternalSubcommand {
                         )),
                     })
                     .await?;
-                }
+                };
+
+                Ok(ExitCode::SUCCESS)
             },
             #[cfg(target_os = "macos")]
             InternalSubcommand::AttemptToFinishInputMethodInstallation { bundle_path } => {
                 match InputMethod::finish_input_method_installation(bundle_path) {
-                    Ok(_) => {
-                        return Ok(ExitCode::SUCCESS);
-                    },
+                    Ok(_) => Ok(ExitCode::SUCCESS),
                     Err(err) => {
                         println!(
                             "{}",
                             serde_json::to_string(&err).expect("InputMethodError should be serializable")
                         );
-                        return Ok(ExitCode::FAILURE);
+                        Ok(ExitCode::FAILURE)
                     },
                 }
             },
@@ -691,6 +725,7 @@ impl InternalSubcommand {
                 .context("Failed to send dump state command")?;
 
                 println!("{}", state.json);
+                Ok(ExitCode::SUCCESS)
             },
             InternalSubcommand::FinishUpdate {
                 relaunch_dashboard,
@@ -722,6 +757,8 @@ impl InternalSubcommand {
                     verbose: false,
                 })
                 .ok();
+
+                Ok(ExitCode::SUCCESS)
             },
             #[cfg(target_os = "macos")]
             InternalSubcommand::SwapFiles {
@@ -751,10 +788,11 @@ impl InternalSubcommand {
                 match fig_install::macos::install(from_cstr, to_cstr, !not_same_bundle_name) {
                     Ok(_) => {
                         writeln!(stdout(), "success").ok();
+                        Ok(ExitCode::SUCCESS)
                     },
                     Err(err) => {
                         writeln!(stderr(), "Failed to swap files: {err}").ok();
-                        return Ok(ExitCode::FAILURE);
+                        Ok(ExitCode::FAILURE)
                     },
                 }
             },
@@ -776,58 +814,23 @@ impl InternalSubcommand {
                     InstallComponents::SHELL_INTEGRATIONS | InstallComponents::SSH
                 };
                 fig_install::uninstall(components).await.ok();
+                Ok(ExitCode::SUCCESS)
             },
             InternalSubcommand::GenerateSsh(args) => {
                 args.execute()?;
+                Ok(ExitCode::SUCCESS)
             },
-            InternalSubcommand::InlineShellCompletion { buffer } => {
-                let Ok(session_id) = std::env::var(QTERM_SESSION_ID) else {
-                    return Ok(ExitCode::FAILURE);
-                };
-
-                let Ok(mut conn) =
-                    BufferedUnixStream::connect(fig_util::directories::figterm_socket_path(&session_id)?).await
-                else {
-                    return Ok(ExitCode::FAILURE);
-                };
-
-                let Ok(Some(FigtermResponseMessage {
-                    response:
-                        Some(fig_proto::figterm::figterm_response_message::Response::InlineShellCompletion(
-                            fig_proto::figterm::InlineShellCompletionResponse {
-                                insert_text: Some(insert_text),
-                            },
-                        )),
-                })) = conn
-                    .send_recv_message_timeout(
-                        fig_proto::figterm::FigtermRequestMessage {
-                            request: Some(
-                                fig_proto::figterm::figterm_request_message::Request::InlineShellCompletion(
-                                    fig_proto::figterm::InlineShellCompletionRequest { buffer: buffer.clone() },
-                                ),
-                            ),
-                        },
-                        Duration::from_secs(5),
-                    )
-                    .await
-                else {
-                    return Ok(ExitCode::FAILURE);
-                };
-
-                let _ = writeln!(stdout(), "{buffer}{insert_text}");
-            },
+            InternalSubcommand::InlineShellCompletion { buffer } => Ok(inline_shell_completion(buffer).await),
             InternalSubcommand::InlineShellCompletionAccept { buffer, suggestion } => {
-                fig_telemetry::send_inline_shell_completion_actioned(true, buffer.len(), suggestion.len()).await;
+                Ok(inline_shell_completion_accept(buffer, suggestion).await)
             },
         }
-
-        Ok(ExitCode::SUCCESS)
     }
 }
 
-pub async fn pre_cmd(alias: Option<String>) {
+pub async fn pre_cmd(alias: Option<String>) -> ExitCode {
     let Ok(session_id) = std::env::var(QTERM_SESSION_ID) else {
-        return;
+        return ExitCode::FAILURE;
     };
 
     match figterm_socket_path(&session_id) {
@@ -848,11 +851,20 @@ pub async fn pre_cmd(alias: Option<String>) {
                 };
                 if let Err(err) = figterm_stream.send_message(message).await {
                     error!(%err, %session_id, "Failed to send UpdateShellContext to Figterm");
+                    ExitCode::FAILURE
+                } else {
+                    ExitCode::SUCCESS
                 }
             },
-            Err(err) => error!(%err, %session_id, "Failed to connect to Figterm socket"),
+            Err(err) => {
+                error!(%err, %session_id, "Failed to connect to Figterm socket");
+                ExitCode::FAILURE
+            },
         },
-        Err(err) => error!(%err, %session_id, "Failed to get Figterm socket path"),
+        Err(err) => {
+            error!(%err, %session_id, "Failed to get Figterm socket path");
+            ExitCode::FAILURE
+        },
     }
 }
 

@@ -9,7 +9,7 @@ use quote::{
 
 const DEF: &str = include_str!("./def.json");
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct TypeDef {
     name: String,
@@ -18,7 +18,7 @@ struct TypeDef {
     description: String,
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize)]
 struct MetricDef {
     name: String,
     description: String,
@@ -27,13 +27,13 @@ struct MetricDef {
     unit: Option<String>,
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize)]
 struct MetricMetadata {
     r#type: String,
     required: Option<bool>,
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize)]
 struct Def {
     types: Vec<TypeDef>,
     metrics: Vec<MetricDef>,
@@ -81,7 +81,9 @@ fn main() {
                     #[derive(Debug, Clone, PartialEq)]
                     #[non_exhaustive]
                     pub enum #name {
-                        #( #variants, )*
+                        #(
+                            #variants,
+                        )*
                     }
 
                     impl #name {
@@ -113,7 +115,8 @@ fn main() {
 
                 quote::quote!(
                     #[doc = #description]
-                    #[derive(Debug, Clone, PartialEq)]
+                    #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+                    #[serde(transparent)]
                     pub struct #name(pub #r#type);
 
                     impl #name {
@@ -151,7 +154,7 @@ fn main() {
     out.push('}');
 
     out.push_str("pub mod metrics {");
-    for m in data.metrics {
+    for m in data.metrics.clone() {
         let raw_name = m.name;
         let name = format_ident!("{}", raw_name.to_case(Case::Pascal));
         let description = m.description;
@@ -206,7 +209,8 @@ fn main() {
 
         let rust_type = quote::quote!(
             #[doc = #description]
-            #[derive(Debug, Clone, PartialEq)]
+            #[derive(Debug, Clone, PartialEq, ::serde::Serialize, ::serde::Deserialize)]
+            #[serde(rename_all = "camelCase")]
             pub struct #name {
                 /// The time that the event took place,
                 pub create_time: ::std::option::Option<::std::time::SystemTime>,
@@ -249,6 +253,20 @@ fn main() {
         );
 
         out.push_str(&rust_type.to_string());
+    }
+    out.push('}');
+
+    // enum of all metrics
+    let mut metrics = Vec::new();
+    for m in data.metrics {
+        let name = format_ident!("{}", m.name.to_case(Case::Pascal));
+        metrics.push(quote!(
+            #name
+        ));
+    }
+    out.push_str("#[derive(Debug, Clone, PartialEq, ::serde::Serialize, ::serde::Deserialize)]\n#[serde(tag = \"type\", content = \"content\")]\npub enum Metric {\n");
+    for m in metrics {
+        out.push_str(&format!("{m}(crate::metrics::{m}),\n"));
     }
     out.push('}');
 

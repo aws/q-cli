@@ -1,5 +1,6 @@
 pub mod cognito;
 pub mod endpoint;
+mod event;
 mod install_method;
 mod util;
 
@@ -10,14 +11,16 @@ use std::time::{
 
 use amzn_codewhisperer_client::types::{
     ChatAddMessageEvent,
+    CompletionType,
     IdeCategory,
     OperatingSystem,
     OptOutPreference,
-    SuggestionState,
+    ProgrammingLanguage,
     TelemetryEvent,
     TerminalUserInteractionEvent,
     TerminalUserInteractionEventType,
     UserContext,
+    UserTriggerDecisionEvent,
 };
 use amzn_toolkit_telemetry::config::{
     AppName,
@@ -28,38 +31,15 @@ use amzn_toolkit_telemetry::error::DisplayErrorContext;
 use amzn_toolkit_telemetry::types::AwsProduct;
 use amzn_toolkit_telemetry::Config;
 use aws_credential_types::provider::SharedCredentialsProvider;
-use aws_toolkit_telemetry_definitions::metrics::{
-    AmazonqEndChat,
-    AmazonqStartChat,
-    CodewhispererterminalCliSubcommandExecuted,
-    CodewhispererterminalDashboardPageViewed,
-    CodewhispererterminalDoctorCheckFailed,
-    CodewhispererterminalFigUserMigrated,
-    CodewhispererterminalMenuBarActioned,
-    CodewhispererterminalTranslationActioned,
-};
-use aws_toolkit_telemetry_definitions::types::{
-    AmazonqConversationId,
-    CodewhispererterminalAccepted,
-    CodewhispererterminalCommand,
-    CodewhispererterminalDoctorCheck,
-    CodewhispererterminalMenuBarItem,
-    CodewhispererterminalRoute,
-    CodewhispererterminalShell,
-    CodewhispererterminalShellVersion,
-    CodewhispererterminalSubcommand,
-    CodewhispererterminalSuggestedCount,
-    CodewhispererterminalTerminal,
-    CodewhispererterminalTerminalVersion,
-    CodewhispererterminalTypedCount,
-    CredentialStartUrl,
-};
-use aws_toolkit_telemetry_definitions::{
-    metrics,
-    IntoMetricDatum,
-};
+use aws_smithy_types::DateTime;
+use aws_toolkit_telemetry_definitions::IntoMetricDatum;
 use cognito::CognitoProvider;
 use endpoint::StaticEndpoint;
+pub use event::SuggestionState;
+use event::{
+    Event,
+    EventType,
+};
 use fig_api_client::ai::{
     cw_client,
     cw_endpoint,
@@ -86,7 +66,7 @@ use uuid::Uuid;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("telemetry is disabled")]
+    #[error("Telemetry is disabled")]
     TelemetryDisabled,
     #[error(transparent)]
     ClientError(#[from] amzn_toolkit_telemetry::operation::post_metrics::PostMetricsError),
@@ -103,6 +83,9 @@ async fn client() -> &'static Client {
         .await
 }
 
+/// A IDE toolkit telemetry stage
+///
+/// Endpoints from <https://w.amazon.com/bin/view/AWS/DevEx/IDEToolkits/Telemetry/>
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct TelemetryStage {
@@ -113,20 +96,21 @@ pub struct TelemetryStage {
 }
 
 impl TelemetryStage {
-    // data from <https://w.amazon.com/bin/view/AWS/DevEx/IDEToolkits/Telemetry/>
-    pub const BETA: Self = Self::new(
+    #[allow(dead_code)]
+    const BETA: Self = Self::new(
         "beta",
         "https://7zftft3lj2.execute-api.us-east-1.amazonaws.com/Beta",
         "us-east-1:db7bfc9f-8ecd-4fbb-bea7-280c16069a99",
         "us-east-1",
     );
-    pub const EXTERNAL_PROD: Self = Self::new(
+    const EXTERNAL_PROD: Self = Self::new(
         "prod",
         "https://client-telemetry.us-east-1.amazonaws.com",
         "us-east-1:820fd6d1-95c0-4ca4-bffb-3f01d32da842",
         "us-east-1",
     );
-    pub const INTERNAL_PROD: Self = Self::new(
+    #[allow(dead_code)]
+    const INTERNAL_PROD: Self = Self::new(
         "internal-prod",
         "https://1ek5zo40ci.execute-api.us-east-1.amazonaws.com/InternalProd",
         "us-east-1:4037bda8-adbd-4c71-ae5e-88b270261c25",
@@ -232,7 +216,7 @@ impl Client {
         }
     }
 
-    pub async fn post_metric(&self, inner: impl IntoMetricDatum + Clone + 'static) {
+    async fn post_metric(&self, inner: Event) {
         if telemetry_is_disabled() {
             return;
         }
@@ -387,25 +371,70 @@ impl Client {
             }
         });
     }
-}
 
-async fn start_url() -> Option<CredentialStartUrl> {
-    auth::builder_id_token()
-        .await
-        .ok()
-        .flatten()
-        .and_then(|t| t.start_url)
-        .map(CredentialStartUrl)
+    /// This is the user decision to accept a suggestion for inline suggestions
+    async fn user_trigger_decision_event(
+        &self,
+        session_id: String,
+        request_id: String,
+        latency: Duration,
+        accepted: bool,
+    ) {
+        let codewhisperer_client = self.codewhisperer_client.clone();
+        let user_context = self.user_context().unwrap();
+        let opt_out_preference = opt_out_preference();
+
+        let programming_language = match ProgrammingLanguage::builder().language_name("shell").build() {
+            Ok(language) => language,
+            Err(err) => {
+                error!(err =% DisplayErrorContext(err), "Failed to build programming language");
+                return;
+            },
+        };
+
+        let suggestion_state = if accepted {
+            SuggestionState::Accept
+        } else {
+            SuggestionState::Discard
+        };
+
+        let user_trigger_decision_event = match UserTriggerDecisionEvent::builder()
+            .session_id(session_id)
+            .request_id(request_id)
+            .programming_language(programming_language)
+            .completion_type(CompletionType::Line)
+            .suggestion_state(suggestion_state.into())
+            .recommendation_latency_milliseconds(latency.as_secs_f64() * 1000.0)
+            .timestamp(DateTime::from(SystemTime::now()))
+            .build()
+        {
+            Ok(event) => event,
+            Err(err) => {
+                error!(err =% DisplayErrorContext(err), "Failed to build user trigger decision event");
+                return;
+            },
+        };
+
+        let mut set = JOIN_SET.lock().await;
+        set.spawn(async move {
+            if let Err(err) = codewhisperer_client
+                .send_telemetry_event()
+                .telemetry_event(TelemetryEvent::UserTriggerDecisionEvent(user_trigger_decision_event))
+                .user_context(user_context)
+                .opt_out_preference(opt_out_preference)
+                .send()
+                .await
+            {
+                error!(err =% DisplayErrorContext(err), "Failed to send telemetry event");
+            }
+        });
+    }
 }
 
 pub async fn send_user_logged_in() {
     client()
         .await
-        .post_metric(metrics::CodewhispererterminalUserLoggedIn {
-            create_time: Some(SystemTime::now()),
-            value: None,
-            credential_start_url: start_url().await,
-        })
+        .post_metric(Event::new(EventType::UserLoggedIn {}).await)
         .await;
 }
 
@@ -414,53 +443,58 @@ pub async fn send_completion_inserted(command: String, terminal: Option<String>,
     client
         .completion_inserted_event(command.clone(), terminal.clone(), shell.clone())
         .await;
-    client
-        .post_metric(metrics::CodewhispererterminalCompletionInserted {
-            create_time: None,
-            value: None,
-            codewhispererterminal_command: Some(CodewhispererterminalCommand(command)),
-            codewhispererterminal_duration: None,
-            codewhispererterminal_terminal: terminal.map(CodewhispererterminalTerminal),
-            codewhispererterminal_terminal_version: None,
-            codewhispererterminal_shell: shell.map(CodewhispererterminalShell),
-            codewhispererterminal_shell_version: None,
-            credential_start_url: start_url().await,
-        })
-        .await;
+
+    let event = Event::new(EventType::CompletionInserted {
+        command,
+        terminal,
+        shell,
+    })
+    .await;
+
+    client.post_metric(event).await;
 }
 
-pub async fn send_inline_shell_completion_actioned(accepted: bool, edit_buffer_len: usize, suggested_chars_len: usize) {
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InlineShellCompletionActionedOptions {
+    pub session_id: String,
+    pub request_id: String,
+    pub accepted: bool,
+    pub edit_buffer_len: i64,
+    pub suggested_chars_len: i64,
+    pub latency: Duration,
+}
+
+pub async fn send_inline_shell_completion_actioned(options: InlineShellCompletionActionedOptions) {
+    let client = client().await;
+
     let (shell, shell_version) = Shell::current_shell_version()
         .await
         .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
         .unwrap_or((None, None));
 
-    client()
-        .await
-        .post_metric(metrics::CodewhispererterminalInlineShellActioned {
-            create_time: None,
-            value: None,
-            codewhispererterminal_duration: None,
-            codewhispererterminal_accepted: Some(CodewhispererterminalAccepted(accepted)),
-            codewhispererterminal_typed_count: Some(CodewhispererterminalTypedCount(edit_buffer_len as i64)),
-            codewhispererterminal_suggested_count: Some(CodewhispererterminalSuggestedCount(
-                suggested_chars_len as i64,
-            )),
-            codewhispererterminal_terminal: CURRENT_TERMINAL
-                .clone()
-                .map(|terminal| CodewhispererterminalTerminal(terminal.internal_id().to_string())),
-            codewhispererterminal_terminal_version: CURRENT_TERMINAL_VERSION
-                .clone()
-                .map(CodewhispererterminalTerminalVersion),
-            codewhispererterminal_shell: shell.map(|shell| CodewhispererterminalShell(shell.to_string())),
-            codewhispererterminal_shell_version: shell_version.map(CodewhispererterminalShellVersion),
-            credential_start_url: start_url().await,
-        })
+    let event = Event::new(EventType::InlineShellCompletionActioned {
+        options: options.clone(),
+        terminal: CURRENT_TERMINAL.as_ref().map(|t| t.internal_id().to_string()),
+        terminal_version: CURRENT_TERMINAL_VERSION.clone(),
+        shell: shell.map(|s| s.to_string()),
+        shell_version,
+    })
+    .await;
+
+    client
+        .user_trigger_decision_event(
+            options.session_id,
+            options.request_id,
+            options.latency,
+            options.accepted,
+        )
         .await;
+
+    client.post_metric(event).await;
 }
 
 pub async fn send_translation_actioned(latency: Duration, suggestion_state: SuggestionState) {
-    let accepted = suggestion_state == SuggestionState::Accept;
     let (shell, shell_version) = Shell::current_shell_version()
         .await
         .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
@@ -468,51 +502,37 @@ pub async fn send_translation_actioned(latency: Duration, suggestion_state: Sugg
 
     let client = client().await;
 
+    let event = Event::new(EventType::TranslationActioned {
+        latency,
+        suggestion_state,
+        terminal: CURRENT_TERMINAL.as_ref().map(|t| t.internal_id().to_string()),
+        terminal_version: CURRENT_TERMINAL_VERSION.clone(),
+        shell: shell.map(|s| s.to_string()),
+        shell_version,
+    })
+    .await;
+
     client.translation_actioned_event(latency, suggestion_state).await;
 
-    client
-        .post_metric(CodewhispererterminalTranslationActioned {
-            create_time: None,
-            value: None,
-            codewhispererterminal_duration: None,
-            codewhispererterminal_time_to_suggestion: None,
-            codewhispererterminal_accepted: Some(CodewhispererterminalAccepted(accepted)),
-            codewhispererterminal_terminal: CURRENT_TERMINAL
-                .clone()
-                .map(|terminal| CodewhispererterminalTerminal(terminal.internal_id().to_string())),
-            codewhispererterminal_terminal_version: CURRENT_TERMINAL_VERSION
-                .clone()
-                .map(CodewhispererterminalTerminalVersion),
-            codewhispererterminal_shell: shell.map(|shell| CodewhispererterminalShell(shell.to_string())),
-            codewhispererterminal_shell_version: shell_version.map(CodewhispererterminalShellVersion),
-            credential_start_url: start_url().await,
-        })
-        .await;
+    client.post_metric(event).await;
 }
 
-pub async fn send_cli_subcommand_executed(command_name: impl Into<String>) {
+pub async fn send_cli_subcommand_executed(subcommand: impl Into<String>) {
     let (shell, shell_version) = Shell::current_shell_version()
         .await
         .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
         .unwrap_or((None, None));
 
-    client()
-        .await
-        .post_metric(CodewhispererterminalCliSubcommandExecuted {
-            create_time: None,
-            value: None,
-            codewhispererterminal_subcommand: Some(CodewhispererterminalSubcommand(command_name.into())),
-            codewhispererterminal_terminal: CURRENT_TERMINAL
-                .clone()
-                .map(|terminal| CodewhispererterminalTerminal(terminal.internal_id().to_string())),
-            codewhispererterminal_terminal_version: CURRENT_TERMINAL_VERSION
-                .clone()
-                .map(CodewhispererterminalTerminalVersion),
-            codewhispererterminal_shell: shell.map(|shell| CodewhispererterminalShell(shell.to_string())),
-            codewhispererterminal_shell_version: shell_version.map(CodewhispererterminalShellVersion),
-            credential_start_url: start_url().await,
-        })
-        .await;
+    let event = Event::new(EventType::CliSubcommandExecuted {
+        subcommand: subcommand.into(),
+        terminal: CURRENT_TERMINAL.as_ref().map(|t| t.internal_id().to_string()),
+        terminal_version: CURRENT_TERMINAL_VERSION.clone(),
+        shell: shell.map(|s| s.to_string()),
+        shell_version,
+    })
+    .await;
+
+    client().await.post_metric(event).await;
 }
 
 pub async fn send_doctor_check_failed(failed_check: impl Into<String>) {
@@ -521,83 +541,44 @@ pub async fn send_doctor_check_failed(failed_check: impl Into<String>) {
         .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
         .unwrap_or((None, None));
 
-    client()
-        .await
-        .post_metric(CodewhispererterminalDoctorCheckFailed {
-            create_time: None,
-            value: None,
-            codewhispererterminal_doctor_check: Some(CodewhispererterminalDoctorCheck(failed_check.into())),
-            codewhispererterminal_terminal: CURRENT_TERMINAL
-                .clone()
-                .map(|terminal| CodewhispererterminalTerminal(terminal.internal_id().to_string())),
-            codewhispererterminal_terminal_version: CURRENT_TERMINAL_VERSION
-                .clone()
-                .map(CodewhispererterminalTerminalVersion),
-            codewhispererterminal_shell: shell.map(|shell| CodewhispererterminalShell(shell.to_string())),
-            codewhispererterminal_shell_version: shell_version.map(CodewhispererterminalShellVersion),
-            credential_start_url: start_url().await,
-        })
-        .await;
+    let event = Event::new(EventType::DoctorCheckFailed {
+        doctor_check: failed_check.into(),
+        terminal: CURRENT_TERMINAL.as_ref().map(|t| t.internal_id().to_string()),
+        terminal_version: CURRENT_TERMINAL_VERSION.clone(),
+        shell: shell.map(|s| s.to_string()),
+        shell_version,
+    })
+    .await;
+
+    client().await.post_metric(event).await;
 }
 
 pub async fn send_dashboard_page_viewed(route: impl Into<String>) {
-    client()
-        .await
-        .post_metric(CodewhispererterminalDashboardPageViewed {
-            create_time: None,
-            value: None,
-            codewhispererterminal_route: Some(CodewhispererterminalRoute(route.into())),
-            credential_start_url: start_url().await,
-        })
-        .await;
+    let event = Event::new(EventType::DashboardPageViewed { route: route.into() }).await;
+    client().await.post_metric(event).await;
 }
 
 pub async fn send_menu_bar_actioned(menu_bar_item: Option<impl Into<String>>) {
-    client()
-        .await
-        .post_metric(CodewhispererterminalMenuBarActioned {
-            create_time: None,
-            value: None,
-            codewhispererterminal_menu_bar_item: menu_bar_item
-                .map(|item| CodewhispererterminalMenuBarItem(item.into())),
-            credential_start_url: start_url().await,
-        })
-        .await;
+    let event = Event::new(EventType::MenuBarActioned {
+        menu_bar_item: menu_bar_item.map(|i| i.into()),
+    })
+    .await;
+    client().await.post_metric(event).await;
 }
 
 pub async fn send_fig_user_migrated() {
-    client()
-        .await
-        .post_metric(CodewhispererterminalFigUserMigrated {
-            create_time: None,
-            value: None,
-            credential_start_url: start_url().await,
-        })
-        .await;
+    let event = Event::new(EventType::FigUserMigrated {}).await;
+    client().await.post_metric(event).await;
 }
 
 pub async fn send_start_chat(conversation_id: String) {
-    client()
-        .await
-        .post_metric(AmazonqStartChat {
-            create_time: None,
-            value: None,
-            amazonq_conversation_id: Some(AmazonqConversationId(conversation_id)),
-            credential_start_url: start_url().await,
-        })
-        .await;
+    let event = Event::new(EventType::AmazonqStartChat { conversation_id }).await;
+    client().await.post_metric(event).await;
 }
 
 pub async fn send_end_chat(conversation_id: String) {
-    client()
-        .await
-        .post_metric(AmazonqEndChat {
-            create_time: None,
-            value: None,
-            amazonq_conversation_id: Some(AmazonqConversationId(conversation_id)),
-            credential_start_url: start_url().await,
-        })
-        .await;
+    let event = Event::new(EventType::AmazonqEndChat { conversation_id }).await;
+    client().await.post_metric(event).await;
 }
 
 pub async fn send_chat_added_message(conversation_id: String, message_id: String) {
@@ -633,29 +614,30 @@ mod test {
     #[tokio::test]
     #[ignore = "needs auth which is not in CI"]
     async fn test_send() {
-        let (shell, shell_version) = Shell::current_shell_version()
-            .await
-            .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
-            .unwrap_or((None, None));
+        // let (shell, shell_version) = Shell::current_shell_version()
+        //     .await
+        //     .map(|(shell, shell_version)| (Some(shell), Some(shell_version)))
+        //     .unwrap_or((None, None));
 
-        let client = Client::new(TelemetryStage::BETA).await;
+        // let client = Client::new(TelemetryStage::BETA).await;
 
-        client
-            .post_metric(metrics::CodewhispererterminalCliSubcommandExecuted {
-                create_time: None,
-                value: None,
-                codewhispererterminal_subcommand: Some(CodewhispererterminalSubcommand("doctor".into())),
-                codewhispererterminal_terminal: CURRENT_TERMINAL
-                    .clone()
-                    .map(|terminal| CodewhispererterminalTerminal(terminal.internal_id().to_string())),
-                codewhispererterminal_terminal_version: CURRENT_TERMINAL_VERSION
-                    .clone()
-                    .map(CodewhispererterminalTerminalVersion),
-                codewhispererterminal_shell: shell.map(|shell| CodewhispererterminalShell(shell.to_string())),
-                codewhispererterminal_shell_version: shell_version.map(CodewhispererterminalShellVersion),
-                credential_start_url: start_url().await,
-            })
-            .await;
+        // client
+        //     .post_metric(metrics::CodewhispererterminalCliSubcommandExecuted {
+        //         create_time: None,
+        //         value: None,
+        //         codewhispererterminal_subcommand: Some(CodewhispererterminalSubcommand("doctor".into())),
+        //         codewhispererterminal_terminal: CURRENT_TERMINAL
+        //             .clone()
+        //             .map(|terminal| CodewhispererterminalTerminal(terminal.internal_id().to_string())),
+        //         codewhispererterminal_terminal_version: CURRENT_TERMINAL_VERSION
+        //             .clone()
+        //             .map(CodewhispererterminalTerminalVersion),
+        //         codewhispererterminal_shell: shell.map(|shell|
+        // CodewhispererterminalShell(shell.to_string())),
+        //         codewhispererterminal_shell_version:
+        // shell_version.map(CodewhispererterminalShellVersion),         credential_start_url:
+        // start_url().await,     })
+        //     .await;
 
         finish_telemetry_unwrap().await;
 
@@ -672,7 +654,15 @@ mod test {
     async fn test_all_telemetry() {
         send_user_logged_in().await;
         send_completion_inserted(CLI_BINARY_NAME.to_owned(), None, None).await;
-        send_inline_shell_completion_actioned(true, 1, 2).await;
+        send_inline_shell_completion_actioned(InlineShellCompletionActionedOptions {
+            session_id: "".into(),
+            request_id: "".into(),
+            accepted: true,
+            edit_buffer_len: 0,
+            suggested_chars_len: 0,
+            latency: Duration::from_secs(1),
+        })
+        .await;
         send_translation_actioned(Duration::from_millis(10), SuggestionState::Accept).await;
         send_cli_subcommand_executed("doctor").await;
         send_doctor_check_failed("").await;
