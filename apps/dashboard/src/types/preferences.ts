@@ -15,6 +15,7 @@ export type Pref = {
     color: string;
     image: string;
   };
+  priority?: number;
 };
 
 export type Action = {

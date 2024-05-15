@@ -37,13 +37,13 @@ fn q_term_session_id() -> &'static Option<String> {
 
 pub(crate) enum DispatchStatus {
     Failed,
-    Succeded,
+    Succeeded,
     NotEnabled,
 }
 
 impl DispatchStatus {
     pub fn should_fallback(self) -> bool {
-        !matches!(self, Self::Succeded)
+        !matches!(self, Self::Succeeded)
     }
 }
 
@@ -86,7 +86,7 @@ pub(crate) async fn dispatch(event: &Event) -> DispatchStatus {
         })
         .await
     {
-        Ok(_) => DispatchStatus::Succeded,
+        Ok(_) => DispatchStatus::Succeeded,
         Err(err) => {
             error!(%err, "Failed to send telemetry event");
             DispatchStatus::Failed

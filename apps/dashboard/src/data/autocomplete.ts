@@ -1,9 +1,20 @@
+import { Intro, PrefSection } from "@/components/preference/list";
 import { AUTOCOMPLETE_WIKI_URL, PRODUCT_NAME } from "@/lib/constants";
 
-const autocompleteSettings = [
+const autocompleteSettings: PrefSection[] = [
   {
     title: "General",
     properties: [
+      {
+        id: "autocomplete.disable",
+        title: "Enable Autocomplete",
+        description: `${PRODUCT_NAME} will provide a list of subcommands and options for you to choose from.`,
+        type: "boolean",
+        default: false,
+        inverted: true,
+        popular: true,
+        priority: 1,
+      },
       {
         id: "autocomplete.insertSpaceAutomatically",
         title:
@@ -15,15 +26,6 @@ const autocompleteSettings = [
         default: true,
         popular: true,
       },
-      // {
-      //   id: "autocomplete.disable",
-      //   title: "Enable Autocomplete",
-      //   description:
-      //     `${PRODUCT_NAME} will provide a list of subcommands and options for you to choose from.`,
-      //   type: "boolean",
-      //   default: false,
-      //   inverted: true,
-      // },
       {
         id: "autocomplete.immediatelyExecuteAfterSpace",
         title: "Allow instant execute after Space",
@@ -140,7 +142,7 @@ const autocompleteSettings = [
   },
   {
     title: "Appearance",
-    withPreview: true,
+    // withPreview: true,
     properties: [
       {
         id: "autocomplete.theme",
@@ -240,15 +242,10 @@ const autocompleteSettings = [
   },
 ];
 
-export default autocompleteSettings;
-
-export const intro = {
+export const intro: Intro = {
   title: "CLI Completions",
   description: "IDE-style autocomplete for 500+ CLIs.",
   link: AUTOCOMPLETE_WIKI_URL,
-  enable: {
-    flag: "autocomplete.disable",
-    inverted: true,
-    default: false,
-  },
 };
+
+export default autocompleteSettings;

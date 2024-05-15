@@ -1,4 +1,5 @@
 import { Intro, PrefSection } from "@/components/preference/list";
+import { INLINE_WIKI_URL } from "@/lib/constants";
 
 const inlineShellCompletionSettings: PrefSection[] = [
   {
@@ -6,7 +7,7 @@ const inlineShellCompletionSettings: PrefSection[] = [
     properties: [
       {
         id: "inline-shell-completion.enabled",
-        title: "Enable inline shell completions",
+        title: "Enable Inline completion",
         description: "This setting only applies in new shell sessions.",
         type: "boolean",
         default: true,
@@ -15,15 +16,10 @@ const inlineShellCompletionSettings: PrefSection[] = [
   },
 ];
 
-export default inlineShellCompletionSettings;
-
 export const intro: Intro = {
-  title: "Inline shell completions",
-  description: "AI-generated command suggestions.",
-  disabled: true,
-  enable: {
-    flag: "inline-shell-completion.enabled",
-    inverted: false,
-    default: true,
-  },
+  title: "Inline",
+  description: "AI-generated command suggestions in your shell.",
+  link: INLINE_WIKI_URL,
 };
+
+export default inlineShellCompletionSettings;

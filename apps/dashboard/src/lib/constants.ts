@@ -12,6 +12,8 @@ export const CHAT_WIKI_URL =
   "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line-chat.html";
 export const TRANSLATE_WIKI_URL =
   "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line-conversation.html";
+export const INLINE_WIKI_URL =
+  "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line-inline.html";
 export const TELEMETRY_WIKI_URL =
   "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/opt-out-IDE.html";
 export const Q_MIGRATION_URL =

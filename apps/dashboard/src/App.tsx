@@ -183,11 +183,6 @@ const useNavData = () => {
       name: "Chat",
       link: "/chat",
     },
-    {
-      type: "link",
-      name: "Translate",
-      link: "/translate",
-    },
     ...(isAmzn
       ? [
           {
@@ -197,6 +192,11 @@ const useNavData = () => {
           },
         ]
       : []),
+    {
+      type: "link",
+      name: "Translate",
+      link: "/translate",
+    },
     {
       type: "header",
       name: "Settings",

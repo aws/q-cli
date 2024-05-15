@@ -1,16 +1,12 @@
-import { cn } from "@/lib/utils";
-import { useState } from "react";
 import autocompleteDemo from "@assets/images/autocomplete_demo.gif";
 import translateDemo from "@assets/images/translate_demo.gif";
 import chatDemo from "@assets/images/chat_demo.gif";
 import { Link } from "@/components/ui/link";
 import { QLogo } from "@/components/svg/icons";
 import { AUTOCOMPLETE_SSH_WIKI_URL, Q_MIGRATION_URL } from "@/lib/constants";
+import { Terminal } from "@/components/ui/terminal";
 
 export default function Page() {
-  const [activeTab, setActiveTab] = useState(0);
-  const [demoClosed, setDemoClosed] = useState(false);
-
   return (
     <div className="flex flex-col items-start gap-4">
       <div className="flex flex-col">
@@ -82,61 +78,17 @@ export default function Page() {
           </li>
         </ol>
       </div>
-      {!demoClosed && (
-        <div className="place-self-center border rounded-lg border-zinc-800 w-full max-w-2xl scale-75 relative -top-16 overflow-hidden">
-          <div className="w-full h-auto rounded-lg flex flex-col bg-[#161A1D]">
-            <div className="flex flex-row gap-1.5 p-2 bg-zinc-700 rounded-t">
-              <div
-                className="flex items-center justify-center w-3 h-3 rounded-full bg-red-500"
-                onClick={() => setDemoClosed(true)}
-              />
-              <div className="flex items-center justify-center w-3 h-3 rounded-full bg-yellow-500" />
-              <div className="flex items-center justify-center w-3 h-3 rounded-full bg-green-500" />
-            </div>
-            <div className="grid grid-cols-3 border-b-zinc-900 border-b-2 gap-0.5">
-              <div
-                className={cn(
-                  "text-zinc-400 text-center p-1.5 hover:bg-zinc-800 hover:border-transparent transition-colors font-mono border-t border-zinc-950 select-none cursor-pointer",
-                  activeTab == 0 &&
-                    "bg-zinc-700 hover:bg-zinc-700 border-transparent text-zinc-100",
-                )}
-                onClick={() => setActiveTab(0)}
-              >
-                Autocomplete
-              </div>
-              <div
-                className={cn(
-                  "text-zinc-400 text-center p-1.5 hover:bg-zinc-800 hover:border-transparent transition-colors font-mono border-t border-zinc-950 select-none  cursor-pointer",
-                  activeTab == 1 &&
-                    "bg-zinc-700 hover:bg-zinc-700 border-transparent text-zinc-100",
-                )}
-                onClick={() => setActiveTab(1)}
-              >
-                Translate
-              </div>
-              <div
-                className={cn(
-                  "text-zinc-400 text-center p-1.5 hover:bg-zinc-800 hover:border-transparent transition-colors font-mono border-t border-zinc-950 select-none  cursor-pointer",
-                  activeTab == 2 &&
-                    "bg-zinc-700 hover:bg-zinc-700 border-transparent text-zinc-100",
-                )}
-                onClick={() => setActiveTab(2)}
-              >
-                Chat
-              </div>
-            </div>
-            <div className="p-2">
-              {activeTab == 0 && (
-                <img src={autocompleteDemo} alt="autocomplete demo" />
-              )}
-              {activeTab == 1 && (
-                <img src={translateDemo} alt="translation demo" />
-              )}
-              {activeTab == 2 && <img src={chatDemo} alt="chat demo" />}
-            </div>
-          </div>
-        </div>
-      )}
+      <Terminal tabNames={["Autocomplete", "Translation", "Chat"]}>
+        <Terminal.Tab>
+          <img src={autocompleteDemo} alt="autocomplete demo" />
+        </Terminal.Tab>
+        <Terminal.Tab>
+          <img src={translateDemo} alt="translation demo" />
+        </Terminal.Tab>
+        <Terminal.Tab>
+          <img src={chatDemo} alt="chat demo" />
+        </Terminal.Tab>
+      </Terminal>
     </div>
   );
 }

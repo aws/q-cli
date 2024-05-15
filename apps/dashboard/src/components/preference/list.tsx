@@ -1,12 +1,8 @@
 import { alphaByTitle } from "@/lib/sort";
-import { Action, Pref, PrefDefault } from "@/types/preferences";
+import { Action, Pref } from "@/types/preferences";
 import { Setting } from "./listItem";
-import { useEffect, useState } from "react";
-import { Settings } from "@withfig/api-bindings";
 import { getIconFromName } from "@/lib/icons";
-import { cn, interpolateSettingBoolean } from "@/lib/utils";
-import { useSetting } from "@/hooks/store/useSetting";
-import { Switch } from "../ui/switch";
+import { cn } from "@/lib/utils";
 import { parseBackticksToCode } from "@/lib/strings";
 import { Link } from "../ui/link";
 
@@ -20,45 +16,14 @@ export type Intro = {
   title: string;
   description: string;
   link?: string;
-  /**
-   * Configuration settings for the feature flag. Only applies if `disabled`
-   * is not true.
-   */
-  enable: {
-    flag: string;
-    inverted: boolean;
-    default: boolean;
-  };
-  /**
-   * Whether or not to allow the user to enable or disable the feature.
-   */
-  disabled?: boolean;
 };
 
 function FeatureIntro({ intro }: { intro: Intro }) {
-  const [setting, setSetting] = useSetting(intro.enable.flag);
-  const [inputValue, setInputValue] = useState<PrefDefault>(
-    intro.enable.default,
-  );
-  const localValue = interpolateSettingBoolean(
-    inputValue as boolean,
-    intro.enable.inverted,
-  );
-
-  // see if this specific setting is set in config file, then synchronize the initial state
-  useEffect(() => {
-    if (setting !== undefined) setInputValue(setting);
-  }, [setting]);
-
-  function toggleSwitch() {
-    setSetting(!inputValue);
-  }
-
   return (
-    <section className="flex flex-col p-6 gap-4 w-full gradient-q-secondary-light-alt rounded-lg items-start text-white">
+    <section className="flex flex-col justify-center p-6 gap-4 w-full gradient-q-secondary-light-alt rounded-lg items-start text-white min-h-[6.5rem]">
       <div className="flex gap-4 justify-between w-full">
         <div className="flex gap-4">
-          {getIconFromName(intro.title, 48)}
+          <div className="flex-shrink-0">{getIconFromName(intro.title, 48)}</div>
           <div className="flex flex-col">
             <h1 className="font-bold text-2xl font-ember leading-none">
               {intro.title}
@@ -80,16 +45,6 @@ function FeatureIntro({ intro }: { intro: Intro }) {
             </p>
           </div>
         </div>
-        {!intro.disabled && (
-          <div className="flex items-center gap-2">
-            <span className="font-bold">{localValue ? "On" : "Off"}</span>
-            <Switch
-              onClick={toggleSwitch}
-              checked={localValue as boolean}
-              variant={"inverted"}
-            />
-          </div>
-        )}
       </div>
     </section>
   );
@@ -146,42 +101,19 @@ export function UserPrefView({
   intro,
   className,
 }: {
-  array: PrefSection[];
+  array?: PrefSection[];
   children?: React.ReactNode;
   intro?: Intro;
   className?: string;
 }) {
-  const [viewDisabled, setViewDisabled] = useState<string | undefined>();
-  const localDisabled = intro?.enable.inverted ? !viewDisabled : viewDisabled;
-
-  useEffect(() => {
-    if (!intro?.enable) return;
-
-    Settings.get(intro.enable.flag)
-      .then((r) => {
-        if (!r || r.jsonBlob === undefined) return;
-
-        setViewDisabled(JSON.parse(r.jsonBlob));
-      })
-      .catch(() => {
-        // Errors are thrown every time a setting isn't yet configured
-        // so we just swallow those since they'll be set to the default automatically
-        return;
-      });
-  }, [intro, intro?.enable.flag]);
-
   return (
     <div className={cn("w-full flex flex-col", className)}>
       {intro && <FeatureIntro intro={intro} />}
       {children}
-      {array.map((section, i) => (
-        <UserPrefSection
-          disabled={localDisabled === "true"}
-          data={section}
-          index={i}
-          key={i}
-        />
-      ))}
+      {array &&
+        array.map((section, i) => (
+          <UserPrefSection data={section} index={i} key={i} />
+        ))}
     </div>
   );
 }
