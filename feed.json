@@ -1,0 +1,20 @@
+[
+  {
+    "kind": "release",
+    "title": "Version 1.0.3",
+    "date": "2024-05-15",
+    "changes": [
+      {
+        "kind": "added",
+        "description": "a release changelog and announcement feed"
+      }
+    ]
+  },
+  {
+    "kind": "announcement",
+    "title": "CodeWhisperer is now Amazon Q",
+    "description": "Amazon Q Developer is a generative artificial intelligence (AI) powered conversational assistant that can help you understand, build, extend, and operate AWS applications.",
+    "link": "https://aws.amazon.com/blogs/aws/amazon-q-developer-now-generally-available-includes-new-capabilities-to-reimagine-developer-experience/",
+    "date": "2024-04-30"
+  }
+]

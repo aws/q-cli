@@ -51,7 +51,7 @@ export default function SidebarLink({
           !
         </span>
       )}
-      {count && !error && (
+      {count != undefined && count > 0 && !error && (
         <span className="flex items-center justify-center leading-none p-1 px-2 rounded-full font-medium text-sm select-none">
           {count > 9 ? "9+" : count}
         </span>

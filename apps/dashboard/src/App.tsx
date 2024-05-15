@@ -12,9 +12,9 @@ import Integrations from "./pages/settings/integrations";
 import Keybindings from "./pages/settings/keybindings";
 import Licenses from "./pages/licenses";
 import ModalContext from "./context/modal";
-import { Suspense, useContext, useEffect, useRef, useState } from "react";
+import { Suspense, useContext, useEffect, useRef } from "react";
 import Modal from "./components/modal";
-import { Telemetry, Event } from "@withfig/api-bindings";
+import { Telemetry, Event, State } from "@withfig/api-bindings";
 import InstallModal from "./components/installs/modal";
 import LoginModal from "./components/installs/modal/login";
 import { getIconFromName } from "./lib/icons";
@@ -27,6 +27,9 @@ import { useLocalStateZodDefault } from "./hooks/store/useState";
 import { z } from "zod";
 import { useAuth } from "./hooks/store/useAuth";
 import { AMZN_START_URL } from "./lib/constants";
+import WhatsNew from "./pages/whats-new";
+import notificationFeedItems from "../../../feed.json";
+import { useState } from "react";
 
 function App() {
   const store = useRef(createStore()).current;
@@ -86,6 +89,17 @@ function ActiveModal() {
 function Router() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [notifCount, setNotifCount] = useLocalStateZodDefault(
+    "desktop.notificationsSeen",
+    z.number(),
+    0,
+  );
+
+  useEffect(() => {
+    if (location.pathname == "/whats-new") {
+      setNotifCount(notificationFeedItems.length);
+    }
+  }, [location]);
 
   useEffect(() => {
     try {
@@ -127,6 +141,7 @@ function Router() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Onboarding />} />
           <Route path="help" element={<Help />} />
+          <Route path="whats-new" element={<WhatsNew />} />
           <Route path="autocomplete" element={<Autocomplete />} />
           <Route path="translate" element={<Translate />} />
           <Route path="chat" element={<Chat />} />
@@ -159,11 +174,11 @@ const useNavData = () => {
     //   name: "Getting started",
     //   link: "/onboarding",
     // },
-    // {
-    //   type: "link",
-    //   name: "What's new?",
-    //   link: "/",
-    // },
+    {
+      type: "link",
+      name: "What's new?",
+      link: "/whats-new",
+    },
     {
       type: "link",
       name: "Help & support",
@@ -230,6 +245,12 @@ function Layout() {
   const navData = useNavData();
   const error = accessibilityCheck === false || dotfilesCheck === false;
 
+  const [notifCount, _] = useLocalStateZodDefault(
+    "desktop.notificationsSeen",
+    z.number(),
+    0,
+  );
+
   return (
     <div className="flex flex-row h-screen w-full overflow-hidden bg-white dark:bg-zinc-800 text-black dark:text-zinc-200">
       <nav className="w-[240px] flex-none h-full flex flex-col items-center gap-1 p-4">
@@ -240,7 +261,11 @@ function Layout() {
               path={item.link}
               name={item.name}
               icon={getIconFromName(item.name)}
-              count={undefined}
+              count={
+                item.link == "/whats-new"
+                  ? notificationFeedItems.length - notifCount
+                  : undefined
+              }
               error={item.link == "/help" ? error : undefined}
             />
           ) : (
