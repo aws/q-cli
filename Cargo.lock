@@ -2994,6 +2994,7 @@ dependencies = [
  "shellexpand",
  "shlex",
  "sysinfo",
+ "tempfile",
  "time",
  "tokio",
  "tracing",

@@ -25,11 +25,13 @@ function CustomizationsSelector() {
 
   const [selectedCustomizations, setSelectedCustomizations] = useLocalStateZod(
     CUSTOMIZATIONS_STATE_KEY,
-    z.object({
-      arn: z.string(),
-      name: z.string().nullish(),
-      description: z.string().nullish(),
-    }),
+    z
+      .object({
+        arn: z.string(),
+        name: z.string().nullish(),
+        description: z.string().nullish(),
+      })
+      .nullish(),
   );
 
   useEffect(() => {
@@ -38,7 +40,7 @@ function CustomizationsSelector() {
 
   const name = selectedCustomizations?.name ?? undefined;
 
-  if (customizations?.length === 0) {
+  if (!customizations || customizations.length === 0) {
     return <></>;
   }
 
@@ -58,26 +60,31 @@ function CustomizationsSelector() {
         <div className="pt-1">
           <Select
             onValueChange={(newName) => {
-              const c = customizations?.find((c) => c.name === newName);
-              if (c) {
-                setSelectedCustomizations(c);
-              }
+              const c = customizations.find((c) => c.name === newName);
+              setSelectedCustomizations(c);
             }}
             value={name}
           >
             <SelectTrigger className="min-w-60 w-fit">
-              <span className="whitespace-nowrap">{name} </span>
+              <span className="whitespace-nowrap">{name ?? "None"} </span>
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                {customizations?.map((c, i) => {
+                {[
+                  { name: "None", description: undefined },
+                  ...customizations,
+                ].map((c, i) => {
                   return (
                     <SelectItem value={c.name ?? ""} key={i}>
                       <span>{c.name}</span>
-                      <br />
-                      <span className="text-xs opacity-70">
-                        {c.description}
-                      </span>
+                      {c.description && (
+                        <>
+                          <br />
+                          <span className="text-xs opacity-70">
+                            {c.description}
+                          </span>
+                        </>
+                      )}
                     </SelectItem>
                   );
                 })}

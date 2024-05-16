@@ -6,7 +6,7 @@ const inlineShellCompletionSettings: PrefSection[] = [
     title: "Settings",
     properties: [
       {
-        id: "inline-shell-completion.enabled",
+        id: "inline.enabled",
         title: "Enable Inline completion",
         description: "This setting only applies in new shell sessions.",
         type: "boolean",

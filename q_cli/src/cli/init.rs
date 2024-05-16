@@ -9,6 +9,7 @@ use std::process::ExitCode;
 
 use auth::AMZN_START_URL;
 use clap::Args;
+use crossterm::style::Stylize;
 use eyre::Result;
 use fig_integrations::shell::{
     ShellExt,
@@ -20,6 +21,7 @@ use fig_util::{
     Shell,
     Terminal,
     CLI_BINARY_NAME,
+    PRODUCT_NAME,
 };
 use indoc::formatdoc;
 use once_cell::sync::Lazy;
@@ -154,6 +156,7 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
 
     // Grabbing the real auth is too slow here, so we just rely on the cached value
     let is_amzn_user = fig_settings::state::get_string_or("auth.idc.start-url", "") == AMZN_START_URL;
+    let inline_enabled = fig_settings::settings::get_bool_or("inline.enabled", is_amzn_user);
 
     if let When::Post = when {
         if !matches!(
@@ -162,7 +165,7 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
         ) && fig_settings::state::get_bool_or("dotfiles.enabled", true)
             && shell == &Shell::Zsh
             && when == &When::Post
-            && fig_settings::settings::get_bool_or("inline-shell-completion.enabled", is_amzn_user)
+            && inline_enabled
             && !*IS_SNAPSHOT_TEST
         {
             to_source.push(guard_source(
@@ -254,30 +257,113 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
             .is_enabled()
             .unwrap_or(false)
     {
-        use crossterm::style::Stylize;
-        use fig_util::PRODUCT_NAME;
-
         if let Some(terminal) = Terminal::parent_terminal() {
             let prompt_state_key = format!("prompt.input-method.{}.count", terminal.internal_id());
             let prompt_count = fig_settings::state::get_int_or(&prompt_state_key, 0);
-
             if terminal.supports_macos_input_method() && prompt_count < 2 {
-                fig_settings::state::set_value(&prompt_state_key, prompt_count + 1)?;
+                let _ = fig_settings::state::set_value(&prompt_state_key, prompt_count + 1);
+                to_source.push(input_method_prompt_code(*shell, &terminal));
+            }
+        }
+    }
 
-                to_source.push(guard_source(
-                    shell,
-                    false,
-                    "Q_INPUT_METHOD_PROMPT",
-                    GuardAssignment::AfterSourcing,
-                    format!(
-                        "printf '\\n🚀 {PRODUCT_NAME} supports {terminal}!\\nEnable integrations with {terminal} by \
-                         running:\\n  {}\\n\\n'\n",
-                        format!("{CLI_BINARY_NAME} integrations install input-method").magenta()
-                    ),
-                ));
+    if inline_enabled && when == &When::Post && shell == &Shell::Zsh {
+        let key = "prompt.inline.count";
+        if let Ok(prompt_count) = fig_settings::state::get_int(key) {
+            let prompt_count = prompt_count.unwrap_or_default();
+            if prompt_count < 1 {
+                let _ = fig_settings::state::set_value(key, prompt_count + 1);
+                to_source.push(inline_prompt_code(*shell));
             }
         }
     }
 
     Ok(to_source.join("\n"))
+}
+
+#[allow(dead_code)]
+fn input_method_prompt_code(shell: Shell, terminal: &Terminal) -> String {
+    guard_source(
+        &shell,
+        false,
+        "Q_INPUT_METHOD_PROMPT",
+        GuardAssignment::AfterSourcing,
+        format!(
+            "printf '\\n🚀 {PRODUCT_NAME} supports {terminal}!\\n\\nEnable integrations with {terminal} by \
+             running:\\n  {}\\n\\n'\n",
+            format!("{CLI_BINARY_NAME} integrations install input-method").magenta()
+        ),
+    )
+}
+
+fn inline_prompt_code(shell: Shell) -> String {
+    guard_source(
+        &shell,
+        false,
+        "Q_INLINE_PROMPT",
+        GuardAssignment::AfterSourcing,
+        format!(
+            "printf '\\n{PRODUCT_NAME} now supports Inline AI suggestions!\\n\\nTo disable run: {}\\n\\n'\n",
+            format!("{CLI_BINARY_NAME} settings inline.enabled false").magenta()
+        ),
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use std::process::{
+        Command,
+        Stdio,
+    };
+
+    use super::*;
+
+    fn run_shell_stdout(shell: &Shell, text: &str) -> String {
+        let mut child = Command::new(shell.as_str())
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+            .unwrap();
+
+        let stdin = child.stdin.as_mut().unwrap();
+        stdin.write_all(text.as_bytes()).unwrap();
+        stdin.flush().unwrap();
+
+        let output = child.wait_with_output().unwrap();
+        String::from_utf8(output.stdout).unwrap()
+    }
+
+    #[test]
+    fn test_prompts() {
+        for shell in [Shell::Bash, Shell::Zsh] {
+            let terminal = Terminal::Iterm;
+            let input_method_prompt_code = run_shell_stdout(&shell, &input_method_prompt_code(shell, &terminal));
+
+            println!("=== input_method_prompt {shell:?} ===");
+            println!("{input_method_prompt_code}");
+            println!("===");
+
+            assert_eq!(
+                input_method_prompt_code,
+                format!(
+                    "\n🚀 {PRODUCT_NAME} supports {terminal}!\n\nEnable integrations with {terminal} by running:\n  {}\n\n",
+                    format!("{CLI_BINARY_NAME} integrations install input-method").magenta()
+                )
+            );
+
+            let inline_prompt_code = run_shell_stdout(&shell, &inline_prompt_code(shell));
+
+            println!("=== inline_prompt {shell:?} ===");
+            println!("{inline_prompt_code}");
+            println!("===");
+
+            assert_eq!(
+                inline_prompt_code,
+                format!(
+                    "\n{PRODUCT_NAME} now supports Inline AI suggestions!\n\nTo disable run: {}\n\n",
+                    format!("{CLI_BINARY_NAME} settings inline.enabled false").magenta()
+                )
+            );
+        }
+    }
 }
