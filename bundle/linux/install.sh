@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Installs the q and qterm into place on the user's machine
-# and installs the recommended integtations
+# and installs the recommended integrations
 
 set -o errexit
 set -o nounset

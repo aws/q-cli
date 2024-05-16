@@ -1,17 +1,17 @@
 import itertools
 import os
 from typing import List, Mapping, Sequence
-from rust import rust_env
-from util import isBrazil, isLinux, run_cmd
+from rust import cargo_cmd_name, rust_env
+from util import isBrazil, isDarwin, isLinux, run_cmd
 from const import CLI_PACKAGE_NAME, DESKTOP_PACKAGE_NAME, PTY_PACKAGE_NAME
 
 
 def run_clippy(
-    features: Mapping[str, Sequence[str]] | None = None, targets: List[str] = [], fail_on_warn: bool = False
+    features: Mapping[str, Sequence[str]] | None = None, target: str | None = None, fail_on_warn: bool = False
 ):
-    args = ["cargo", "clippy", "--locked", "--workspace"]
+    args = [cargo_cmd_name(), "clippy", "--locked", "--workspace"]
 
-    for target in targets:
+    if target:
         args.extend(["--target", target])
 
     if isLinux() or isBrazil():
@@ -37,17 +37,15 @@ def run_clippy(
     )
 
 
-def run_cargo_tests(features: Mapping[str, Sequence[str]] | None = None, targets: List[str] = []):
-    args = [
-        "cargo",
-    ]
+def run_cargo_tests(features: Mapping[str, Sequence[str]] | None = None, target: str | None = None):
+    args = [cargo_cmd_name()]
 
     if isBrazil():
         args.extend(["brazil", "with-coverage"])
 
     args.extend(["build", "--tests", "--locked", "--workspace"])
 
-    for target in targets:
+    if target:
         args.extend(["--target", target])
 
     if isLinux() or isBrazil():
@@ -69,12 +67,15 @@ def run_cargo_tests(features: Mapping[str, Sequence[str]] | None = None, targets
         },
     )
 
-    args = ["cargo"]
+    args = [cargo_cmd_name()]
 
     if isBrazil():
         args.extend(["brazil", "with-coverage"])
 
     args.extend(["test", "--locked", "--workspace"])
+
+    if target:
+        args.extend(["--target", target])
 
     # disable desktop tests for now
     if isLinux() or isBrazil():

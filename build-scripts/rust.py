@@ -3,7 +3,7 @@ from os import environ
 import platform
 import shutil
 from typing import Dict, List
-from util import info, isBrazil, isDarwin, isLinux, get_variant, run_cmd_output, warn
+from util import info, isBrazil, isDarwin, isLinux, get_variant, isMusl, run_cmd_output, warn
 from datetime import datetime, timezone
 
 
@@ -34,6 +34,14 @@ def skip_fish_tests() -> bool:
     if skip_fish_tests:
         warn("Skipping fish tests in brazil")
     return skip_fish_tests
+
+
+@cache
+def cargo_cmd_name() -> str:
+    if isMusl():
+        return "cross"
+    else:
+        return "cargo"
 
 
 def rust_env(release: bool, linker=None) -> Dict[str, str]:
@@ -78,9 +86,9 @@ def rust_targets() -> List[str]:
         case "Linux":
             match platform.machine():
                 case "x86_64":
-                    return ["x86_64-unknown-linux-gnu"]
+                    return ["x86_64-unknown-linux-musl" if isMusl() else "x86_64-unknown-linux-gnu"]
                 case "aarch64":
-                    return ["aarch64-unknown-linux-gnu"]
+                    return ["aarch64-unknown-linux-musl" if isMusl() else "aarch64-unknown-linux-gnu"]
                 case other:
                     raise ValueError(f"Unsupported machine {other}")
         case other:

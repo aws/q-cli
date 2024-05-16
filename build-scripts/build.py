@@ -6,7 +6,7 @@ import pathlib
 import shutil
 from typing import Dict, Mapping, Sequence
 from util import Variant, get_variant, isDarwin, isLinux, run_cmd, run_cmd_output, info
-from rust import rust_targets, rust_env
+from rust import cargo_cmd_name, rust_targets, rust_env
 from test import run_cargo_tests, run_clippy
 from signing import (
     EcSigningData,
@@ -55,13 +55,13 @@ def build_cargo_bin(
     package: str,
     output_name: str | None = None,
     features: Mapping[str, Sequence[str]] | None = None,
+    targets: Sequence[str] = [],
 ) -> pathlib.Path:
-    args = ["cargo", "build", "--locked", "--package", package]
+    args = [cargo_cmd_name(), "build", "--locked", "--package", package]
 
     if release:
         args.append("--release")
 
-    targets = rust_targets()
     for target in targets:
         args.extend(["--target", target])
 
@@ -432,21 +432,27 @@ def build(
         info("Building npm packages")
         npm_packages = build_npm_packages()
 
+    targets = rust_targets()
+
+    # Mac has multiple targets, so just use the default for the platform
+    # for testing and linting.
+    target = None if isDarwin() else targets[0]
+
     if run_test:
         info("Running cargo tests")
-        run_cargo_tests(features=cargo_features)
+        run_cargo_tests(features=cargo_features, target=target)
 
     if run_lints:
-        run_clippy(features=cargo_features)
+        run_clippy(features=cargo_features, target=target)
 
     info("Building", CLI_PACKAGE_NAME)
     cli_path = build_cargo_bin(
-        release=release, package=CLI_PACKAGE_NAME, output_name=CLI_BINARY_NAME, features=cargo_features
+        release=release, package=CLI_PACKAGE_NAME, output_name=CLI_BINARY_NAME, features=cargo_features, targets=targets
     )
 
     info("Building", PTY_PACKAGE_NAME)
     pty_path = build_cargo_bin(
-        release=release, package=PTY_PACKAGE_NAME, output_name=PTY_BINARY_NAME, features=cargo_features
+        release=release, package=PTY_PACKAGE_NAME, output_name=PTY_BINARY_NAME, features=cargo_features, targets=targets
     )
 
     if isDarwin():

@@ -6,7 +6,7 @@ import subprocess
 from build import build
 from const import CLI_BINARY_NAME, CLI_PACKAGE_NAME, PTY_BINARY_NAME
 from doc import run_doc
-from rust import rust_env
+from rust import cargo_cmd_name, rust_env
 from test import all_tests
 
 
@@ -112,7 +112,7 @@ match args.subparser:
     case "cli":
         subprocess.run(
             [
-                "cargo",
+                cargo_cmd_name(),
                 "run",
                 f"--bin={CLI_PACKAGE_NAME}",
                 *args.args,
