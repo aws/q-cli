@@ -19,6 +19,7 @@ import * as Types from "./types";
 import * as User from "./user";
 import * as History from "./history";
 import * as Auth from "./auth";
+import * as Codewhisperer from "./codewhisperer";
 
 import * as Internal from "./requests";
 
@@ -44,6 +45,7 @@ const lib = {
   User,
   History,
   Auth,
+  Codewhisperer,
 };
 
 export {
@@ -69,6 +71,7 @@ export {
   User,
   WindowPosition,
   Auth,
+  Codewhisperer,
 };
 
 declare global {

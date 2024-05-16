@@ -17,6 +17,8 @@ import {
   AuthStatusResponse,
   CheckForUpdatesRequest,
   CheckForUpdatesResponse,
+  CodewhispererListCustomizationRequest,
+  CodewhispererListCustomizationResponse,
   ContentsOfDirectoryRequest,
   ContentsOfDirectoryResponse,
   CreateDirectoryRequest,
@@ -608,6 +610,35 @@ export async function sendPingRequest(
           );
       }
     });
+  });
+}
+
+export async function sendCodewhispererListCustomizationRequest(
+  request: CodewhispererListCustomizationRequest,
+): Promise<CodewhispererListCustomizationResponse> {
+  return new Promise((resolve, reject) => {
+    sendMessage(
+      {
+        $case: "codewhispererListCustomizationRequest",
+        codewhispererListCustomizationRequest: request,
+      },
+      (response) => {
+        switch (response?.$case) {
+          case "codewhispererListCustomizationResponse":
+            resolve(response.codewhispererListCustomizationResponse);
+            break;
+          case "error":
+            reject(Error(response.error));
+            break;
+          default:
+            reject(
+              Error(
+                `Invalid response '${response?.$case}' for 'CodewhispererListCustomizationRequest'`,
+              ),
+            );
+        }
+      },
+    );
   });
 }
 

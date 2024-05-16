@@ -50,6 +50,7 @@ message ClientOriginatedMessage {
     AuthBuilderIdStartDeviceAuthorizationRequest auth_builder_id_start_device_authorization_request = 142;
     AuthBuilderIdPollCreateTokenRequest auth_builder_id_poll_create_token_request = 143;
     PingRequest ping_request = 144;
+    CodewhispererListCustomizationRequest codewhisperer_list_customization_request = 145;
   }
 
   reserved 115;
@@ -82,6 +83,7 @@ message ServerOriginatedMessage {
     AuthBuilderIdStartDeviceAuthorizationResponse auth_builder_id_start_device_authorization_response = 117;
     AuthBuilderIdPollCreateTokenResponse auth_builder_id_poll_create_token_response = 118;
     PingResponse ping_response = 119;
+    CodewhispererListCustomizationResponse codewhisperer_list_customization_response = 120;
 
     Notification notification = 1000;
   }
@@ -663,6 +665,18 @@ message AuthStatusResponse {
 message PingRequest {}
 
 message PingResponse {}
+
+message CodewhispererCustomization {
+  string arn = 1;
+  optional string name = 2;
+  optional string description = 3;
+}
+
+message CodewhispererListCustomizationRequest {}
+
+message CodewhispererListCustomizationResponse {
+  repeated CodewhispererCustomization customizations = 1; 
+}
 
 /// Notifications
 

@@ -3,6 +3,7 @@ use std::borrow::Cow;
 use fig_proto::ReflectMessage;
 
 pub mod auth;
+pub mod codewhisperer;
 pub mod defaults;
 pub mod fs;
 pub mod history;

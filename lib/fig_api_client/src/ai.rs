@@ -10,11 +10,17 @@ use amzn_codewhisperer_client::config::{
     RuntimeComponents,
     StalledStreamProtectionConfig,
 };
-use amzn_codewhisperer_client::error::SdkError;
+use amzn_codewhisperer_client::error::{
+    DisplayErrorContext,
+    SdkError,
+};
 use amzn_codewhisperer_client::operation::generate_completions::{
     GenerateCompletionsError,
     GenerateCompletionsOutput,
 };
+use amzn_codewhisperer_client::operation::list_available_customizations::ListAvailableCustomizationsError;
+use amzn_codewhisperer_client::types::error::AccessDeniedError;
+use amzn_codewhisperer_client::types::AccessDeniedExceptionReason;
 use auth::builder_id::BearerResolver;
 use aws_config::{
     AppName,
@@ -22,10 +28,13 @@ use aws_config::{
     SdkConfig,
 };
 use aws_credential_types::Credentials;
+use aws_smithy_runtime_api::http::Response;
 use aws_smithy_types::config_bag::ConfigBag;
 use once_cell::sync::Lazy;
 use serde_json::Value;
+use tracing::error;
 
+use crate::customization::Customization;
 pub use crate::endpoints::Endpoint;
 
 static APP_NAME: Lazy<AppName> = Lazy::new(|| AppName::new("codewhisperer-terminal").unwrap());
@@ -161,11 +170,15 @@ pub struct CwResponse {
     pub session_id: Option<String>,
 }
 
-async fn request_cw_inner(
-    client: amzn_codewhisperer_client::Client,
+/// Make a request to the CodeWhisperer API with no special error handling
+async fn cw_generate_completions_raw(
+    client: &amzn_codewhisperer_client::Client,
     request: CodeWhispererRequest,
-) -> Result<CwResponse, SdkError<GenerateCompletionsError, aws_smithy_runtime_api::client::orchestrator::HttpResponse>>
-{
+    session_id_lock: Arc<Mutex<Option<String>>>,
+) -> Result<
+    GenerateCompletionsOutput,
+    SdkError<GenerateCompletionsError, aws_smithy_runtime_api::client::orchestrator::HttpResponse>,
+> {
     #[derive(Debug, Clone)]
     struct SessionIdInterceptor(Arc<Mutex<Option<String>>>);
 
@@ -189,8 +202,15 @@ async fn request_cw_inner(
         }
     }
 
-    let session_id_lock = Arc::new(Mutex::new(None));
-    let output = client
+    let customization_arn = match Customization::load_selected() {
+        Ok(opt) => opt.map(|Customization { arn, .. }| arn),
+        Err(err) => {
+            error!(%err, "Failed to load selected customization");
+            None
+        },
+    };
+
+    client
         .generate_completions()
         .file_context(
             amzn_codewhisperer_client::types::FileContext::builder()
@@ -206,10 +226,42 @@ async fn request_cw_inner(
         )
         .max_results(request.max_results)
         .set_next_token(request.next_token)
+        .set_customization_arn(customization_arn)
         .customize()
         .interceptor(SessionIdInterceptor(session_id_lock.clone()))
         .send()
-        .await?;
+        .await
+}
+
+/// Make a request to the CodeWhisperer API with error handling for invalid customizations with the
+/// specified client
+async fn cw_generate_completions(
+    client: amzn_codewhisperer_client::Client,
+    request: CodeWhispererRequest,
+) -> Result<CwResponse, SdkError<GenerateCompletionsError, aws_smithy_runtime_api::client::orchestrator::HttpResponse>>
+{
+    let session_id_lock = Arc::new(Mutex::new(None));
+    let res = cw_generate_completions_raw(&client, request.clone(), session_id_lock.clone()).await;
+
+    let output = match res {
+        Ok(output) => output,
+        Err(ref err @ SdkError::ServiceError(ref service_err))
+            if matches!(
+                service_err.err(),
+                GenerateCompletionsError::AccessDeniedError(AccessDeniedError {
+                    reason: Some(AccessDeniedExceptionReason::UnauthorizedCustomizationResourceAccess),
+                    ..
+                })
+            ) =>
+        {
+            error!(err =% DisplayErrorContext(err), "Access denied for selected customization, clearing selection and trying again");
+            if let Err(err) = Customization::delete_selected() {
+                error!(%err, "Failed to delete selected customization");
+            }
+            cw_generate_completions_raw(&client, request, session_id_lock.clone()).await?
+        },
+        Err(err) => return Err(err),
+    };
 
     let session_id = session_id_lock
         .lock()
@@ -218,11 +270,12 @@ async fn request_cw_inner(
     Ok(CwResponse { output, session_id })
 }
 
+/// Make a request to the CodeWhisperer API with the default client
 pub async fn request_cw(
     request: CodeWhispererRequest,
 ) -> Result<CwResponse, SdkError<GenerateCompletionsError, aws_smithy_runtime_api::client::orchestrator::HttpResponse>>
 {
-    request_cw_inner(cw_client(cw_endpoint()).await, request).await
+    cw_generate_completions(cw_client(cw_endpoint()).await, request).await
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -294,6 +347,21 @@ pub struct CodewhispererRecommendation {
     pub content: Option<String>,
 }
 
+/// List the customizations the user has access to
+pub async fn list_customizations() -> Result<Vec<Customization>, SdkError<ListAvailableCustomizationsError, Response>> {
+    let mut customizations = Vec::new();
+    let mut paginator = cw_client(cw_endpoint())
+        .await
+        .list_available_customizations()
+        .into_paginator()
+        .send();
+    while let Some(res) = paginator.next().await {
+        let output = res?;
+        customizations.extend(output.customizations.into_iter().map(Into::into));
+    }
+    Ok(customizations)
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::Value;
@@ -346,7 +414,7 @@ mod tests {
 1549  11.10.2023 15:19  git commit -m 'Add gamma stage' -n
 1550  11.10.2023 15:19  git push
 1551  11.10.2023 15:19  cr
-1552  11.10.2023 15:20  g";
+1552  11.10.2023 15:20  mwi";
 
         cw_client(cw_endpoint()).await;
 
@@ -375,6 +443,7 @@ mod tests {
         let time = std::time::Instant::now();
 
         while let Some(token) = &res.next_token {
+            println!("next_token: {token:?}");
             if token.is_empty() {
                 break;
             } else {
@@ -505,6 +574,18 @@ mod tests {
                 None => {
                     // println!("Unknown: {:?}", line);
                 },
+            }
+        }
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_list_customizations() {
+        let a = list_customizations().await.unwrap();
+        for c in a {
+            println!("{c:?}");
+            if c.name.as_deref() == Some("Amazon-Internal-V17") {
+                c.save_selected().unwrap();
             }
         }
     }

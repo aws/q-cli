@@ -160,6 +160,7 @@ async fn handle_request<Ctx: KVStore, E: EventHandler<Ctx = Ctx> + Sync>(
                 AuthBuilderIdStartDeviceAuthorizationRequest,
                 AuthStatusRequest,
                 CheckForUpdatesRequest,
+                CodewhispererListCustomizationRequest,
                 ContentsOfDirectoryRequest,
                 CreateDirectoryRequest,
                 DebuggerUpdateRequest,
@@ -250,6 +251,8 @@ async fn handle_request<Ctx: KVStore, E: EventHandler<Ctx = Ctx> + Sync>(
                     auth::builder_id_start_device_authorization(request, &ctx).await
                 },
                 AuthBuilderIdPollCreateTokenRequest(request) => auth::builder_id_poll_create_token(request, &ctx).await,
+                // codewhisperer api
+                CodewhispererListCustomizationRequest(request) => codewhisperer::list_customization(request).await,
                 // other
                 OpenInExternalApplicationRequest(request) => other::open_in_external_application(request).await,
                 PingRequest(request) => other::ping(request),
