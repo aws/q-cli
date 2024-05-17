@@ -105,6 +105,8 @@ impl Error {
 pub(crate) trait ErrorExt<T, E> {
     #[allow(dead_code)]
     fn context(self, context: impl Into<Cow<'static, str>>) -> Result<T, Error>;
+
+    #[allow(dead_code)]
     fn with_context(self, context_fn: impl FnOnce(&E) -> String) -> Result<T, Error>;
 
     /// If this is an [`io::Error`] and is [`io::ErrorKind::PermissionDenied`] map to
