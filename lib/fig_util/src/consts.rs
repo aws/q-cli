@@ -104,7 +104,10 @@ pub mod env_var {
         Q_SHELL = "Q_SHELL",
 
         /// Indicates the user is debugging the shell
-        Q_DEBUG_SHELL = "Q_DEBUG_SHELL"
+        Q_DEBUG_SHELL = "Q_DEBUG_SHELL",
+
+        /// Indicates the user is using zsh autosuggestions which disables Inline
+        Q_USING_ZSH_AUTOSUGGESTIONS = "Q_USING_ZSH_AUTOSUGGESTIONS"
     }
 }
 

@@ -29,6 +29,9 @@ use once_cell::sync::Lazy;
 use super::internal::should_figterm_launch::should_figterm_launch_exit_status;
 use crate::util::app_path_from_bundle_id;
 
+const INLINE_ENABLED_SETTINGS_KEY: &str = "inline.enabled";
+const SHELL_INTEGRATIONS_ENABLED_STATE_KEY: &str = "shell-integrations.enabled";
+
 static IS_SNAPSHOT_TEST: Lazy<bool> = Lazy::new(|| std::env::var_os("Q_INIT_SNAPSHOT_TEST").is_some());
 
 #[derive(Debug, Args, PartialEq, Eq)]
@@ -120,14 +123,8 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
         return Ok("".into());
     }
 
-    if !fig_settings::state::get_bool_or("shell-integrations.enabled", true) {
-        return Ok(guard_source(
-            shell,
-            false,
-            "Q_SHELL_INTEGRATION_DISABLED",
-            GuardAssignment::AfterSourcing,
-            "echo '[Debug]: fig shell integration is disabled.'",
-        ));
+    if !fig_settings::state::get_bool_or(SHELL_INTEGRATIONS_ENABLED_STATE_KEY, true) {
+        return Ok(shell_integrations_disabled_code(*shell));
     }
 
     let mut to_source = Vec::new();
@@ -156,7 +153,7 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
 
     // Grabbing the real auth is too slow here, so we just rely on the cached value
     let is_amzn_user = fig_settings::state::get_string_or("auth.idc.start-url", "") == AMZN_START_URL;
-    let inline_enabled = fig_settings::settings::get_bool_or("inline.enabled", is_amzn_user);
+    let inline_enabled = fig_settings::settings::get_bool_or(INLINE_ENABLED_SETTINGS_KEY, is_amzn_user);
 
     if let When::Post = when {
         if !matches!(
@@ -281,6 +278,19 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
     Ok(to_source.join("\n"))
 }
 
+fn shell_integrations_disabled_code(shell: Shell) -> String {
+    guard_source(
+        &shell,
+        false,
+        "Q_SHELL_INTEGRATION_DISABLED",
+        GuardAssignment::AfterSourcing,
+        format!(
+            "printf '{PRODUCT_NAME} shell integration is disabled.\\nRe-enable by running: {}\\n'",
+            format!("{CLI_BINARY_NAME} _ local-state -d {SHELL_INTEGRATIONS_ENABLED_STATE_KEY}").magenta()
+        ),
+    )
+}
+
 #[allow(dead_code)]
 fn input_method_prompt_code(shell: Shell, terminal: &Terminal) -> String {
     guard_source(
@@ -304,7 +314,7 @@ fn inline_prompt_code(shell: Shell) -> String {
         GuardAssignment::AfterSourcing,
         format!(
             "printf '\\n{PRODUCT_NAME} now supports Inline AI suggestions!\\n\\nTo disable run: {}\\n\\n'\n",
-            format!("{CLI_BINARY_NAME} settings inline.enabled false").magenta()
+            format!("{CLI_BINARY_NAME} settings {INLINE_ENABLED_SETTINGS_KEY} false").magenta()
         ),
     )
 }
@@ -326,6 +336,8 @@ mod tests {
             .unwrap();
 
         let stdin = child.stdin.as_mut().unwrap();
+        // Since these are all guarded we run the code twice to double check
+        stdin.write_all(text.as_bytes()).unwrap();
         stdin.write_all(text.as_bytes()).unwrap();
         stdin.flush().unwrap();
 
@@ -335,33 +347,47 @@ mod tests {
 
     #[test]
     fn test_prompts() {
-        for shell in [Shell::Bash, Shell::Zsh] {
-            let terminal = Terminal::Iterm;
-            let input_method_prompt_code = run_shell_stdout(&shell, &input_method_prompt_code(shell, &terminal));
+        for shell in Shell::all_test() {
+            let shell_integrations_disabled_output = run_shell_stdout(&shell, &shell_integrations_disabled_code(shell));
 
-            println!("=== input_method_prompt {shell:?} ===");
-            println!("{input_method_prompt_code}");
+            println!("=== shell_integrations_disabled_code {shell:?} ===");
+            println!("{shell_integrations_disabled_output}");
             println!("===");
 
             assert_eq!(
-                input_method_prompt_code,
+                shell_integrations_disabled_output,
+                format!(
+                    "{PRODUCT_NAME} shell integration is disabled.\nRe-enable by running: {}\n",
+                    format!("{CLI_BINARY_NAME} _ local-state -d {SHELL_INTEGRATIONS_ENABLED_STATE_KEY}").magenta()
+                )
+            );
+
+            let terminal = Terminal::Iterm;
+            let input_method_prompt_output = run_shell_stdout(&shell, &input_method_prompt_code(shell, &terminal));
+
+            println!("=== input_method_prompt {shell:?} ===");
+            println!("{input_method_prompt_output}");
+            println!("===");
+
+            assert_eq!(
+                input_method_prompt_output,
                 format!(
                     "\n🚀 {PRODUCT_NAME} supports {terminal}!\n\nEnable integrations with {terminal} by running:\n  {}\n\n",
                     format!("{CLI_BINARY_NAME} integrations install input-method").magenta()
                 )
             );
 
-            let inline_prompt_code = run_shell_stdout(&shell, &inline_prompt_code(shell));
+            let inline_prompt_output = run_shell_stdout(&shell, &inline_prompt_code(shell));
 
             println!("=== inline_prompt {shell:?} ===");
-            println!("{inline_prompt_code}");
+            println!("{inline_prompt_output}");
             println!("===");
 
             assert_eq!(
-                inline_prompt_code,
+                inline_prompt_output,
                 format!(
                     "\n{PRODUCT_NAME} now supports Inline AI suggestions!\n\nTo disable run: {}\n\n",
-                    format!("{CLI_BINARY_NAME} settings inline.enabled false").magenta()
+                    format!("{CLI_BINARY_NAME} settings {INLINE_ENABLED_SETTINGS_KEY} false").magenta()
                 )
             );
         }

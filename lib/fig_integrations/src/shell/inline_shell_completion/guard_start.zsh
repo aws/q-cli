@@ -1,3 +1,3 @@
 if command -v _zsh_autosuggest_accept >/dev/null 2>&1; then
-  echo "Amazon Q InlineShell is not compatible with zsh-autosuggestions. Please remove zsh-autosuggestions from your zshrc and restart your terminal."
+  export Q_USING_ZSH_AUTOSUGGESTIONS=1
 else

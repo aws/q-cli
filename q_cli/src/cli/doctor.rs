@@ -67,6 +67,7 @@ use fig_util::env_var::{
     QTERM_SESSION_ID,
     Q_PARENT,
     Q_TERM,
+    Q_USING_ZSH_AUTOSUGGESTIONS,
 };
 use fig_util::macos::BUNDLE_CONTENTS_INFO_PLIST_PATH;
 use fig_util::system_info::SupportLevel;
@@ -690,6 +691,54 @@ impl DoctorCheck for FigIntegrationsCheck {
                 error: None,
             }),
         }
+    }
+}
+
+struct InlineCheck;
+
+#[async_trait]
+impl DoctorCheck for InlineCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Inline".into()
+    }
+
+    async fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
+        let shell = get_shell_context().await;
+
+        let is_amzn_user = matches!(auth::is_amzn_user().await, Ok(true));
+        let inline_enabled = fig_settings::settings::get_bool_or("inline.enabled", is_amzn_user);
+        let is_zsh = matches!(shell, Ok(Some(Shell::Zsh)));
+
+        if inline_enabled && is_zsh {
+            DoctorCheckType::NormalCheck
+        } else {
+            DoctorCheckType::NoCheck
+        }
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        if std::env::var_os(Q_USING_ZSH_AUTOSUGGESTIONS).is_some() {
+            return Err(DoctorError::Error {
+                reason: "Using zsh-autosuggestions is not supported at the same time as Inline".into(),
+                info: vec![
+                    "To fix either:".into(),
+                    format!(
+                        "- Remove zsh-autosuggestions from {} and restart your terminal",
+                        "~/.zshrc".bold()
+                    )
+                    .into(),
+                    format!(
+                        "- Disable Inline by running: {}",
+                        format!("{CLI_BINARY_NAME} settings inline.enabled false").magenta()
+                    )
+                    .into(),
+                ],
+                fix: None,
+                error: None,
+            });
+        }
+
+        Ok(())
     }
 }
 
@@ -2382,6 +2431,7 @@ pub async fn doctor_cli(all: bool, strict: bool) -> Result<ExitCode> {
                 &DashboardHostCheck,
                 &AutocompleteHostCheck,
                 &MidwayCheck,
+                &InlineCheck,
             ],
             config,
             &mut spinner,

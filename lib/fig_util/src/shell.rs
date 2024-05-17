@@ -13,6 +13,7 @@ use serde::{
 };
 use tokio::process::Command;
 
+use crate::consts::build::SKIP_FISH_TESTS;
 use crate::env_var::Q_ZDOTDIR;
 use crate::process_info::get_parent_process_exe;
 use crate::{
@@ -57,6 +58,15 @@ impl FromStr for Shell {
 impl Shell {
     pub fn all() -> &'static [Self] {
         &[Shell::Bash, Shell::Zsh, Shell::Fish, Shell::Nu]
+    }
+
+    /// All shells to run unit / integration tests with
+    pub fn all_test() -> Vec<Self> {
+        let mut shells = vec![Shell::Bash, Shell::Zsh];
+        if !SKIP_FISH_TESTS {
+            shells.push(Shell::Fish);
+        }
+        shells
     }
 
     /// Try to find the name of common shells in the input
