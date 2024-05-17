@@ -1,70 +1,46 @@
 # Amazon Q for command line Monorepo
 
-[![Rust CI](https://github.com/withfig/macos/actions/workflows/rust-ci.yaml/badge.svg?branch=develop)](https://github.com/withfig/macos/actions/workflows/rust-ci.yaml)
-[![codecov](https://codecov.io/gh/withfig/macos/branch/develop/graph/badge.svg?token=EFRYMRH32O)](https://codecov.io/gh/withfig/macos)
+The FigIoDesktop monorepo houses most of the core code for the Amazon Q desktop
+app and CLI.
 
-```mermaid
-%%{
-  init: {
-    "fontFamily": "monospace"
-  }
-}%%
+If you are only interested in installing the Amazon Q app see the wiki
+[here](https://w.amazon.com/bin/view/CodeWhisperer/Fig)
 
-flowchart LR
-    term[fa:fa-terminal Terminal]
-    click term href "https://en.wikipedia.org/wiki/Terminal_emulator"
-      desktop[fa:fa-laptop-code Desktop App *]
-    click desktop href "https://github.com/withfig/macos/tree/HEAD/fig_desktop"
-    subgraph webview[Web View]
-      style webview fill:transparent,stroke-dasharray: 5 5
-      autocomplete[fa:fa-window-restore Autocomplete *]
-      click autocomplete href "https://www.github.com/withfig/autocomplete-engine"
-      dashboard[fa:fa-window-maximize Dashboard *]
-      click dashboard href "https://www.github.com/withfig/mission-control"
-    end
-    localCli[Fig CLI *]
-    click localCli href "https://github.com/withfig/macos/tree/HEAD/fig_cli"
-    subgraph remote["Remote (SSH/WSL/Docker)"]
-      style remote fill:transparent,stroke-dasharray: 5 5
-      figterm[Figterm *]
-      click figterm href "https://github.com/withfig/macos/tree/HEAD/figterm"
-      shell["Shell (bash)"]
-      click shell href "https://en.wikipedia.org/wiki/Unix_shell"
-      remoteCli[Fig CLI *]
-      click remoteCli href "https://github.com/withfig/macos/tree/HEAD/fig_cli"
-      subgraph kernel[Kernel]
-        style kernel fill:transparent,stroke-dasharray: 5 5
-        pseudo[Pseudoterminal]
-        click pseudo href "https://en.wikipedia.org/wiki/Pseudoterminal"
-      end
-    end
+## Overview
 
-    localCli <-->|local proto *| desktop
-    term <-->|stdin/stdout| figterm
-    webview <-->|Fig.js *| desktop
-    desktop <==>|remote proto *| figterm
-    figterm <-->|stdin/stdout| pseudo
-    pseudo <-->|stdin/stdout| shell
-    shell -.->|"fork()"| figterm
-    shell --> remoteCli
-    remoteCli ==>|figterm proto *| figterm
-    desktop ===|remote proto *| remoteCli
-```
+Several projects live here:
 
-The Fig monorepo houses most of the core Fig code for the Fig desktop app and
-CLI. Several projects live here:
-
-- `proto/` - [protocol buffer](https://developers.google.com/protocol-buffers/)
-  message specification for inter-process communication
-- `figterm/` - figterm, our headless terminal/pseudoterminal that intercepts the
-  user’s terminal edit buffer.
-- `q_cli/` - the `q` CLI, allows users to interface with Amazon Q from
+- [`apps/autocomlete`](apps/autocomplete/) - The autocomplete react app
+- [`apps/dashboard`](apps/dashboard/) - The dashboard react app
+- [`figterm/`](figterm/) - figterm, our headless terminal/pseudoterminal that
+  intercepts the user’s terminal edit buffer.
+- [`q_cli/`](q_cli/) - the `q` CLI, allows users to interface with Amazon Q from
   the command line
-- `fig_desktop/` - the Rust desktop app, uses
+- [`fig_desktop/`](fig_desktop/) - the Rust desktop app, uses
   [`tao`](https://docs.rs/tao/latest/tao/)/[`wry`](https://docs.rs/wry/latest/wry/)
   for windowing/webviews
-- `fig_input_method/` - The input method used to get cursor position on macOS
-- `typescript-api-bindings/` - The protocol buffer bindings for typescript
+- [`fig_input_method/`](fig_input_method/) - The input method used to get cursor
+  position on macOS
+- [`extensions/vscode`](extensions/vscode/) - Contains the VSCode plugin needed
+  for the Amazon Q for command line to work in VSCode
+- [`extensions/jetbrains`](extensions/jetbrains/) - Contains the VSCode plugin
+  needed for the Amazon Q for command line to work in Jetbrains IDEs
+
+Other folder to be aware of
+
+- [`build-scripts/`](build-scripts/) - Contains all python scripts to build,
+  sign, and test the project on macOS and Linux
+- [`lib/`](lib/) - Contains all internal rust crates
+- [`packages/`](packages/) - Contains all internal npm packages
+- [`proto/`](proto/) -
+  [protocol buffer](https://developers.google.com/protocol-buffers/) message
+  specification for inter-process communication
+- [`tests/`](tests/) - Contain integration tests for the projects
+
+Below is a high level architecture of how the different components of the app and
+their IPC:
+
+![architecture](docs/architecture.svg)
 
 ## Setup
 
@@ -112,19 +88,14 @@ sudo dnf group install "C Development Tools and Libraries"
 
 For MacOS:
 
-```bash
+```shell
 xcode-select --install
-brew install yarn protobuf
+brew install rtx pnpm protobuf zsh bash fish shellcheck typos-cli jq
 ```
 
-### 2. Install protobuf compilers.
+### 2. Install Rust toolchain using [Rustup](https://rustup.rs):
 
-See
-[proto/README.md](https://github.com/withfig/macos/blob/develop/proto/README.md)
-
-### 3. Install Rust toolchain using [Rustup](https://rustup.rs):
-
-```bash
+```shell
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 rustup toolchain default stable
 # for nightly cargo fmt
@@ -135,69 +106,38 @@ For MacOS development make sure the right targets are installed:
 
 ```bash
 rustup target add x86_64-apple-darwin
-rustup target add arm_64-apple-darwin
+rustup target add aarch64-apple-darwin
 ```
 
-### 4. Setup precommit hooks
+### 3. Setup Python and Node using [`rtx`](https://mise.jdx.dev)
 
-```bash
-# Required for spell-checking
-cargo install typos-cli
+Add mise integrations to your shell shell
 
+```shell
+# zsh
+echo 'eval "$(mise activate zsh)"' >> "${ZDOTDIR-$HOME}/.zshrc"
+
+# bash
+echo 'eval "$(mise activate bash)"' >> ~/.bashrc
+
+# fish
+echo 'mise activate fish | source' >> ~/.config/fish/config.fish
+```
+
+Install the Python and Node toolchains using:
+
+```shell
+mise install
+```
+
+### 3. Setup precommit hooks
+
+```shell
 # Run `pnpm` in root directory to add pre-commit hooks
-pnpm install --ignore-scripts
+pnpm install --ignore-scripts && pnpm husky install
 ```
 
-### 5. XCode (MacOS)
+## Contributing
 
-- You MUST be [added](https://appstoreconnect.apple.com/access/users) to Fig's
-  Apple Developer account.
-- Setup Xcode signing credentials
-
-## Building and Running Projects
-
-### MacOS App
-
-Run `cargo run --bin fig_desktop` to run the app.
-
-### figterm
-
-Run
-
-```
-make install
-```
-
-This will build the project and copy it to the correct place.
-
-### fig CLI
-
-Run
-
-```
-make install-native
-```
-
-This will build the project and copy it to the correct place.
-
-## Git Branching Conventions
-
-- Feature branches
-  - `name/feature-name`
-  - e.g. `grant/bug-fix`
-- `develop` branch
-  - should be buildable and pass all lints
-- `staging` branch is auto pushed to beta/staging
-- `master` branch is auto pushed to prod
-
-## Running tests
-
-To test MacOS, first run
-`brew install shellcheck fish`
-
-Then to run rust tests, ensure cargo is installed and run
-`cargo test`
-
----
-
-Team: fig.io
+Before contributing be sure to read the guidelines for the project
+[here](https://quip-amazon.com/1hQEAN4c2v96/FigIoDesktop-Code-Guidelines)
