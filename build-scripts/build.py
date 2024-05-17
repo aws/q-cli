@@ -135,8 +135,8 @@ def gen_manifest() -> str:
     )
 
 
-def build_macos_ime(release: bool, signing_data: EcSigningData | None) -> pathlib.Path:
-    fig_input_method_bin = build_cargo_bin(release=release, package="fig_input_method")
+def build_macos_ime(release: bool, signing_data: EcSigningData | None, targets: Sequence[str] = []) -> pathlib.Path:
+    fig_input_method_bin = build_cargo_bin(release=release, package="fig_input_method", targets=targets)
     input_method_app = pathlib.Path("build/CodeWhispererInputMethod.app")
 
     (input_method_app / "Contents/MacOS").mkdir(parents=True, exist_ok=True)
@@ -185,11 +185,12 @@ def build_desktop_app(
     npm_packages: Dict[str, pathlib.Path],
     signing_data: EcSigningData | None,
     features: Mapping[str, Sequence[str]] | None = None,
+    targets: Sequence[str] = []
 ) -> pathlib.Path:
     target = "universal-apple-darwin"
 
     info("Building macos ime")
-    ime_app = build_macos_ime(release=release, signing_data=signing_data)
+    ime_app = build_macos_ime(release=release, signing_data=signing_data, targets=targets)
 
     info("Writing manifest")
     manifest_path = pathlib.Path(DESKTOP_PACKAGE_NAME) / "manifest.json"
@@ -436,14 +437,14 @@ def build(
 
     # Mac has multiple targets, so just use the default for the platform
     # for testing and linting.
-    target = None if isDarwin() else targets[0]
+    cargo_test_target = None if isDarwin() else targets[0]
 
     if run_test:
         info("Running cargo tests")
-        run_cargo_tests(features=cargo_features, target=target)
+        run_cargo_tests(features=cargo_features, target=cargo_test_target)
 
     if run_lints:
-        run_clippy(features=cargo_features, target=target)
+        run_clippy(features=cargo_features, target=cargo_test_target)
 
     info("Building", CLI_PACKAGE_NAME)
     cli_path = build_cargo_bin(
@@ -464,6 +465,7 @@ def build(
             npm_packages=npm_packages,
             signing_data=signing_data,
             features=cargo_features,
+            targets=targets
         )
 
         sha_path = generate_sha(dmg_path)
