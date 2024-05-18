@@ -22,10 +22,9 @@ const variants = cva(
   },
 );
 
-interface LinkPropsBase extends VariantProps<typeof variants> {
-  className?: string;
-  children?: React.ReactNode;
-}
+interface LinkPropsBase
+  extends VariantProps<typeof variants>,
+    React.HTMLAttributes<HTMLAnchorElement> {}
 
 interface LinkPropsExternal extends LinkPropsBase {
   href: string;
@@ -49,29 +48,13 @@ type LinkProps = LinkPropsExternal | LinkPropsInternal;
  * @param props.to The to for an internal Link
  * @returns The Link component
  */
-function Link(props: LinkProps) {
+function Link({ className, variant, ...props }: LinkProps) {
+  const c = cn(variants({ variant, className }));
+
   if (typeof props.href === "string") {
-    return (
-      <ExternalLink
-        href={props.href}
-        className={cn(
-          variants({ variant: props.variant, className: props.className }),
-        )}
-      >
-        {props.children}
-      </ExternalLink>
-    );
+    return <ExternalLink className={c} {...props} />;
   } else if (typeof props.to === "string") {
-    return (
-      <RouterLink
-        to={props.to}
-        className={cn(
-          variants({ variant: props.variant, className: props.className }),
-        )}
-      >
-        {props.children}
-      </RouterLink>
-    );
+    return <RouterLink className={c} {...props} />;
   } else {
     throw new Error("Invalid props for Link component");
   }

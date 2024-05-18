@@ -1,20 +1,42 @@
-[
-  {
-    "kind": "release",
-    "title": "Version 1.0.3",
-    "date": "2024-05-15",
-    "changes": [
-      {
-        "kind": "added",
-        "description": "a release changelog and announcement feed"
-      }
-    ]
-  },
-  {
-    "kind": "announcement",
-    "title": "CodeWhisperer is now Amazon Q",
-    "description": "Amazon Q Developer is a generative artificial intelligence (AI) powered conversational assistant that can help you understand, build, extend, and operate AWS applications.",
-    "link": "https://aws.amazon.com/blogs/aws/amazon-q-developer-now-generally-available-includes-new-capabilities-to-reimagine-developer-experience/",
-    "date": "2024-04-30"
-  }
-]
+{
+  "$schema": "./docs/feed-schema.json",
+  "entries": [
+    {
+      "$comment": "This is the next release, any changes here",
+      "type": "release",
+      "date": "2999-01-01",
+      "version": "0.0.0",
+      "title": "Version 0.0.0",
+      "hidden": true,
+      "changes": []
+    },
+    {
+      "type": "release",
+      "date": "2024-05-20",
+      "version": "1.1.0",
+      "title": "Version 1.1.0",
+      "changes": [
+        {
+          "type": "added",
+          "description": "The \"What's New\" page with the latest release notes and announcements."
+        },
+        {
+          "type": "added",
+          "description": "History loading for CLI Completions, press `ctrl+r` to switch to history mode. ([#57](https://github.com/aws/q-command-line-discussions/discussions/57))"
+        },
+        {
+          "type": "added",
+          "description": "Support for [`generateSpecCacheKey`](https://github.com/withfig/autocomplete-tools/pull/105) for CLI Completions"
+        }
+      ]
+    },
+    {
+      "type": "announcement",
+      "date": "2024-04-30",
+      "version": "1.0.0",
+      "title": "CodeWhisperer is now Amazon Q",
+      "description": "Amazon Q Developer is a generative artificial intelligence (AI) powered conversational assistant that can help you understand, build, extend, and operate AWS applications.",
+      "link": "https://aws.amazon.com/blogs/aws/amazon-q-developer-now-generally-available-includes-new-capabilities-to-reimagine-developer-experience/"
+    }
+  ]
+}

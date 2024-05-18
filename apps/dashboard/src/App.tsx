@@ -14,7 +14,7 @@ import Licenses from "./pages/licenses";
 import ModalContext from "./context/modal";
 import { Suspense, useContext, useEffect, useRef } from "react";
 import Modal from "./components/modal";
-import { Telemetry, Event, State } from "@withfig/api-bindings";
+import { Telemetry, Event } from "@withfig/api-bindings";
 import InstallModal from "./components/installs/modal";
 import LoginModal from "./components/installs/modal/login";
 import { getIconFromName } from "./lib/icons";
@@ -26,7 +26,7 @@ import { useAccessibilityCheck, useDotfilesCheck } from "./hooks/store";
 import { useLocalStateZodDefault } from "./hooks/store/useState";
 import { z } from "zod";
 import { useAuth } from "./hooks/store/useAuth";
-import { AMZN_START_URL } from "./lib/constants";
+import { AMZN_START_URL, NOTIFICATIONS_SEEN_STATE_KEY } from "./lib/constants";
 import WhatsNew from "./pages/whats-new";
 import notificationFeedItems from "../../../feed.json";
 import { useState } from "react";
@@ -89,17 +89,6 @@ function ActiveModal() {
 function Router() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [notifCount, setNotifCount] = useLocalStateZodDefault(
-    "desktop.notificationsSeen",
-    z.number(),
-    0,
-  );
-
-  useEffect(() => {
-    if (location.pathname == "/whats-new") {
-      setNotifCount(notificationFeedItems.length);
-    }
-  }, [location]);
 
   useEffect(() => {
     try {
@@ -246,7 +235,7 @@ function Layout() {
   const error = accessibilityCheck === false || dotfilesCheck === false;
 
   const [notifCount, _] = useLocalStateZodDefault(
-    "desktop.notificationsSeen",
+    NOTIFICATIONS_SEEN_STATE_KEY,
     z.number(),
     0,
   );
@@ -263,7 +252,8 @@ function Layout() {
               icon={getIconFromName(item.name)}
               count={
                 item.link == "/whats-new"
-                  ? notificationFeedItems.length - notifCount
+                  ? notificationFeedItems.entries.filter((i) => !i.hidden)
+                      .length - notifCount
                   : undefined
               }
               error={item.link == "/help" ? error : undefined}

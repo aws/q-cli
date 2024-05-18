@@ -1,17 +1,26 @@
+import { cn } from "@/lib/utils";
 import { Native } from "@withfig/api-bindings";
 
 export default function ExternalLink({
   href,
   onClick,
+  className,
   ...props
-}: { href: string } & React.HTMLAttributes<HTMLButtonElement>) {
+}: { href: string } & React.HTMLAttributes<HTMLAnchorElement>) {
   return (
-    <button
-      {...props}
+    <a
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cn("cursor-pointer", className)}
+      href={href}
       onClick={(e) => {
-        Native.open(href).catch(console.error);
+        if (window.fig) {
+          e.preventDefault();
+          Native.open(href).catch(console.error);
+        }
         onClick?.(e);
       }}
+      {...props}
     />
   );
 }
