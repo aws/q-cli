@@ -37,6 +37,7 @@ BUILD_DIR = BUILD_DIR_RELATIVE.absolute()
 def build_npm_packages() -> Dict[str, pathlib.Path]:
     run_cmd(["pnpm", "install", "--frozen-lockfile"])
     run_cmd(["pnpm", "build"])
+    run_cmd(["pnpm", "test"])
 
     # copy to output
     dashboard_path = BUILD_DIR / "dashboard"
