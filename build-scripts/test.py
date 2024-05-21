@@ -1,8 +1,8 @@
 import itertools
 import os
-from typing import List, Mapping, Sequence
+from typing import Mapping, Sequence
 from rust import cargo_cmd_name, rust_env
-from util import isBrazil, isDarwin, isLinux, run_cmd
+from util import isBrazil, isLinux, run_cmd
 from const import CLI_PACKAGE_NAME, DESKTOP_PACKAGE_NAME, PTY_PACKAGE_NAME
 
 
