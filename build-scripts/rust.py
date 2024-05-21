@@ -68,6 +68,7 @@ def rust_env(release: bool, linker=None) -> Dict[str, str]:
         env["MACOSX_DEPLOYMENT_TARGET"] = "10.13"
 
     # TODO(grant): move Variant to be an arg of the functions
+    env["AMAZON_Q_BUILD_TARGET_TRIPLE"] = get_target_triple()
     env["AMAZON_Q_BUILD_VARIANT"] = get_variant().name
     env["AMAZON_Q_BUILD_HASH"] = build_hash()
     env["AMAZON_Q_BUILD_DATETIME"] = build_time()
@@ -80,19 +81,36 @@ def rust_env(release: bool, linker=None) -> Dict[str, str]:
 
 
 def rust_targets() -> List[str]:
+    """
+    Returns the supported rust targets for the current environment.
+    """
     match platform.system():
         case "Darwin":
             return ["x86_64-apple-darwin", "aarch64-apple-darwin"]
         case "Linux":
-            match platform.machine():
-                case "x86_64":
-                    return ["x86_64-unknown-linux-musl" if isMusl() else "x86_64-unknown-linux-gnu"]
-                case "aarch64":
-                    return ["aarch64-unknown-linux-musl" if isMusl() else "aarch64-unknown-linux-gnu"]
-                case other:
-                    raise ValueError(f"Unsupported machine {other}")
+            return [get_target_triple()]
         case other:
             raise ValueError(f"Unsupported platform {other}")
+
+
+@cache
+def get_target_triple() -> str:
+    """
+    Returns the target triple to be built and defined in the application manifest.
+    """
+    env = environ.get("AMAZON_Q_BUILD_TARGET_TRIPLE")
+    if env:
+        return env
+    elif isDarwin():
+        return "universal-apple-darwin"
+    else:
+        match platform.machine():
+            case "x86_64":
+                return "x86_64-unknown-linux-musl" if isMusl() else "x86_64-unknown-linux-gnu"
+            case "aarch64":
+                return "aarch64-unknown-linux-musl" if isMusl() else "aarch64-unknown-linux-gnu"
+            case other:
+                raise ValueError(f"Unsupported machine {other}")
 
 
 if __name__ == "__main__":

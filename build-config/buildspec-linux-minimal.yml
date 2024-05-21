@@ -3,8 +3,6 @@ version: 0.2
 env:
   shell: bash
 
-run-as: codebuild-user
-
 phases:
   install:
     run-as: root
@@ -12,12 +10,6 @@ phases:
       - dnf update -y
       - dnf install -y python cmake bash zsh unzip zstd xz git jq protobuf
       - dnf swap -y gnupg2-minimal gnupg2-full
-      - mkdir -p /home/codebuild-user
-      - chown -R codebuild-user:codebuild-user /home/codebuild-user
-      - chmod -R ug+rwx /home/codebuild-user
-      # Start the Docker daemon, required for cross builds.
-      - nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://0.0.0.0:2375 --storage-driver=overlay2&
-      - timeout 15 sh -c "until docker info; do echo .; sleep 1; done"
   pre_build:
     commands:
       - export HOME=/home/codebuild-user

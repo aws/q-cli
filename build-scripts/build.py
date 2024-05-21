@@ -6,7 +6,7 @@ import pathlib
 import shutil
 from typing import Dict, Mapping, Sequence
 from util import Variant, get_variant, isDarwin, isLinux, run_cmd, run_cmd_output, info
-from rust import cargo_cmd_name, rust_targets, rust_env
+from rust import cargo_cmd_name, rust_targets, rust_env, get_target_triple
 from test import run_cargo_tests, run_clippy
 from signing import (
     EcSigningData,
@@ -188,7 +188,7 @@ def build_desktop_app(
     features: Mapping[str, Sequence[str]] | None = None,
     targets: Sequence[str] = []
 ) -> pathlib.Path:
-    target = "universal-apple-darwin"
+    target = get_target_triple()
 
     info("Building macos ime")
     ime_app = build_macos_ime(release=release, signing_data=signing_data, targets=targets)
