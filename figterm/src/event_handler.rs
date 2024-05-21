@@ -22,7 +22,7 @@ use crate::history::{
     HistoryCommand,
     HistorySender,
 };
-use crate::inline_shell_completion::on_prompt;
+use crate::inline::on_prompt;
 use crate::{
     shell_state_to_context,
     MainLoopEvent,

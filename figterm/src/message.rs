@@ -48,7 +48,7 @@ use crate::history::HistorySender;
 use crate::interceptor::KeyInterceptor;
 use crate::pty::AsyncMasterPty;
 use crate::{
-    inline_shell_completion,
+    inline,
     shell_state_to_context,
     MainLoopEvent,
     EXPECTED_BUFFER,
@@ -330,15 +330,10 @@ pub async fn process_figterm_message(
             let history_sender = history_sender.clone();
             let session_id = session_id.to_owned();
 
-            tokio::spawn(inline_shell_completion::handle_request(
-                request,
-                session_id,
-                response_tx,
-                history_sender,
-            ));
+            tokio::spawn(inline::handle_request(request, session_id, response_tx, history_sender));
         },
         Some(FigtermRequest::InlineShellCompletionAccept(request)) => {
-            tokio::spawn(inline_shell_completion::handle_accept(request, session_id.to_owned()));
+            tokio::spawn(inline::handle_accept(request, session_id.to_owned()));
         },
         Some(FigtermRequest::Telemtety(TelemetryRequest { event_blob })) => {
             match fig_telemetry::Event::from_json(&event_blob) {

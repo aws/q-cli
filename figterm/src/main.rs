@@ -3,7 +3,7 @@ mod cleanup;
 pub mod cli;
 mod event_handler;
 pub mod history;
-pub mod inline_shell_completion;
+pub mod inline;
 pub mod input;
 pub mod interceptor;
 pub mod ipc;
