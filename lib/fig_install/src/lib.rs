@@ -15,7 +15,6 @@ use std::time::SystemTimeError;
 use fig_util::manifest::{
     manifest,
     Channel,
-    Os,
 };
 #[cfg(target_os = "freebsd")]
 use freebsd as os;
@@ -132,7 +131,13 @@ pub fn get_max_channel() -> Channel {
 
 pub async fn check_for_updates(ignore_rollout: bool) -> Result<Option<UpdatePackage>, Error> {
     let manifest = manifest();
-    index::check_for_updates(get_channel()?, Os::current(), manifest.variant.clone(), ignore_rollout).await
+    index::check_for_updates(
+        get_channel()?,
+        &manifest.target_triple,
+        &manifest.variant,
+        ignore_rollout,
+    )
+    .await
 }
 
 #[derive(Debug, Clone)]

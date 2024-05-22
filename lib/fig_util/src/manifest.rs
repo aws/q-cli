@@ -13,12 +13,15 @@ use strum::{
     EnumString,
 };
 
+use crate::build::TARGET_TRIPLE;
 use crate::consts::build::VARIANT;
 
 #[derive(Deserialize)]
 pub struct Manifest {
     #[serde(deserialize_with = "deser_enum_other")]
     pub managed_by: ManagedBy,
+    #[serde(deserialize_with = "deser_enum_other")]
+    pub target_triple: TargetTriple,
     #[serde(deserialize_with = "deser_enum_other")]
     pub variant: Variant,
     #[serde(deserialize_with = "deser_enum_other")]
@@ -34,6 +37,49 @@ pub enum ManagedBy {
     None,
     #[strum(default)]
     Other(String),
+}
+
+/// The target triplet, describes a platform on which the project is build for. Note that this also
+/// includes "fake" targets like `universal-apple-darwin` as provided by [Tauri](https://tauri.app/v1/guides/building/macos/#binary-targets)
+#[derive(Deserialize, Serialize, PartialEq, Eq, EnumString, Debug, Display)]
+pub enum TargetTriple {
+    #[serde(rename = "universal-apple-darwin")]
+    #[strum(serialize = "universal-apple-darwin")]
+    UniversalAppleDarwin,
+    #[serde(rename = "x86_64-unknown-linux-gnu")]
+    #[strum(serialize = "x86_64-unknown-linux-gnu")]
+    X86_64UnknownLinuxGnu,
+    #[serde(rename = "x86_64-unknown-linux-musl")]
+    #[strum(serialize = "x86_64-unknown-linux-musl")]
+    X86_64UnknownLinuxMusl,
+    #[serde(rename = "aarch64-unknown-linux-gnu")]
+    #[strum(serialize = "aarch64-unknown-linux-gnu")]
+    AArch64UnknownLinuxGnu,
+    #[serde(rename = "aarch64-unknown-linux-musl")]
+    #[strum(serialize = "aarch64-unknown-linux-musl")]
+    AArch64UnknownLinuxMusl,
+    #[strum(default)]
+    Other(String),
+}
+
+impl TargetTriple {
+    const fn from_system() -> Self {
+        cfg_if! {
+            if #[cfg(target_os = "macos")] {
+                TargetTriple::UniversalAppleDarwin
+            } else if #[cfg(all(target_os = "linux", target_env = "gnu", target_arch = "x86_64"))] {
+                TargetTriple::X86_64UnknownLinuxGnu
+            } else if #[cfg(all(target_os = "linux", target_env = "gnu", target_arch = "aarch64"))] {
+                TargetTriple::AArch64UnknownLinuxGnu
+            } else if #[cfg(all(target_os = "linux", target_env = "musl", target_arch = "x86_64"))] {
+                TargetTriple::X86_64UnknownLinuxMusl
+            } else if #[cfg(all(target_os = "linux", target_env = "musl", target_arch = "aarch64"))] {
+                TargetTriple::AArch64UnknownLinuxMusl
+            } else {
+                compile_error!("unknown target")
+            }
+        }
+    }
 }
 
 #[derive(EnumString, Display, Deserialize, Serialize, PartialEq, Eq, Clone, Debug)]
@@ -157,6 +203,10 @@ where
 
 static CACHED: Lazy<Manifest> = Lazy::new(|| Manifest {
     managed_by: ManagedBy::None,
+    target_triple: match TARGET_TRIPLE {
+        Some(target) => TargetTriple::from_str(target).expect("parsing target triple should not fail"),
+        _ => TargetTriple::from_system(),
+    },
     variant: match VARIANT.map(|s| s.to_ascii_lowercase()).as_deref() {
         Some("minimal") => Variant::Minimal,
         _ => Variant::Full,
@@ -234,6 +284,15 @@ mod tests {
             assert_eq!($variant, $ty::from_str($text).unwrap());
             assert_eq!($text, $variant.to_string());
         };
+    }
+
+    #[test]
+    fn test_target_triple_serialize_deserialize() {
+        test_ser_deser!(TargetTriple, TargetTriple::UniversalAppleDarwin, "universal-apple-darwin");
+        test_ser_deser!(TargetTriple, TargetTriple::X86_64UnknownLinuxGnu, "x86_64-unknown-linux-gnu");
+        test_ser_deser!(TargetTriple, TargetTriple::AArch64UnknownLinuxGnu, "aarch64-unknown-linux-gnu");
+        test_ser_deser!(TargetTriple, TargetTriple::X86_64UnknownLinuxMusl, "x86_64-unknown-linux-musl");
+        test_ser_deser!(TargetTriple, TargetTriple::AArch64UnknownLinuxMusl, "aarch64-unknown-linux-musl");
     }
 
     #[test]

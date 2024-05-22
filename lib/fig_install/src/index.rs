@@ -14,6 +14,7 @@ use fig_util::manifest::{
     Channel,
     FileType,
     Os,
+    TargetTriple,
     Variant,
 };
 use fig_util::system_info::get_system_id;
@@ -94,6 +95,137 @@ impl Index {
     pub(crate) fn latest(&self) -> Option<&RemoteVersion> {
         self.versions.iter().max_by(|a, b| a.version.cmp(&b.version))
     }
+
+    /// Determines the next package in the index to update to, given the provided parameters.
+    pub fn find_next_version(
+        &self,
+        target_triple: &TargetTriple,
+        variant: &Variant,
+        file_type: &FileType,
+        current_version: &str,
+        ignore_rollout: bool,
+        threshold_override: Option<u8>,
+    ) -> Result<Option<UpdatePackage>, Error> {
+        if !self.supported.iter().any(|support| {
+            support.target_triple.as_ref() == Some(target_triple)
+                && support.variant == *variant
+                && support.file_type.as_ref() == Some(file_type)
+        }) {
+            return Err(Error::SystemNotOnChannel);
+        }
+
+        let right_now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
+
+        let mut valid_versions = self
+            .versions
+            .iter()
+            .filter(|version| {
+                version.packages.iter().any(|package| {
+                    package.target_triple.as_ref() == Some(target_triple)
+                        && package.variant == *variant
+                        && package.file_type.as_ref() == Some(file_type)
+                })
+            })
+            .filter(|version| match &version.rollout {
+                Some(rollout) => rollout.start <= right_now,
+                None => true,
+            })
+            .collect::<Vec<&RemoteVersion>>();
+
+        valid_versions.sort_unstable_by(|lhs, rhs| lhs.version.cmp(&rhs.version));
+        valid_versions.reverse();
+
+        let Some(sys_id) = get_system_id() else {
+            return Err(Error::SystemIdNotFound);
+        };
+        let system_threshold = threshold_override.unwrap_or_else(|| {
+            let mut hasher = DefaultHasher::new();
+            // different for each system
+            sys_id.hash(&mut hasher);
+            // different for each version, which prevents people from getting repeatedly hit by untested
+            // releases
+            current_version.hash(&mut hasher);
+
+            (hasher.finish() % 0xff) as u8
+        });
+
+        let chosen = valid_versions.into_iter().next().filter(|entry| {
+            if let Some(rollout) = &entry.rollout {
+                if ignore_rollout {
+                    trace!("accepted update candidate {} because rollout is ignored", entry.version);
+                    return true;
+                }
+                if rollout.end < right_now {
+                    trace!("accepted update candidate {} because rollout is over", entry.version);
+                    return true;
+                }
+                if rollout.start > right_now {
+                    trace!(
+                        "rejected update candidate {} because rollout hasn't started yet",
+                        entry.version
+                    );
+                    return false;
+                }
+
+                // interpolate rollout progress
+                let offset_into = (right_now - rollout.start) as f64;
+                let rollout_length = (rollout.end - rollout.start) as f64;
+                let progress = offset_into / rollout_length;
+                let remote_threshold = (progress * 256.0).round().clamp(0.0, 256.0) as u8;
+
+                if remote_threshold >= system_threshold {
+                    // the rollout chose us
+                    info!(
+                        "accepted update candidate {} with remote_threshold {remote_threshold} and system_threshold {system_threshold}",
+                        entry.version
+                    );
+                    true
+                } else {
+                    info!(
+                        "rejected update candidate {} because remote_threshold {remote_threshold} is below system_threshold {system_threshold}",
+                        entry.version
+                    );
+                    false
+                }
+            } else {
+                true
+            }
+        });
+
+        if chosen.is_none() {
+            // no upgrade candidates
+            return Ok(None);
+        }
+
+        let chosen = chosen.unwrap();
+        let package = chosen
+            .packages
+            .iter()
+            .find(|package| {
+                package.target_triple.as_ref() == Some(target_triple)
+                    && package.variant == *variant
+                    && package.file_type.as_ref() == Some(file_type)
+            })
+            .unwrap();
+
+        if match Version::parse(current_version) {
+            Ok(current_version) => chosen.version <= current_version,
+            Err(err) => {
+                error!("failed parsing current version semver: {err:?}");
+                chosen.version.to_string() == current_version
+            },
+        } {
+            return Ok(None);
+        }
+
+        Ok(Some(UpdatePackage {
+            version: chosen.version.clone(),
+            download_url: package.download_url(),
+            sha256: package.sha256.clone(),
+            size: package.size,
+            cli_path: package.cli_path.clone(),
+        }))
+    }
 }
 
 #[allow(unused)]
@@ -104,6 +236,8 @@ struct Support {
     architecture: PackageArchitecture,
     #[serde(deserialize_with = "deser_enum_other")]
     variant: Variant,
+    #[serde(deserialize_with = "deser_opt_enum_other", default)]
+    target_triple: Option<TargetTriple>,
     #[serde(deserialize_with = "deser_opt_enum_other", default)]
     os: Option<Os>,
     #[serde(deserialize_with = "deser_opt_enum_other", default)]
@@ -130,6 +264,8 @@ pub struct Package {
     pub(crate) architecture: PackageArchitecture,
     #[serde(deserialize_with = "deser_enum_other")]
     pub(crate) variant: Variant,
+    #[serde(deserialize_with = "deser_opt_enum_other", default)]
+    pub(crate) target_triple: Option<TargetTriple>,
     #[serde(deserialize_with = "deser_opt_enum_other", default)]
     pub(crate) os: Option<Os>,
     #[serde(deserialize_with = "deser_opt_enum_other", default)]
@@ -178,6 +314,7 @@ pub enum PackageArchitecture {
 }
 
 impl PackageArchitecture {
+    #[allow(dead_code)]
     const fn from_system() -> Self {
         cfg_if! {
             if #[cfg(target_os = "macos")] {
@@ -211,168 +348,22 @@ pub async fn pull(channel: &Channel) -> Result<Index, Error> {
 
 pub async fn check_for_updates(
     channel: Channel,
-    os: Os,
-    variant: Variant,
+    target_triple: &TargetTriple,
+    variant: &Variant,
     ignore_rollout: bool,
 ) -> Result<Option<UpdatePackage>, Error> {
     const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
-    const ARCHITECTURE: PackageArchitecture = PackageArchitecture::from_system();
     const FILE_TYPE: FileType = FileType::from_system();
+    let index = pull(&channel).await?;
 
-    query_index(
-        channel,
-        os,
+    index.find_next_version(
+        target_triple,
         variant,
-        FILE_TYPE,
+        &FILE_TYPE,
         CURRENT_VERSION,
-        ARCHITECTURE,
         ignore_rollout,
         None,
     )
-    .await
-}
-
-#[allow(clippy::too_many_arguments)]
-pub async fn query_index(
-    channel: Channel,
-    os: Os,
-    variant: Variant,
-    file_type: FileType,
-    current_version: &str,
-    architecture: PackageArchitecture,
-    ignore_rollout: bool,
-    threshold_override: Option<u8>,
-) -> Result<Option<UpdatePackage>, Error> {
-    let index = pull(&channel).await?;
-
-    if !index.supported.iter().any(|support| {
-        support.os.as_ref() == Some(&os)
-            && support.architecture == architecture
-            && support.variant == variant
-            && support.file_type.as_ref() == Some(&file_type)
-    }) {
-        return Err(Error::SystemNotOnChannel);
-    }
-
-    let right_now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
-
-    let mut valid_versions = index
-        .versions
-        .into_iter()
-        .filter(|version| {
-            version.packages.iter().any(|package| {
-                package.os.as_ref() == Some(&os)
-                    && package.architecture == architecture
-                    && package.variant == variant
-                    && package.file_type.as_ref() == Some(&file_type)
-            })
-        })
-        .filter(|version| match &version.rollout {
-            Some(rollout) => rollout.start <= right_now,
-            None => true,
-        })
-        .collect::<Vec<RemoteVersion>>();
-
-    valid_versions.sort_unstable_by(|lhs, rhs| lhs.version.cmp(&rhs.version));
-    valid_versions.reverse();
-
-    let Some(sys_id) = get_system_id() else {
-        return Err(Error::SystemIdNotFound);
-    };
-    let system_threshold = threshold_override.unwrap_or_else(|| {
-        let mut hasher = DefaultHasher::new();
-        // different for each system
-        sys_id.hash(&mut hasher);
-        // different for each version, which prevents people from getting repeatedly hit by untested
-        // releases
-        current_version.hash(&mut hasher);
-
-        (hasher.finish() % 0xff) as u8
-    });
-
-    let mut chosen = None;
-    #[allow(clippy::never_loop)] // todo(mia): fix
-    for entry in valid_versions {
-        if let Some(rollout) = &entry.rollout {
-            if ignore_rollout {
-                trace!("accepted update candidate {} because rollout is ignored", entry.version);
-                chosen = Some(entry);
-                break;
-            }
-            if rollout.end < right_now {
-                trace!("accepted update candidate {} because rollout is over", entry.version);
-                chosen = Some(entry);
-                break;
-            }
-            if rollout.start > right_now {
-                trace!(
-                    "rejected update candidate {} because rollout hasn't started yet",
-                    entry.version
-                );
-                break;
-            }
-
-            // interpolate rollout progress
-            let offset_into = (right_now - rollout.start) as f64;
-            let rollout_length = (rollout.end - rollout.start) as f64;
-            let progress = offset_into / rollout_length;
-            let remote_threshold = (progress * 256.0).round().clamp(0.0, 256.0) as u8;
-
-            if remote_threshold >= system_threshold {
-                // the rollout chose us
-                info!(
-                    "accepted update candidate {} with remote_threshold {remote_threshold} and system_threshold {system_threshold}",
-                    entry.version
-                );
-                chosen = Some(entry);
-                break;
-            } else {
-                info!(
-                    "rejected update candidate {} because remote_threshold {remote_threshold} is below system_threshold {system_threshold}",
-                    entry.version
-                );
-                break;
-            }
-        } else {
-            chosen = Some(entry);
-            break;
-        }
-    }
-
-    if chosen.is_none() {
-        // no upgrade candidates
-        return Ok(None);
-    }
-
-    let chosen = chosen.unwrap();
-    let package = chosen
-        .packages
-        .into_iter()
-        .find(|package| {
-            package.os.as_ref() == Some(&os)
-                && package.architecture == architecture
-                && package.variant == variant
-                && package.file_type.as_ref() == Some(&file_type)
-        })
-        .unwrap();
-
-    if match Version::parse(current_version) {
-        Ok(current_version) => chosen.version <= current_version,
-        Err(err) => {
-            error!("failed parsing current version semver: {err:?}");
-            chosen.version.to_string() == current_version
-        },
-    } {
-        return Ok(None);
-    }
-
-    Ok(Some(UpdatePackage {
-        version: chosen.version,
-        download_url: package.download_url(),
-        sha256: package.sha256,
-        size: package.size,
-        cli_path: package.cli_path,
-    }))
 }
 
 #[cfg(test)]
@@ -416,9 +407,14 @@ mod tests {
     #[cfg(target_os = "macos")]
     #[ignore = "New index format not used yet"]
     async fn check_test() {
-        check_for_updates(Channel::Stable, Os::Macos, Variant::Full, false)
-            .await
-            .unwrap();
+        check_for_updates(
+            Channel::Stable,
+            &TargetTriple::UniversalAppleDarwin,
+            &Variant::Full,
+            false,
+        )
+        .await
+        .unwrap();
     }
 
     #[test]
@@ -434,6 +430,7 @@ mod tests {
             "supported": [
                 {
                     "kind": "dmg",
+                    "targetTriple": "universal-apple-darwin",
                     "os": "macos",
                     "architecture": "universal",
                     "variant": "full",
@@ -441,6 +438,7 @@ mod tests {
                 },
                 {
                     "kind": "deb",
+                    "targetTriple": "x86_64-unknown-linux-gnu",
                     "os": "linux",
                     "architecture": "x86_64",
                     "variant": "headless",
@@ -530,12 +528,14 @@ mod tests {
         assert_eq!(index.supported.len(), 2);
         assert_eq!(index.supported[0], Support {
             architecture: PackageArchitecture::Universal,
+            target_triple: Some(TargetTriple::UniversalAppleDarwin),
             variant: Variant::Full,
             os: Some(Os::Macos),
             file_type: Some(FileType::Dmg),
         });
         assert_eq!(index.supported[1], Support {
             architecture: PackageArchitecture::X86_64,
+            target_triple: Some(TargetTriple::X86_64UnknownLinuxGnu),
             variant: Variant::Minimal,
             os: Some(Os::Linux),
             file_type: Some(FileType::TarZst),
@@ -552,6 +552,7 @@ mod tests {
                     architecture: PackageArchitecture::Universal,
                     variant: Variant::Full,
                     os: Some(Os::Macos),
+                    target_triple: None,
                     file_type: Some(FileType::Dmg),
                     download: "1.0.0/Q.dmg".into(),
                     sha256: "87a311e493bb2b0e68a1b4b5d267c79628d23c1e39b0a62d1a80b0c2352f80a2".into(),
@@ -562,6 +563,7 @@ mod tests {
                     architecture: PackageArchitecture::X86_64,
                     variant: Variant::Minimal,
                     os: Some(Os::Linux),
+                    target_triple: None,
                     file_type: Some(FileType::TarZst),
                     download: "1.0.0/q-x86_64-linux.tar.zst".into(),
                     sha256: "5a6abea56bfa91bd58d49fe40322058d0efea825f7e19f7fb7db1c204ae625b6".into(),
@@ -570,5 +572,54 @@ mod tests {
                 }
             ],
         });
+    }
+
+    fn load_test_index() -> Index {
+        serde_json::from_str(include_str!("../test_files/test-index.json")).unwrap()
+    }
+
+    #[test]
+    fn index_latest_version_does_not_upgrade() {
+        let next = load_test_index()
+            .find_next_version(
+                &TargetTriple::AArch64UnknownLinuxMusl,
+                &Variant::Minimal,
+                &FileType::TarZst,
+                "1.2.1",
+                true,
+                None,
+            )
+            .unwrap();
+        assert!(next.is_none());
+    }
+
+    #[test]
+    fn index_outdated_version_upgrades_to_correct_version() {
+        let next = load_test_index()
+            .find_next_version(
+                &TargetTriple::AArch64UnknownLinuxMusl,
+                &Variant::Minimal,
+                &FileType::TarZst,
+                "1.2.0",
+                true,
+                None,
+            )
+            .unwrap()
+            .expect("Should have UpdatePackage");
+        assert_eq!(next.version.to_string(), "1.2.1".to_owned());
+        assert_eq!(next.sha256, "a8112".to_owned());
+    }
+
+    #[test]
+    fn index_missing_support_returns_error() {
+        let next = load_test_index().find_next_version(
+            &TargetTriple::AArch64UnknownLinuxMusl,
+            &Variant::Full,
+            &FileType::TarZst,
+            "1.2.1",
+            true,
+            None,
+        );
+        assert!(next.is_err());
     }
 }

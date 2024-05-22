@@ -39,6 +39,9 @@ pub mod url {
 
 /// Build time env vars
 pub mod build {
+    /// The target of the current build, e.g. "aarch64-unknown-linux-musl"
+    pub const TARGET_TRIPLE: Option<&str> = option_env!("AMAZON_Q_BUILD_TARGET_TRIPLE");
+
     /// The variant of the current build
     pub const VARIANT: Option<&str> = option_env!("AMAZON_Q_BUILD_VARIANT");
 

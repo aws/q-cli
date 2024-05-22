@@ -206,16 +206,14 @@ pub enum DebugSubcommand {
         #[arg(short, long)]
         channel: String,
         #[arg(short, long)]
-        os: String,
+        target_triple: String,
         #[arg(short = 'V', long)]
         variant: String,
         #[arg(short = 'e', long)]
         version: String,
-        #[arg(short, long)]
-        architecture: String,
         #[arg(short = 'r', long)]
         enable_rollout: bool,
-        #[arg(short = 't', long)]
+        #[arg(short, long)]
         override_threshold: Option<u8>,
         #[arg(short, long)]
         file_type: String,
@@ -738,32 +736,29 @@ impl DebugSubcommand {
             },
             DebugSubcommand::QueryIndex {
                 channel,
-                os,
+                target_triple,
                 variant,
                 version: current_version,
-                architecture,
                 enable_rollout,
                 override_threshold,
                 file_type,
             } => {
-                use fig_install::index::PackageArchitecture;
                 use fig_util::manifest::{
                     Channel,
-                    Os,
+                    TargetTriple,
                     Variant,
                 };
 
-                let result = fig_install::index::query_index(
-                    Channel::from_str(channel)?,
-                    Os::from_str(os)?,
-                    Variant::from_str(variant)?,
-                    FileType::from_str(file_type)?,
-                    current_version,
-                    PackageArchitecture::from_str(architecture)?,
-                    !enable_rollout,
-                    *override_threshold,
-                )
-                .await?;
+                let result = fig_install::index::pull(&Channel::from_str(channel)?)
+                    .await?
+                    .find_next_version(
+                        &TargetTriple::from_str(target_triple)?,
+                        &Variant::from_str(variant)?,
+                        &FileType::from_str(file_type)?,
+                        current_version,
+                        !enable_rollout,
+                        *override_threshold,
+                    );
 
                 println!("{result:#?}");
             },
