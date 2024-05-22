@@ -729,7 +729,7 @@ impl DoctorCheck for InlineCheck {
                     .into(),
                     format!(
                         "- Disable Inline by running: {}",
-                        format!("{CLI_BINARY_NAME} settings inline.enabled false").magenta()
+                        format!("{CLI_BINARY_NAME} inline disable").magenta()
                     )
                     .into(),
                 ],

@@ -8,6 +8,7 @@ mod diagnostics;
 mod doctor;
 mod hook;
 mod init;
+mod inline;
 mod installation;
 mod integrations;
 pub mod internal;
@@ -185,6 +186,9 @@ pub enum CliRootCommands {
         /// The first question to ask
         input: Option<String>,
     },
+    /// Inline shell completions
+    #[command(subcommand)]
+    Inline(inline::InlineSubcommand),
 }
 
 impl CliRootCommands {
@@ -218,6 +222,7 @@ impl CliRootCommands {
             CliRootCommands::Version => "version",
             CliRootCommands::Dashboard => "dashboard",
             CliRootCommands::Chat { .. } => "chat",
+            CliRootCommands::Inline(_) => "inline",
         }
     }
 }
@@ -319,6 +324,7 @@ impl Cli {
                 CliRootCommands::Version => Self::print_version(),
                 CliRootCommands::Dashboard => launch_dashboard(false).await,
                 CliRootCommands::Chat { input } => chat::chat(input.unwrap_or_default()).await,
+                CliRootCommands::Inline(subcommand) => subcommand.execute().await,
             },
             // Root command
             None => launch_dashboard(true).await,

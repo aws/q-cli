@@ -248,7 +248,7 @@ pub async fn handle_request(
                 // skips the first one which we will recommend, we only cache the rest
                 for completion in completions.iter().skip(1) {
                     let full_text = format!("{buffer}{completion}");
-                    if validate(&full_text) && !completion.is_empty() {
+                    if !completion.is_empty() && validate(&full_text) {
                         completion_cache.insert(full_text, 1.0);
                     }
                 }
