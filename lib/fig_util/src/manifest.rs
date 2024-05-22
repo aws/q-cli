@@ -288,11 +288,31 @@ mod tests {
 
     #[test]
     fn test_target_triple_serialize_deserialize() {
-        test_ser_deser!(TargetTriple, TargetTriple::UniversalAppleDarwin, "universal-apple-darwin");
-        test_ser_deser!(TargetTriple, TargetTriple::X86_64UnknownLinuxGnu, "x86_64-unknown-linux-gnu");
-        test_ser_deser!(TargetTriple, TargetTriple::AArch64UnknownLinuxGnu, "aarch64-unknown-linux-gnu");
-        test_ser_deser!(TargetTriple, TargetTriple::X86_64UnknownLinuxMusl, "x86_64-unknown-linux-musl");
-        test_ser_deser!(TargetTriple, TargetTriple::AArch64UnknownLinuxMusl, "aarch64-unknown-linux-musl");
+        test_ser_deser!(
+            TargetTriple,
+            TargetTriple::UniversalAppleDarwin,
+            "universal-apple-darwin"
+        );
+        test_ser_deser!(
+            TargetTriple,
+            TargetTriple::X86_64UnknownLinuxGnu,
+            "x86_64-unknown-linux-gnu"
+        );
+        test_ser_deser!(
+            TargetTriple,
+            TargetTriple::AArch64UnknownLinuxGnu,
+            "aarch64-unknown-linux-gnu"
+        );
+        test_ser_deser!(
+            TargetTriple,
+            TargetTriple::X86_64UnknownLinuxMusl,
+            "x86_64-unknown-linux-musl"
+        );
+        test_ser_deser!(
+            TargetTriple,
+            TargetTriple::AArch64UnknownLinuxMusl,
+            "aarch64-unknown-linux-musl"
+        );
     }
 
     #[test]

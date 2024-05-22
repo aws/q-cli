@@ -308,8 +308,8 @@ impl ShellScriptShellIntegration {
                     Shell::Fish => format!("command -qv {CLI_BINARY_NAME}; and eval ({CLI_BINARY_NAME} init {shell} {when}{rcfile} | string split0)"),
                     Shell::Bash | Shell::Zsh => {
                         // Check that the current shell is bash
-                        let bash_pre = if self.shell.is_bash() { "[ -n $BASH_VERSION ] && " } else { "" };
-                        format!("{bash_pre}command -v {CLI_BINARY_NAME} 2&>1 >/dev/null && eval \"$({CLI_BINARY_NAME} init {shell} {when}{rcfile})\"")
+                        let bash_pre = if self.shell.is_bash() { "[ -n \"$BASH_VERSION\" ] && " } else { "" };
+                        format!("{bash_pre}command -v {CLI_BINARY_NAME} >/dev/null 2>&1 && eval \"$({CLI_BINARY_NAME} init {shell} {when}{rcfile})\"")
                     }
                     Shell::Nu => "".into(),
                 };
@@ -757,7 +757,11 @@ mod test {
 
     use super::*;
 
-    fn check_script(shell: Shell, when: When) {
+    fn run_shellcheck(source: String) {
+        if SKIP_SHELLCHECK_TESTS {
+            return;
+        }
+
         let shell_arg = "--shell=bash";
         let mut child = Command::new("shellcheck")
             .args([shell_arg, "--color=always", "-"])
@@ -769,9 +773,7 @@ mod test {
 
         let mut stdin = child.stdin.take().unwrap();
         std::thread::spawn(move || {
-            stdin
-                .write_all(shell.get_fig_integration_source(&when).as_bytes())
-                .unwrap();
+            stdin.write_all(source.as_bytes()).unwrap();
         });
 
         let output = child.wait_with_output().unwrap();
@@ -787,25 +789,23 @@ mod test {
                 eprintln!("{stderr}");
             }
 
-            // if stdout.contains("error") {
-            //    panic!();
-            //}
+            if stdout.contains("error") {
+                panic!();
+            }
         }
+    }
+
+    fn check_script(shell: Shell, when: When) {
+        run_shellcheck(shell.get_fig_integration_source(&when).to_owned())
     }
 
     #[test]
     fn shellcheck_bash_pre() {
-        if SKIP_SHELLCHECK_TESTS {
-            return;
-        }
         check_script(Shell::Bash, When::Pre);
     }
 
     #[test]
     fn shellcheck_bash_post() {
-        if SKIP_SHELLCHECK_TESTS {
-            return;
-        }
         check_script(Shell::Bash, When::Post);
     }
 
@@ -894,6 +894,14 @@ mod test {
             )
             .replace(' ', "_");
             insta::assert_snapshot!(integration_name, integration.get_contents());
+        }
+    }
+
+    #[test]
+    #[cfg(target_os = "linux")]
+    fn dotfile_shell_integrations_shellcheck() {
+        for integration in all_dotfile_shell_integrations() {
+            run_shellcheck(integration.get_contents());
         }
     }
 }
