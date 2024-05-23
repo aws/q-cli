@@ -605,14 +605,6 @@ const getGenerateSpecCacheKey = (
 ): string | undefined => {
   let cacheKey: string | undefined;
 
-  // TODO(grant): remove this after the mechanic spec is updated to use generateSpecCacheKey
-  if (
-    completionObj.name?.[0] === "mechanic" &&
-    tokenArray?.[0] === "mechanic"
-  ) {
-    cacheKey = "mechanic";
-  }
-
   const generateSpecCacheKey = completionObj?.generateSpecCacheKey;
   if (generateSpecCacheKey) {
     if (typeof generateSpecCacheKey === "string") {
