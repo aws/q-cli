@@ -52,6 +52,12 @@ use webview::{
     AutocompleteOptions,
     DashboardOptions,
     WebviewManager,
+    HOTKEY_CHAT_ID,
+};
+#[cfg(feature = "hotkey-chat")]
+use webview::{
+    build_hotkey_chat,
+    hotkey_chat,
 };
 pub use webview::{
     AUTOCOMPLETE_ID,
@@ -276,6 +282,11 @@ async fn main() {
             autocomplete_enabled,
             autocomplete::url,
         )
+        .unwrap();
+
+    #[cfg(feature = "hotkey-chat")]
+    webview_manager
+        .build_webview(HOTKEY_CHAT_ID, build_hotkey_chat, (), true, hotkey_chat::url)
         .unwrap();
 
     // webview_manager

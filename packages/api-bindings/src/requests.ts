@@ -25,12 +25,15 @@ import {
   DebuggerUpdateRequest,
   DestinationOfSymbolicLinkRequest,
   DestinationOfSymbolicLinkResponse,
+  DragWindowRequest,
   GetConfigPropertyRequest,
   GetConfigPropertyResponse,
   GetDefaultsPropertyRequest,
   GetDefaultsPropertyResponse,
   GetLocalStateRequest,
   GetLocalStateResponse,
+  GetScreenshotRequest,
+  GetScreenshotResponse,
   GetSettingsPropertyRequest,
   GetSettingsPropertyResponse,
   HistoryQueryRequest,
@@ -41,6 +44,7 @@ import {
   MacosInputMethodRequest,
   MacosInputMethodResponse,
   OnboardingRequest,
+  OpenContextMenuRequest,
   OpenInExternalApplicationRequest,
   PingRequest,
   PingResponse,
@@ -642,6 +646,32 @@ export async function sendCodewhispererListCustomizationRequest(
   });
 }
 
+export async function sendGetScreenshotRequest(
+  request: GetScreenshotRequest,
+): Promise<GetScreenshotResponse> {
+  return new Promise((resolve, reject) => {
+    sendMessage(
+      { $case: "getScreenshotRequest", getScreenshotRequest: request },
+      (response) => {
+        switch (response?.$case) {
+          case "getScreenshotResponse":
+            resolve(response.getScreenshotResponse);
+            break;
+          case "error":
+            reject(Error(response.error));
+            break;
+          default:
+            reject(
+              Error(
+                `Invalid response '${response?.$case}' for 'GetScreenshotRequest'`,
+              ),
+            );
+        }
+      },
+    );
+  });
+}
+
 export async function sendPseudoterminalWriteRequest(
   request: PseudoterminalWriteRequest,
 ): Promise<void> {
@@ -1204,6 +1234,58 @@ export async function sendUpdateApplicationRequest(
             reject(
               Error(
                 `Invalid response '${response?.$case}' for 'UpdateApplicationRequest'`,
+              ),
+            );
+        }
+      },
+    );
+  });
+}
+
+export async function sendDragWindowRequest(
+  request: DragWindowRequest,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    sendMessage(
+      { $case: "dragWindowRequest", dragWindowRequest: request },
+      (response) => {
+        switch (response?.$case) {
+          case "success":
+            resolve();
+            break;
+          case "error":
+            reject(Error(response.error));
+            break;
+          default:
+            reject(
+              Error(
+                `Invalid response '${response?.$case}' for 'DragWindowRequest'`,
+              ),
+            );
+        }
+      },
+    );
+  });
+}
+
+export async function sendOpenContextMenuRequest(
+  request: OpenContextMenuRequest,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    sendMessage(
+      { $case: "openContextMenuRequest", openContextMenuRequest: request },
+      (response) => {
+        switch (response?.$case) {
+          case "success":
+            resolve();
+            break;
+          case "error":
+            reject(Error(response.error));
+            break;
+          default:
+            reject(
+              Error(
+                `Invalid response '${response?.$case}' for 'OpenContextMenuRequest'`,
               ),
             );
         }

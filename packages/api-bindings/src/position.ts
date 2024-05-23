@@ -1,4 +1,7 @@
-import { sendPositionWindowRequest } from "./requests.js";
+import {
+  sendPositionWindowRequest,
+  sendDragWindowRequest,
+} from "./requests.js";
 
 // Developer Facing API
 export async function isValidFrame(frame: {
@@ -23,4 +26,8 @@ export async function setFrame(frame: {
     size: { width: frame.width, height: frame.height },
     anchor: { x: frame.anchorX, y: frame.offsetFromBaseline ?? 0 },
   });
+}
+
+export async function dragWindow() {
+  return sendDragWindowRequest({});
 }

@@ -1,5 +1,6 @@
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
+    DragWindowRequest,
     FocusAction,
     PositionWindowRequest,
     PositionWindowResponse,
@@ -102,6 +103,18 @@ pub async fn focus(request: WindowFocusRequest, window_id: WindowId, proxy: &Eve
         },
         FocusAction::ReturnFocus => return Err("ReturnFocus not implemented".into()),
     }
+
+    RequestResult::success()
+}
+
+pub async fn drag(request: DragWindowRequest, window_id: WindowId, proxy: &EventLoopProxy) -> RequestResult {
+    debug!(?request, %window_id, "Window Drag Request");
+    proxy
+        .send_event(Event::WindowEvent {
+            window_id,
+            window_event: WindowEvent::Drag,
+        })
+        .unwrap();
 
     RequestResult::success()
 }

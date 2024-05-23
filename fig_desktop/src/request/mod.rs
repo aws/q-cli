@@ -4,6 +4,7 @@ mod notifications;
 mod onboarding;
 mod process;
 mod properties;
+mod screen;
 mod telemetry;
 mod user;
 mod window;
@@ -24,9 +25,12 @@ use fig_proto::fig::{
     AggregateSessionMetricActionRequest,
     ClientOriginatedMessage,
     DebuggerUpdateRequest,
+    DragWindowRequest,
+    GetScreenshotRequest,
     InsertTextRequest,
     NotificationRequest,
     OnboardingRequest,
+    OpenContextMenuRequest,
     PositionWindowRequest,
     PseudoterminalExecuteRequest,
     PseudoterminalWriteRequest,
@@ -126,6 +130,27 @@ impl<'a> fig_desktop_api::handler::EventHandler for EventHandler<'a> {
             request.context.proxy,
         )
         .await
+    }
+
+    async fn drag_window(&self, request: Wrapped<Self::Ctx, DragWindowRequest>) -> RequestResult {
+        window::drag(
+            request.request,
+            request.context.window_id.clone(),
+            request.context.proxy,
+        )
+        .await
+    }
+
+    async fn get_screenshot(&self, request: Wrapped<Self::Ctx, GetScreenshotRequest>) -> RequestResult {
+        screen::get_screenshot(request.request, request.context.window_id.clone())
+    }
+
+    async fn open_context_menu(&self, request: Wrapped<Self::Ctx, OpenContextMenuRequest>) -> RequestResult {
+        screen::open_context_menu(
+            request.request,
+            request.context.window_id.clone(),
+            request.context.proxy,
+        )
     }
 
     async fn onboarding(&self, request: Wrapped<Self::Ctx, OnboardingRequest>) -> RequestResult {

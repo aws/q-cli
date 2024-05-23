@@ -1,4 +1,5 @@
 use std::fmt::Display;
+use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 use base64::prelude::*;
@@ -17,12 +18,14 @@ use fig_remote_ipc::figterm::{
     FigtermCommand,
     FigtermState,
 };
+use muda::Submenu;
 use parking_lot::Mutex;
 use tao::dpi::{
     LogicalPosition,
     LogicalSize,
     Position,
 };
+use tao::platform::macos::WindowExtMacOS;
 use tao::window::Window;
 use tokio::sync::mpsc::UnboundedSender;
 use tracing::{
@@ -54,6 +57,7 @@ use crate::{
     EventLoopWindowTarget,
     AUTOCOMPLETE_ID,
     DASHBOARD_ID,
+    HOTKEY_CHAT_ID,
 };
 
 pub struct WindowGeometryState {
@@ -110,7 +114,7 @@ impl WindowState {
         }
     }
 
-    fn update_position(
+    fn update_window_geometry(
         &self,
         position: Option<WindowPosition>,
         size: Option<LogicalSize<f64>>,
@@ -118,6 +122,14 @@ impl WindowState {
         platform_state: &PlatformState,
         dry_run: bool,
     ) -> (bool, bool) {
+        if self.window_id == HOTKEY_CHAT_ID {
+            if let Some(size) = size {
+                self.window.set_inner_size(size);
+            }
+
+            return (true, false);
+        }
+
         // Lock our atomic state
         let mut state = self.window_geometry_state.lock();
 
@@ -304,6 +316,7 @@ impl WindowState {
     }
 
     #[allow(clippy::only_used_in_recursion)]
+    #[allow(clippy::too_many_arguments)]
     pub fn handle(
         &self,
         event: WindowEvent,
@@ -312,6 +325,7 @@ impl WindowState {
         notifications_state: &WebviewNotificationsState,
         window_target: &EventLoopWindowTarget,
         api_tx: &UnboundedSender<(WindowId, String)>,
+        context_menu: Option<&Submenu>,
     ) {
         match event {
             WindowEvent::UpdateWindowGeometry {
@@ -321,7 +335,8 @@ impl WindowState {
                 dry_run,
                 tx,
             } => {
-                let (is_above, is_clipped) = self.update_position(position, size, anchor, platform_state, dry_run);
+                let (is_above, is_clipped) =
+                    self.update_window_geometry(position, size, anchor, platform_state, dry_run);
                 if let Some(tx) = tx {
                     if let Err(err) = tx.send((is_above, is_clipped)) {
                         tracing::error!(%err, "failed to send window geometry update result");
@@ -508,6 +523,61 @@ impl WindowState {
                     .evaluate_script(&format!("document.documentElement.innerHTML = `{html}`;"))
                     .unwrap();
             },
+            WindowEvent::Drag => {
+                if let Err(err) = self.window.drag_window() {
+                    error!(%err, "Failed to drag window");
+                }
+            },
+            WindowEvent::OpenContextMenu { x, y, windows } => {
+                use std::io::Cursor;
+
+                use image::ImageFormat;
+                use muda::{
+                    ContextMenu,
+                    IconMenuItemBuilder,
+                };
+
+                let Some(current_context_menu) = context_menu else {
+                    return;
+                };
+
+                let mut num_items = current_context_menu.items().len();
+
+                while num_items > 12 {
+                    current_context_menu.remove_at(0);
+                    num_items -= 1;
+                }
+
+                for (window, app) in windows {
+                    let path_str = format!("/Applications/{}.app", app);
+                    let path = Path::new(&path_str);
+                    let Some(bytes) = (unsafe { macos_utils::image::png_for_path(path) }) else {
+                        continue;
+                    };
+                    let cursor = Cursor::new(bytes);
+                    let img = match image::load(cursor, ImageFormat::Png) {
+                        Ok(img) => img.into_rgba8(),
+                        Err(err) => panic!("Failed to load PNG: {}", err),
+                    };
+                    let (width, height) = img.dimensions();
+                    let raw_pixels = img.into_raw();
+                    let icon = muda::Icon::from_rgba(raw_pixels, width, height).expect("Failed to open icon");
+
+                    current_context_menu
+                        .prepend(
+                            &IconMenuItemBuilder::new()
+                                .icon(Some(icon))
+                                .text(window.clone())
+                                .id(window.into())
+                                .enabled(true)
+                                .build(),
+                        )
+                        .unwrap();
+                }
+
+                current_context_menu
+                    .show_context_menu_for_nsview(self.window.ns_view().cast(), Some(Position::Logical((x, y).into())));
+            },
             WindowEvent::Batch(events) => {
                 for event in events {
                     self.handle(
@@ -517,6 +587,7 @@ impl WindowState {
                         notifications_state,
                         window_target,
                         api_tx,
+                        None,
                     );
                 }
             },

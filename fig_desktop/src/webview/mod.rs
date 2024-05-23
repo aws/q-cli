@@ -1,6 +1,8 @@
 pub mod autocomplete;
 pub mod companion;
 pub mod dashboard;
+#[cfg(feature = "hotkey-chat")]
+pub mod hotkey_chat;
 pub mod menu;
 pub mod notification;
 pub mod window;
@@ -26,6 +28,16 @@ use fig_util::{
     URL_SCHEMA,
 };
 use fnv::FnvBuildHasher;
+#[cfg(feature = "hotkey-chat")]
+use global_hotkey::{
+    hotkey::{
+        Code,
+        HotKey,
+        Modifiers,
+    },
+    GlobalHotKeyEvent,
+    GlobalHotKeyManager,
+};
 use muda::MenuEvent;
 use once_cell::sync::Lazy;
 use regex::RegexSet;
@@ -62,7 +74,10 @@ use wry::{
     WebViewBuilder,
 };
 
-use self::menu::menu_bar;
+use self::menu::{
+    context_menu,
+    menu_bar,
+};
 use self::notification::WebviewNotificationsState;
 use self::window_id::DashboardId;
 use crate::event::{
@@ -91,10 +106,13 @@ use crate::tray::{
     build_tray,
 };
 use crate::webview::window_id::AutocompleteId;
+#[cfg(feature = "hotkey-chat")]
+use crate::webview::window_id::HotkeyChatId;
 pub use crate::webview::window_id::{
     WindowId,
     AUTOCOMPLETE_ID,
     DASHBOARD_ID,
+    HOTKEY_CHAT_ID,
 };
 use crate::{
     file_watcher,
@@ -109,7 +127,12 @@ use crate::{
 pub const DASHBOARD_SIZE: LogicalSize<f64> = LogicalSize::new(960.0, 720.0);
 pub const DASHBOARD_MINIMUM_SIZE: LogicalSize<f64> = LogicalSize::new(700.0, 480.0);
 
+#[cfg(feature = "hotkey-chat")]
+pub const HOTKEY_CHAT_SIZE: LogicalSize<f64> = LogicalSize::new(600.0, 73.0);
+
 pub const AUTOCOMPLETE_WINDOW_TITLE: &str = "Fig Autocomplete";
+#[cfg(feature = "hotkey-chat")]
+pub const HOTKEY_CHAT_WINDOW_TITLE: &str = "Fig Hotkey Chat";
 
 pub const LOGIN_PATH: &str = "/";
 
@@ -379,10 +402,23 @@ impl WebviewManager {
         #[cfg(target_os = "macos")]
         menu_bar.init_for_nsapp();
 
+        let (hotkey_menu_bar, hotkey_context_menu) = context_menu();
+
+        #[cfg(target_os = "macos")]
+        hotkey_menu_bar.init_for_nsapp();
+
         let proxy = self.event_loop.create_proxy();
         proxy
             .send_event(Event::PlatformBoundEvent(PlatformBoundEvent::InitializePostRun))
             .expect("Failed to send post init event");
+
+        #[cfg(feature = "hotkey-chat")]
+        let hotkeys_manager = GlobalHotKeyManager::new().expect("GlobalHotKeyManager failed to create");
+        #[cfg(feature = "hotkey-chat")]
+        {
+            let hotkey = HotKey::new(Some(Modifiers::ALT), Code::Space);
+            hotkeys_manager.register(hotkey).expect("HotKey failed to register");
+        }
 
         self.event_loop.run(move |event, window_target, control_flow| {
             *control_flow = ControlFlow::Wait;
@@ -392,6 +428,14 @@ impl WebviewManager {
                 info!(?menu_event, "Menu Event");
                 menu::handle_event(&menu_event, &proxy);
                 tray::handle_event(&menu_event, &proxy);
+            }
+
+            #[cfg(feature = "hotkey-chat")]
+            if GlobalHotKeyEvent::receiver().try_recv().is_ok() {
+                if let Some(window_state) = self.fig_id_map.get(&HOTKEY_CHAT_ID) {
+                    window_state.window.set_visible(true);
+                    window_state.window.set_focus();
+                }
             }
 
             match event {
@@ -432,6 +476,15 @@ impl WebviewManager {
                                         .unwrap();
                                 }
 
+                                // if !focused && window_state.window_id == HOTKEY_CHAT_ID {
+                                //     proxy
+                                //         .send_event(Event::WindowEvent {
+                                //             window_id: HOTKEY_CHAT_ID,
+                                //             window_event: WindowEvent::Hide,
+                                //         })
+                                //         .unwrap();
+                                // }
+
                                 proxy
                                     .send_event(Event::PlatformBoundEvent(PlatformBoundEvent::AppWindowFocusChanged {
                                         window_id: window_state.window_id.clone(),
@@ -460,6 +513,7 @@ impl WebviewManager {
                                         &self.notifications_state,
                                         window_target,
                                         &api_handler_tx,
+                                        Some(&hotkey_context_menu),
                                     );
                                 } else {
                                     trace!(
@@ -485,6 +539,7 @@ impl WebviewManager {
                                         &self.notifications_state,
                                         window_target,
                                         &api_handler_tx,
+                                        None,
                                     );
                                 } else {
                                     trace!(
@@ -803,6 +858,70 @@ pub fn build_autocomplete(
         .with_clipboard(true)
         .with_hotkeys_zoom(true)
         .with_accept_first_mouse(true)
+        .build()?;
+
+    Ok((window, webview))
+}
+
+#[cfg(feature = "hotkey-chat")]
+pub fn build_hotkey_chat(
+    web_context: &mut WebContext,
+    event_loop: &EventLoop,
+    _: (),
+) -> anyhow::Result<(Window, WebView)> {
+    let mut window_builder = WindowBuilder::new()
+        .with_title(HOTKEY_CHAT_WINDOW_TITLE)
+        .with_inner_size(HOTKEY_CHAT_SIZE)
+        .with_resizable(false)
+        .with_visible(false)
+        .with_focused(false)
+        .with_transparent(true)
+        .with_decorations(false)
+        .with_theme(THEME.and_then(to_tao_theme));
+
+    cfg_if!(
+        if #[cfg(target_os = "linux")] {
+            use tao::platform::unix::WindowBuilderExtUnix;
+            window_builder = window_builder.with_resizable(true).with_skip_taskbar(true);
+        } else if #[cfg(target_os = "macos")] {
+            use tao::platform::macos::WindowBuilderExtMacOS;
+            window_builder = window_builder.with_resizable(false).with_has_shadow(false);
+        } else if #[cfg(target_os = "windows")] {
+            use tao::platform::windows::WindowBuilderExtWindows;
+            window_builder = window_builder.with_resizable(false).with_skip_taskbar(true);
+        }
+    );
+
+    let window = window_builder.build(event_loop)?;
+
+    let proxy = event_loop.create_proxy();
+    let url = hotkey_chat::url();
+
+    let webview = WebViewBuilder::new(&window)
+        .with_web_context(web_context)
+        .with_url(url.as_str())
+        .with_ipc_handler(move |payload| {
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: HOTKEY_CHAT_ID.clone(),
+                    window_event: WindowEvent::Api {
+                        payload: payload.into_body().into(),
+                    },
+                })
+                .unwrap();
+        })
+        .with_devtools(true)
+        .with_navigation_handler(navigation_handler(HOTKEY_CHAT_ID, &[r"^localhost$", r"^127\.0\.0\.1$"]))
+        .with_asynchronous_custom_protocol(
+            "api".into(),
+            utils::wrap_custom_protocol("api", HotkeyChatId, api::handle),
+        )
+        .with_asynchronous_custom_protocol(
+            "icon".into(),
+            utils::wrap_custom_protocol("icon", HotkeyChatId, icons::handle),
+        )
+        .with_transparent(true)
+        .with_initialization_script(&javascript_init(true))
         .build()?;
 
     Ok((window, webview))

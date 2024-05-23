@@ -3,6 +3,7 @@ use std::fmt;
 
 pub const DASHBOARD_ID: WindowId = WindowId(Cow::Borrowed("dashboard"));
 pub const AUTOCOMPLETE_ID: WindowId = WindowId(Cow::Borrowed("autocomplete"));
+pub const HOTKEY_CHAT_ID: WindowId = WindowId(Cow::Borrowed("hotkey_chat"));
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WindowId(pub Cow<'static, str>);
@@ -44,5 +45,14 @@ pub struct AutocompleteId;
 impl WindowIdProvider for AutocompleteId {
     fn window_id(&self) -> WindowId {
         AUTOCOMPLETE_ID
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct HotkeyChatId;
+
+impl WindowIdProvider for HotkeyChatId {
+    fn window_id(&self) -> WindowId {
+        HOTKEY_CHAT_ID
     }
 }

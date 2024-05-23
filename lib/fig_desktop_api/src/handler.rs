@@ -7,9 +7,12 @@ use fig_proto::fig::{
     AggregateSessionMetricActionRequest,
     ClientOriginatedMessage,
     DebuggerUpdateRequest,
+    DragWindowRequest,
+    GetScreenshotRequest,
     InsertTextRequest,
     NotificationRequest,
     OnboardingRequest,
+    OpenContextMenuRequest,
     PositionWindowRequest,
     PseudoterminalExecuteRequest,
     PseudoterminalWriteRequest,
@@ -93,6 +96,18 @@ pub trait EventHandler {
     async fn user_logout(&self, request: Wrapped<Self::Ctx, UserLogoutRequest>) -> RequestResult {
         RequestResult::unimplemented(request.request)
     }
+
+    async fn drag_window(&self, request: Wrapped<Self::Ctx, DragWindowRequest>) -> RequestResult {
+        RequestResult::unimplemented(request.request)
+    }
+
+    async fn get_screenshot(&self, request: Wrapped<Self::Ctx, GetScreenshotRequest>) -> RequestResult {
+        RequestResult::unimplemented(request.request)
+    }
+
+    async fn open_context_menu(&self, request: Wrapped<Self::Ctx, OpenContextMenuRequest>) -> RequestResult {
+        RequestResult::unimplemented(request.request)
+    }
 }
 
 pub fn request_from_b64(request_b64: &str) -> Result<ClientOriginatedMessage> {
@@ -165,9 +180,11 @@ async fn handle_request<Ctx: KVStore, E: EventHandler<Ctx = Ctx> + Sync>(
                 CreateDirectoryRequest,
                 DebuggerUpdateRequest,
                 DestinationOfSymbolicLinkRequest,
+                DragWindowRequest,
                 GetConfigPropertyRequest,
                 GetDefaultsPropertyRequest,
                 GetLocalStateRequest,
+                GetScreenshotRequest,
                 GetSettingsPropertyRequest,
                 HistoryQueryRequest,
                 InsertTextRequest,
@@ -175,6 +192,7 @@ async fn handle_request<Ctx: KVStore, E: EventHandler<Ctx = Ctx> + Sync>(
                 MacosInputMethodRequest,
                 NotificationRequest,
                 OnboardingRequest,
+                OpenContextMenuRequest,
                 OpenInExternalApplicationRequest,
                 PingRequest,
                 PositionWindowRequest,
@@ -239,6 +257,10 @@ async fn handle_request<Ctx: KVStore, E: EventHandler<Ctx = Ctx> + Sync>(
                 // window
                 PositionWindowRequest(request) => event_handler.position_window(request!(request)).await,
                 WindowFocusRequest(request) => event_handler.window_focus(request!(request)).await,
+                DragWindowRequest(request) => event_handler.drag_window(request!(request)).await,
+                // screen
+                GetScreenshotRequest(request) => event_handler.get_screenshot(request!(request)).await,
+                OpenContextMenuRequest(request) => event_handler.open_context_menu(request!(request)).await,
                 // onboarding
                 OnboardingRequest(request) => event_handler.onboarding(request!(request)).await,
                 // install

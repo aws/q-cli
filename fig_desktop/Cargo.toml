@@ -31,6 +31,7 @@ gamma = ["fig_install/gamma"]
 # console = ["tokio/tracing", "fig_log/console"]
 # Required for cargo-tauri CLI
 custom-protocol = []
+hotkey-chat = []
 
 [dependencies]
 anyhow.workspace = true
@@ -57,6 +58,7 @@ fig_util.workspace = true
 flume = "0.11.0"
 fnv = "1.0.7"
 futures = "0.3.30"
+global-hotkey = "0.5.3"
 http = "1.1.0"
 image = "0.25.0"
 infer = "0.15.0"
@@ -132,6 +134,10 @@ libc.workspace = true
 macos-utils = { path = "../lib/macos-utils" }
 objc = "0.2.7"
 system-configuration = "0.6.0"
+screencapturekit-sys = "0.2.8"
+screencapturekit = "0.2.8"
+objc-foundation = "0.1.1"
+objc_id = "0.1.1"
 
 [build-dependencies]
 image = "0.25.1"
