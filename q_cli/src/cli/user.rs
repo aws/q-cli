@@ -107,12 +107,10 @@ impl RootUserSubcommand {
                         println!();
                         // confirm("Continue?")?;
 
-                        if fig_util::open_url_async(&device_auth.verification_uri_complete)
-                            .await
-                            .is_err()
-                        {
-                            println!("Open this URL: {}", device_auth.verification_uri_complete);
-                        };
+                        match fig_util::open_url_async(&device_auth.verification_uri_complete).await {
+                            Ok(false) | Err(_) => println!("Open this URL: {}", device_auth.verification_uri_complete),
+                            _ => (),
+                        }
                         // println!();
 
                         let mut spinner = Spinner::new(vec![

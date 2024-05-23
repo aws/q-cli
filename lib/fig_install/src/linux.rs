@@ -102,14 +102,15 @@ pub(crate) async fn update(
     _relaunch_dashboard: bool,
 ) -> Result<(), Error> {
     // check if the current exe can update
-    let exe_path = std::env::current_exe()?;
+    let exe_path = std::env::current_exe()?.canonicalize()?;
     let Some(exe_name) = exe_path.file_name().and_then(|s| s.to_str()) else {
         bail!("Failed to get name of current executable: {exe_path:?}")
     };
     let Some(exe_parent) = exe_path.parent() else {
         bail!("Failed to get parent of current executable: {exe_path:?}")
     };
-    let local_bin = fig_util::directories::home_local_bin()?;
+    // canonicalize to handle if the home dir is a symlink (like on Dev Desktops)
+    let local_bin = fig_util::directories::home_local_bin()?.canonicalize()?;
 
     if exe_parent != local_bin {
         bail!(

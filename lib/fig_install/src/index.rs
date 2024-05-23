@@ -111,6 +111,7 @@ impl Index {
                 && support.variant == *variant
                 && support.file_type.as_ref() == Some(file_type)
         }) {
+            error!("No support found for: {} {} {}", target_triple, variant, file_type);
             return Err(Error::SystemNotOnChannel);
         }
 
