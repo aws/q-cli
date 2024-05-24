@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from functools import cache
 import os
 import json
 import datetime
@@ -6,7 +7,7 @@ import pathlib
 import shutil
 from typing import Dict, Mapping, Sequence
 from util import Variant, get_variant, isDarwin, isLinux, run_cmd, run_cmd_output, info
-from rust import cargo_cmd_name, rust_targets, rust_env, get_target_triple
+from rust import build_hash, build_time, cargo_cmd_name, rust_targets, rust_env, get_target_triple
 from test import run_cargo_tests, run_clippy
 from signing import (
     EcSigningData,
@@ -105,6 +106,7 @@ def build_cargo_bin(
         return out_path
 
 
+@cache
 def version() -> str:
     output = run_cmd_output(
         [
@@ -122,6 +124,7 @@ def version() -> str:
     raise ValueError("Version not found")
 
 
+@cache
 def gen_manifest() -> str:
     return json.dumps(
         {
@@ -186,7 +189,7 @@ def build_desktop_app(
     npm_packages: Dict[str, pathlib.Path],
     signing_data: EcSigningData | None,
     features: Mapping[str, Sequence[str]] | None = None,
-    targets: Sequence[str] = []
+    targets: Sequence[str] = [],
 ) -> pathlib.Path:
     target = get_target_triple()
 
@@ -466,7 +469,7 @@ def build(
             npm_packages=npm_packages,
             signing_data=signing_data,
             features=cargo_features,
-            targets=targets
+            targets=targets,
         )
 
         sha_path = generate_sha(dmg_path)
@@ -483,6 +486,7 @@ def build(
         #   archive/bin/qterm
         #   archive/install.sh
         #   archive/README
+        #   archive/BUILD-INFO
 
         archive_name = LINUX_ARCHIVE_NAME
 
@@ -491,6 +495,19 @@ def build(
 
         shutil.copy2("bundle/linux/install.sh", archive_path)
         shutil.copy2("bundle/linux/README", archive_path)
+
+        # write the BUILD-INFO
+        build_info_path = archive_path / "BUILD-INFO"
+        build_info_path.write_text(
+            "\n".join(
+                [
+                    f"BUILD_DATE={build_time()}",
+                    f"BUILD_HASH={build_hash()}",
+                    f"BUILD_TARGET_TRIPLE={get_target_triple()}",
+                    f"BUILD_VERSION={version}",
+                ]
+            )
+        )
 
         archive_bin_path = archive_path / "bin"
         archive_bin_path.mkdir(parents=True, exist_ok=True)
