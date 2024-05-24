@@ -89,6 +89,39 @@ export CARGO_HOME
 
 cargo brazil fetch --workspace
 
+# https://code.amazon.com/packages/CargoBrazil/blobs/841280a3f0f9bf659c26cfa50b16f1c075aa6906/--/bin/cargo-brazil-build#L184-L214
+# Provide a convenient hook for cargo-eevee.
+if [[ $# -gt 0 ]] && [[ "$1" = eevee-audit ]]; then
+    if ! command -v cargo-eevee &> /dev/null; then
+        echo "cargo-eevee was not found in \$PATH." >&2
+        echo "Add 'CargoEevee' to 'build-tools' in 'Config'." >&2
+        exit 1
+    fi
+    echo "delegating to cargo-eevee"
+    shift
+    # If running on ToD, we should pick up credentials from there.
+    if [[ -n "${TOD_CUSTOMER_CREDENTIAL_PATH:-}" ]]; then
+        exec cargo eevee --aws --credentials-file "$TOD_CUSTOMER_CREDENTIAL_PATH" audit "$@"
+    # If ToD credentials aren't available, check if we _might_ be on ToD
+    # and provide a decent warnings that ToD credentials aren't available.
+    elif [[ -e tod.json ]]; then
+		echo "It looks like you're running eevee-audit on a ToD worker,"
+		echo "but TOD_CUSTOMER_CREDENTIAL_PATH isn't set, so cargo-eevee"
+		echo "has no way of authenticating to Eevee."
+		echo
+		echo "You need to set the AWS Role ARN for your ToD step to:"
+		echo
+		echo "  arn:aws:iam::775576702762:role/cargo-eevee-cli"
+		echo
+        exit 1
+    # Otherwise we'll just use the default (Midway-based) credentials.
+    else
+        exec cargo eevee audit "$@"
+    fi
+    # If we get here, exec must have failed somehow.
+    exit 1
+fi
+
 rustup +stable component add llvm-tools-preview
 
 BUILD_DIR=$(brazil-path package-build-root)

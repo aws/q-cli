@@ -18,6 +18,7 @@ package.FigIoDesktop = {
             CPython311 = default;
             GoogleProtoBuf = 3.21.x;
             Shellcheck = 0.x;
+            CargoEevee = 0.1;
         };
     };
 };
