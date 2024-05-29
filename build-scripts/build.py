@@ -7,7 +7,7 @@ import pathlib
 import shutil
 from typing import Dict, Mapping, Sequence
 from util import Variant, get_variant, isDarwin, isLinux, run_cmd, run_cmd_output, info
-from rust import build_hash, build_time, cargo_cmd_name, rust_targets, rust_env, get_target_triple
+from rust import build_hash, build_datetime, cargo_cmd_name, rust_targets, rust_env, get_target_triple
 from test import run_cargo_tests, run_clippy
 from signing import (
     EcSigningData,
@@ -501,7 +501,7 @@ def build(
         build_info_path.write_text(
             "\n".join(
                 [
-                    f"BUILD_DATE={build_time()}",
+                    f"BUILD_DATE={build_datetime()}",
                     f"BUILD_HASH={build_hash()}",
                     f"BUILD_TARGET_TRIPLE={get_target_triple()}",
                     f"BUILD_VERSION={version}",

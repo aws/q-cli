@@ -127,6 +127,11 @@ def run_cargo_tests(features: Mapping[str, Sequence[str]] | None = None, target:
         )
 
 
+def lint_install_sh():
+    run_cmd(["shellcheck", "bundle/linux/install.sh"])
+
+
 def all_tests(clippy_fail_on_warn: bool):
+    lint_install_sh()
     run_cargo_tests()
     run_clippy(fail_on_warn=clippy_fail_on_warn)

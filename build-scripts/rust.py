@@ -9,8 +9,8 @@ from datetime import datetime, timezone
 
 @cache
 def build_hash() -> str:
-    if environ.get("CODEBUILD_SOURCE_VERSION") is not None:
-        build_hash = environ["CODEBUILD_SOURCE_VERSION"]
+    if environ.get("CODEBUILD_RESOLVED_SOURCE_VERSION") is not None:
+        build_hash = environ["CODEBUILD_RESOLVED_SOURCE_VERSION"]
     else:
         try:
             build_hash = run_cmd_output(["git", "rev-parse", "HEAD"]).strip()
@@ -22,7 +22,7 @@ def build_hash() -> str:
 
 
 @cache
-def build_time() -> str:
+def build_datetime() -> str:
     build_time = datetime.now(timezone.utc).isoformat()
     info("build_time =", build_time)
     return build_time
@@ -71,9 +71,10 @@ def rust_env(release: bool, linker=None) -> Dict[str, str]:
     env["AMAZON_Q_BUILD_TARGET_TRIPLE"] = get_target_triple()
     env["AMAZON_Q_BUILD_VARIANT"] = get_variant().name
     env["AMAZON_Q_BUILD_HASH"] = build_hash()
-    env["AMAZON_Q_BUILD_DATETIME"] = build_time()
-    env["Q_TELEMETRY_CLIENT_ID"] = "ffffffff-ffff-ffff-ffff-ffffffffffff"
+    env["AMAZON_Q_BUILD_DATETIME"] = build_datetime()
 
+    # Test related env vars:
+    env["Q_TELEMETRY_CLIENT_ID"] = "ffffffff-ffff-ffff-ffff-ffffffffffff"
     if skip_fish_tests():
         env["AMAZON_Q_BUILD_SKIP_FISH_TESTS"] = "1"
 
@@ -115,5 +116,5 @@ def get_target_triple() -> str:
 
 if __name__ == "__main__":
     build_hash()
-    build_time()
+    build_datetime()
     info("rust_targets =", rust_targets())
