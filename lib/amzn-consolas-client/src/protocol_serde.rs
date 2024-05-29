@@ -151,6 +151,8 @@ pub(crate) mod shape_recommendations_list;
 
 pub(crate) mod shape_reference_tracker_configuration;
 
+pub(crate) mod shape_resource_policy;
+
 pub(crate) mod shape_string_list_type;
 
 pub(crate) mod shape_supplemental_context;

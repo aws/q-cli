@@ -107,3 +107,12 @@ impl CompletionType {
         }
     }
 }
+impl ::std::fmt::Display for CompletionType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            CompletionType::Block => write!(f, "BLOCK"),
+            CompletionType::Line => write!(f, "LINE"),
+            CompletionType::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

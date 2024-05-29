@@ -55,6 +55,8 @@ pub(crate) mod shape_internal_server_error;
 
 pub(crate) mod shape_resource_not_found_exception;
 
+pub(crate) mod shape_service_quota_exceeded_exception;
+
 pub(crate) mod shape_throttling_exception;
 
 pub(crate) mod shape_validation_exception;
@@ -67,6 +69,8 @@ pub fn parse_event_stream_error_metadata(
 }
 
 pub(crate) mod shape_conversation_state;
+
+pub(crate) mod shape_export_context;
 
 pub(crate) mod shape_workspace_state;
 
@@ -90,6 +94,8 @@ pub(crate) mod shape_programming_language;
 
 pub(crate) mod shape_supplementary_web_links_event;
 
+pub(crate) mod shape_transformation_export_context;
+
 pub(crate) mod shape_assistant_response_message;
 
 pub(crate) mod shape_user_input_message;
@@ -105,6 +111,8 @@ pub(crate) mod shape_supplementary_web_link;
 pub(crate) mod shape_supplementary_web_links;
 
 pub(crate) mod shape_user_input_message_context;
+
+pub(crate) mod shape_app_studio_state;
 
 pub(crate) mod shape_diagnostic;
 

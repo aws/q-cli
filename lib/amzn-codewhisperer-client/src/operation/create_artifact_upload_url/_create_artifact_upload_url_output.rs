@@ -9,6 +9,9 @@ pub struct CreateArtifactUploadUrlOutput {
     pub upload_url: ::std::string::String,
     #[allow(missing_docs)] // documentation missing in model
     pub kms_key_arn: ::std::option::Option<::std::string::String>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub request_headers:
+        ::std::option::Option<::std::collections::HashMap<::std::string::String, ::std::string::String>>,
     _request_id: Option<String>,
 }
 impl CreateArtifactUploadUrlOutput {
@@ -28,6 +31,13 @@ impl CreateArtifactUploadUrlOutput {
     pub fn kms_key_arn(&self) -> ::std::option::Option<&str> {
         self.kms_key_arn.as_deref()
     }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn request_headers(
+        &self,
+    ) -> ::std::option::Option<&::std::collections::HashMap<::std::string::String, ::std::string::String>> {
+        self.request_headers.as_ref()
+    }
 }
 impl ::std::fmt::Debug for CreateArtifactUploadUrlOutput {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
@@ -35,6 +45,7 @@ impl ::std::fmt::Debug for CreateArtifactUploadUrlOutput {
         formatter.field("upload_id", &self.upload_id);
         formatter.field("upload_url", &"*** Sensitive Data Redacted ***");
         formatter.field("kms_key_arn", &self.kms_key_arn);
+        formatter.field("request_headers", &"*** Sensitive Data Redacted ***");
         formatter.field("_request_id", &self._request_id);
         formatter.finish()
     }
@@ -60,6 +71,8 @@ pub struct CreateArtifactUploadUrlOutputBuilder {
     pub(crate) upload_id: ::std::option::Option<::std::string::String>,
     pub(crate) upload_url: ::std::option::Option<::std::string::String>,
     pub(crate) kms_key_arn: ::std::option::Option<::std::string::String>,
+    pub(crate) request_headers:
+        ::std::option::Option<::std::collections::HashMap<::std::string::String, ::std::string::String>>,
     _request_id: Option<String>,
 }
 impl CreateArtifactUploadUrlOutputBuilder {
@@ -116,6 +129,37 @@ impl CreateArtifactUploadUrlOutputBuilder {
         &self.kms_key_arn
     }
 
+    /// Adds a key-value pair to `request_headers`.
+    ///
+    /// To override the contents of this collection use
+    /// [`set_request_headers`](Self::set_request_headers).
+    pub fn request_headers(
+        mut self,
+        k: impl ::std::convert::Into<::std::string::String>,
+        v: impl ::std::convert::Into<::std::string::String>,
+    ) -> Self {
+        let mut hash_map = self.request_headers.unwrap_or_default();
+        hash_map.insert(k.into(), v.into());
+        self.request_headers = ::std::option::Option::Some(hash_map);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_request_headers(
+        mut self,
+        input: ::std::option::Option<::std::collections::HashMap<::std::string::String, ::std::string::String>>,
+    ) -> Self {
+        self.request_headers = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_request_headers(
+        &self,
+    ) -> &::std::option::Option<::std::collections::HashMap<::std::string::String, ::std::string::String>> {
+        &self.request_headers
+    }
+
     pub(crate) fn _request_id(mut self, request_id: impl Into<String>) -> Self {
         self._request_id = Some(request_id.into());
         self
@@ -152,6 +196,7 @@ impl CreateArtifactUploadUrlOutputBuilder {
                     )
                 })?,
                 kms_key_arn: self.kms_key_arn,
+                request_headers: self.request_headers,
                 _request_id: self._request_id,
             },
         )
@@ -163,6 +208,7 @@ impl ::std::fmt::Debug for CreateArtifactUploadUrlOutputBuilder {
         formatter.field("upload_id", &self.upload_id);
         formatter.field("upload_url", &"*** Sensitive Data Redacted ***");
         formatter.field("kms_key_arn", &self.kms_key_arn);
+        formatter.field("request_headers", &"*** Sensitive Data Redacted ***");
         formatter.field("_request_id", &self._request_id);
         formatter.finish()
     }

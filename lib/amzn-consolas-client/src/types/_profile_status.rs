@@ -143,3 +143,17 @@ impl ProfileStatus {
         }
     }
 }
+impl ::std::fmt::Display for ProfileStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            ProfileStatus::Active => write!(f, "ACTIVE"),
+            ProfileStatus::CreateFailed => write!(f, "CREATE_FAILED"),
+            ProfileStatus::Creating => write!(f, "CREATING"),
+            ProfileStatus::DeleteFailed => write!(f, "DELETE_FAILED"),
+            ProfileStatus::Deleting => write!(f, "DELETING"),
+            ProfileStatus::UpdateFailed => write!(f, "UPDATE_FAILED"),
+            ProfileStatus::Updating => write!(f, "UPDATING"),
+            ProfileStatus::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

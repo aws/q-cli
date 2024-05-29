@@ -128,3 +128,15 @@ impl FunctionalityName {
         }
     }
 }
+impl ::std::fmt::Display for FunctionalityName {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            FunctionalityName::Analysis => write!(f, "ANALYSIS"),
+            FunctionalityName::Completions => write!(f, "COMPLETIONS"),
+            FunctionalityName::Conversations => write!(f, "CONVERSATIONS"),
+            FunctionalityName::TaskAssist => write!(f, "TASK_ASSIST"),
+            FunctionalityName::Transformations => write!(f, "TRANSFORMATIONS"),
+            FunctionalityName::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

@@ -10,8 +10,10 @@ pub struct UserInputMessageContext {
     pub shell_state: ::std::option::Option<crate::types::ShellState>,
     /// Git state chat message context.
     pub git_state: ::std::option::Option<crate::types::GitState>,
-    /// Environment state chat messaage context.
+    /// Environment state chat message context.
     pub env_state: ::std::option::Option<crate::types::EnvState>,
+    /// The state of a user's AppStudio UI when sending a message.
+    pub app_studio_context: ::std::option::Option<crate::types::AppStudioState>,
     /// Diagnostic chat message context.
     pub diagnostic: ::std::option::Option<crate::types::Diagnostic>,
 }
@@ -31,9 +33,14 @@ impl UserInputMessageContext {
         self.git_state.as_ref()
     }
 
-    /// Environment state chat messaage context.
+    /// Environment state chat message context.
     pub fn env_state(&self) -> ::std::option::Option<&crate::types::EnvState> {
         self.env_state.as_ref()
+    }
+
+    /// The state of a user's AppStudio UI when sending a message.
+    pub fn app_studio_context(&self) -> ::std::option::Option<&crate::types::AppStudioState> {
+        self.app_studio_context.as_ref()
     }
 
     /// Diagnostic chat message context.
@@ -57,6 +64,7 @@ pub struct UserInputMessageContextBuilder {
     pub(crate) shell_state: ::std::option::Option<crate::types::ShellState>,
     pub(crate) git_state: ::std::option::Option<crate::types::GitState>,
     pub(crate) env_state: ::std::option::Option<crate::types::EnvState>,
+    pub(crate) app_studio_context: ::std::option::Option<crate::types::AppStudioState>,
     pub(crate) diagnostic: ::std::option::Option<crate::types::Diagnostic>,
 }
 impl UserInputMessageContextBuilder {
@@ -111,21 +119,38 @@ impl UserInputMessageContextBuilder {
         &self.git_state
     }
 
-    /// Environment state chat messaage context.
+    /// Environment state chat message context.
     pub fn env_state(mut self, input: crate::types::EnvState) -> Self {
         self.env_state = ::std::option::Option::Some(input);
         self
     }
 
-    /// Environment state chat messaage context.
+    /// Environment state chat message context.
     pub fn set_env_state(mut self, input: ::std::option::Option<crate::types::EnvState>) -> Self {
         self.env_state = input;
         self
     }
 
-    /// Environment state chat messaage context.
+    /// Environment state chat message context.
     pub fn get_env_state(&self) -> &::std::option::Option<crate::types::EnvState> {
         &self.env_state
+    }
+
+    /// The state of a user's AppStudio UI when sending a message.
+    pub fn app_studio_context(mut self, input: crate::types::AppStudioState) -> Self {
+        self.app_studio_context = ::std::option::Option::Some(input);
+        self
+    }
+
+    /// The state of a user's AppStudio UI when sending a message.
+    pub fn set_app_studio_context(mut self, input: ::std::option::Option<crate::types::AppStudioState>) -> Self {
+        self.app_studio_context = input;
+        self
+    }
+
+    /// The state of a user's AppStudio UI when sending a message.
+    pub fn get_app_studio_context(&self) -> &::std::option::Option<crate::types::AppStudioState> {
+        &self.app_studio_context
     }
 
     /// Diagnostic chat message context.
@@ -153,6 +178,7 @@ impl UserInputMessageContextBuilder {
             shell_state: self.shell_state,
             git_state: self.git_state,
             env_state: self.env_state,
+            app_studio_context: self.app_studio_context,
             diagnostic: self.diagnostic,
         }
     }

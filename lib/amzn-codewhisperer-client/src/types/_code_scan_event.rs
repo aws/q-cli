@@ -9,6 +9,8 @@ pub struct CodeScanEvent {
     pub code_scan_job_id: ::std::string::String,
     #[allow(missing_docs)] // documentation missing in model
     pub timestamp: ::aws_smithy_types::DateTime,
+    #[allow(missing_docs)] // documentation missing in model
+    pub code_analysis_scope: ::std::option::Option<crate::types::CodeAnalysisScope>,
 }
 impl CodeScanEvent {
     /// Programming Languages supported by CodeWhisperer
@@ -26,6 +28,11 @@ impl CodeScanEvent {
     pub fn timestamp(&self) -> &::aws_smithy_types::DateTime {
         &self.timestamp
     }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn code_analysis_scope(&self) -> ::std::option::Option<&crate::types::CodeAnalysisScope> {
+        self.code_analysis_scope.as_ref()
+    }
 }
 impl CodeScanEvent {
     /// Creates a new builder-style object to manufacture
@@ -42,6 +49,7 @@ pub struct CodeScanEventBuilder {
     pub(crate) programming_language: ::std::option::Option<crate::types::ProgrammingLanguage>,
     pub(crate) code_scan_job_id: ::std::option::Option<::std::string::String>,
     pub(crate) timestamp: ::std::option::Option<::aws_smithy_types::DateTime>,
+    pub(crate) code_analysis_scope: ::std::option::Option<crate::types::CodeAnalysisScope>,
 }
 impl CodeScanEventBuilder {
     /// Programming Languages supported by CodeWhisperer
@@ -98,6 +106,23 @@ impl CodeScanEventBuilder {
         &self.timestamp
     }
 
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn code_analysis_scope(mut self, input: crate::types::CodeAnalysisScope) -> Self {
+        self.code_analysis_scope = ::std::option::Option::Some(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_code_analysis_scope(mut self, input: ::std::option::Option<crate::types::CodeAnalysisScope>) -> Self {
+        self.code_analysis_scope = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_code_analysis_scope(&self) -> &::std::option::Option<crate::types::CodeAnalysisScope> {
+        &self.code_analysis_scope
+    }
+
     /// Consumes the builder and constructs a [`CodeScanEvent`](crate::types::CodeScanEvent).
     /// This method will fail if any of the following fields are not set:
     /// - [`programming_language`](crate::types::builders::CodeScanEventBuilder::programming_language)
@@ -125,6 +150,7 @@ impl CodeScanEventBuilder {
                     "timestamp was not specified but it is required when building CodeScanEvent",
                 )
             })?,
+            code_analysis_scope: self.code_analysis_scope,
         })
     }
 }

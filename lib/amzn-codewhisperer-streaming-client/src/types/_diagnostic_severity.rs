@@ -117,3 +117,14 @@ impl DiagnosticSeverity {
         }
     }
 }
+impl ::std::fmt::Display for DiagnosticSeverity {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            DiagnosticSeverity::Error => write!(f, "ERROR"),
+            DiagnosticSeverity::Hint => write!(f, "HINT"),
+            DiagnosticSeverity::Information => write!(f, "INFORMATION"),
+            DiagnosticSeverity::Warning => write!(f, "WARNING"),
+            DiagnosticSeverity::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

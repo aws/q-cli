@@ -119,22 +119,26 @@ impl ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugin for StartTr
         _: &::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder,
     ) -> ::std::borrow::Cow<'_, ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder> {
         #[allow(unused_mut)]
-        let mut rcb = ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder::new("StartTransformation")
-            .with_interceptor(
-                ::aws_smithy_runtime::client::stalled_stream_protection::StalledStreamProtectionInterceptor::new(
-                    ::aws_smithy_runtime::client::stalled_stream_protection::StalledStreamProtectionInterceptorKind::ResponseBody,
-                ),
-            )
-            .with_interceptor(StartTransformationEndpointParamsInterceptor)
-            .with_retry_classifier(::aws_smithy_runtime::client::retries::classifiers::TransientErrorClassifier::<
+        let mut rcb = ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder::new(
+            "StartTransformation",
+        )
+        .with_interceptor(
+            ::aws_smithy_runtime::client::stalled_stream_protection::StalledStreamProtectionInterceptor::default(),
+        )
+        .with_interceptor(StartTransformationEndpointParamsInterceptor)
+        .with_retry_classifier(
+            ::aws_smithy_runtime::client::retries::classifiers::TransientErrorClassifier::<
                 crate::operation::start_transformation::StartTransformationError,
-            >::new())
-            .with_retry_classifier(::aws_smithy_runtime::client::retries::classifiers::ModeledAsRetryableClassifier::<
+            >::new(),
+        )
+        .with_retry_classifier(
+            ::aws_smithy_runtime::client::retries::classifiers::ModeledAsRetryableClassifier::<
                 crate::operation::start_transformation::StartTransformationError,
-            >::new())
-            .with_retry_classifier(::aws_runtime::retries::classifiers::AwsErrorCodeClassifier::<
-                crate::operation::start_transformation::StartTransformationError,
-            >::new());
+            >::new(),
+        )
+        .with_retry_classifier(::aws_runtime::retries::classifiers::AwsErrorCodeClassifier::<
+            crate::operation::start_transformation::StartTransformationError,
+        >::new());
 
         ::std::borrow::Cow::Owned(rcb)
     }
@@ -282,6 +286,9 @@ pub enum StartTransformationError {
     /// This exception is thrown when the input fails to satisfy the constraints specified by the
     /// service.
     ValidationError(crate::types::error::ValidationError),
+    /// This exception is thrown when the action to perform could not be completed because the
+    /// resource is in a conflicting state.
+    ConflictError(crate::types::error::ConflictError),
     /// This exception is thrown when the user does not have sufficient access to perform this
     /// action.
     AccessDeniedError(crate::types::error::AccessDeniedError),
@@ -326,6 +333,7 @@ impl StartTransformationError {
             Self::InternalServerError(e) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(e),
             Self::ThrottlingError(e) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(e),
             Self::ValidationError(e) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(e),
+            Self::ConflictError(e) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(e),
             Self::AccessDeniedError(e) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(e),
             Self::Unhandled(e) => &e.meta,
         }
@@ -346,6 +354,11 @@ impl StartTransformationError {
         matches!(self, Self::ValidationError(_))
     }
 
+    /// Returns `true` if the error kind is `StartTransformationError::ConflictError`.
+    pub fn is_conflict_error(&self) -> bool {
+        matches!(self, Self::ConflictError(_))
+    }
+
     /// Returns `true` if the error kind is `StartTransformationError::AccessDeniedError`.
     pub fn is_access_denied_error(&self) -> bool {
         matches!(self, Self::AccessDeniedError(_))
@@ -357,6 +370,7 @@ impl ::std::error::Error for StartTransformationError {
             Self::InternalServerError(_inner) => ::std::option::Option::Some(_inner),
             Self::ThrottlingError(_inner) => ::std::option::Option::Some(_inner),
             Self::ValidationError(_inner) => ::std::option::Option::Some(_inner),
+            Self::ConflictError(_inner) => ::std::option::Option::Some(_inner),
             Self::AccessDeniedError(_inner) => ::std::option::Option::Some(_inner),
             Self::Unhandled(_inner) => ::std::option::Option::Some(&*_inner.source),
         }
@@ -368,6 +382,7 @@ impl ::std::fmt::Display for StartTransformationError {
             Self::InternalServerError(_inner) => _inner.fmt(f),
             Self::ThrottlingError(_inner) => _inner.fmt(f),
             Self::ValidationError(_inner) => _inner.fmt(f),
+            Self::ConflictError(_inner) => _inner.fmt(f),
             Self::AccessDeniedError(_inner) => _inner.fmt(f),
             Self::Unhandled(_inner) => {
                 if let ::std::option::Option::Some(code) =
@@ -402,6 +417,7 @@ impl ::aws_smithy_types::error::metadata::ProvideErrorMetadata for StartTransfor
             },
             Self::ThrottlingError(_inner) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner),
             Self::ValidationError(_inner) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner),
+            Self::ConflictError(_inner) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner),
             Self::AccessDeniedError(_inner) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner),
             Self::Unhandled(_inner) => &_inner.meta,
         }

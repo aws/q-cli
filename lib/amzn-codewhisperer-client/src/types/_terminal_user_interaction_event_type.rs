@@ -118,3 +118,16 @@ impl TerminalUserInteractionEventType {
         }
     }
 }
+impl ::std::fmt::Display for TerminalUserInteractionEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            TerminalUserInteractionEventType::CodewhispererTerminalCompletionInserted => {
+                write!(f, "CODEWHISPERER_TERMINAL_COMPLETION_INSERTED")
+            },
+            TerminalUserInteractionEventType::CodewhispererTerminalTranslationAction => {
+                write!(f, "CODEWHISPERER_TERMINAL_TRANSLATION_ACTION")
+            },
+            TerminalUserInteractionEventType::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

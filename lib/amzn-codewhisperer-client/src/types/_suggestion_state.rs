@@ -117,3 +117,14 @@ impl SuggestionState {
         }
     }
 }
+impl ::std::fmt::Display for SuggestionState {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            SuggestionState::Accept => write!(f, "ACCEPT"),
+            SuggestionState::Discard => write!(f, "DISCARD"),
+            SuggestionState::Empty => write!(f, "EMPTY"),
+            SuggestionState::Reject => write!(f, "REJECT"),
+            SuggestionState::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

@@ -14,6 +14,8 @@ pub struct ChatInteractWithMessageEvent {
     #[allow(missing_docs)] // documentation missing in model
     pub accepted_character_count: ::std::option::Option<i32>,
     #[allow(missing_docs)] // documentation missing in model
+    pub accepted_line_count: ::std::option::Option<i32>,
+    #[allow(missing_docs)] // documentation missing in model
     pub accepted_snippet_has_reference: ::std::option::Option<bool>,
 }
 impl ChatInteractWithMessageEvent {
@@ -45,6 +47,11 @@ impl ChatInteractWithMessageEvent {
     }
 
     #[allow(missing_docs)] // documentation missing in model
+    pub fn accepted_line_count(&self) -> ::std::option::Option<i32> {
+        self.accepted_line_count
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
     pub fn accepted_snippet_has_reference(&self) -> ::std::option::Option<bool> {
         self.accepted_snippet_has_reference
     }
@@ -66,6 +73,7 @@ pub struct ChatInteractWithMessageEventBuilder {
     pub(crate) interaction_type: ::std::option::Option<crate::types::ChatMessageInteractionType>,
     pub(crate) interaction_target: ::std::option::Option<::std::string::String>,
     pub(crate) accepted_character_count: ::std::option::Option<i32>,
+    pub(crate) accepted_line_count: ::std::option::Option<i32>,
     pub(crate) accepted_snippet_has_reference: ::std::option::Option<bool>,
 }
 impl ChatInteractWithMessageEventBuilder {
@@ -160,6 +168,23 @@ impl ChatInteractWithMessageEventBuilder {
     }
 
     #[allow(missing_docs)] // documentation missing in model
+    pub fn accepted_line_count(mut self, input: i32) -> Self {
+        self.accepted_line_count = ::std::option::Option::Some(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_accepted_line_count(mut self, input: ::std::option::Option<i32>) -> Self {
+        self.accepted_line_count = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_accepted_line_count(&self) -> &::std::option::Option<i32> {
+        &self.accepted_line_count
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
     pub fn accepted_snippet_has_reference(mut self, input: bool) -> Self {
         self.accepted_snippet_has_reference = ::std::option::Option::Some(input);
         self
@@ -203,6 +228,7 @@ impl ChatInteractWithMessageEventBuilder {
             interaction_type: self.interaction_type,
             interaction_target: self.interaction_target,
             accepted_character_count: self.accepted_character_count,
+            accepted_line_count: self.accepted_line_count,
             accepted_snippet_has_reference: self.accepted_snippet_has_reference,
         })
     }

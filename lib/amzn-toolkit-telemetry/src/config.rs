@@ -38,7 +38,7 @@ impl Config {
             config: self.cloneable.clone(),
             runtime_components: self.runtime_components.clone(),
             runtime_plugins: self.runtime_plugins.clone(),
-            behavior_version: self.behavior_version.clone(),
+            behavior_version: self.behavior_version,
         }
     }
 
@@ -1353,7 +1353,7 @@ pub(crate) fn base_client_runtime_plugins(
     let mut configured_plugins = ::std::vec::Vec::new();
     ::std::mem::swap(&mut config.runtime_plugins, &mut configured_plugins);
     #[allow(unused_mut)]
-    let mut behavior_version = config.behavior_version.clone();
+    let mut behavior_version = config.behavior_version;
     #[cfg(feature = "behavior-version-latest")]
     {
         if behavior_version.is_none() {

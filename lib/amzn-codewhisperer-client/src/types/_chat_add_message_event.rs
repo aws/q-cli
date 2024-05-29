@@ -25,6 +25,8 @@ pub struct ChatAddMessageEvent {
     pub request_length: ::std::option::Option<i32>,
     #[allow(missing_docs)] // documentation missing in model
     pub response_length: ::std::option::Option<i32>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub number_of_code_blocks: ::std::option::Option<i32>,
 }
 impl ChatAddMessageEvent {
     /// ID which represents a multi-turn conversation
@@ -85,6 +87,11 @@ impl ChatAddMessageEvent {
     pub fn response_length(&self) -> ::std::option::Option<i32> {
         self.response_length
     }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn number_of_code_blocks(&self) -> ::std::option::Option<i32> {
+        self.number_of_code_blocks
+    }
 }
 impl ChatAddMessageEvent {
     /// Creates a new builder-style object to manufacture
@@ -109,6 +116,7 @@ pub struct ChatAddMessageEventBuilder {
     pub(crate) full_responselatency: ::std::option::Option<f64>,
     pub(crate) request_length: ::std::option::Option<i32>,
     pub(crate) response_length: ::std::option::Option<i32>,
+    pub(crate) number_of_code_blocks: ::std::option::Option<i32>,
 }
 impl ChatAddMessageEventBuilder {
     /// ID which represents a multi-turn conversation
@@ -305,6 +313,23 @@ impl ChatAddMessageEventBuilder {
         &self.response_length
     }
 
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn number_of_code_blocks(mut self, input: i32) -> Self {
+        self.number_of_code_blocks = ::std::option::Option::Some(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_number_of_code_blocks(mut self, input: ::std::option::Option<i32>) -> Self {
+        self.number_of_code_blocks = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_number_of_code_blocks(&self) -> &::std::option::Option<i32> {
+        &self.number_of_code_blocks
+    }
+
     /// Consumes the builder and constructs a
     /// [`ChatAddMessageEvent`](crate::types::ChatAddMessageEvent). This method will fail if any
     /// of the following fields are not set:
@@ -336,6 +361,7 @@ impl ChatAddMessageEventBuilder {
             full_responselatency: self.full_responselatency,
             request_length: self.request_length,
             response_length: self.response_length,
+            number_of_code_blocks: self.number_of_code_blocks,
         })
     }
 }

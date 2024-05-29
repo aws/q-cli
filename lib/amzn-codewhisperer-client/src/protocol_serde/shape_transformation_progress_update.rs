@@ -61,6 +61,11 @@ where
                                     ::aws_smithy_types::date_time::Format::EpochSeconds,
                                 )?);
                         },
+                        "downloadArtifacts" => {
+                            builder = builder.set_download_artifacts(
+                                crate::protocol_serde::shape_transformation_download_artifacts::de_transformation_download_artifacts(tokens)?,
+                            );
+                        },
                         _ => ::aws_smithy_json::deserialize::token::skip_value(tokens)?,
                     },
                     other => {

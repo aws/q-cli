@@ -12,6 +12,7 @@ impl super::Client {
     ///   - [`client_token(impl Into<String>)`](crate::operation::create_profile::builders::CreateProfileFluentBuilder::client_token) / [`set_client_token(Option<String>)`](crate::operation::create_profile::builders::CreateProfileFluentBuilder::set_client_token):<br>required: **false**<br>(undocumented)<br>
     ///   - [`kms_key_arn(impl Into<String>)`](crate::operation::create_profile::builders::CreateProfileFluentBuilder::kms_key_arn) / [`set_kms_key_arn(Option<String>)`](crate::operation::create_profile::builders::CreateProfileFluentBuilder::set_kms_key_arn):<br>required: **false**<br>(undocumented)<br>
     ///   - [`tags(Tag)`](crate::operation::create_profile::builders::CreateProfileFluentBuilder::tags) / [`set_tags(Option<Vec::<Tag>>)`](crate::operation::create_profile::builders::CreateProfileFluentBuilder::set_tags):<br>required: **false**<br>(undocumented)<br>
+    ///   - [`resource_policy(ResourcePolicy)`](crate::operation::create_profile::builders::CreateProfileFluentBuilder::resource_policy) / [`set_resource_policy(Option<ResourcePolicy>)`](crate::operation::create_profile::builders::CreateProfileFluentBuilder::set_resource_policy):<br>required: **false**<br>(undocumented)<br>
     /// - On success, responds with
     ///   [`CreateProfileOutput`](crate::operation::create_profile::CreateProfileOutput) with
     ///   field(s):

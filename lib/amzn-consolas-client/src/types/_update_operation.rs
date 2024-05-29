@@ -112,3 +112,13 @@ impl UpdateOperation {
         }
     }
 }
+impl ::std::fmt::Display for UpdateOperation {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            UpdateOperation::Activate => write!(f, "ACTIVATE"),
+            UpdateOperation::Deactivate => write!(f, "DEACTIVATE"),
+            UpdateOperation::Update => write!(f, "UPDATE"),
+            UpdateOperation::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

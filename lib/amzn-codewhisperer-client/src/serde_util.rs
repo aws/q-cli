@@ -47,6 +47,15 @@ pub(crate) fn create_artifact_upload_url_output_output_correct_errors(
     builder
 }
 
+pub(crate) fn service_quota_exceeded_exception_correct_errors(
+    mut builder: crate::types::error::builders::ServiceQuotaExceededErrorBuilder,
+) -> crate::types::error::builders::ServiceQuotaExceededErrorBuilder {
+    if builder.message.is_none() {
+        builder.message = Some(Default::default())
+    }
+    builder
+}
+
 pub(crate) fn create_task_assist_conversation_output_output_correct_errors(
     mut builder: crate::operation::create_task_assist_conversation::builders::CreateTaskAssistConversationOutputBuilder,
 ) -> crate::operation::create_task_assist_conversation::builders::CreateTaskAssistConversationOutputBuilder {
@@ -170,6 +179,15 @@ pub(crate) fn list_feature_evaluations_output_output_correct_errors(
 ) -> crate::operation::list_feature_evaluations::builders::ListFeatureEvaluationsOutputBuilder {
     if builder.feature_evaluations.is_none() {
         builder.feature_evaluations = Some(Default::default())
+    }
+    builder
+}
+
+pub(crate) fn resume_transformation_output_output_correct_errors(
+    mut builder: crate::operation::resume_transformation::builders::ResumeTransformationOutputBuilder,
+) -> crate::operation::resume_transformation::builders::ResumeTransformationOutputBuilder {
+    if builder.transformation_status.is_none() {
+        builder.transformation_status = "no value was set".parse::<crate::types::TransformationStatus>().ok()
     }
     builder
 }

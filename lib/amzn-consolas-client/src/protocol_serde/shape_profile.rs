@@ -72,6 +72,18 @@ where
                                         .transpose()?,
                                 );
                             },
+                            "resourcePolicy" => {
+                                builder = builder.set_resource_policy(
+                                    crate::protocol_serde::shape_resource_policy::de_resource_policy(tokens)?,
+                                );
+                            },
+                            "profileType" => {
+                                builder = builder.set_profile_type(
+                                    ::aws_smithy_json::deserialize::token::expect_string_or_null(tokens.next())?
+                                        .map(|s| s.to_unescaped().map(|u| crate::types::ProfileType::from(u.as_ref())))
+                                        .transpose()?,
+                                );
+                            },
                             _ => ::aws_smithy_json::deserialize::token::skip_value(tokens)?,
                         }
                     },

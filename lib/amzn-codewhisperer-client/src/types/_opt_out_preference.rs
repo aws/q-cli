@@ -107,3 +107,12 @@ impl OptOutPreference {
         }
     }
 }
+impl ::std::fmt::Display for OptOutPreference {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            OptOutPreference::OptIn => write!(f, "OPTIN"),
+            OptOutPreference::OptOut => write!(f, "OPTOUT"),
+            OptOutPreference::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

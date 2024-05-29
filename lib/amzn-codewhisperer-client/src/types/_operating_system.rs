@@ -112,3 +112,13 @@ impl OperatingSystem {
         }
     }
 }
+impl ::std::fmt::Display for OperatingSystem {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            OperatingSystem::Linux => write!(f, "LINUX"),
+            OperatingSystem::Mac => write!(f, "MAC"),
+            OperatingSystem::Windows => write!(f, "WINDOWS"),
+            OperatingSystem::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

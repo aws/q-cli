@@ -9,5 +9,8 @@ pub fn ser_generate_assistant_response_input_input(
         crate::protocol_serde::shape_conversation_state::ser_conversation_state(&mut object_2, var_1)?;
         object_2.finish();
     }
+    if let Some(var_3) = &input.profile_arn {
+        object.key("profileArn").string(var_3.as_str());
+    }
     Ok(())
 }

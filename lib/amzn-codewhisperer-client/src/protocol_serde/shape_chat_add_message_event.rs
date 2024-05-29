@@ -63,5 +63,11 @@ pub fn ser_chat_add_message_event(
             ::aws_smithy_types::Number::NegInt((*var_12).into()),
         );
     }
+    if let Some(var_13) = &input.number_of_code_blocks {
+        object.key("numberOfCodeBlocks").number(
+            #[allow(clippy::useless_conversion)]
+            ::aws_smithy_types::Number::NegInt((*var_13).into()),
+        );
+    }
     Ok(())
 }

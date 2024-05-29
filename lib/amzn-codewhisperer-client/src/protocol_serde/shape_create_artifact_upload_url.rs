@@ -188,6 +188,11 @@ pub(crate) fn de_create_artifact_upload_url(
                             .transpose()?,
                     );
                 },
+                "requestHeaders" => {
+                    builder = builder.set_request_headers(
+                        crate::protocol_serde::shape_request_headers::de_request_headers(tokens)?,
+                    );
+                },
                 _ => ::aws_smithy_json::deserialize::token::skip_value(tokens)?,
             },
             other => {

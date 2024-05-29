@@ -49,6 +49,8 @@ pub(crate) mod shape_list_code_analysis_findings;
 
 pub(crate) mod shape_list_feature_evaluations;
 
+pub(crate) mod shape_resume_transformation;
+
 pub(crate) mod shape_send_telemetry_event;
 
 pub(crate) mod shape_start_code_analysis;
@@ -93,7 +95,11 @@ pub(crate) mod shape_list_feature_evaluations_input;
 
 pub(crate) mod shape_resource_not_found_exception;
 
+pub(crate) mod shape_resume_transformation_input;
+
 pub(crate) mod shape_send_telemetry_event_input;
+
+pub(crate) mod shape_service_quota_exceeded_exception;
 
 pub(crate) mod shape_start_code_analysis_input;
 
@@ -123,6 +129,8 @@ pub(crate) mod shape_programming_language;
 
 pub(crate) mod shape_reference_tracker_configuration;
 
+pub(crate) mod shape_request_headers;
+
 pub(crate) mod shape_supplemental_context;
 
 pub(crate) mod shape_telemetry_event;
@@ -147,6 +155,8 @@ pub(crate) mod shape_chat_message;
 
 pub(crate) mod shape_chat_user_modification_event;
 
+pub(crate) mod shape_code_analysis_upload_context;
+
 pub(crate) mod shape_code_coverage_event;
 
 pub(crate) mod shape_code_scan_event;
@@ -168,6 +178,8 @@ pub(crate) mod shape_terminal_user_interaction_event;
 pub(crate) mod shape_transformation_project_state;
 
 pub(crate) mod shape_transformation_steps;
+
+pub(crate) mod shape_transformation_upload_context;
 
 pub(crate) mod shape_user_modification_event;
 
@@ -203,6 +215,8 @@ pub(crate) mod shape_supplementary_web_link;
 
 pub(crate) mod shape_user_input_message_context;
 
+pub(crate) mod shape_app_studio_state;
+
 pub(crate) mod shape_diagnostic;
 
 pub(crate) mod shape_editor_state;
@@ -229,8 +243,12 @@ pub(crate) mod shape_text_document;
 
 pub(crate) mod shape_text_document_diagnostic;
 
+pub(crate) mod shape_transformation_download_artifacts;
+
 pub(crate) mod shape_document_symbol;
 
 pub(crate) mod shape_position;
 
 pub(crate) mod shape_range;
+
+pub(crate) mod shape_transformation_download_artifact;

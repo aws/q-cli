@@ -2,7 +2,7 @@
 pub use crate::operation::generate_completions::_generate_completions_input::GenerateCompletionsInputBuilder;
 pub use crate::operation::generate_completions::_generate_completions_output::GenerateCompletionsOutputBuilder;
 
-impl GenerateCompletionsInputBuilder {
+impl crate::operation::generate_completions::builders::GenerateCompletionsInputBuilder {
     /// Sends a request with this input using the given client.
     pub async fn send_with(
         self,
@@ -102,12 +102,18 @@ impl GenerateCompletionsFluentBuilder {
         crate::client::customize::CustomizableOperation::new(self)
     }
 
-    pub(crate) fn config_override(mut self, config_override: impl Into<crate::config::Builder>) -> Self {
-        self.set_config_override(Some(config_override.into()));
+    pub(crate) fn config_override(
+        mut self,
+        config_override: impl ::std::convert::Into<crate::config::Builder>,
+    ) -> Self {
+        self.set_config_override(::std::option::Option::Some(config_override.into()));
         self
     }
 
-    pub(crate) fn set_config_override(&mut self, config_override: Option<crate::config::Builder>) -> &mut Self {
+    pub(crate) fn set_config_override(
+        &mut self,
+        config_override: ::std::option::Option<crate::config::Builder>,
+    ) -> &mut Self {
         self.config_override = config_override;
         self
     }
@@ -270,5 +276,22 @@ impl GenerateCompletionsFluentBuilder {
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_user_context(&self) -> &::std::option::Option<crate::types::UserContext> {
         self.inner.get_user_context()
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn profile_arn(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
+        self.inner = self.inner.profile_arn(input.into());
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_profile_arn(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
+        self.inner = self.inner.set_profile_arn(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_profile_arn(&self) -> &::std::option::Option<::std::string::String> {
+        self.inner.get_profile_arn()
     }
 }

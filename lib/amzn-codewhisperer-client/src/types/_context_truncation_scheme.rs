@@ -107,3 +107,12 @@ impl ContextTruncationScheme {
         }
     }
 }
+impl ::std::fmt::Display for ContextTruncationScheme {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            ContextTruncationScheme::Analysis => write!(f, "ANALYSIS"),
+            ContextTruncationScheme::Gumby => write!(f, "GUMBY"),
+            ContextTruncationScheme::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

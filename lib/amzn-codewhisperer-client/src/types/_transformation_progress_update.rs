@@ -13,6 +13,8 @@ pub struct TransformationProgressUpdate {
     pub start_time: ::std::option::Option<::aws_smithy_types::DateTime>,
     #[allow(missing_docs)] // documentation missing in model
     pub end_time: ::std::option::Option<::aws_smithy_types::DateTime>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub download_artifacts: ::std::option::Option<::std::vec::Vec<crate::types::TransformationDownloadArtifact>>,
 }
 impl TransformationProgressUpdate {
     #[allow(missing_docs)] // documentation missing in model
@@ -40,6 +42,13 @@ impl TransformationProgressUpdate {
     pub fn end_time(&self) -> ::std::option::Option<&::aws_smithy_types::DateTime> {
         self.end_time.as_ref()
     }
+
+    #[allow(missing_docs)] // documentation missing in model
+    /// If no value was sent for this field, a default will be set. If you want to determine if no
+    /// value was sent, use `.download_artifacts.is_none()`.
+    pub fn download_artifacts(&self) -> &[crate::types::TransformationDownloadArtifact] {
+        self.download_artifacts.as_deref().unwrap_or_default()
+    }
 }
 impl TransformationProgressUpdate {
     /// Creates a new builder-style object to manufacture
@@ -58,6 +67,7 @@ pub struct TransformationProgressUpdateBuilder {
     pub(crate) description: ::std::option::Option<::std::string::String>,
     pub(crate) start_time: ::std::option::Option<::aws_smithy_types::DateTime>,
     pub(crate) end_time: ::std::option::Option<::aws_smithy_types::DateTime>,
+    pub(crate) download_artifacts: ::std::option::Option<::std::vec::Vec<crate::types::TransformationDownloadArtifact>>,
 }
 impl TransformationProgressUpdateBuilder {
     #[allow(missing_docs)] // documentation missing in model
@@ -150,6 +160,33 @@ impl TransformationProgressUpdateBuilder {
         &self.end_time
     }
 
+    /// Appends an item to `download_artifacts`.
+    ///
+    /// To override the contents of this collection use
+    /// [`set_download_artifacts`](Self::set_download_artifacts).
+    pub fn download_artifacts(mut self, input: crate::types::TransformationDownloadArtifact) -> Self {
+        let mut v = self.download_artifacts.unwrap_or_default();
+        v.push(input);
+        self.download_artifacts = ::std::option::Option::Some(v);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_download_artifacts(
+        mut self,
+        input: ::std::option::Option<::std::vec::Vec<crate::types::TransformationDownloadArtifact>>,
+    ) -> Self {
+        self.download_artifacts = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_download_artifacts(
+        &self,
+    ) -> &::std::option::Option<::std::vec::Vec<crate::types::TransformationDownloadArtifact>> {
+        &self.download_artifacts
+    }
+
     /// Consumes the builder and constructs a
     /// [`TransformationProgressUpdate`](crate::types::TransformationProgressUpdate).
     /// This method will fail if any of the following fields are not set:
@@ -177,6 +214,7 @@ impl TransformationProgressUpdateBuilder {
             description: self.description,
             start_time: self.start_time,
             end_time: self.end_time,
+            download_artifacts: self.download_artifacts,
         })
     }
 }

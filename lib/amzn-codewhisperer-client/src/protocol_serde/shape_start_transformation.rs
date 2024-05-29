@@ -75,6 +75,23 @@ pub fn de_start_transformation_http_error(
             };
             tmp
         }),
+        "ConflictException" => crate::operation::start_transformation::StartTransformationError::ConflictError({
+            #[allow(unused_mut)]
+            let mut tmp = {
+                #[allow(unused_mut)]
+                let mut output = crate::types::error::builders::ConflictErrorBuilder::default();
+                output = crate::protocol_serde::shape_conflict_exception::de_conflict_exception_json_err(
+                    _response_body,
+                    output,
+                )
+                .map_err(crate::operation::start_transformation::StartTransformationError::unhandled)?;
+                let output = output.meta(generic);
+                crate::serde_util::conflict_exception_correct_errors(output)
+                    .build()
+                    .map_err(crate::operation::start_transformation::StartTransformationError::unhandled)?
+            };
+            tmp
+        }),
         "AccessDeniedException" => {
             crate::operation::start_transformation::StartTransformationError::AccessDeniedError({
                 #[allow(unused_mut)]

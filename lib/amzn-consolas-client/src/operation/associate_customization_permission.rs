@@ -129,22 +129,26 @@ impl ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugin for Associa
         _: &::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder,
     ) -> ::std::borrow::Cow<'_, ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder> {
         #[allow(unused_mut)]
-        let mut rcb = ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder::new("AssociateCustomizationPermission")
-            .with_interceptor(
-                ::aws_smithy_runtime::client::stalled_stream_protection::StalledStreamProtectionInterceptor::new(
-                    ::aws_smithy_runtime::client::stalled_stream_protection::StalledStreamProtectionInterceptorKind::ResponseBody,
-                ),
-            )
-            .with_interceptor(AssociateCustomizationPermissionEndpointParamsInterceptor)
-            .with_retry_classifier(::aws_smithy_runtime::client::retries::classifiers::TransientErrorClassifier::<
+        let mut rcb = ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder::new(
+            "AssociateCustomizationPermission",
+        )
+        .with_interceptor(
+            ::aws_smithy_runtime::client::stalled_stream_protection::StalledStreamProtectionInterceptor::default(),
+        )
+        .with_interceptor(AssociateCustomizationPermissionEndpointParamsInterceptor)
+        .with_retry_classifier(
+            ::aws_smithy_runtime::client::retries::classifiers::TransientErrorClassifier::<
                 crate::operation::associate_customization_permission::AssociateCustomizationPermissionError,
-            >::new())
-            .with_retry_classifier(::aws_smithy_runtime::client::retries::classifiers::ModeledAsRetryableClassifier::<
+            >::new(),
+        )
+        .with_retry_classifier(
+            ::aws_smithy_runtime::client::retries::classifiers::ModeledAsRetryableClassifier::<
                 crate::operation::associate_customization_permission::AssociateCustomizationPermissionError,
-            >::new())
-            .with_retry_classifier(::aws_runtime::retries::classifiers::AwsErrorCodeClassifier::<
-                crate::operation::associate_customization_permission::AssociateCustomizationPermissionError,
-            >::new());
+            >::new(),
+        )
+        .with_retry_classifier(::aws_runtime::retries::classifiers::AwsErrorCodeClassifier::<
+            crate::operation::associate_customization_permission::AssociateCustomizationPermissionError,
+        >::new());
 
         ::std::borrow::Cow::Owned(rcb)
     }

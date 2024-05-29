@@ -21,8 +21,14 @@ pub fn ser_chat_interact_with_message_event(
             ::aws_smithy_types::Number::NegInt((*var_3).into()),
         );
     }
-    if let Some(var_4) = &input.accepted_snippet_has_reference {
-        object.key("acceptedSnippetHasReference").boolean(*var_4);
+    if let Some(var_4) = &input.accepted_line_count {
+        object.key("acceptedLineCount").number(
+            #[allow(clippy::useless_conversion)]
+            ::aws_smithy_types::Number::NegInt((*var_4).into()),
+        );
+    }
+    if let Some(var_5) = &input.accepted_snippet_has_reference {
+        object.key("acceptedSnippetHasReference").boolean(*var_5);
     }
     Ok(())
 }

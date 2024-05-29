@@ -13,6 +13,24 @@ pub fn ser_upload_context(
             )?;
             object_1.finish();
         },
+        crate::types::UploadContext::TransformationUploadContext(inner) => {
+            #[allow(unused_mut)]
+            let mut object_2 = object_8.key("transformationUploadContext").start_object();
+            crate::protocol_serde::shape_transformation_upload_context::ser_transformation_upload_context(
+                &mut object_2,
+                inner,
+            )?;
+            object_2.finish();
+        },
+        crate::types::UploadContext::CodeAnalysisUploadContext(inner) => {
+            #[allow(unused_mut)]
+            let mut object_3 = object_8.key("codeAnalysisUploadContext").start_object();
+            crate::protocol_serde::shape_code_analysis_upload_context::ser_code_analysis_upload_context(
+                &mut object_3,
+                inner,
+            )?;
+            object_3.finish();
+        },
         crate::types::UploadContext::Unknown => {
             return Err(::aws_smithy_types::error::operation::SerializationError::unknown_variant("UploadContext"));
         },

@@ -12,6 +12,8 @@ impl super::Client {
     ///     <br>required: **true**<br>(undocumented)<br>
     ///   - [`programming_language(ProgrammingLanguage)`](crate::operation::start_code_analysis::builders::StartCodeAnalysisFluentBuilder::programming_language) / [`set_programming_language(Option<ProgrammingLanguage>)`](crate::operation::start_code_analysis::builders::StartCodeAnalysisFluentBuilder::set_programming_language):<br>required: **true**<br>Programming Languages supported by CodeWhisperer<br>
     ///   - [`client_token(impl Into<String>)`](crate::operation::start_code_analysis::builders::StartCodeAnalysisFluentBuilder::client_token) / [`set_client_token(Option<String>)`](crate::operation::start_code_analysis::builders::StartCodeAnalysisFluentBuilder::set_client_token):<br>required: **false**<br>(undocumented)<br>
+    ///   - [`scope(CodeAnalysisScope)`](crate::operation::start_code_analysis::builders::StartCodeAnalysisFluentBuilder::scope) / [`set_scope(Option<CodeAnalysisScope>)`](crate::operation::start_code_analysis::builders::StartCodeAnalysisFluentBuilder::set_scope):<br>required: **false**<br>(undocumented)<br>
+    ///   - [`code_scan_name(impl Into<String>)`](crate::operation::start_code_analysis::builders::StartCodeAnalysisFluentBuilder::code_scan_name) / [`set_code_scan_name(Option<String>)`](crate::operation::start_code_analysis::builders::StartCodeAnalysisFluentBuilder::set_code_scan_name):<br>required: **false**<br>Code analysis scan name<br>
     /// - On success, responds with
     ///   [`StartCodeAnalysisOutput`](crate::operation::start_code_analysis::StartCodeAnalysisOutput)
     ///   with field(s):

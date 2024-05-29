@@ -2,7 +2,7 @@
 pub use crate::operation::create_profile::_create_profile_input::CreateProfileInputBuilder;
 pub use crate::operation::create_profile::_create_profile_output::CreateProfileOutputBuilder;
 
-impl CreateProfileInputBuilder {
+impl crate::operation::create_profile::builders::CreateProfileInputBuilder {
     /// Sends a request with this input using the given client.
     pub async fn send_with(
         self,
@@ -103,12 +103,18 @@ impl CreateProfileFluentBuilder {
         crate::client::customize::CustomizableOperation::new(self)
     }
 
-    pub(crate) fn config_override(mut self, config_override: impl Into<crate::config::Builder>) -> Self {
-        self.set_config_override(Some(config_override.into()));
+    pub(crate) fn config_override(
+        mut self,
+        config_override: impl ::std::convert::Into<crate::config::Builder>,
+    ) -> Self {
+        self.set_config_override(::std::option::Option::Some(config_override.into()));
         self
     }
 
-    pub(crate) fn set_config_override(&mut self, config_override: Option<crate::config::Builder>) -> &mut Self {
+    pub(crate) fn set_config_override(
+        &mut self,
+        config_override: ::std::option::Option<crate::config::Builder>,
+    ) -> &mut Self {
         self.config_override = config_override;
         self
     }
@@ -247,5 +253,22 @@ impl CreateProfileFluentBuilder {
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_tags(&self) -> &::std::option::Option<::std::vec::Vec<crate::types::Tag>> {
         self.inner.get_tags()
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn resource_policy(mut self, input: crate::types::ResourcePolicy) -> Self {
+        self.inner = self.inner.resource_policy(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_resource_policy(mut self, input: ::std::option::Option<crate::types::ResourcePolicy>) -> Self {
+        self.inner = self.inner.set_resource_policy(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_resource_policy(&self) -> &::std::option::Option<crate::types::ResourcePolicy> {
+        self.inner.get_resource_policy()
     }
 }

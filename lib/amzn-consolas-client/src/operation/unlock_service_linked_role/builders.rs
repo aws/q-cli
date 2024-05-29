@@ -2,7 +2,7 @@
 pub use crate::operation::unlock_service_linked_role::_unlock_service_linked_role_input::UnlockServiceLinkedRoleInputBuilder;
 pub use crate::operation::unlock_service_linked_role::_unlock_service_linked_role_output::UnlockServiceLinkedRoleOutputBuilder;
 
-impl UnlockServiceLinkedRoleInputBuilder {
+impl crate::operation::unlock_service_linked_role::builders::UnlockServiceLinkedRoleInputBuilder {
     /// Sends a request with this input using the given client.
     pub async fn send_with(
         self,
@@ -104,12 +104,18 @@ impl UnlockServiceLinkedRoleFluentBuilder {
         crate::client::customize::CustomizableOperation::new(self)
     }
 
-    pub(crate) fn config_override(mut self, config_override: impl Into<crate::config::Builder>) -> Self {
-        self.set_config_override(Some(config_override.into()));
+    pub(crate) fn config_override(
+        mut self,
+        config_override: impl ::std::convert::Into<crate::config::Builder>,
+    ) -> Self {
+        self.set_config_override(::std::option::Option::Some(config_override.into()));
         self
     }
 
-    pub(crate) fn set_config_override(&mut self, config_override: Option<crate::config::Builder>) -> &mut Self {
+    pub(crate) fn set_config_override(
+        &mut self,
+        config_override: ::std::option::Option<crate::config::Builder>,
+    ) -> &mut Self {
         self.config_override = config_override;
         self
     }

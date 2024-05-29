@@ -6,11 +6,18 @@
 pub struct GenerateAssistantResponseInput {
     /// Structure to represent the current state of a chat conversation.
     pub conversation_state: ::std::option::Option<crate::types::ConversationState>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub profile_arn: ::std::option::Option<::std::string::String>,
 }
 impl GenerateAssistantResponseInput {
     /// Structure to represent the current state of a chat conversation.
     pub fn conversation_state(&self) -> ::std::option::Option<&crate::types::ConversationState> {
         self.conversation_state.as_ref()
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn profile_arn(&self) -> ::std::option::Option<&str> {
+        self.profile_arn.as_deref()
     }
 }
 impl GenerateAssistantResponseInput {
@@ -27,6 +34,7 @@ impl GenerateAssistantResponseInput {
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
 pub struct GenerateAssistantResponseInputBuilder {
     pub(crate) conversation_state: ::std::option::Option<crate::types::ConversationState>,
+    pub(crate) profile_arn: ::std::option::Option<::std::string::String>,
 }
 impl GenerateAssistantResponseInputBuilder {
     /// Structure to represent the current state of a chat conversation.
@@ -47,6 +55,23 @@ impl GenerateAssistantResponseInputBuilder {
         &self.conversation_state
     }
 
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn profile_arn(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
+        self.profile_arn = ::std::option::Option::Some(input.into());
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_profile_arn(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
+        self.profile_arn = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_profile_arn(&self) -> &::std::option::Option<::std::string::String> {
+        &self.profile_arn
+    }
+
     /// Consumes the builder and constructs a
     /// [`GenerateAssistantResponseInput`](crate::operation::generate_assistant_response::GenerateAssistantResponseInput).
     pub fn build(
@@ -58,6 +83,7 @@ impl GenerateAssistantResponseInputBuilder {
         ::std::result::Result::Ok(
             crate::operation::generate_assistant_response::GenerateAssistantResponseInput {
                 conversation_state: self.conversation_state,
+                profile_arn: self.profile_arn,
             },
         )
     }

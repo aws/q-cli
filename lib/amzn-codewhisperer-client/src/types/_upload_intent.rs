@@ -12,6 +12,8 @@
 /// ```text
 /// # let uploadintent = unimplemented!();
 /// match uploadintent {
+///     UploadIntent::AutomaticFileSecurityScan => { /* ... */ },
+///     UploadIntent::FullProjectSecurityScan => { /* ... */ },
 ///     UploadIntent::TaskAssistPlanning => { /* ... */ },
 ///     UploadIntent::Transformation => { /* ... */ },
 ///     other @ _ if other.as_str() == "NewFeature" => { /* handles a case for `NewFeature` */ },
@@ -47,6 +49,10 @@
     ::std::hash::Hash,
 )]
 pub enum UploadIntent {
+    /// Automatic File Security Scan
+    AutomaticFileSecurityScan,
+    /// Full Project Security Scan
+    FullProjectSecurityScan,
     /// Code Task Assist
     TaskAssistPlanning,
     /// Code Transformation
@@ -60,6 +66,8 @@ pub enum UploadIntent {
 impl ::std::convert::From<&str> for UploadIntent {
     fn from(s: &str) -> Self {
         match s {
+            "AUTOMATIC_FILE_SECURITY_SCAN" => UploadIntent::AutomaticFileSecurityScan,
+            "FULL_PROJECT_SECURITY_SCAN" => UploadIntent::FullProjectSecurityScan,
             "TASK_ASSIST_PLANNING" => UploadIntent::TaskAssistPlanning,
             "TRANSFORMATION" => UploadIntent::Transformation,
             other => UploadIntent::Unknown(crate::primitives::sealed_enum_unknown::UnknownVariantValue(
@@ -79,6 +87,8 @@ impl UploadIntent {
     /// Returns the `&str` value of the enum member.
     pub fn as_str(&self) -> &str {
         match self {
+            UploadIntent::AutomaticFileSecurityScan => "AUTOMATIC_FILE_SECURITY_SCAN",
+            UploadIntent::FullProjectSecurityScan => "FULL_PROJECT_SECURITY_SCAN",
             UploadIntent::TaskAssistPlanning => "TASK_ASSIST_PLANNING",
             UploadIntent::Transformation => "TRANSFORMATION",
             UploadIntent::Unknown(value) => value.as_str(),
@@ -87,7 +97,12 @@ impl UploadIntent {
 
     /// Returns all the `&str` representations of the enum members.
     pub const fn values() -> &'static [&'static str] {
-        &["TASK_ASSIST_PLANNING", "TRANSFORMATION"]
+        &[
+            "AUTOMATIC_FILE_SECURITY_SCAN",
+            "FULL_PROJECT_SECURITY_SCAN",
+            "TASK_ASSIST_PLANNING",
+            "TRANSFORMATION",
+        ]
     }
 }
 impl ::std::convert::AsRef<str> for UploadIntent {
@@ -104,6 +119,17 @@ impl UploadIntent {
             #[allow(deprecated)]
             Self::Unknown(_) => ::std::result::Result::Err(crate::error::UnknownVariantError::new(value)),
             known => Ok(known),
+        }
+    }
+}
+impl ::std::fmt::Display for UploadIntent {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            UploadIntent::AutomaticFileSecurityScan => write!(f, "AUTOMATIC_FILE_SECURITY_SCAN"),
+            UploadIntent::FullProjectSecurityScan => write!(f, "FULL_PROJECT_SECURITY_SCAN"),
+            UploadIntent::TaskAssistPlanning => write!(f, "TASK_ASSIST_PLANNING"),
+            UploadIntent::Transformation => write!(f, "TRANSFORMATION"),
+            UploadIntent::Unknown(value) => write!(f, "{}", value),
         }
     }
 }

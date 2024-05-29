@@ -152,3 +152,19 @@ impl ChatMessageInteractionType {
         }
     }
 }
+impl ::std::fmt::Display for ChatMessageInteractionType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            ChatMessageInteractionType::ClickBodyLink => write!(f, "CLICK_BODY_LINK"),
+            ChatMessageInteractionType::ClickFollowUp => write!(f, "CLICK_FOLLOW_UP"),
+            ChatMessageInteractionType::ClickLink => write!(f, "CLICK_LINK"),
+            ChatMessageInteractionType::Copy => write!(f, "COPY"),
+            ChatMessageInteractionType::CopySnippet => write!(f, "COPY_SNIPPET"),
+            ChatMessageInteractionType::Downvote => write!(f, "DOWNVOTE"),
+            ChatMessageInteractionType::HoverReference => write!(f, "HOVER_REFERENCE"),
+            ChatMessageInteractionType::InsertAtCursor => write!(f, "INSERT_AT_CURSOR"),
+            ChatMessageInteractionType::Upvote => write!(f, "UPVOTE"),
+            ChatMessageInteractionType::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

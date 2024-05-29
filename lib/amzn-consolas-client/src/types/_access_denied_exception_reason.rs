@@ -106,3 +106,13 @@ impl AccessDeniedExceptionReason {
         }
     }
 }
+impl ::std::fmt::Display for AccessDeniedExceptionReason {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            AccessDeniedExceptionReason::UnauthorizedCustomizationResourceAccess => {
+                write!(f, "UNAUTHORIZED_CUSTOMIZATION_RESOURCE_ACCESS")
+            },
+            AccessDeniedExceptionReason::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

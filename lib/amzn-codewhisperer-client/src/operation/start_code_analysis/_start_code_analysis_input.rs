@@ -10,6 +10,10 @@ pub struct StartCodeAnalysisInput {
     pub programming_language: ::std::option::Option<crate::types::ProgrammingLanguage>,
     #[allow(missing_docs)] // documentation missing in model
     pub client_token: ::std::option::Option<::std::string::String>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub scope: ::std::option::Option<crate::types::CodeAnalysisScope>,
+    /// Code analysis scan name
+    pub code_scan_name: ::std::option::Option<::std::string::String>,
 }
 impl StartCodeAnalysisInput {
     #[allow(missing_docs)] // documentation missing in model
@@ -27,6 +31,16 @@ impl StartCodeAnalysisInput {
     #[allow(missing_docs)] // documentation missing in model
     pub fn client_token(&self) -> ::std::option::Option<&str> {
         self.client_token.as_deref()
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn scope(&self) -> ::std::option::Option<&crate::types::CodeAnalysisScope> {
+        self.scope.as_ref()
+    }
+
+    /// Code analysis scan name
+    pub fn code_scan_name(&self) -> ::std::option::Option<&str> {
+        self.code_scan_name.as_deref()
     }
 }
 impl StartCodeAnalysisInput {
@@ -46,6 +60,8 @@ pub struct StartCodeAnalysisInputBuilder {
         ::std::option::Option<::std::collections::HashMap<crate::types::ArtifactType, ::std::string::String>>,
     pub(crate) programming_language: ::std::option::Option<crate::types::ProgrammingLanguage>,
     pub(crate) client_token: ::std::option::Option<::std::string::String>,
+    pub(crate) scope: ::std::option::Option<crate::types::CodeAnalysisScope>,
+    pub(crate) code_scan_name: ::std::option::Option<::std::string::String>,
 }
 impl StartCodeAnalysisInputBuilder {
     /// Adds a key-value pair to `artifacts`.
@@ -113,6 +129,40 @@ impl StartCodeAnalysisInputBuilder {
         &self.client_token
     }
 
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn scope(mut self, input: crate::types::CodeAnalysisScope) -> Self {
+        self.scope = ::std::option::Option::Some(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_scope(mut self, input: ::std::option::Option<crate::types::CodeAnalysisScope>) -> Self {
+        self.scope = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_scope(&self) -> &::std::option::Option<crate::types::CodeAnalysisScope> {
+        &self.scope
+    }
+
+    /// Code analysis scan name
+    pub fn code_scan_name(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
+        self.code_scan_name = ::std::option::Option::Some(input.into());
+        self
+    }
+
+    /// Code analysis scan name
+    pub fn set_code_scan_name(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
+        self.code_scan_name = input;
+        self
+    }
+
+    /// Code analysis scan name
+    pub fn get_code_scan_name(&self) -> &::std::option::Option<::std::string::String> {
+        &self.code_scan_name
+    }
+
     /// Consumes the builder and constructs a
     /// [`StartCodeAnalysisInput`](crate::operation::start_code_analysis::StartCodeAnalysisInput).
     pub fn build(
@@ -125,6 +175,8 @@ impl StartCodeAnalysisInputBuilder {
             artifacts: self.artifacts,
             programming_language: self.programming_language,
             client_token: self.client_token,
+            scope: self.scope,
+            code_scan_name: self.code_scan_name,
         })
     }
 }

@@ -15,11 +15,14 @@ pub use crate::types::_identity_source::IdentitySource;
 pub use crate::types::_import::Import;
 pub use crate::types::_profile::Profile;
 pub use crate::types::_profile_status::ProfileStatus;
+pub use crate::types::_profile_type::ProfileType;
 pub use crate::types::_programming_language::ProgrammingLanguage;
 pub use crate::types::_recommendation::Recommendation;
 pub use crate::types::_recommendations_with_references_preference::RecommendationsWithReferencesPreference;
 pub use crate::types::_reference::Reference;
 pub use crate::types::_reference_tracker_configuration::ReferenceTrackerConfiguration;
+pub use crate::types::_resource_policy::ResourcePolicy;
+pub use crate::types::_resource_policy_effect::ResourcePolicyEffect;
 pub use crate::types::_s3_reference::S3Reference;
 pub use crate::types::_span::Span;
 pub use crate::types::_sso_identity_details::SsoIdentityDetails;
@@ -61,6 +64,8 @@ mod _profile;
 
 mod _profile_status;
 
+mod _profile_type;
+
 mod _programming_language;
 
 mod _recommendation;
@@ -70,6 +75,10 @@ mod _recommendations_with_references_preference;
 mod _reference;
 
 mod _reference_tracker_configuration;
+
+mod _resource_policy;
+
+mod _resource_policy_effect;
 
 mod _s3_reference;
 

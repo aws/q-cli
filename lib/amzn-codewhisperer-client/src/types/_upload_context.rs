@@ -4,7 +4,11 @@
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::fmt::Debug)]
 pub enum UploadContext {
     #[allow(missing_docs)] // documentation missing in model
+    CodeAnalysisUploadContext(crate::types::CodeAnalysisUploadContext),
+    #[allow(missing_docs)] // documentation missing in model
     TaskAssistPlanningUploadContext(crate::types::TaskAssistPlanningUploadContext),
+    #[allow(missing_docs)] // documentation missing in model
+    TransformationUploadContext(crate::types::TransformationUploadContext),
     /// The `Unknown` variant represents cases where new union variant was received. Consider
     /// upgrading the SDK to the latest available version. An unknown enum variant
     ///
@@ -17,7 +21,26 @@ pub enum UploadContext {
     Unknown,
 }
 impl UploadContext {
-    #[allow(irrefutable_let_patterns)]
+    /// Tries to convert the enum instance into
+    /// [`CodeAnalysisUploadContext`](crate::types::UploadContext::CodeAnalysisUploadContext),
+    /// extracting the inner [`CodeAnalysisUploadContext`](crate::types::CodeAnalysisUploadContext).
+    /// Returns `Err(&Self)` if it can't be converted.
+    pub fn as_code_analysis_upload_context(
+        &self,
+    ) -> ::std::result::Result<&crate::types::CodeAnalysisUploadContext, &Self> {
+        if let UploadContext::CodeAnalysisUploadContext(val) = &self {
+            ::std::result::Result::Ok(val)
+        } else {
+            ::std::result::Result::Err(self)
+        }
+    }
+
+    /// Returns true if this is a
+    /// [`CodeAnalysisUploadContext`](crate::types::UploadContext::CodeAnalysisUploadContext).
+    pub fn is_code_analysis_upload_context(&self) -> bool {
+        self.as_code_analysis_upload_context().is_ok()
+    }
+
     /// Tries to convert the enum instance into
     /// [`TaskAssistPlanningUploadContext`](crate::types::UploadContext::TaskAssistPlanningUploadContext),
     /// extracting the inner
@@ -37,6 +60,27 @@ impl UploadContext {
     /// [`TaskAssistPlanningUploadContext`](crate::types::UploadContext::TaskAssistPlanningUploadContext).
     pub fn is_task_assist_planning_upload_context(&self) -> bool {
         self.as_task_assist_planning_upload_context().is_ok()
+    }
+
+    /// Tries to convert the enum instance into
+    /// [`TransformationUploadContext`](crate::types::UploadContext::TransformationUploadContext),
+    /// extracting the inner
+    /// [`TransformationUploadContext`](crate::types::TransformationUploadContext).
+    /// Returns `Err(&Self)` if it can't be converted.
+    pub fn as_transformation_upload_context(
+        &self,
+    ) -> ::std::result::Result<&crate::types::TransformationUploadContext, &Self> {
+        if let UploadContext::TransformationUploadContext(val) = &self {
+            ::std::result::Result::Ok(val)
+        } else {
+            ::std::result::Result::Err(self)
+        }
+    }
+
+    /// Returns true if this is a
+    /// [`TransformationUploadContext`](crate::types::UploadContext::TransformationUploadContext).
+    pub fn is_transformation_upload_context(&self) -> bool {
+        self.as_transformation_upload_context().is_ok()
     }
 
     /// Returns true if the enum instance is the `Unknown` variant.

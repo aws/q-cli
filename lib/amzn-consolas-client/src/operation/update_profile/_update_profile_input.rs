@@ -13,6 +13,8 @@ pub struct UpdateProfileInput {
     pub active_functionalities: ::std::option::Option<::std::vec::Vec<crate::types::FunctionalityName>>,
     #[allow(missing_docs)] // documentation missing in model
     pub kms_key_arn: ::std::option::Option<::std::string::String>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub resource_policy: ::std::option::Option<crate::types::ResourcePolicy>,
 }
 impl UpdateProfileInput {
     #[allow(missing_docs)] // documentation missing in model
@@ -43,6 +45,11 @@ impl UpdateProfileInput {
     pub fn kms_key_arn(&self) -> ::std::option::Option<&str> {
         self.kms_key_arn.as_deref()
     }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn resource_policy(&self) -> ::std::option::Option<&crate::types::ResourcePolicy> {
+        self.resource_policy.as_ref()
+    }
 }
 impl UpdateProfileInput {
     /// Creates a new builder-style object to manufacture
@@ -61,6 +68,7 @@ pub struct UpdateProfileInputBuilder {
     pub(crate) reference_tracker_configuration: ::std::option::Option<crate::types::ReferenceTrackerConfiguration>,
     pub(crate) active_functionalities: ::std::option::Option<::std::vec::Vec<crate::types::FunctionalityName>>,
     pub(crate) kms_key_arn: ::std::option::Option<::std::string::String>,
+    pub(crate) resource_policy: ::std::option::Option<crate::types::ResourcePolicy>,
 }
 impl UpdateProfileInputBuilder {
     #[allow(missing_docs)] // documentation missing in model
@@ -164,6 +172,23 @@ impl UpdateProfileInputBuilder {
         &self.kms_key_arn
     }
 
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn resource_policy(mut self, input: crate::types::ResourcePolicy) -> Self {
+        self.resource_policy = ::std::option::Option::Some(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_resource_policy(mut self, input: ::std::option::Option<crate::types::ResourcePolicy>) -> Self {
+        self.resource_policy = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_resource_policy(&self) -> &::std::option::Option<crate::types::ResourcePolicy> {
+        &self.resource_policy
+    }
+
     /// Consumes the builder and constructs a
     /// [`UpdateProfileInput`](crate::operation::update_profile::UpdateProfileInput).
     pub fn build(
@@ -178,6 +203,7 @@ impl UpdateProfileInputBuilder {
             reference_tracker_configuration: self.reference_tracker_configuration,
             active_functionalities: self.active_functionalities,
             kms_key_arn: self.kms_key_arn,
+            resource_policy: self.resource_policy,
         })
     }
 }

@@ -103,6 +103,8 @@ mod list_code_analysis_findings;
 
 mod list_feature_evaluations;
 
+mod resume_transformation;
+
 mod send_telemetry_event;
 
 mod start_code_analysis;

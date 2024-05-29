@@ -129,22 +129,26 @@ impl ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugin for SendTel
         _: &::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder,
     ) -> ::std::borrow::Cow<'_, ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder> {
         #[allow(unused_mut)]
-        let mut rcb = ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder::new("SendTelemetryEvent")
-            .with_interceptor(
-                ::aws_smithy_runtime::client::stalled_stream_protection::StalledStreamProtectionInterceptor::new(
-                    ::aws_smithy_runtime::client::stalled_stream_protection::StalledStreamProtectionInterceptorKind::ResponseBody,
-                ),
-            )
-            .with_interceptor(SendTelemetryEventEndpointParamsInterceptor)
-            .with_retry_classifier(::aws_smithy_runtime::client::retries::classifiers::TransientErrorClassifier::<
+        let mut rcb = ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder::new(
+            "SendTelemetryEvent",
+        )
+        .with_interceptor(
+            ::aws_smithy_runtime::client::stalled_stream_protection::StalledStreamProtectionInterceptor::default(),
+        )
+        .with_interceptor(SendTelemetryEventEndpointParamsInterceptor)
+        .with_retry_classifier(
+            ::aws_smithy_runtime::client::retries::classifiers::TransientErrorClassifier::<
                 crate::operation::send_telemetry_event::SendTelemetryEventError,
-            >::new())
-            .with_retry_classifier(::aws_smithy_runtime::client::retries::classifiers::ModeledAsRetryableClassifier::<
+            >::new(),
+        )
+        .with_retry_classifier(
+            ::aws_smithy_runtime::client::retries::classifiers::ModeledAsRetryableClassifier::<
                 crate::operation::send_telemetry_event::SendTelemetryEventError,
-            >::new())
-            .with_retry_classifier(::aws_runtime::retries::classifiers::AwsErrorCodeClassifier::<
-                crate::operation::send_telemetry_event::SendTelemetryEventError,
-            >::new());
+            >::new(),
+        )
+        .with_retry_classifier(::aws_runtime::retries::classifiers::AwsErrorCodeClassifier::<
+            crate::operation::send_telemetry_event::SendTelemetryEventError,
+        >::new());
 
         ::std::borrow::Cow::Owned(rcb)
     }

@@ -30,5 +30,11 @@ pub fn ser_update_profile_input_input(
     if let Some(var_8) = &input.kms_key_arn {
         object.key("kmsKeyArn").string(var_8.as_str());
     }
+    if let Some(var_9) = &input.resource_policy {
+        #[allow(unused_mut)]
+        let mut object_10 = object.key("resourcePolicy").start_object();
+        crate::protocol_serde::shape_resource_policy::ser_resource_policy(&mut object_10, var_9)?;
+        object_10.finish();
+    }
     Ok(())
 }

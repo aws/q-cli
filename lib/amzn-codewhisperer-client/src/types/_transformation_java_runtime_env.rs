@@ -112,3 +112,13 @@ impl TransformationJavaRuntimeEnv {
         }
     }
 }
+impl ::std::fmt::Display for TransformationJavaRuntimeEnv {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            TransformationJavaRuntimeEnv::Jvm11 => write!(f, "JVM_11"),
+            TransformationJavaRuntimeEnv::Jvm17 => write!(f, "JVM_17"),
+            TransformationJavaRuntimeEnv::Jvm8 => write!(f, "JVM_8"),
+            TransformationJavaRuntimeEnv::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

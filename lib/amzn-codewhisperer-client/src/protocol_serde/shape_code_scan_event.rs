@@ -20,5 +20,8 @@ pub fn ser_code_scan_event(
             .key("timestamp")
             .date_time(&input.timestamp, ::aws_smithy_types::date_time::Format::EpochSeconds)?;
     }
+    if let Some(var_2) = &input.code_analysis_scope {
+        object.key("codeAnalysisScope").string(var_2.as_str());
+    }
     Ok(())
 }

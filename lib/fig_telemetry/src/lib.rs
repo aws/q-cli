@@ -179,7 +179,7 @@ impl Client {
         let client_id = util::get_client_id();
         let toolkit_telemetry_client = amzn_toolkit_telemetry::Client::from_conf(
             Config::builder()
-                .behavior_version(BehaviorVersion::v2023_11_09())
+                .behavior_version(BehaviorVersion::v2024_03_28())
                 .endpoint_resolver(StaticEndpoint(telemetry_stage.endpoint))
                 .app_name(AppName::new(APP_NAME).unwrap())
                 .region(telemetry_stage.region.clone())

@@ -109,3 +109,12 @@ impl RecommendationsWithReferencesPreference {
         }
     }
 }
+impl ::std::fmt::Display for RecommendationsWithReferencesPreference {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            RecommendationsWithReferencesPreference::Allow => write!(f, "ALLOW"),
+            RecommendationsWithReferencesPreference::Block => write!(f, "BLOCK"),
+            RecommendationsWithReferencesPreference::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

@@ -42,6 +42,25 @@ pub fn de_create_upload_url_http_error(
             };
             tmp
         }),
+        "ServiceQuotaExceededException" => {
+            crate::operation::create_upload_url::CreateUploadUrlError::ServiceQuotaExceededError({
+                #[allow(unused_mut)]
+                let mut tmp = {
+                    #[allow(unused_mut)]
+                    let mut output = crate::types::error::builders::ServiceQuotaExceededErrorBuilder::default();
+                    output = crate::protocol_serde::shape_service_quota_exceeded_exception::de_service_quota_exceeded_exception_json_err(
+                    _response_body,
+                    output,
+                )
+                .map_err(crate::operation::create_upload_url::CreateUploadUrlError::unhandled)?;
+                    let output = output.meta(generic);
+                    crate::serde_util::service_quota_exceeded_exception_correct_errors(output)
+                        .build()
+                        .map_err(crate::operation::create_upload_url::CreateUploadUrlError::unhandled)?
+                };
+                tmp
+            })
+        },
         "ThrottlingException" => crate::operation::create_upload_url::CreateUploadUrlError::ThrottlingError({
             #[allow(unused_mut)]
             let mut tmp = {
@@ -195,6 +214,11 @@ pub(crate) fn de_create_upload_url(
                         ::aws_smithy_json::deserialize::token::expect_string_or_null(tokens.next())?
                             .map(|s| s.to_unescaped().map(|u| u.into_owned()))
                             .transpose()?,
+                    );
+                },
+                "requestHeaders" => {
+                    builder = builder.set_request_headers(
+                        crate::protocol_serde::shape_request_headers::de_request_headers(tokens)?,
                     );
                 },
                 _ => ::aws_smithy_json::deserialize::token::skip_value(tokens)?,

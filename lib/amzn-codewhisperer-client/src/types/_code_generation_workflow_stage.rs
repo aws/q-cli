@@ -107,3 +107,12 @@ impl CodeGenerationWorkflowStage {
         }
     }
 }
+impl ::std::fmt::Display for CodeGenerationWorkflowStage {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            CodeGenerationWorkflowStage::Refinement => write!(f, "CodeRefinement"),
+            CodeGenerationWorkflowStage::Initial => write!(f, "InitialCodeGeneration"),
+            CodeGenerationWorkflowStage::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

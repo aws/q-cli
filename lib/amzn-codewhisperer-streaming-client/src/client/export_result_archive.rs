@@ -7,6 +7,7 @@ impl super::Client {
     /// - The fluent builder is configurable:
     ///   - [`export_id(impl Into<String>)`](crate::operation::export_result_archive::builders::ExportResultArchiveFluentBuilder::export_id) / [`set_export_id(Option<String>)`](crate::operation::export_result_archive::builders::ExportResultArchiveFluentBuilder::set_export_id):<br>required: **true**<br>(undocumented)<br>
     ///   - [`export_intent(ExportIntent)`](crate::operation::export_result_archive::builders::ExportResultArchiveFluentBuilder::export_intent) / [`set_export_intent(Option<ExportIntent>)`](crate::operation::export_result_archive::builders::ExportResultArchiveFluentBuilder::set_export_intent):<br>required: **true**<br>Export Intent<br>
+    ///   - [`export_context(ExportContext)`](crate::operation::export_result_archive::builders::ExportResultArchiveFluentBuilder::export_context) / [`set_export_context(Option<ExportContext>)`](crate::operation::export_result_archive::builders::ExportResultArchiveFluentBuilder::set_export_context):<br>required: **false**<br>Export Context<br>
     /// - On success, responds with
     ///   [`ExportResultArchiveOutput`](crate::operation::export_result_archive::ExportResultArchiveOutput)
     ///   with field(s):

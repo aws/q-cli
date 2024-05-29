@@ -107,3 +107,12 @@ impl SymbolType {
         }
     }
 }
+impl ::std::fmt::Display for SymbolType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            SymbolType::Declaration => write!(f, "DECLARATION"),
+            SymbolType::Usage => write!(f, "USAGE"),
+            SymbolType::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

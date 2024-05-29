@@ -78,7 +78,7 @@ impl Intercept for OptOutInterceptor {
 }
 
 async fn sdk_config(endpoint: &Endpoint) -> SdkConfig {
-    aws_config::defaults(BehaviorVersion::v2023_11_09())
+    aws_config::defaults(BehaviorVersion::v2024_03_28())
         .region(endpoint.region())
         .credentials_provider(Credentials::new("xxx", "xxx", None, None, "xxx"))
         .load()

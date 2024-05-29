@@ -18,6 +18,9 @@ impl super::Client {
     ///   - [`upload_id(String)`](crate::operation::create_upload_url::CreateUploadUrlOutput::upload_id): Upload ID returned by CreateUploadUrl API
     ///   - [`upload_url(String)`](crate::operation::create_upload_url::CreateUploadUrlOutput::upload_url): (undocumented)
     ///   - [`kms_key_arn(Option<String>)`](crate::operation::create_upload_url::CreateUploadUrlOutput::kms_key_arn): (undocumented)
+    ///   - [`request_headers(Option<HashMap::<String,
+    ///     String>>)`](crate::operation::create_upload_url::CreateUploadUrlOutput::request_headers):
+    ///     (undocumented)
     /// - On failure, responds with
     ///   [`SdkError<CreateUploadUrlError>`](crate::operation::create_upload_url::CreateUploadUrlError)
     pub fn create_upload_url(&self) -> crate::operation::create_upload_url::builders::CreateUploadUrlFluentBuilder {

@@ -112,3 +112,13 @@ impl CodeGenerationWorkflowStatus {
         }
     }
 }
+impl ::std::fmt::Display for CodeGenerationWorkflowStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            CodeGenerationWorkflowStatus::Complete => write!(f, "Complete"),
+            CodeGenerationWorkflowStatus::Failed => write!(f, "Failed"),
+            CodeGenerationWorkflowStatus::InProgress => write!(f, "InProgress"),
+            CodeGenerationWorkflowStatus::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

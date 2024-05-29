@@ -116,3 +116,13 @@ impl CodeScanRemediationsEventType {
         }
     }
 }
+impl ::std::fmt::Display for CodeScanRemediationsEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            CodeScanRemediationsEventType::CodescanIssueApplyFix => write!(f, "CODESCAN_ISSUE_APPLY_FIX"),
+            CodeScanRemediationsEventType::CodescanIssueHover => write!(f, "CODESCAN_ISSUE_HOVER"),
+            CodeScanRemediationsEventType::CodescanIssueViewDetails => write!(f, "CODESCAN_ISSUE_VIEW_DETAILS"),
+            CodeScanRemediationsEventType::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

@@ -17,6 +17,8 @@ pub struct CreateProfileInput {
     pub kms_key_arn: ::std::option::Option<::std::string::String>,
     #[allow(missing_docs)] // documentation missing in model
     pub tags: ::std::option::Option<::std::vec::Vec<crate::types::Tag>>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub resource_policy: ::std::option::Option<crate::types::ResourcePolicy>,
 }
 impl CreateProfileInput {
     #[allow(missing_docs)] // documentation missing in model
@@ -59,6 +61,11 @@ impl CreateProfileInput {
     pub fn tags(&self) -> &[crate::types::Tag] {
         self.tags.as_deref().unwrap_or_default()
     }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn resource_policy(&self) -> ::std::option::Option<&crate::types::ResourcePolicy> {
+        self.resource_policy.as_ref()
+    }
 }
 impl CreateProfileInput {
     /// Creates a new builder-style object to manufacture
@@ -79,6 +86,7 @@ pub struct CreateProfileInputBuilder {
     pub(crate) client_token: ::std::option::Option<::std::string::String>,
     pub(crate) kms_key_arn: ::std::option::Option<::std::string::String>,
     pub(crate) tags: ::std::option::Option<::std::vec::Vec<crate::types::Tag>>,
+    pub(crate) resource_policy: ::std::option::Option<crate::types::ResourcePolicy>,
 }
 impl CreateProfileInputBuilder {
     #[allow(missing_docs)] // documentation missing in model
@@ -222,6 +230,23 @@ impl CreateProfileInputBuilder {
         &self.tags
     }
 
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn resource_policy(mut self, input: crate::types::ResourcePolicy) -> Self {
+        self.resource_policy = ::std::option::Option::Some(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_resource_policy(mut self, input: ::std::option::Option<crate::types::ResourcePolicy>) -> Self {
+        self.resource_policy = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_resource_policy(&self) -> &::std::option::Option<crate::types::ResourcePolicy> {
+        &self.resource_policy
+    }
+
     /// Consumes the builder and constructs a
     /// [`CreateProfileInput`](crate::operation::create_profile::CreateProfileInput).
     pub fn build(
@@ -238,6 +263,7 @@ impl CreateProfileInputBuilder {
             client_token: self.client_token,
             kms_key_arn: self.kms_key_arn,
             tags: self.tags,
+            resource_policy: self.resource_policy,
         })
     }
 }

@@ -112,3 +112,13 @@ impl IdeCategory {
         }
     }
 }
+impl ::std::fmt::Display for IdeCategory {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            IdeCategory::Cli => write!(f, "CLI"),
+            IdeCategory::JetBrains => write!(f, "JETBRAINS"),
+            IdeCategory::VsCode => write!(f, "VSCODE"),
+            IdeCategory::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

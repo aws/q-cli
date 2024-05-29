@@ -15,6 +15,7 @@
 ///     TransformationProgressUpdateStatus::Completed => { /* ... */ },
 ///     TransformationProgressUpdateStatus::Failed => { /* ... */ },
 ///     TransformationProgressUpdateStatus::InProgress => { /* ... */ },
+///     TransformationProgressUpdateStatus::Paused => { /* ... */ },
 ///     other @ _ if other.as_str() == "NewFeature" => { /* handles a case for `NewFeature` */ },
 ///     _ => { /* ... */ },
 /// }
@@ -55,6 +56,8 @@ pub enum TransformationProgressUpdateStatus {
     Failed,
     #[allow(missing_docs)] // documentation missing in model
     InProgress,
+    #[allow(missing_docs)] // documentation missing in model
+    Paused,
     /// `Unknown` contains new variants that have been added since this code was generated.
     #[deprecated(
         note = "Don't directly match on `Unknown`. See the docs on this enum for the correct way to handle unknown variants."
@@ -67,6 +70,7 @@ impl ::std::convert::From<&str> for TransformationProgressUpdateStatus {
             "COMPLETED" => TransformationProgressUpdateStatus::Completed,
             "FAILED" => TransformationProgressUpdateStatus::Failed,
             "IN_PROGRESS" => TransformationProgressUpdateStatus::InProgress,
+            "PAUSED" => TransformationProgressUpdateStatus::Paused,
             other => TransformationProgressUpdateStatus::Unknown(
                 crate::primitives::sealed_enum_unknown::UnknownVariantValue(other.to_owned()),
             ),
@@ -87,13 +91,14 @@ impl TransformationProgressUpdateStatus {
             TransformationProgressUpdateStatus::Completed => "COMPLETED",
             TransformationProgressUpdateStatus::Failed => "FAILED",
             TransformationProgressUpdateStatus::InProgress => "IN_PROGRESS",
+            TransformationProgressUpdateStatus::Paused => "PAUSED",
             TransformationProgressUpdateStatus::Unknown(value) => value.as_str(),
         }
     }
 
     /// Returns all the `&str` representations of the enum members.
     pub const fn values() -> &'static [&'static str] {
-        &["COMPLETED", "FAILED", "IN_PROGRESS"]
+        &["COMPLETED", "FAILED", "IN_PROGRESS", "PAUSED"]
     }
 }
 impl ::std::convert::AsRef<str> for TransformationProgressUpdateStatus {
@@ -110,6 +115,17 @@ impl TransformationProgressUpdateStatus {
             #[allow(deprecated)]
             Self::Unknown(_) => ::std::result::Result::Err(crate::error::UnknownVariantError::new(value)),
             known => Ok(known),
+        }
+    }
+}
+impl ::std::fmt::Display for TransformationProgressUpdateStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            TransformationProgressUpdateStatus::Completed => write!(f, "COMPLETED"),
+            TransformationProgressUpdateStatus::Failed => write!(f, "FAILED"),
+            TransformationProgressUpdateStatus::InProgress => write!(f, "IN_PROGRESS"),
+            TransformationProgressUpdateStatus::Paused => write!(f, "PAUSED"),
+            TransformationProgressUpdateStatus::Unknown(value) => write!(f, "{}", value),
         }
     }
 }

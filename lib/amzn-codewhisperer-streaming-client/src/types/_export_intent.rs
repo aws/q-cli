@@ -107,3 +107,12 @@ impl ExportIntent {
         }
     }
 }
+impl ::std::fmt::Display for ExportIntent {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            ExportIntent::TaskAssist => write!(f, "TASK_ASSIST"),
+            ExportIntent::Transformation => write!(f, "TRANSFORMATION"),
+            ExportIntent::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

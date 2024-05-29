@@ -22,5 +22,11 @@ pub fn ser_start_code_analysis_input_input(
     if let Some(var_7) = &input.client_token {
         object.key("clientToken").string(var_7.as_str());
     }
+    if let Some(var_8) = &input.scope {
+        object.key("scope").string(var_8.as_str());
+    }
+    if let Some(var_9) = &input.code_scan_name {
+        object.key("codeScanName").string(var_9.as_str());
+    }
     Ok(())
 }

@@ -19,6 +19,8 @@ pub struct GenerateCompletionsInput {
     pub opt_out_preference: ::std::option::Option<crate::types::OptOutPreference>,
     #[allow(missing_docs)] // documentation missing in model
     pub user_context: ::std::option::Option<crate::types::UserContext>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub profile_arn: ::std::option::Option<::std::string::String>,
 }
 impl GenerateCompletionsInput {
     #[allow(missing_docs)] // documentation missing in model
@@ -64,6 +66,11 @@ impl GenerateCompletionsInput {
     pub fn user_context(&self) -> ::std::option::Option<&crate::types::UserContext> {
         self.user_context.as_ref()
     }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn profile_arn(&self) -> ::std::option::Option<&str> {
+        self.profile_arn.as_deref()
+    }
 }
 impl ::std::fmt::Debug for GenerateCompletionsInput {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
@@ -76,6 +83,7 @@ impl ::std::fmt::Debug for GenerateCompletionsInput {
         formatter.field("customization_arn", &self.customization_arn);
         formatter.field("opt_out_preference", &self.opt_out_preference);
         formatter.field("user_context", &self.user_context);
+        formatter.field("profile_arn", &self.profile_arn);
         formatter.finish()
     }
 }
@@ -100,6 +108,7 @@ pub struct GenerateCompletionsInputBuilder {
     pub(crate) customization_arn: ::std::option::Option<::std::string::String>,
     pub(crate) opt_out_preference: ::std::option::Option<crate::types::OptOutPreference>,
     pub(crate) user_context: ::std::option::Option<crate::types::UserContext>,
+    pub(crate) profile_arn: ::std::option::Option<::std::string::String>,
 }
 impl GenerateCompletionsInputBuilder {
     #[allow(missing_docs)] // documentation missing in model
@@ -254,6 +263,23 @@ impl GenerateCompletionsInputBuilder {
         &self.user_context
     }
 
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn profile_arn(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
+        self.profile_arn = ::std::option::Option::Some(input.into());
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_profile_arn(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
+        self.profile_arn = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_profile_arn(&self) -> &::std::option::Option<::std::string::String> {
+        &self.profile_arn
+    }
+
     /// Consumes the builder and constructs a
     /// [`GenerateCompletionsInput`](crate::operation::generate_completions::GenerateCompletionsInput).
     pub fn build(
@@ -271,6 +297,7 @@ impl GenerateCompletionsInputBuilder {
             customization_arn: self.customization_arn,
             opt_out_preference: self.opt_out_preference,
             user_context: self.user_context,
+            profile_arn: self.profile_arn,
         })
     }
 }
@@ -285,6 +312,7 @@ impl ::std::fmt::Debug for GenerateCompletionsInputBuilder {
         formatter.field("customization_arn", &self.customization_arn);
         formatter.field("opt_out_preference", &self.opt_out_preference);
         formatter.field("user_context", &self.user_context);
+        formatter.field("profile_arn", &self.profile_arn);
         formatter.finish()
     }
 }

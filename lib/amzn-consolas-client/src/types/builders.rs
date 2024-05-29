@@ -10,6 +10,7 @@ pub use crate::types::_programming_language::ProgrammingLanguageBuilder;
 pub use crate::types::_recommendation::RecommendationBuilder;
 pub use crate::types::_reference::ReferenceBuilder;
 pub use crate::types::_reference_tracker_configuration::ReferenceTrackerConfigurationBuilder;
+pub use crate::types::_resource_policy::ResourcePolicyBuilder;
 pub use crate::types::_s3_reference::S3ReferenceBuilder;
 pub use crate::types::_span::SpanBuilder;
 pub use crate::types::_sso_identity_details::SsoIdentityDetailsBuilder;

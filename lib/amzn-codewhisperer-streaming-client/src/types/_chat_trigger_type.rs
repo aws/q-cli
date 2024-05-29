@@ -107,3 +107,12 @@ impl ChatTriggerType {
         }
     }
 }
+impl ::std::fmt::Display for ChatTriggerType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            ChatTriggerType::Diagnostic => write!(f, "DIAGNOSTIC"),
+            ChatTriggerType::Manual => write!(f, "MANUAL"),
+            ChatTriggerType::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

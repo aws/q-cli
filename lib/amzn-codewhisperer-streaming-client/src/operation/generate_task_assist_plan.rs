@@ -120,22 +120,26 @@ impl ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugin for Generat
         _: &::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder,
     ) -> ::std::borrow::Cow<'_, ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder> {
         #[allow(unused_mut)]
-        let mut rcb = ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder::new("GenerateTaskAssistPlan")
-            .with_interceptor(
-                ::aws_smithy_runtime::client::stalled_stream_protection::StalledStreamProtectionInterceptor::new(
-                    ::aws_smithy_runtime::client::stalled_stream_protection::StalledStreamProtectionInterceptorKind::ResponseBody,
-                ),
-            )
-            .with_interceptor(GenerateTaskAssistPlanEndpointParamsInterceptor)
-            .with_retry_classifier(::aws_smithy_runtime::client::retries::classifiers::TransientErrorClassifier::<
+        let mut rcb = ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder::new(
+            "GenerateTaskAssistPlan",
+        )
+        .with_interceptor(
+            ::aws_smithy_runtime::client::stalled_stream_protection::StalledStreamProtectionInterceptor::default(),
+        )
+        .with_interceptor(GenerateTaskAssistPlanEndpointParamsInterceptor)
+        .with_retry_classifier(
+            ::aws_smithy_runtime::client::retries::classifiers::TransientErrorClassifier::<
                 crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError,
-            >::new())
-            .with_retry_classifier(::aws_smithy_runtime::client::retries::classifiers::ModeledAsRetryableClassifier::<
+            >::new(),
+        )
+        .with_retry_classifier(
+            ::aws_smithy_runtime::client::retries::classifiers::ModeledAsRetryableClassifier::<
                 crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError,
-            >::new())
-            .with_retry_classifier(::aws_runtime::retries::classifiers::AwsErrorCodeClassifier::<
-                crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError,
-            >::new());
+            >::new(),
+        )
+        .with_retry_classifier(::aws_runtime::retries::classifiers::AwsErrorCodeClassifier::<
+            crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError,
+        >::new());
 
         ::std::borrow::Cow::Owned(rcb)
     }
@@ -289,6 +293,8 @@ impl ::aws_smithy_runtime_api::client::interceptors::Intercept for GenerateTaskA
 #[non_exhaustive]
 #[derive(::std::fmt::Debug)]
 pub enum GenerateTaskAssistPlanError {
+    /// This exception is thrown when request was denied due to caller exceeding their usage limits
+    ServiceQuotaExceededError(crate::types::error::ServiceQuotaExceededError),
     /// This exception is thrown when request was denied due to request throttling.
     ThrottlingError(crate::types::error::ThrottlingError),
     /// This exception is thrown when the action to perform could not be completed because the
@@ -343,6 +349,7 @@ impl GenerateTaskAssistPlanError {
     /// request ID, and potentially additional information.
     pub fn meta(&self) -> &::aws_smithy_types::error::ErrorMetadata {
         match self {
+            Self::ServiceQuotaExceededError(e) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(e),
             Self::ThrottlingError(e) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(e),
             Self::ConflictError(e) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(e),
             Self::ValidationError(e) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(e),
@@ -351,6 +358,12 @@ impl GenerateTaskAssistPlanError {
             Self::AccessDeniedError(e) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(e),
             Self::Unhandled(e) => &e.meta,
         }
+    }
+
+    /// Returns `true` if the error kind is
+    /// `GenerateTaskAssistPlanError::ServiceQuotaExceededError`.
+    pub fn is_service_quota_exceeded_error(&self) -> bool {
+        matches!(self, Self::ServiceQuotaExceededError(_))
     }
 
     /// Returns `true` if the error kind is `GenerateTaskAssistPlanError::ThrottlingError`.
@@ -386,6 +399,7 @@ impl GenerateTaskAssistPlanError {
 impl ::std::error::Error for GenerateTaskAssistPlanError {
     fn source(&self) -> ::std::option::Option<&(dyn ::std::error::Error + 'static)> {
         match self {
+            Self::ServiceQuotaExceededError(_inner) => ::std::option::Option::Some(_inner),
             Self::ThrottlingError(_inner) => ::std::option::Option::Some(_inner),
             Self::ConflictError(_inner) => ::std::option::Option::Some(_inner),
             Self::ValidationError(_inner) => ::std::option::Option::Some(_inner),
@@ -399,6 +413,7 @@ impl ::std::error::Error for GenerateTaskAssistPlanError {
 impl ::std::fmt::Display for GenerateTaskAssistPlanError {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match self {
+            Self::ServiceQuotaExceededError(_inner) => _inner.fmt(f),
             Self::ThrottlingError(_inner) => _inner.fmt(f),
             Self::ConflictError(_inner) => _inner.fmt(f),
             Self::ValidationError(_inner) => _inner.fmt(f),
@@ -433,6 +448,9 @@ impl ::aws_smithy_types::retry::ProvideErrorKind for GenerateTaskAssistPlanError
 impl ::aws_smithy_types::error::metadata::ProvideErrorMetadata for GenerateTaskAssistPlanError {
     fn meta(&self) -> &::aws_smithy_types::error::ErrorMetadata {
         match self {
+            Self::ServiceQuotaExceededError(_inner) => {
+                ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner)
+            },
             Self::ThrottlingError(_inner) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner),
             Self::ConflictError(_inner) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner),
             Self::ValidationError(_inner) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner),

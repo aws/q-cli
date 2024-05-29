@@ -112,3 +112,13 @@ impl CodeAnalysisStatus {
         }
     }
 }
+impl ::std::fmt::Display for CodeAnalysisStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            CodeAnalysisStatus::Completed => write!(f, "Completed"),
+            CodeAnalysisStatus::Failed => write!(f, "Failed"),
+            CodeAnalysisStatus::Pending => write!(f, "Pending"),
+            CodeAnalysisStatus::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

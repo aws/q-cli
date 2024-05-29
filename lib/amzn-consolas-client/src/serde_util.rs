@@ -264,6 +264,15 @@ pub(crate) fn reference_tracker_configuration_correct_errors(
     builder
 }
 
+pub(crate) fn resource_policy_correct_errors(
+    mut builder: crate::types::builders::ResourcePolicyBuilder,
+) -> crate::types::builders::ResourcePolicyBuilder {
+    if builder.effect.is_none() {
+        builder.effect = "no value was set".parse::<crate::types::ResourcePolicyEffect>().ok()
+    }
+    builder
+}
+
 pub(crate) fn sso_identity_details_correct_errors(
     mut builder: crate::types::builders::SsoIdentityDetailsBuilder,
 ) -> crate::types::builders::SsoIdentityDetailsBuilder {

@@ -140,3 +140,17 @@ impl UserIntent {
         }
     }
 }
+impl ::std::fmt::Display for UserIntent {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            UserIntent::ApplyCommonBestPractices => write!(f, "APPLY_COMMON_BEST_PRACTICES"),
+            UserIntent::CiteSources => write!(f, "CITE_SOURCES"),
+            UserIntent::ExplainCodeSelection => write!(f, "EXPLAIN_CODE_SELECTION"),
+            UserIntent::ExplainLineByLine => write!(f, "EXPLAIN_LINE_BY_LINE"),
+            UserIntent::ImproveCode => write!(f, "IMPROVE_CODE"),
+            UserIntent::ShowExamples => write!(f, "SHOW_EXAMPLES"),
+            UserIntent::SuggestAlternateImplementation => write!(f, "SUGGEST_ALTERNATE_IMPLEMENTATION"),
+            UserIntent::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

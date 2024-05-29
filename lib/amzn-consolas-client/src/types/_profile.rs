@@ -19,6 +19,10 @@ pub struct Profile {
     pub status: ::std::option::Option<crate::types::ProfileStatus>,
     #[allow(missing_docs)] // documentation missing in model
     pub error_details: ::std::option::Option<::std::string::String>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub resource_policy: ::std::option::Option<crate::types::ResourcePolicy>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub profile_type: ::std::option::Option<crate::types::ProfileType>,
 }
 impl Profile {
     #[allow(missing_docs)] // documentation missing in model
@@ -64,6 +68,16 @@ impl Profile {
     pub fn error_details(&self) -> ::std::option::Option<&str> {
         self.error_details.as_deref()
     }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn resource_policy(&self) -> ::std::option::Option<&crate::types::ResourcePolicy> {
+        self.resource_policy.as_ref()
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn profile_type(&self) -> ::std::option::Option<&crate::types::ProfileType> {
+        self.profile_type.as_ref()
+    }
 }
 impl Profile {
     /// Creates a new builder-style object to manufacture [`Profile`](crate::types::Profile).
@@ -84,6 +98,8 @@ pub struct ProfileBuilder {
     pub(crate) active_functionalities: ::std::option::Option<::std::vec::Vec<crate::types::FunctionalityName>>,
     pub(crate) status: ::std::option::Option<crate::types::ProfileStatus>,
     pub(crate) error_details: ::std::option::Option<::std::string::String>,
+    pub(crate) resource_policy: ::std::option::Option<crate::types::ResourcePolicy>,
+    pub(crate) profile_type: ::std::option::Option<crate::types::ProfileType>,
 }
 impl ProfileBuilder {
     #[allow(missing_docs)] // documentation missing in model
@@ -240,6 +256,40 @@ impl ProfileBuilder {
         &self.error_details
     }
 
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn resource_policy(mut self, input: crate::types::ResourcePolicy) -> Self {
+        self.resource_policy = ::std::option::Option::Some(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_resource_policy(mut self, input: ::std::option::Option<crate::types::ResourcePolicy>) -> Self {
+        self.resource_policy = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_resource_policy(&self) -> &::std::option::Option<crate::types::ResourcePolicy> {
+        &self.resource_policy
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn profile_type(mut self, input: crate::types::ProfileType) -> Self {
+        self.profile_type = ::std::option::Option::Some(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_profile_type(mut self, input: ::std::option::Option<crate::types::ProfileType>) -> Self {
+        self.profile_type = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_profile_type(&self) -> &::std::option::Option<crate::types::ProfileType> {
+        &self.profile_type
+    }
+
     /// Consumes the builder and constructs a [`Profile`](crate::types::Profile).
     /// This method will fail if any of the following fields are not set:
     /// - [`arn`](crate::types::builders::ProfileBuilder::arn)
@@ -272,6 +322,8 @@ impl ProfileBuilder {
             active_functionalities: self.active_functionalities,
             status: self.status,
             error_details: self.error_details,
+            resource_policy: self.resource_policy,
+            profile_type: self.profile_type,
         })
     }
 }

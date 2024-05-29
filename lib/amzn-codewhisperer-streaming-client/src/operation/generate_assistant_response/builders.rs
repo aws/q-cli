@@ -2,7 +2,7 @@
 pub use crate::operation::generate_assistant_response::_generate_assistant_response_input::GenerateAssistantResponseInputBuilder;
 pub use crate::operation::generate_assistant_response::_generate_assistant_response_output::GenerateAssistantResponseOutputBuilder;
 
-impl GenerateAssistantResponseInputBuilder {
+impl crate::operation::generate_assistant_response::builders::GenerateAssistantResponseInputBuilder {
     /// Sends a request with this input using the given client.
     pub async fn send_with(
         self,
@@ -106,12 +106,18 @@ impl GenerateAssistantResponseFluentBuilder {
         crate::client::customize::CustomizableOperation::new(self)
     }
 
-    pub(crate) fn config_override(mut self, config_override: impl Into<crate::config::Builder>) -> Self {
-        self.set_config_override(Some(config_override.into()));
+    pub(crate) fn config_override(
+        mut self,
+        config_override: impl ::std::convert::Into<crate::config::Builder>,
+    ) -> Self {
+        self.set_config_override(::std::option::Option::Some(config_override.into()));
         self
     }
 
-    pub(crate) fn set_config_override(&mut self, config_override: Option<crate::config::Builder>) -> &mut Self {
+    pub(crate) fn set_config_override(
+        &mut self,
+        config_override: ::std::option::Option<crate::config::Builder>,
+    ) -> &mut Self {
         self.config_override = config_override;
         self
     }
@@ -131,5 +137,22 @@ impl GenerateAssistantResponseFluentBuilder {
     /// Structure to represent the current state of a chat conversation.
     pub fn get_conversation_state(&self) -> &::std::option::Option<crate::types::ConversationState> {
         self.inner.get_conversation_state()
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn profile_arn(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
+        self.inner = self.inner.profile_arn(input.into());
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_profile_arn(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
+        self.inner = self.inner.set_profile_arn(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_profile_arn(&self) -> &::std::option::Option<::std::string::String> {
+        self.inner.get_profile_arn()
     }
 }

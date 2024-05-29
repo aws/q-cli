@@ -181,3 +181,23 @@ impl CustomizationStatus {
         }
     }
 }
+impl ::std::fmt::Display for CustomizationStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            CustomizationStatus::Activated => write!(f, "ACTIVATED"),
+            CustomizationStatus::Activating => write!(f, "ACTIVATING"),
+            CustomizationStatus::ActivationFailed => write!(f, "ACTIVATION_FAILED"),
+            CustomizationStatus::Created => write!(f, "CREATED"),
+            CustomizationStatus::Creating => write!(f, "CREATING"),
+            CustomizationStatus::CreationFailed => write!(f, "CREATION_FAILED"),
+            CustomizationStatus::Deactivating => write!(f, "DEACTIVATING"),
+            CustomizationStatus::DeactivationFailed => write!(f, "DEACTIVATION_FAILED"),
+            CustomizationStatus::Deleting => write!(f, "DELETING"),
+            CustomizationStatus::DeletionFailed => write!(f, "DELETION_FAILED"),
+            CustomizationStatus::Updated => write!(f, "UPDATED"),
+            CustomizationStatus::UpdateFailed => write!(f, "UPDATE_FAILED"),
+            CustomizationStatus::Updating => write!(f, "UPDATING"),
+            CustomizationStatus::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

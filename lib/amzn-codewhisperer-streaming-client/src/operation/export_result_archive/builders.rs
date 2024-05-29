@@ -2,7 +2,7 @@
 pub use crate::operation::export_result_archive::_export_result_archive_input::ExportResultArchiveInputBuilder;
 pub use crate::operation::export_result_archive::_export_result_archive_output::ExportResultArchiveOutputBuilder;
 
-impl ExportResultArchiveInputBuilder {
+impl crate::operation::export_result_archive::builders::ExportResultArchiveInputBuilder {
     /// Sends a request with this input using the given client.
     pub async fn send_with(
         self,
@@ -102,12 +102,18 @@ impl ExportResultArchiveFluentBuilder {
         crate::client::customize::CustomizableOperation::new(self)
     }
 
-    pub(crate) fn config_override(mut self, config_override: impl Into<crate::config::Builder>) -> Self {
-        self.set_config_override(Some(config_override.into()));
+    pub(crate) fn config_override(
+        mut self,
+        config_override: impl ::std::convert::Into<crate::config::Builder>,
+    ) -> Self {
+        self.set_config_override(::std::option::Option::Some(config_override.into()));
         self
     }
 
-    pub(crate) fn set_config_override(&mut self, config_override: Option<crate::config::Builder>) -> &mut Self {
+    pub(crate) fn set_config_override(
+        &mut self,
+        config_override: ::std::option::Option<crate::config::Builder>,
+    ) -> &mut Self {
         self.config_override = config_override;
         self
     }
@@ -144,5 +150,22 @@ impl ExportResultArchiveFluentBuilder {
     /// Export Intent
     pub fn get_export_intent(&self) -> &::std::option::Option<crate::types::ExportIntent> {
         self.inner.get_export_intent()
+    }
+
+    /// Export Context
+    pub fn export_context(mut self, input: crate::types::ExportContext) -> Self {
+        self.inner = self.inner.export_context(input);
+        self
+    }
+
+    /// Export Context
+    pub fn set_export_context(mut self, input: ::std::option::Option<crate::types::ExportContext>) -> Self {
+        self.inner = self.inner.set_export_context(input);
+        self
+    }
+
+    /// Export Context
+    pub fn get_export_context(&self) -> &::std::option::Option<crate::types::ExportContext> {
+        self.inner.get_export_context()
     }
 }

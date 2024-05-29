@@ -52,6 +52,25 @@ pub fn de_generate_task_assist_plan_http_error(
 
     let _error_message = generic.message().map(|msg| msg.to_owned());
     Err(match error_code {
+        "ServiceQuotaExceededException" => {
+            crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::ServiceQuotaExceededError({
+                #[allow(unused_mut)]
+                let mut tmp = {
+                    #[allow(unused_mut)]
+                    let mut output = crate::types::error::builders::ServiceQuotaExceededErrorBuilder::default();
+                    output = crate::protocol_serde::shape_service_quota_exceeded_exception::de_service_quota_exceeded_exception_json_err(
+                    _response_body,
+                    output,
+                )
+                .map_err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled)?;
+                    let output = output.meta(generic);
+                    crate::serde_util::service_quota_exceeded_exception_correct_errors(output)
+                        .build()
+                        .map_err(crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::unhandled)?
+                };
+                tmp
+            })
+        },
         "ThrottlingException" => {
             crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanError::ThrottlingError({
                 #[allow(unused_mut)]

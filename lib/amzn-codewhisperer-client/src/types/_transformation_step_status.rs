@@ -16,6 +16,7 @@
 ///     TransformationStepStatus::Created => { /* ... */ },
 ///     TransformationStepStatus::Failed => { /* ... */ },
 ///     TransformationStepStatus::PartiallyCompleted => { /* ... */ },
+///     TransformationStepStatus::Paused => { /* ... */ },
 ///     TransformationStepStatus::Stopped => { /* ... */ },
 ///     other @ _ if other.as_str() == "NewFeature" => { /* handles a case for `NewFeature` */ },
 ///     _ => { /* ... */ },
@@ -59,6 +60,8 @@ pub enum TransformationStepStatus {
     #[allow(missing_docs)] // documentation missing in model
     PartiallyCompleted,
     #[allow(missing_docs)] // documentation missing in model
+    Paused,
+    #[allow(missing_docs)] // documentation missing in model
     Stopped,
     /// `Unknown` contains new variants that have been added since this code was generated.
     #[deprecated(
@@ -73,6 +76,7 @@ impl ::std::convert::From<&str> for TransformationStepStatus {
             "CREATED" => TransformationStepStatus::Created,
             "FAILED" => TransformationStepStatus::Failed,
             "PARTIALLY_COMPLETED" => TransformationStepStatus::PartiallyCompleted,
+            "PAUSED" => TransformationStepStatus::Paused,
             "STOPPED" => TransformationStepStatus::Stopped,
             other => TransformationStepStatus::Unknown(crate::primitives::sealed_enum_unknown::UnknownVariantValue(
                 other.to_owned(),
@@ -95,6 +99,7 @@ impl TransformationStepStatus {
             TransformationStepStatus::Created => "CREATED",
             TransformationStepStatus::Failed => "FAILED",
             TransformationStepStatus::PartiallyCompleted => "PARTIALLY_COMPLETED",
+            TransformationStepStatus::Paused => "PAUSED",
             TransformationStepStatus::Stopped => "STOPPED",
             TransformationStepStatus::Unknown(value) => value.as_str(),
         }
@@ -102,7 +107,14 @@ impl TransformationStepStatus {
 
     /// Returns all the `&str` representations of the enum members.
     pub const fn values() -> &'static [&'static str] {
-        &["COMPLETED", "CREATED", "FAILED", "PARTIALLY_COMPLETED", "STOPPED"]
+        &[
+            "COMPLETED",
+            "CREATED",
+            "FAILED",
+            "PARTIALLY_COMPLETED",
+            "PAUSED",
+            "STOPPED",
+        ]
     }
 }
 impl ::std::convert::AsRef<str> for TransformationStepStatus {
@@ -119,6 +131,19 @@ impl TransformationStepStatus {
             #[allow(deprecated)]
             Self::Unknown(_) => ::std::result::Result::Err(crate::error::UnknownVariantError::new(value)),
             known => Ok(known),
+        }
+    }
+}
+impl ::std::fmt::Display for TransformationStepStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            TransformationStepStatus::Completed => write!(f, "COMPLETED"),
+            TransformationStepStatus::Created => write!(f, "CREATED"),
+            TransformationStepStatus::Failed => write!(f, "FAILED"),
+            TransformationStepStatus::PartiallyCompleted => write!(f, "PARTIALLY_COMPLETED"),
+            TransformationStepStatus::Paused => write!(f, "PAUSED"),
+            TransformationStepStatus::Stopped => write!(f, "STOPPED"),
+            TransformationStepStatus::Unknown(value) => write!(f, "{}", value),
         }
     }
 }

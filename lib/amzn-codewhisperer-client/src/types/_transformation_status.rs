@@ -17,11 +17,13 @@
 ///     TransformationStatus::Created => { /* ... */ },
 ///     TransformationStatus::Failed => { /* ... */ },
 ///     TransformationStatus::PartiallyCompleted => { /* ... */ },
+///     TransformationStatus::Paused => { /* ... */ },
 ///     TransformationStatus::Planned => { /* ... */ },
 ///     TransformationStatus::Planning => { /* ... */ },
 ///     TransformationStatus::Prepared => { /* ... */ },
 ///     TransformationStatus::Preparing => { /* ... */ },
 ///     TransformationStatus::Rejected => { /* ... */ },
+///     TransformationStatus::Resumed => { /* ... */ },
 ///     TransformationStatus::Started => { /* ... */ },
 ///     TransformationStatus::Stopped => { /* ... */ },
 ///     TransformationStatus::Stopping => { /* ... */ },
@@ -71,6 +73,8 @@ pub enum TransformationStatus {
     #[allow(missing_docs)] // documentation missing in model
     PartiallyCompleted,
     #[allow(missing_docs)] // documentation missing in model
+    Paused,
+    #[allow(missing_docs)] // documentation missing in model
     Planned,
     #[allow(missing_docs)] // documentation missing in model
     Planning,
@@ -80,6 +84,8 @@ pub enum TransformationStatus {
     Preparing,
     #[allow(missing_docs)] // documentation missing in model
     Rejected,
+    #[allow(missing_docs)] // documentation missing in model
+    Resumed,
     #[allow(missing_docs)] // documentation missing in model
     Started,
     #[allow(missing_docs)] // documentation missing in model
@@ -104,11 +110,13 @@ impl ::std::convert::From<&str> for TransformationStatus {
             "CREATED" => TransformationStatus::Created,
             "FAILED" => TransformationStatus::Failed,
             "PARTIALLY_COMPLETED" => TransformationStatus::PartiallyCompleted,
+            "PAUSED" => TransformationStatus::Paused,
             "PLANNED" => TransformationStatus::Planned,
             "PLANNING" => TransformationStatus::Planning,
             "PREPARED" => TransformationStatus::Prepared,
             "PREPARING" => TransformationStatus::Preparing,
             "REJECTED" => TransformationStatus::Rejected,
+            "RESUMED" => TransformationStatus::Resumed,
             "STARTED" => TransformationStatus::Started,
             "STOPPED" => TransformationStatus::Stopped,
             "STOPPING" => TransformationStatus::Stopping,
@@ -136,11 +144,13 @@ impl TransformationStatus {
             TransformationStatus::Created => "CREATED",
             TransformationStatus::Failed => "FAILED",
             TransformationStatus::PartiallyCompleted => "PARTIALLY_COMPLETED",
+            TransformationStatus::Paused => "PAUSED",
             TransformationStatus::Planned => "PLANNED",
             TransformationStatus::Planning => "PLANNING",
             TransformationStatus::Prepared => "PREPARED",
             TransformationStatus::Preparing => "PREPARING",
             TransformationStatus::Rejected => "REJECTED",
+            TransformationStatus::Resumed => "RESUMED",
             TransformationStatus::Started => "STARTED",
             TransformationStatus::Stopped => "STOPPED",
             TransformationStatus::Stopping => "STOPPING",
@@ -158,11 +168,13 @@ impl TransformationStatus {
             "CREATED",
             "FAILED",
             "PARTIALLY_COMPLETED",
+            "PAUSED",
             "PLANNED",
             "PLANNING",
             "PREPARED",
             "PREPARING",
             "REJECTED",
+            "RESUMED",
             "STARTED",
             "STOPPED",
             "STOPPING",
@@ -185,6 +197,30 @@ impl TransformationStatus {
             #[allow(deprecated)]
             Self::Unknown(_) => ::std::result::Result::Err(crate::error::UnknownVariantError::new(value)),
             known => Ok(known),
+        }
+    }
+}
+impl ::std::fmt::Display for TransformationStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            TransformationStatus::Accepted => write!(f, "ACCEPTED"),
+            TransformationStatus::Completed => write!(f, "COMPLETED"),
+            TransformationStatus::Created => write!(f, "CREATED"),
+            TransformationStatus::Failed => write!(f, "FAILED"),
+            TransformationStatus::PartiallyCompleted => write!(f, "PARTIALLY_COMPLETED"),
+            TransformationStatus::Paused => write!(f, "PAUSED"),
+            TransformationStatus::Planned => write!(f, "PLANNED"),
+            TransformationStatus::Planning => write!(f, "PLANNING"),
+            TransformationStatus::Prepared => write!(f, "PREPARED"),
+            TransformationStatus::Preparing => write!(f, "PREPARING"),
+            TransformationStatus::Rejected => write!(f, "REJECTED"),
+            TransformationStatus::Resumed => write!(f, "RESUMED"),
+            TransformationStatus::Started => write!(f, "STARTED"),
+            TransformationStatus::Stopped => write!(f, "STOPPED"),
+            TransformationStatus::Stopping => write!(f, "STOPPING"),
+            TransformationStatus::Transformed => write!(f, "TRANSFORMED"),
+            TransformationStatus::Transforming => write!(f, "TRANSFORMING"),
+            TransformationStatus::Unknown(value) => write!(f, "{}", value),
         }
     }
 }

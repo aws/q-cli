@@ -37,6 +37,9 @@ pub mod list_code_analysis_findings;
 /// Types for the `ListFeatureEvaluations` operation.
 pub mod list_feature_evaluations;
 
+/// Types for the `ResumeTransformation` operation.
+pub mod resume_transformation;
+
 /// Types for the `SendTelemetryEvent` operation.
 pub mod send_telemetry_event;
 

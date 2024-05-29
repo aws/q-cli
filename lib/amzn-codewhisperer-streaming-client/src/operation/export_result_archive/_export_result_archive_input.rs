@@ -8,6 +8,8 @@ pub struct ExportResultArchiveInput {
     pub export_id: ::std::option::Option<::std::string::String>,
     /// Export Intent
     pub export_intent: ::std::option::Option<crate::types::ExportIntent>,
+    /// Export Context
+    pub export_context: ::std::option::Option<crate::types::ExportContext>,
 }
 impl ExportResultArchiveInput {
     #[allow(missing_docs)] // documentation missing in model
@@ -18,6 +20,11 @@ impl ExportResultArchiveInput {
     /// Export Intent
     pub fn export_intent(&self) -> ::std::option::Option<&crate::types::ExportIntent> {
         self.export_intent.as_ref()
+    }
+
+    /// Export Context
+    pub fn export_context(&self) -> ::std::option::Option<&crate::types::ExportContext> {
+        self.export_context.as_ref()
     }
 }
 impl ExportResultArchiveInput {
@@ -35,6 +42,7 @@ impl ExportResultArchiveInput {
 pub struct ExportResultArchiveInputBuilder {
     pub(crate) export_id: ::std::option::Option<::std::string::String>,
     pub(crate) export_intent: ::std::option::Option<crate::types::ExportIntent>,
+    pub(crate) export_context: ::std::option::Option<crate::types::ExportContext>,
 }
 impl ExportResultArchiveInputBuilder {
     #[allow(missing_docs)] // documentation missing in model
@@ -73,6 +81,23 @@ impl ExportResultArchiveInputBuilder {
         &self.export_intent
     }
 
+    /// Export Context
+    pub fn export_context(mut self, input: crate::types::ExportContext) -> Self {
+        self.export_context = ::std::option::Option::Some(input);
+        self
+    }
+
+    /// Export Context
+    pub fn set_export_context(mut self, input: ::std::option::Option<crate::types::ExportContext>) -> Self {
+        self.export_context = input;
+        self
+    }
+
+    /// Export Context
+    pub fn get_export_context(&self) -> &::std::option::Option<crate::types::ExportContext> {
+        &self.export_context
+    }
+
     /// Consumes the builder and constructs a
     /// [`ExportResultArchiveInput`](crate::operation::export_result_archive::ExportResultArchiveInput).
     pub fn build(
@@ -84,6 +109,7 @@ impl ExportResultArchiveInputBuilder {
         ::std::result::Result::Ok(crate::operation::export_result_archive::ExportResultArchiveInput {
             export_id: self.export_id,
             export_intent: self.export_intent,
+            export_context: self.export_context,
         })
     }
 }

@@ -38,7 +38,7 @@ impl Config {
             config: self.cloneable.clone(),
             runtime_components: self.runtime_components.clone(),
             runtime_plugins: self.runtime_plugins.clone(),
-            behavior_version: self.behavior_version.clone(),
+            behavior_version: self.behavior_version,
         }
     }
 
@@ -179,6 +179,28 @@ impl Builder {
     /// Constructs a config builder.
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Constructs a config builder from the given `config_bag`, setting only fields stored in the
+    /// config bag, but not those in runtime components.
+    #[allow(unused)]
+    pub(crate) fn from_config_bag(config_bag: &::aws_smithy_types::config_bag::ConfigBag) -> Self {
+        let mut builder = Self::new();
+        builder.set_stalled_stream_protection(
+            config_bag
+                .load::<crate::config::StalledStreamProtectionConfig>()
+                .cloned(),
+        );
+        builder.set_retry_config(config_bag.load::<::aws_smithy_types::retry::RetryConfig>().cloned());
+        builder.set_timeout_config(config_bag.load::<::aws_smithy_types::timeout::TimeoutConfig>().cloned());
+        builder.set_retry_partition(
+            config_bag
+                .load::<::aws_smithy_runtime::client::retries::RetryPartition>()
+                .cloned(),
+        );
+        builder.set_app_name(config_bag.load::<::aws_types::app_name::AppName>().cloned());
+        builder.set_region(config_bag.load::<crate::config::Region>().cloned());
+        builder
     }
 
     /// Set the [`StalledStreamProtectionConfig`](crate::config::StalledStreamProtectionConfig)
@@ -508,7 +530,12 @@ impl Builder {
         self
     }
 
-    /// Set the timeout_config for the builder
+    /// Set the timeout_config for the builder.
+    ///
+    /// Setting this to `None` has no effect if another source of configuration has set timeouts. If
+    /// you are attempting to disable timeouts, use
+    /// [`TimeoutConfig::disabled`](::aws_smithy_types::timeout::TimeoutConfig::disabled)
+    ///
     ///
     /// # Examples
     ///
@@ -535,7 +562,15 @@ impl Builder {
         &mut self,
         timeout_config: ::std::option::Option<::aws_smithy_types::timeout::TimeoutConfig>,
     ) -> &mut Self {
-        timeout_config.map(|t| self.config.store_put(t));
+        // passing None has no impact.
+        let Some(mut timeout_config) = timeout_config else {
+            return self;
+        };
+
+        if let Some(base) = self.config.load::<::aws_smithy_types::timeout::TimeoutConfig>() {
+            timeout_config.take_defaults_from(base);
+        }
+        self.config.store_put(timeout_config);
         self
     }
 
@@ -1200,7 +1235,8 @@ impl Builder {
                 ::std::time::UNIX_EPOCH + ::std::time::Duration::from_secs(1234567890),
             )),
         ));
-        self.config.store_put(::aws_http::user_agent::AwsUserAgent::for_tests());
+        self.config
+            .store_put(::aws_runtime::user_agent::AwsUserAgent::for_tests());
         self.set_credentials_provider(Some(crate::config::SharedCredentialsProvider::new(
             ::aws_credential_types::Credentials::for_tests(),
         )));
@@ -1394,20 +1430,30 @@ impl From<&::aws_types::sdk_config::SdkConfig> for Config {
     }
 }
 
-pub use ::aws_smithy_async::rt::sleep::Sleep;
 pub use ::aws_types::app_name::AppName;
+
+#[allow(dead_code)]
+fn service_config_key<'a>(env: &'a str, profile: &'a str) -> aws_types::service_config::ServiceConfigKey<'a> {
+    ::aws_types::service_config::ServiceConfigKey::builder()
+        .service_id("codewhisperer")
+        .env(env)
+        .profile(profile)
+        .build()
+        .expect("all field sets explicitly, can't fail")
+}
+
+pub use ::aws_smithy_async::rt::sleep::Sleep;
 
 pub(crate) fn base_client_runtime_plugins(
     mut config: crate::Config,
 ) -> ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugins {
     let mut configured_plugins = ::std::vec::Vec::new();
     ::std::mem::swap(&mut config.runtime_plugins, &mut configured_plugins);
-    #[allow(unused_mut)]
-    let mut behavior_version = config.behavior_version.clone();
     #[cfg(feature = "behavior-version-latest")]
     {
-        if behavior_version.is_none() {
-            behavior_version = Some(::aws_smithy_runtime_api::client::behavior_version::BehaviorVersion::latest());
+        if config.behavior_version.is_none() {
+            config.behavior_version =
+                Some(::aws_smithy_runtime_api::client::behavior_version::BehaviorVersion::latest());
         }
     }
 
@@ -1416,7 +1462,7 @@ pub(crate) fn base_client_runtime_plugins(
                         .with_client_plugins(::aws_smithy_runtime::client::defaults::default_plugins(
                             ::aws_smithy_runtime::client::defaults::DefaultPluginParams::new()
                                 .with_retry_partition_name("codewhisperer")
-                                .with_behavior_version(behavior_version.expect("Invalid client configuration: A behavior major version must be set when sending a request or constructing a client. You must set it during client construction or by enabling the `behavior-version-latest` cargo feature."))
+                                .with_behavior_version(config.behavior_version.expect("Invalid client configuration: A behavior major version must be set when sending a request or constructing a client. You must set it during client construction or by enabling the `behavior-version-latest` cargo feature."))
                         ))
                         // user config
                         .with_client_plugin(
@@ -1425,7 +1471,7 @@ pub(crate) fn base_client_runtime_plugins(
                                 .with_runtime_components(config.runtime_components.clone())
                         )
                         // codegen config
-                        .with_client_plugin(crate::config::ServiceRuntimePlugin::new(config))
+                        .with_client_plugin(crate::config::ServiceRuntimePlugin::new(config.clone()))
                         .with_client_plugin(::aws_smithy_runtime::client::auth::no_auth::NoAuthRuntimePlugin::new());
 
     for plugin in configured_plugins {

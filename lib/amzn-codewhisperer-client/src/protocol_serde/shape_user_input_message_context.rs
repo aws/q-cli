@@ -27,11 +27,17 @@ pub fn ser_user_input_message_context(
         crate::protocol_serde::shape_env_state::ser_env_state(&mut object_8, var_7)?;
         object_8.finish();
     }
-    if let Some(var_9) = &input.diagnostic {
+    if let Some(var_9) = &input.app_studio_context {
         #[allow(unused_mut)]
-        let mut object_10 = object.key("diagnostic").start_object();
-        crate::protocol_serde::shape_diagnostic::ser_diagnostic(&mut object_10, var_9)?;
+        let mut object_10 = object.key("appStudioContext").start_object();
+        crate::protocol_serde::shape_app_studio_state::ser_app_studio_state(&mut object_10, var_9)?;
         object_10.finish();
+    }
+    if let Some(var_11) = &input.diagnostic {
+        #[allow(unused_mut)]
+        let mut object_12 = object.key("diagnostic").start_object();
+        crate::protocol_serde::shape_diagnostic::ser_diagnostic(&mut object_12, var_11)?;
+        object_12.finish();
     }
     Ok(())
 }

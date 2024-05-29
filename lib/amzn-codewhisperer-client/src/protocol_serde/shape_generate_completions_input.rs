@@ -51,5 +51,8 @@ pub fn ser_generate_completions_input_input(
         crate::protocol_serde::shape_user_context::ser_user_context(&mut object_14, var_13)?;
         object_14.finish();
     }
+    if let Some(var_15) = &input.profile_arn {
+        object.key("profileArn").string(var_15.as_str());
+    }
     Ok(())
 }

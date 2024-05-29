@@ -107,3 +107,12 @@ impl ValidationExceptionReason {
         }
     }
 }
+impl ::std::fmt::Display for ValidationExceptionReason {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            ValidationExceptionReason::ContentLengthExceedsThreshold => write!(f, "CONTENT_LENGTH_EXCEEDS_THRESHOLD"),
+            ValidationExceptionReason::InvalidConversationId => write!(f, "INVALID_CONVERSATION_ID"),
+            ValidationExceptionReason::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

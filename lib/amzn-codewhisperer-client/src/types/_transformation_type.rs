@@ -102,3 +102,11 @@ impl TransformationType {
         }
     }
 }
+impl ::std::fmt::Display for TransformationType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            TransformationType::LanguageUpgrade => write!(f, "LANGUAGE_UPGRADE"),
+            TransformationType::Unknown(value) => write!(f, "{}", value),
+        }
+    }
+}

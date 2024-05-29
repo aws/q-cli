@@ -2,7 +2,7 @@
 pub use crate::operation::start_code_analysis::_start_code_analysis_input::StartCodeAnalysisInputBuilder;
 pub use crate::operation::start_code_analysis::_start_code_analysis_output::StartCodeAnalysisOutputBuilder;
 
-impl StartCodeAnalysisInputBuilder {
+impl crate::operation::start_code_analysis::builders::StartCodeAnalysisInputBuilder {
     /// Sends a request with this input using the given client.
     pub async fn send_with(
         self,
@@ -102,12 +102,18 @@ impl StartCodeAnalysisFluentBuilder {
         crate::client::customize::CustomizableOperation::new(self)
     }
 
-    pub(crate) fn config_override(mut self, config_override: impl Into<crate::config::Builder>) -> Self {
-        self.set_config_override(Some(config_override.into()));
+    pub(crate) fn config_override(
+        mut self,
+        config_override: impl ::std::convert::Into<crate::config::Builder>,
+    ) -> Self {
+        self.set_config_override(::std::option::Option::Some(config_override.into()));
         self
     }
 
-    pub(crate) fn set_config_override(&mut self, config_override: Option<crate::config::Builder>) -> &mut Self {
+    pub(crate) fn set_config_override(
+        &mut self,
+        config_override: ::std::option::Option<crate::config::Builder>,
+    ) -> &mut Self {
         self.config_override = config_override;
         self
     }
@@ -173,5 +179,39 @@ impl StartCodeAnalysisFluentBuilder {
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_client_token(&self) -> &::std::option::Option<::std::string::String> {
         self.inner.get_client_token()
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn scope(mut self, input: crate::types::CodeAnalysisScope) -> Self {
+        self.inner = self.inner.scope(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_scope(mut self, input: ::std::option::Option<crate::types::CodeAnalysisScope>) -> Self {
+        self.inner = self.inner.set_scope(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_scope(&self) -> &::std::option::Option<crate::types::CodeAnalysisScope> {
+        self.inner.get_scope()
+    }
+
+    /// Code analysis scan name
+    pub fn code_scan_name(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
+        self.inner = self.inner.code_scan_name(input.into());
+        self
+    }
+
+    /// Code analysis scan name
+    pub fn set_code_scan_name(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
+        self.inner = self.inner.set_code_scan_name(input);
+        self
+    }
+
+    /// Code analysis scan name
+    pub fn get_code_scan_name(&self) -> &::std::option::Option<::std::string::String> {
+        self.inner.get_code_scan_name()
     }
 }

@@ -7,6 +7,8 @@ pub struct SsoIdentityDetails {
     pub instance_arn: ::std::string::String,
     #[allow(missing_docs)] // documentation missing in model
     pub oidc_client_id: ::std::string::String,
+    #[allow(missing_docs)] // documentation missing in model
+    pub sso_region: ::std::option::Option<::std::string::String>,
 }
 impl SsoIdentityDetails {
     #[allow(missing_docs)] // documentation missing in model
@@ -19,6 +21,11 @@ impl SsoIdentityDetails {
     pub fn oidc_client_id(&self) -> &str {
         use std::ops::Deref;
         self.oidc_client_id.deref()
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn sso_region(&self) -> ::std::option::Option<&str> {
+        self.sso_region.as_deref()
     }
 }
 impl SsoIdentityDetails {
@@ -35,6 +42,7 @@ impl SsoIdentityDetails {
 pub struct SsoIdentityDetailsBuilder {
     pub(crate) instance_arn: ::std::option::Option<::std::string::String>,
     pub(crate) oidc_client_id: ::std::option::Option<::std::string::String>,
+    pub(crate) sso_region: ::std::option::Option<::std::string::String>,
 }
 impl SsoIdentityDetailsBuilder {
     #[allow(missing_docs)] // documentation missing in model
@@ -73,6 +81,23 @@ impl SsoIdentityDetailsBuilder {
         &self.oidc_client_id
     }
 
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn sso_region(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
+        self.sso_region = ::std::option::Option::Some(input.into());
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_sso_region(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
+        self.sso_region = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_sso_region(&self) -> &::std::option::Option<::std::string::String> {
+        &self.sso_region
+    }
+
     /// Consumes the builder and constructs a
     /// [`SsoIdentityDetails`](crate::types::SsoIdentityDetails). This method will fail if any
     /// of the following fields are not set:
@@ -94,6 +119,7 @@ impl SsoIdentityDetailsBuilder {
                     "oidc_client_id was not specified but it is required when building SsoIdentityDetails",
                 )
             })?,
+            sso_region: self.sso_region,
         })
     }
 }

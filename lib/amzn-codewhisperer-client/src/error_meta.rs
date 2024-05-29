@@ -14,6 +14,8 @@ pub enum Error {
     InternalServerError(crate::types::error::InternalServerError),
     /// This exception is thrown when describing a resource that does not exist.
     ResourceNotFoundError(crate::types::error::ResourceNotFoundError),
+    /// This exception is thrown when request was denied due to caller exceeding their usage limits
+    ServiceQuotaExceededError(crate::types::error::ServiceQuotaExceededError),
     /// This exception is thrown when request was denied due to request throttling.
     ThrottlingError(crate::types::error::ThrottlingError),
     /// This exception is thrown when the input fails to satisfy the constraints specified by the
@@ -38,6 +40,7 @@ impl ::std::fmt::Display for Error {
             Error::ConflictError(inner) => inner.fmt(f),
             Error::InternalServerError(inner) => inner.fmt(f),
             Error::ResourceNotFoundError(inner) => inner.fmt(f),
+            Error::ServiceQuotaExceededError(inner) => inner.fmt(f),
             Error::ThrottlingError(inner) => inner.fmt(f),
             Error::ValidationError(inner) => inner.fmt(f),
             Error::Unhandled(_) => {
@@ -67,6 +70,7 @@ impl ::aws_smithy_types::error::metadata::ProvideErrorMetadata for Error {
             Self::ConflictError(inner) => inner.meta(),
             Self::InternalServerError(inner) => inner.meta(),
             Self::ResourceNotFoundError(inner) => inner.meta(),
+            Self::ServiceQuotaExceededError(inner) => inner.meta(),
             Self::ThrottlingError(inner) => inner.meta(),
             Self::ValidationError(inner) => inner.meta(),
             Self::Unhandled(inner) => &inner.meta,
@@ -150,6 +154,9 @@ impl From<crate::operation::create_task_assist_conversation::CreateTaskAssistCon
             crate::operation::create_task_assist_conversation::CreateTaskAssistConversationError::InternalServerError(inner) => {
                 Error::InternalServerError(inner)
             }
+            crate::operation::create_task_assist_conversation::CreateTaskAssistConversationError::ServiceQuotaExceededError(inner) => {
+                Error::ServiceQuotaExceededError(inner)
+            }
             crate::operation::create_task_assist_conversation::CreateTaskAssistConversationError::ThrottlingError(inner) => {
                 Error::ThrottlingError(inner)
             }
@@ -193,6 +200,9 @@ impl From<crate::operation::create_upload_url::CreateUploadUrlError> for Error {
         match err {
             crate::operation::create_upload_url::CreateUploadUrlError::InternalServerError(inner) => {
                 Error::InternalServerError(inner)
+            },
+            crate::operation::create_upload_url::CreateUploadUrlError::ServiceQuotaExceededError(inner) => {
+                Error::ServiceQuotaExceededError(inner)
             },
             crate::operation::create_upload_url::CreateUploadUrlError::ThrottlingError(inner) => {
                 Error::ThrottlingError(inner)
@@ -641,6 +651,55 @@ impl From<crate::operation::list_feature_evaluations::ListFeatureEvaluationsErro
 impl<R>
     From<
         ::aws_smithy_runtime_api::client::result::SdkError<
+            crate::operation::resume_transformation::ResumeTransformationError,
+            R,
+        >,
+    > for Error
+where
+    R: Send + Sync + std::fmt::Debug + 'static,
+{
+    fn from(
+        err: ::aws_smithy_runtime_api::client::result::SdkError<
+            crate::operation::resume_transformation::ResumeTransformationError,
+            R,
+        >,
+    ) -> Self {
+        match err {
+            ::aws_smithy_runtime_api::client::result::SdkError::ServiceError(context) => Self::from(context.into_err()),
+            _ => Error::Unhandled(crate::error::sealed_unhandled::Unhandled {
+                meta: ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(&err).clone(),
+                source: err.into(),
+            }),
+        }
+    }
+}
+impl From<crate::operation::resume_transformation::ResumeTransformationError> for Error {
+    fn from(err: crate::operation::resume_transformation::ResumeTransformationError) -> Self {
+        match err {
+            crate::operation::resume_transformation::ResumeTransformationError::InternalServerError(inner) => {
+                Error::InternalServerError(inner)
+            },
+            crate::operation::resume_transformation::ResumeTransformationError::ThrottlingError(inner) => {
+                Error::ThrottlingError(inner)
+            },
+            crate::operation::resume_transformation::ResumeTransformationError::ValidationError(inner) => {
+                Error::ValidationError(inner)
+            },
+            crate::operation::resume_transformation::ResumeTransformationError::ResourceNotFoundError(inner) => {
+                Error::ResourceNotFoundError(inner)
+            },
+            crate::operation::resume_transformation::ResumeTransformationError::AccessDeniedError(inner) => {
+                Error::AccessDeniedError(inner)
+            },
+            crate::operation::resume_transformation::ResumeTransformationError::Unhandled(inner) => {
+                Error::Unhandled(inner)
+            },
+        }
+    }
+}
+impl<R>
+    From<
+        ::aws_smithy_runtime_api::client::result::SdkError<
             crate::operation::send_telemetry_event::SendTelemetryEventError,
             R,
         >,
@@ -765,6 +824,9 @@ impl From<crate::operation::start_task_assist_code_generation::StartTaskAssistCo
             crate::operation::start_task_assist_code_generation::StartTaskAssistCodeGenerationError::InternalServerError(inner) => {
                 Error::InternalServerError(inner)
             }
+            crate::operation::start_task_assist_code_generation::StartTaskAssistCodeGenerationError::ServiceQuotaExceededError(inner) => {
+                Error::ServiceQuotaExceededError(inner)
+            }
             crate::operation::start_task_assist_code_generation::StartTaskAssistCodeGenerationError::ThrottlingError(inner) => {
                 Error::ThrottlingError(inner)
             }
@@ -820,6 +882,9 @@ impl From<crate::operation::start_transformation::StartTransformationError> for 
             },
             crate::operation::start_transformation::StartTransformationError::ValidationError(inner) => {
                 Error::ValidationError(inner)
+            },
+            crate::operation::start_transformation::StartTransformationError::ConflictError(inner) => {
+                Error::ConflictError(inner)
             },
             crate::operation::start_transformation::StartTransformationError::AccessDeniedError(inner) => {
                 Error::AccessDeniedError(inner)
@@ -884,6 +949,7 @@ impl ::std::error::Error for Error {
             Error::ConflictError(inner) => inner.source(),
             Error::InternalServerError(inner) => inner.source(),
             Error::ResourceNotFoundError(inner) => inner.source(),
+            Error::ServiceQuotaExceededError(inner) => inner.source(),
             Error::ThrottlingError(inner) => inner.source(),
             Error::ValidationError(inner) => inner.source(),
             Error::Unhandled(inner) => ::std::option::Option::Some(&*inner.source),
@@ -897,6 +963,7 @@ impl ::aws_types::request_id::RequestId for Error {
             Self::ConflictError(e) => e.request_id(),
             Self::InternalServerError(e) => e.request_id(),
             Self::ResourceNotFoundError(e) => e.request_id(),
+            Self::ServiceQuotaExceededError(e) => e.request_id(),
             Self::ThrottlingError(e) => e.request_id(),
             Self::ValidationError(e) => e.request_id(),
             Self::Unhandled(e) => e.meta.request_id(),

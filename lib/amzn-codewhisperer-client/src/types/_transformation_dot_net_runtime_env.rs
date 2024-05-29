@@ -35,6 +35,7 @@
 ///     TransformationDotNetRuntimeEnv::NetFrameworkV471 => { /* ... */ },
 ///     TransformationDotNetRuntimeEnv::NetFrameworkV472 => { /* ... */ },
 ///     TransformationDotNetRuntimeEnv::NetFrameworkV48 => { /* ... */ },
+///     TransformationDotNetRuntimeEnv::NetFrameworkV481 => { /* ... */ },
 ///     other @ _ if other.as_str() == "NewFeature" => { /* handles a case for `NewFeature` */ },
 ///     _ => { /* ... */ },
 /// }
@@ -114,6 +115,8 @@ pub enum TransformationDotNetRuntimeEnv {
     NetFrameworkV472,
     #[allow(missing_docs)] // documentation missing in model
     NetFrameworkV48,
+    #[allow(missing_docs)] // documentation missing in model
+    NetFrameworkV481,
     /// `Unknown` contains new variants that have been added since this code was generated.
     #[deprecated(
         note = "Don't directly match on `Unknown`. See the docs on this enum for the correct way to handle unknown variants."
@@ -146,6 +149,7 @@ impl ::std::convert::From<&str> for TransformationDotNetRuntimeEnv {
             "NET_FRAMEWORK_V_4_7_1" => TransformationDotNetRuntimeEnv::NetFrameworkV471,
             "NET_FRAMEWORK_V_4_7_2" => TransformationDotNetRuntimeEnv::NetFrameworkV472,
             "NET_FRAMEWORK_V_4_8" => TransformationDotNetRuntimeEnv::NetFrameworkV48,
+            "NET_FRAMEWORK_V_4_8_1" => TransformationDotNetRuntimeEnv::NetFrameworkV481,
             other => TransformationDotNetRuntimeEnv::Unknown(
                 crate::primitives::sealed_enum_unknown::UnknownVariantValue(other.to_owned()),
             ),
@@ -186,6 +190,7 @@ impl TransformationDotNetRuntimeEnv {
             TransformationDotNetRuntimeEnv::NetFrameworkV471 => "NET_FRAMEWORK_V_4_7_1",
             TransformationDotNetRuntimeEnv::NetFrameworkV472 => "NET_FRAMEWORK_V_4_7_2",
             TransformationDotNetRuntimeEnv::NetFrameworkV48 => "NET_FRAMEWORK_V_4_8",
+            TransformationDotNetRuntimeEnv::NetFrameworkV481 => "NET_FRAMEWORK_V_4_8_1",
             TransformationDotNetRuntimeEnv::Unknown(value) => value.as_str(),
         }
     }
@@ -216,6 +221,7 @@ impl TransformationDotNetRuntimeEnv {
             "NET_FRAMEWORK_V_4_7_1",
             "NET_FRAMEWORK_V_4_7_2",
             "NET_FRAMEWORK_V_4_8",
+            "NET_FRAMEWORK_V_4_8_1",
         ]
     }
 }
@@ -233,6 +239,37 @@ impl TransformationDotNetRuntimeEnv {
             #[allow(deprecated)]
             Self::Unknown(_) => ::std::result::Result::Err(crate::error::UnknownVariantError::new(value)),
             known => Ok(known),
+        }
+    }
+}
+impl ::std::fmt::Display for TransformationDotNetRuntimeEnv {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match self {
+            TransformationDotNetRuntimeEnv::Net50 => write!(f, "NET_5_0"),
+            TransformationDotNetRuntimeEnv::Net60 => write!(f, "NET_6_0"),
+            TransformationDotNetRuntimeEnv::Net70 => write!(f, "NET_7_0"),
+            TransformationDotNetRuntimeEnv::Net80 => write!(f, "NET_8_0"),
+            TransformationDotNetRuntimeEnv::NetCoreApp10 => write!(f, "NET_CORE_APP_1_0"),
+            TransformationDotNetRuntimeEnv::NetCoreApp11 => write!(f, "NET_CORE_APP_1_1"),
+            TransformationDotNetRuntimeEnv::NetCoreApp20 => write!(f, "NET_CORE_APP_2_0"),
+            TransformationDotNetRuntimeEnv::NetCoreApp21 => write!(f, "NET_CORE_APP_2_1"),
+            TransformationDotNetRuntimeEnv::NetCoreApp22 => write!(f, "NET_CORE_APP_2_2"),
+            TransformationDotNetRuntimeEnv::NetCoreApp30 => write!(f, "NET_CORE_APP_3_0"),
+            TransformationDotNetRuntimeEnv::NetCoreApp31 => write!(f, "NET_CORE_APP_3_1"),
+            TransformationDotNetRuntimeEnv::NetFrameworkV35 => write!(f, "NET_FRAMEWORK_V_3_5"),
+            TransformationDotNetRuntimeEnv::NetFrameworkV40 => write!(f, "NET_FRAMEWORK_V_4_0"),
+            TransformationDotNetRuntimeEnv::NetFrameworkV45 => write!(f, "NET_FRAMEWORK_V_4_5"),
+            TransformationDotNetRuntimeEnv::NetFrameworkV451 => write!(f, "NET_FRAMEWORK_V_4_5_1"),
+            TransformationDotNetRuntimeEnv::NetFrameworkV452 => write!(f, "NET_FRAMEWORK_V_4_5_2"),
+            TransformationDotNetRuntimeEnv::NetFrameworkV46 => write!(f, "NET_FRAMEWORK_V_4_6"),
+            TransformationDotNetRuntimeEnv::NetFrameworkV461 => write!(f, "NET_FRAMEWORK_V_4_6_1"),
+            TransformationDotNetRuntimeEnv::NetFrameworkV462 => write!(f, "NET_FRAMEWORK_V_4_6_2"),
+            TransformationDotNetRuntimeEnv::NetFrameworkV47 => write!(f, "NET_FRAMEWORK_V_4_7"),
+            TransformationDotNetRuntimeEnv::NetFrameworkV471 => write!(f, "NET_FRAMEWORK_V_4_7_1"),
+            TransformationDotNetRuntimeEnv::NetFrameworkV472 => write!(f, "NET_FRAMEWORK_V_4_7_2"),
+            TransformationDotNetRuntimeEnv::NetFrameworkV48 => write!(f, "NET_FRAMEWORK_V_4_8"),
+            TransformationDotNetRuntimeEnv::NetFrameworkV481 => write!(f, "NET_FRAMEWORK_V_4_8_1"),
+            TransformationDotNetRuntimeEnv::Unknown(value) => write!(f, "{}", value),
         }
     }
 }

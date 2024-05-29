@@ -15,6 +15,7 @@ impl super::Client {
     ///   - [`customization_arn(impl Into<String>)`](crate::operation::generate_completions::builders::GenerateCompletionsFluentBuilder::customization_arn) / [`set_customization_arn(Option<String>)`](crate::operation::generate_completions::builders::GenerateCompletionsFluentBuilder::set_customization_arn):<br>required: **false**<br>(undocumented)<br>
     ///   - [`opt_out_preference(OptOutPreference)`](crate::operation::generate_completions::builders::GenerateCompletionsFluentBuilder::opt_out_preference) / [`set_opt_out_preference(Option<OptOutPreference>)`](crate::operation::generate_completions::builders::GenerateCompletionsFluentBuilder::set_opt_out_preference):<br>required: **false**<br>(undocumented)<br>
     ///   - [`user_context(UserContext)`](crate::operation::generate_completions::builders::GenerateCompletionsFluentBuilder::user_context) / [`set_user_context(Option<UserContext>)`](crate::operation::generate_completions::builders::GenerateCompletionsFluentBuilder::set_user_context):<br>required: **false**<br>(undocumented)<br>
+    ///   - [`profile_arn(impl Into<String>)`](crate::operation::generate_completions::builders::GenerateCompletionsFluentBuilder::profile_arn) / [`set_profile_arn(Option<String>)`](crate::operation::generate_completions::builders::GenerateCompletionsFluentBuilder::set_profile_arn):<br>required: **false**<br>(undocumented)<br>
     /// - On success, responds with
     ///   [`GenerateCompletionsOutput`](crate::operation::generate_completions::GenerateCompletionsOutput)
     ///   with field(s):
