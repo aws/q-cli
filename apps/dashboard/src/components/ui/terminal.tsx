@@ -33,13 +33,20 @@ function Terminal({ title, tabNames, className, children }: TerminalProps) {
       )}
     >
       <div className="w-full h-auto rounded-lg flex flex-col bg-[#161A1D]">
-        <div className={cn("flex flex-row items-center gap-1.5 p-2 bg-zinc-700 rounded-t relative", title && "h-7")}>
+        <div
+          className={cn(
+            "flex flex-row items-center gap-1.5 p-2 bg-zinc-700 rounded-t relative",
+            title && "h-7",
+          )}
+        >
           <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
           <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
           <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
           {title && (
             <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <span className="text-xs text-zinc-200 font-mono cursor-default">{title}</span>
+              <span className="text-xs text-zinc-200 font-mono cursor-default">
+                {title}
+              </span>
             </div>
           )}
         </div>

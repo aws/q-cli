@@ -11,7 +11,6 @@ import Preferences from "./pages/settings/preferences";
 import Integrations from "./pages/settings/integrations";
 import Keybindings from "./pages/settings/keybindings";
 import Licenses from "./pages/licenses";
-import ModalContext from "./context/modal";
 import { Suspense, useContext, useEffect, useRef } from "react";
 import Modal from "./components/modal";
 import { Telemetry, Event } from "@withfig/api-bindings";
@@ -33,15 +32,12 @@ import { useState } from "react";
 
 function App() {
   const store = useRef(createStore()).current;
-  const [modal, setModal] = useState<React.ReactNode | null>(null);
   const [listening, setListening] = useState<string | null>(null);
 
   return (
     <StoreContext.Provider value={store}>
       <ListenerContext.Provider value={{ listening, setListening }}>
-        <ModalContext.Provider value={{ modal, setModal }}>
-          <AppLoading />
-        </ModalContext.Provider>
+        <AppLoading />
       </ListenerContext.Provider>
     </StoreContext.Provider>
   );
@@ -234,6 +230,7 @@ function Layout() {
   const navData = useNavData();
   const error = accessibilityCheck === false || dotfilesCheck === false;
 
+  // eslint-disable-next-line
   const [notifCount, _] = useLocalStateZodDefault(
     NOTIFICATIONS_SEEN_STATE_KEY,
     z.number(),

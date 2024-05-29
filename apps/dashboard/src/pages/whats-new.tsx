@@ -131,8 +131,12 @@ function FeedItem({ item }: { item: FeedItemData }) {
       <div className={cn("h-2 rounded-full mt-6 p-1.5 z-20", typeBgColor)} />
       <div className="flex flex-col items-start">
         <div className="text-xs">
-          <span className={cn("font-mono font-semibold", typeTextColor)}>{typeName}</span>
-          {date && <span className="opacity-50 font-extralight ml-2">{date}</span>}
+          <span className={cn("font-mono font-semibold", typeTextColor)}>
+            {typeName}
+          </span>
+          {date && (
+            <span className="opacity-50 font-extralight ml-2">{date}</span>
+          )}
         </div>
         <h2 className="text-xl font-bold font-ember">{item.title}</h2>
         <Markdown {...MARKDOWN_OPTIONS} className="text-sm mb-1">

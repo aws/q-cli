@@ -1,14 +1,13 @@
-import ModalContext from "@/context/modal";
 import { InstallCheck } from "@/types/preferences";
 import { Fig, Internal } from "@withfig/api-bindings";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "../../ui/button";
 import Lockup from "../../svg/logo";
 import onboarding from "@/data/onboarding";
 import { useStatusCheck } from "@/hooks/store/useStatusCheck";
 import LoginModal from "./login";
 import InstallModal from "./install";
-import { useLocalState } from "@/hooks/store/useState";
+import { useLocalState, useRefreshLocalState } from "@/hooks/store/useState";
 import migrate_dark from "@assets/images/fig-migration/dark.png?url";
 
 export default function OnboardingModal() {
@@ -18,10 +17,10 @@ export default function OnboardingModal() {
   const [migrationEnded, setMigrationEnded] = useLocalState(
     "desktop.migratedFromFig.UiComplete",
   );
-  const { setModal } = useContext(ModalContext);
   const [dotfilesCheck, refreshDotfiles] = useStatusCheck("dotfiles");
   const [accessibilityCheck, refreshAccessibility] =
     useStatusCheck("accessibility");
+  const refreshLocalState = useRefreshLocalState();
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_dotfiles, setDotfiles] = useState(dotfilesCheck);
@@ -49,8 +48,11 @@ export default function OnboardingModal() {
     refreshDotfiles();
     Internal.sendOnboardingRequest({
       action: Fig.OnboardingAction.FINISH_ONBOARDING,
-    });
-    setModal(null);
+    })
+      .then(() => {
+        refreshLocalState().catch((err) => console.error(err));
+      })
+      .catch((err) => console.error(err));
   }
 
   function skipInstall() {

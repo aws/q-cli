@@ -54,3 +54,9 @@ export function useLocalStateZodDefault<T>(
     (value: T) => setState(value),
   ];
 }
+
+export function useRefreshLocalState() {
+  const store = useContext(StoreContext);
+  if (!store) throw new Error("Missing StoreContext.Provider in the tree");
+  return useStore(store, (state) => state.refreshLocalState);
+}

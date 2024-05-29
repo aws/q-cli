@@ -21,6 +21,7 @@ export interface Data {
 export interface Actions {
   setSetting: (key: string, value: unknown) => Promise<void>;
   setState: (key: string, value: unknown) => Promise<void>;
+  refreshLocalState: () => Promise<void>;
   refreshAuth: () => Promise<void>;
   refreshAccessibilityIsInstalled: () => Promise<void>;
   refreshDotfilesIsInstalled: () => Promise<void>;
@@ -65,6 +66,10 @@ export const createStore = () => {
     refreshAuth: async () => {
       const auth = await Auth.status();
       set(() => ({ auth }));
+    },
+    refreshLocalState: async () => {
+      const state = await ApiState.current();
+      set(() => ({ state }));
     },
     isLoading: () => {
       const { state, settings, auth } = get();
