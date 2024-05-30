@@ -12,6 +12,18 @@
     },
     {
       "type": "release",
+      "date": "2024-05-30",
+      "version": "1.1.1",
+      "title": "Version 1.1.1",
+      "changes": [
+        {
+          "type": "fixed",
+          "description": "Login infinite redirect for first time users."
+        }
+      ]
+    },
+    {
+      "type": "release",
       "date": "2024-05-20",
       "version": "1.1.0",
       "title": "Version 1.1.0",
