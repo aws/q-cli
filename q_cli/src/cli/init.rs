@@ -7,7 +7,6 @@ use std::io::{
 use std::path::Path;
 use std::process::ExitCode;
 
-use auth::AMZN_START_URL;
 use clap::Args;
 use crossterm::style::Stylize;
 use eyre::Result;
@@ -151,9 +150,7 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
         to_source.push(assign_shell_variable(shell, "SHOULD_QTERM_LAUNCH", status, false));
     }
 
-    // Grabbing the real auth is too slow here, so we just rely on the cached value
-    let is_amzn_user = fig_settings::state::get_string_or("auth.idc.start-url", "") == AMZN_START_URL;
-    let inline_enabled = fig_settings::settings::get_bool_or(INLINE_ENABLED_SETTINGS_KEY, is_amzn_user);
+    let inline_enabled = fig_settings::settings::get_bool_or(INLINE_ENABLED_SETTINGS_KEY, true);
 
     if let When::Post = when {
         if !matches!(
@@ -264,7 +261,7 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
         }
     }
 
-    if inline_enabled && when == &When::Post && shell == &Shell::Zsh {
+    if inline_enabled && when == &When::Post && shell == &Shell::Zsh && !*IS_SNAPSHOT_TEST {
         let key = "prompt.inline.count";
         if let Ok(prompt_count) = fig_settings::state::get_int(key) {
             let prompt_count = prompt_count.unwrap_or_default();
@@ -313,8 +310,8 @@ fn inline_prompt_code(shell: Shell) -> String {
         "Q_INLINE_PROMPT",
         GuardAssignment::AfterSourcing,
         format!(
-            "printf '\\n{PRODUCT_NAME} now supports Inline AI suggestions!\\n\\nTo disable run: {}\\n\\n'\n",
-            format!("{CLI_BINARY_NAME} settings {INLINE_ENABLED_SETTINGS_KEY} false").magenta()
+            "printf '\\n{PRODUCT_NAME} now supports AI-powered inline completions!\\n\\nTo disable run: {}\\n\\n'\n",
+            format!("{CLI_BINARY_NAME} inline disable").magenta()
         ),
     )
 }
@@ -386,8 +383,8 @@ mod tests {
             assert_eq!(
                 inline_prompt_output,
                 format!(
-                    "\n{PRODUCT_NAME} now supports Inline AI suggestions!\n\nTo disable run: {}\n\n",
-                    format!("{CLI_BINARY_NAME} settings {INLINE_ENABLED_SETTINGS_KEY} false").magenta()
+                    "\n{PRODUCT_NAME} now supports AI-powered inline completions!\n\nTo disable run: {}\n\n",
+                    format!("{CLI_BINARY_NAME} inline disable").magenta()
                 )
             );
         }

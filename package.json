@@ -4,7 +4,7 @@
   "repository": "git@github.com:withfig/macos",
   "author": "Fig Team",
   "license": "MIT",
-  "packageManager": "pnpm@9.0.2",
+  "packageManager": "pnpm@9.1.4",
   "scripts": {
     "build": "pnpm -r build",
     "b": "pnpm build",

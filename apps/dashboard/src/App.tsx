@@ -25,7 +25,7 @@ import { useAccessibilityCheck, useDotfilesCheck } from "./hooks/store";
 import { useLocalStateZodDefault } from "./hooks/store/useState";
 import { z } from "zod";
 import { useAuth } from "./hooks/store/useAuth";
-import { AMZN_START_URL, NOTIFICATIONS_SEEN_STATE_KEY } from "./lib/constants";
+import { NOTIFICATIONS_SEEN_STATE_KEY } from "./lib/constants";
 import WhatsNew from "./pages/whats-new";
 import notificationFeedItems from "../../../feed.json";
 import { useState } from "react";
@@ -145,84 +145,76 @@ function Router() {
   );
 }
 
-const useNavData = () => {
-  const auth = useAuth();
-  const isAmzn = auth.startUrl === AMZN_START_URL;
-  return [
-    {
-      type: "link",
-      name: "Getting started",
-      link: "/",
-    },
-    // {
-    //   type: "link",
-    //   name: "Getting started",
-    //   link: "/onboarding",
-    // },
-    {
-      type: "link",
-      name: "What's new?",
-      link: "/whats-new",
-    },
-    {
-      type: "link",
-      name: "Help & support",
-      link: "/help",
-    },
-    {
-      type: "header",
-      name: "Features",
-    },
-    {
-      type: "link",
-      name: "CLI Completions",
-      link: "/autocomplete",
-    },
-    {
-      type: "link",
-      name: "Chat",
-      link: "/chat",
-    },
-    ...(isAmzn
-      ? [
-          {
-            type: "link",
-            name: "Inline",
-            link: "/inline",
-          },
-        ]
-      : []),
-    {
-      type: "link",
-      name: "Translate",
-      link: "/translate",
-    },
-    {
-      type: "header",
-      name: "Settings",
-    },
-    // {
-    //   type: "link",
-    //   name: "Account",
-    //   link: "/account",
-    // },
-    {
-      type: "link",
-      name: "Keybindings",
-      link: "/keybindings",
-    },
-    {
-      type: "link",
-      name: "Integrations",
-      link: "/integrations",
-    },
-    {
-      type: "link",
-      name: "Preferences",
-      link: "/preferences",
-    },
-  ];
-};
+const useNavData = () => [
+  {
+    type: "link",
+    name: "Getting started",
+    link: "/",
+  },
+  // {
+  //   type: "link",
+  //   name: "Getting started",
+  //   link: "/onboarding",
+  // },
+  {
+    type: "link",
+    name: "What's new?",
+    link: "/whats-new",
+  },
+  {
+    type: "link",
+    name: "Help & support",
+    link: "/help",
+  },
+  {
+    type: "header",
+    name: "Features",
+  },
+  {
+    type: "link",
+    name: "CLI Completions",
+    link: "/autocomplete",
+  },
+  {
+    type: "link",
+    name: "Chat",
+    link: "/chat",
+  },
+  {
+    type: "link",
+    name: "Inline",
+    link: "/inline",
+  },
+  {
+    type: "link",
+    name: "Translate",
+    link: "/translate",
+  },
+  {
+    type: "header",
+    name: "Settings",
+  },
+  // {
+  //   type: "link",
+  //   name: "Account",
+  //   link: "/account",
+  // },
+  {
+    type: "link",
+    name: "Keybindings",
+    link: "/keybindings",
+  },
+  {
+    type: "link",
+    name: "Integrations",
+    link: "/integrations",
+  },
+  {
+    type: "link",
+    name: "Preferences",
+    link: "/preferences",
+  },
+];
 
 function Layout() {
   const [accessibilityCheck] = useAccessibilityCheck();

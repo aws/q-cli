@@ -704,19 +704,29 @@ impl DoctorCheck for InlineCheck {
 
     async fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
         let shell = get_shell_context().await;
-
-        let is_amzn_user = matches!(auth::is_amzn_user().await, Ok(true));
-        let inline_enabled = fig_settings::settings::get_bool_or("inline.enabled", is_amzn_user);
+        let inline_enabled = fig_settings::settings::get_bool_or("inline.enabled", true);
         let is_zsh = matches!(shell, Ok(Some(Shell::Zsh)));
 
-        if inline_enabled && is_zsh {
+        if is_zsh && inline_enabled {
             DoctorCheckType::NormalCheck
-        } else {
+        } else if !is_zsh {
             DoctorCheckType::NoCheck
+        } else {
+            DoctorCheckType::SoftCheck
         }
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        if !fig_settings::settings::get_bool_or("inline.enabled", true) {
+            return Err(DoctorError::Warning(
+                format!(
+                    "Inline is disabled, to re-enable run: {}",
+                    format!("{CLI_BINARY_NAME} inline enable").magenta()
+                )
+                .into(),
+            ));
+        }
+
         if std::env::var_os(Q_USING_ZSH_AUTOSUGGESTIONS).is_some() {
             return Err(DoctorError::Error {
                 reason: "Using zsh-autosuggestions is not supported at the same time as Inline".into(),
