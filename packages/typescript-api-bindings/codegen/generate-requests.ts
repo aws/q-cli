@@ -7,7 +7,11 @@ import {
   IndentationText,
 } from "ts-morph";
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 /* eslint-enable import/no-extraneous-dependencies */
 const capitalizeFirstLetter = (str: string) =>
@@ -179,11 +183,9 @@ const sourceFile = project.createSourceFile(
       .sort()
       .map(capitalizeFirstLetter);
     writer.writeLine(
-      `import { \n${imports.join(
-        ",\n",
-      )}\n } from "@fig/fig-api-proto/dist/fig.pb";`,
+      `import { \n${imports.join(",\n")}\n } from "@fig/fig-api-proto/fig";`,
     );
-    writer.writeLine(`import { sendMessage } from "./core";`).blankLine();
+    writer.writeLine(`import { sendMessage } from "./core.js";`).blankLine();
 
     requestsWithMatchingResponses.forEach((request) =>
       writeGenericSendRequestWithResponseFunction(writer, normalize(request)),

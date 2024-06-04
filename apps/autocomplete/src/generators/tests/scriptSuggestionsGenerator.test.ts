@@ -1,4 +1,4 @@
-import * as apiBindingsWrappers from "@amzn/fig-io-api-bindings-wrappers/src/executeCommand";
+import * as apiBindingsWrappers from "@amzn/fig-io-api-bindings-wrappers/executeCommand";
 
 import { Annotation } from "@amzn/fig-io-autocomplete-parser";
 import {

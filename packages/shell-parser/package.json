@@ -3,12 +3,10 @@
   "version": "1.0.0",
   "author": "The Fig team",
   "type": "module",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "main": "dist/index.js",
-  "files": [
-    "dist/"
-  ],
+  "exports": "./dist/index.js",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "dev": "tsc --watch",
     "build": "tsc",
@@ -18,9 +16,11 @@
     "lint:fix": "eslint --fix src tests && prettier --write src tests",
     "clean": "rm -rf dist"
   },
+  "dependencies": {
+    "@internal/shared": "workspace:^"
+  },
   "devDependencies": {
     "@amzn/fig-io-eslint-config": "workspace:^",
-    "@internal/shared": "workspace:^",
     "@internal/tsconfig": "workspace:^",
     "@vitest/coverage-v8": "^1.6.0",
     "eslint": "^8.57.0",

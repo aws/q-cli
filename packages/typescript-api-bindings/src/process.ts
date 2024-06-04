@@ -1,4 +1,4 @@
-import { sendRunProcessRequest } from "./requests";
+import { sendRunProcessRequest } from "./requests.js";
 
 export async function run({
   executable,

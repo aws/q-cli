@@ -1,18 +1,7 @@
 {
-  "extends": "@tsconfig/recommended/tsconfig.json",
-  "exclude": ["node_modules/"],
-  "include": ["src/"],
+  "extends": ["@internal/tsconfig/base.json", "@internal/tsconfig/dom.json"],
   "compilerOptions": {
-    "lib": ["ESNext", "DOM"],
-    "moduleResolution": "node",
-    "sourceMap": true,
-    "rootDir": "./src",
-    "allowSyntheticDefaultImports": true,
-    "baseUrl": "./",
-    "declaration": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "outDir": "dist"
   },
+  "include": ["src/"]
 }

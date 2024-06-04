@@ -1,20 +1,8 @@
 {
+  "extends": ["@internal/tsconfig/base.json", "@internal/tsconfig/dom.json"],
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "strict": true,
-    "sourceMap": true,
-    "lib": ["ESNext", "DOM"],
-    "rootDir": "./src/",
-    "outDir": "./dist",
-    "skipLibCheck": true,
-    "declaration": true,
-    "declarationMap": true,
-    "esModuleInterop": true,
-    "allowJs": true,
+    "outDir": "dist",
     "types": ["@internal/types", "@withfig/autocomplete-types"]
   },
-  "include": ["./src/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": ["src"]
 }

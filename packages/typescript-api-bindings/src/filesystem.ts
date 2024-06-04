@@ -5,7 +5,7 @@ import {
   sendContentsOfDirectoryRequest,
   sendAppendToFileRequest,
   sendCreateDirectoryRequest,
-} from "./requests";
+} from "./requests.js";
 
 export async function write(path: string, contents: string) {
   return sendWriteFileRequest({

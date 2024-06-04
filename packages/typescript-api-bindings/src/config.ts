@@ -1,7 +1,7 @@
 import {
   sendGetConfigPropertyRequest,
   sendUpdateConfigPropertyRequest,
-} from "./requests";
+} from "./requests.js";
 
 export async function get(key: string) {
   const response = await sendGetConfigPropertyRequest({ key });

@@ -9,6 +9,7 @@ TS_FLAGS="--plugin=${TS_PROTO} \
             --ts_proto_opt=esModuleInterop=true \
             --ts_proto_opt=oneof=unions \
             --ts_proto_opt=fileSuffix=.pb \
+            --ts_proto_opt=importSuffix=.js \
             --ts_proto_opt=removeEnumPrefix=true \
             --ts_proto_opt=useExactTypes=false \
             --ts_proto_opt=globalThisPolyfill=true"
@@ -18,8 +19,10 @@ API="./fig.proto ./fig_common.proto"
 OUT="dist"
 
 # clean the out dir
-rm -rf $OUT
-mkdir -p $OUT
+rm -rf "$OUT"
+mkdir -p "$OUT"
 
 # shellcheck disable=SC2086
 protoc $FLAGS $TS_FLAGS "--ts_proto_out=$OUT" $API
+
+tsc

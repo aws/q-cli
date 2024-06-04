@@ -1,27 +1,27 @@
-import * as Fig from "@fig/fig-api-proto/dist/fig.pb";
-import * as WindowPosition from "./position";
-import * as Settings from "./settings";
-import * as EditBufferNotifications from "./editbuffer";
-import * as PTY from "./pty";
-import * as Process from "./process";
-import * as Shell from "./shell";
-import * as Keybindings from "./keybindings";
-import * as Event from "./event";
-import * as Defaults from "./defaults";
-import * as Telemetry from "./telemetry";
-import * as fs from "./filesystem";
-import * as Config from "./config";
-import * as Native from "./native";
-import * as Debugger from "./debugger";
-import * as State from "./state";
-import * as Install from "./install";
-import * as Types from "./types";
-import * as User from "./user";
-import * as History from "./history";
-import * as Auth from "./auth";
-import * as Codewhisperer from "./codewhisperer";
+import * as Fig from "@fig/fig-api-proto/fig";
+import * as WindowPosition from "./position.js";
+import * as Settings from "./settings.js";
+import * as EditBufferNotifications from "./editbuffer.js";
+import * as PTY from "./pty.js";
+import * as Process from "./process.js";
+import * as Shell from "./shell.js";
+import * as Keybindings from "./keybindings.js";
+import * as Event from "./event.js";
+import * as Defaults from "./defaults.js";
+import * as Telemetry from "./telemetry.js";
+import * as fs from "./filesystem.js";
+import * as Config from "./config.js";
+import * as Native from "./native.js";
+import * as Debugger from "./debugger.js";
+import * as State from "./state.js";
+import * as Install from "./install.js";
+import * as Types from "./types.js";
+import * as User from "./user.js";
+import * as History from "./history.js";
+import * as Auth from "./auth.js";
+import * as Codewhisperer from "./codewhisperer.js";
 
-import * as Internal from "./requests";
+import * as Internal from "./requests.js";
 
 const lib = {
   Config,

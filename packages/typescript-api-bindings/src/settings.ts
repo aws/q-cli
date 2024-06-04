@@ -1,13 +1,13 @@
 import {
   SettingsChangedNotification,
   NotificationType,
-} from "@fig/fig-api-proto/dist/fig.pb";
-import { _subscribe, NotificationResponse } from "./notifications";
+} from "@fig/fig-api-proto/fig";
+import { _subscribe, NotificationResponse } from "./notifications.js";
 
 import {
   sendGetSettingsPropertyRequest,
   sendUpdateSettingsPropertyRequest,
-} from "./requests";
+} from "./requests.js";
 
 export const didChange = {
   subscribe(

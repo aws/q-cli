@@ -7,10 +7,10 @@ import {
   NotificationType,
   // eslint-disable-next-line camelcase
   Result_Result,
-} from "@fig/fig-api-proto/dist/fig.pb";
+} from "@fig/fig-api-proto/fig";
 
-import { sendInstallRequest } from "./requests";
-import { NotificationResponse, _subscribe } from "./notifications";
+import { sendInstallRequest } from "./requests.js";
+import { NotificationResponse, _subscribe } from "./notifications.js";
 
 export type Component =
   | "dotfiles"

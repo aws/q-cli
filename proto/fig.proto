@@ -675,7 +675,7 @@ message CodewhispererCustomization {
 message CodewhispererListCustomizationRequest {}
 
 message CodewhispererListCustomizationResponse {
-  repeated CodewhispererCustomization customizations = 1; 
+  repeated CodewhispererCustomization customizations = 1;
 }
 
 /// Notifications

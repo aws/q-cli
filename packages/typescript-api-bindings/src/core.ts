@@ -1,9 +1,9 @@
 import {
   ServerOriginatedMessage,
   ClientOriginatedMessage,
-} from "@fig/fig-api-proto/dist/fig.pb";
+} from "@fig/fig-api-proto/fig";
 
-import { b64ToBytes, bytesToBase64 } from "./utils";
+import { b64ToBytes, bytesToBase64 } from "./utils.js";
 
 interface GlobalAPIError {
   error: string;

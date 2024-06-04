@@ -1,7 +1,7 @@
 import {
   sendPseudoterminalExecuteRequest,
   sendPseudoterminalWriteRequest,
-} from "./requests";
+} from "./requests.js";
 
 /**
  * @deprecated

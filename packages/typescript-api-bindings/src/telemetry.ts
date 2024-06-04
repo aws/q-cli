@@ -1,9 +1,9 @@
-import { TelemetryProperty } from "@fig/fig-api-proto/dist/fig.pb";
+import { TelemetryProperty } from "@fig/fig-api-proto/fig";
 import {
   sendTelemetryIdentifyRequest,
   sendTelemetryPageRequest,
   sendTelemetryTrackRequest,
-} from "./requests";
+} from "./requests.js";
 
 type Property = string | boolean | number | null;
 type NamespaceSpecifier =

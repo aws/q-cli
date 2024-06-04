@@ -1,6 +1,6 @@
 // eslint-disable-next-line camelcase
-import { HistoryQueryRequest_Param } from "@fig/fig-api-proto/dist/fig.pb";
-import { sendHistoryQueryRequest } from "./requests";
+import { HistoryQueryRequest_Param } from "@fig/fig-api-proto/fig";
+import { sendHistoryQueryRequest } from "./requests.js";
 
 export type Param = string | number | Uint8Array | null;
 

@@ -1,8 +1,7 @@
 {
-  "extends": "@internal/tsconfig/base.json",
+  "extends": ["@internal/tsconfig/base.json", "@internal/tsconfig/dom.json"],
   "compilerOptions": {
-    "outDir": "dist",
-    "lib": ["ESNext", "DOM"]
+    "outDir": "dist"
   },
-  "include": ["src/**/*.ts", "index.ts"]
+  "include": ["src"]
 }

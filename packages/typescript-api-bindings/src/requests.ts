@@ -68,8 +68,8 @@ import {
   UserLogoutRequest,
   WindowFocusRequest,
   WriteFileRequest,
-} from "@fig/fig-api-proto/dist/fig.pb";
-import { sendMessage } from "./core";
+} from "@fig/fig-api-proto/fig";
+import { sendMessage } from "./core.js";
 
 export async function sendPositionWindowRequest(
   request: PositionWindowRequest,

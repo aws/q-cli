@@ -1,9 +1,8 @@
 {
-  "extends": "@internal/tsconfig/base.json",
+  "extends": ["@internal/tsconfig/base.json", "@internal/tsconfig/dom.json"],
   "compilerOptions": {
-    "lib": ["ESNext", "DOM"],
-    "outDir": "./dist",
-    "types": ["@withfig/autocomplete-types"]
+    "outDir": "dist",
+    "types": ["@internal/types"]
   },
-  "include": ["src/**/*.ts", "../types/global.d.ts"]
+  "include": ["src"]
 }

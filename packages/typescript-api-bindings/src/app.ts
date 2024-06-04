@@ -1,4 +1,4 @@
-import { sendDebuggerUpdateRequest } from "./requests";
+import { sendDebuggerUpdateRequest } from "./requests.js";
 
 /**
  * @param {string}  message - the message that will appear in the debugger UI.

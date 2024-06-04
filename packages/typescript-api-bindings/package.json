@@ -2,24 +2,14 @@
   "name": "@withfig/api-bindings",
   "version": "0.30.3",
   "license": "MIT",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "typings": "./dist/cjs/index.d.ts",
-  "exports": {
-    "require": "./dist/cjs/index.js",
-    "import": "./dist/esm/index.js"
-  },
-  "files": [
-    "dist"
-  ],
+  "type": "module",
+  "exports": "./dist/index.js",
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   },
   "scripts": {
     "clean": "rm -rf dist/",
-    "build": "npm run clean && npm run generate-requests && npm run build:cjs && npm run build:esm",
-    "build:cjs": "tsc --declaration --outDir dist/cjs",
-    "build:esm": "tsc --declaration --module esnext --outDir dist/esm",
+    "build": "npm run clean && npm run generate-requests && tsc",
     "lint": "eslint src && prettier --check src",
     "lint:fix": "eslint --fix src && prettier --write src",
     "precommit": "lint-staged",
@@ -32,6 +22,7 @@
   },
   "devDependencies": {
     "@amzn/fig-io-eslint-config": "workspace:^",
+    "@internal/tsconfig": "workspace:^",
     "@tsconfig/recommended": "^1.0.6",
     "@types/node": "^20.12.12",
     "@typescript-eslint/eslint-plugin": "^7.11.0",

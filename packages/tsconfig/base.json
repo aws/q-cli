@@ -1,17 +1,23 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "strict": true,
-    "sourceMap": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
+    "target": "es2020",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "lib": ["ESNext"],
-    "skipLibCheck": true,
+
     "declaration": true,
-    "allowJs": true
+    "stripInternal": true,
+    "sourceMap": true,
+    "newLine": "lf",
+
+    "experimentalDecorators": true,
+    "esModuleInterop": true,
+
+    "strict": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true
   },
-  "exclude": ["node_modules/**"]
+  "exclude": ["node_modules", "build", "dist"]
 }

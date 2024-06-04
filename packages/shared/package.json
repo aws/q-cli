@@ -6,6 +6,9 @@
   "exports": {
     "./*": "./dist/*.js"
   },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "build": "tsc",
     "test": "vitest",
@@ -19,6 +22,7 @@
   "devDependencies": {
     "@amzn/fig-io-eslint-config": "workspace:^",
     "@internal/fuzzysort": "workspace:^",
+    "@internal/tsconfig": "workspace:^",
     "@internal/types": "workspace:^",
     "@typescript-eslint/eslint-plugin": "^7.11.0",
     "@withfig/autocomplete-types": "^1.31.0",

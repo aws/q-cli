@@ -1,5 +1,5 @@
-import { CodewhispererCustomization as Customization } from "@fig/fig-api-proto/dist/fig.pb";
-import { sendCodewhispererListCustomizationRequest } from "./requests";
+import { CodewhispererCustomization as Customization } from "@fig/fig-api-proto/fig";
+import { sendCodewhispererListCustomizationRequest } from "./requests.js";
 
 const listCustomizations = async () =>
   (await sendCodewhispererListCustomizationRequest({})).customizations;

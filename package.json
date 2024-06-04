@@ -6,19 +6,19 @@
   "license": "MIT",
   "packageManager": "pnpm@9.1.4",
   "scripts": {
-    "build": "pnpm -r build",
-    "b": "pnpm build",
+    "build": "turbo build",
+    "b": "turbo build",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "coverage": "vitest run --coverage",
-    "lint": "pnpm -r lint",
-    "lint:fix": "pnpm -r lint:fix",
-    "dev": "pnpm -r dev",
+    "lint": "turbo lint",
+    "lint:fix": "turbo lint:fix",
+    "dev": "turbo dev",
     "dev:autocomplete": "pnpm -C apps/autocomplete dev",
     "dev:dashboard": "pnpm -C apps/dashboard dev",
     "preview:autocomplete": "pnpm -C apps/autocomplete preview",
     "preview:dashboard": "pnpm -C apps/dashboard preview",
-    "clean": "pnpm -r clean",
+    "clean": "turbo clean",
     "prepare": "husky install",
     "precommit": "lint-staged --config .lintstagedrc.mjs"
   },
@@ -29,6 +29,7 @@
     "lint-staged": "^15.2.5",
     "prettier": "^3.2.5",
     "tsx": "^4.11.0",
+    "turbo": "^2.0.1",
     "vitest": "^1.6.0"
   }
 }

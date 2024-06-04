@@ -3,12 +3,10 @@
   "version": "1.0.0",
   "author": "The Fig team",
   "type": "module",
-  "private": true,
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist/"
-  ],
+  "exports": "./dist/index.js",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "dev": "tsc --watch",
     "build": "tsc",

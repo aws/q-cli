@@ -1,7 +1,7 @@
 import {
   sendGetDefaultsPropertyRequest,
   sendUpdateDefaultsPropertyRequest,
-} from "./requests";
+} from "./requests.js";
 
 /**
  * @deprecated

@@ -1,9 +1,14 @@
 {
   "name": "@fig/fig-api-proto",
   "version": "1.0.0",
-  "files": [
-    "dist"
-  ],
+  "type": "module",
+  "exports": {
+    "./fig": "./dist/fig.pb.js",
+    "./fig_common": "./dist/fig_common.pb.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "build": "./build-ts.sh",
     "lint": "buf lint && (buf format --exit-code > /dev/null || (echo 'Run `buf format -w`' && exit 1))",
@@ -16,6 +21,8 @@
     "protobufjs": "^7.3.0"
   },
   "devDependencies": {
-    "ts-proto": "~1.176.1"
+    "@internal/tsconfig": "workspace:^",
+    "ts-proto": "~1.176.1",
+    "typescript": "^5.4.5"
   }
 }

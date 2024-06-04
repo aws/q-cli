@@ -1,28 +1,35 @@
-declare global {
-  namespace fig {
-    const constants:
-      | {
-          version?: string;
-          os?: string;
-          supportApiProto?: boolean;
-          apiProtoUrl?: string;
-        }
-      | undefined;
-    const quiet: boolean | undefined;
-  }
+/* eslint-disable no-var, vars-on-top */
 
-  interface Window {
-    webkit?: {
-      messageHandlers?: Record<string, unknown> & {
-        proto?: {
-          postMessage: (message: string) => void;
+declare global {
+  var fig:
+    | {
+        constants:
+          | {
+              version?: string;
+              os?: string;
+              supportApiProto?: boolean;
+              apiProtoUrl?: string;
+            }
+          | undefined;
+        quiet: boolean | undefined;
+      }
+    | undefined;
+
+  var webkit:
+    | {
+        messageHandlers?: Record<string, unknown> & {
+          proto?: {
+            postMessage: (message: string) => void;
+          };
         };
-      };
-    };
-    ipc?: {
-      postMessage?: (message: string) => void;
-    };
-  }
+      }
+    | undefined;
+
+  var ipc:
+    | {
+        postMessage?: (message: string) => void;
+      }
+    | undefined;
 }
 
 export {};

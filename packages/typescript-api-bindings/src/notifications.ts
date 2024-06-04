@@ -3,9 +3,9 @@ import {
   ServerOriginatedMessage,
   NotificationRequest,
   NotificationType,
-} from "@fig/fig-api-proto/dist/fig.pb";
+} from "@fig/fig-api-proto/fig";
 
-import { sendMessage } from "./core";
+import { sendMessage } from "./core.js";
 
 export type NotificationResponse = {
   unsubscribe: boolean;

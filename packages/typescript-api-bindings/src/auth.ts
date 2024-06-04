@@ -3,12 +3,12 @@ import {
   // eslint-disable-next-line camelcase
   AuthStatusResponse_AuthKind,
   AuthBuilderIdPollCreateTokenResponse_PollStatus as PollStatus,
-} from "@fig/fig-api-proto/dist/fig.pb";
+} from "@fig/fig-api-proto/fig";
 import {
   sendAuthBuilderIdStartDeviceAuthorizationRequest,
   sendAuthBuilderIdPollCreateTokenRequest,
   sendAuthStatusRequest,
-} from "./requests";
+} from "./requests.js";
 
 export function status() {
   return sendAuthStatusRequest({}).then((res) => {

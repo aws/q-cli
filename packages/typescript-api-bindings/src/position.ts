@@ -1,4 +1,4 @@
-import { sendPositionWindowRequest } from "./requests";
+import { sendPositionWindowRequest } from "./requests.js";
 
 // Developer Facing API
 export async function isValidFrame(frame: {

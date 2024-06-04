@@ -2,9 +2,9 @@ import {
   Action,
   KeybindingPressedNotification,
   NotificationType,
-} from "@fig/fig-api-proto/dist/fig.pb";
-import { sendUpdateApplicationPropertiesRequest } from "./requests";
-import { _subscribe, NotificationResponse } from "./notifications";
+} from "@fig/fig-api-proto/fig";
+import { sendUpdateApplicationPropertiesRequest } from "./requests.js";
+import { _subscribe, NotificationResponse } from "./notifications.js";
 
 export function pressed(
   handler: (
