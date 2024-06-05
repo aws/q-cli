@@ -27,7 +27,7 @@
       "@/*": ["./src/*"],
       "@assets/*": ["./assets/*"]
     },
-    "types": ["@internal/types"]
+    "types": ["@amzn/fig-io-types"]
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]

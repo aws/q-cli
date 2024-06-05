@@ -1,4 +1,4 @@
-import { NotificationType } from "@fig/fig-api-proto/fig";
+import { NotificationType } from "@amzn/fig-io-proto/fig";
 import { _subscribe, NotificationResponse } from "./notifications.js";
 
 export function subscribe<T>(

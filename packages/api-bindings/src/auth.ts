@@ -3,7 +3,7 @@ import {
   // eslint-disable-next-line camelcase
   AuthStatusResponse_AuthKind,
   AuthBuilderIdPollCreateTokenResponse_PollStatus as PollStatus,
-} from "@fig/fig-api-proto/fig";
+} from "@amzn/fig-io-proto/fig";
 import {
   sendAuthBuilderIdStartDeviceAuthorizationRequest,
   sendAuthBuilderIdPollCreateTokenRequest,

@@ -1,6 +1,6 @@
 import logger from "loglevel";
 import { SETTINGS, updateSettings } from "@amzn/fig-io-api-bindings-wrappers";
-import { SpecLocationSource } from "@internal/shared/utils";
+import { SpecLocationSource } from "@amzn/fig-io-shared/utils";
 import {
   getSpecPath,
   loadFigSubcommand,

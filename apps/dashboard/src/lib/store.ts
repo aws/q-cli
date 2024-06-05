@@ -4,7 +4,7 @@ import {
   State as ApiState,
   Auth,
   Install,
-} from "@withfig/api-bindings";
+} from "@amzn/fig-io-api-bindings";
 
 type KV = Record<string, unknown>;
 

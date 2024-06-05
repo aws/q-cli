@@ -1,4 +1,4 @@
-import { Suggestion } from "@internal/shared/internal";
+import { Suggestion } from "@amzn/fig-io-shared/internal";
 import { SETTINGS } from "@amzn/fig-io-api-bindings-wrappers";
 import * as settings from "@amzn/fig-io-api-bindings-wrappers";
 import {

@@ -9,9 +9,9 @@
     "precommit": "exit 0"
   },
   "devDependencies": {
-    "@internal/types": "link:../../packages/types",
+    "@amzn/fig-io-types": "link:../../packages/types",
     "@types/node": "^20.12.12",
-    "@withfig/api-bindings": "workspace:^",
+    "@amzn/fig-io-api-bindings": "workspace:^",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0"
   }

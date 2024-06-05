@@ -1,4 +1,4 @@
-import { State as DefaultState } from "@withfig/api-bindings";
+import { State as DefaultState } from "@amzn/fig-io-api-bindings";
 
 export enum States {
   DEVELOPER_API_HOST = "developer.apiHost",

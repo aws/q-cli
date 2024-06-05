@@ -16,9 +16,9 @@
   },
   "devDependencies": {
     "@amzn/fig-io-eslint-config": "workspace:^",
-    "@internal/shared": "workspace:^",
-    "@internal/tsconfig": "workspace:^",
-    "@internal/types": "workspace:^",
+    "@amzn/fig-io-shared": "workspace:^",
+    "@amzn/fig-io-tsconfig": "workspace:^",
+    "@amzn/fig-io-types": "workspace:^",
     "@types/react": "^18.3.3",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@amzn/fig-io-api-bindings-wrappers": "workspace:^",
-    "@withfig/api-bindings": "workspace:~",
+    "@amzn/fig-io-api-bindings": "workspace:~",
     "react": "^18.3.1"
   },
   "publishConfig": {

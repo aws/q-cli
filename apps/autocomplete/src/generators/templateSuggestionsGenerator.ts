@@ -1,6 +1,6 @@
 import logger from "loglevel";
 import { Annotation, TokenType } from "@amzn/fig-io-autocomplete-parser";
-import { makeArray, findLast } from "@internal/shared/utils";
+import { makeArray, findLast } from "@amzn/fig-io-shared/utils";
 import { GeneratorContext } from "./helpers";
 import { getHistoryArgSuggestions } from "../history";
 

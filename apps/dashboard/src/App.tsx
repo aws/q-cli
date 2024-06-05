@@ -13,7 +13,7 @@ import Keybindings from "./pages/settings/keybindings";
 import Licenses from "./pages/licenses";
 import { Suspense, useContext, useEffect, useRef } from "react";
 import Modal from "./components/modal";
-import { Telemetry, Event } from "@withfig/api-bindings";
+import { Telemetry, Event } from "@amzn/fig-io-api-bindings";
 import InstallModal from "./components/installs/modal";
 import LoginModal from "./components/installs/modal/login";
 import { getIconFromName } from "./lib/icons";

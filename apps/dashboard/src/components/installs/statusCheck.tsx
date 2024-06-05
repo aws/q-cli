@@ -1,5 +1,5 @@
 import { InstallCheckWithInstallKey } from "@/types/preferences";
-import { Install } from "@withfig/api-bindings";
+import { Install } from "@amzn/fig-io-api-bindings";
 import { useEffect, useState } from "react";
 import {
   Collapsible,

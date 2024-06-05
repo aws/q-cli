@@ -1,6 +1,6 @@
 import { getVersionFromVersionedSpec } from "@fig/autocomplete-helpers";
-import { splitPath } from "@internal/shared/utils";
-import { SpecLocation } from "@internal/shared/internal";
+import { splitPath } from "@amzn/fig-io-shared/utils";
+import { SpecLocation } from "@amzn/fig-io-shared/internal";
 import { SpecFileImport, getVersionFromFullFile } from "./loadHelpers.js";
 import { WrongDiffVersionedSpecError } from "./errors.js";
 import { importSpecFromLocation } from "./loadSpec.js";

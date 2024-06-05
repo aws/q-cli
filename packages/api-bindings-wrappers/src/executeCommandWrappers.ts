@@ -1,6 +1,6 @@
-import { Process } from "@withfig/api-bindings";
-import { withTimeout } from "@internal/shared/utils";
-import { createErrorInstance } from "@internal/shared/errors";
+import { Process } from "@amzn/fig-io-api-bindings";
+import { withTimeout } from "@amzn/fig-io-shared/utils";
+import { createErrorInstance } from "@amzn/fig-io-shared/errors";
 import logger from "loglevel";
 import { cleanOutput, executeCommandTimeout } from "./executeCommand.js";
 import { fread } from "./fs.js";

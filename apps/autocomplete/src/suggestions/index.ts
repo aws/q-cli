@@ -1,4 +1,4 @@
-import { Result } from "@internal/fuzzysort";
+import { Result } from "@amzn/fig-io-fuzzysort";
 import logger from "loglevel";
 import {
   Option,
@@ -6,7 +6,7 @@ import {
   Arg,
   Suggestion,
   SuggestionType,
-} from "@internal/shared/internal";
+} from "@amzn/fig-io-shared/internal";
 import {
   makeArray,
   SuggestionFlags,
@@ -15,7 +15,7 @@ import {
   memoizeOne,
   localProtocol,
   fieldsAreEqual,
-} from "@internal/shared/utils";
+} from "@amzn/fig-io-shared/utils";
 import {
   countEqualOptions,
   Annotation,

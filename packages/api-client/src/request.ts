@@ -3,7 +3,7 @@ import {
   State,
   States,
 } from "@amzn/fig-io-api-bindings-wrappers";
-import { ensureTrailingSlash } from "@internal/shared/utils";
+import { ensureTrailingSlash } from "@amzn/fig-io-shared/utils";
 import { AuthClient } from "./auth.js";
 import { GenericRequestError } from "./errors.js";
 

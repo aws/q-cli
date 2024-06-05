@@ -1,5 +1,5 @@
 {
-  "name": "@internal/types",
+  "name": "@amzn/fig-io-types",
   "private": true,
   "version": "1.0.0",
   "types": "global.d.ts",

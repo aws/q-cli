@@ -1,6 +1,6 @@
 import { Annotation } from "@amzn/fig-io-autocomplete-parser";
-import { Suggestion } from "@internal/shared/internal";
-import { getCWDForFilesAndFolders } from "@internal/shared/utils";
+import { Suggestion } from "@amzn/fig-io-shared/internal";
+import { getCWDForFilesAndFolders } from "@amzn/fig-io-shared/utils";
 import { getSetting, SETTINGS } from "@amzn/fig-io-api-bindings-wrappers";
 import { Cache } from "./cache";
 

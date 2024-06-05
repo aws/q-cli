@@ -53,7 +53,7 @@ importers:
       '@fig/autocomplete-shared':
         specifier: ^1.1.2
         version: 1.1.2
-      '@fig/fig-api-proto':
+      '@amzn/fig-io-proto':
         specifier: workspace:^
         version: link:../../proto
       '@juggle/resize-observer':
@@ -65,9 +65,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.3.0
         version: 4.3.0(vite@5.2.12(@types/node@20.12.12)(terser@5.31.0))
-      '@withfig/api-bindings':
+      '@amzn/fig-io-api-bindings':
         specifier: workspace:~
-        version: link:../../packages/typescript-api-bindings
+        version: link:../../packages/api-bindings
       '@withfig/autocomplete-types':
         specifier: ^1.31.0
         version: 1.31.0
@@ -119,14 +119,14 @@ importers:
     devDependencies:
       '@amzn/fig-io-eslint-config':
         specifier: workspace:^
-        version: link:../../packages/eslint-internal
-      '@internal/fuzzysort':
+        version: link:../../packages/eslint-config
+      '@amzn/fig-io-fuzzysort':
         specifier: workspace:^
         version: link:../../packages/fuzzysort
-      '@internal/shared':
+      '@amzn/fig-io-shared':
         specifier: workspace:^
         version: link:../../packages/shared
-      '@internal/types':
+      '@amzn/fig-io-types':
         specifier: workspace:^
         version: link:../../packages/types
       '@types/node':
@@ -210,9 +210,9 @@ importers:
       '@radix-ui/react-tabs':
         specifier: ^1.0.4
         version: 1.0.4(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@withfig/api-bindings':
+      '@amzn/fig-io-api-bindings':
         specifier: workspace:^
-        version: link:../../packages/typescript-api-bindings
+        version: link:../../packages/api-bindings
       class-variance-authority:
         specifier: ^0.7.0
         version: 0.7.0
@@ -250,7 +250,7 @@ importers:
         specifier: ^4.5.2
         version: 4.5.2(@types/react@18.3.3)(react@18.3.1)
     devDependencies:
-      '@internal/types':
+      '@amzn/fig-io-types':
         specifier: workspace:^
         version: link:../../packages/types
       '@types/react':
@@ -329,266 +329,16 @@ importers:
         specifier: ^5.4.5
         version: 5.4.5
 
-  packages/api-bindings-wrappers:
+  packages/api-bindings:
     dependencies:
-      '@withfig/api-bindings':
-        specifier: workspace:~
-        version: link:../typescript-api-bindings
-      loglevel:
-        specifier: ^1.9.1
-        version: 1.9.1
-    devDependencies:
-      '@amzn/fig-io-eslint-config':
-        specifier: workspace:^
-        version: link:../eslint-internal
-      '@internal/shared':
-        specifier: workspace:^
-        version: link:../shared
-      '@internal/tsconfig':
-        specifier: workspace:^
-        version: link:../tsconfig
-      '@internal/types':
-        specifier: workspace:^
-        version: link:../types
-      '@withfig/autocomplete-types':
-        specifier: ^1.31.0
-        version: 1.31.0
-      eslint:
-        specifier: ^8.57.0
-        version: 8.57.0
-      eslint-config-prettier:
-        specifier: ^9.1.0
-        version: 9.1.0(eslint@8.57.0)
-      prettier:
-        specifier: ^3.2.5
-        version: 3.2.5
-      typescript:
-        specifier: ^5.4.5
-        version: 5.4.5
-
-  packages/api-client:
-    dependencies:
-      '@amzn/fig-io-api-bindings-wrappers':
-        specifier: workspace:^
-        version: link:../api-bindings-wrappers
-      '@withfig/api-bindings':
-        specifier: workspace:~
-        version: link:../typescript-api-bindings
-      react:
-        specifier: ^18.3.1
-        version: 18.3.1
-    devDependencies:
-      '@amzn/fig-io-eslint-config':
-        specifier: workspace:^
-        version: link:../eslint-internal
-      '@internal/shared':
-        specifier: workspace:^
-        version: link:../shared
-      '@internal/tsconfig':
-        specifier: workspace:^
-        version: link:../tsconfig
-      '@internal/types':
-        specifier: workspace:^
-        version: link:../types
-      '@types/react':
-        specifier: ^18.3.3
-        version: 18.3.3
-      eslint:
-        specifier: ^8.57.0
-        version: 8.57.0
-      eslint-config-prettier:
-        specifier: ^9.1.0
-        version: 9.1.0(eslint@8.57.0)
-      prettier:
-        specifier: ^3.2.5
-        version: 3.2.5
-      typescript:
-        specifier: ^5.4.5
-        version: 5.4.5
-
-  packages/autocomplete-parser:
-    dependencies:
-      '@amzn/fig-io-api-bindings-wrappers':
-        specifier: workspace:^
-        version: link:../api-bindings-wrappers
-      '@amzn/fig-io-api-client':
-        specifier: workspace:^
-        version: link:../api-client
-      '@amzn/fig-io-shell-parser':
-        specifier: workspace:^
-        version: link:../shell-parser
-      '@fig/autocomplete-generators':
-        specifier: ^2.4.0
-        version: 2.4.0
-      '@fig/autocomplete-helpers':
-        specifier: ^1.0.7
-        version: 1.0.7
-      '@fig/autocomplete-shared':
-        specifier: ^1.1.2
-        version: 1.1.2
-      '@withfig/api-bindings':
-        specifier: workspace:~
-        version: link:../typescript-api-bindings
-      loglevel:
-        specifier: ^1.9.1
-        version: 1.9.1
-      semver:
-        specifier: ^7.6.2
-        version: 7.6.2
-      zod:
-        specifier: ^3.23.8
-        version: 3.23.8
-    devDependencies:
-      '@amzn/fig-io-eslint-config':
-        specifier: workspace:^
-        version: link:../eslint-internal
-      '@internal/shared':
-        specifier: workspace:^
-        version: link:../shared
-      '@internal/tsconfig':
-        specifier: workspace:^
-        version: link:../tsconfig
-      '@internal/types':
-        specifier: workspace:^
-        version: link:../types
-      '@types/semver':
-        specifier: ^7.5.8
-        version: 7.5.8
-      '@withfig/autocomplete-types':
-        specifier: ^1.31.0
-        version: 1.31.0
-      eslint:
-        specifier: ^8.57.0
-        version: 8.57.0
-      typescript:
-        specifier: ^5.4.5
-        version: 5.4.5
-      vitest:
-        specifier: ^1.6.0
-        version: 1.6.0(@types/node@20.12.12)(@vitest/ui@1.6.0)(jsdom@24.1.0)(terser@5.31.0)
-
-  packages/eslint-internal:
-    dependencies:
-      eslint:
-        specifier: ^8.45.0
-        version: 8.57.0
-    devDependencies:
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^7.11.0
-        version: 7.11.0(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.4.5))(eslint@8.57.0)(typescript@5.4.5)
-      '@typescript-eslint/parser':
-        specifier: ^7.11.0
-        version: 7.11.0(eslint@8.57.0)(typescript@5.4.5)
-      eslint-config-airbnb:
-        specifier: ^19.0.4
-        version: 19.0.4(eslint-plugin-import@2.29.1(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.4.5))(eslint@8.57.0))(eslint-plugin-jsx-a11y@6.8.0(eslint@8.57.0))(eslint-plugin-react-hooks@4.6.2(eslint@8.57.0))(eslint-plugin-react@7.34.2(eslint@8.57.0))(eslint@8.57.0)
-      eslint-config-airbnb-base:
-        specifier: ^15.0.0
-        version: 15.0.0(eslint-plugin-import@2.29.1(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.4.5))(eslint@8.57.0))(eslint@8.57.0)
-      eslint-config-prettier:
-        specifier: ^9.1.0
-        version: 9.1.0(eslint@8.57.0)
-      eslint-plugin-import:
-        specifier: ^2.29.1
-        version: 2.29.1(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.4.5))(eslint@8.57.0)
-      eslint-plugin-jsx-a11y:
-        specifier: ^6.8.0
-        version: 6.8.0(eslint@8.57.0)
-      eslint-plugin-react:
-        specifier: ^7.34.2
-        version: 7.34.2(eslint@8.57.0)
-      eslint-plugin-react-hooks:
-        specifier: ^4.6.2
-        version: 4.6.2(eslint@8.57.0)
-      eslint-plugin-react-refresh:
-        specifier: ^0.4.7
-        version: 0.4.7(eslint@8.57.0)
-      prettier:
-        specifier: ^3.2.5
-        version: 3.2.5
-
-  packages/fuzzysort: {}
-
-  packages/shared:
-    dependencies:
-      '@fig/autocomplete-shared':
-        specifier: ^1.1.2
-        version: 1.1.2
-    devDependencies:
-      '@amzn/fig-io-eslint-config':
-        specifier: workspace:^
-        version: link:../eslint-internal
-      '@internal/fuzzysort':
-        specifier: workspace:^
-        version: link:../fuzzysort
-      '@internal/tsconfig':
-        specifier: workspace:^
-        version: link:../tsconfig
-      '@internal/types':
-        specifier: workspace:^
-        version: link:../types
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^7.11.0
-        version: 7.11.0(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.4.5))(eslint@8.57.0)(typescript@5.4.5)
-      '@withfig/autocomplete-types':
-        specifier: ^1.31.0
-        version: 1.31.0
-      eslint:
-        specifier: ^8.57.0
-        version: 8.57.0
-      typescript:
-        specifier: ^5.4.5
-        version: 5.4.5
-      vitest:
-        specifier: ^1.6.0
-        version: 1.6.0(@types/node@20.12.12)(@vitest/ui@1.6.0)(jsdom@24.1.0)(terser@5.31.0)
-
-  packages/shell-parser:
-    dependencies:
-      '@internal/shared':
-        specifier: workspace:^
-        version: link:../shared
-    devDependencies:
-      '@amzn/fig-io-eslint-config':
-        specifier: workspace:^
-        version: link:../eslint-internal
-      '@internal/tsconfig':
-        specifier: workspace:^
-        version: link:../tsconfig
-      '@vitest/coverage-v8':
-        specifier: ^1.6.0
-        version: 1.6.0(vitest@1.6.0(@types/node@20.12.12)(@vitest/ui@1.6.0)(jsdom@24.1.0)(terser@5.31.0))
-      eslint:
-        specifier: ^8.57.0
-        version: 8.57.0
-      prettier:
-        specifier: ^3.2.5
-        version: 3.2.5
-      typescript:
-        specifier: ^5.4.5
-        version: 5.4.5
-      vitest:
-        specifier: ^1.6.0
-        version: 1.6.0(@types/node@20.12.12)(@vitest/ui@1.6.0)(jsdom@24.1.0)(terser@5.31.0)
-
-  packages/tsconfig:
-    dependencies:
-      typescript:
-        specifier: '*'
-        version: 5.4.5
-
-  packages/types: {}
-
-  packages/typescript-api-bindings:
-    dependencies:
-      '@fig/fig-api-proto':
+      '@amzn/fig-io-proto':
         specifier: workspace:^
         version: link:../../proto
     devDependencies:
       '@amzn/fig-io-eslint-config':
         specifier: workspace:^
-        version: link:../eslint-internal
-      '@internal/tsconfig':
+        version: link:../eslint-config
+      '@amzn/fig-io-tsconfig':
         specifier: workspace:^
         version: link:../tsconfig
       '@tsconfig/recommended':
@@ -640,6 +390,256 @@ importers:
         specifier: ^5.4.5
         version: 5.4.5
 
+  packages/api-bindings-wrappers:
+    dependencies:
+      '@amzn/fig-io-api-bindings':
+        specifier: workspace:~
+        version: link:../api-bindings
+      loglevel:
+        specifier: ^1.9.1
+        version: 1.9.1
+    devDependencies:
+      '@amzn/fig-io-eslint-config':
+        specifier: workspace:^
+        version: link:../eslint-config
+      '@amzn/fig-io-shared':
+        specifier: workspace:^
+        version: link:../shared
+      '@amzn/fig-io-tsconfig':
+        specifier: workspace:^
+        version: link:../tsconfig
+      '@amzn/fig-io-types':
+        specifier: workspace:^
+        version: link:../types
+      '@withfig/autocomplete-types':
+        specifier: ^1.31.0
+        version: 1.31.0
+      eslint:
+        specifier: ^8.57.0
+        version: 8.57.0
+      eslint-config-prettier:
+        specifier: ^9.1.0
+        version: 9.1.0(eslint@8.57.0)
+      prettier:
+        specifier: ^3.2.5
+        version: 3.2.5
+      typescript:
+        specifier: ^5.4.5
+        version: 5.4.5
+
+  packages/api-client:
+    dependencies:
+      '@amzn/fig-io-api-bindings-wrappers':
+        specifier: workspace:^
+        version: link:../api-bindings-wrappers
+      '@amzn/fig-io-api-bindings':
+        specifier: workspace:~
+        version: link:../api-bindings
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+    devDependencies:
+      '@amzn/fig-io-eslint-config':
+        specifier: workspace:^
+        version: link:../eslint-config
+      '@amzn/fig-io-shared':
+        specifier: workspace:^
+        version: link:../shared
+      '@amzn/fig-io-tsconfig':
+        specifier: workspace:^
+        version: link:../tsconfig
+      '@amzn/fig-io-types':
+        specifier: workspace:^
+        version: link:../types
+      '@types/react':
+        specifier: ^18.3.3
+        version: 18.3.3
+      eslint:
+        specifier: ^8.57.0
+        version: 8.57.0
+      eslint-config-prettier:
+        specifier: ^9.1.0
+        version: 9.1.0(eslint@8.57.0)
+      prettier:
+        specifier: ^3.2.5
+        version: 3.2.5
+      typescript:
+        specifier: ^5.4.5
+        version: 5.4.5
+
+  packages/autocomplete-parser:
+    dependencies:
+      '@amzn/fig-io-api-bindings-wrappers':
+        specifier: workspace:^
+        version: link:../api-bindings-wrappers
+      '@amzn/fig-io-api-client':
+        specifier: workspace:^
+        version: link:../api-client
+      '@amzn/fig-io-shell-parser':
+        specifier: workspace:^
+        version: link:../shell-parser
+      '@fig/autocomplete-generators':
+        specifier: ^2.4.0
+        version: 2.4.0
+      '@fig/autocomplete-helpers':
+        specifier: ^1.0.7
+        version: 1.0.7
+      '@fig/autocomplete-shared':
+        specifier: ^1.1.2
+        version: 1.1.2
+      '@amzn/fig-io-api-bindings':
+        specifier: workspace:~
+        version: link:../api-bindings
+      loglevel:
+        specifier: ^1.9.1
+        version: 1.9.1
+      semver:
+        specifier: ^7.6.2
+        version: 7.6.2
+      zod:
+        specifier: ^3.23.8
+        version: 3.23.8
+    devDependencies:
+      '@amzn/fig-io-eslint-config':
+        specifier: workspace:^
+        version: link:../eslint-config
+      '@amzn/fig-io-shared':
+        specifier: workspace:^
+        version: link:../shared
+      '@amzn/fig-io-tsconfig':
+        specifier: workspace:^
+        version: link:../tsconfig
+      '@amzn/fig-io-types':
+        specifier: workspace:^
+        version: link:../types
+      '@types/semver':
+        specifier: ^7.5.8
+        version: 7.5.8
+      '@withfig/autocomplete-types':
+        specifier: ^1.31.0
+        version: 1.31.0
+      eslint:
+        specifier: ^8.57.0
+        version: 8.57.0
+      typescript:
+        specifier: ^5.4.5
+        version: 5.4.5
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.0(@types/node@20.12.12)(@vitest/ui@1.6.0)(jsdom@24.1.0)(terser@5.31.0)
+
+  packages/eslint-config:
+    dependencies:
+      eslint:
+        specifier: ^8.45.0
+        version: 8.57.0
+    devDependencies:
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^7.11.0
+        version: 7.11.0(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.4.5))(eslint@8.57.0)(typescript@5.4.5)
+      '@typescript-eslint/parser':
+        specifier: ^7.11.0
+        version: 7.11.0(eslint@8.57.0)(typescript@5.4.5)
+      eslint-config-airbnb:
+        specifier: ^19.0.4
+        version: 19.0.4(eslint-plugin-import@2.29.1(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.4.5))(eslint@8.57.0))(eslint-plugin-jsx-a11y@6.8.0(eslint@8.57.0))(eslint-plugin-react-hooks@4.6.2(eslint@8.57.0))(eslint-plugin-react@7.34.2(eslint@8.57.0))(eslint@8.57.0)
+      eslint-config-airbnb-base:
+        specifier: ^15.0.0
+        version: 15.0.0(eslint-plugin-import@2.29.1(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.4.5))(eslint@8.57.0))(eslint@8.57.0)
+      eslint-config-prettier:
+        specifier: ^9.1.0
+        version: 9.1.0(eslint@8.57.0)
+      eslint-plugin-import:
+        specifier: ^2.29.1
+        version: 2.29.1(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.4.5))(eslint@8.57.0)
+      eslint-plugin-jsx-a11y:
+        specifier: ^6.8.0
+        version: 6.8.0(eslint@8.57.0)
+      eslint-plugin-react:
+        specifier: ^7.34.2
+        version: 7.34.2(eslint@8.57.0)
+      eslint-plugin-react-hooks:
+        specifier: ^4.6.2
+        version: 4.6.2(eslint@8.57.0)
+      eslint-plugin-react-refresh:
+        specifier: ^0.4.7
+        version: 0.4.7(eslint@8.57.0)
+      prettier:
+        specifier: ^3.2.5
+        version: 3.2.5
+
+  packages/fuzzysort: {}
+
+  packages/shared:
+    dependencies:
+      '@fig/autocomplete-shared':
+        specifier: ^1.1.2
+        version: 1.1.2
+    devDependencies:
+      '@amzn/fig-io-eslint-config':
+        specifier: workspace:^
+        version: link:../eslint-config
+      '@amzn/fig-io-fuzzysort':
+        specifier: workspace:^
+        version: link:../fuzzysort
+      '@amzn/fig-io-tsconfig':
+        specifier: workspace:^
+        version: link:../tsconfig
+      '@amzn/fig-io-types':
+        specifier: workspace:^
+        version: link:../types
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^7.11.0
+        version: 7.11.0(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.4.5))(eslint@8.57.0)(typescript@5.4.5)
+      '@withfig/autocomplete-types':
+        specifier: ^1.31.0
+        version: 1.31.0
+      eslint:
+        specifier: ^8.57.0
+        version: 8.57.0
+      typescript:
+        specifier: ^5.4.5
+        version: 5.4.5
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.0(@types/node@20.12.12)(@vitest/ui@1.6.0)(jsdom@24.1.0)(terser@5.31.0)
+
+  packages/shell-parser:
+    dependencies:
+      '@amzn/fig-io-shared':
+        specifier: workspace:^
+        version: link:../shared
+    devDependencies:
+      '@amzn/fig-io-eslint-config':
+        specifier: workspace:^
+        version: link:../eslint-config
+      '@amzn/fig-io-tsconfig':
+        specifier: workspace:^
+        version: link:../tsconfig
+      '@vitest/coverage-v8':
+        specifier: ^1.6.0
+        version: 1.6.0(vitest@1.6.0(@types/node@20.12.12)(@vitest/ui@1.6.0)(jsdom@24.1.0)(terser@5.31.0))
+      eslint:
+        specifier: ^8.57.0
+        version: 8.57.0
+      prettier:
+        specifier: ^3.2.5
+        version: 3.2.5
+      typescript:
+        specifier: ^5.4.5
+        version: 5.4.5
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.0(@types/node@20.12.12)(@vitest/ui@1.6.0)(jsdom@24.1.0)(terser@5.31.0)
+
+  packages/tsconfig:
+    dependencies:
+      typescript:
+        specifier: '*'
+        version: 5.4.5
+
+  packages/types: {}
+
   proto:
     dependencies:
       long:
@@ -649,7 +649,7 @@ importers:
         specifier: ^7.3.0
         version: 7.3.0
     devDependencies:
-      '@internal/tsconfig':
+      '@amzn/fig-io-tsconfig':
         specifier: workspace:^
         version: link:../packages/tsconfig
       ts-proto:
@@ -661,15 +661,15 @@ importers:
 
   tests/fig-api:
     devDependencies:
-      '@internal/types':
+      '@amzn/fig-io-types':
         specifier: link:../../packages/types
         version: link:../../packages/types
       '@types/node':
         specifier: ^20.12.12
         version: 20.12.12
-      '@withfig/api-bindings':
+      '@amzn/fig-io-api-bindings':
         specifier: workspace:^
-        version: link:../../packages/typescript-api-bindings
+        version: link:../../packages/api-bindings
       typescript:
         specifier: ^5.4.5
         version: 5.4.5

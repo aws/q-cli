@@ -1,7 +1,7 @@
 import {
   EditBufferChangedNotification,
   NotificationType,
-} from "@fig/fig-api-proto/fig";
+} from "@amzn/fig-io-proto/fig";
 import { _subscribe, NotificationResponse } from "./notifications.js";
 
 export function subscribe(

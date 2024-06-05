@@ -7,7 +7,7 @@ import {
   NotificationType,
   // eslint-disable-next-line camelcase
   Result_Result,
-} from "@fig/fig-api-proto/fig";
+} from "@amzn/fig-io-proto/fig";
 
 import { sendInstallRequest } from "./requests.js";
 import { NotificationResponse, _subscribe } from "./notifications.js";

@@ -1,4 +1,4 @@
-import { WindowPosition, Settings } from "@withfig/api-bindings";
+import { WindowPosition, Settings } from "@amzn/fig-io-api-bindings";
 import { SETTINGS } from "@amzn/fig-io-api-bindings-wrappers";
 import React, {
   useState,
@@ -10,9 +10,9 @@ import React, {
 } from "react";
 
 import logger from "loglevel";
-import { getCWDForFilesAndFolders } from "@internal/shared/utils";
+import { getCWDForFilesAndFolders } from "@amzn/fig-io-shared/utils";
 import * as jsxRuntime from "react/jsx-runtime";
-import * as figApiBindings from "@withfig/api-bindings";
+import * as figApiBindings from "@amzn/fig-io-api-bindings";
 import { getMaxHeight, getMaxWidth, POPOUT_WIDTH } from "./window";
 import { useParseArgumentsEffect } from "./parser/hooks";
 import { loadHistory } from "./history";

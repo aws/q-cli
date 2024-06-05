@@ -1,5 +1,5 @@
 import { Annotation, TokenType } from "@amzn/fig-io-autocomplete-parser";
-import { Subcommand } from "@internal/shared/internal";
+import { Subcommand } from "@amzn/fig-io-shared/internal";
 import { describe, expect, it } from "vitest";
 import { getTemplateSuggestions } from "../templateSuggestionsGenerator";
 import { GeneratorContext } from "../helpers";

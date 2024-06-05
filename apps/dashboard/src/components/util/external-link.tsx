@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Native } from "@withfig/api-bindings";
+import { Native } from "@amzn/fig-io-api-bindings";
 
 export default function ExternalLink({
   href,

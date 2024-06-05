@@ -4,7 +4,7 @@ import {
   ShellPromptReturnedNotification,
   TextUpdate,
   HistoryUpdatedNotification,
-} from "@fig/fig-api-proto/fig";
+} from "@amzn/fig-io-proto/fig";
 import { sendInsertTextRequest } from "./requests.js";
 import { _subscribe, NotificationResponse } from "./notifications.js";
 

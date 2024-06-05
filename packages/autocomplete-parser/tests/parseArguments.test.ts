@@ -5,13 +5,13 @@ import {
 } from "@fig/autocomplete-shared";
 import logger from "loglevel";
 import { folders, filepaths } from "@fig/autocomplete-generators";
-import * as Internal from "@internal/shared/internal";
+import * as Internal from "@amzn/fig-io-shared/internal";
 import {
   SuggestionFlag,
   SuggestionFlags,
   makeArray,
   SpecLocationSource,
-} from "@internal/shared/utils";
+} from "@amzn/fig-io-shared/utils";
 import { Command, getCommand } from "@amzn/fig-io-shell-parser";
 import {
   findOption,

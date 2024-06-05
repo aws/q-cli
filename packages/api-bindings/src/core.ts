@@ -1,7 +1,7 @@
 import {
   ServerOriginatedMessage,
   ClientOriginatedMessage,
-} from "@fig/fig-api-proto/fig";
+} from "@amzn/fig-io-proto/fig";
 
 import { b64ToBytes, bytesToBase64 } from "./utils.js";
 

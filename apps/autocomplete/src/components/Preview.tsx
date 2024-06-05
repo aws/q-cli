@@ -1,5 +1,5 @@
 import React, { ErrorInfo, lazy, Suspense, useMemo } from "react";
-import { Suggestion } from "@internal/shared/internal";
+import { Suggestion } from "@amzn/fig-io-shared/internal";
 import root from "react-shadow";
 import { SETTINGS } from "@amzn/fig-io-api-bindings-wrappers";
 import { importFromPublicCDN } from "@amzn/fig-io-autocomplete-parser";

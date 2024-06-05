@@ -1,7 +1,0 @@
-{
-  "extends": ["@internal/tsconfig/base.json", "@internal/tsconfig/dom.json"],
-  "compilerOptions": {
-    "outDir": "dist"
-  },
-  "include": ["src/"]
-}

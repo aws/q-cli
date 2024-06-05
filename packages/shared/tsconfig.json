@@ -1,8 +1,8 @@
 {
-  "extends": ["@internal/tsconfig/base.json", "@internal/tsconfig/dom.json"],
+  "extends": ["@amzn/fig-io-tsconfig/base.json", "@amzn/fig-io-tsconfig/dom.json"],
   "compilerOptions": {
     "outDir": "dist",
-    "types": ["@internal/types", "@withfig/autocomplete-types"]
+    "types": ["@amzn/fig-io-types", "@withfig/autocomplete-types"]
   },
   "include": ["src"]
 }

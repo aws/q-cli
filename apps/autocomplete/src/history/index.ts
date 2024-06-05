@@ -15,15 +15,15 @@ import {
   AliasMap,
   Command,
 } from "@amzn/fig-io-shell-parser";
-import { SpecLocationSource } from "@internal/shared/utils";
-import { Suggestion } from "@internal/shared/internal";
+import { SpecLocationSource } from "@amzn/fig-io-shared/utils";
+import { Suggestion } from "@amzn/fig-io-shared/internal";
 import {
   executeCommand,
   executeLoginShell,
   SETTINGS,
   getSetting,
 } from "@amzn/fig-io-api-bindings-wrappers";
-import { History } from "@withfig/api-bindings";
+import { History } from "@amzn/fig-io-api-bindings";
 import { captureError } from "../sentry";
 import {
   AnnotatedCommand,

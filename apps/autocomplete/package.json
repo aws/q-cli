@@ -27,11 +27,11 @@
     "@amzn/fig-io-shell-parser": "workspace:^",
     "@fig/autocomplete-helpers": "^1.0.7",
     "@fig/autocomplete-shared": "^1.1.2",
-    "@fig/fig-api-proto": "workspace:^",
+    "@amzn/fig-io-proto": "workspace:^",
     "@juggle/resize-observer": "^3.4.0",
     "@types/js-yaml": "^4.0.9",
     "@vitejs/plugin-react": "^4.3.0",
-    "@withfig/api-bindings": "workspace:~",
+    "@amzn/fig-io-api-bindings": "workspace:~",
     "@withfig/autocomplete-types": "^1.31.0",
     "deep-object-diff": "^1.1.9",
     "exponential-backoff": "^3.1.1",
@@ -51,9 +51,9 @@
   },
   "devDependencies": {
     "@amzn/fig-io-eslint-config": "workspace:^",
-    "@internal/fuzzysort": "workspace:^",
-    "@internal/shared": "workspace:^",
-    "@internal/types": "workspace:^",
+    "@amzn/fig-io-fuzzysort": "workspace:^",
+    "@amzn/fig-io-shared": "workspace:^",
+    "@amzn/fig-io-types": "workspace:^",
     "@types/node": "^20.12.12",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
@@ -75,7 +75,7 @@
     "vitest": "^1.6.0"
   },
   "bundledDependencies": [
-    "@internal/fuzzysort",
-    "@internal/shared"
+    "@amzn/fig-io-fuzzysort",
+    "@amzn/fig-io-shared"
   ]
 }

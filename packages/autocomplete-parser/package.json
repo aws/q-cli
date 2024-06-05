@@ -17,9 +17,9 @@
   },
   "devDependencies": {
     "@amzn/fig-io-eslint-config": "workspace:^",
-    "@internal/shared": "workspace:^",
-    "@internal/tsconfig": "workspace:^",
-    "@internal/types": "workspace:^",
+    "@amzn/fig-io-shared": "workspace:^",
+    "@amzn/fig-io-tsconfig": "workspace:^",
+    "@amzn/fig-io-types": "workspace:^",
     "@types/semver": "^7.5.8",
     "@withfig/autocomplete-types": "^1.31.0",
     "eslint": "^8.57.0",
@@ -33,7 +33,7 @@
     "@fig/autocomplete-generators": "^2.4.0",
     "@fig/autocomplete-helpers": "^1.0.7",
     "@fig/autocomplete-shared": "^1.1.2",
-    "@withfig/api-bindings": "workspace:~",
+    "@amzn/fig-io-api-bindings": "workspace:~",
     "loglevel": "^1.9.1",
     "semver": "^7.6.2",
     "zod": "^3.23.8"

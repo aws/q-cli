@@ -1,7 +1,7 @@
 import logger from "loglevel";
 import { convertSubcommand, initializeDefault } from "@fig/autocomplete-shared";
 import { filepaths, folders } from "@fig/autocomplete-generators";
-import * as Internal from "@internal/shared/internal";
+import * as Internal from "@amzn/fig-io-shared/internal";
 import {
   firstMatchingToken,
   makeArray,
@@ -9,7 +9,7 @@ import {
   SuggestionFlag,
   SuggestionFlags,
   withTimeout,
-} from "@internal/shared/utils";
+} from "@amzn/fig-io-shared/utils";
 import {
   executeCommand,
   executeLoginShell,

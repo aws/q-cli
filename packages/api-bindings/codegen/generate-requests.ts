@@ -126,7 +126,7 @@ const project = new Project({
 project.addSourceFilesAtPaths(join(__dirname, "../src/*.ts"));
 
 const text = readFileSync(
-  "node_modules/@fig/fig-api-proto/dist/fig.pb.ts",
+  "node_modules/@amzn/fig-io-proto/dist/fig.pb.ts",
   "utf8",
 );
 const protobufBindings = project.createSourceFile("fig.pb.ts", text);
@@ -183,7 +183,7 @@ const sourceFile = project.createSourceFile(
       .sort()
       .map(capitalizeFirstLetter);
     writer.writeLine(
-      `import { \n${imports.join(",\n")}\n } from "@fig/fig-api-proto/fig";`,
+      `import { \n${imports.join(",\n")}\n } from "@amzn/fig-io-proto/fig";`,
     );
     writer.writeLine(`import { sendMessage } from "./core.js";`).blankLine();
 

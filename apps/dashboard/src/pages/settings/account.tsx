@@ -1,4 +1,4 @@
-import { State, Process } from "@withfig/api-bindings";
+import { State, Process } from "@amzn/fig-io-api-bindings";
 import { useEffect, useState } from "react";
 import ExternalLink from "@/components/util/external-link";
 import {

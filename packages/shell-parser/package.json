@@ -17,11 +17,11 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@internal/shared": "workspace:^"
+    "@amzn/fig-io-shared": "workspace:^"
   },
   "devDependencies": {
     "@amzn/fig-io-eslint-config": "workspace:^",
-    "@internal/tsconfig": "workspace:^",
+    "@amzn/fig-io-tsconfig": "workspace:^",
     "@vitest/coverage-v8": "^1.6.0",
     "eslint": "^8.57.0",
     "prettier": "^3.2.5",

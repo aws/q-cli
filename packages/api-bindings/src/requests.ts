@@ -68,7 +68,7 @@ import {
   UserLogoutRequest,
   WindowFocusRequest,
   WriteFileRequest,
-} from "@fig/fig-api-proto/fig";
+} from "@amzn/fig-io-proto/fig";
 import { sendMessage } from "./core.js";
 
 export async function sendPositionWindowRequest(

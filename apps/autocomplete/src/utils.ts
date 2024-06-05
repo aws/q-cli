@@ -1,4 +1,4 @@
-import { fs } from "@withfig/api-bindings";
+import { fs } from "@amzn/fig-io-api-bindings";
 import util from "util";
 import { isInDevMode } from "@amzn/fig-io-api-bindings-wrappers";
 

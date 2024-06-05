@@ -1,5 +1,5 @@
 /* eslint-disable no-await-in-loop */
-import { sleep } from "@internal/shared/utils";
+import { sleep } from "@amzn/fig-io-shared/utils";
 import { Annotation } from "@amzn/fig-io-autocomplete-parser";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {

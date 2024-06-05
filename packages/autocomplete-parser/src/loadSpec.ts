@@ -1,5 +1,5 @@
 import logger, { Logger } from "loglevel";
-import { Settings, Debugger } from "@withfig/api-bindings";
+import { Settings, Debugger } from "@amzn/fig-io-api-bindings";
 import {
   convertSubcommand,
   initializeDefault,
@@ -10,8 +10,8 @@ import {
   SpecLocationSource,
   splitPath,
   ensureTrailingSlash,
-} from "@internal/shared/utils";
-import { Subcommand, SpecLocation } from "@internal/shared/internal";
+} from "@amzn/fig-io-shared/utils";
+import { Subcommand, SpecLocation } from "@amzn/fig-io-shared/internal";
 import {
   SETTINGS,
   getSetting,

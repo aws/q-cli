@@ -2,8 +2,12 @@ import React from "react";
 import logger from "loglevel";
 import { create, Mutate, StateCreator, StoreApi } from "zustand";
 
-import { Suggestion } from "@internal/shared/internal";
-import { fieldsAreEqual, makeArray, memoizeOne } from "@internal/shared/utils";
+import { Suggestion } from "@amzn/fig-io-shared/internal";
+import {
+  fieldsAreEqual,
+  makeArray,
+  memoizeOne,
+} from "@amzn/fig-io-shared/utils";
 import { AliasMap, getCommand } from "@amzn/fig-io-shell-parser";
 import {
   ArgumentParserResult,
@@ -14,7 +18,7 @@ import {
   SETTINGS,
   SettingsMap,
 } from "@amzn/fig-io-api-bindings-wrappers";
-import { type Types } from "@withfig/api-bindings";
+import { type Types } from "@amzn/fig-io-api-bindings";
 import { detailedDiff } from "deep-object-diff";
 import { trackEvent } from "../telemetry.js";
 import { FigState, initialFigState } from "../fig/hooks";

@@ -1,4 +1,4 @@
-import { TelemetryProperty } from "@fig/fig-api-proto/fig";
+import { TelemetryProperty } from "@amzn/fig-io-proto/fig";
 import {
   sendTelemetryIdentifyRequest,
   sendTelemetryPageRequest,

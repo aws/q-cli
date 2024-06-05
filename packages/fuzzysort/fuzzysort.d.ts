@@ -1,4 +1,4 @@
-declare module "@internal/fuzzysort" {
+declare module "@amzn/fig-io-fuzzysort" {
   export interface Result {
     /**
      * Higher is better

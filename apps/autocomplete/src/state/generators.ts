@@ -1,6 +1,6 @@
 import logger from "loglevel";
 import { StoreApi } from "zustand";
-import { sleep } from "@internal/shared/utils";
+import { sleep } from "@amzn/fig-io-shared/utils";
 import { ArgumentParserResult } from "@amzn/fig-io-autocomplete-parser";
 import { SETTINGS, getSetting } from "@amzn/fig-io-api-bindings-wrappers";
 import { runPipingConsoleMethods } from "../utils";

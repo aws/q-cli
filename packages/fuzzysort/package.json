@@ -1,8 +1,8 @@
 {
-  "name": "@internal/fuzzysort",
+  "name": "@amzn/fig-io-fuzzysort",
   "version": "1.1.5",
   "private": true,
-  "main": "fuzzysort.js",
-  "types": "./index.d.ts",
-  "type": "module"
+  "type": "module",
+  "exports": "./fuzzysort.js",
+  "types": "./fuzzysort.d.ts"
 }

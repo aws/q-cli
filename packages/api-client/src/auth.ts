@@ -1,5 +1,5 @@
 import { fread } from "@amzn/fig-io-api-bindings-wrappers";
-import { fs } from "@withfig/api-bindings";
+import { fs } from "@amzn/fig-io-api-bindings";
 import { CredentialsError } from "./errors.js";
 
 export interface AuthClient {

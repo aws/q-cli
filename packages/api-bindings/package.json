@@ -1,5 +1,5 @@
 {
-  "name": "@withfig/api-bindings",
+  "name": "@amzn/fig-io-api-bindings",
   "version": "0.30.3",
   "license": "MIT",
   "type": "module",
@@ -18,11 +18,11 @@
   },
   "author": "The Fig Team",
   "dependencies": {
-    "@fig/fig-api-proto": "workspace:^"
+    "@amzn/fig-io-proto": "workspace:^"
   },
   "devDependencies": {
     "@amzn/fig-io-eslint-config": "workspace:^",
-    "@internal/tsconfig": "workspace:^",
+    "@amzn/fig-io-tsconfig": "workspace:^",
     "@tsconfig/recommended": "^1.0.6",
     "@types/node": "^20.12.12",
     "@typescript-eslint/eslint-plugin": "^7.11.0",

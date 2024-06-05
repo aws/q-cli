@@ -1,5 +1,5 @@
 {
-  "name": "@fig/fig-api-proto",
+  "name": "@amzn/fig-io-proto",
   "version": "1.0.0",
   "type": "module",
   "exports": {
@@ -21,7 +21,7 @@
     "protobufjs": "^7.3.0"
   },
   "devDependencies": {
-    "@internal/tsconfig": "workspace:^",
+    "@amzn/fig-io-tsconfig": "workspace:^",
     "ts-proto": "~1.176.1",
     "typescript": "^5.4.5"
   }

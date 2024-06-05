@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import logger from "loglevel";
-import { Keybindings, Shell } from "@withfig/api-bindings";
+import { Keybindings, Shell } from "@amzn/fig-io-api-bindings";
 import { SETTINGS, getSetting } from "@amzn/fig-io-api-bindings-wrappers";
 import { ACTIONS, AutocompleteAction } from "../actions";
 import { useAutocompleteStore } from "../state";

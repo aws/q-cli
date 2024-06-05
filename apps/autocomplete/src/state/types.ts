@@ -1,4 +1,4 @@
-import { Suggestion } from "@internal/shared/internal";
+import { Suggestion } from "@amzn/fig-io-shared/internal";
 import { ArgumentParserResult } from "@amzn/fig-io-autocomplete-parser";
 import { Command } from "@amzn/fig-io-shell-parser";
 import { SettingsMap } from "@amzn/fig-io-api-bindings-wrappers";

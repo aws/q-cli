@@ -6,7 +6,7 @@ import {
   Settings,
   Shell,
   Types,
-} from "@withfig/api-bindings";
+} from "@amzn/fig-io-api-bindings";
 import { AliasMap } from "@amzn/fig-io-shell-parser";
 import {
   SettingsMap,

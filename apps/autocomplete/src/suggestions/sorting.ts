@@ -1,5 +1,5 @@
-import { makeArray } from "@internal/shared/utils";
-import { Suggestion } from "@internal/shared/internal";
+import { makeArray } from "@amzn/fig-io-shared/utils";
+import { Suggestion } from "@amzn/fig-io-shared/internal";
 import { SETTINGS, getSetting } from "@amzn/fig-io-api-bindings-wrappers";
 
 // { command: { commandParam: count/lastUsedDate } }

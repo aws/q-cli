@@ -23,7 +23,7 @@
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-switch": "^1.0.3",
     "@radix-ui/react-tabs": "^1.0.4",
-    "@withfig/api-bindings": "workspace:^",
+    "@amzn/fig-io-api-bindings": "workspace:^",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.379.0",
@@ -38,7 +38,7 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
-    "@internal/types": "workspace:^",
+    "@amzn/fig-io-types": "workspace:^",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@typescript-eslint/eslint-plugin": "^7.11.0",

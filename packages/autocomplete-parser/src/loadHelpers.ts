@@ -5,7 +5,7 @@ import {
   ensureTrailingSlash,
   withTimeout,
   exponentialBackoff,
-} from "@internal/shared/utils";
+} from "@amzn/fig-io-shared/utils";
 import {
   executeCommand,
   fread,

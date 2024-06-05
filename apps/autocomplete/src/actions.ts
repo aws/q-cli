@@ -1,4 +1,4 @@
-import { Fig as FigAPI } from "@withfig/api-bindings";
+import { Fig as FigAPI } from "@amzn/fig-io-api-bindings";
 import { SettingsMap } from "@amzn/fig-io-api-bindings-wrappers";
 import * as app from "./fig.json";
 

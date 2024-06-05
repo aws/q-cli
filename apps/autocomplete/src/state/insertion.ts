@@ -1,13 +1,13 @@
 import logger from "loglevel";
 import { StoreApi } from "zustand";
-import { Shell } from "@withfig/api-bindings";
+import { Shell } from "@amzn/fig-io-api-bindings";
 import { SpecLocationSource } from "@fig/autocomplete-shared";
-import { SpecLocation, Suggestion } from "@internal/shared/internal";
+import { SpecLocation, Suggestion } from "@amzn/fig-io-shared/internal";
 import {
   makeArray,
   longestCommonPrefix,
   ensureTrailingSlash,
-} from "@internal/shared/utils";
+} from "@amzn/fig-io-shared/utils";
 import { getPrivateSpec } from "@amzn/fig-io-autocomplete-parser";
 import { SETTINGS } from "@amzn/fig-io-api-bindings-wrappers";
 import { trackEvent } from "../telemetry";
