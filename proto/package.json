@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "exports": {
-    "./fig": "./dist/fig.pb.js",
-    "./fig_common": "./dist/fig_common.pb.js"
+    "./*": "./dist/*.pb.js"
   },
   "engines": {
     "node": ">=18"

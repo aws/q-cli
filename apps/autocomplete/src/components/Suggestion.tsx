@@ -1,4 +1,3 @@
-/* eslint-disable no-plusplus */
 import { useCallback, useMemo, CSSProperties, useRef } from "react";
 import logger from "loglevel";
 import fuzzysort from "@amzn/fig-io-fuzzysort";

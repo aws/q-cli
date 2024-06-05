@@ -1,4 +1,3 @@
-/* eslint-disable import/first */
 global.fig = {
   ...global.fig,
   settings: {},

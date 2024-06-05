@@ -49,7 +49,6 @@ function renderIcon(icon: URL, height: string | number) {
     <div
       role="img"
       aria-label={
-        // eslint-disable-next-line no-nested-ternary
         type
           ? `Icon for ${type}`
           : isTemplate

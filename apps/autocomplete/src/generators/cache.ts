@@ -1,5 +1,3 @@
-/* eslint-disable max-classes-per-file */
-
 class CacheEntry<T> {
   private lastFetch = 0;
 

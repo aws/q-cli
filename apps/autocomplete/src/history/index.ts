@@ -97,7 +97,6 @@ const indexArgumentValues = (
         const specKey = serializeSpecLocation(specLocation);
 
         if (!historyValueIndex[specKey]) {
-          // eslint-disable-next-line no-param-reassign
           historyValueIndex[specKey] = mirrorSubcommand(
             spec,
             () => ({ values: [] }) as HistoryArgValues,
@@ -132,7 +131,6 @@ const awaitBatched = async <T>(
     const promises = getPromiseArray
       .slice(i, i + batchSize)
       .map((getPromise) => getPromise());
-    // eslint-disable-next-line no-await-in-loop
     const batchResults = await Promise.all(promises);
     results.push(...batchResults);
   }
@@ -167,7 +165,6 @@ export const loadHistorySource = async (
       entryMap[text] = { text, commands };
 
       for (const command of commands) {
-        // eslint-disable-next-line no-await-in-loop
         const location = await getCommandLocation(command, context);
         if (location.type === SpecLocationSource.GLOBAL) {
           allLocations.push(location.name);
@@ -195,7 +192,6 @@ export const loadHistorySource = async (
     const entry = { ...entryMap[text], context };
     for (let j = 0; j < entry.commands.length; j += 1) {
       const command = entry.commands[j];
-      // eslint-disable-next-line no-await-in-loop
       const location = await getCommandLocation(command, context);
       if (
         !command.parserResult &&
@@ -208,7 +204,6 @@ export const loadHistorySource = async (
             currentProcess: "",
             environmentVariables: {},
           };
-          // eslint-disable-next-line no-await-in-loop
           command.parserResult = await parseArguments(
             command.command,
             parseContext,

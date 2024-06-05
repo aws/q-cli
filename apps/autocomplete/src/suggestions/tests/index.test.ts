@@ -3,7 +3,6 @@ import { SETTINGS } from "@amzn/fig-io-api-bindings-wrappers";
 import * as settings from "@amzn/fig-io-api-bindings-wrappers";
 import {
   MockInstance,
-  SpyInstance,
   afterAll,
   beforeAll,
   describe,
@@ -192,7 +191,7 @@ describe("filterSuggestions", () => {
     //   key: SETTINGS,
     //   defaultValue?: any,
     // ) => T;
-    let spy: MockInstance<[key: SETTINGS, defaultValue?: any], unknown>;
+    let spy: MockInstance<[key: SETTINGS, defaultValue?: unknown], unknown>;
     beforeAll(() => {
       spy = vi.spyOn(settings, "getSetting");
       spy.mockImplementation((arg) => {
