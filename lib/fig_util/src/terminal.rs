@@ -492,6 +492,12 @@ intellij_variants! {
         name: "IDEA Ultimate",
         bundle: "com.jetbrains.intellij"
     },
+    IdeaUltimateEap {
+        org: "JetBrains",
+        internal_id: "idea-ultimate-eap",
+        name: "IDEA Ultimate EAP",
+        bundle: "com.jetbrains.intellij-EAP"
+    },
     IdeaCE {
         org: "JetBrains",
         internal_id: "idea-ce",
@@ -563,6 +569,12 @@ intellij_variants! {
         internal_id: "datagrip",
         name: "DataGrip",
         bundle: "com.jetbrains.datagrip"
+    },
+    RustRover {
+        org: "JetBrains",
+        internal_id: "rustrover",
+        name: "Rust Rover",
+        bundle: "com.jetbrains.rustrover"
     },
     RustRoverEap {
         org: "JetBrains",
