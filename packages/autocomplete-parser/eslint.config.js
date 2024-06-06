@@ -1,3 +1,5 @@
 // @ts-check
-import react from "@amzn/fig-io-eslint-config/react";
-export default react;
+import base from "@amzn/fig-io-eslint-config/base";
+export default base({
+  tsconfigPath: "./tsconfig.eslint.json",
+});

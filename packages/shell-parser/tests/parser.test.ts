@@ -1,5 +1,5 @@
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 import { describe, it, expect } from "vitest";
 import { parse } from "../src/parser";
 
@@ -66,7 +66,7 @@ function mapKeysDiff<K, V>(mapA: Map<K, V>, mapB: Map<K, V>) {
 }
 
 describe("parser fixtures", () => {
-  const fixturesPath = path.join(__dirname, "fixtures");
+  const fixturesPath = path.join(import.meta.dirname, "fixtures");
   const fixtures = fs.readdirSync(fixturesPath);
   describe.each(fixtures)("%s", (fixture) => {
     const inputFile = path.join(fixturesPath, fixture, "input.sh");

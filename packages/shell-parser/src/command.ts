@@ -26,7 +26,7 @@ const descendantAtIndex = (
   if (node.startIndex <= index && index <= node.endIndex) {
     const descendant = node.children
       .map((child) => descendantAtIndex(child, index, type))
-      .find((desc) => Boolean(desc));
+      .find(Boolean);
     if (descendant) {
       return descendant;
     }

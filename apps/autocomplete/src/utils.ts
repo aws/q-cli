@@ -1,4 +1,5 @@
 import { fs } from "@amzn/fig-io-api-bindings";
+// eslint-disable-next-line unicorn/prefer-node-protocol
 import util from "util";
 import { isInDevMode } from "@amzn/fig-io-api-bindings-wrappers";
 

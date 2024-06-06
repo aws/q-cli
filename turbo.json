@@ -5,9 +5,17 @@
       "dependsOn": ["^build"],
       "outputs": ["dist"]
     },
-    "lint": {},
-    "lint:fix": {},
-    "clean": {},
+    "lint": {
+      "dependsOn": ["@amzn/fig-io-eslint-config#build"],
+      "cache": false
+    },
+    "lint:fix": {
+      "dependsOn": ["@amzn/fig-io-eslint-config#build"],
+      "cache": false
+    },
+    "clean": {
+      "cache": false
+    },
     "dev": {
       "cache": false,
       "persistent": true
