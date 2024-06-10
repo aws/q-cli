@@ -36,7 +36,7 @@ use url::Url;
 
 use crate::Error;
 
-const DEFAULT_RELEASE_URL: &str = "https://desktop-release.codewhisperer.us-east-1.amazonaws.com";
+const DEFAULT_RELEASE_URL: &str = "https://desktop-release.q.us-east-1.amazonaws.com";
 
 /// The url to check for updates from, tries the following order:
 /// - The env var `Q_DESKTOP_RELEASE_URL`

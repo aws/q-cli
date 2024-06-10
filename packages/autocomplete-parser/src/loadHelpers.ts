@@ -40,7 +40,7 @@ const makeCdnUrlFactory =
     `${baseUrl}${specName}.${ext}`;
 
 const cdnUrlFactory = makeCdnUrlFactory(
-  "https://specs.codewhisperer.us-east-1.amazonaws.com/",
+  "https://specs.q.us-east-1.amazonaws.com/",
 );
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */

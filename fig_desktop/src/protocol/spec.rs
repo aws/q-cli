@@ -54,9 +54,7 @@ static CDNS: Lazy<Vec<CdnSource>> = Lazy::new(|| {
     vec![
         // Public cdn
         CdnSource {
-            url: "https://specs.codewhisperer.us-east-1.amazonaws.com"
-                .try_into()
-                .unwrap(),
+            url: "https://specs.q.us-east-1.amazonaws.com".try_into().unwrap(),
             auth_type: AuthType::None,
         },
         // Internal Amazon spec cdn
