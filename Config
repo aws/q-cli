@@ -15,10 +15,15 @@ package.FigIoDesktop = {
             NpmPrettyMuch = 1.1;
             NodeJS = 20.x;
             BrazilPath = 1.1;
-            CPython311 = default;
             GoogleProtoBuf = 3.21.x;
             Shellcheck = 0.x;
             CargoEevee = 0.1;
+            
+            # Python build deps
+            CPython311 = default;
+            Boto3 = 1.x;
+            BotoCore = 1.x;
+            Requests = 2.x.x;
         };
     };
 };

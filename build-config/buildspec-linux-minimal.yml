@@ -28,6 +28,8 @@ phases:
       - eval "$(mise activate bash --shims)"
       # Enable corepack for pnpm
       - corepack enable
+      # Install python deps
+      - pip3 install -r build-scripts/requirements.txt
   build:
     commands:
       # Disable tests that need fish/shellcheck

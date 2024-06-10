@@ -142,5 +142,5 @@ fi
 
 # npm_registry
 
-python3.11 build-scripts/main.py test --clippy-fail-on-warn
-python3.11 build-scripts/main.py doc
+"$BRAZIL_BUILD_HOME/bin/brazil-runtime-exec" python3.11 build-scripts/main.py test --clippy-fail-on-warn
+"$BRAZIL_BUILD_HOME/bin/brazil-runtime-exec" python3.11 build-scripts/main.py doc

@@ -139,7 +139,12 @@ def gen_manifest() -> str:
     )
 
 
-def build_macos_ime(release: bool, signing_data: EcSigningData | None, targets: Sequence[str] = []) -> pathlib.Path:
+def build_macos_ime(
+    release: bool,
+    is_prod: bool,
+    signing_data: EcSigningData | None,
+    targets: Sequence[str] = [],
+) -> pathlib.Path:
     fig_input_method_bin = build_cargo_bin(release=release, package="fig_input_method", targets=targets)
     input_method_app = pathlib.Path("build/CodeWhispererInputMethod.app")
 
@@ -161,7 +166,7 @@ def build_macos_ime(release: bool, signing_data: EcSigningData | None, targets: 
 
     if signing_data:
         info("Signing macos ime")
-        ec_sign_file(input_method_app, EcSigningType.IME, signing_data)
+        ec_sign_file(input_method_app, EcSigningType.IME, signing_data, is_prod=is_prod)
         apple_notarize_file(input_method_app, signing_data)
 
     return input_method_app
@@ -187,6 +192,7 @@ def build_desktop_app(
     pty_path: pathlib.Path,
     cli_path: pathlib.Path,
     npm_packages: Dict[str, pathlib.Path],
+    is_prod: bool,
     signing_data: EcSigningData | None,
     features: Mapping[str, Sequence[str]] | None = None,
     targets: Sequence[str] = [],
@@ -194,7 +200,7 @@ def build_desktop_app(
     target = get_target_triple()
 
     info("Building macos ime")
-    ime_app = build_macos_ime(release=release, signing_data=signing_data, targets=targets)
+    ime_app = build_macos_ime(release=release, signing_data=signing_data, targets=targets, is_prod=is_prod)
 
     info("Writing manifest")
     manifest_path = pathlib.Path(DESKTOP_PACKAGE_NAME) / "manifest.json"
@@ -316,16 +322,16 @@ def build_desktop_app(
     info(f"Created dmg at {dmg_path}")
 
     if signing_data:
-        sign_and_rebundle_macos(app_path=app_path, dmg_path=dmg_path, signing_data=signing_data)
+        sign_and_rebundle_macos(app_path=app_path, dmg_path=dmg_path, signing_data=signing_data, is_prod=is_prod)
 
     return dmg_path
 
 
-def sign_and_rebundle_macos(app_path: pathlib.Path, dmg_path: pathlib.Path, signing_data: EcSigningData):
+def sign_and_rebundle_macos(app_path: pathlib.Path, dmg_path: pathlib.Path, signing_data: EcSigningData, is_prod: bool):
     info("Signing app and dmg")
 
     # Sign the application
-    ec_sign_file(app_path, EcSigningType.APP, signing_data)
+    ec_sign_file(app_path, EcSigningType.APP, signing_data, is_prod=is_prod)
 
     # Notarize the application
 
@@ -335,7 +341,7 @@ def sign_and_rebundle_macos(app_path: pathlib.Path, dmg_path: pathlib.Path, sign
     rebundle_dmg(app_path=app_path, dmg_path=dmg_path)
 
     # Sign the dmg
-    ec_sign_file(dmg_path, EcSigningType.DMG, signing_data)
+    ec_sign_file(dmg_path, EcSigningType.DMG, signing_data, is_prod=is_prod)
 
     # Notarize the dmg
     apple_notarize_file(dmg_path, signing_data)
@@ -470,6 +476,7 @@ def build(
             signing_data=signing_data,
             features=cargo_features,
             targets=targets,
+            is_prod=stage_name == "prod" or stage_name is None,
         )
 
         sha_path = generate_sha(dmg_path)

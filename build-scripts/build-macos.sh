@@ -64,7 +64,7 @@ cargo install tauri-cli@1.5.2 --locked
 # create python venv and install dmgbuild
 python3.11 -m venv .venv
 source .venv/bin/activate
-pip3 install dmgbuild==1.6.1
+pip3 install -r build-scripts/requirements.txt
 
 python3.11 build-scripts/main.py build \
   --output-bucket "${output_bucket:-}" \
