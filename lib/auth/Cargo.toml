@@ -15,6 +15,7 @@ aws-sdk-ssooidc = "1.4.0"
 aws-smithy-async = "1.0.3"
 aws-smithy-runtime-api = { version = "1.0.3", features = ["http-auth"] }
 aws-types.workspace = true
+fig_aws_common.workspace = true
 fig_settings.workspace = true
 fig_util.workspace = true
 once_cell.workspace = true

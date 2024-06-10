@@ -580,6 +580,7 @@ dependencies = [
  "aws-smithy-async",
  "aws-smithy-runtime-api",
  "aws-types",
+ "fig_aws_common",
  "fig_settings",
  "fig_util",
  "insta",
@@ -2502,6 +2503,7 @@ dependencies = [
  "aws-smithy-runtime-api",
  "aws-smithy-types",
  "bytes",
+ "fig_aws_common",
  "fig_request",
  "fig_settings",
  "fig_util",
@@ -2518,6 +2520,17 @@ dependencies = [
  "tracing-subscriber",
  "url",
  "which 6.0.1",
+]
+
+[[package]]
+name = "fig_aws_common"
+version = "1.2.0"
+dependencies = [
+ "aws-runtime",
+ "aws-smithy-runtime-api",
+ "aws-smithy-types",
+ "aws-types",
+ "http 0.2.12",
 ]
 
 [[package]]
@@ -2871,6 +2884,7 @@ dependencies = [
  "aws-smithy-types",
  "aws-toolkit-telemetry-definitions",
  "fig_api_client",
+ "fig_aws_common",
  "fig_ipc",
  "fig_proto",
  "fig_request",

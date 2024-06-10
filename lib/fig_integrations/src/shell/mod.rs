@@ -796,7 +796,7 @@ mod test {
     }
 
     fn check_script(shell: Shell, when: When) {
-        run_shellcheck(shell.get_fig_integration_source(&when).to_owned())
+        run_shellcheck(shell.get_fig_integration_source(&when).to_owned());
     }
 
     #[test]

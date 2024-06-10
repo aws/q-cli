@@ -23,21 +23,21 @@ use amzn_codewhisperer_client::types::error::AccessDeniedError;
 use amzn_codewhisperer_client::types::AccessDeniedExceptionReason;
 use auth::builder_id::BearerResolver;
 use aws_config::{
-    AppName,
     BehaviorVersion,
     SdkConfig,
 };
 use aws_credential_types::Credentials;
 use aws_smithy_runtime_api::http::Response;
 use aws_smithy_types::config_bag::ConfigBag;
-use once_cell::sync::Lazy;
+use fig_aws_common::{
+    app_name,
+    UserAgentOverrideInterceptor,
+};
 use serde_json::Value;
 use tracing::error;
 
 use crate::customization::Customization;
 pub use crate::endpoints::Endpoint;
-
-static APP_NAME: Lazy<AppName> = Lazy::new(|| AppName::new("codewhisperer-terminal").unwrap());
 
 // Opt out constants
 const SHARE_CODEWHISPERER_CONTENT_SETTINGS_KEY: &str = "codeWhisperer.shareCodeWhispererContentWithAWS";
@@ -89,8 +89,9 @@ pub async fn cw_client(endpoint: Endpoint) -> amzn_codewhisperer_client::Client 
     let conf_builder: amzn_codewhisperer_client::config::Builder = (&sdk_config(&endpoint).await).into();
     let conf = conf_builder
         .interceptor(OptOutInterceptor)
+        .interceptor(UserAgentOverrideInterceptor::new())
         .bearer_token_resolver(BearerResolver)
-        .app_name(APP_NAME.clone())
+        .app_name(app_name())
         .endpoint_url(endpoint.url())
         .build();
     amzn_codewhisperer_client::Client::from_conf(conf)
@@ -103,8 +104,9 @@ pub async fn cw_streaming_client(endpoint: Endpoint) -> amzn_codewhisperer_strea
         .build();
     let conf = conf_builder
         .interceptor(OptOutInterceptor)
+        .interceptor(UserAgentOverrideInterceptor::new())
         .bearer_token_resolver(BearerResolver)
-        .app_name(APP_NAME.clone())
+        .app_name(app_name())
         .endpoint_url(endpoint.url())
         .stalled_stream_protection(stalled_stream_protection_config)
         .build();

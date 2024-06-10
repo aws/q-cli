@@ -125,12 +125,12 @@ mod tests {
     fn test_build_envs() {
         if let Some(build_variant) = build::VARIANT {
             println!("build_variant: {build_variant}");
-            assert!(["full", "minimal"].contains(&&&*build_variant.to_ascii_lowercase()));
+            assert!(["full", "minimal"].contains(&&*build_variant.to_ascii_lowercase()));
         }
 
         if let Some(build_hash) = build::HASH {
             println!("build_hash: {build_hash}");
-            assert!(build_hash.len() > 0);
+            assert!(!build_hash.is_empty());
         }
 
         if let Some(build_datetime) = build::DATETIME {

@@ -10,30 +10,31 @@ version.workspace = true
 workspace = true
 
 [dependencies]
+amzn-codewhisperer-client = { path = "../amzn-codewhisperer-client" }
+amzn-codewhisperer-streaming-client = { path = "../amzn-codewhisperer-streaming-client" }
+auth.workspace = true
+aws-config = "1.0.3"
+aws-credential-types = "1.0.3"
+aws-smithy-async = "1.0.3"
+aws-smithy-runtime-api = "1.0.3"
+aws-smithy-types = "1.0.3"
+bytes.workspace = true
+fig_aws_common.workspace = true
 fig_request.workspace = true
 fig_settings.workspace = true
 fig_util.workspace = true
+http = "1.1.0"
+once_cell.workspace = true
 regex.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-time.workspace = true
-url = { version = "2.3.1", features = ["serde"] }
-tokio.workspace = true
-tracing.workspace = true
-which.workspace = true
-aws-smithy-types = "1.0.3"
-aws-smithy-async = "1.0.3"
-aws-smithy-runtime-api = "1.0.3"
-tower = "0.4.13"
-http = "1.1.0"
-aws-config = "1.0.3"
-aws-credential-types = "1.0.3"
-bytes.workspace = true
-amzn-codewhisperer-client = { path = "../amzn-codewhisperer-client" }
-once_cell.workspace = true
 strum = { version = "0.26.1", features = ["derive"] }
-auth.workspace = true
-amzn-codewhisperer-streaming-client = { path = "../amzn-codewhisperer-streaming-client" }
+time.workspace = true
+tokio.workspace = true
+tower = "0.4.13"
+tracing.workspace = true
+url = { version = "2.3.1", features = ["serde"] }
+which.workspace = true
 
 [dev-dependencies]
 aws-smithy-runtime = { version = "1.3.1", features = ["test-util"] }

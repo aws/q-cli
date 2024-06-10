@@ -1,7 +1,4 @@
-use amzn_toolkit_telemetry::config::{
-    AppName,
-    BehaviorVersion,
-};
+use amzn_toolkit_telemetry::config::BehaviorVersion;
 use aws_credential_types::provider::error::CredentialsError;
 use aws_credential_types::{
     provider,
@@ -11,11 +8,9 @@ use aws_sdk_cognitoidentity::primitives::{
     DateTime,
     DateTimeFormat,
 };
+use fig_aws_common::app_name;
 
-use crate::{
-    TelemetryStage,
-    APP_NAME,
-};
+use crate::TelemetryStage;
 
 const CREDENTIALS_KEY: &str = "telemetry-cognito-credentials";
 
@@ -35,7 +30,7 @@ pub(crate) async fn get_cognito_credentials_send(
     let conf = aws_sdk_cognitoidentity::Config::builder()
         .behavior_version(BehaviorVersion::v2024_03_28())
         .region(telemetry_stage.region.clone())
-        .app_name(AppName::new(APP_NAME).unwrap())
+        .app_name(app_name())
         .build();
     let client = aws_sdk_cognitoidentity::Client::from_conf(conf);
 

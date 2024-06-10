@@ -43,6 +43,7 @@ crossterm = "0.27.0"
 dashmap = "5.5.0"
 dirs = "5.0.0"
 fig_api_client = { path = "lib/fig_api_client" }
+fig_aws_common = { path = "lib/fig_aws_common" }
 fig_diagnostic = { path = "lib/fig_diagnostic" }
 fig_install = { path = "lib/fig_install" }
 fig_integrations = { path = "lib/fig_integrations" }

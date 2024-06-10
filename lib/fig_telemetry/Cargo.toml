@@ -20,6 +20,7 @@ aws-sdk-cognitoidentityprovider = "1.16.0"
 aws-smithy-async = "1.1.7"
 aws-smithy-types = "1.1.7"
 aws-toolkit-telemetry-definitions = { path = "../aws-toolkit-telemetry-definitions" }
+fig_aws_common.workspace = true
 fig_api_client.workspace = true
 fig_ipc.workspace = true
 fig_proto.workspace = true

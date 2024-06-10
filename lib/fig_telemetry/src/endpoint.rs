@@ -26,7 +26,7 @@ mod tests {
         let params = Params::builder().build().unwrap();
         let endpoint = endpoint.resolve_endpoint(&params).await.unwrap();
         assert_eq!(endpoint.url(), "https://example.com");
-        assert!(endpoint.properties().len() == 0);
+        assert!(endpoint.properties().is_empty());
         assert!(endpoint.headers().count() == 0);
     }
 }

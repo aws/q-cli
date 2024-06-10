@@ -38,9 +38,8 @@ use aws_smithy_runtime_api::client::identity::{
     IdentityFuture,
     ResolveIdentity,
 };
-use aws_types::app_name::AppName;
 use aws_types::region::Region;
-use once_cell::sync::Lazy;
+use fig_aws_common::app_name;
 use time::OffsetDateTime;
 use tracing::error;
 
@@ -76,8 +75,6 @@ pub const AMZN_START_URL: &str = "https://amzn.awsapps.com/start";
 const DEVICE_GRANT_TYPE: &str = "urn:ietf:params:oauth:grant-type:device_code";
 const REFRESH_GRANT_TYPE: &str = "refresh_token";
 
-static APP_NAME: Lazy<AppName> = Lazy::new(|| AppName::new("codewhisperer-terminal").unwrap());
-
 /// Indicates if an expiration time has passed, there is a small 1 min window that is removed
 /// so the token will not expire in transit
 fn is_expired(expiration_time: &OffsetDateTime) -> bool {
@@ -97,7 +94,7 @@ fn client(region: Region) -> Client {
         .region(region)
         .retry_config(retry_config)
         .sleep_impl(SharedAsyncSleep::new(TokioSleep::new()))
-        .app_name(APP_NAME.clone())
+        .app_name(app_name())
         .build();
     Client::new(&sdk_config)
 }
@@ -491,11 +488,6 @@ mod tests {
 
     const US_EAST_1: Region = Region::from_static("us-east-1");
     const US_WEST_2: Region = Region::from_static("us-west-2");
-
-    #[test]
-    fn test_app_name() {
-        println!("{:?}", *APP_NAME);
-    }
 
     #[test]
     fn test_client() {

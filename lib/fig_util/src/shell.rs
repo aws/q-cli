@@ -202,7 +202,7 @@ mod tests {
             }
 
             let exe_path = Path::new(exe_path);
-            let version: String = shell_version(&shell, &exe_path).await.unwrap();
+            let version: String = shell_version(&shell, exe_path).await.unwrap();
             println!("{}: {version:?}\n", exe_path.display());
         }
     }

@@ -24,7 +24,6 @@ use amzn_codewhisperer_client::types::{
     UserTriggerDecisionEvent,
 };
 use amzn_toolkit_telemetry::config::{
-    AppName,
     BehaviorVersion,
     Region,
 };
@@ -51,6 +50,7 @@ use fig_api_client::ai::{
     cw_client,
     cw_endpoint,
 };
+use fig_aws_common::app_name;
 use fig_util::system_info::os_version;
 use fig_util::terminal::{
     CURRENT_TERMINAL,
@@ -79,7 +79,6 @@ pub enum Error {
     ClientError(#[from] amzn_toolkit_telemetry::operation::post_metrics::PostMetricsError),
 }
 
-const APP_NAME: &str = "codewhisperer-terminal";
 const PRODUCT: &str = "CodeWhisperer";
 const PRODUCT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -181,7 +180,7 @@ impl Client {
             Config::builder()
                 .behavior_version(BehaviorVersion::v2024_03_28())
                 .endpoint_resolver(StaticEndpoint(telemetry_stage.endpoint))
-                .app_name(AppName::new(APP_NAME).unwrap())
+                .app_name(app_name())
                 .region(telemetry_stage.region.clone())
                 .credentials_provider(SharedCredentialsProvider::new(CognitoProvider::new(telemetry_stage)))
                 .build(),
