@@ -98,7 +98,7 @@ def cd_signer_status_request(request_id: str):
         path=f"/signing_requests/{request_id}",
     ).json()
     info(f"Signing request status: {status_json}")
-    return status_json["status"]
+    return status_json["signingRequest"]["status"]
 
 
 def ec_post_request(source: str, destination: str, signing_data: EcSigningData):
