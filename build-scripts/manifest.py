@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Optional, Mapping
 
 from const import APPLE_TEAM_ID
 
@@ -15,7 +14,6 @@ class EcSigningType(Enum):
 class EmbeddedRequirement:
     path: str
     identifier: str
-    signing_args: Optional[Mapping[str, Any]]
 
 
 def manifest(
@@ -25,7 +23,7 @@ def manifest(
     entitlements: bool | None = None,
     embedded_requirements: list[EmbeddedRequirement] | None = None,
 ):
-    return {
+    m = {
         "type": type,
         "os": "osx",
         "name": name,
@@ -35,17 +33,22 @@ def manifest(
             "signing_requirements": {
                 "certificate_type": "developerIDAppDistribution",
                 "app_id_prefix": APPLE_TEAM_ID,
-                "signing_args": {"entitlements_path": "SIGNING_METADATA/entitlements.plist"} if entitlements else None,
-            },
-            "embedded_requirements": {
-                req.path: {
-                    "identifier": req.identifier,
-                    "signing_args": req.signing_args,
-                }
-                for req in embedded_requirements or []
             },
         },
     }
+
+    if entitlements:
+        m["app"]["signing_args"] = {"entitlements_path": "SIGNING_METADATA/entitlements.plist"}
+
+    if embedded_requirements:
+        m["app"]["embedded_binaries"] = {
+            req.path: {
+                "identifier": req.identifier,
+            }
+            for req in embedded_requirements
+        }
+
+    return m
 
 
 def app_manifest():
@@ -58,12 +61,10 @@ def app_manifest():
             EmbeddedRequirement(
                 path="Contents/MacOS/q",
                 identifier="com.amazon.q",
-                signing_args={},
             ),
             EmbeddedRequirement(
                 path="Contents/MacOS/qterm",
                 identifier="com.amazon.qterm",
-                signing_args={},
             ),
         ],
     )

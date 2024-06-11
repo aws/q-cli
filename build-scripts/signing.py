@@ -5,7 +5,7 @@ import pathlib
 from typing import Any, List, Optional
 from const import APPLE_TEAM_ID
 from manifest import EcSigningType, app_manifest, dmg_manifest, ime_manifest
-from util import Args, Env, info, run_cmd, run_cmd_output, run_cmd_status
+from util import Args, Env, info, run_cmd, run_cmd_output, run_cmd_status, warn
 import json
 import shutil
 import time
@@ -61,7 +61,9 @@ def cd_signer_request(method: str, path: str, data: str | None = None):
     headers = {"Content-Type": "application/json"}
     request = AWSRequest(method=method, url=url, data=data, headers=headers)
     SigV4Auth(get_creds(), "signer-builder-tools", REGION).add_auth(request)
-    return requests.request(method=method, url=url, headers=dict(request.headers), data=data)
+    response = requests.request(method=method, url=url, headers=dict(request.headers), data=data)
+    info(f"CDSigner Request ({url}): {response.status}")
+    return response
 
 
 def cd_signer_create_request(manifest: Any) -> str:
@@ -71,12 +73,13 @@ def cd_signer_create_request(manifest: Any) -> str:
         data=json.dumps({"manifest": manifest}),
     )
     response_json = response.json()
+    info(f"Signing request create: {response_json}")
     request_id = response_json["signingRequestId"]
     return request_id
 
 
 def cd_signer_start_request(request_id: str, source_key: str, destination_key: str, signing_data: EcSigningData):
-    cd_signer_request(
+    response_json = cd_signer_request(
         method="POST",
         path=f"/signing_requests/{request_id}/start",
         data=json.dumps(
@@ -89,16 +92,17 @@ def cd_signer_start_request(request_id: str, source_key: str, destination_key: s
                 },
             }
         ),
-    )
+    ).json()
+    info(f"Signing request start: {response_json}")
 
 
 def cd_signer_status_request(request_id: str):
-    status_json = cd_signer_request(
+    response_json = cd_signer_request(
         method="GET",
         path=f"/signing_requests/{request_id}",
     ).json()
-    info(f"Signing request status: {status_json}")
-    return status_json["signingRequest"]["status"]
+    info(f"Signing request status: {response_json}")
+    return response_json["signingRequest"]["status"]
 
 
 def ec_post_request(source: str, destination: str, signing_data: EcSigningData):
@@ -209,8 +213,15 @@ def ec_sign_file(file: pathlib.Path, type: EcSigningType, signing_data: EcSignin
         while True:
             info(f"Checking for signed package {i}")
             status = cd_signer_status_request(request_id)
-            if not (status == "created" or status == "processing" or status == "inProgress"):
-                break
+
+            match status:
+                case "created" | "processing" | "inProgress":
+                    pass
+                case "failure":
+                    raise RuntimeError("Signing request failed")
+                case _:
+                    warn(f"Unexpected status, ignoring: {status}")
+
             if time.time() >= end_time:
                 raise RuntimeError("Signed package did not appear, check signer logs")
             time.sleep(5)
