@@ -215,6 +215,8 @@ def ec_sign_file(file: pathlib.Path, type: EcSigningType, signing_data: EcSignin
             status = cd_signer_status_request(request_id)
 
             match status:
+                case "success":
+                    break
                 case "created" | "processing" | "inProgress":
                     pass
                 case "failure":
@@ -224,7 +226,7 @@ def ec_sign_file(file: pathlib.Path, type: EcSigningType, signing_data: EcSignin
 
             if time.time() >= end_time:
                 raise RuntimeError("Signed package did not appear, check signer logs")
-            time.sleep(5)
+            time.sleep(2)
             i += 1
 
     info("Signed!")
