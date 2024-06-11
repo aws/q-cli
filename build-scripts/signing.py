@@ -62,7 +62,7 @@ def cd_signer_request(method: str, path: str, data: str | None = None):
     request = AWSRequest(method=method, url=url, data=data, headers=headers)
     SigV4Auth(get_creds(), "signer-builder-tools", REGION).add_auth(request)
     response = requests.request(method=method, url=url, headers=dict(request.headers), data=data)
-    info(f"CDSigner Request ({url}): {response.status}")
+    info(f"CDSigner Request ({url}): {response.status_code}")
     return response
 
 
