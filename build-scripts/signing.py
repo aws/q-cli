@@ -79,7 +79,7 @@ def cd_signer_create_request(manifest: Any) -> str:
 
 
 def cd_signer_start_request(request_id: str, source_key: str, destination_key: str, signing_data: EcSigningData):
-    response_json = cd_signer_request(
+    response_text = cd_signer_request(
         method="POST",
         path=f"/signing_requests/{request_id}/start",
         data=json.dumps(
@@ -92,8 +92,8 @@ def cd_signer_start_request(request_id: str, source_key: str, destination_key: s
                 },
             }
         ),
-    ).json()
-    info(f"Signing request start: {response_json}")
+    ).text
+    info(f"Signing request start: {response_text}")
 
 
 def cd_signer_status_request(request_id: str):
