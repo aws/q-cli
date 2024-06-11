@@ -27,7 +27,7 @@ def manifest(
         "type": type,
         "os": "osx",
         "name": name,
-        "outputs": {"label": "macos", "path": name},
+        "outputs": [{"label": "macos", "path": name}],
         "app": {
             "identifier": identifier,
             "signing_requirements": {
