@@ -19,14 +19,14 @@ class EmbeddedRequirement:
 
 
 def manifest(
-    type: EcSigningType,
+    type: str,
     name: str,
     identifier: str,
     entitlements: bool | None = None,
     embedded_requirements: list[EmbeddedRequirement] | None = None,
 ):
     return {
-        "type": type.value,
+        "type": type,
         "os": "osx",
         "name": name,
         "outputs": {"label": "macos", "path": name},
@@ -50,7 +50,7 @@ def manifest(
 
 def app_manifest():
     return manifest(
-        type=EcSigningType.APP,
+        type="app",
         name="Amazon Q.app",
         identifier="com.amazon.codewhisperer",
         entitlements=True,
@@ -71,7 +71,7 @@ def app_manifest():
 
 def dmg_manifest(name: str):
     return manifest(
-        type=EcSigningType.DMG,
+        type="dmg",
         name=name,
         identifier="com.amazon.codewhisperer.installer",
     )
@@ -79,7 +79,7 @@ def dmg_manifest(name: str):
 
 def ime_manifest():
     return manifest(
-        type=EcSigningType.IME,
+        type="app",
         name="CodeWhispererInputMethod.app",
         identifier="com.amazon.inputmethod.codewhisperer",
     )
