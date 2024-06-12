@@ -41,7 +41,7 @@ def manifest(
         m["app"]["signing_args"] = {"entitlements_path": "SIGNING_METADATA/entitlements.plist"}
 
     if embedded_requirements:
-        m["app"]["embedded_binaries"] = {
+        m["app"]["embedded_requirements"] = {
             req.path: {
                 "identifier": req.identifier,
             }
