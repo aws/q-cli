@@ -73,9 +73,12 @@ check_glibc_version() {
         log_error "Could not determine glibc version."
         return 1
     else
-        set -- "$glibc_version"
-        major=$1
-        minor=$2
+        IFS='.' read -r major minor << EOF
+$glibc_version
+EOF
+        if [ -z "$minor" ]; then
+            minor=0
+        fi
         if [ "$major" -gt 2 ] || { [ "$major" -eq 2 ] && [ "$minor" -ge 34 ]; }; then
             return 0
         else

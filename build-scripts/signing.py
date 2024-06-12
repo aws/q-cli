@@ -61,9 +61,17 @@ def cd_signer_request(method: str, path: str, data: str | None = None):
     headers = {"Content-Type": "application/json"}
     request = AWSRequest(method=method, url=url, data=data, headers=headers)
     SigV4Auth(get_creds(), "signer-builder-tools", REGION).add_auth(request)
-    response = requests.request(method=method, url=url, headers=dict(request.headers), data=data)
-    info(f"CDSigner Request ({url}): {response.status_code}")
-    return response
+
+    for i in range(1, 8):
+        response = requests.request(method=method, url=url, headers=dict(request.headers), data=data)
+        info(f"CDSigner Request ({url}): {response.status_code}")
+        if response.status_code == 429:
+            warn(f"Too many requests, backing off for {2 ** i} seconds")
+            time.sleep(2**i)
+            continue
+        return response
+
+    raise Exception(f"Failed to request {url}")
 
 
 def cd_signer_create_request(manifest: Any) -> str:
