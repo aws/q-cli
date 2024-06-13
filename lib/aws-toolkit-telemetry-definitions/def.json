@@ -91,6 +91,14 @@
       ]
     },
     {
+      "name": "codewhispererterminal_addChatMessage",
+      "description": "Captures active usage with Q Chat in shell",
+      "metadata": [
+        { "type": "amazonqConversationId" },
+        { "type": "credentialStartUrl", "required": false }
+      ]
+    },
+    {
       "name": "amazonq_endChat",
       "description": "Captures end of the conversation with amazonq /dev",
       "metadata": [

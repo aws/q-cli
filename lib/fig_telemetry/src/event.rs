@@ -7,6 +7,7 @@ use amzn_toolkit_telemetry::types::MetricDatum;
 use aws_toolkit_telemetry_definitions::metrics::{
     AmazonqEndChat,
     AmazonqStartChat,
+    CodewhispererterminalAddChatMessage,
     CodewhispererterminalCliSubcommandExecuted,
     CodewhispererterminalCompletionInserted,
     CodewhispererterminalDashboardPageViewed,
@@ -293,7 +294,15 @@ impl Event {
                 }
                 .into_metric_datum(),
             ),
-            EventType::ChatAddedMessage { .. } => None,
+            EventType::ChatAddedMessage { conversation_id, .. } => Some(
+                CodewhispererterminalAddChatMessage {
+                    create_time: self.created_time,
+                    value: None,
+                    amazonq_conversation_id: Some(conversation_id.into()),
+                    credential_start_url: self.credential_start_url.map(Into::into),
+                }
+                .into_metric_datum(),
+            ),
         }
     }
 }
