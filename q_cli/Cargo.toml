@@ -68,11 +68,7 @@ thiserror.workspace = true
 time.workspace = true
 tokio.workspace = true
 tracing.workspace = true
-tracing-subscriber = { version = "0.3.16", features = [
-    "fmt",
-    "time",
-    "parking_lot",
-] }
+tracing-subscriber.workspace = true
 unicode-width = "0.1.11"
 url = "2.3.1"
 uuid.workspace = true

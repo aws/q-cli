@@ -59,11 +59,7 @@ sysinfo.workspace = true
 time.workspace = true
 tokio.workspace = true
 tracing.workspace = true
-tracing-subscriber = { version = "0.3.16", features = [
-    "fmt",
-    "time",
-    "parking_lot",
-] }
+tracing-subscriber.workspace = true
 uuid.workspace = true
 which.workspace = true
 

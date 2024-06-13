@@ -51,6 +51,12 @@ impl SecretStore {
     }
 }
 
+impl std::fmt::Debug for SecretStore {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SecretStore").finish()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

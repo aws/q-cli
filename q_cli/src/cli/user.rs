@@ -11,6 +11,7 @@ use auth::builder_id::{
     PollCreateToken,
     TokenType,
 };
+use auth::pkce::start_pkce_authorization;
 use auth::secret_store::SecretStore;
 use clap::Subcommand;
 use crossterm::style::Stylize;
@@ -96,49 +97,32 @@ impl RootUserSubcommand {
                                 (Some(start_url), Some(region))
                             },
                         };
-
                         let secret_store = SecretStore::new().await?;
-                        let device_auth =
-                            start_device_authorization(&secret_store, start_url.clone(), region.clone()).await?;
 
-                        println!();
-                        println!("Confirm the following code in the browser");
-                        println!("Code: {}", device_auth.user_code.bold());
-                        println!();
-                        // confirm("Continue?")?;
+                        // Remote machine won't be able to handle browser opening and redirects,
+                        // hence always use device code flow.
+                        if fig_util::system_info::is_remote() {
+                            try_device_authorization(&secret_store, start_url.clone(), region.clone()).await?;
+                        } else {
+                            let (client, registration) =
+                                start_pkce_authorization(start_url.clone(), region.clone()).await?;
 
-                        match fig_util::open_url_async(&device_auth.verification_uri_complete).await {
-                            Ok(false) | Err(_) => println!("Open this URL: {}", device_auth.verification_uri_complete),
-                            _ => (),
-                        }
-                        // println!();
-
-                        let mut spinner = Spinner::new(vec![
-                            SpinnerComponent::Spinner,
-                            SpinnerComponent::Text(" Logging in...".into()),
-                        ]);
-
-                        loop {
-                            tokio::time::sleep(Duration::from_secs(device_auth.interval.try_into().unwrap_or(1))).await;
-                            match poll_create_token(
-                                &secret_store,
-                                device_auth.device_code.clone(),
-                                start_url.clone(),
-                                region.clone(),
-                            )
-                            .await
-                            {
-                                PollCreateToken::Pending => {},
-                                PollCreateToken::Complete(_) => {
-                                    fig_telemetry::send_user_logged_in().await;
+                            match fig_util::open_url_async(&registration.url).await {
+                                // If we are unable to open the link with the browser, then fallback to
+                                // the device code flow.
+                                Ok(false) | Err(_) => {
+                                    try_device_authorization(&secret_store, start_url.clone(), region.clone()).await?;
+                                },
+                                // Otherwise, finish PKCE.
+                                _ => {
+                                    let mut spinner = Spinner::new(vec![
+                                        SpinnerComponent::Spinner,
+                                        SpinnerComponent::Text(" Logging in...".into()),
+                                    ]);
+                                    registration.finish(&client, Some(&secret_store)).await?;
                                     spinner.stop_with_message("Logged in successfully".into());
-                                    break;
                                 },
-                                PollCreateToken::Error(err) => {
-                                    spinner.stop();
-                                    return Err(err.into());
-                                },
-                            };
+                            }
                         }
                     },
                     // Other methods soon!
@@ -213,4 +197,53 @@ impl UserSubcommand {
             Self::Root(cmd) => cmd.execute().await,
         }
     }
+}
+
+async fn try_device_authorization(
+    secret_store: &SecretStore,
+    start_url: Option<String>,
+    region: Option<String>,
+) -> Result<()> {
+    let device_auth = start_device_authorization(secret_store, start_url.clone(), region.clone()).await?;
+
+    println!();
+    println!("Confirm the following code in the browser");
+    println!("Code: {}", device_auth.user_code.bold());
+    println!();
+    // confirm("Continue?")?;
+
+    match fig_util::open_url_async(&device_auth.verification_uri_complete).await {
+        Ok(false) | Err(_) => println!("Open this URL: {}", device_auth.verification_uri_complete),
+        _ => (),
+    }
+    // println!();
+
+    let mut spinner = Spinner::new(vec![
+        SpinnerComponent::Spinner,
+        SpinnerComponent::Text(" Logging in...".into()),
+    ]);
+
+    loop {
+        tokio::time::sleep(Duration::from_secs(device_auth.interval.try_into().unwrap_or(1))).await;
+        match poll_create_token(
+            secret_store,
+            device_auth.device_code.clone(),
+            start_url.clone(),
+            region.clone(),
+        )
+        .await
+        {
+            PollCreateToken::Pending => {},
+            PollCreateToken::Complete(_) => {
+                fig_telemetry::send_user_logged_in().await;
+                spinner.stop_with_message("Logged in successfully".into());
+                break;
+            },
+            PollCreateToken::Error(err) => {
+                spinner.stop();
+                return Err(err.into());
+            },
+        };
+    }
+    Ok(())
 }

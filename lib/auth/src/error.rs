@@ -37,6 +37,16 @@ pub enum Error {
     Setting(#[from] fig_settings::Error),
     #[error("No token")]
     NoToken,
+    #[error("OAuth state mismatch. Actual: {} | Expected: {}", .actual, .expected)]
+    OAuthStateMismatch { actual: String, expected: String },
+    #[error("OAuth invalid query parameters")]
+    OAuthInvalidQueryParams(String),
+    #[error("Timeout waiting for authentication to complete")]
+    OAuthTimeout,
+    #[error("No code received on redirect")]
+    OAuthMissingCode,
+    #[error("OAuth error: {0}")]
+    OAuthCustomError(String),
 }
 
 impl Error {

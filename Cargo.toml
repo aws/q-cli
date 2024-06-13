@@ -68,6 +68,7 @@ nix = { version = "0.29.0", features = [
     "user",
 ] }
 once_cell = { version = "1.18.0", features = ["parking_lot"] }
+percent-encoding = "2.2.0"
 rand = "0.8.5"
 regex = "1.7.0"
 reqwest = { version = "0.12.2", default-features = false, features = [
@@ -102,6 +103,12 @@ time = { version = "0.3.34", features = [
 tokio = { version = "1.37.0", features = ["full"] }
 toml = "0.8.12"
 tracing = { version = "0.1.40", features = ["log"] }
+tracing-subscriber = { version = "0.3.17", features = [
+    "env-filter",
+    "fmt",
+    "parking_lot",
+    "time",
+] }
 uuid = { version = "1.8.0", features = ["v4", "serde"] }
 which = "6.0.0"
 whoami = "1.5.1"

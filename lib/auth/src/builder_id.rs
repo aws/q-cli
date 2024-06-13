@@ -52,11 +52,11 @@ use crate::{
     Result,
 };
 
-const CLIENT_NAME: &str = "Amazon Q Developer for command line";
+pub(crate) const CLIENT_NAME: &str = "Amazon Q Developer for command line";
 
-const OIDC_BUILDER_ID_REGION: Region = Region::from_static("us-east-1");
+pub(crate) const OIDC_BUILDER_ID_REGION: Region = Region::from_static("us-east-1");
 
-const SCOPES: &[&str] = &[
+pub(crate) const SCOPES: &[&str] = &[
     "sso:account:access",
     "codewhisperer:completions",
     "codewhisperer:analysis",
@@ -64,7 +64,7 @@ const SCOPES: &[&str] = &[
     // "codewhisperer:taskassist",
     // "codewhisperer:transformations",
 ];
-const CLIENT_TYPE: &str = "public";
+pub(crate) const CLIENT_TYPE: &str = "public";
 
 // The start URL for public builder ID users
 pub const START_URL: &str = "https://view.awsapps.com/start";
@@ -82,11 +82,11 @@ fn is_expired(expiration_time: &OffsetDateTime) -> bool {
     &(now + time::Duration::minutes(1)) > expiration_time
 }
 
-fn oidc_url(region: &Region) -> String {
+pub(crate) fn oidc_url(region: &Region) -> String {
     format!("https://oidc.{region}.amazonaws.com")
 }
 
-fn client(region: Region) -> Client {
+pub(crate) fn client(region: Region) -> Client {
     let retry_config = RetryConfig::standard().with_max_attempts(3);
     let sdk_config = aws_types::SdkConfig::builder()
         .behavior_version(BehaviorVersion::v2024_03_28())
@@ -350,7 +350,7 @@ impl BuilderIdToken {
         Ok(())
     }
 
-    fn from_output(output: CreateTokenOutput, region: Region, start_url: Option<String>) -> Self {
+    pub(crate) fn from_output(output: CreateTokenOutput, region: Region, start_url: Option<String>) -> Self {
         Self {
             access_token: output.access_token.unwrap_or_default().into(),
             expires_at: time::OffsetDateTime::now_utc() + time::Duration::seconds(output.expires_in as i64),

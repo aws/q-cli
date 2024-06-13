@@ -22,4 +22,4 @@ parking_lot = "0.12.1"
 thiserror.workspace = true
 tracing.workspace = true
 tracing-appender = "0.2.2"
-tracing-subscriber = { version = "0.3.16", features = ["env-filter", "parking_lot"] }
+tracing-subscriber.workspace = true
