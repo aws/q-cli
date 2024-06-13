@@ -17,14 +17,13 @@ class EmbeddedRequirement:
 
 
 def manifest(
-    type: str,
     name: str,
     identifier: str,
     entitlements: bool | None = None,
     embedded_requirements: list[EmbeddedRequirement] | None = None,
 ):
     m = {
-        "type": type,
+        "type": "app",
         "os": "osx",
         "name": name,
         "outputs": [{"label": "macos", "path": name}],
@@ -53,7 +52,6 @@ def manifest(
 
 def app_manifest():
     return manifest(
-        type="app",
         name="Amazon Q.app",
         identifier="com.amazon.codewhisperer",
         entitlements=True,
@@ -72,7 +70,6 @@ def app_manifest():
 
 def dmg_manifest(name: str):
     return manifest(
-        type="dmg",
         name=name,
         identifier="com.amazon.codewhisperer.installer",
     )
@@ -80,7 +77,6 @@ def dmg_manifest(name: str):
 
 def ime_manifest():
     return manifest(
-        type="app",
         name="CodeWhispererInputMethod.app",
         identifier="com.amazon.inputmethod.codewhisperer",
     )
