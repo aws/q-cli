@@ -5,7 +5,7 @@ import pathlib
 from typing import Any, List, Optional
 from const import APPLE_TEAM_ID
 from manifest import EcSigningType, app_manifest, dmg_manifest, ime_manifest
-from util import Args, Env, info, run_cmd, run_cmd_output, run_cmd_status, warn
+from util import Args, Env, info, run_cmd, run_cmd_output, warn
 import json
 import shutil
 import time
@@ -44,12 +44,6 @@ class EcSigningData:
         self.notarizing_secret_id = notarizing_secret_id
         self.aws_account_id = aws_account_id
         self.signing_role_name = signing_role_name
-
-
-def ec_signed_package_exists(name: str, signing_data: EcSigningData) -> bool:
-    s3_path = f"s3://{signing_data.bucket_name}/{name}"
-    info(f"Checking if {s3_path} exists")
-    return run_cmd_status(["aws", "s3", "ls", s3_path]) == 0
 
 
 def cd_signer_request(method: str, path: str, data: str | None = None):
@@ -113,24 +107,6 @@ def cd_signer_status_request(request_id: str):
     return response_json["signingRequest"]["status"]
 
 
-def ec_post_request(source: str, destination: str, signing_data: EcSigningData):
-    message = {
-        "data": {
-            "source": {"arn": f"arn:aws:s3:::{source}"},
-            "destination": {"arn": f"arn:aws:s3:::{destination}"},
-            "iam-role": {"arn": f"arn:aws:iam::{signing_data.aws_account_id}:role/{signing_data.signing_role_name}"},
-        }
-    }
-    message_json = json.dumps(message)
-
-    queue_url_output = run_cmd_output(
-        ["aws", "sqs", "get-queue-url", "--queue-name", signing_data.signing_request_queue_name]
-    )
-    queue_url = json.loads(queue_url_output)["QueueUrl"]
-
-    run_cmd(["aws", "sqs", "send-message", "--queue-url", queue_url, "--message-body", message_json])
-
-
 def ec_build_signed_package(type: EcSigningType, file_path: pathlib.Path, name: str):
     working_dir = pathlib.Path(f"build-config/signing/{type.value}")
     starting_dir = pathlib.Path.cwd()
@@ -178,64 +154,44 @@ def ec_sign_file(file: pathlib.Path, type: EcSigningType, signing_data: EcSignin
 
     info("Sending request...")
 
-    if is_prod:
-        ec_post_request(
-            f"{signing_data.bucket_name}/pre-signed/package.tar.gz",
-            f"{signing_data.bucket_name}/signed/signed.zip",
-            signing_data,
-        )
+    match type:
+        case EcSigningType.APP:
+            manifest = app_manifest()
+        case EcSigningType.DMG:
+            manifest = dmg_manifest(name)
+        case EcSigningType.IME:
+            manifest = ime_manifest()
 
-        # Loop until the signed package appears in the S3 bucket, for a maximum of 3 minutes
-        max_duration = 180
-        end_time = time.time() + max_duration
-        i = 1
-        while True:
-            info(f"Checking for signed package {i}")
-            if ec_signed_package_exists("signed/signed.zip", signing_data):
+    request_id = cd_signer_create_request(manifest)
+
+    cd_signer_start_request(
+        request_id=request_id,
+        source_key="pre-signed/package.tar.gz",
+        destination_key="signed/signed.zip",
+        signing_data=signing_data,
+    )
+
+    max_duration = 180
+    end_time = time.time() + max_duration
+    i = 1
+    while True:
+        info(f"Checking for signed package {i}")
+        status = cd_signer_status_request(request_id)
+
+        match status:
+            case "success":
                 break
-            if time.time() >= end_time:
-                raise RuntimeError("Signed package did not appear, check signer logs")
-            time.sleep(10)
-            i += 1
-    else:
-        match type:
-            case EcSigningType.APP:
-                manifest = app_manifest()
-            case EcSigningType.DMG:
-                manifest = dmg_manifest(name)
-            case EcSigningType.IME:
-                manifest = ime_manifest()
+            case "created" | "processing" | "inProgress":
+                pass
+            case "failure":
+                raise RuntimeError("Signing request failed")
+            case _:
+                warn(f"Unexpected status, ignoring: {status}")
 
-        request_id = cd_signer_create_request(manifest)
-
-        cd_signer_start_request(
-            request_id=request_id,
-            source_key="pre-signed/package.tar.gz",
-            destination_key="signed/signed.zip",
-            signing_data=signing_data,
-        )
-
-        max_duration = 180
-        end_time = time.time() + max_duration
-        i = 1
-        while True:
-            info(f"Checking for signed package {i}")
-            status = cd_signer_status_request(request_id)
-
-            match status:
-                case "success":
-                    break
-                case "created" | "processing" | "inProgress":
-                    pass
-                case "failure":
-                    raise RuntimeError("Signing request failed")
-                case _:
-                    warn(f"Unexpected status, ignoring: {status}")
-
-            if time.time() >= end_time:
-                raise RuntimeError("Signed package did not appear, check signer logs")
-            time.sleep(2)
-            i += 1
+        if time.time() >= end_time:
+            raise RuntimeError("Signed package did not appear, check signer logs")
+        time.sleep(2)
+        i += 1
 
     info("Signed!")
 

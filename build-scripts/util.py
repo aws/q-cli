@@ -32,6 +32,7 @@ def isDarwin() -> bool:
 def isLinux() -> bool:
     return platform.system() == "Linux"
 
+
 @cache
 def isMusl() -> bool:
     return os.environ.get("AMAZON_Q_BUILD_MUSL") is not None
@@ -39,9 +40,9 @@ def isMusl() -> bool:
 
 def log(*value: object, title: str, color: str | None):
     if isCi() or color is None:
-        print(f"{title}:", *value)
+        print(f"{title}:", *value, flush=True)
     else:
-        print(f"{color}{title}:{ENDC}", *value)
+        print(f"{color}{title}:{ENDC}", *value, flush=True)
 
 
 def info(*value: object):
