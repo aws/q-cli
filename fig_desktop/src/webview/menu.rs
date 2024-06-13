@@ -103,6 +103,7 @@ pub fn menu_bar() -> Menu {
     menu_bar
 }
 
+#[allow(dead_code)]
 #[cfg(target_os = "macos")]
 pub fn context_menu() -> (Menu, Submenu) {
     use muda::{

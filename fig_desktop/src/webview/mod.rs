@@ -74,10 +74,9 @@ use wry::{
     WebViewBuilder,
 };
 
-use self::menu::{
-    context_menu,
-    menu_bar,
-};
+#[cfg(all(target_os = "macos", feature = "hotkey-chat"))]
+use self::menu::context_menu;
+use self::menu::menu_bar;
 use self::notification::WebviewNotificationsState;
 use self::window_id::DashboardId;
 use crate::event::{
@@ -402,9 +401,10 @@ impl WebviewManager {
         #[cfg(target_os = "macos")]
         menu_bar.init_for_nsapp();
 
+        #[cfg(all(target_os = "macos", feature = "hotkey-chat"))]
         let (hotkey_menu_bar, hotkey_context_menu) = context_menu();
 
-        #[cfg(target_os = "macos")]
+        #[cfg(all(target_os = "macos", feature = "hotkey-chat"))]
         hotkey_menu_bar.init_for_nsapp();
 
         let proxy = self.event_loop.create_proxy();
@@ -513,7 +513,10 @@ impl WebviewManager {
                                         &self.notifications_state,
                                         window_target,
                                         &api_handler_tx,
+                                        #[cfg(all(target_os = "macos", feature = "hotkey-chat"))]
                                         Some(&hotkey_context_menu),
+                                        #[cfg(not(all(target_os = "macos", feature = "hotkey-chat")))]
+                                        None,
                                     );
                                 } else {
                                     trace!(

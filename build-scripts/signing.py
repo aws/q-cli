@@ -4,7 +4,7 @@ import os
 import pathlib
 from typing import Any, List, Optional
 from const import APPLE_TEAM_ID
-from manifest import EcSigningType, app_manifest, dmg_manifest, ime_manifest
+from manifest import CdSigningType, app_manifest, dmg_manifest, ime_manifest
 from util import Args, Env, info, run_cmd, run_cmd_output, warn
 import json
 import shutil
@@ -24,9 +24,8 @@ def get_creds():
     return creds
 
 
-class EcSigningData:
+class CdSigningData:
     bucket_name: str
-    signing_request_queue_name: str
     notarizing_secret_id: str
     aws_account_id: str
     signing_role_name: str
@@ -34,13 +33,11 @@ class EcSigningData:
     def __init__(
         self,
         bucket_name: str,
-        signing_request_queue_name: str,
         notarizing_secret_id: str,
         aws_account_id: str,
         signing_role_name: str,
     ):
         self.bucket_name = bucket_name
-        self.signing_request_queue_name = signing_request_queue_name
         self.notarizing_secret_id = notarizing_secret_id
         self.aws_account_id = aws_account_id
         self.signing_role_name = signing_role_name
@@ -80,7 +77,7 @@ def cd_signer_create_request(manifest: Any) -> str:
     return request_id
 
 
-def cd_signer_start_request(request_id: str, source_key: str, destination_key: str, signing_data: EcSigningData):
+def cd_signer_start_request(request_id: str, source_key: str, destination_key: str, signing_data: CdSigningData):
     response_text = cd_signer_request(
         method="POST",
         path=f"/signing_requests/{request_id}/start",
@@ -107,11 +104,11 @@ def cd_signer_status_request(request_id: str):
     return response_json["signingRequest"]["status"]
 
 
-def ec_build_signed_package(type: EcSigningType, file_path: pathlib.Path, name: str):
+def cd_build_signed_package(type: CdSigningType, file_path: pathlib.Path, name: str):
     working_dir = pathlib.Path(f"build-config/signing/{type.value}")
     starting_dir = pathlib.Path.cwd()
 
-    if type == EcSigningType.DMG:
+    if type == CdSigningType.DMG:
         # Our dmg file names vary by platform, so this is templated in the manifest
         manifest_template_path = working_dir / "manifest.yaml.template"
         manifest_path = working_dir / "manifest.yaml"
@@ -135,15 +132,15 @@ def ec_build_signed_package(type: EcSigningType, file_path: pathlib.Path, name: 
     shutil.rmtree(working_dir / "artifact")
 
 
-# Sign a file with electric company
-def ec_sign_file(file: pathlib.Path, type: EcSigningType, signing_data: EcSigningData, is_prod: bool):
+# Sign a file with CDSigner
+def cd_sign_file(file: pathlib.Path, type: CdSigningType, signing_data: CdSigningData, is_prod: bool):
     name = file.name
 
     info(f"Signing {name}")
 
-    # Electric Company requires us to build up a tar file in an extremely specific format
+    # CDSigner requires us to build up a tar file in an extremely specific format
     info("Packaging...")
-    ec_build_signed_package(type, file, name)
+    cd_build_signed_package(type, file, name)
 
     # Upload package for signing to S3
     info("Uploading...")
@@ -155,11 +152,11 @@ def ec_sign_file(file: pathlib.Path, type: EcSigningType, signing_data: EcSignin
     info("Sending request...")
 
     match type:
-        case EcSigningType.APP:
+        case CdSigningType.APP:
             manifest = app_manifest()
-        case EcSigningType.DMG:
+        case CdSigningType.DMG:
             manifest = dmg_manifest(name)
-        case EcSigningType.IME:
+        case CdSigningType.IME:
             manifest = ime_manifest()
 
     request_id = cd_signer_create_request(manifest)
@@ -251,7 +248,7 @@ def rebundle_dmg(dmg_path: pathlib.Path, app_path: pathlib.Path):
     run_cmd(["hdiutil", "convert", tempdmg_path, "-format", "UDZO", "-o", dmg_path])
 
 
-def apple_notarize_file(file: pathlib.Path, signing_data: EcSigningData):
+def apple_notarize_file(file: pathlib.Path, signing_data: CdSigningData):
     name = file.name
     file_type = file.suffix[1:]
 

@@ -44,11 +44,6 @@ build_subparser.add_argument(
     help="The Apple ID secret",
 )
 build_subparser.add_argument(
-    "--signing-queue",
-    action=StoreIfNotEmptyAction,
-    help="The name of the signing queue",
-)
-build_subparser.add_argument(
     "--signing-role-name",
     action=StoreIfNotEmptyAction,
     help="The name of the signing role",
@@ -99,7 +94,6 @@ match args.subparser:
             signing_bucket=args.signing_bucket,
             aws_account_id=args.aws_account_id,
             apple_id_secret=args.apple_id_secret,
-            signing_queue=args.signing_queue,
             signing_role_name=args.signing_role_name,
             stage_name=args.stage_name,
         )

@@ -10,11 +10,11 @@ from util import Variant, get_variant, isDarwin, isLinux, run_cmd, run_cmd_outpu
 from rust import build_hash, build_datetime, cargo_cmd_name, rust_targets, rust_env, get_target_triple
 from test import run_cargo_tests, run_clippy
 from signing import (
-    EcSigningData,
-    EcSigningType,
+    CdSigningData,
+    CdSigningType,
     load_gpg_signer,
     rebundle_dmg,
-    ec_sign_file,
+    cd_sign_file,
     apple_notarize_file,
 )
 from importlib import import_module
@@ -142,7 +142,7 @@ def gen_manifest() -> str:
 def build_macos_ime(
     release: bool,
     is_prod: bool,
-    signing_data: EcSigningData | None,
+    signing_data: CdSigningData | None,
     targets: Sequence[str] = [],
 ) -> pathlib.Path:
     fig_input_method_bin = build_cargo_bin(release=release, package="fig_input_method", targets=targets)
@@ -166,7 +166,7 @@ def build_macos_ime(
 
     if signing_data:
         info("Signing macos ime")
-        ec_sign_file(input_method_app, EcSigningType.IME, signing_data, is_prod=is_prod)
+        cd_sign_file(input_method_app, CdSigningType.IME, signing_data, is_prod=is_prod)
         apple_notarize_file(input_method_app, signing_data)
 
     return input_method_app
@@ -193,7 +193,7 @@ def build_desktop_app(
     cli_path: pathlib.Path,
     npm_packages: Dict[str, pathlib.Path],
     is_prod: bool,
-    signing_data: EcSigningData | None,
+    signing_data: CdSigningData | None,
     features: Mapping[str, Sequence[str]] | None = None,
     targets: Sequence[str] = [],
 ) -> pathlib.Path:
@@ -327,11 +327,11 @@ def build_desktop_app(
     return dmg_path
 
 
-def sign_and_rebundle_macos(app_path: pathlib.Path, dmg_path: pathlib.Path, signing_data: EcSigningData, is_prod: bool):
+def sign_and_rebundle_macos(app_path: pathlib.Path, dmg_path: pathlib.Path, signing_data: CdSigningData, is_prod: bool):
     info("Signing app and dmg")
 
     # Sign the application
-    ec_sign_file(app_path, EcSigningType.APP, signing_data, is_prod=is_prod)
+    cd_sign_file(app_path, CdSigningType.APP, signing_data, is_prod=is_prod)
 
     # Notarize the application
 
@@ -341,7 +341,7 @@ def sign_and_rebundle_macos(app_path: pathlib.Path, dmg_path: pathlib.Path, sign
     rebundle_dmg(app_path=app_path, dmg_path=dmg_path)
 
     # Sign the dmg
-    ec_sign_file(dmg_path, EcSigningType.DMG, signing_data, is_prod=is_prod)
+    cd_sign_file(dmg_path, CdSigningType.DMG, signing_data, is_prod=is_prod)
 
     # Notarize the dmg
     apple_notarize_file(dmg_path, signing_data)
@@ -400,7 +400,6 @@ def build(
     signing_bucket: str | None = None,
     aws_account_id: str | None = None,
     apple_id_secret: str | None = None,
-    signing_queue: str | None = None,
     signing_role_name: str | None = None,
     stage_name: str | None = None,
     run_lints: bool = True,
@@ -408,12 +407,11 @@ def build(
 ):
     variant = get_variant()
 
-    if signing_bucket and aws_account_id and apple_id_secret and signing_queue and signing_role_name:
-        signing_data = EcSigningData(
+    if signing_bucket and aws_account_id and apple_id_secret and signing_role_name:
+        signing_data = CdSigningData(
             bucket_name=signing_bucket,
             aws_account_id=aws_account_id,
             notarizing_secret_id=apple_id_secret,
-            signing_request_queue_name=signing_queue,
             signing_role_name=signing_role_name,
         )
     else:

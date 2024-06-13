@@ -19,10 +19,6 @@ while [[ $# -gt 0 ]]; do
       shift
       signing_bucket=$1
       ;;
-     --signing-queue)
-      shift
-      signing_queue=$1
-      ;;   
     --apple-id-secret)
       shift
       apple_id_secret=$1
@@ -69,7 +65,6 @@ pip3 install -r build-scripts/requirements.txt
 python3.11 build-scripts/main.py build \
   --output-bucket "${output_bucket:-}" \
   --signing-bucket "${signing_bucket:-}" \
-  --signing-queue "${signing_queue:-}" \
   --apple-id-secret "${apple_id_secret:-}" \
   --aws-account-id "${aws_account_id:-}" \
   --signing-role-name "${signing_role_name:-}" \

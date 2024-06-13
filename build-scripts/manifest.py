@@ -4,7 +4,7 @@ from enum import Enum
 from const import APPLE_TEAM_ID
 
 
-class EcSigningType(Enum):
+class CdSigningType(Enum):
     DMG = "dmg"
     APP = "app"
     IME = "ime"
