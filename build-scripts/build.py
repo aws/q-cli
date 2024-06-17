@@ -5,8 +5,8 @@ import json
 import datetime
 import pathlib
 import shutil
-from typing import Dict, Mapping, Sequence
-from util import Variant, get_variant, isDarwin, isLinux, run_cmd, run_cmd_output, info
+from typing import Mapping, Sequence
+from util import Variant, get_variant, isDarwin, isLinux, run_cmd, run_cmd_output, info, version
 from rust import build_hash, build_datetime, cargo_cmd_name, rust_targets, rust_env, get_target_triple
 from test import run_cargo_tests, run_clippy
 from signing import (
@@ -35,10 +35,28 @@ BUILD_DIR_RELATIVE = pathlib.Path(os.environ.get("BUILD_DIR") or "build")
 BUILD_DIR = BUILD_DIR_RELATIVE.absolute()
 
 
-def build_npm_packages() -> Dict[str, pathlib.Path]:
+@dataclass
+class NpmBuildOutput:
+    dashboard_path: pathlib.Path
+    autocomplete_path: pathlib.Path
+    vscode_path: pathlib.Path
+
+
+def build_npm_packages() -> NpmBuildOutput:
     run_cmd(["pnpm", "install", "--frozen-lockfile"])
+
+    # set the version of extensions/vscode
+    package_json_path = pathlib.Path("extensions/vscode/package.json")
+    packge_json_text = package_json_path.read_text()
+    packge_json = json.loads(packge_json_text)
+    packge_json["version"] = version()
+    package_json_path.write_text(json.dumps(packge_json, indent=2))
+
     run_cmd(["pnpm", "build"])
-    run_cmd(["pnpm", "test"])
+    run_cmd(["pnpm", "test", "--", "--run"])
+
+    # revert the package.json
+    package_json_path.write_text(packge_json_text)
 
     # copy to output
     dashboard_path = BUILD_DIR / "dashboard"
@@ -49,7 +67,15 @@ def build_npm_packages() -> Dict[str, pathlib.Path]:
     shutil.rmtree(autocomplete_path, ignore_errors=True)
     shutil.copytree("apps/autocomplete/dist", autocomplete_path)
 
-    return {"dashboard": dashboard_path, "autocomplete": autocomplete_path}
+    vscode_path = BUILD_DIR / "vscode-plugin.vsix"
+    shutil.rmtree(vscode_path, ignore_errors=True)
+    shutil.copy2(f"extensions/vscode/codewhisperer-for-command-line-companion-{version()}.vsix", vscode_path)
+    shutil.copy2(
+        f"extensions/vscode/codewhisperer-for-command-line-companion-{version()}.vsix",
+        "lib/fig_integrations/src/vscode/vscode-plugin.vsix",
+    )
+
+    return NpmBuildOutput(dashboard_path=dashboard_path, autocomplete_path=autocomplete_path, vscode_path=vscode_path)
 
 
 def build_cargo_bin(
@@ -104,24 +130,6 @@ def build_cargo_bin(
         out_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(target_path, out_path)
         return out_path
-
-
-@cache
-def version() -> str:
-    output = run_cmd_output(
-        [
-            "cargo",
-            "metadata",
-            "--format-version",
-            "1",
-            "--no-deps",
-        ]
-    )
-    data = json.loads(output)
-    for pkg in data["packages"]:
-        if pkg["name"] == DESKTOP_PACKAGE_NAME:
-            return pkg["version"]
-    raise ValueError("Version not found")
 
 
 @cache
@@ -191,7 +199,7 @@ def build_desktop_app(
     release: bool,
     pty_path: pathlib.Path,
     cli_path: pathlib.Path,
-    npm_packages: Dict[str, pathlib.Path],
+    npm_packages: NpmBuildOutput,
     is_prod: bool,
     signing_data: CdSigningData | None,
     features: Mapping[str, Sequence[str]] | None = None,
@@ -281,9 +289,11 @@ def build_desktop_app(
     run_cmd(["git", "clone", "https://github.com/withfig/themes.git", theme_repo])
     shutil.copytree(theme_repo / "themes", app_path / "Contents/Resources/themes")
 
-    for package, path in npm_packages.items():
-        info(f"Copying {package} into bundle")
-        shutil.copytree(path, app_path / "Contents/Resources" / package)
+    info("Copying dashboard into bundle")
+    shutil.copytree(npm_packages.dashboard_path, app_path / "Contents/Resources/dashboard")
+
+    info("Copying autocomplete into bundle")
+    shutil.copytree(npm_packages.autocomplete_path, app_path / "Contents/Resources/autocomplete")
 
     # Add symlinks
     # os.symlink(f"./{CLI_BINARY_NAME}", app_path / "Contents/MacOS/cli")

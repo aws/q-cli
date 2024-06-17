@@ -18,6 +18,9 @@
       "supported": true
     }
   },
+  "bugs": {
+    "url": "https://github.com/aws/q-command-line-discussions"
+  },
   "publisher": "amazonwebservices",
   "main": "./extension.js",
   "scripts": {

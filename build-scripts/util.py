@@ -1,10 +1,12 @@
 from enum import Enum
 from functools import cache
+import json
 import os
 import shlex
 import subprocess
 import platform
 from typing import Mapping, Sequence
+from const import DESKTOP_PACKAGE_NAME
 
 
 INFO = "\033[92;1m"
@@ -36,6 +38,24 @@ def isLinux() -> bool:
 @cache
 def isMusl() -> bool:
     return os.environ.get("AMAZON_Q_BUILD_MUSL") is not None
+
+
+@cache
+def version() -> str:
+    output = run_cmd_output(
+        [
+            "cargo",
+            "metadata",
+            "--format-version",
+            "1",
+            "--no-deps",
+        ]
+    )
+    data = json.loads(output)
+    for pkg in data["packages"]:
+        if pkg["name"] == DESKTOP_PACKAGE_NAME:
+            return pkg["version"]
+    raise ValueError("Version not found")
 
 
 def log(*value: object, title: str, color: str | None):
