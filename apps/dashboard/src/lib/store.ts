@@ -12,6 +12,7 @@ export interface Data {
   settings: KV | undefined;
   state: KV | undefined;
   auth: Awaited<ReturnType<typeof Auth.status>> | undefined;
+  authRequestId: string | undefined;
 
   accessibilityIsInstalled: boolean | undefined;
   dotfilesIsInstalled: boolean | undefined;
@@ -23,6 +24,8 @@ export interface Actions {
   setState: (key: string, value: unknown) => Promise<void>;
   refreshLocalState: () => Promise<void>;
   refreshAuth: () => Promise<void>;
+  currAuthRequestId: () => string | undefined;
+  setAuthRequestId: (authRequestId: string | undefined) => void;
   refreshAccessibilityIsInstalled: () => Promise<void>;
   refreshDotfilesIsInstalled: () => Promise<void>;
   refreshInputMethodIsInstalled: () => Promise<void>;
@@ -42,6 +45,13 @@ export const createStore = () => {
     accessibilityIsInstalled: undefined,
     dotfilesIsInstalled: undefined,
     inputMethodIsInstalled: undefined,
+    authRequestId: undefined,
+    currAuthRequestId: () => {
+      return get().authRequestId;
+    },
+    setAuthRequestId: (authRequestId: string | undefined) => {
+      set((s) => ({ ...s, authRequestId }));
+    },
     setSetting: async (key, value) => {
       set((s) => ({ settings: { ...s.settings, [key]: value } }));
       await ApiSettings.set(key, value);

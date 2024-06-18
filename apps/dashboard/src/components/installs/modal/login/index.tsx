@@ -7,7 +7,7 @@ import { useLocalStateZodDefault } from "@/hooks/store/useState";
 import { z } from "zod";
 import { Link } from "@/components/ui/link";
 import { Q_MIGRATION_URL } from "@/lib/constants";
-import { useAuth, useRefreshAuth } from "@/hooks/store/useAuth";
+import { useAuth, useAuthRequest, useRefreshAuth } from "@/hooks/store/useAuth";
 
 export default function LoginModal({ next }: { next: () => void }) {
   const midway = window?.fig?.constants?.midway ?? false;
@@ -15,12 +15,12 @@ export default function LoginModal({ next }: { next: () => void }) {
   const [loginState, setLoginState] = useState<
     "not started" | "loading" | "logged in"
   >("not started");
-  const [loginCode, setLoginCode] = useState<string | null>(null);
   const [tab, setTab] = useLocalStateZodDefault<"builderId" | "iam">(
     "dashboard.loginTab",
     z.enum(["builderId", "iam"]),
     midway ? "iam" : "builderId",
   );
+  const [currAuthRequestId, setAuthRequestId] = useAuthRequest();
 
   // console.log(tab);
 
@@ -33,27 +33,30 @@ export default function LoginModal({ next }: { next: () => void }) {
   const auth = useAuth();
   const refreshAuth = useRefreshAuth();
 
-  async function handleLogin(startUrl?: string, region?: string) {
+  async function handleLogin(issuerUrl?: string, region?: string) {
     setLoginState("loading");
-    const init = await Auth.builderIdStartDeviceAuthorization({
-      startUrl,
+    setError(null);
+    // We need to reset the auth request state before attempting, otherwise
+    // an expected auth request cancellation will be presented to the user
+    // as an error.
+    setAuthRequestId(undefined);
+    const init = await Auth.startPkceAuthorization({
+      issuerUrl,
       region,
     }).catch((err) => {
       setLoginState("not started");
-      setLoginCode(null);
       setError(err.message);
       console.error(err);
     });
 
     if (!init) return;
-
-    setLoginCode(init.code);
+    setAuthRequestId(init.authRequestId);
 
     Native.open(init.url).catch((err) => {
       console.error(err);
     });
 
-    await Auth.builderIdPollCreateToken(init)
+    await Auth.finishPkceAuthorization(init)
       .then(() => {
         setLoginState("logged in");
         Internal.sendWindowFocusRequest({});
@@ -61,10 +64,13 @@ export default function LoginModal({ next }: { next: () => void }) {
         next();
       })
       .catch((err) => {
-        setLoginState("not started");
-        setLoginCode(null);
-        setError(err.message);
-        console.error(err);
+        // If this promise was originally for some older request attempt,
+        // then we should just ignore the error.
+        if (currAuthRequestId() === init.authRequestId) {
+          setLoginState("not started");
+          setError(err.message);
+          console.error(err);
+        }
       });
   }
 
@@ -106,18 +112,16 @@ export default function LoginModal({ next }: { next: () => void }) {
         </div>
       )}
       <div className="flex flex-col gap-4 text-white text-sm">
-        {loginCode ? (
+        {loginState === "loading" ? (
           <>
             <p className="text-center w-80">
-              Confirm code <span className="font-bold">{loginCode}</span> in the
-              login page opened in your web browser.
+              Waiting for authentication in the browser to complete...
             </p>
             <Button
               variant="glass"
               className="self-center w-32"
               onClick={() => {
                 setLoginState("not started");
-                setLoginCode(null);
               }}
             >
               Back

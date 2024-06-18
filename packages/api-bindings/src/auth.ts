@@ -1,5 +1,6 @@
 import {
   AuthBuilderIdStartDeviceAuthorizationResponse,
+  AuthStartPkceAuthorizationResponse,
   // eslint-disable-next-line camelcase
   AuthStatusResponse_AuthKind,
   AuthBuilderIdPollCreateTokenResponse_PollStatus as PollStatus,
@@ -7,8 +8,12 @@ import {
 import {
   sendAuthBuilderIdStartDeviceAuthorizationRequest,
   sendAuthBuilderIdPollCreateTokenRequest,
+  sendAuthFinishPkceAuthorizationRequest,
   sendAuthStatusRequest,
+  sendAuthStartPkceAuthorizationRequest,
 } from "./requests.js";
+import { AuthFinishPkceAuthorizationResponse } from "@amzn/fig-io-proto/fig";
+import { AuthFinishPkceAuthorizationRequest } from "@amzn/fig-io-proto/fig";
 
 export function status() {
   return sendAuthStatusRequest({}).then((res) => {
@@ -33,6 +38,25 @@ export function status() {
       region: res.region,
     };
   });
+}
+
+export function startPkceAuthorization({
+  region,
+  issuerUrl,
+}: {
+  region?: string;
+  issuerUrl?: string;
+} = {}): Promise<AuthStartPkceAuthorizationResponse> {
+  return sendAuthStartPkceAuthorizationRequest({
+    region,
+    issuerUrl,
+  });
+}
+
+export function finishPkceAuthorization({
+  authRequestId,
+}: AuthFinishPkceAuthorizationRequest): Promise<AuthFinishPkceAuthorizationResponse> {
+  return sendAuthFinishPkceAuthorizationRequest({ authRequestId });
 }
 
 export function builderIdStartDeviceAuthorization({

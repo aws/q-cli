@@ -23,9 +23,9 @@ use std::future::Future;
 use std::pin::Pin;
 use std::time::Duration;
 
-use aws_sdk_ssooidc::client::Client;
-use aws_sdk_ssooidc::operation::create_token::CreateTokenOutput;
-use aws_types::region::Region;
+pub use aws_sdk_ssooidc::client::Client;
+pub use aws_sdk_ssooidc::operation::create_token::CreateTokenOutput;
+pub use aws_types::region::Region;
 use base64::engine::general_purpose::URL_SAFE;
 use base64::Engine;
 use bytes::Bytes;
@@ -56,6 +56,8 @@ use crate::{
     Result,
 };
 
+const DEFAULT_AUTHORIZATION_TIMEOUT: Duration = Duration::from_secs(60 * 3);
+
 /// Starts the PKCE authorization flow, using [`START_URL`] and [`OIDC_BUILDER_ID_REGION`] as the
 /// default issuer URL and region. Returns the [`PkceClient`] to use to finish the flow.
 pub async fn start_pkce_authorization(
@@ -79,22 +81,22 @@ pub trait PkceClient {
 
 #[derive(Debug, Clone)]
 pub struct RegisterClientResponse {
-    client_id: String,
-    client_secret: String,
+    pub client_id: String,
+    pub client_secret: String,
 }
 
 #[derive(Debug)]
 pub struct CreateTokenResponse {
-    output: CreateTokenOutput,
+    pub output: CreateTokenOutput,
 }
 
 #[derive(Debug)]
 pub struct CreateTokenArgs {
-    client_id: String,
-    client_secret: String,
-    redirect_uri: String,
-    code_verifier: String,
-    code: String,
+    pub client_id: String,
+    pub client_secret: String,
+    pub redirect_uri: String,
+    pub code_verifier: String,
+    pub code: String,
 }
 
 #[async_trait::async_trait]
@@ -146,12 +148,12 @@ pub struct PkceRegistration {
     client_id: String,
     client_secret: String,
     /// Configured URI that the authorization server will redirect the client to.
-    redirect_uri: String,
+    pub redirect_uri: String,
     code_verifier: String,
     /// Random value generated for every authentication attempt.
     ///
     /// https://stackoverflow.com/questions/26132066/what-is-the-purpose-of-the-state-parameter-in-oauth-authorization-request
-    state: String,
+    pub state: String,
     /// Listener for hosting the local HTTP server.
     listener: TcpListener,
     region: Region,
@@ -159,7 +161,7 @@ pub struct PkceRegistration {
     ///
     /// Reference: https://quip-amazon.com/SlOfAat54xwt/Tinkerbell-Developer-Guide#temp:C:BKFaabeb4c898c747a08f482d209
     issuer_url: String,
-    /// Time to wait for [`Self::finish`] to complete. Default is 3 minutes.
+    /// Time to wait for [`Self::finish`] to complete. Default is [`DEFAULT_AUTHORIZATION_TIMEOUT`].
     timeout: Duration,
 }
 
@@ -203,7 +205,7 @@ impl PkceRegistration {
             redirect_uri,
             region,
             issuer_url,
-            timeout: timeout.unwrap_or(Duration::from_secs(60 * 3)),
+            timeout: timeout.unwrap_or(DEFAULT_AUTHORIZATION_TIMEOUT),
         })
     }
 

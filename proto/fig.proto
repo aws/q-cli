@@ -54,6 +54,8 @@ message ClientOriginatedMessage {
     DragWindowRequest drag_window_request = 146;
     GetScreenshotRequest get_screenshot_request = 147;
     OpenContextMenuRequest open_context_menu_request = 148;
+    AuthStartPkceAuthorizationRequest auth_start_pkce_authorization_request = 149;
+    AuthFinishPkceAuthorizationRequest auth_finish_pkce_authorization_request = 150;
   }
 
   reserved 115;
@@ -88,6 +90,8 @@ message ServerOriginatedMessage {
     PingResponse ping_response = 119;
     CodewhispererListCustomizationResponse codewhisperer_list_customization_response = 120;
     GetScreenshotResponse get_screenshot_response = 121;
+    AuthStartPkceAuthorizationResponse auth_start_pkce_authorization_response = 122;
+    AuthFinishPkceAuthorizationResponse auth_finish_pkce_authorization_response = 123;
 
     Notification notification = 1000;
   }
@@ -619,6 +623,25 @@ message HistoryQueryResponse {
 }
 
 /// Auth
+
+message AuthStartPkceAuthorizationRequest {
+  // Issuer URL for IAM Identity Center
+  // Equivalent to the "start url" in device code authorization
+  optional string issuer_url = 1;
+  // Region for IAM Identity Center
+  optional string region = 2;
+}
+
+message AuthStartPkceAuthorizationResponse {
+  string auth_request_id = 1;
+  string url = 2;
+}
+
+message AuthFinishPkceAuthorizationRequest {
+  string auth_request_id = 1;
+}
+
+message AuthFinishPkceAuthorizationResponse {}
 
 message AuthBuilderIdStartDeviceAuthorizationRequest {
   // Start URL for IAM Identity Center

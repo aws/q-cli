@@ -173,6 +173,8 @@ async fn handle_request<Ctx: KVStore, E: EventHandler<Ctx = Ctx> + Sync>(
                 ApplicationUpdateStatusRequest,
                 AuthBuilderIdPollCreateTokenRequest,
                 AuthBuilderIdStartDeviceAuthorizationRequest,
+                AuthFinishPkceAuthorizationRequest,
+                AuthStartPkceAuthorizationRequest,
                 AuthStatusRequest,
                 CheckForUpdatesRequest,
                 CodewhispererListCustomizationRequest,
@@ -269,6 +271,8 @@ async fn handle_request<Ctx: KVStore, E: EventHandler<Ctx = Ctx> + Sync>(
                 HistoryQueryRequest(request) => history::query(request).await,
                 // auth
                 AuthStatusRequest(request) => auth::status(request).await,
+                AuthStartPkceAuthorizationRequest(request) => auth::start_pkce_authorization(request).await,
+                AuthFinishPkceAuthorizationRequest(request) => auth::finish_pkce_authorization(request).await,
                 AuthBuilderIdStartDeviceAuthorizationRequest(request) => {
                     auth::builder_id_start_device_authorization(request, &ctx).await
                 },

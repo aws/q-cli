@@ -2646,6 +2646,8 @@ dependencies = [
  "fig_util",
  "fnv",
  "macos-utils",
+ "once_cell",
+ "reqwest",
  "serde",
  "serde_json",
  "shellexpand",
