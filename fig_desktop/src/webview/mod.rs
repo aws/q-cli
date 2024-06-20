@@ -103,6 +103,8 @@ use crate::request::api_request;
 use crate::tray::{
     self,
     build_tray,
+    get_context_menu,
+    get_icon,
 };
 use crate::webview::window_id::AutocompleteId;
 #[cfg(feature = "hotkey-chat")]
@@ -386,7 +388,9 @@ impl WebviewManager {
         init_webview_notification_listeners(self.event_loop.create_proxy()).await;
 
         let tray_visible = !fig_settings::settings::get_bool_or("app.hideMenubarIcon", false);
-        let tray = build_tray(&self.event_loop, &self.debug_state, &self.figterm_state).unwrap();
+        let tray = build_tray(&self.event_loop, &self.debug_state, &self.figterm_state)
+            .await
+            .unwrap();
         if let Err(err) = tray.set_visible(tray_visible) {
             error!(%err, "Failed to set tray visible");
         }
@@ -556,8 +560,11 @@ impl WebviewManager {
                         Event::ControlFlow(new_control_flow) => {
                             *control_flow = new_control_flow;
                         },
-                        Event::ReloadTray => {
-                            // tray.set_menu(Some(Box::new(get_context_menu())));
+                        Event::ReloadTray { is_logged_in } => {
+                            tray.set_icon(Some(get_icon(is_logged_in)))
+                                .map_err(|err| error!(?err))
+                                .ok();
+                            tray.set_menu(Some(Box::new(get_context_menu(is_logged_in))));
                         },
                         Event::ReloadCredentials => {
                             // tray.set_menu(Some(Box::new(get_context_menu())));

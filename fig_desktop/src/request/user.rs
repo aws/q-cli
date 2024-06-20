@@ -3,6 +3,7 @@ use fig_desktop_api::requests::{
     RequestResultImpl,
 };
 use fig_proto::fig::UserLogoutRequest;
+use tracing::error;
 
 use crate::event::{
     Event,
@@ -27,6 +28,13 @@ pub async fn logout(_request: UserLogoutRequest, proxy: &EventLoopProxy) -> Requ
                 WindowEvent::Show,
             ]),
         })
+        .map_err(|err| error!(?err))
+        .ok();
+
+    error!("Sending logout event!");
+    proxy
+        .send_event(Event::ReloadTray { is_logged_in: false })
+        .map_err(|err| error!(?err))
         .ok();
 
     RequestResult::success()

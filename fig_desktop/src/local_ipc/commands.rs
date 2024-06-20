@@ -219,6 +219,12 @@ pub async fn logout(proxy: &EventLoopProxy) -> LocalResult {
             window_id: DASHBOARD_ID,
             window_event: WindowEvent::Batch(vec![WindowEvent::Reload, WindowEvent::Show]),
         })
+        .map_err(|err| error!(?err))
+        .ok();
+
+    proxy
+        .send_event(Event::ReloadTray { is_logged_in: false })
+        .map_err(|err| error!(?err))
         .ok();
 
     Ok(LocalResponse::Success(None))

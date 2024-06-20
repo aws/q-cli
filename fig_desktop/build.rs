@@ -34,7 +34,8 @@ fn resize_directory(name: &str, var: &str, width: u32, height: u32, filter: Filt
         .map(Result::unwrap)
         .map(|x| (x.file_name(), x.path()))
     {
-        let asset = image::open(path).expect("Failed reading image");
+        let asset = image::open(path.clone())
+            .unwrap_or_else(|err| panic!("Failed reading image at path {}: {:?}", &path.to_string_lossy(), err));
         let asset = asset.resize_exact(width, height, filter);
         asset.save(target.join(name)).expect("Failed writing image");
     }

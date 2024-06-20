@@ -29,7 +29,9 @@ pub enum Event {
 
     ReloadCredentials,
     ReloadAccessibility,
-    ReloadTray,
+    ReloadTray {
+        is_logged_in: bool,
+    },
 
     ShowMessageNotification {
         title: Cow<'static, str>,

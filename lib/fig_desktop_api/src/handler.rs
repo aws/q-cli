@@ -93,6 +93,10 @@ pub trait EventHandler {
         RequestResult::unimplemented(request.request)
     }
 
+    // TODO: rename EventHandler to RequestHandler, and move this callback out
+    // to a separate trait.
+    async fn user_logged_in_callback(&self, _context: Self::Ctx) {}
+
     async fn user_logout(&self, request: Wrapped<Self::Ctx, UserLogoutRequest>) -> RequestResult {
         RequestResult::unimplemented(request.request)
     }
@@ -272,7 +276,11 @@ async fn handle_request<Ctx: KVStore, E: EventHandler<Ctx = Ctx> + Sync>(
                 // auth
                 AuthStatusRequest(request) => auth::status(request).await,
                 AuthStartPkceAuthorizationRequest(request) => auth::start_pkce_authorization(request).await,
-                AuthFinishPkceAuthorizationRequest(request) => auth::finish_pkce_authorization(request).await,
+                AuthFinishPkceAuthorizationRequest(request) => {
+                    let result = auth::finish_pkce_authorization(request).await;
+                    event_handler.user_logged_in_callback(ctx).await;
+                    result
+                },
                 AuthBuilderIdStartDeviceAuthorizationRequest(request) => {
                     auth::builder_id_start_device_authorization(request, &ctx).await
                 },

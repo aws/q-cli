@@ -1,19 +1,17 @@
 use std::borrow::Cow;
 
-use cfg_if::cfg_if;
 use fig_install::{
     InstallComponents,
     UpdateOptions,
 };
 use fig_remote_ipc::figterm::FigtermState;
 use fig_util::consts::PRODUCT_NAME;
-use fig_util::manifest::Channel;
 use fig_util::url::USER_MANUAL;
 use muda::{
+    IconMenuItem,
     Menu,
     MenuEvent,
     MenuId,
-    MenuItem,
     MenuItemBuilder,
     PredefinedMenuItem,
     Submenu,
@@ -59,6 +57,8 @@ use crate::{
 //         }
 //     }};
 // }
+
+const LOGIN_MENU_ID: &str = "onboarding";
 
 fn tray_update(proxy: &EventLoopProxy) {
     let proxy_a = proxy.clone();
@@ -109,9 +109,6 @@ fn tray_update(proxy: &EventLoopProxy) {
 
 pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
     match &*menu_event.id().0 {
-        "debugger-refresh" => {
-            proxy.send_event(Event::ReloadTray).unwrap();
-        },
         "dashboard-devtools" => {
             proxy
                 .send_event(Event::WindowEvent {
@@ -145,7 +142,7 @@ pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
                 })
                 .unwrap();
         },
-        "onboarding" => {
+        LOGIN_MENU_ID => {
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: DASHBOARD_ID.clone(),
@@ -195,15 +192,6 @@ pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
             }
         },
         id => {
-            for channel in Channel::all() {
-                if id == format!("channel-{channel}") {
-                    fig_settings::state::set_value("updates.channel", channel.to_string()).ok();
-                    proxy.send_event(Event::ReloadTray).unwrap();
-                    tray_update(proxy);
-                    return;
-                }
-            }
-
             trace!(?id, "Unhandled tray event");
         },
     }
@@ -219,15 +207,26 @@ fn load_icon(path: impl AsRef<std::path::Path>) -> Option<Icon> {
     Icon::from_rgba(rgba, width, height).ok()
 }
 
-fn load_from_memory() -> Icon {
+pub async fn build_tray(
+    _event_loop_window_target: &EventLoopWindowTarget,
+    _debug_state: &DebugState,
+    _figterm_state: &FigtermState,
+) -> tray_icon::Result<TrayIcon> {
+    let is_logged_in = auth::is_logged_in().await;
+    TrayIconBuilder::new()
+        .with_icon(get_icon(is_logged_in))
+        .with_menu(Box::new(get_context_menu(is_logged_in)))
+        .build()
+}
+
+pub fn get_icon(is_logged_in: bool) -> Icon {
     let (icon_rgba, icon_width, icon_height) = {
-        // TODO: Use different per platform icons
-        #[cfg(not(target_os = "macos"))]
-        let image = image::load_from_memory(include_bytes!("../icons/32x32.png"))
-            .expect("Failed to open icon path")
-            .into_rgba8();
-        #[cfg(target_os = "macos")]
-        let image = image::load_from_memory(include_bytes!("../icons/icon-monochrome.png"))
+        let bytes = if is_logged_in {
+            include_bytes!("../icons/icon-monochrome.png").to_vec()
+        } else {
+            include_bytes!("../icons/tray/not-logged-in.png").to_vec()
+        };
+        let image = image::load_from_memory(&bytes)
             .expect("Failed to open icon path")
             .into_rgba8();
         let (width, height) = image.dimensions();
@@ -237,37 +236,19 @@ fn load_from_memory() -> Icon {
     Icon::from_rgba(icon_rgba, icon_width, icon_height).expect("Failed to open icon")
 }
 
-pub fn build_tray(
-    _event_loop_window_target: &EventLoopWindowTarget,
-    _debug_state: &DebugState,
-    _figterm_state: &FigtermState,
-) -> tray_icon::Result<TrayIcon> {
-    let tray_menu = get_context_menu();
-
-    cfg_if!(
-        if #[cfg(target_os = "linux")] {
-            let icon_path = "/usr/share/icons/hicolor/64x64/apps/fig.png";
-            let icon = load_icon(icon_path).unwrap_or_else(load_from_memory);
-        } else {
-            let icon = load_from_memory();
-        }
-    );
-
-    #[allow(unused_mut)]
-    let mut tray_builder = TrayIconBuilder::new().with_icon(icon).with_menu(Box::new(tray_menu));
-
-    #[cfg(target_os = "macos")]
-    {
-        tray_builder = tray_builder.with_icon_as_template(true);
-    }
-
-    tray_builder.build()
+fn get_image_rgba(image_bytes: &[u8]) -> (Vec<u8>, u32, u32) {
+    let image = image::load_from_memory(image_bytes)
+        .expect("Failed to open icon path")
+        .into_rgba8();
+    let (width, height) = image.dimensions();
+    let rgba = image.into_raw();
+    (rgba, width, height)
 }
 
-pub fn get_context_menu() -> Menu {
+pub fn get_context_menu(is_logged_in: bool) -> Menu {
     let mut tray_menu = Menu::new();
 
-    let elements = menu();
+    let elements = menu(is_logged_in);
     for elem in elements {
         elem.add_to_menu(&mut tray_menu);
     }
@@ -276,14 +257,18 @@ pub fn get_context_menu() -> Menu {
 }
 
 enum MenuElement {
-    Info(Cow<'static, str>),
+    Info {
+        image_icon: Option<muda::Icon>,
+        text: Cow<'static, str>,
+    },
     Entry {
         emoji_icon: Option<Cow<'static, str>>,
-        // image_icon: Option<tao::window::Icon>,
+        image_icon: Option<muda::Icon>,
         text: Cow<'static, str>,
         id: Cow<'static, str>,
     },
     Separator,
+    #[allow(dead_code)]
     SubMenu {
         title: Cow<'static, str>,
         elements: Vec<MenuElement>,
@@ -291,35 +276,22 @@ enum MenuElement {
 }
 
 impl MenuElement {
+    fn info(image_icon: Option<(Vec<u8>, u32, u32)>, text: impl Into<Cow<'static, str>>) -> Self {
+        Self::Info {
+            image_icon: image_icon.and_then(|(bytes, width, height)| muda::Icon::from_rgba(bytes, width, height).ok()),
+            text: text.into(),
+        }
+    }
+
     fn entry(
         emoji_icon: Option<Cow<'static, str>>,
-        _image: Option<&'static [u8]>,
+        image_icon: Option<(Vec<u8>, u32, u32)>,
         text: impl Into<Cow<'static, str>>,
         id: impl Into<Cow<'static, str>>,
     ) -> Self {
-        // cfg_if::cfg_if! {
-        //     if #[cfg(target_os = "macos")] {
-        //         let image_icon = match image {
-        //             Some(image) => {
-        //                 let image = image::load_from_memory(image)
-        //                     .expect("Failed to open icon path")
-        //                     .to_rgba8();
-
-        //                 let (width, height) = image.dimensions();
-
-        //                 tao::window::Icon::from_rgba(image.into_raw(), width, height).ok()
-        //             },
-        //             None => None,
-        //         };
-        //     } else {
-        //         let _ = image;
-        //         let image_icon = None;
-        //     }
-        // };
-
         Self::Entry {
             emoji_icon,
-            // image_icon,
+            image_icon: image_icon.and_then(|(bytes, width, height)| muda::Icon::from_rgba(bytes, width, height).ok()),
             text: text.into(),
             id: id.into(),
         }
@@ -334,26 +306,33 @@ impl MenuElement {
 
     fn add_to_menu(&self, menu: &mut Menu) {
         match self {
-            MenuElement::Info(info) => {
-                // menu.append(MenuItemAttributes::new(info).with_enabled(false));
-                menu.append(&MenuItem::new(info, false, None)).unwrap();
+            MenuElement::Info { text, image_icon } => {
+                let menu_item = IconMenuItem::new(
+                    text,
+                    false,
+                    image_icon.clone(), // Some(muda::Icon::from_rgba(bytes, width, height).unwrap()),
+                    None,
+                );
+                menu.append(&menu_item).unwrap();
             },
             MenuElement::Entry {
-                emoji_icon, text, id, ..
+                emoji_icon,
+                image_icon,
+                text,
+                id,
+                ..
             } => {
                 let text = match (std::env::consts::OS, emoji_icon) {
                     ("linux", Some(emoji_icon)) => format!("{emoji_icon} {text}"),
                     _ => text.to_string(),
                 };
-                let menu_item = MenuItemBuilder::new()
+                let menu_item = muda::IconMenuItemBuilder::new()
                     .text(text)
                     .id(MenuId::new(id))
                     .enabled(true)
+                    .icon(image_icon.clone())
                     .build();
                 menu.append(&menu_item).unwrap();
-                // if let Some(image_icon) = &image_icon {
-                //     custom_menu_item.set_icon(image_icon.clone());
-                // }
             },
             MenuElement::Separator => {
                 menu.append(&PredefinedMenuItem::separator()).unwrap();
@@ -371,9 +350,15 @@ impl MenuElement {
 
     fn add_to_submenu(&self, submenu: &Submenu) {
         match self {
-            MenuElement::Info(info) => {
+            MenuElement::Info { image_icon, text } => {
                 // menu.append(MenuItemAttributes::new(info).with_enabled(false));
-                submenu.append(&MenuItem::new(info, false, None)).unwrap();
+                let menu_item = IconMenuItem::new(
+                    text,
+                    false,
+                    image_icon.clone(), // Some(muda::Icon::from_rgba(bytes, width, height).unwrap()),
+                    None,
+                );
+                submenu.append(&menu_item).unwrap();
             },
             MenuElement::Entry {
                 emoji_icon, text, id, ..
@@ -388,9 +373,6 @@ impl MenuElement {
                     .enabled(true)
                     .build();
                 submenu.append(&menu_item).unwrap();
-                // if let Some(image_icon) = &image_icon {
-                //     custom_menu_item.set_icon(image_icon.clone());
-                // }
             },
             MenuElement::Separator => {
                 submenu.append(&PredefinedMenuItem::separator()).unwrap();
@@ -407,13 +389,10 @@ impl MenuElement {
     }
 }
 
-fn menu() -> Vec<MenuElement> {
-    // let logged_in = fig_request::auth::is_logged_in();
-    let logged_in = true;
-
+fn menu(is_logged_in: bool) -> Vec<MenuElement> {
     let not_working = MenuElement::entry(None, None, format!("{PRODUCT_NAME} not working?"), "not-working");
     let manual = MenuElement::entry(None, None, "User Guide", "user-manual");
-    let version = MenuElement::Info(format!("Version: {}", env!("CARGO_PKG_VERSION")).into());
+    let version = MenuElement::info(None, format!("Version: {}", env!("CARGO_PKG_VERSION")));
     let update = MenuElement::entry(None, None, "Check for updates...", "update");
     let quit = MenuElement::entry(None, None, format!("Quit {PRODUCT_NAME}"), "quit");
     // let dashboard = MenuElement::entry(None, None, "Dashboard", "dashboard");
@@ -424,86 +403,35 @@ fn menu() -> Vec<MenuElement> {
     //     MenuElement::entry(None, None, "Companion Devtools", "companion-devtools"),
     // ]);
 
-    let mut menu = if !logged_in {
+    let onboarded_completed = fig_settings::state::get_bool_or("desktop.completedOnboarding", false);
+    let yellow_circle_img = get_image_rgba(include_bytes!("../icons/tray/yellow-circle.png"));
+    let mut menu = if !is_logged_in && !onboarded_completed {
         vec![
-            MenuElement::Info(format!("{PRODUCT_NAME} hasn't been set up yet...").into()),
-            MenuElement::entry(None, None, "Get Started", "/"),
-            MenuElement::Separator,
-            manual,
-            not_working,
-            MenuElement::Separator,
+            MenuElement::info(
+                Some(yellow_circle_img),
+                format!("{PRODUCT_NAME} hasn't been set up yet..."),
+            ),
+            MenuElement::entry(None, None, "Get Started", LOGIN_MENU_ID),
+        ]
+    } else if !is_logged_in {
+        vec![
+            MenuElement::info(Some(yellow_circle_img), "Your session has expired"),
+            MenuElement::entry(None, None, "Log back in", LOGIN_MENU_ID),
         ]
     } else {
-        let mut menu = vec![];
-
-        // accessibility not enabled
-        // or shell integrations are not installed,
-        // or input method not enabled AND kitty/alacritty/jetbrains installed
-
-        // let handle = tokio::runtime::Handle::current();
-        // let shell_not_installed = std::thread::spawn(move || {
-        //     fig_util::Shell::all()
-        //         .iter()
-        //         .filter_map(|s| s.get_shell_integrations().ok())
-        //         .flatten()
-        //         .any(|i| handle.block_on(i.is_installed()).is_err())
-        // })
-        // .join()
-        // .unwrap();
-
-        // TODO: renable, the lib is broken rn
-        // let accessibility_not_installed = !PlatformState::accessibility_is_enabled().unwrap_or(true);
-
-        // TODO: Add input method check
-
-        // if accessibility_not_installed || shell_not_installed {
-        //     menu.extend([
-        //         MenuElement::Info(format!("{PRODUCT_NAME} hasn't been configured correctly").into()),
-        //         MenuElement::entry(None, None, "Fix Configuration Issues", "/help"),
-        //         MenuElement::Separator,
-        //     ]);
-        // }
-
-        menu.extend([
-            settings,
-            MenuElement::Separator,
-            manual,
-            not_working,
-            MenuElement::Separator,
-        ]);
-
-        menu
+        vec![settings]
     };
 
-    menu.push(version);
-
-    let max_channel = fig_install::get_max_channel();
-    if max_channel != Channel::Stable {
-        let channel = fig_install::get_channel().unwrap_or(Channel::Stable);
-
-        menu.push(MenuElement::SubMenu {
-            title: format!("Channel: {channel:#}").into(),
-            elements: Channel::all()
-                .iter()
-                .filter_map(|c| {
-                    if c > &max_channel {
-                        None
-                    } else if c == &channel {
-                        Some(MenuElement::Info(format!("Channel: {c:#} (current)").into()))
-                    } else {
-                        Some(MenuElement::entry(
-                            None,
-                            None,
-                            format!("Channel: {c:#}"),
-                            format!("channel-{c}"),
-                        ))
-                    }
-                })
-                .collect(),
-        });
-    }
-
-    menu.extend([update, MenuElement::Separator, quit]);
+    menu.extend(vec![
+        MenuElement::Separator,
+        manual,
+        not_working,
+        MenuElement::Separator,
+        version,
+        update,
+        MenuElement::Separator,
+        quit,
+    ]);
 
     menu
 }

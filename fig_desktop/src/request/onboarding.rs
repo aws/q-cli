@@ -16,10 +16,8 @@ use super::{
 use crate::event::Event;
 use crate::EventLoopProxy;
 
-// Sync all of the user's data from the server and restart the daemon after they log in
-pub async fn post_login(proxy: &EventLoopProxy) {
+pub async fn post_login() {
     fig_settings::state::set_value("desktop.completedOnboarding", true).ok();
-    proxy.send_event(Event::ReloadTray).ok();
 }
 
 pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> RequestResult {
@@ -63,7 +61,7 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
             result
         },
         OnboardingAction::FinishOnboarding => {
-            post_login(proxy).await;
+            post_login().await;
             RequestResult::success()
         },
         OnboardingAction::LaunchShellOnboarding => {
@@ -117,7 +115,7 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
             }
         },
         OnboardingAction::PostLogin => {
-            post_login(proxy).await;
+            post_login().await;
             RequestResult::success()
         },
         OnboardingAction::CloseAccessibilityPromptWindow
