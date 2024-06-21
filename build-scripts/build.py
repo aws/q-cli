@@ -47,16 +47,16 @@ def build_npm_packages() -> NpmBuildOutput:
 
     # set the version of extensions/vscode
     package_json_path = pathlib.Path("extensions/vscode/package.json")
-    packge_json_text = package_json_path.read_text()
-    packge_json = json.loads(packge_json_text)
-    packge_json["version"] = version()
-    package_json_path.write_text(json.dumps(packge_json, indent=2))
+    package_json_text = package_json_path.read_text()
+    package_json = json.loads(package_json_text)
+    package_json["version"] = version()
+    package_json_path.write_text(json.dumps(package_json, indent=2))
 
     run_cmd(["pnpm", "build"])
     run_cmd(["pnpm", "test", "--", "--run"])
 
     # revert the package.json
-    package_json_path.write_text(packge_json_text)
+    package_json_path.write_text(package_json_text)
 
     # copy to output
     dashboard_path = BUILD_DIR / "dashboard"

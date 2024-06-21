@@ -53,8 +53,9 @@ function ChangesInner({
             className="before:content-['•_'] flex flex-row gap-1"
             key={`${change.type}-${change.description}`}
           >
-            <span className="font-bold">{toCapsCase(change.type)}:</span>
-            <Markdown {...MARKDOWN_OPTIONS}>{change.description}</Markdown>
+            <Markdown {...MARKDOWN_OPTIONS}>
+              {`**${toCapsCase(change.type)}**: ${change.description}`}
+            </Markdown>
           </li>
         ))}
       </ul>
