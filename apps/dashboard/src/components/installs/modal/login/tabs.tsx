@@ -36,9 +36,7 @@ function BuilderIdTab({
         variant={"ghost"}
         onClick={toggleTab}
       >
-        <span className="text-xs">
-          Pro account? Switch to IAM Identity Center
-        </span>
+        <span className="text-xs">Use with Pro license</span>
       </Button>
     </div>
   );
@@ -180,12 +178,13 @@ function IamTab({
   return (
     <div className="border rounded p-4 flex flex-col bg-black/20 gap-4">
       <div>
-        <p className="font-bold text-lg">IAM Identity Center</p>
-        <p>Successor to AWS Single Sign-on</p>
+        <p className="font-bold text-lg">
+          Sign in with AWS IAM Identity Center
+        </p>
       </div>
       <IamInput
         title="Start URL"
-        description="URL for your organization, provided by an admin or help desk."
+        description="Provided by your admin or help desk"
         input={
           <Input
             value={startUrl}
@@ -197,7 +196,7 @@ function IamTab({
       />
       <IamInput
         title="Region"
-        description="AWS Region that hosts Identity directory."
+        description="AWS Region that hosts identity directory"
         input={
           <Select onValueChange={(value) => setRegion(value)} value={region}>
             <SelectTrigger className="w-full text-black dark:text-white">
@@ -230,7 +229,7 @@ function IamTab({
           variant={"ghost"}
           onClick={toggleTab}
         >
-          <span className="text-xs">Personal account? Use Builder ID</span>
+          <span className="text-xs">Use for Free with Builder ID</span>
         </Button>
       </div>
     </div>

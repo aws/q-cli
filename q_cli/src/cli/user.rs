@@ -60,8 +60,8 @@ enum AuthMethod {
 impl Display for AuthMethod {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            AuthMethod::Email => write!(f, "Sign up or Sign in with Email (Builder ID)"),
-            AuthMethod::IdentityCenter => write!(f, "Sign in with IAM Identity Center"),
+            AuthMethod::Email => write!(f, "Use for Free with Builder ID"),
+            AuthMethod::IdentityCenter => write!(f, "Use with Pro license"),
         }
     }
 }

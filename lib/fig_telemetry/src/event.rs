@@ -56,6 +56,15 @@ impl SuggestionState {
     pub(crate) fn is_accepted(&self) -> bool {
         matches!(self, SuggestionState::Accept)
     }
+
+    fn as_str(&self) -> &'static str {
+        match self {
+            SuggestionState::Accept => "ACCEPT",
+            SuggestionState::Discard => "DISCARD",
+            SuggestionState::Empty => "EMPTY",
+            SuggestionState::Reject => "REJECT",
+        }
+    }
 }
 
 impl From<SuggestionState> for amzn_codewhisperer_client::types::SuggestionState {
@@ -187,6 +196,7 @@ impl Event {
                     codewhispererterminal_terminal_version: terminal_version.map(Into::into),
                     codewhispererterminal_shell: shell.map(Into::into),
                     codewhispererterminal_shell_version: shell_version.map(Into::into),
+                    codewhispererterminal_suggestion_state: Some(suggestion_state.as_str().to_owned().into()),
                 }
                 .into_metric_datum(),
             ),

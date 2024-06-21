@@ -26,6 +26,11 @@
       "description": "Whether the user accepted a completion"
     },
     {
+      "name": "codewhispererterminal_suggestionState",
+      "type": "string",
+      "description": "The result of a suggestion from the service"
+    },
+    {
       "name": "codewhispererterminal_typedCount",
       "type": "int",
       "description": "A count of characters in the user edit buffer prior to accepting a suggestion"
@@ -139,7 +144,8 @@
         { "type": "codewhispererterminal_duration" },
         { "type": "codewhispererterminal_accepted" },
         { "type": "codewhispererterminal_typedCount" },
-        { "type": "codewhispererterminal_suggestedCount" }
+        { "type": "codewhispererterminal_suggestedCount" },
+        { "type": "codewhispererterminal_suggestionState"}
       ]
     },
     {
