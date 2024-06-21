@@ -238,6 +238,7 @@ pub async fn finish_pkce_authorization(
         .await
         .map_err(|err| format!("{}", err))?;
 
+    fig_telemetry::send_user_logged_in().await;
     Ok(ServerOriginatedSubMessage::AuthFinishPkceAuthorizationResponse(AuthFinishPkceAuthorizationResponse {}).into())
 }
 

@@ -120,6 +120,7 @@ impl RootUserSubcommand {
                                         SpinnerComponent::Text(" Logging in...".into()),
                                     ]);
                                     registration.finish(&client, Some(&secret_store)).await?;
+                                    fig_telemetry::send_user_logged_in().await;
                                     spinner.stop_with_message("Logged in successfully".into());
                                 },
                             }
