@@ -85,12 +85,14 @@ async fn try_chat(stderr: &mut Stderr, mut input: String) -> Result<()> {
 
     loop {
         // Make request with input
-        if input.trim() == "exit" {
-            if let Some(conversation_id) = conversation_id {
-                fig_telemetry::send_end_chat(conversation_id.clone()).await;
-            }
-
-            return Ok(());
+        match input.trim() {
+            "exit" | "quit" => {
+                if let Some(conversation_id) = conversation_id {
+                    fig_telemetry::send_end_chat(conversation_id.clone()).await;
+                }
+                return Ok(());
+            },
+            _ => (),
         }
 
         if !input.is_empty() {
