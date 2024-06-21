@@ -215,6 +215,7 @@ pub async fn build_tray(
     let is_logged_in = auth::is_logged_in().await;
     TrayIconBuilder::new()
         .with_icon(get_icon(is_logged_in))
+        .with_icon_as_template(true)
         .with_menu(Box::new(get_context_menu(is_logged_in)))
         .build()
 }

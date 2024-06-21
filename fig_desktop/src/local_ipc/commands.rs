@@ -206,6 +206,12 @@ pub async fn login(proxy: &EventLoopProxy) -> LocalResult {
                 WindowEvent::Show,
             ]),
         })
+        .map_err(|err| error!(?err))
+        .ok();
+
+    proxy
+        .send_event(Event::ReloadTray { is_logged_in: true })
+        .map_err(|err| error!(?err))
         .ok();
 
     Ok(LocalResponse::Success(None))
