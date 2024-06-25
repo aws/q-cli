@@ -1,9 +1,9 @@
 mod api;
 mod parse;
+mod prompt;
 
 use std::io::{
     stderr,
-    ErrorKind,
     Stderr,
     Write,
 };
@@ -23,8 +23,6 @@ use crossterm::{
     ExecutableCommand,
     QueueableCommand,
 };
-use dialoguer::theme::ColorfulTheme;
-use dialoguer::Input;
 use eyre::{
     bail,
     eyre,
@@ -35,6 +33,11 @@ use fig_api_client::ai::{
     cw_streaming_client,
 };
 use fig_util::CLI_BINARY_NAME;
+use prompt::{
+    rl,
+    PROMPT,
+};
+use rustyline::error::ReadlineError;
 use spinners::{
     Spinner,
     Spinners,
@@ -78,6 +81,7 @@ pub async fn chat(input: String) -> Result<ExitCode> {
 }
 
 async fn try_chat(stderr: &mut Stderr, mut input: String) -> Result<()> {
+    let mut rl = rl()?;
     let client = cw_streaming_client(cw_endpoint()).await;
     let mut rx = None;
     let mut conversation_id: Option<String> = None;
@@ -242,31 +246,24 @@ You can include additional context by adding the following to your prompt:
             }
         }
 
-        // Prompt user for input
-        const PROMPT: &str = ">";
-        input = match Input::with_theme(&ColorfulTheme {
-            prompt_suffix: dialoguer::console::style(PROMPT.into()).magenta().bright(),
-            ..ColorfulTheme::default()
-        })
-        .report(false)
-        .interact_text()
-        {
-            Ok(input) => input,
-            Err(dialoguer::Error::IO(err)) if err.kind() == ErrorKind::Interrupted => return Ok(()),
-            Err(err) => return Err(err.into()),
-        };
-
-        let lines = (input.len() + 3) / usize::from(crossterm::terminal::window_size()?.columns);
-        if let Ok(lines) = u16::try_from(lines) {
-            if lines > 0 {
-                stderr.queue(cursor::MoveToPreviousLine(lines))?;
+        loop {
+            let readline = rl.readline(PROMPT);
+            match readline {
+                Ok(line) => {
+                    if line.trim().is_empty() {
+                        continue;
+                    }
+                    let _ = rl.add_history_entry(line.as_str());
+                    input = line;
+                    break;
+                },
+                Err(ReadlineError::Interrupted | ReadlineError::Eof) => {
+                    return Ok(());
+                },
+                Err(err) => {
+                    return Err(err.into());
+                },
             }
         }
-
-        stderr
-            .queue(style::SetForegroundColor(Color::DarkGrey))?
-            .queue(style::Print(format!("{PROMPT} {input}\n")))?
-            .queue(style::SetForegroundColor(Color::Reset))?
-            .flush()?;
     }
 }
