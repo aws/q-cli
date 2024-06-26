@@ -12,9 +12,13 @@ use fig_install::{
     install,
     InstallComponents,
 };
-use fig_util::CLI_BINARY_NAME;
+use fig_util::{
+    CLI_BINARY_NAME,
+    PRODUCT_NAME,
+};
 
-use crate::util::dialoguer_theme;
+use super::user::login_interactive;
+use crate::util::choose;
 
 #[cfg_attr(windows, allow(unused_variables))]
 pub async fn install_cli(install_components: InstallComponents, no_confirm: bool, force: bool) -> Result<ExitCode> {
@@ -41,12 +45,12 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
                 eyre::bail!("You must run with --no-confirm if unattended");
             }
 
-            !dialoguer::Confirm::with_theme(&dialoguer_theme())
-                .with_prompt(format!(
-                    "Do you want {} to modify your shell config (you will have to manually do this otherwise)?",
-                    CLI_BINARY_NAME
-                ))
-                .interact()?
+            choose(
+                format!(
+                    "Do you want {CLI_BINARY_NAME} to modify your shell config (you will have to manually do this otherwise)?",
+                ),
+                &["Yes", "No"],
+            )? == 1
         };
         if !manual_install {
             if let Err(err) = install(InstallComponents::SHELL_INTEGRATIONS).await {
@@ -81,7 +85,7 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
         }
     }
 
-    if install_components.contains(InstallComponents::INPUT_METHOD) {
+    if install_components.contains(InstallComponents::INPUT_METHOD) && !no_confirm {
         cfg_if::cfg_if! {
             if #[cfg(target_os = "macos")] {
                 if !dialoguer::console::user_attended() {
@@ -95,14 +99,25 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
                 println!("To enable the integration, select \"yes\" below and then click Ok in the popup.");
                 println!();
 
-                if dialoguer::Select::with_theme(&dialoguer_theme())
-                    .with_prompt("Do you want to enable support for input method backed terminals?")
-                    .default(0)
-                    .items(&["Yes", "No"])
-                    .interact_opt()? == Some(0) {
+                if choose("Do you want to enable support for input method backed terminals?", &["Yes", "No"])? == 0 {
                     install(InstallComponents::INPUT_METHOD).await?;
                 }
             }
+        }
+    }
+
+    if !auth::is_logged_in().await {
+        if !no_confirm {
+            if !dialoguer::console::user_attended() {
+                eyre::bail!("You must run with --no-confirm if unattended");
+            }
+
+            login_interactive().await?;
+        } else {
+            println!();
+            println!("You must login before you can use {PRODUCT_NAME}'s features.");
+            println!("To login run: {}", format!("{CLI_BINARY_NAME} login").bold());
+            println!();
         }
     }
 

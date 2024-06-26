@@ -118,8 +118,9 @@ pub enum CliRootCommands {
     /// Customize appearance & behavior
     #[command(alias("setting"))]
     Settings(settings::SettingsArgs),
-    /// Install cli components
-    Install(internal::InstallArgs),
+    /// Setup cli components
+    #[command(alias("install"))]
+    Setup(internal::InstallArgs),
     /// Uninstall Amazon Q
     #[command(hide = true)]
     Uninstall {
@@ -198,7 +199,7 @@ impl CliRootCommands {
             CliRootCommands::Hook(_) => "hook",
             CliRootCommands::Debug(_) => "debug",
             CliRootCommands::Settings(_) => "settings",
-            CliRootCommands::Install(_) => "install",
+            CliRootCommands::Setup(_) => "setup",
             CliRootCommands::Uninstall { .. } => "uninstall",
             CliRootCommands::Update(_) => "update",
             CliRootCommands::Diagnostic(_) => "diagnostics",
@@ -291,7 +292,7 @@ impl Cli {
 
         match self.subcommand {
             Some(subcommand) => match subcommand {
-                CliRootCommands::Install(args) => {
+                CliRootCommands::Setup(args) => {
                     let no_confirm = args.no_confirm;
                     let force = args.force;
                     installation::install_cli(args.into(), no_confirm, force).await

@@ -104,4 +104,4 @@ mkdir -p "$HOME/.local/bin"
 install -m 755 "$SCRIPT_DIR/bin/q" "$HOME/.local/bin/"
 install -m 755 "$SCRIPT_DIR/bin/qterm" "$HOME/.local/bin/"
 
-"$HOME/.local/bin/q" install
+"$HOME/.local/bin/q" setup 

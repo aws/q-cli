@@ -77,61 +77,7 @@ impl RootUserSubcommand {
                     );
                 }
 
-                let options = [AuthMethod::Email, AuthMethod::IdentityCenter];
-                let login_method = options[choose("Select action", &options)?];
-                match login_method {
-                    AuthMethod::Email | AuthMethod::IdentityCenter => {
-                        let (start_url, region) = match login_method {
-                            AuthMethod::Email => (None, None),
-                            AuthMethod::IdentityCenter => {
-                                let default_start_url =
-                                    fig_settings::state::get_string("auth.idc.start-url").ok().flatten();
-                                let default_region = fig_settings::state::get_string("auth.idc.region").ok().flatten();
-
-                                let start_url = input("Enter Start URL", default_start_url.as_deref())?;
-                                let region = input("Enter Region", default_region.as_deref())?;
-
-                                let _ = fig_settings::state::set_value("auth.idc.start-url", start_url.clone());
-                                let _ = fig_settings::state::set_value("auth.idc.region", region.clone());
-
-                                (Some(start_url), Some(region))
-                            },
-                        };
-                        let secret_store = SecretStore::new().await?;
-
-                        // Remote machine won't be able to handle browser opening and redirects,
-                        // hence always use device code flow.
-                        if fig_util::system_info::is_remote() {
-                            try_device_authorization(&secret_store, start_url.clone(), region.clone()).await?;
-                        } else {
-                            let (client, registration) =
-                                start_pkce_authorization(start_url.clone(), region.clone()).await?;
-
-                            match fig_util::open_url_async(&registration.url).await {
-                                // If we are unable to open the link with the browser, then fallback to
-                                // the device code flow.
-                                Ok(false) | Err(_) => {
-                                    try_device_authorization(&secret_store, start_url.clone(), region.clone()).await?;
-                                },
-                                // Otherwise, finish PKCE.
-                                _ => {
-                                    let mut spinner = Spinner::new(vec![
-                                        SpinnerComponent::Spinner,
-                                        SpinnerComponent::Text(" Logging in...".into()),
-                                    ]);
-                                    registration.finish(&client, Some(&secret_store)).await?;
-                                    fig_telemetry::send_user_logged_in().await;
-                                    spinner.stop_with_message("Logged in successfully".into());
-                                },
-                            }
-                        }
-                    },
-                    // Other methods soon!
-                };
-
-                if let Err(err) = login_command().await {
-                    error!(%err, "Failed to send login command");
-                }
+                login_interactive().await?;
 
                 Ok(ExitCode::SUCCESS)
             },
@@ -198,6 +144,63 @@ impl UserSubcommand {
             Self::Root(cmd) => cmd.execute().await,
         }
     }
+}
+
+pub async fn login_interactive() -> Result<()> {
+    let options = [AuthMethod::Email, AuthMethod::IdentityCenter];
+    let login_method = options[choose("Select action", &options)?];
+    match login_method {
+        AuthMethod::Email | AuthMethod::IdentityCenter => {
+            let (start_url, region) = match login_method {
+                AuthMethod::Email => (None, None),
+                AuthMethod::IdentityCenter => {
+                    let default_start_url = fig_settings::state::get_string("auth.idc.start-url").ok().flatten();
+                    let default_region = fig_settings::state::get_string("auth.idc.region").ok().flatten();
+
+                    let start_url = input("Enter Start URL", default_start_url.as_deref())?;
+                    let region = input("Enter Region", default_region.as_deref())?;
+
+                    let _ = fig_settings::state::set_value("auth.idc.start-url", start_url.clone());
+                    let _ = fig_settings::state::set_value("auth.idc.region", region.clone());
+
+                    (Some(start_url), Some(region))
+                },
+            };
+            let secret_store = SecretStore::new().await?;
+
+            // Remote machine won't be able to handle browser opening and redirects,
+            // hence always use device code flow.
+            if fig_util::system_info::is_remote() {
+                try_device_authorization(&secret_store, start_url.clone(), region.clone()).await?;
+            } else {
+                let (client, registration) = start_pkce_authorization(start_url.clone(), region.clone()).await?;
+
+                match fig_util::open_url_async(&registration.url).await {
+                    // If we are unable to open the link with the browser, then fallback to
+                    // the device code flow.
+                    Ok(false) | Err(_) => {
+                        try_device_authorization(&secret_store, start_url.clone(), region.clone()).await?;
+                    },
+                    // Otherwise, finish PKCE.
+                    _ => {
+                        let mut spinner = Spinner::new(vec![
+                            SpinnerComponent::Spinner,
+                            SpinnerComponent::Text(" Logging in...".into()),
+                        ]);
+                        registration.finish(&client, Some(&secret_store)).await?;
+                        fig_telemetry::send_user_logged_in().await;
+                        spinner.stop_with_message("Logged in successfully".into());
+                    },
+                }
+            }
+        },
+    };
+
+    if let Err(err) = login_command().await {
+        error!(%err, "Failed to send login command");
+    }
+
+    Ok(())
 }
 
 async fn try_device_authorization(
