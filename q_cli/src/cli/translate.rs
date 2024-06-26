@@ -274,6 +274,46 @@ fn highlighter(s: &str) -> String {
         .into_owned()
 }
 
+#[cfg(unix)]
+fn clear_stdin() -> Result<()> {
+    use std::io::Read;
+    use std::os::fd::AsRawFd;
+
+    let mut stdin = std::io::stdin().lock();
+    change_blocking_fd(stdin.as_raw_fd(), false)?;
+    // Raw mode is required in order to read from the terminal unbuffered.
+    crossterm::terminal::enable_raw_mode()?;
+    let mut buf = [0u8; 64];
+    loop {
+        match stdin.read(&mut buf) {
+            Err(err) if err.kind() == std::io::ErrorKind::WouldBlock => {
+                break;
+            },
+            _ => (),
+        }
+    }
+    crossterm::terminal::disable_raw_mode()?;
+    change_blocking_fd(stdin.as_raw_fd(), true)?;
+    Ok(())
+}
+
+#[cfg(unix)]
+fn change_blocking_fd(fd: std::os::unix::io::RawFd, is_blocking: bool) -> Result<()> {
+    use nix::fcntl::*;
+
+    let flags = fcntl(fd, FcntlArg::F_GETFL)?;
+    let flags = OFlag::from_bits_truncate(flags);
+    fcntl(
+        fd,
+        FcntlArg::F_SETFL(if is_blocking {
+            flags & !OFlag::O_NONBLOCK
+        } else {
+            flags | OFlag::O_NONBLOCK
+        }),
+    )?;
+    Ok(())
+}
+
 impl TranslateArgs {
     pub async fn execute(self) -> Result<ExitCode> {
         if !auth::is_logged_in().await {
@@ -366,6 +406,11 @@ impl TranslateArgs {
                 let response_time_start = Instant::now();
                 let res = generate_response(&question, n).await?;
                 let response_latency = response_time_start.elapsed();
+
+                // Prevents any buffered "enter" or "space" key presses from
+                // automatically executing the command.
+                #[cfg(unix)]
+                clear_stdin()?;
 
                 match &res.completions[..] {
                     [] => {
