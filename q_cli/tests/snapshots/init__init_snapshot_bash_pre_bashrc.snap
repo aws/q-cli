@@ -441,10 +441,12 @@ then
   # Do not launch figterm in non-interactive shells (like VSCode Tasks)
   if [[ $- == *i* ]]; then
     Q_TERM_NAME="$(basename "${Q_SHELL}") (qterm)"
-    if [[ -x "${HOME}/.local/bin/${Q_TERM_NAME}" ]]; then
-      Q_TERM_PATH="${HOME}/.local/bin/${Q_TERM_NAME}"
-    else
-      Q_TERM_PATH="$(command -v qterm || echo "${HOME}/.local/bin/qterm")"
+    if [[ -z "${Q_TERM_PATH}" ]]; then
+      if [[ -x "${HOME}/.local/bin/${Q_TERM_NAME}" ]]; then
+        Q_TERM_PATH="${HOME}/.local/bin/${Q_TERM_NAME}"
+      else
+        Q_TERM_PATH="$(command -v qterm || echo "${HOME}/.local/bin/qterm")"
+      fi
     fi
 
     Q_EXECUTION_STRING="${BASH_EXECUTION_STRING:=$ZSH_EXECUTION_STRING}"

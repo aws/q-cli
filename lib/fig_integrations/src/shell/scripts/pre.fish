@@ -39,10 +39,12 @@ if test -t 1
     # Do not launch qterm in non-interactive shells (like VSCode Tasks)
     if status --is-interactive
         set Q_TERM_NAME (command basename "$Q_SHELL")" (qterm)"
-        if test -x "$HOME/.local/bin/$Q_TERM_NAME"
-            set Q_TERM_PATH "$HOME/.local/bin/$Q_TERM_NAME"
-        else
-            set Q_TERM_PATH (command -v qterm || echo "$HOME/.local/bin/qterm")
+        if not set -q Q_TERM_PATH
+            if test -x "$HOME/.local/bin/$Q_TERM_NAME"
+                set Q_TERM_PATH "$HOME/.local/bin/$Q_TERM_NAME"
+            else
+                set Q_TERM_PATH (command -v qterm || echo "$HOME/.local/bin/qterm")
+            end
         end
 
         # Need to exec bash because we're using 'exec -a <name>'

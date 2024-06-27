@@ -197,6 +197,10 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
         to_source.push("Q_IS_LOGIN_SHELL=1".into());
     }
 
+    if let Some(path) = fig_settings::settings::get_string_opt("qterm.path") {
+        to_source.push(assign_shell_variable(shell, "Q_TERM_PATH", path, false));
+    }
+
     let shell_integration_source = shell.get_fig_integration_source(when);
     to_source.push(shell_integration_source.into());
 
