@@ -331,8 +331,10 @@ mod tests {
     impl PkceClient for TestPkceClient {
         async fn register_client(&self, _: String, _: String) -> Result<RegisterClientResponse, auth::Error> {
             Ok(RegisterClientResponse {
-                client_id: "test_client_id".into(),
-                client_secret: "test_client_secret".into(),
+                output: RegisterClientOutput::builder()
+                    .client_id("test_client_id")
+                    .client_secret("test_client_secret")
+                    .build(),
             })
         }
 

@@ -31,6 +31,7 @@ use aws_sdk_ssooidc::config::{
 };
 use aws_sdk_ssooidc::error::SdkError;
 use aws_sdk_ssooidc::operation::create_token::CreateTokenOutput;
+use aws_sdk_ssooidc::operation::register_client::RegisterClientOutput;
 use aws_smithy_async::rt::sleep::TokioSleep;
 use aws_smithy_runtime_api::client::identity::http::Token;
 use aws_smithy_runtime_api::client::identity::{
@@ -75,6 +76,12 @@ pub const AMZN_START_URL: &str = "https://amzn.awsapps.com/start";
 const DEVICE_GRANT_TYPE: &str = "urn:ietf:params:oauth:grant-type:device_code";
 const REFRESH_GRANT_TYPE: &str = "refresh_token";
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum OAuthFlow {
+    DeviceCode,
+    PKCE,
+}
+
 /// Indicates if an expiration time has passed, there is a small 1 min window that is removed
 /// so the token will not expire in transit
 fn is_expired(expiration_time: &OffsetDateTime) -> bool {
@@ -99,6 +106,7 @@ pub(crate) fn client(region: Region) -> Client {
     Client::new(&sdk_config)
 }
 
+/// Represents an OIDC registered client, resulting from the "register client" API call.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DeviceRegistration {
     pub client_id: String,
@@ -106,11 +114,23 @@ pub struct DeviceRegistration {
     #[serde(with = "time::serde::rfc3339::option")]
     pub client_secret_expires_at: Option<time::OffsetDateTime>,
     pub region: String,
+    pub oauth_flow: OAuthFlow,
 }
 
 impl DeviceRegistration {
     const SECRET_KEY: &'static str = "codewhisperer:odic:device-registration";
 
+    pub fn from_output(output: RegisterClientOutput, region: &Region, oauth_flow: OAuthFlow) -> Self {
+        Self {
+            client_id: output.client_id.unwrap_or_default(),
+            client_secret: output.client_secret.unwrap_or_default().into(),
+            client_secret_expires_at: time::OffsetDateTime::from_unix_timestamp(output.client_secret_expires_at).ok(),
+            region: region.to_string(),
+            oauth_flow,
+        }
+    }
+
+    /// Loads the OIDC registered client from the secret store, deleting it if it is expired.
     async fn load_from_secret_store(secret_store: &SecretStore, region: &Region) -> Result<Option<Self>> {
         let device_registration = secret_store.get(Self::SECRET_KEY).await?;
 
@@ -133,11 +153,20 @@ impl DeviceRegistration {
         Ok(None)
     }
 
-    /// Register the client with OIDC and cache the response for the expiration period
-    pub async fn register(client: &Client, secret_store: &SecretStore, region: &Region) -> Result<Self> {
+    /// Loads the client saved in the secret store if available, otherwise registers a new client
+    /// and saves it in the secret store.
+    pub async fn init_device_code_registration(
+        client: &Client,
+        secret_store: &SecretStore,
+        region: &Region,
+    ) -> Result<Self> {
         match Self::load_from_secret_store(secret_store, region).await {
-            Ok(Some(device_registration)) => return Ok(device_registration),
-            Ok(None) => {},
+            Ok(Some(device_registration)) if device_registration.oauth_flow == OAuthFlow::DeviceCode => {
+                return Ok(device_registration);
+            },
+            // If it doesn't exist or is for another OAuth flow, then continue with creating a new
+            // one.
+            Ok(None | Some(_)) => {},
             Err(err) => {
                 error!(?err, "Failed to read device registration from keychain");
             },
@@ -152,21 +181,21 @@ impl DeviceRegistration {
         }
         let output = register.send().await?;
 
-        let device_registration = Self {
-            client_id: output.client_id.unwrap_or_default(),
-            client_secret: output.client_secret.unwrap_or_default().into(),
-            client_secret_expires_at: time::OffsetDateTime::from_unix_timestamp(output.client_secret_expires_at).ok(),
-            region: region.to_string(),
-        };
+        let device_registration = Self::from_output(output, region, OAuthFlow::DeviceCode);
 
-        if let Err(err) = secret_store
-            .set(Self::SECRET_KEY, &serde_json::to_string(&device_registration)?)
-            .await
-        {
+        if let Err(err) = device_registration.save(secret_store).await {
             error!(?err, "Failed to write device registration to keychain");
         }
 
         Ok(device_registration)
+    }
+
+    /// Saves to the passed secret store.
+    pub async fn save(&self, secret_store: &SecretStore) -> Result<()> {
+        secret_store
+            .set(Self::SECRET_KEY, &serde_json::to_string(&self)?)
+            .await?;
+        Ok(())
     }
 }
 
@@ -201,7 +230,7 @@ pub async fn start_device_authorization(
         client_id,
         client_secret,
         ..
-    } = DeviceRegistration::register(&client, secret_store, &region).await?;
+    } = DeviceRegistration::init_device_code_registration(&client, secret_store, &region).await?;
 
     let output = client
         .start_device_authorization()
@@ -236,6 +265,7 @@ pub struct BuilderIdToken {
     pub refresh_token: Option<Secret>,
     pub region: Option<String>,
     pub start_url: Option<String>,
+    pub oauth_flow: OAuthFlow,
 }
 
 impl BuilderIdToken {
@@ -278,12 +308,6 @@ impl BuilderIdToken {
     ) -> Result<Option<Self>> {
         // TODO: add telem on error https://github.com/aws/aws-toolkit-vscode/blob/df9fc7315b37844a09b7f60b49c604fa267a88ab/src/auth/sso/ssoAccessTokenProvider.ts#L135-L143
 
-        let DeviceRegistration {
-            client_id,
-            client_secret,
-            ..
-        } = DeviceRegistration::register(client, secret_store, region).await?;
-
         let Some(refresh_token) = &self.refresh_token else {
             // if the token is expired and has no refresh token, delete it
             if let Err(err) = self.delete(secret_store).await {
@@ -293,17 +317,27 @@ impl BuilderIdToken {
             return Ok(None);
         };
 
+        let registration = match DeviceRegistration::load_from_secret_store(secret_store, region).await? {
+            Some(registration) if registration.oauth_flow == self.oauth_flow => registration,
+            // If the OIDC client registration is for a different oauth flow or doesn't exist, then
+            // we can't refresh the token.
+            None | Some(_) => {
+                return Ok(None);
+            },
+        };
+
         match client
             .create_token()
-            .client_id(client_id)
-            .client_secret(client_secret.0)
+            .client_id(registration.client_id)
+            .client_secret(registration.client_secret.0)
             .refresh_token(&refresh_token.0)
             .grant_type(REFRESH_GRANT_TYPE)
             .send()
             .await
         {
             Ok(output) => {
-                let token: BuilderIdToken = Self::from_output(output, region.clone(), self.start_url.clone());
+                let token: BuilderIdToken =
+                    Self::from_output(output, region.clone(), self.start_url.clone(), self.oauth_flow);
 
                 if let Err(err) = token.save(secret_store).await {
                     error!(?err, "Failed to store builder id access token");
@@ -350,13 +384,19 @@ impl BuilderIdToken {
         Ok(())
     }
 
-    pub(crate) fn from_output(output: CreateTokenOutput, region: Region, start_url: Option<String>) -> Self {
+    pub(crate) fn from_output(
+        output: CreateTokenOutput,
+        region: Region,
+        start_url: Option<String>,
+        oauth_flow: OAuthFlow,
+    ) -> Self {
         Self {
             access_token: output.access_token.unwrap_or_default().into(),
             expires_at: time::OffsetDateTime::now_utc() + time::Duration::seconds(output.expires_in as i64),
             refresh_token: output.refresh_token.map(|t| t.into()),
             region: Some(region.to_string()),
             start_url,
+            oauth_flow,
         }
     }
 
@@ -395,7 +435,7 @@ pub async fn poll_create_token(
         client_id,
         client_secret,
         ..
-    } = match DeviceRegistration::register(&client, secret_store, &region).await {
+    } = match DeviceRegistration::init_device_code_registration(&client, secret_store, &region).await {
         Ok(res) => res,
         Err(err) => {
             return PollCreateToken::Error(err);
@@ -412,7 +452,7 @@ pub async fn poll_create_token(
         .await
     {
         Ok(output) => {
-            let token: BuilderIdToken = BuilderIdToken::from_output(output, region, start_url);
+            let token: BuilderIdToken = BuilderIdToken::from_output(output, region, start_url, OAuthFlow::DeviceCode);
 
             if let Err(err) = token.save(secret_store).await {
                 error!(?err, "Failed to store builder id token");

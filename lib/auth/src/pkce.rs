@@ -25,6 +25,7 @@ use std::time::Duration;
 
 pub use aws_sdk_ssooidc::client::Client;
 pub use aws_sdk_ssooidc::operation::create_token::CreateTokenOutput;
+pub use aws_sdk_ssooidc::operation::register_client::RegisterClientOutput;
 pub use aws_types::region::Region;
 use base64::engine::general_purpose::URL_SAFE;
 use base64::Engine;
@@ -81,8 +82,17 @@ pub trait PkceClient {
 
 #[derive(Debug, Clone)]
 pub struct RegisterClientResponse {
-    pub client_id: String,
-    pub client_secret: String,
+    pub output: RegisterClientOutput,
+}
+
+impl RegisterClientResponse {
+    pub fn client_id(&self) -> &str {
+        self.output.client_id().unwrap_or_default()
+    }
+
+    pub fn client_secret(&self) -> &str {
+        self.output.client_secret().unwrap_or_default()
+    }
 }
 
 #[derive(Debug)]
@@ -108,22 +118,20 @@ impl PkceClient for Client {
             .client_type(CLIENT_TYPE)
             .issuer_url(issuer_url.clone())
             .redirect_uris(redirect_uri.clone())
-            .grant_types("authorization_code");
+            .grant_types("authorization_code")
+            .grant_types("refresh_token");
         for scope in SCOPES {
             register = register.scopes(*scope);
         }
         let output = register.send().await?;
-        Ok(RegisterClientResponse {
-            client_id: output.client_id.unwrap_or_default(),
-            client_secret: output.client_secret.unwrap_or_default(),
-        })
+        Ok(RegisterClientResponse { output })
     }
 
     async fn create_token(&self, args: CreateTokenArgs) -> Result<CreateTokenResponse> {
         let output = self
             .create_token()
-            .client_id(args.client_id)
-            .client_secret(args.client_secret)
+            .client_id(args.client_id.clone())
+            .client_secret(args.client_secret.clone())
             .grant_type("authorization_code")
             .redirect_uri(args.redirect_uri)
             .code_verifier(args.code_verifier)
@@ -145,8 +153,7 @@ impl PkceClient for Client {
 pub struct PkceRegistration {
     /// URL to be opened by the user's browser.
     pub url: String,
-    client_id: String,
-    client_secret: String,
+    registered_client: RegisterClientResponse,
     /// Configured URI that the authorization server will redirect the client to.
     pub redirect_uri: String,
     code_verifier: String,
@@ -185,7 +192,7 @@ impl PkceRegistration {
         let response = client.register_client(redirect_uri.clone(), issuer_url.clone()).await?;
 
         let query = PkceQueryParams {
-            client_id: response.client_id.clone(),
+            client_id: response.client_id().to_string(),
             redirect_uri: redirect_uri.clone(),
             // Scopes must be space delimited.
             scopes: SCOPES.join(" "),
@@ -197,8 +204,7 @@ impl PkceRegistration {
 
         Ok(Self {
             url,
-            client_id: response.client_id,
-            client_secret: response.client_secret,
+            registered_client: response,
             code_verifier,
             state,
             listener,
@@ -225,8 +231,8 @@ impl PkceRegistration {
 
         let response = client
             .create_token(CreateTokenArgs {
-                client_id: self.client_id,
-                client_secret: self.client_secret,
+                client_id: self.registered_client.client_id().to_string(),
+                client_secret: self.registered_client.client_secret().to_string(),
                 redirect_uri: self.redirect_uri,
                 code_verifier: self.code_verifier,
                 code,
@@ -234,8 +240,20 @@ impl PkceRegistration {
             .await?;
         // Tokens are redacted in the log output.
         debug!(?response, "Received create_token response");
-        let token = BuilderIdToken::from_output(response.output, self.region, Some(self.issuer_url));
+        let token = BuilderIdToken::from_output(
+            response.output,
+            self.region.clone(),
+            Some(self.issuer_url),
+            OAuthFlow::PKCE,
+        );
         if let Some(secret_store) = secret_store {
+            if let Err(err) =
+                DeviceRegistration::from_output(self.registered_client.output, &self.region, OAuthFlow::PKCE)
+                    .save(secret_store)
+                    .await
+            {
+                error!(?err, "Failed to store pkce registration to secret store");
+            }
             if let Err(err) = token.save(secret_store).await {
                 error!(?err, "Failed to store builder id token");
             };
@@ -449,8 +467,10 @@ mod tests {
     impl PkceClient for TestPkceClient {
         async fn register_client(&self, _: String, _: String) -> Result<RegisterClientResponse> {
             Ok(RegisterClientResponse {
-                client_id: "test_client_id".into(),
-                client_secret: "test_client_secret".into(),
+                output: RegisterClientOutput::builder()
+                    .client_id("test_client_id")
+                    .client_secret("test_client_secret")
+                    .build(),
             })
         }
 
