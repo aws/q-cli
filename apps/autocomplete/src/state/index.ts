@@ -1,6 +1,7 @@
 import React from "react";
 import logger from "loglevel";
-import { create, Mutate, StateCreator, StoreApi } from "zustand";
+import { Mutate, StateCreator, StoreApi } from "zustand";
+import { createWithEqualityFn } from "zustand/traditional";
 
 import { Suggestion } from "@amzn/fig-io-shared/internal";
 import {
@@ -290,7 +291,7 @@ const log =
     return config(namedSet, get, api);
   };
 
-export const useAutocompleteStore = create<AutocompleteState>(
+export const useAutocompleteStore = createWithEqualityFn<AutocompleteState>(
   updateSuggestions(
     log((setNamed, get) => {
       const generatorState = createGeneratorState(setNamed, get);
