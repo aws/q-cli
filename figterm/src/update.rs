@@ -1,5 +1,9 @@
 use crossterm::style::Stylize;
 use fig_settings::settings::get_bool_or;
+use fig_telemetry::{
+    get_install_method,
+    InstallMethod,
+};
 use fig_util::system_info::get_platform;
 use fig_util::CLI_BINARY_NAME;
 use semver::Version;
@@ -28,6 +32,10 @@ pub fn check_for_update() {
 
     // If updates are disabled, don't check for updates
     if !get_bool_or("app.disableAutoupdates", true) {
+        return;
+    }
+
+    if get_install_method() == InstallMethod::Toolbox {
         return;
     }
 
