@@ -1230,7 +1230,7 @@ impl DoctorCheck<DiagnosticsResponse> for BundlePathCheck {
 
     async fn check(&self, diagnostics: &DiagnosticsResponse) -> Result<(), DoctorError> {
         let path = diagnostics.path_to_bundle.clone();
-        if path.contains(&format!("/Applications/{APP_BUNDLE_NAME}")) {
+        if path.contains(&format!("/Applications/{APP_BUNDLE_NAME}")) || path.contains(".toolbox") {
             Ok(())
         } else if path.contains(&format!("/Build/Products/Debug/{APP_BUNDLE_NAME}")) {
             Err(DoctorError::Warning(
