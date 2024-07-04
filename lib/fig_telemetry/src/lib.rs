@@ -115,13 +115,6 @@ impl TelemetryStage {
         "us-east-1:820fd6d1-95c0-4ca4-bffb-3f01d32da842",
         "us-east-1",
     );
-    #[allow(dead_code)]
-    const INTERNAL_PROD: Self = Self::new(
-        "internal-prod",
-        "https://1ek5zo40ci.execute-api.us-east-1.amazonaws.com/InternalProd",
-        "us-east-1:4037bda8-adbd-4c71-ae5e-88b270261c25",
-        "us-east-1",
-    );
 
     const fn new(
         name: &'static str,

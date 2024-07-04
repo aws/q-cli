@@ -142,11 +142,7 @@ mod test {
             return;
         }
 
-        for telemetry_stage in [
-            TelemetryStage::BETA,
-            TelemetryStage::INTERNAL_PROD,
-            TelemetryStage::EXTERNAL_PROD,
-        ] {
+        for telemetry_stage in [TelemetryStage::BETA, TelemetryStage::EXTERNAL_PROD] {
             get_cognito_credentials_send(&telemetry_stage).await.unwrap();
         }
     }
