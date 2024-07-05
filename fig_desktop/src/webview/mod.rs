@@ -116,6 +116,7 @@ pub use crate::webview::window_id::{
     HOTKEY_CHAT_ID,
 };
 use crate::{
+    auth_watcher,
     file_watcher,
     local_ipc,
     utils,
@@ -384,6 +385,7 @@ impl WebviewManager {
         }
 
         file_watcher::setup_listeners(self.notifications_state.clone(), self.event_loop.create_proxy()).await;
+        auth_watcher::spawn_auth_watcher();
 
         init_webview_notification_listeners(self.event_loop.create_proxy()).await;
 

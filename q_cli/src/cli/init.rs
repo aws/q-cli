@@ -6,6 +6,7 @@ use std::io::{
 };
 use std::path::Path;
 use std::process::ExitCode;
+use std::time::SystemTime;
 
 use clap::Args;
 use crossterm::style::Stylize;
@@ -276,6 +277,18 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
         }
     }
 
+    if when == &When::Post && !fig_settings::state::get_bool_or("desktop.auth-watcher.logged-in", true) {
+        let last_sent_at = fig_settings::state::get_int_or("cli.init.login-prompt.sent-at", 0);
+        let now = SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+        if now - last_sent_at > 60 * 60 * 36 {
+            let _ = fig_settings::state::set_value("cli.init.login-prompt.sent-at", now);
+            to_source.push(login_prompt_code(*shell));
+        }
+    }
+
     Ok(to_source.join("\n"))
 }
 
@@ -316,6 +329,21 @@ fn inline_prompt_code(shell: Shell) -> String {
         format!(
             "printf '\\n{PRODUCT_NAME} now supports AI-powered inline completions!\\n\\nTo disable run: {}\\n\\n'\n",
             format!("{CLI_BINARY_NAME} inline disable").magenta()
+        ),
+    )
+}
+
+fn login_prompt_code(shell: Shell) -> String {
+    guard_source(
+        &shell,
+        false,
+        "Q_LOGIN_PROMPT",
+        GuardAssignment::AfterSourcing,
+        format!(
+            "printf '\\nRun {} to log back into {PRODUCT_NAME}. Logging back in allows you to use AI features such as inline completions, {}, and {}\\n\\n'\n",
+            format!("{CLI_BINARY_NAME} login").magenta(),
+            format!("{CLI_BINARY_NAME} translate").magenta(),
+            format!("{CLI_BINARY_NAME} chat").magenta()
         ),
     )
 }
@@ -389,6 +417,22 @@ mod tests {
                 format!(
                     "\n{PRODUCT_NAME} now supports AI-powered inline completions!\n\nTo disable run: {}\n\n",
                     format!("{CLI_BINARY_NAME} inline disable").magenta()
+                )
+            );
+
+            let login_prompt_output = run_shell_stdout(&shell, &login_prompt_code(shell));
+
+            println!("=== login_prompt {shell:?} ===");
+            println!("{login_prompt_output}");
+            println!("===");
+
+            assert_eq!(
+                login_prompt_output,
+                format!(
+                    "\nRun {} to log back into {PRODUCT_NAME}. Logging back in allows you to use AI features such as inline completions, {}, and {}\n\n",
+                    format!("{CLI_BINARY_NAME} login").magenta(),
+                    format!("{CLI_BINARY_NAME} translate").magenta(),
+                    format!("{CLI_BINARY_NAME} chat").magenta()
                 )
             );
         }

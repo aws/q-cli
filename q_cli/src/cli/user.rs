@@ -7,7 +7,6 @@ use anstream::println;
 use auth::builder_id::{
     poll_create_token,
     start_device_authorization,
-    BuilderIdToken,
     PollCreateToken,
     TokenType,
 };
@@ -94,8 +93,7 @@ impl RootUserSubcommand {
                 Ok(ExitCode::SUCCESS)
             },
             Self::Whoami { format } => {
-                let secret_store = SecretStore::new().await?;
-                let builder_id = BuilderIdToken::load(&secret_store).await;
+                let builder_id = auth::builder_id_token().await;
 
                 match builder_id {
                     Ok(Some(token)) => {

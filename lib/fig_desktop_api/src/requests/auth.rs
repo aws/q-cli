@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use auth::builder_id::{
-    BuilderIdToken,
     PollCreateToken,
     StartDeviceAuthorizationResponse,
     TokenType,
@@ -180,12 +179,7 @@ impl<T: PkceClient + Send + Sync + 'static> PkceState<T> {
 }
 
 pub async fn status(_request: AuthStatusRequest) -> RequestResult {
-    let secret_store = SecretStore::new()
-        .await
-        .map_err(|err| format!("Failed to load secret store: {err}"))?;
-
-    let token = BuilderIdToken::load(&secret_store).await;
-
+    let token = auth::builder_id_token().await;
     Ok(ServerOriginatedSubMessage::AuthStatusResponse(AuthStatusResponse {
         authed: matches!(token, Ok(Some(_))),
         auth_kind: match &token {
