@@ -21,7 +21,7 @@ fig_settings.workspace = true
 fig_util.workspace = true
 once_cell.workspace = true
 reqwest.workspace = true
-reqwest_cookie_store = "0.7.0"
+reqwest_cookie_store = "0.8.0"
 rustls-pemfile = "2.1.0"
 serde.workspace = true
 serde_json.workspace = true
@@ -31,10 +31,11 @@ tracing.workspace = true
 url = "2.3.1"
 
 # Keep these synced with reqwest
-# https://github.com/seanmonstar/reqwest/blob/6768a8e81849faebd044b65009f09fd119b600eb/Cargo.toml#L134-L140
-rustls = "0.22.2"
+# https://github.com/seanmonstar/reqwest/blob/v0.12.5/Cargo.toml
+rustls = "0.23.4"
 rustls-native-certs = "0.7.0"
 webpki-roots = "0.26.0"
 
 [dev-dependencies]
+mockito = "1.4.0"
 tokio.workspace = true

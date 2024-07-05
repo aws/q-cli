@@ -53,7 +53,13 @@ pub fn create_default_root_cert_store(native_certs: bool) -> RootCertStore {
 }
 
 fn client_config(native_certs: bool) -> ClientConfig {
-    ClientConfig::builder()
+    let provider = rustls::crypto::CryptoProvider::get_default()
+        .cloned()
+        .unwrap_or_else(|| Arc::new(rustls::crypto::ring::default_provider()));
+
+    ClientConfig::builder_with_provider(provider)
+        .with_protocol_versions(rustls::DEFAULT_VERSIONS)
+        .expect("Failed to set supported TLS versions")
         .with_root_certificates(create_default_root_cert_store(native_certs))
         .with_no_client_auth()
 }
@@ -139,5 +145,45 @@ mod tests {
         reqwest_client(true).unwrap();
         reqwest_client(false).unwrap();
         reqwest_client_no_redirect().unwrap();
+    }
+
+    #[tokio::test]
+    async fn request_test() {
+        let mut server = mockito::Server::new_async().await;
+        let mock = server
+            .mock("GET", "/hello")
+            .with_status(200)
+            .with_header("content-type", "text/plain")
+            .with_body("world")
+            .create();
+        let url = server.url();
+
+        for client in [reqwest_client(false).unwrap(), reqwest_client(true).unwrap()] {
+            let res = client.get(format!("{url}/hello")).send().await.unwrap();
+            assert_eq!(res.status(), 200);
+            assert_eq!(res.headers()["content-type"], "text/plain");
+            assert_eq!(res.text().await.unwrap(), "world");
+        }
+
+        mock.expect(2).assert();
+    }
+
+    #[tokio::test]
+    async fn no_redirect_request_test() {
+        let mut server = mockito::Server::new_async().await;
+        let mock = server
+            .mock("GET", "/hello")
+            .with_status(302)
+            .with_header("location", "/redirect")
+            .create();
+
+        let url = server.url();
+
+        let client = reqwest_client_no_redirect().unwrap();
+        let res = client.get(format!("{url}/hello")).send().await.unwrap();
+        assert_eq!(res.status(), 302);
+        assert_eq!(res.headers()["location"], "/redirect");
+
+        mock.expect(1).assert();
     }
 }

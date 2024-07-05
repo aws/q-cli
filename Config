@@ -18,6 +18,7 @@ package.FigIoDesktop = {
             GoogleProtoBuf = 3.21.x;
             Shellcheck = 0.x;
             CargoEevee = 0.1;
+            CMake = 3.x;
             
             # Python build deps
             CPython311 = default;
