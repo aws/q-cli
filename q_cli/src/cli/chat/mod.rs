@@ -117,7 +117,7 @@ async fn try_chat(stderr: &mut Stderr, mut input: String) -> Result<()> {
             stderr
                 .queue(style::SetForegroundColor(Color::Reset))?
                 .execute(style::Print("\n"))?;
-        } else {
+        } else if fig_settings::settings::get_bool_or("chat.greeting.enabled", true) {
             stderr.execute(style::Print(format!(
                 "
 Hi, I'm Amazon Q. I can answer questions about your shell and CLI tools!

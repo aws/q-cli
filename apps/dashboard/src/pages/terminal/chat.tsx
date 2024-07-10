@@ -7,7 +7,7 @@ import chatWithContextDemo from "@assets/images/chat_with_context_demo.gif";
 export default function Page() {
   return (
     <>
-      <UserPrefView array={settings} intro={intro} />
+      <UserPrefView intro={intro} />
       <section className="flex flex-col py-4">
         <h2
           id="subhead-chat-how-to"
@@ -46,6 +46,7 @@ export default function Page() {
           </Terminal>
         </div>
       </section>
+      <UserPrefView array={settings} />
     </>
   );
 }

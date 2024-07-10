@@ -119,7 +119,7 @@ export default function Page() {
           />
         </Terminal.Tab>
       </Terminal>
-      <UserPrefView array={settings}></UserPrefView>
+      <UserPrefView array={settings} />
       <CustomizationsSelector />
     </div>
   );
