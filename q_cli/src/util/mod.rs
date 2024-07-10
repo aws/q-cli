@@ -15,6 +15,7 @@ use std::process::{
 use std::time::Duration;
 
 use anstream::println;
+use anstream::stream::IsTerminal;
 use cfg_if::cfg_if;
 use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;
@@ -36,7 +37,6 @@ use globset::{
     GlobSet,
     GlobSetBuilder,
 };
-use once_cell::sync::Lazy;
 use regex::Regex;
 use tracing::warn;
 
@@ -209,24 +209,22 @@ pub fn match_regex(regex: impl AsRef<str>, input: impl AsRef<str>) -> Option<Str
     )
 }
 
-static IS_TTY: Lazy<bool> = Lazy::new(|| std::env::var_os("TTY").is_some());
-
 pub fn choose(prompt: impl Display, options: &[impl ToString]) -> Result<usize> {
+    if options.is_empty() {
+        bail!("no options passed to choose")
+    }
+
+    if !stdout().is_terminal() {
+        warn!("called choose while stdout is not a terminal");
+        return Ok(0);
+    }
+
     tokio::spawn(async {
         tokio::signal::ctrl_c().await.unwrap();
         crossterm::execute!(stdout(), crossterm::cursor::Show).unwrap();
         #[allow(clippy::exit)]
         std::process::exit(0);
     });
-
-    if options.is_empty() {
-        bail!("no options passed to choose")
-    }
-
-    if !*IS_TTY {
-        warn!("choose called without TTY, choosing first option");
-        return Ok(0);
-    }
 
     Select::with_theme(&dialoguer_theme())
         .items(options)
@@ -237,8 +235,8 @@ pub fn choose(prompt: impl Display, options: &[impl ToString]) -> Result<usize> 
 }
 
 pub fn input(prompt: &str, initial_text: Option<&str>) -> Result<String> {
-    if !*IS_TTY {
-        warn!("called input without a tty");
+    if !stdout().is_terminal() {
+        warn!("called input while stdout is not a terminal");
         return Ok(String::new());
     }
 

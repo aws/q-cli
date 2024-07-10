@@ -52,14 +52,16 @@ pub enum RootUserSubcommand {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum AuthMethod {
-    Email,
+    /// Builder ID (free)
+    BuilderId,
+    /// IdC (enterprise)
     IdentityCenter,
 }
 
 impl Display for AuthMethod {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            AuthMethod::Email => write!(f, "Use for Free with Builder ID"),
+            AuthMethod::BuilderId => write!(f, "Use for Free with Builder ID"),
             AuthMethod::IdentityCenter => write!(f, "Use with Pro license"),
         }
     }
@@ -145,12 +147,12 @@ impl UserSubcommand {
 }
 
 pub async fn login_interactive() -> Result<()> {
-    let options = [AuthMethod::Email, AuthMethod::IdentityCenter];
-    let login_method = options[choose("Select action", &options)?];
+    let options = [AuthMethod::BuilderId, AuthMethod::IdentityCenter];
+    let login_method = options[choose("Select login method", &options)?];
     match login_method {
-        AuthMethod::Email | AuthMethod::IdentityCenter => {
+        AuthMethod::BuilderId | AuthMethod::IdentityCenter => {
             let (start_url, region) = match login_method {
-                AuthMethod::Email => (None, None),
+                AuthMethod::BuilderId => (None, None),
                 AuthMethod::IdentityCenter => {
                     let default_start_url = fig_settings::state::get_string("auth.idc.start-url").ok().flatten();
                     let default_region = fig_settings::state::get_string("auth.idc.region").ok().flatten();
