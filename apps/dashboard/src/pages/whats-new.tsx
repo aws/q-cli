@@ -35,6 +35,18 @@ const MARKDOWN_OPTIONS: MarkdownOptions = {
     kbd(props) {
       return <Kbd>{props.children}</Kbd>;
     },
+    code({ className, children }) {
+      return (
+        <code
+          className={cn(
+            "text-[0.9em] px-1 py-px bg-zinc-50 border border-zinc-200 rounded-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-300 dark:bg-zinc-900 whitespace-nowrap",
+            className,
+          )}
+        >
+          {children}
+        </code>
+      );
+    },
   },
 };
 
@@ -47,7 +59,7 @@ function ChangesInner({
 }) {
   return (
     <div className="relative">
-      <ul className="text-sm ml-4">
+      <ul className="text-sm ml-4 flex flex-col gap-0.5">
         {changes.map((change) => (
           <li
             className="before:content-['•_'] flex flex-row gap-1"

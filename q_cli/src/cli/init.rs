@@ -285,7 +285,8 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
             .as_secs() as i64;
         if now - last_sent_at > 60 * 60 * 36 {
             let _ = fig_settings::state::set_value("cli.init.login-prompt.sent-at", now);
-            to_source.push(login_prompt_code(*shell));
+            // TODO(grant): re-enable, this has not been tested enough before the 1.3.2 launch
+            // to_source.push(login_prompt_code(*shell));
         }
     }
 
@@ -333,6 +334,7 @@ fn inline_prompt_code(shell: Shell) -> String {
     )
 }
 
+#[allow(dead_code)]
 fn login_prompt_code(shell: Shell) -> String {
     guard_source(
         &shell,
