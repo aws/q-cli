@@ -68,11 +68,8 @@ fn parent_status(current_pid: fig_util::process_info::Pid) -> Status {
 
     let valid_parent = ["zsh", "bash", "fish", "nu"].contains(&parent_name);
 
-    if fig_util::system_info::in_ssh() {
-        return match std::env::var_os(Q_TERM) {
-            Some(_) => Status::DontLaunch(format!("In SSH and {Q_TERM} is set").into()),
-            None => Status::Launch(format!("In SSH and {Q_TERM} is not set").into()),
-        };
+    if fig_util::system_info::in_ssh() && std::env::var_os(Q_TERM).is_none() {
+        return Status::Launch(format!("In SSH and {Q_TERM} is not set").into());
     }
 
     if fig_util::system_info::in_codespaces() {
