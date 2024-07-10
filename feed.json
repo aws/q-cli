@@ -43,9 +43,6 @@
         {
           "type": "fixed",
           "description": "Pressing enter multiple times triggered `q translate` to immediately execute."
-        },
-        {
-          "type": "fixed"
         }
       ]
     },
