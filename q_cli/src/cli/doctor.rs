@@ -18,6 +18,7 @@ use anstream::{
     println,
 };
 use async_trait::async_trait;
+use auth::is_amzn_user;
 use clap::Args;
 use crossterm::style::Stylize;
 use crossterm::terminal::{
@@ -1162,7 +1163,7 @@ struct SshdConfigCheck;
 #[async_trait]
 impl DoctorCheck<()> for SshdConfigCheck {
     fn name(&self) -> Cow<'static, str> {
-        "SSHD config".into()
+        "sshd config".into()
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
@@ -1171,26 +1172,36 @@ impl DoctorCheck<()> for SshdConfigCheck {
             "  AcceptEnv Q_SET_PARENT".magenta().to_string().into(),
             "  AllowStreamLocalForwarding yes".magenta().to_string().into(),
             "".into(),
+            "If your sshd_config is already configured correctly then:".into(),
+            "  1. Restart sshd".into(),
+            "  2. Disconnect and reconnect to the host".into(),
+            "".into(),
             format!("See {AUTOCOMPLETE_SSH_WIKI} for more info").into(),
         ];
 
         let sshd_config_path = "/etc/ssh/sshd_config";
 
-        let sshd_config = std::fs::read_to_string(sshd_config_path)
-            .context("Could not read sshd_config")
-            .map_err(|err| {
-                if std::env::var_os(Q_PARENT).is_some() {
-                    // We will assume the integration is correct if Q_PARENT is set
-                    doctor_warning!("Could not read sshd_config, check {AUTOCOMPLETE_SSH_WIKI} for more info")
+        let sshd_config = match std::fs::read_to_string(sshd_config_path).context("Could not read sshd_config") {
+            Ok(config) => config,
+            Err(_err) if std::env::var_os(Q_PARENT).is_some() => {
+                // We will assume amzn users have this configured correctly and warn other users.
+                if is_amzn_user().await.unwrap_or_default() {
+                    return Ok(());
                 } else {
-                    DoctorError::Error {
-                        reason: err.to_string().into(),
-                        info: info.clone(),
-                        fix: None,
-                        error: None,
-                    }
+                    return Err(doctor_warning!(
+                        "Could not read sshd_config, check {AUTOCOMPLETE_SSH_WIKI} for more info"
+                    ));
                 }
-            })?;
+            },
+            Err(err) => {
+                return Err(DoctorError::Error {
+                    reason: err.to_string().into(),
+                    info: info.clone(),
+                    fix: None,
+                    error: None,
+                });
+            },
+        };
 
         let accept_env_regex = Regex::new(r"(?m)^\s*AcceptEnv\s+.*(Q_\*|Q_SET_PARENT)([^\S\r\n]+.*$|$)").unwrap();
 

@@ -21,7 +21,6 @@ dirs.workspace = true
 hex.workspace = true
 indoc.workspace = true
 libc.workspace = true
-once_cell.workspace = true
 paste = "1.0.11"
 rand.workspace = true
 regex.workspace = true

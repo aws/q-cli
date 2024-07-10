@@ -53,8 +53,8 @@ use fig_api_client::ai::{
 use fig_aws_common::app_name;
 use fig_util::system_info::os_version;
 use fig_util::terminal::{
-    CURRENT_TERMINAL,
-    CURRENT_TERMINAL_VERSION,
+    current_terminal,
+    current_terminal_version,
 };
 use fig_util::Shell;
 pub use install_method::{
@@ -535,8 +535,8 @@ pub async fn send_translation_actioned(latency: Duration, suggestion_state: Sugg
     let event = Event::new(EventType::TranslationActioned {
         latency,
         suggestion_state,
-        terminal: CURRENT_TERMINAL.as_ref().map(|t| t.internal_id().to_string()),
-        terminal_version: CURRENT_TERMINAL_VERSION.clone(),
+        terminal: current_terminal().map(|t| t.internal_id().to_string()),
+        terminal_version: current_terminal_version().map(Into::into),
         shell: shell.map(|s| s.to_string()),
         shell_version,
     })
@@ -548,8 +548,8 @@ pub async fn send_cli_subcommand_executed(subcommand: impl Into<String>) {
     let (shell, shell_version) = shell().await;
     let event = Event::new(EventType::CliSubcommandExecuted {
         subcommand: subcommand.into(),
-        terminal: CURRENT_TERMINAL.as_ref().map(|t| t.internal_id().to_string()),
-        terminal_version: CURRENT_TERMINAL_VERSION.clone(),
+        terminal: current_terminal().map(|t| t.internal_id().to_string()),
+        terminal_version: current_terminal_version().map(Into::into),
         shell: shell.map(|s| s.to_string()),
         shell_version,
     })
@@ -561,8 +561,8 @@ pub async fn send_doctor_check_failed(failed_check: impl Into<String>) {
     let (shell, shell_version) = shell().await;
     let event = Event::new(EventType::DoctorCheckFailed {
         doctor_check: failed_check.into(),
-        terminal: CURRENT_TERMINAL.as_ref().map(|t| t.internal_id().to_string()),
-        terminal_version: CURRENT_TERMINAL_VERSION.clone(),
+        terminal: current_terminal().map(|t| t.internal_id().to_string()),
+        terminal_version: current_terminal_version().map(Into::into),
         shell: shell.map(|s| s.to_string()),
         shell_version,
     })

@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::fmt;
+use std::sync::OnceLock;
 
-use once_cell::sync::Lazy;
 use serde::{
     Deserialize,
     Serialize,
@@ -51,8 +51,15 @@ pub const SPECIAL_TERMINALS: &[Terminal] = &[
     Terminal::Zellij,
 ];
 
-pub static CURRENT_TERMINAL: Lazy<Option<Terminal>> = Lazy::new(Terminal::parent_terminal);
-pub static CURRENT_TERMINAL_VERSION: Lazy<Option<String>> = Lazy::new(Terminal::version);
+pub fn current_terminal() -> Option<&'static Terminal> {
+    static CURRENT_TERMINAL: OnceLock<Option<Terminal>> = OnceLock::new();
+    CURRENT_TERMINAL.get_or_init(Terminal::parent_terminal).as_ref()
+}
+
+pub fn current_terminal_version() -> Option<&'static str> {
+    static CURRENT_TERMINAL_VERSION: OnceLock<Option<String>> = OnceLock::new();
+    CURRENT_TERMINAL_VERSION.get_or_init(Terminal::version).as_deref()
+}
 
 /// All supported terminals
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]

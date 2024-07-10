@@ -1,8 +1,8 @@
 use std::fmt::Display;
 use std::str::FromStr;
+use std::sync::OnceLock;
 
 use cfg_if::cfg_if;
-use once_cell::sync::Lazy;
 use serde::{
     Deserialize,
     Deserializer,
@@ -201,24 +201,23 @@ where
     }
 }
 
-static CACHED: Lazy<Manifest> = Lazy::new(|| Manifest {
-    managed_by: ManagedBy::None,
-    target_triple: match TARGET_TRIPLE {
-        Some(target) => TargetTriple::from_str(target).expect("parsing target triple should not fail"),
-        _ => TargetTriple::from_system(),
-    },
-    variant: match VARIANT.map(|s| s.to_ascii_lowercase()).as_deref() {
-        Some("minimal") => Variant::Minimal,
-        _ => Variant::Full,
-    },
-    default_channel: Channel::Stable,
-    packaged_at: "unknown".into(),
-    packaged_by: "unknown".into(),
-});
-
 /// Returns the manifest, reading and parsing it if necessary
 pub fn manifest() -> &'static Manifest {
-    &CACHED
+    static CACHED: OnceLock<Manifest> = OnceLock::new();
+    CACHED.get_or_init(|| Manifest {
+        managed_by: ManagedBy::None,
+        target_triple: match TARGET_TRIPLE {
+            Some(target) => TargetTriple::from_str(target).expect("parsing target triple should not fail"),
+            _ => TargetTriple::from_system(),
+        },
+        variant: match VARIANT.map(|s| s.to_ascii_lowercase()).as_deref() {
+            Some("minimal") => Variant::Minimal,
+            _ => Variant::Full,
+        },
+        default_channel: Channel::Stable,
+        packaged_at: "unknown".into(),
+        packaged_by: "unknown".into(),
+    })
 }
 
 /// Checks if this is a full build according to the manifest.

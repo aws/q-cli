@@ -1,9 +1,9 @@
 pub mod linux;
 
 use std::borrow::Cow;
+use std::sync::OnceLock;
 
 use cfg_if::cfg_if;
-use once_cell::sync::Lazy;
 use serde::{
     Deserialize,
     Serialize,
@@ -16,108 +16,6 @@ use sha2::{
 use crate::env_var::Q_PARENT;
 use crate::manifest::is_minimal;
 use crate::Error;
-
-static OS_VERSION: Lazy<Option<OSVersion>> = Lazy::new(|| {
-    cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            use std::process::Command;
-            use regex::Regex;
-
-            let version_info = Command::new("sw_vers")
-                .output()
-                .ok()?;
-
-            let version_info: String = String::from_utf8_lossy(&version_info.stdout).trim().into();
-
-            let version_regex = Regex::new(r"ProductVersion:\s*(\S+)").unwrap();
-            let build_regex = Regex::new(r"BuildVersion:\s*(\S+)").unwrap();
-
-            let version: String = version_regex
-                .captures(&version_info)
-                .and_then(|c| c.get(1))
-                .map(|v| v.as_str().into())?;
-
-            let major = version
-                .split('.')
-                .next()?
-                .parse().ok()?;
-
-            let minor = version
-                .split('.')
-                .nth(1)?
-                .parse().ok()?;
-
-            let patch = version.split('.').nth(2).and_then(|p| p.parse().ok());
-
-            let build = build_regex
-                .captures(&version_info)
-                .and_then(|c| c.get(1))?
-                .as_str()
-                .into();
-
-            Some(OSVersion::MacOS {
-                major,
-                minor,
-                patch,
-                build,
-            })
-        } else if #[cfg(target_os = "linux")] {
-            use nix::sys::utsname::uname;
-
-            let kernel_version = uname().ok()?.release().to_string_lossy().into();
-            let os_release = linux::get_os_release().cloned();
-
-            Some(OSVersion::Linux {
-                kernel_version,
-                os_release,
-            })
-        } else if #[cfg(target_os = "windows")] {
-            use winreg::enums::HKEY_LOCAL_MACHINE;
-            use winreg::RegKey;
-
-            let rkey = RegKey::predef(HKEY_LOCAL_MACHINE).open_subkey(r"SOFTWARE\Microsoft\Windows NT\CurrentVersion").ok()?;
-            let build: String = rkey.get_value("CurrentBuild").ok()?;
-
-            Some(OSVersion::Windows {
-                name: rkey.get_value("ProductName").ok()?,
-                build: build.parse::<u32>().ok()?,
-            })
-        } else if #[cfg(target_os = "freebsd")] {
-            use nix::sys::utsname::uname;
-
-            let version = uname().ok()?.release().to_string_lossy().into();
-
-            Some(OSVersion::FreeBsd {
-                version,
-            })
-
-        }
-    }
-});
-
-#[cfg(target_os = "linux")]
-static IN_WSL: Lazy<bool> = Lazy::new(|| {
-    if let Ok(b) = std::fs::read("/proc/sys/kernel/osrelease") {
-        if let Ok(s) = std::str::from_utf8(&b) {
-            let a = s.to_ascii_lowercase();
-            return a.contains("microsoft") || a.contains("wsl");
-        }
-    }
-    false
-});
-
-static IN_SSH: Lazy<bool> = Lazy::new(|| {
-    std::env::var_os("SSH_CLIENT").is_some()
-        || std::env::var_os("SSH_CONNECTION").is_some()
-        || std::env::var_os("SSH_TTY").is_some()
-});
-
-static HAS_PARENT: Lazy<bool> = Lazy::new(|| std::env::var_os(Q_PARENT).is_some());
-
-static IN_CODESPACES: Lazy<bool> =
-    Lazy::new(|| std::env::var_os("CODESPACES").is_some() || std::env::var_os("Q_CODESPACES").is_some());
-
-static IN_CI: Lazy<bool> = Lazy::new(|| std::env::var_os("CI").is_some() || std::env::var_os("Q_CI").is_some());
 
 /// The support level for different platforms
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -133,6 +31,7 @@ pub enum SupportLevel {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum OSVersion {
     MacOS {
         major: i32,
@@ -142,6 +41,7 @@ pub enum OSVersion {
     },
     Linux {
         kernel_version: String,
+        #[serde(flatten)]
         os_release: Option<linux::OsRelease>,
     },
     Windows {
@@ -266,18 +166,109 @@ impl std::fmt::Display for OSVersion {
 }
 
 pub fn os_version() -> Option<&'static OSVersion> {
-    OS_VERSION.as_ref()
+    static OS_VERSION: OnceLock<Option<OSVersion>> = OnceLock::new();
+    OS_VERSION.get_or_init(|| {
+        cfg_if! {
+            if #[cfg(target_os = "macos")] {
+                use std::process::Command;
+                use regex::Regex;
+
+                let version_info = Command::new("sw_vers")
+                    .output()
+                    .ok()?;
+
+                let version_info: String = String::from_utf8_lossy(&version_info.stdout).trim().into();
+
+                let version_regex = Regex::new(r"ProductVersion:\s*(\S+)").unwrap();
+                let build_regex = Regex::new(r"BuildVersion:\s*(\S+)").unwrap();
+
+                let version: String = version_regex
+                    .captures(&version_info)
+                    .and_then(|c| c.get(1))
+                    .map(|v| v.as_str().into())?;
+
+                let major = version
+                    .split('.')
+                    .next()?
+                    .parse().ok()?;
+
+                let minor = version
+                    .split('.')
+                    .nth(1)?
+                    .parse().ok()?;
+
+                let patch = version.split('.').nth(2).and_then(|p| p.parse().ok());
+
+                let build = build_regex
+                    .captures(&version_info)
+                    .and_then(|c| c.get(1))?
+                    .as_str()
+                    .into();
+
+                Some(OSVersion::MacOS {
+                    major,
+                    minor,
+                    patch,
+                    build,
+                })
+            } else if #[cfg(target_os = "linux")] {
+                use nix::sys::utsname::uname;
+
+                let kernel_version = uname().ok()?.release().to_string_lossy().into();
+                let os_release = linux::get_os_release().cloned();
+
+                Some(OSVersion::Linux {
+                    kernel_version,
+                    os_release,
+                })
+            } else if #[cfg(target_os = "windows")] {
+                use winreg::enums::HKEY_LOCAL_MACHINE;
+                use winreg::RegKey;
+
+                let rkey = RegKey::predef(HKEY_LOCAL_MACHINE).open_subkey(r"SOFTWARE\Microsoft\Windows NT\CurrentVersion").ok()?;
+                let build: String = rkey.get_value("CurrentBuild").ok()?;
+
+                Some(OSVersion::Windows {
+                    name: rkey.get_value("ProductName").ok()?,
+                    build: build.parse::<u32>().ok()?,
+                })
+            } else if #[cfg(target_os = "freebsd")] {
+                use nix::sys::utsname::uname;
+
+                let version = uname().ok()?.release().to_string_lossy().into();
+
+                Some(OSVersion::FreeBsd {
+                    version,
+                })
+
+            }
+        }
+    }).as_ref()
 }
 
 pub fn in_ssh() -> bool {
-    *IN_SSH
+    static IN_SSH: OnceLock<bool> = OnceLock::new();
+    *IN_SSH.get_or_init(|| {
+        std::env::var_os("SSH_CLIENT").is_some()
+            || std::env::var_os("SSH_CONNECTION").is_some()
+            || std::env::var_os("SSH_TTY").is_some()
+    })
 }
 
 /// Test if the program is running under WSL
 pub fn in_wsl() -> bool {
     cfg_if! {
         if #[cfg(target_os = "linux")] {
-            *IN_WSL
+            static IN_WSL: OnceLock<bool> = OnceLock::new();
+            *IN_WSL.get_or_init(|| {
+                if let Ok(b) = std::fs::read("/proc/sys/kernel/osrelease") {
+                    if let Ok(s) = std::str::from_utf8(&b) {
+                        let a = s.to_ascii_lowercase();
+                        return a.contains("microsoft") || a.contains("wsl");
+                    }
+                }
+                false
+            })
         } else {
             false
         }
@@ -287,20 +278,34 @@ pub fn in_wsl() -> bool {
 /// Is the calling binary running on a remote instance
 pub fn is_remote() -> bool {
     // TODO(chay): Add detection for inside docker container
-    in_ssh() || in_wsl() || std::env::var_os("Q_FAKE_IS_REMOTE").is_some()
+    in_ssh() || in_cloudshell() || in_wsl() || std::env::var_os("Q_FAKE_IS_REMOTE").is_some()
 }
 
 /// Determines if we have an IPC path to a Desktop app from a remote environment
 pub fn has_parent() -> bool {
-    *HAS_PARENT
+    static HAS_PARENT: OnceLock<bool> = OnceLock::new();
+    *HAS_PARENT.get_or_init(|| std::env::var_os(Q_PARENT).is_some())
+}
+
+/// This true if the env var `AWS_EXECUTION_ENV=CloudShell`
+pub fn in_cloudshell() -> bool {
+    static IN_CLOUDSHELL: OnceLock<bool> = OnceLock::new();
+    *IN_CLOUDSHELL.get_or_init(|| {
+        std::env::var_os("AWS_EXECUTION_ENV").map_or(false, |v| {
+            v.to_string_lossy().to_ascii_lowercase().trim() == "cloudshell"
+        })
+    })
 }
 
 pub fn in_codespaces() -> bool {
+    static IN_CODESPACES: OnceLock<bool> = OnceLock::new();
     *IN_CODESPACES
+        .get_or_init(|| std::env::var_os("CODESPACES").is_some() || std::env::var_os("Q_CODESPACES").is_some())
 }
 
 pub fn in_ci() -> bool {
-    *IN_CI
+    static IN_CI: OnceLock<bool> = OnceLock::new();
+    *IN_CI.get_or_init(|| std::env::var_os("CI").is_some() || std::env::var_os("Q_CI").is_some())
 }
 
 #[cfg(target_os = "macos")]
@@ -352,15 +357,16 @@ fn raw_system_id() -> Result<String, Error> {
     Err(Error::HwidNotFound)
 }
 
-static SYSTEM_ID: Lazy<Option<String>> = Lazy::new(|| {
-    let hwid = raw_system_id().ok()?;
-    let mut hasher = Sha256::new();
-    hasher.update(hwid);
-    Some(format!("{:x}", hasher.finalize()))
-});
-
 pub fn get_system_id() -> Option<&'static str> {
-    SYSTEM_ID.as_deref()
+    static SYSTEM_ID: OnceLock<Option<String>> = OnceLock::new();
+    SYSTEM_ID
+        .get_or_init(|| {
+            let hwid = raw_system_id().ok()?;
+            let mut hasher = Sha256::new();
+            hasher.update(hwid);
+            Some(format!("{:x}", hasher.finalize()))
+        })
+        .as_deref()
 }
 
 pub fn get_platform() -> &'static str {

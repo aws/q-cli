@@ -355,6 +355,7 @@ utf8_dir!(figterm_socket_path, session_id: impl Display);
 utf8_dir!(manifest_path);
 utf8_dir!(backups_dir);
 utf8_dir!(logs_dir);
+utf8_dir!(settings_path);
 
 // TODO(grant): Add back path tests on linux
 #[cfg(all(test, not(target_os = "linux")))]

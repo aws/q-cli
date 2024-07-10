@@ -28,8 +28,8 @@ use fig_telemetry::{
     SuggestionState,
 };
 use fig_util::terminal::{
-    CURRENT_TERMINAL,
-    CURRENT_TERMINAL_VERSION,
+    current_terminal,
+    current_terminal_version,
 };
 use fig_util::Shell;
 use flume::Sender;
@@ -94,8 +94,8 @@ impl TelemetryQueue {
                     edit_buffer_len,
                     suggested_chars_len,
                     latency,
-                    terminal: CURRENT_TERMINAL.as_ref().map(|s| s.internal_id().into_owned()),
-                    terminal_version: CURRENT_TERMINAL_VERSION.as_ref().map(|s| s.clone()),
+                    terminal: current_terminal().map(|s| s.internal_id().into_owned()),
+                    terminal_version: current_terminal_version().map(Into::into),
                     // The only supported shell currently is Zsh
                     shell: Some(Shell::Zsh.as_str().into()),
                     shell_version: None,
