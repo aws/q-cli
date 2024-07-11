@@ -81,6 +81,7 @@ use tracing::{
     error,
     info,
     trace,
+    warn,
 };
 
 use self::inline_shell_completion::{
@@ -655,9 +656,9 @@ impl InternalSubcommand {
             InternalSubcommand::OpenUninstallPage => {
                 let url = fig_install::UNINSTALL_URL;
                 match fig_util::open_url(url) {
-                    Ok(_) => Ok(ExitCode::SUCCESS),
+                    Ok(()) => Ok(ExitCode::SUCCESS),
                     Err(err) => {
-                        info!("Failed to open uninstall directly, trying daemon proxy: {err}");
+                        warn!(%err, "Failed to open uninstall directly, trying to open via desktop app");
 
                         match fig_ipc::local::send_command_to_socket(fig_proto::local::command::Command::OpenBrowser(
                             fig_proto::local::OpenBrowserCommand { url: url.into() },
@@ -666,7 +667,7 @@ impl InternalSubcommand {
                         {
                             Ok(_) => Ok(ExitCode::SUCCESS),
                             Err(err) => {
-                                info!("Failed to open uninstall via desktop, no more options: {err}");
+                                error!(%err, "Failed to open uninstall via desktop, no more options");
                                 Ok(ExitCode::FAILURE)
                             },
                         }
@@ -798,13 +799,15 @@ impl InternalSubcommand {
             },
             #[cfg(target_os = "macos")]
             InternalSubcommand::BrewUninstall { zap } => {
+                use fig_install::UNINSTALL_URL;
+
                 let brew_is_reinstalling = crate::util::is_brew_reinstall().await;
 
                 if brew_is_reinstalling {
                     // If we're reinstalling, we don't want to uninstall
                     return Ok(ExitCode::SUCCESS);
-                } else {
-                    fig_util::open_url_async(fig_install::UNINSTALL_URL).await.ok();
+                } else if let Err(err) = fig_util::open_url_async(UNINSTALL_URL).await {
+                    error!(%err, %UNINSTALL_URL, "Failed to open uninstall url");
                 }
 
                 let components = if zap {

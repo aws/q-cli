@@ -72,7 +72,7 @@ impl IssueArgs {
         )?;
 
         println!("Heading over to GitHub...");
-        if fig_util::open_url(url.as_str()).is_err() {
+        if is_remote() || fig_util::open_url_async(url.as_str()).await.is_err() {
             println!("Issue Url: {}", url.as_str().underlined());
         }
 

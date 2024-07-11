@@ -225,8 +225,12 @@ impl AppSubcommand {
             },
             #[cfg(target_os = "macos")]
             AppSubcommand::Uninstall(args) => {
+                use fig_install::UNINSTALL_URL;
+
                 if !args.no_open && !crate::util::is_brew_reinstall().await {
-                    fig_util::open_url_async(fig_install::UNINSTALL_URL).await.ok();
+                    if let Err(err) = fig_util::open_url_async(UNINSTALL_URL).await {
+                        tracing::error!(%err, %UNINSTALL_URL, "Failed to open uninstall url");
+                    }
                 }
 
                 if !args.only_open {

@@ -1,9 +1,15 @@
-use std::io;
-
 use cfg_if::cfg_if;
 
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    #[error("Failed to open URL")]
+    Failed,
+}
+
 #[cfg(target_os = "macos")]
-fn open_macos(url_str: impl AsRef<str>) -> io::Result<bool> {
+fn open_macos(url_str: impl AsRef<str>) -> Result<(), Error> {
     use macos_utils::NSURL;
     use objc::runtime::{
         Object,
@@ -22,7 +28,7 @@ fn open_macos(url_str: impl AsRef<str>) -> io::Result<bool> {
         let shared: *mut Object = msg_send![class!(NSWorkspace), sharedWorkspace];
         msg_send![shared, openURL: url]
     };
-    Ok(res != NO)
+    if res != NO { Ok(()) } else { Err(Error::Failed) }
 }
 
 #[cfg(target_os = "windows")]
@@ -50,29 +56,40 @@ fn open_command(url: impl AsRef<str>) -> std::process::Command {
 }
 
 /// Returns bool indicating whether the URL was opened successfully
-pub fn open_url(url: impl AsRef<str>) -> io::Result<bool> {
+pub fn open_url(url: impl AsRef<str>) -> Result<(), Error> {
     cfg_if! {
         if #[cfg(target_os = "macos")] {
             open_macos(url)
         } else {
-            open_command(url)
+            match open_command(url)
                 .stdout(std::process::Stdio::null())
                 .stderr(std::process::Stdio::null())
-                .status().map(|status| status.success())
+                .status()
+            {
+                Ok(status) if status.success() => Ok(()),
+                Ok(_) => Err(Error::Failed),
+                Err(err) => Err(err.into()),
+            }
         }
     }
 }
 
 /// Returns bool indicating whether the URL was opened successfully
-pub async fn open_url_async(url: impl AsRef<str>) -> io::Result<bool> {
+pub async fn open_url_async(url: impl AsRef<str>) -> Result<(), Error> {
     cfg_if! {
         if #[cfg(target_os = "macos")] {
             open_macos(url)
         } else {
-            tokio::process::Command::from(open_command(url))
+            match tokio::process::Command::from(open_command(url))
                 .stdout(std::process::Stdio::null())
                 .stderr(std::process::Stdio::null())
-                .status().await.map(|status| status.success())
+                .status()
+                .await
+            {
+                Ok(status) if status.success() => Ok(()),
+                Ok(_) => Err(Error::Failed),
+                Err(err) => Err(err.into()),
+            }
         }
     }
 }
@@ -84,6 +101,6 @@ mod tests {
     #[ignore]
     #[test]
     fn test_open_url() {
-        assert!(open_url("https://fig.io").unwrap());
+        open_url("https://fig.io").unwrap();
     }
 }

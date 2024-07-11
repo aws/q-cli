@@ -37,7 +37,13 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<ExitCode> {
 
 #[cfg(target_os = "macos")]
 async fn uninstall() -> Result<()> {
-    fig_util::open_url(fig_install::UNINSTALL_URL).ok();
+    use fig_install::UNINSTALL_URL;
+    use tracing::error;
+
+    if let Err(err) = fig_util::open_url_async(UNINSTALL_URL).await {
+        error!(%err, %UNINSTALL_URL, "Failed to open uninstall url");
+    }
+
     auth::logout().await.ok();
     fig_install::uninstall(fig_install::InstallComponents::all()).await?;
 

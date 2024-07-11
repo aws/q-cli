@@ -492,9 +492,8 @@ mod tests {
             .await
             .unwrap();
         println!("{:?}", registration);
-        match fig_util::open_url_async(&registration.url).await {
-            Ok(false) | Err(_) => panic!("unable to open the URL"),
-            _ => (),
+        if fig_util::open_url_async(&registration.url).await.is_err() {
+            panic!("unable to open the URL");
         }
         println!("Waiting for authorization to complete...");
         let secret_store = SecretStore::new().await.unwrap();

@@ -19,6 +19,7 @@ use fig_ipc::local::{
     login_command,
     logout_command,
 };
+use fig_util::system_info::is_remote;
 use fig_util::{
     CLI_BINARY_NAME,
     PRODUCT_NAME,
@@ -170,19 +171,14 @@ pub async fn login_interactive() -> Result<()> {
 
             // Remote machine won't be able to handle browser opening and redirects,
             // hence always use device code flow.
-            if fig_util::system_info::is_remote() {
+            if is_remote() {
                 try_device_authorization(&secret_store, start_url.clone(), region.clone()).await?;
             } else {
                 let (client, registration) = start_pkce_authorization(start_url.clone(), region.clone()).await?;
 
                 match fig_util::open_url_async(&registration.url).await {
-                    // If we are unable to open the link with the browser, then fallback to
-                    // the device code flow.
-                    Ok(false) | Err(_) => {
-                        try_device_authorization(&secret_store, start_url.clone(), region.clone()).await?;
-                    },
-                    // Otherwise, finish PKCE.
-                    _ => {
+                    // If it succeeded, finish PKCE.
+                    Ok(()) => {
                         let mut spinner = Spinner::new(vec![
                             SpinnerComponent::Spinner,
                             SpinnerComponent::Text(" Logging in...".into()),
@@ -190,6 +186,14 @@ pub async fn login_interactive() -> Result<()> {
                         registration.finish(&client, Some(&secret_store)).await?;
                         fig_telemetry::send_user_logged_in().await;
                         spinner.stop_with_message("Logged in successfully".into());
+                    },
+                    // If we are unable to open the link with the browser, then fallback to
+                    // the device code flow.
+                    Err(err) => {
+                        error!(%err, "Failed to open URL with browser, falling back to device code flow");
+
+                        // Try device code flow.
+                        try_device_authorization(&secret_store, start_url.clone(), region.clone()).await?;
                     },
                 }
             }
@@ -214,13 +218,15 @@ async fn try_device_authorization(
     println!("Confirm the following code in the browser");
     println!("Code: {}", device_auth.user_code.bold());
     println!();
-    // confirm("Continue?")?;
 
-    match fig_util::open_url_async(&device_auth.verification_uri_complete).await {
-        Ok(false) | Err(_) => println!("Open this URL: {}", device_auth.verification_uri_complete),
-        _ => (),
+    let print_open_url = || println!("Open this URL: {}", device_auth.verification_uri_complete);
+
+    if is_remote() {
+        print_open_url();
+    } else if let Err(err) = fig_util::open_url_async(&device_auth.verification_uri_complete).await {
+        error!(%err, "Failed to open URL with browser");
+        print_open_url();
     }
-    // println!();
 
     let mut spinner = Spinner::new(vec![
         SpinnerComponent::Spinner,

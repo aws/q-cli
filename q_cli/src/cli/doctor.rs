@@ -1173,8 +1173,22 @@ impl DoctorCheck<()> for SshdConfigCheck {
             "  AllowStreamLocalForwarding yes".magenta().to_string().into(),
             "".into(),
             "If your sshd_config is already configured correctly then:".into(),
-            "  1. Restart sshd".into(),
-            "  2. Disconnect and reconnect to the host".into(),
+            format!(
+                "  1. Restart sshd, if using systemd: {}",
+                "sudo systemctl restart sshd".bold()
+            )
+            .into(),
+            "  2. Disconnect from the remote host".into(),
+            format!(
+                "  3. Run {} on the local machine",
+                format!("{CLI_BINARY_NAME} integrations install ssh",).bold()
+            )
+            .into(),
+            format!(
+                "  4. Reconnect to the remote host and run {} again",
+                format!("{CLI_BINARY_NAME} doctor").bold()
+            )
+            .into(),
             "".into(),
             format!("See {AUTOCOMPLETE_SSH_WIKI} for more info").into(),
         ];
