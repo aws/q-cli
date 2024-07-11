@@ -453,6 +453,7 @@ fn launch_shell(command: Option<&[String]>) -> Result<()> {
 
 fn figterm_main(command: Option<&[String]>) -> Result<()> {
     fig_settings::settings::init_global().ok();
+    fig_telemetry::init_global_telemetry_emitter();
 
     let session_id = match std::env::var("MOCK_QTERM_SESSION_ID") {
         Ok(id) => id,

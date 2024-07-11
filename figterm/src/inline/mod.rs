@@ -24,7 +24,7 @@ use fig_proto::figterm::{
 };
 use fig_settings::history::CommandInfo;
 use fig_telemetry::{
-    Event,
+    AppTelemetryEvent,
     SuggestionState,
 };
 use fig_util::terminal::{
@@ -84,23 +84,26 @@ impl TelemetryQueue {
                 ..
             } = item;
 
-            fig_telemetry::send_event(Event {
-                created_time: Some(timestamp),
-                credential_start_url: start_url.clone(),
-                ty: fig_telemetry::EventType::InlineShellCompletionActioned {
-                    session_id,
-                    request_id,
-                    suggestion_state,
-                    edit_buffer_len,
-                    suggested_chars_len,
-                    latency,
-                    terminal: current_terminal().map(|s| s.internal_id().into_owned()),
-                    terminal_version: current_terminal_version().map(Into::into),
-                    // The only supported shell currently is Zsh
-                    shell: Some(Shell::Zsh.as_str().into()),
-                    shell_version: None,
-                },
-            })
+            fig_telemetry::send_event(
+                AppTelemetryEvent::from_event(fig_telemetry_core::Event {
+                    created_time: Some(timestamp),
+                    credential_start_url: start_url.clone(),
+                    ty: fig_telemetry::EventType::InlineShellCompletionActioned {
+                        session_id,
+                        request_id,
+                        suggestion_state,
+                        edit_buffer_len,
+                        suggested_chars_len,
+                        latency,
+                        terminal: current_terminal().map(|s| s.internal_id().into_owned()),
+                        terminal_version: current_terminal_version().map(Into::into),
+                        // The only supported shell currently is Zsh
+                        shell: Some(Shell::Zsh.as_str().into()),
+                        shell_version: None,
+                    },
+                })
+                .await,
+            )
             .await;
         }
     }

@@ -97,9 +97,7 @@ pub(super) async fn handle_x11(
 
     trace!(
         "connected to X{}.{} release {} screen number {screen_num}",
-        setup.protocol_major_version,
-        setup.protocol_minor_version,
-        setup.release_number,
+        setup.protocol_major_version, setup.protocol_minor_version, setup.release_number,
     );
 
     let screen = &setup.roots[screen_num];

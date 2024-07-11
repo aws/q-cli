@@ -35,6 +35,7 @@ fig_proto.workspace = true
 fig_request.workspace = true
 fig_settings.workspace = true
 fig_telemetry.workspace = true
+fig_telemetry_core.workspace = true
 fig_util.workspace = true
 filedescriptor = "0.8"
 flume = "0.11.0"

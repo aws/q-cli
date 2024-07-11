@@ -21,6 +21,7 @@ use tracing::metadata::LevelFilter;
 fn main() -> Result<ExitCode> {
     color_eyre::install()?;
     fig_telemetry::set_dispatch_mode(fig_telemetry::DispatchMode::On);
+    fig_telemetry::init_global_telemetry_emitter();
 
     let multithread = matches!(
         std::env::args().nth(1).as_deref(),

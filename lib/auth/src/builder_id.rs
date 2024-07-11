@@ -39,10 +39,21 @@ use aws_smithy_runtime_api::client::identity::{
     IdentityFuture,
     ResolveIdentity,
 };
+use aws_smithy_types::error::display::DisplayErrorContext;
 use aws_types::region::Region;
+use aws_types::request_id::RequestId;
 use fig_aws_common::app_name;
+use fig_telemetry_core::{
+    Event,
+    EventType,
+    TelemetryResult,
+};
 use time::OffsetDateTime;
-use tracing::error;
+use tracing::{
+    debug,
+    error,
+    warn,
+};
 
 use crate::secret_store::{
     Secret,
@@ -80,6 +91,15 @@ const REFRESH_GRANT_TYPE: &str = "refresh_token";
 pub enum OAuthFlow {
     DeviceCode,
     PKCE,
+}
+
+impl std::fmt::Display for OAuthFlow {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match *self {
+            OAuthFlow::DeviceCode => write!(f, "DeviceCode"),
+            OAuthFlow::PKCE => write!(f, "PKCE"),
+        }
+    }
 }
 
 /// Indicates if an expiration time has passed, there is a small 1 min window that is removed
@@ -306,8 +326,6 @@ impl BuilderIdToken {
         secret_store: &SecretStore,
         region: &Region,
     ) -> Result<Option<Self>> {
-        // TODO: add telem on error https://github.com/aws/aws-toolkit-vscode/blob/df9fc7315b37844a09b7f60b49c604fa267a88ab/src/auth/sso/ssoAccessTokenProvider.ts#L135-L143
-
         let Some(refresh_token) = &self.refresh_token else {
             // if the token is expired and has no refresh token, delete it
             if let Err(err) = self.delete(secret_store).await {
@@ -321,11 +339,20 @@ impl BuilderIdToken {
             Some(registration) if registration.oauth_flow == self.oauth_flow => registration,
             // If the OIDC client registration is for a different oauth flow or doesn't exist, then
             // we can't refresh the token.
-            None | Some(_) => {
+            Some(registration) => {
+                warn!(
+                    "Unable to refresh token: Stored client registration has oauth flow: {:?} but current access token has oauth flow: {:?}",
+                    registration.oauth_flow, self.oauth_flow
+                );
+                return Ok(None);
+            },
+            None => {
+                warn!("Unable to refresh token: No registered client was found");
                 return Ok(None);
             },
         };
 
+        debug!("Refreshing access token");
         match client
             .create_token()
             .client_id(registration.client_id)
@@ -336,8 +363,20 @@ impl BuilderIdToken {
             .await
         {
             Ok(output) => {
+                fig_telemetry_core::send_event(
+                    Event::new(EventType::RefreshCredentials {
+                        request_id: output.request_id().unwrap_or_default().into(),
+                        result: TelemetryResult::Succeeded,
+                        reason: None,
+                        oauth_flow: registration.oauth_flow.to_string(),
+                    })
+                    .with_credential_start_url(self.start_url.clone().unwrap_or_else(|| START_URL.to_owned())),
+                )
+                .await;
+
                 let token: BuilderIdToken =
                     Self::from_output(output, region.clone(), self.start_url.clone(), self.oauth_flow);
+                debug!("Refreshed access token, new token: {:?}", token);
 
                 if let Err(err) = token.save(secret_store).await {
                     error!(?err, "Failed to store builder id access token");
@@ -346,10 +385,21 @@ impl BuilderIdToken {
                 Ok(Some(token))
             },
             Err(err) => {
-                error!(?err, "Failed to refresh builder id access token");
+                let display_err = DisplayErrorContext(&err);
+                error!("Failed to refresh builder id access token: {}", display_err);
 
                 // if the error is the client's fault, clear the token
                 if let SdkError::ServiceError(service_err) = &err {
+                    fig_telemetry_core::send_event(
+                        Event::new(EventType::RefreshCredentials {
+                            request_id: err.request_id().unwrap_or_default().into(),
+                            result: TelemetryResult::Failed,
+                            reason: Some(display_err.to_string()),
+                            oauth_flow: registration.oauth_flow.to_string(),
+                        })
+                        .with_credential_start_url(self.start_url.clone().unwrap_or_else(|| START_URL.to_owned())),
+                    )
+                    .await;
                     if !service_err.err().is_slow_down_exception() {
                         if let Err(err) = self.delete(secret_store).await {
                             error!(?err, "Failed to delete builder id token");
@@ -529,6 +579,14 @@ mod tests {
     const US_EAST_1: Region = Region::from_static("us-east-1");
     const US_WEST_2: Region = Region::from_static("us-west-2");
 
+    macro_rules! test_ser_deser {
+        ($ty:ident, $variant:expr, $text:expr) => {
+            let quoted = format!("\"{}\"", $text);
+            assert_eq!(quoted, serde_json::to_string(&$variant).unwrap());
+            assert_eq!($variant, serde_json::from_str(&quoted).unwrap());
+        };
+    }
+
     #[test]
     fn test_client() {
         println!("{:?}", client(US_EAST_1));
@@ -539,6 +597,12 @@ mod tests {
     fn oidc_url_snapshot() {
         insta::assert_snapshot!(oidc_url(&US_EAST_1), @"https://oidc.us-east-1.amazonaws.com");
         insta::assert_snapshot!(oidc_url(&US_WEST_2), @"https://oidc.us-west-2.amazonaws.com");
+    }
+
+    #[test]
+    fn test_oauth_flow_ser_deser() {
+        test_ser_deser!(OAuthFlow, OAuthFlow::DeviceCode, "DeviceCode");
+        test_ser_deser!(OAuthFlow, OAuthFlow::PKCE, "PKCE");
     }
 
     #[ignore = "not in ci"]

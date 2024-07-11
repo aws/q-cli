@@ -12,7 +12,7 @@ use fig_proto::figterm::{
 use fig_util::env_var::QTERM_SESSION_ID;
 use tracing::error;
 
-use crate::Event;
+use crate::event::AppTelemetryEvent;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DispatchMode {
@@ -47,7 +47,7 @@ impl DispatchStatus {
     }
 }
 
-pub(crate) async fn dispatch(event: &Event) -> DispatchStatus {
+pub(crate) async fn dispatch(event: &AppTelemetryEvent) -> DispatchStatus {
     if dispatch_mode() == DispatchMode::Off {
         return DispatchStatus::NotEnabled;
     };

@@ -84,6 +84,26 @@
       "name": "credentialStartUrl",
       "type": "string",
       "description": "The start URL of current SSO connection"
+    },
+    {
+      "name": "requestId",
+      "type": "string",
+      "description": "The id assigned to an AWS request"
+    },
+    {
+      "name": "oauthFlow",
+      "type": "string",
+      "description": "The oauth authentication flow executed by the user, e.g. device code or PKCE"
+    },
+    {
+      "name": "result",
+      "type": "string",
+      "description": "Whether or not the operation succeeded"
+    },
+    {
+      "name": "reason",
+      "type": "string",
+      "description": "Description of what caused an error, if any"
     }
   ],
   "metrics": [
@@ -116,6 +136,18 @@
       "description": "Emitted when users log in",
       "passive": false,
       "metadata": [{ "type": "credentialStartUrl" }]
+    },
+    {
+      "name": "codewhispererterminal_refreshCredentials",
+      "description": "Emitted when users refresh their credentials",
+      "passive": false,
+      "metadata": [
+          { "type": "credentialStartUrl" },
+          { "type": "requestId" },
+          { "type": "oauthFlow" },
+          { "type": "result" },
+          { "type": "reason", "required": false }
+      ]
     },
     {
       "name": "codewhispererterminal_completionInserted",

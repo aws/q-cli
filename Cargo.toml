@@ -53,6 +53,7 @@ fig_proto = { path = "lib/fig_proto" }
 fig_request = { path = "lib/fig_request" }
 fig_settings = { path = "lib/fig_settings" }
 fig_telemetry = { path = "lib/fig_telemetry" }
+fig_telemetry_core = { path = "lib/fig_telemetry_core" }
 fig_util = { path = "lib/fig_util" }
 hex = "0.4.3"
 indoc = "2.0.5"

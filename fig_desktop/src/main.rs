@@ -99,6 +99,8 @@ async fn main() {
         .init()
         .expect("Failed to init logger");
 
+    fig_telemetry::init_global_telemetry_emitter();
+
     #[cfg(target_os = "macos")]
     install::migrate_data_dir().await;
 

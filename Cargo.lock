@@ -590,11 +590,13 @@ dependencies = [
  "aws-sdk-ssooidc",
  "aws-smithy-async",
  "aws-smithy-runtime-api",
+ "aws-smithy-types",
  "aws-types",
  "base64 0.22.1",
  "bytes",
  "fig_aws_common",
  "fig_settings",
+ "fig_telemetry_core",
  "fig_util",
  "http-body-util",
  "hyper 1.3.1",
@@ -2916,6 +2918,7 @@ dependencies = [
  "amzn-codewhisperer-client",
  "amzn-toolkit-telemetry",
  "anyhow",
+ "async-trait",
  "auth",
  "aws-credential-types",
  "aws-sdk-cognitoidentity",
@@ -2929,6 +2932,7 @@ dependencies = [
  "fig_proto",
  "fig_request",
  "fig_settings",
+ "fig_telemetry_core",
  "fig_util",
  "macos-utils",
  "once_cell",
@@ -2939,6 +2943,19 @@ dependencies = [
  "tracing",
  "tracing-test",
  "uuid",
+]
+
+[[package]]
+name = "fig_telemetry_core"
+version = "1.3.2"
+dependencies = [
+ "amzn-codewhisperer-client",
+ "amzn-toolkit-telemetry",
+ "async-trait",
+ "aws-toolkit-telemetry-definitions",
+ "serde",
+ "strum 0.26.2",
+ "tokio",
 ]
 
 [[package]]
@@ -3019,6 +3036,7 @@ dependencies = [
  "fig_request",
  "fig_settings",
  "fig_telemetry",
+ "fig_telemetry_core",
  "fig_util",
  "filedescriptor",
  "flume",

@@ -843,8 +843,7 @@ impl<T> Term<T> {
 
                 trace!(
                     "Command cursor offset by '{}' to {:?}",
-                    offset,
-                    self.shell_state.cmd_cursor
+                    offset, self.shell_state.cmd_cursor
                 );
             }
         }

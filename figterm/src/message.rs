@@ -336,7 +336,7 @@ pub async fn process_figterm_message(
             tokio::spawn(inline::handle_accept(request, session_id.to_owned()));
         },
         Some(FigtermRequest::Telemtety(TelemetryRequest { event_blob })) => {
-            match fig_telemetry::Event::from_json(&event_blob) {
+            match fig_telemetry::AppTelemetryEvent::from_json(&event_blob) {
                 Ok(event) => {
                     tokio::spawn(fig_telemetry::send_event(event));
                 },

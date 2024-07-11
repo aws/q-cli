@@ -5,6 +5,7 @@ mod event;
 mod install_method;
 mod util;
 
+use std::any::Any;
 use std::time::{
     Duration,
     SystemTime,
@@ -41,16 +42,19 @@ pub use dispatch::{
 };
 use endpoint::StaticEndpoint;
 pub use event::{
-    Event,
-    EventType,
+    AppTelemetryEvent,
     InlineShellCompletionActionedOptions,
-    SuggestionState,
 };
 use fig_api_client::ai::{
     cw_client,
     cw_endpoint,
 };
 use fig_aws_common::app_name;
+use fig_telemetry_core::TelemetryEmitter;
+pub use fig_telemetry_core::{
+    EventType,
+    SuggestionState,
+};
 use fig_util::system_info::os_version;
 use fig_util::terminal::{
     current_terminal,
@@ -67,7 +71,10 @@ use tokio::sync::{
     OnceCell,
 };
 use tokio::task::JoinSet;
-use tracing::error;
+use tracing::{
+    debug,
+    error,
+};
 use util::telemetry_is_disabled;
 use uuid::Uuid;
 
@@ -87,6 +94,27 @@ async fn client() -> &'static Client {
     CLIENT
         .get_or_init(|| async { Client::new(TelemetryStage::EXTERNAL_PROD).await })
         .await
+}
+
+/// A telemetry emitter that first tries sending the event to figterm so that the CLI commands can
+/// execute much quicker. Only falls back to sending it directly on the current task if sending to
+/// figterm fails.
+struct DispatchingTelemetryEmitter;
+
+#[async_trait::async_trait]
+impl TelemetryEmitter for DispatchingTelemetryEmitter {
+    async fn send(&self, event: fig_telemetry_core::Event) {
+        let event = AppTelemetryEvent::from_event(event).await;
+        dispatch_or_send_event(event).await;
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+pub fn init_global_telemetry_emitter() {
+    fig_telemetry_core::init_global_telemetry_emitter(DispatchingTelemetryEmitter {});
 }
 
 /// A IDE toolkit telemetry stage
@@ -188,12 +216,12 @@ impl Client {
         }
     }
 
-    async fn send_event(&self, event: Event) {
+    async fn send_event(&self, event: AppTelemetryEvent) {
         self.send_cw_telemetry_event(&event).await;
         self.send_telemetry_toolkit_metric(event).await;
     }
 
-    async fn send_telemetry_toolkit_metric(&self, event: Event) {
+    async fn send_telemetry_toolkit_metric(&self, event: AppTelemetryEvent) {
         if telemetry_is_disabled() {
             return;
         }
@@ -214,6 +242,7 @@ impl Client {
                 let os_version = os_version().map(|v| v.to_string()).unwrap_or_default();
                 let metric_name = metric_datum.metric_name().to_owned();
 
+                debug!(?product, ?metric_datum, "Posting metrics");
                 if let Err(err) = toolkit_telemetry_client
                     .post_metrics()
                     .aws_product(product)
@@ -233,7 +262,7 @@ impl Client {
         });
     }
 
-    async fn send_cw_telemetry_event(&self, event: &Event) {
+    async fn send_cw_telemetry_event(&self, event: &AppTelemetryEvent) {
         match &event.ty {
             EventType::TranslationActioned {
                 latency,
@@ -505,23 +534,25 @@ impl Client {
     }
 }
 
-pub async fn send_event(event: Event) {
+pub async fn send_event(event: AppTelemetryEvent) {
     client().await.send_event(event).await;
 }
 
-pub async fn dispatch_or_send_event(event: Event) {
+pub async fn dispatch_or_send_event(event: AppTelemetryEvent) {
+    debug!(?event, "Dispatching telemetry event");
     if dispatch(&event).await.should_fallback() {
+        debug!(?event, "Dispatch failed, falling back to send_event");
         send_event(event).await;
     }
 }
 
 pub async fn send_user_logged_in() {
-    let event = Event::new(EventType::UserLoggedIn {}).await;
+    let event = AppTelemetryEvent::new(EventType::UserLoggedIn {}).await;
     dispatch_or_send_event(event).await;
 }
 
 pub async fn send_completion_inserted(command: String, terminal: Option<String>, shell: Option<String>) {
-    let event = Event::new(EventType::CompletionInserted {
+    let event = AppTelemetryEvent::new(EventType::CompletionInserted {
         command,
         terminal,
         shell,
@@ -532,7 +563,7 @@ pub async fn send_completion_inserted(command: String, terminal: Option<String>,
 
 pub async fn send_translation_actioned(latency: Duration, suggestion_state: SuggestionState) {
     let (shell, shell_version) = shell().await;
-    let event = Event::new(EventType::TranslationActioned {
+    let event = AppTelemetryEvent::new(EventType::TranslationActioned {
         latency,
         suggestion_state,
         terminal: current_terminal().map(|t| t.internal_id().to_string()),
@@ -546,7 +577,7 @@ pub async fn send_translation_actioned(latency: Duration, suggestion_state: Sugg
 
 pub async fn send_cli_subcommand_executed(subcommand: impl Into<String>) {
     let (shell, shell_version) = shell().await;
-    let event = Event::new(EventType::CliSubcommandExecuted {
+    let event = AppTelemetryEvent::new(EventType::CliSubcommandExecuted {
         subcommand: subcommand.into(),
         terminal: current_terminal().map(|t| t.internal_id().to_string()),
         terminal_version: current_terminal_version().map(Into::into),
@@ -559,7 +590,7 @@ pub async fn send_cli_subcommand_executed(subcommand: impl Into<String>) {
 
 pub async fn send_doctor_check_failed(failed_check: impl Into<String>) {
     let (shell, shell_version) = shell().await;
-    let event = Event::new(EventType::DoctorCheckFailed {
+    let event = AppTelemetryEvent::new(EventType::DoctorCheckFailed {
         doctor_check: failed_check.into(),
         terminal: current_terminal().map(|t| t.internal_id().to_string()),
         terminal_version: current_terminal_version().map(Into::into),
@@ -571,12 +602,12 @@ pub async fn send_doctor_check_failed(failed_check: impl Into<String>) {
 }
 
 pub async fn send_dashboard_page_viewed(route: impl Into<String>) {
-    let event = Event::new(EventType::DashboardPageViewed { route: route.into() }).await;
+    let event = AppTelemetryEvent::new(EventType::DashboardPageViewed { route: route.into() }).await;
     dispatch_or_send_event(event).await;
 }
 
 pub async fn send_menu_bar_actioned(menu_bar_item: Option<impl Into<String>>) {
-    let event = Event::new(EventType::MenuBarActioned {
+    let event = AppTelemetryEvent::new(EventType::MenuBarActioned {
         menu_bar_item: menu_bar_item.map(|i| i.into()),
     })
     .await;
@@ -584,22 +615,22 @@ pub async fn send_menu_bar_actioned(menu_bar_item: Option<impl Into<String>>) {
 }
 
 pub async fn send_fig_user_migrated() {
-    let event = Event::new(EventType::FigUserMigrated {}).await;
+    let event = AppTelemetryEvent::new(EventType::FigUserMigrated {}).await;
     dispatch_or_send_event(event).await;
 }
 
 pub async fn send_start_chat(conversation_id: String) {
-    let event = Event::new(EventType::ChatStart { conversation_id }).await;
+    let event = AppTelemetryEvent::new(EventType::ChatStart { conversation_id }).await;
     dispatch_or_send_event(event).await;
 }
 
 pub async fn send_end_chat(conversation_id: String) {
-    let event = Event::new(EventType::ChatEnd { conversation_id }).await;
+    let event = AppTelemetryEvent::new(EventType::ChatEnd { conversation_id }).await;
     dispatch_or_send_event(event).await;
 }
 
 pub async fn send_chat_added_message(conversation_id: String, message_id: String) {
-    let event = Event::new(EventType::ChatAddedMessage {
+    let event = AppTelemetryEvent::new(EventType::ChatAddedMessage {
         conversation_id,
         message_id,
     })
