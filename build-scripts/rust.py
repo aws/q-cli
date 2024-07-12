@@ -105,12 +105,16 @@ def get_target_triple() -> str:
     elif isDarwin():
         return "universal-apple-darwin"
     else:
-        match platform.machine():
-            case "x86_64":
-                return "x86_64-unknown-linux-musl" if isMusl() else "x86_64-unknown-linux-gnu"
-            case "aarch64":
-                return "aarch64-unknown-linux-musl" if isMusl() else "aarch64-unknown-linux-gnu"
-            case other:
+        match (platform.machine(), isMusl()):
+            case ("x86_64", True):
+                return "x86_64-unknown-linux-musl"
+            case ("x86_64", False):
+                return "x86_64-unknown-linux-gnu"
+            case ("aarch64", True):
+                return "aarch64-unknown-linux-musl"
+            case ("aarch64", False):
+                return "aarch64-unknown-linux-gnu"
+            case (other, _):
                 raise ValueError(f"Unsupported machine {other}")
 
 
@@ -118,3 +122,4 @@ if __name__ == "__main__":
     build_hash()
     build_datetime()
     info("rust_targets =", rust_targets())
+    info("get_target_triple =", get_target_triple())

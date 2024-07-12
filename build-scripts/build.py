@@ -519,7 +519,7 @@ def build(
                     f"BUILD_DATE={build_datetime()}",
                     f"BUILD_HASH={build_hash()}",
                     f"BUILD_TARGET_TRIPLE={get_target_triple()}",
-                    f"BUILD_VERSION={version}",
+                    f"BUILD_VERSION={version()}",
                 ]
             )
         )
