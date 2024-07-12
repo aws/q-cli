@@ -424,6 +424,7 @@ mod tests {
         assert!(matches!(events.first().unwrap().ty, EventType::UserLoggedIn {}));
     }
 
+    #[ignore = "depends on test_init_global_telemetry_emitter_receives_event not being ran"]
     #[tokio::test]
     async fn test_no_global_telemetry_emitter() {
         assert!(send_event(Event::new(EventType::UserLoggedIn {})).await.is_none());
