@@ -590,11 +590,13 @@ impl DotfileShellIntegration {
 
         if self.pre {
             self.script_integration(When::Pre)?.install().await?;
+            let (shebang, post_shebang) = split_shebang(&contents);
             contents = format!(
-                "{}\n{}\n{}",
+                "{}{}\n{}\n{}",
+                shebang,
                 self.description(When::Pre),
                 self.source_text(When::Pre)?,
-                contents,
+                post_shebang,
             );
         }
 
@@ -741,6 +743,19 @@ impl ShellIntegration for DotfileShellIntegration {
     }
 }
 
+/// Splits the line containing the shebang (if any) with the rest of the string.
+/// If the shebang exists, the newline is included. Otherwise, an empty slice is returned.
+fn split_shebang(contents: &str) -> (&str, &str) {
+    if contents.starts_with("#!") {
+        match contents.find('\n') {
+            Some(i) => (&contents[..i + 1], &contents[i + 1..]),
+            None => ("", contents),
+        }
+    } else {
+        ("", contents)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use std::io::Write;
@@ -872,6 +887,26 @@ mod test {
         "#};
         let replaced = re.replace_all(&doc, "");
         assert_eq!(replaced, "");
+    }
+
+    #[test]
+    fn test_split_shebang() {
+        let shebang = "#!/usr/bin/env sh";
+        let contents = "echo hello world";
+        let with_shebang = format!("{}\n{}", shebang, contents);
+        let with_shebang_no_lf = format!("{}{}", shebang, contents);
+        let without_shebang = contents;
+        assert_eq!(
+            (format!("{shebang}\n").as_str(), contents),
+            split_shebang(&with_shebang),
+            "split with shebang and linefeed"
+        );
+        assert_eq!(
+            ("", format!("{shebang}{contents}").as_str()),
+            split_shebang(&with_shebang_no_lf),
+            "split with shebang and no linefeed"
+        );
+        assert_eq!(("", contents), split_shebang(without_shebang), "split with no shebang");
     }
 
     #[cfg(target_os = "linux")]
