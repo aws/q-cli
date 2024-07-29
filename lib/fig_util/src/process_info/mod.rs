@@ -86,7 +86,15 @@ pub trait PidExt {
 }
 
 pub fn get_parent_process_exe() -> Option<PathBuf> {
-    Pid::current().parent()?.exe()
+    let mut pid = Pid::current();
+    loop {
+        pid = pid.parent()?;
+        match pid.exe() {
+            // We ignore toolbox-exec since we never want to know if that is the parent process
+            Some(pid) if pid.file_name().and_then(|s| s.to_str()) == Some("toolbox-exec") => {},
+            other => return other,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -101,5 +109,10 @@ mod tests {
         let parent_name = parent_exe.file_name().unwrap().to_str().unwrap();
 
         assert!(parent_name.contains("cargo"));
+    }
+
+    #[test]
+    fn test_get_parent_process_exe() {
+        dbg!(get_parent_process_exe());
     }
 }
