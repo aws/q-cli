@@ -114,7 +114,7 @@ pub struct DeviceRegistration {
     pub client_secret_expires_at: Option<time::OffsetDateTime>,
     pub region: String,
     pub oauth_flow: OAuthFlow,
-    pub scopes: Vec<String>,
+    pub scopes: Option<Vec<String>>,
 }
 
 impl DeviceRegistration {
@@ -132,7 +132,7 @@ impl DeviceRegistration {
             client_secret_expires_at: time::OffsetDateTime::from_unix_timestamp(output.client_secret_expires_at).ok(),
             region: region.to_string(),
             oauth_flow,
-            scopes,
+            scopes: Some(scopes),
         }
     }
 
@@ -167,14 +167,12 @@ impl DeviceRegistration {
         region: &Region,
     ) -> Result<Self> {
         match Self::load_from_secret_store(secret_store, region).await {
-            Ok(Some(device_registration))
-                if device_registration.oauth_flow == OAuthFlow::DeviceCode
-                    && is_scopes(&device_registration.scopes) =>
-            {
-                return Ok(device_registration);
+            Ok(Some(registration)) if registration.oauth_flow == OAuthFlow::DeviceCode => match &registration.scopes {
+                Some(scopes) if is_scopes(scopes) => return Ok(registration),
+                _ => warn!("Invalid scopes in device registration, ignoring"),
             },
-            // If it doesn't exist or is for another OAuth flow, then continue with creating a new
-            // one.
+            // If it doesn't exist or is for another OAuth flow,
+            // then continue with creating a new one.
             Ok(None | Some(_)) => {},
             Err(err) => {
                 error!(?err, "Failed to read device registration from keychain");
@@ -280,13 +278,14 @@ pub struct BuilderIdToken {
     pub region: Option<String>,
     pub start_url: Option<String>,
     pub oauth_flow: OAuthFlow,
+    pub scopes: Option<Vec<String>>,
 }
 
 impl BuilderIdToken {
     const SECRET_KEY: &'static str = "codewhisperer:odic:token";
 
     /// Load the token from the keychain, refresh the token if it is expired and return it
-    pub async fn load(secret_store: &SecretStore) -> Result<Option<Self>> {
+    pub async fn load(secret_store: &SecretStore, force_refresh: bool) -> Result<Option<Self>> {
         match secret_store.get(Self::SECRET_KEY).await {
             Ok(Some(secret)) => {
                 let token: Option<Self> = serde_json::from_str(&secret.0)?;
@@ -296,7 +295,7 @@ impl BuilderIdToken {
 
                         let client = client(region.clone());
                         // if token is expired try to refresh
-                        if token.is_expired() {
+                        if token.is_expired() || force_refresh {
                             token.refresh_token(&client, secret_store, &region).await
                         } else {
                             Ok(Some(token))
@@ -330,9 +329,7 @@ impl BuilderIdToken {
         };
 
         let registration = match DeviceRegistration::load_from_secret_store(secret_store, region).await? {
-            Some(registration) if registration.oauth_flow == self.oauth_flow && is_scopes(&registration.scopes) => {
-                registration
-            },
+            Some(registration) if registration.oauth_flow == self.oauth_flow => registration,
             // If the OIDC client registration is for a different oauth flow or doesn't exist, then
             // we can't refresh the token.
             Some(registration) => {
@@ -370,8 +367,13 @@ impl BuilderIdToken {
                 )
                 .await;
 
-                let token: BuilderIdToken =
-                    Self::from_output(output, region.clone(), self.start_url.clone(), self.oauth_flow);
+                let token: BuilderIdToken = Self::from_output(
+                    output,
+                    region.clone(),
+                    self.start_url.clone(),
+                    self.oauth_flow,
+                    self.scopes.clone(),
+                );
                 debug!("Refreshed access token, new token: {:?}", token);
 
                 if let Err(err) = token.save(secret_store).await {
@@ -435,6 +437,7 @@ impl BuilderIdToken {
         region: Region,
         start_url: Option<String>,
         oauth_flow: OAuthFlow,
+        scopes: Option<Vec<String>>,
     ) -> Self {
         Self {
             access_token: output.access_token.unwrap_or_default().into(),
@@ -443,6 +446,7 @@ impl BuilderIdToken {
             region: Some(region.to_string()),
             start_url,
             oauth_flow,
+            scopes,
         }
     }
 
@@ -480,6 +484,7 @@ pub async fn poll_create_token(
     let DeviceRegistration {
         client_id,
         client_secret,
+        scopes,
         ..
     } = match DeviceRegistration::init_device_code_registration(&client, secret_store, &region).await {
         Ok(res) => res,
@@ -498,7 +503,8 @@ pub async fn poll_create_token(
         .await
     {
         Ok(output) => {
-            let token: BuilderIdToken = BuilderIdToken::from_output(output, region, start_url, OAuthFlow::DeviceCode);
+            let token: BuilderIdToken =
+                BuilderIdToken::from_output(output, region, start_url, OAuthFlow::DeviceCode, scopes);
 
             if let Err(err) = token.save(secret_store).await {
                 error!(?err, "Failed to store builder id token");
@@ -518,7 +524,12 @@ pub async fn poll_create_token(
 
 pub async fn builder_id_token() -> Result<Option<BuilderIdToken>> {
     let secret_store = SecretStore::new().await?;
-    BuilderIdToken::load(&secret_store).await
+    BuilderIdToken::load(&secret_store, false).await
+}
+
+pub async fn refresh_token() -> Result<Option<BuilderIdToken>> {
+    let secret_store = SecretStore::new().await?;
+    BuilderIdToken::load(&secret_store, true).await
 }
 
 pub async fn is_amzn_user() -> Result<bool> {
@@ -556,7 +567,7 @@ impl ResolveIdentity for BearerResolver {
     ) -> IdentityFuture<'a> {
         IdentityFuture::new_boxed(Box::pin(async {
             let secret_store = SecretStore::new().await?;
-            let token = BuilderIdToken::load(&secret_store).await?;
+            let token = BuilderIdToken::load(&secret_store, false).await?;
             match token {
                 Some(token) => Ok(Identity::new(
                     Token::new(token.access_token.0, Some(token.expires_at.into())),
@@ -652,7 +663,7 @@ mod tests {
     #[tokio::test]
     async fn test_load() {
         let secret_store = SecretStore::new().await.unwrap();
-        let token = BuilderIdToken::load(&secret_store).await;
+        let token = BuilderIdToken::load(&secret_store, false).await;
         println!("{:?}", token);
         // println!("{:?}", token.unwrap().unwrap().access_token.0);
     }
@@ -660,12 +671,7 @@ mod tests {
     #[ignore = "not in ci"]
     #[tokio::test]
     async fn test_refresh() {
-        let region = Region::new("us-east-1");
-        let client = client(region.clone());
-        let secret_store = SecretStore::new().await.unwrap();
-        let token = BuilderIdToken::load(&secret_store).await.unwrap().unwrap();
-        let token = token.refresh_token(&client, &secret_store, &region).await;
+        let token = refresh_token().await.unwrap().unwrap();
         println!("{:?}", token);
-        // println!("{:?}", token.unwrap().unwrap().access_token.0);
     }
 }

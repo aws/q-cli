@@ -6159,6 +6159,7 @@ dependencies = [
  "assert_cmd",
  "async-trait",
  "auth",
+ "aws-smithy-types",
  "aws-types",
  "bitflags 2.5.0",
  "bstr",

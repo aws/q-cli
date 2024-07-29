@@ -1,8 +1,7 @@
 use std::borrow::Cow;
 
 use anyhow::Result;
-use auth::builder_id::BuilderIdToken;
-use auth::secret_store::SecretStore;
+use auth::builder_id_token;
 use fig_request::reqwest::Client;
 use fnv::FnvHashSet;
 use futures::prelude::*;
@@ -109,15 +108,7 @@ async fn remote_index_json(client: &Client) -> MappedMutexGuard<'_, Vec<Result<S
         *cache = Some(
             future::join_all(CDNS.iter().map(|cdn_source| async move {
                 if AuthType::Midway == cdn_source.auth_type {
-                    let secret_store = match SecretStore::new().await {
-                        Ok(secret_store) => secret_store,
-                        Err(err) => {
-                            error!(%err, "Failed to create secret store");
-                            return None;
-                        },
-                    };
-
-                    let auth_token = match BuilderIdToken::load(&secret_store).await {
+                    let auth_token = match builder_id_token().await {
                         Ok(auth_token) => match auth_token {
                             Some(auth_token) => auth_token,
                             None => return None,

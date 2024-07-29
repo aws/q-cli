@@ -4,6 +4,8 @@ pub(crate) const CLIENT_NAME: &str = "Amazon Q Developer for command line";
 
 pub(crate) const OIDC_BUILDER_ID_REGION: Region = Region::from_static("us-east-1");
 
+/// The scopes requested for OIDC
+///
 /// Do not include `sso:account:access`, these permissions are not needed and were
 /// previously included
 pub(crate) const SCOPES: &[&str] = &[
@@ -13,6 +15,7 @@ pub(crate) const SCOPES: &[&str] = &[
     // "codewhisperer:taskassist",
     // "codewhisperer:transformations",
 ];
+
 pub(crate) const CLIENT_TYPE: &str = "public";
 
 // The start URL for public builder ID users

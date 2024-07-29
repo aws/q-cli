@@ -323,6 +323,10 @@ mod tests {
 
     #[async_trait::async_trait]
     impl PkceClient for TestPkceClient {
+        fn scopes() -> Vec<String> {
+            vec!["scope:1".into(), "scope:2".into()]
+        }
+
         async fn register_client(&self, _: String, _: String) -> Result<RegisterClientResponse, auth::Error> {
             Ok(RegisterClientResponse {
                 output: RegisterClientOutput::builder()

@@ -77,6 +77,9 @@ pub async fn start_pkce_authorization(
 /// Represents a client used for registering with AWS IAM OIDC.
 #[async_trait::async_trait]
 pub trait PkceClient {
+    /// The scopes that the client will request
+    fn scopes() -> Vec<String>;
+
     async fn register_client(&self, redirect_uri: String, issuer_url: String) -> Result<RegisterClientResponse>;
 
     async fn create_token(&self, args: CreateTokenArgs) -> Result<CreateTokenResponse>;
@@ -113,6 +116,10 @@ pub struct CreateTokenArgs {
 
 #[async_trait::async_trait]
 impl PkceClient for Client {
+    fn scopes() -> Vec<String> {
+        SCOPES.iter().map(|s| (*s).to_owned()).collect()
+    }
+
     async fn register_client(&self, redirect_uri: String, issuer_url: String) -> Result<RegisterClientResponse> {
         let mut register = self
             .register_client()
@@ -122,8 +129,8 @@ impl PkceClient for Client {
             .redirect_uris(redirect_uri.clone())
             .grant_types("authorization_code")
             .grant_types("refresh_token");
-        for scope in SCOPES {
-            register = register.scopes(*scope);
+        for scope in Self::scopes() {
+            register = register.scopes(scope);
         }
         let output = register.send().await?;
         Ok(RegisterClientResponse { output })
@@ -221,7 +228,7 @@ impl PkceRegistration {
     /// then the access and refresh tokens will be saved.
     ///
     /// Only the first connection will be served.
-    pub async fn finish(self, client: &impl PkceClient, secret_store: Option<&SecretStore>) -> Result<()> {
+    pub async fn finish<C: PkceClient>(self, client: &C, secret_store: Option<&SecretStore>) -> Result<()> {
         let code = tokio::select! {
             code = Self::recv_code(self.listener, self.state) => {
                 code?
@@ -249,13 +256,14 @@ impl PkceRegistration {
             self.region.clone(),
             Some(self.issuer_url),
             OAuthFlow::PKCE,
+            Some(C::scopes()),
         );
 
         let device_registration = DeviceRegistration::from_output(
             self.registered_client.output,
             &self.region,
             OAuthFlow::PKCE,
-            SCOPES.iter().map(|s| (*s).to_owned()).collect(),
+            C::scopes(),
         );
 
         let Some(secret_store) = secret_store else {
@@ -471,12 +479,17 @@ fn generate_code_challenge(code_verifier: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::scope::is_scopes;
 
     #[derive(Debug, Clone)]
     struct TestPkceClient;
 
     #[async_trait::async_trait]
     impl PkceClient for TestPkceClient {
+        fn scopes() -> Vec<String> {
+            vec!["scope:1".to_string(), "scope:2".to_string()]
+        }
+
         async fn register_client(&self, _: String, _: String) -> Result<RegisterClientResponse> {
             Ok(RegisterClientResponse {
                 output: RegisterClientOutput::builder()
@@ -610,5 +623,10 @@ mod tests {
         let code_challenge = generate_code_challenge(&code_verifier);
         println!("{:?}", code_challenge);
         assert!(code_challenge.len() >= 43);
+    }
+
+    #[test]
+    fn verify_client_scopes() {
+        assert!(is_scopes(&Client::scopes()));
     }
 }

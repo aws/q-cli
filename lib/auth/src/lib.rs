@@ -1,7 +1,6 @@
 pub mod builder_id;
 mod consts;
 mod error;
-pub mod iam;
 pub mod pkce;
 mod scope;
 pub mod secret_store;
@@ -11,6 +10,7 @@ pub use builder_id::{
     is_amzn_user,
     is_logged_in,
     logout,
+    refresh_token,
 };
 pub use consts::{
     AMZN_START_URL,

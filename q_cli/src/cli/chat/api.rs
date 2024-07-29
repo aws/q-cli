@@ -16,6 +16,7 @@ use amzn_codewhisperer_streaming_client::types::{
     UserIntent,
 };
 use amzn_codewhisperer_streaming_client::Client;
+use aws_smithy_types::error::display::DisplayErrorContext;
 use eyre::Result;
 use fig_settings::history::OrderBy;
 use fig_util::Shell;
@@ -224,36 +225,47 @@ async fn try_send_message(
     client: Client,
     tx: &UnboundedSender<ApiResponse>,
     conversation_state: ConversationState,
-) -> Result<()> {
+) -> Result<(), String> {
     let mut res = client
         .generate_assistant_response()
         .conversation_state(conversation_state)
         .send()
-        .await?;
+        .await
+        .map_err(|err| format!("generate_assistant_response failed: {}", DisplayErrorContext(err)))?;
 
     if let Some(message_id) = res.request_id().map(ToOwned::to_owned) {
-        tx.send(ApiResponse::MessageId(message_id))?;
+        tx.send(ApiResponse::MessageId(message_id))
+            .map_err(|err| format!("tx failed to send ApiResponse::MessageId: {err}"))?;
     }
 
     loop {
         match res.generate_assistant_response_response.recv().await {
             Ok(Some(stream)) => match stream {
                 ChatResponseStream::AssistantResponseEvent(response) => {
-                    tx.send(ApiResponse::Text(response.content))?;
+                    tx.send(ApiResponse::Text(response.content))
+                        .map_err(|err| format!("tx failed to send ApiResponse::Text: {err}"))?;
                 },
                 ChatResponseStream::MessageMetadataEvent(event) => {
                     if let Some(id) = event.conversation_id {
-                        tx.send(ApiResponse::ConversationId(id))?;
+                        tx.send(ApiResponse::ConversationId(id))
+                            .map_err(|err| format!("tx failed to send ApiResponse::ConversationId: {err}"))?;
                     }
                 },
                 ChatResponseStream::FollowupPromptEvent(_event) => {},
                 ChatResponseStream::CodeReferenceEvent(_event) => {},
                 ChatResponseStream::SupplementaryWebLinksEvent(_event) => {},
-                ChatResponseStream::InvalidStateEvent(_event) => {},
+                ChatResponseStream::InvalidStateEvent(event) => {
+                    error!(reason =% event.reason(), message =% event.message(), "invalid state event");
+                },
                 _ => {},
             },
             Ok(None) => break,
-            Err(err) => return Err(err.into()),
+            Err(err) => {
+                return Err(format!(
+                    "generate_assistant_response_response.recv failed: {}",
+                    DisplayErrorContext(err)
+                ));
+            },
         }
     }
 
@@ -300,7 +312,9 @@ pub(super) async fn send_message(
     tokio::spawn(async move {
         if let Err(err) = try_send_message(client, &tx, conversation_state).await {
             error!(%err, "try_send_message failed");
-            tx.send(ApiResponse::Error).ok();
+            if let Err(err) = tx.send(ApiResponse::Error) {
+                error!(%err, "tx failed to send ApiResponse::Error");
+            };
             return;
         }
 

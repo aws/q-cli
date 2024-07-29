@@ -3,7 +3,6 @@ mod inline_shell_completion;
 pub mod local_state;
 pub mod should_figterm_launch;
 
-use std::fmt::Display;
 use std::io::{
     stdout,
     Read,
@@ -134,36 +133,6 @@ impl From<InstallArgs> for InstallComponents {
         } else {
             InstallComponents::all()
         }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
-#[value(rename_all = "UPPER")]
-pub enum Method {
-    Get,
-    Post,
-    Put,
-    Delete,
-    Head,
-    Options,
-    Connect,
-    Patch,
-    Trace,
-}
-
-impl Display for Method {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(match self {
-            Method::Get => "GET",
-            Method::Post => "POST",
-            Method::Put => "PUT",
-            Method::Delete => "DELETE",
-            Method::Head => "HEAD",
-            Method::Options => "OPTIONS",
-            Method::Connect => "CONNECT",
-            Method::Patch => "PATCH",
-            Method::Trace => "TRACE",
-        })
     }
 }
 
