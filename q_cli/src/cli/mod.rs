@@ -261,12 +261,18 @@ pub struct Cli {
 
 impl Cli {
     pub async fn execute(self) -> Result<ExitCode> {
-        let mut logger = Logger::new();
-        // All other cli commands print logs to ~/.fig/logs/cli.log
-        if std::env::var_os("Q_LOG_STDOUT").is_some() || self.verbose > 0 {
-            logger = logger.with_file("cli.log").with_max_file_size(10_000_000).with_stdout();
+        let mut logger = Logger::new().with_max_file_size(10_000_000);
+
+        if matches!(self.subcommand, Some(CliRootCommands::Chat { .. })) {
+            logger = logger.with_file("chat.log");
+        } else if matches!(self.subcommand, Some(CliRootCommands::Translate(..))) {
+            logger = logger.with_file("translate.log");
         } else if fig_log::get_max_fig_log_level() >= LevelFilter::DEBUG {
-            logger = logger.with_file("cli.log").with_max_file_size(10_000_000);
+            logger = logger.with_file("cli.log");
+        }
+
+        if std::env::var_os("Q_LOG_STDOUT").is_some() || self.verbose > 0 {
+            logger = logger.with_stdout();
         }
 
         let _logger_guard = logger.init().expect("Failed to init logger");
