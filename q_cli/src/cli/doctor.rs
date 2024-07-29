@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::borrow::Cow;
 use std::ffi::OsStr;
 use std::fmt::Display;

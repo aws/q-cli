@@ -55,6 +55,8 @@ use tracing::{
     warn,
 };
 
+use crate::consts::*;
+use crate::scope::is_scopes;
 use crate::secret_store::{
     Secret,
     SecretStore,
@@ -63,29 +65,6 @@ use crate::{
     Error,
     Result,
 };
-
-pub(crate) const CLIENT_NAME: &str = "Amazon Q Developer for command line";
-
-pub(crate) const OIDC_BUILDER_ID_REGION: Region = Region::from_static("us-east-1");
-
-pub(crate) const SCOPES: &[&str] = &[
-    "sso:account:access",
-    "codewhisperer:completions",
-    "codewhisperer:analysis",
-    "codewhisperer:conversations",
-    // "codewhisperer:taskassist",
-    // "codewhisperer:transformations",
-];
-pub(crate) const CLIENT_TYPE: &str = "public";
-
-// The start URL for public builder ID users
-pub const START_URL: &str = "https://view.awsapps.com/start";
-
-// The start URL for internal amzn users
-pub const AMZN_START_URL: &str = "https://amzn.awsapps.com/start";
-
-const DEVICE_GRANT_TYPE: &str = "urn:ietf:params:oauth:grant-type:device_code";
-const REFRESH_GRANT_TYPE: &str = "refresh_token";
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum OAuthFlow {
@@ -135,18 +114,25 @@ pub struct DeviceRegistration {
     pub client_secret_expires_at: Option<time::OffsetDateTime>,
     pub region: String,
     pub oauth_flow: OAuthFlow,
+    pub scopes: Vec<String>,
 }
 
 impl DeviceRegistration {
     const SECRET_KEY: &'static str = "codewhisperer:odic:device-registration";
 
-    pub fn from_output(output: RegisterClientOutput, region: &Region, oauth_flow: OAuthFlow) -> Self {
+    pub fn from_output(
+        output: RegisterClientOutput,
+        region: &Region,
+        oauth_flow: OAuthFlow,
+        scopes: Vec<String>,
+    ) -> Self {
         Self {
             client_id: output.client_id.unwrap_or_default(),
             client_secret: output.client_secret.unwrap_or_default().into(),
             client_secret_expires_at: time::OffsetDateTime::from_unix_timestamp(output.client_secret_expires_at).ok(),
             region: region.to_string(),
             oauth_flow,
+            scopes,
         }
     }
 
@@ -181,7 +167,10 @@ impl DeviceRegistration {
         region: &Region,
     ) -> Result<Self> {
         match Self::load_from_secret_store(secret_store, region).await {
-            Ok(Some(device_registration)) if device_registration.oauth_flow == OAuthFlow::DeviceCode => {
+            Ok(Some(device_registration))
+                if device_registration.oauth_flow == OAuthFlow::DeviceCode
+                    && is_scopes(&device_registration.scopes) =>
+            {
                 return Ok(device_registration);
             },
             // If it doesn't exist or is for another OAuth flow, then continue with creating a new
@@ -201,7 +190,12 @@ impl DeviceRegistration {
         }
         let output = register.send().await?;
 
-        let device_registration = Self::from_output(output, region, OAuthFlow::DeviceCode);
+        let device_registration = Self::from_output(
+            output,
+            region,
+            OAuthFlow::DeviceCode,
+            SCOPES.iter().map(|s| (*s).to_owned()).collect(),
+        );
 
         if let Err(err) = device_registration.save(secret_store).await {
             error!(?err, "Failed to write device registration to keychain");
@@ -336,7 +330,9 @@ impl BuilderIdToken {
         };
 
         let registration = match DeviceRegistration::load_from_secret_store(secret_store, region).await? {
-            Some(registration) if registration.oauth_flow == self.oauth_flow => registration,
+            Some(registration) if registration.oauth_flow == self.oauth_flow && is_scopes(&registration.scopes) => {
+                registration
+            },
             // If the OIDC client registration is for a different oauth flow or doesn't exist, then
             // we can't refresh the token.
             Some(registration) => {

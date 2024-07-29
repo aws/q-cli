@@ -172,7 +172,7 @@ macro_rules! tis_property {
         #[allow(dead_code)]
         pub fn $name(&self) -> Option<$rust_type> {
             trace!("Get '{}' from input source", stringify!($name));
-            self.get_property::<$cf_type>(unsafe { $tis_property_key })
+            self.get_property::<$cf_type>($tis_property_key)
                 .map(|s| s.$convert())
         }
     };
@@ -193,25 +193,25 @@ macro_rules! tis_string_property {
 }
 
 impl TISInputSource {
-    tis_string_property!(bundle_id, kTISPropertyBundleID);
+    tis_string_property!(bundle_id, unsafe { kTISPropertyBundleID });
 
-    tis_string_property!(input_source_id, kTISPropertyInputSourceID);
+    tis_string_property!(input_source_id, unsafe { kTISPropertyInputSourceID });
 
-    tis_string_property!(category, kTISPropertyInputSourceCategory);
+    tis_string_property!(category, unsafe { kTISPropertyInputSourceCategory });
 
-    tis_string_property!(localized_name, kTISPropertyLocalizedName);
+    tis_string_property!(localized_name, unsafe { kTISPropertyLocalizedName });
 
-    tis_string_property!(input_mode_id, kTISPropertyInputModeID);
+    tis_string_property!(input_mode_id, unsafe { kTISPropertyInputModeID });
 
-    tis_string_property!(category_keyboard, kTISCategoryKeyboardInputSource);
+    tis_string_property!(category_keyboard, unsafe { kTISCategoryKeyboardInputSource });
 
-    tis_bool_property!(is_enabled, kTISPropertyInputSourceIsEnabled);
+    tis_bool_property!(is_enabled, unsafe { kTISPropertyInputSourceIsEnabled });
 
-    tis_bool_property!(is_enable_capable, kTISPropertyInputSourceIsEnableCapable);
+    tis_bool_property!(is_enable_capable, unsafe { kTISPropertyInputSourceIsEnableCapable });
 
-    tis_bool_property!(is_selected, kTISPropertyInputSourceIsSelected);
+    tis_bool_property!(is_selected, unsafe { kTISPropertyInputSourceIsSelected });
 
-    tis_bool_property!(is_select_capable, kTISPropertyInputSourceIsSelectCapable);
+    tis_bool_property!(is_select_capable, unsafe { kTISPropertyInputSourceIsSelectCapable });
 
     tis_action!(enable, TISEnableInputSource);
 

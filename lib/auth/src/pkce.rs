@@ -51,10 +51,12 @@ use tracing::{
 };
 
 use crate::builder_id::*;
+use crate::consts::*;
 use crate::secret_store::SecretStore;
 use crate::{
     Error,
     Result,
+    START_URL,
 };
 
 const DEFAULT_AUTHORIZATION_TIMEOUT: Duration = Duration::from_secs(60 * 3);
@@ -238,26 +240,36 @@ impl PkceRegistration {
                 code,
             })
             .await?;
+
         // Tokens are redacted in the log output.
         debug!(?response, "Received create_token response");
+
         let token = BuilderIdToken::from_output(
             response.output,
             self.region.clone(),
             Some(self.issuer_url),
             OAuthFlow::PKCE,
         );
-        if let Some(secret_store) = secret_store {
-            if let Err(err) =
-                DeviceRegistration::from_output(self.registered_client.output, &self.region, OAuthFlow::PKCE)
-                    .save(secret_store)
-                    .await
-            {
-                error!(?err, "Failed to store pkce registration to secret store");
-            }
-            if let Err(err) = token.save(secret_store).await {
-                error!(?err, "Failed to store builder id token");
-            };
+
+        let device_registration = DeviceRegistration::from_output(
+            self.registered_client.output,
+            &self.region,
+            OAuthFlow::PKCE,
+            SCOPES.iter().map(|s| (*s).to_owned()).collect(),
+        );
+
+        let Some(secret_store) = secret_store else {
+            return Ok(());
+        };
+
+        if let Err(err) = device_registration.save(secret_store).await {
+            error!(?err, "Failed to store pkce registration to secret store");
         }
+
+        if let Err(err) = token.save(secret_store).await {
+            error!(?err, "Failed to store builder id token");
+        };
+
         Ok(())
     }
 

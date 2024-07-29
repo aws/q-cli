@@ -142,8 +142,8 @@ impl Logger {
     pub fn init(self) -> Result<LoggerGuard> {
         let registry = tracing_subscriber::registry();
 
-        #[cfg(feature = "console")]
-        let registry = registry.with(console_subscriber::spawn());
+        // #[cfg(feature = "console")]
+        // let registry = registry.with(console_subscriber::spawn());
 
         let filter_layer = create_filter_layer();
         let (reloadable_filter_layer, reloadable_handle) = tracing_subscriber::reload::Layer::new(filter_layer);
