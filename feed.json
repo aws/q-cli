@@ -12,6 +12,18 @@
     },
     {
       "type": "release",
+      "date": "2024-07-29",
+      "version": "1.3.3",
+      "title": "Version 1.3.3",
+      "changes": [
+        {
+          "type": "fixed",
+          "description": "Minor issues"
+        }
+      ]
+    },
+    {
+      "type": "release",
       "date": "2024-07-10",
       "version": "1.3.2",
       "title": "Version 1.3.2",
