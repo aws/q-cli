@@ -138,6 +138,15 @@ const autocompleteSettings: PrefSection[] = [
         default: false,
         popular: false,
       },
+      {
+        id: "autocomplete.hideAutoExecuteSuggestion",
+        title: "Always hide auto-execute suggestions",
+        description:
+          "Hide suggestions that will be ran automatically on insert.",
+        type: "boolean",
+        default: false,
+        popular: false,
+      },
     ],
   },
   {

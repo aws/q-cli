@@ -310,6 +310,7 @@ const addAutoExecuteSuggestion = (
     insertValue: "\n",
     description,
   });
+  // Special case handling for when the search term points to a directory path.
   if (
     searchTerm === "." ||
     (searchTerm.endsWith("/") &&
@@ -501,7 +502,11 @@ export const filterSuggestions = (
     ...nonExactMatches.map(({ suggestion }) => suggestion),
   ];
 
-  if (filteredSuggestions.length > 0 && !autoExecuteAdded) {
+  if (
+    filteredSuggestions.length > 0 &&
+    !autoExecuteAdded &&
+    !shouldHideAutoExecute
+  ) {
     // Eventually add suggest current token suggestion
     filteredSuggestions = addAutoExecuteSuggestion(
       filteredSuggestions,
