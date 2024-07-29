@@ -55,7 +55,9 @@ source "$CARGO_HOME/env"
 rustup target add x86_64-apple-darwin
 rustup target add aarch64-apple-darwin
 
-cargo install tauri-cli@1.5.2 --locked
+# tauri-cli does not compile on >=1.80.0 currently, so we pin the version to 1.79.0 here
+rustup install 1.79.0
+cargo +1.79.0 install tauri-cli@1.6.0 --locked
 
 # create python venv and install dmgbuild
 python3.11 -m venv .venv
