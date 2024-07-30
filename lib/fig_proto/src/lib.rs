@@ -7,7 +7,6 @@ pub mod hooks;
 pub mod local;
 pub(crate) mod proto;
 pub mod remote_hooks;
-pub mod stress;
 pub mod util;
 use std::fmt::Debug;
 use std::mem::size_of;

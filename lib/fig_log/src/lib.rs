@@ -216,3 +216,22 @@ impl Logger {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use directories::logs_dir;
+
+    use super::*;
+
+    #[test]
+    fn test_log_path() {
+        let path = log_path("test/abc\\def.log").unwrap();
+        println!("{}", path.display());
+        assert_eq!(path.parent().unwrap(), logs_dir().unwrap());
+    }
+
+    #[test]
+    fn test_fig_log_level() {
+        println!("{}", fig_log_level());
+    }
+}

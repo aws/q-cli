@@ -1180,15 +1180,15 @@ impl<T: EventListener> Handler for Term<T> {
     /// edition, in LINE FEED mode,
     ///
     /// > The execution of the formatter functions LINE FEED (LF), FORM FEED
-    /// (FF), LINE TABULATION (VT) cause only movement of the active position in
-    /// the direction of the line progression.
+    /// > (FF), LINE TABULATION (VT) cause only movement of the active position in
+    /// > the direction of the line progression.
     ///
     /// In NEW LINE mode,
     ///
     /// > The execution of the formatter functions LINE FEED (LF), FORM FEED
-    /// (FF), LINE TABULATION (VT) cause movement to the line home position on
-    /// the following line, the following form, etc. In the case of LF this is
-    /// referred to as the New Line (NL) option.
+    /// > (FF), LINE TABULATION (VT) cause movement to the line home position on
+    /// > the following line, the following form, etc. In the case of LF this is
+    /// > referred to as the New Line (NL) option.
     ///
     /// Additionally, ECMA-48 4th edition says that this option is deprecated.
     /// ECMA-48 5th edition only mentions this option (without explanation)

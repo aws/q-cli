@@ -224,3 +224,56 @@ impl KeyInterceptor {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_key_from_text() {
+        let assert_key = |text: &str, key, modifiers| {
+            assert_eq!(key_from_text(text), Some(KeyEvent { key, modifiers }));
+        };
+
+        assert_key("a", KeyCode::Char('a'), Modifiers::NONE);
+        assert_key("ctrl+a", KeyCode::Char('a'), Modifiers::CTRL);
+        assert_key("ctrl+shift+a", KeyCode::Char('A'), Modifiers::CTRL);
+        assert_key("backspace", KeyCode::Backspace, Modifiers::NONE);
+
+        // invalid
+        assert_eq!(key_from_text("invalid"), None);
+        assert_eq!(key_from_text("ctrl+invalid"), None);
+    }
+
+    #[test]
+    fn test_key_interceptor() {
+        let mut interceptor = KeyInterceptor::new();
+        interceptor.load_key_intercepts().unwrap();
+
+        assert_eq!(
+            interceptor.intercept_key(&KeyEvent {
+                key: KeyCode::Tab,
+                modifiers: Modifiers::NONE
+            }),
+            None
+        );
+
+        interceptor.set_intercept(true);
+        interceptor.set_window_visible(true);
+
+        assert_eq!(
+            interceptor.intercept_key(&KeyEvent {
+                key: KeyCode::Tab,
+                modifiers: Modifiers::NONE
+            }),
+            Some("insertCommonPrefix".into())
+        );
+        assert_eq!(
+            interceptor.intercept_key(&KeyEvent {
+                key: KeyCode::DownArrow,
+                modifiers: Modifiers::NONE
+            }),
+            Some("navigateDown".into())
+        );
+    }
+}

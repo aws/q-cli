@@ -107,10 +107,42 @@ impl Intercept for UserAgentOverrideInterceptor {
 
 #[cfg(test)]
 mod tests {
+    use aws_smithy_runtime_api::client::interceptors::context::{
+        Input,
+        InterceptorContext,
+    };
+    use aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder;
+    use aws_smithy_types::config_bag::Layer;
+
     use super::*;
 
     #[test]
     fn test_app_name() {
         println!("{}", app_name());
+    }
+
+    #[test]
+    fn user_agent_override_test() {
+        let rc = RuntimeComponentsBuilder::for_tests().build().unwrap();
+        let mut cfg = ConfigBag::base();
+
+        let mut layer = Layer::new("layer");
+        layer.store_put(ApiMetadata::new("q", "123"));
+        layer.store_put(app_name());
+        cfg.push_layer(layer);
+
+        let mut context = InterceptorContext::new(Input::erase(()));
+        context.set_request(aws_smithy_runtime_api::http::Request::empty());
+
+        let mut context = BeforeTransmitInterceptorContextMut::from(&mut context);
+        let interceptor = UserAgentOverrideInterceptor::new();
+        println!("Interceptor: {}", interceptor.name());
+        interceptor
+            .modify_before_signing(&mut context, &rc, &mut cfg)
+            .expect("success");
+
+        let ua = context.request().headers().get(USER_AGENT).unwrap();
+        println!("User-Agent: {ua}");
+        assert!(ua.contains(APP_NAME_STR));
     }
 }

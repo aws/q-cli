@@ -147,7 +147,7 @@ pub fn partitioned_compare(lhs: &str, rhs: &str, by: char) -> Ordering {
 mod tests {
     use std::cmp::Ordering;
 
-    use crate::partitioned_compare;
+    use super::*;
 
     #[test]
     fn test_partitioned_compare() {
@@ -155,5 +155,16 @@ mod tests {
         assert_eq!(partitioned_compare("1.2.3", "1.2.2", '.'), Ordering::Greater);
         assert_eq!(partitioned_compare("4-a-b", "4-a-c", '-'), Ordering::Less);
         assert_eq!(partitioned_compare("0?0?0", "0?0", '?'), Ordering::Greater);
+    }
+
+    #[test]
+    fn test_gen_hex_string() {
+        let hex = gen_hex_string();
+        assert_eq!(hex.len(), 64);
+    }
+
+    #[test]
+    fn test_current_exe_origin() {
+        current_exe_origin().unwrap();
     }
 }

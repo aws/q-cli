@@ -91,3 +91,20 @@ pub fn new_start_exchange_credentials_request() -> hostbound::Request {
 pub fn new_confirm_exchange_credentials_request() -> hostbound::Request {
     hook_enum_to_hook(hostbound::request::Request::ConfirmExchangeCredentials(()))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_hooks() {
+        new_edit_buffer_hook(None, "test", 0, 0, None);
+        new_prompt_hook(None);
+        new_preexec_hook(None);
+        new_postexec_hook(None, None, None);
+        new_intercepted_key_hook(None, "", "");
+        new_account_info_request();
+        new_start_exchange_credentials_request();
+        new_confirm_exchange_credentials_request();
+    }
+}

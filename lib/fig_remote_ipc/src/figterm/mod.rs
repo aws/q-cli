@@ -1,5 +1,6 @@
+mod session_id;
+
 use std::collections::HashMap;
-use std::fmt::Display;
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
 
@@ -18,62 +19,14 @@ use parking_lot::{
     MappedFairMutexGuard,
     RawFairMutex,
 };
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::Serialize;
+pub use session_id::FigtermSessionId;
 use time::OffsetDateTime;
 use tokio::sync::{
     broadcast,
     oneshot,
 };
 use tokio::time::Instant;
-use uuid::Uuid;
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum FigtermSessionId {
-    Uuid(Uuid),
-    String(String),
-}
-
-impl FigtermSessionId {
-    pub fn new(s: impl AsRef<str> + Into<String>) -> Self {
-        if let Ok(uuid) = Uuid::parse_str(s.as_ref()) {
-            FigtermSessionId::Uuid(uuid)
-        } else {
-            FigtermSessionId::String(s.into())
-        }
-    }
-
-    pub fn into_string(self) -> String {
-        match self {
-            FigtermSessionId::Uuid(uuid) => uuid.as_hyphenated().to_string(),
-            FigtermSessionId::String(s) => s,
-        }
-    }
-}
-
-impl From<String> for FigtermSessionId {
-    fn from(from: String) -> Self {
-        FigtermSessionId::String(from)
-    }
-}
-
-impl From<Uuid> for FigtermSessionId {
-    fn from(from: Uuid) -> Self {
-        FigtermSessionId::Uuid(from)
-    }
-}
-
-impl Display for FigtermSessionId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            FigtermSessionId::Uuid(uuid) => uuid.as_hyphenated().fmt(f),
-            FigtermSessionId::String(s) => s.fmt(f),
-        }
-    }
-}
 
 #[derive(Clone, Default, Debug)]
 pub struct EditBuffer {

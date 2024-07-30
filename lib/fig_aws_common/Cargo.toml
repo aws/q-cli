@@ -13,5 +13,8 @@ aws-smithy-types = "1.1.10"
 aws-types = "1.3.0"
 http = "0.2.12"
 
+[dev-dependencies]
+aws-smithy-runtime = { version = "1.6.1", features = ["client", "test-util"] }
+
 [lints]
 workspace = true

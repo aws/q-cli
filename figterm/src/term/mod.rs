@@ -99,3 +99,34 @@ pub type SystemTerminal = WindowsTerminal;
 pub fn cast<T: NumCast + Display + Copy, U: NumCast>(n: T) -> Result<U> {
     num_traits::cast(n).ok_or_else(|| anyhow::anyhow!("{} is out of bounds for this system", n))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_cast() {
+        assert_eq!(cast::<u8, u16>(0).unwrap(), 0);
+        assert_eq!(cast::<u8, u16>(255).unwrap(), 255);
+
+        assert!(cast::<u16, u8>(256).is_err());
+    }
+
+    #[tokio::test]
+    #[ignore = "fails without tty"]
+    async fn test_terminal() {
+        let mut term = SystemTerminal::new().unwrap();
+        term.set_raw_mode().unwrap();
+        term.set_cooked_mode().unwrap();
+        term.set_screen_size(ScreenSize {
+            rows: 24,
+            cols: 80,
+            xpixel: 0,
+            ypixel: 0,
+        })
+        .unwrap();
+        term.flush().unwrap();
+        term.read_input().unwrap();
+        term.set_immediate_mode(true).unwrap();
+    }
+}

@@ -375,6 +375,13 @@ mod tests {
     use super::*;
 
     #[tokio::test]
+    async fn client_tests() {
+        let endpoint = Endpoint::Prod;
+        cw_client(endpoint.clone()).await;
+        cw_streaming_client(endpoint).await;
+    }
+
+    #[tokio::test]
     #[ignore]
     async fn test_request() {
         tracing_subscriber::fmt().init();

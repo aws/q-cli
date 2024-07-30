@@ -9,12 +9,12 @@
 //!
 //! SSO flow (RFC: <https://datatracker.ietf.org/doc/html/rfc7636>)
 //!   1. Register an OIDC client
-//!     - Code: [PkceRegistration::register]
+//!      - Code: [PkceRegistration::register]
 //!   2. Host a local HTTP server to handle the redirect
-//!     - Code: [PkceRegistration::finish]
+//!      - Code: [PkceRegistration::finish]
 //!   3. Open the [PkceRegistration::url] in the browser, and approve the request.
 //!   4. Exchange the code for access and refresh tokens.
-//!     - This completes the future returned by [PkceRegistration::finish].
+//!      - This completes the future returned by [PkceRegistration::finish].
 //!
 //! Once access/refresh tokens are received, there is no difference between PKCE
 //! and device code (as already implemented in [crate::builder_id]).

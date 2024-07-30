@@ -13,3 +13,17 @@ impl FromStr for devtools_command::Window {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use devtools_command::Window;
+
+    use super::*;
+
+    #[test]
+    fn test_window_from_str() {
+        assert_eq!("autocomplete".parse::<Window>().unwrap(), Window::DevtoolsAutocomplete);
+        assert_eq!("dashboard".parse::<Window>().unwrap(), Window::DevtoolsDashboard);
+        assert!("unknown".parse::<Window>().is_err());
+    }
+}

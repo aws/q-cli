@@ -36,3 +36,15 @@ impl<S: AsRawHandle> IsTty for S {
         ok == 1
     }
 }
+
+#[cfg(test)]
+mod test {
+    use std::io::stdout;
+
+    use super::IsTty;
+
+    #[test]
+    fn test_is_tty() {
+        stdout().is_tty();
+    }
+}
