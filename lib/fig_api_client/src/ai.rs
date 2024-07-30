@@ -99,8 +99,10 @@ pub async fn cw_client(endpoint: Endpoint) -> amzn_codewhisperer_client::Client 
 
 pub async fn cw_streaming_client(endpoint: Endpoint) -> amzn_codewhisperer_streaming_client::Client {
     let conf_builder: amzn_codewhisperer_streaming_client::config::Builder = (&sdk_config(&endpoint).await).into();
+    // @ptrucks recommends using the same configuration as here
+    // https://code.amazon.com/packages/MynahChatTests/blobs/b3e23c24e5abce0150f872883f80efc0df50ebbc/--/src/main.rs#L37-L41
     let stalled_stream_protection_config = StalledStreamProtectionConfig::enabled()
-        .grace_period(Duration::from_secs(10))
+        .grace_period(Duration::from_secs(20))
         .build();
     let conf = conf_builder
         .interceptor(OptOutInterceptor)
