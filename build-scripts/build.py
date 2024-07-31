@@ -42,6 +42,12 @@ class NpmBuildOutput:
     vscode_path: pathlib.Path
 
 
+@dataclass
+class MacOSBuildOutput:
+    dmg_path: pathlib.Path
+    app_path: pathlib.Path
+
+
 def build_npm_packages() -> NpmBuildOutput:
     run_cmd(["pnpm", "install", "--frozen-lockfile"])
 
@@ -204,7 +210,7 @@ def build_desktop_app(
     signing_data: CdSigningData | None,
     features: Mapping[str, Sequence[str]] | None = None,
     targets: Sequence[str] = [],
-) -> pathlib.Path:
+) -> MacOSBuildOutput:
     target = get_target_triple()
 
     info("Building macos ime")
@@ -334,7 +340,7 @@ def build_desktop_app(
     if signing_data:
         sign_and_rebundle_macos(app_path=app_path, dmg_path=dmg_path, signing_data=signing_data, is_prod=is_prod)
 
-    return dmg_path
+    return MacOSBuildOutput(dmg_path=dmg_path, app_path=app_path)
 
 
 def sign_and_rebundle_macos(app_path: pathlib.Path, dmg_path: pathlib.Path, signing_data: CdSigningData, is_prod: bool):
@@ -476,7 +482,7 @@ def build(
 
     if isDarwin():
         info(f"Building {DMG_NAME}.dmg")
-        dmg_path = build_desktop_app(
+        build_paths = build_desktop_app(
             release=release,
             cli_path=cli_path,
             pty_path=pty_path,
@@ -487,13 +493,14 @@ def build(
             is_prod=stage_name == "prod" or stage_name is None,
         )
 
-        sha_path = generate_sha(dmg_path)
+        sha_path = generate_sha(build_paths.dmg_path)
 
         if output_bucket:
             staging_location = f"s3://{output_bucket}/staging/"
             info(f"Build complete, sending to {staging_location}")
 
-            run_cmd(["aws", "s3", "cp", dmg_path, staging_location])
+            run_cmd(["aws", "s3", "cp", build_paths.dmg_path, staging_location])
+            run_cmd(["aws", "s3", "cp", build_paths.app_path, staging_location])
             run_cmd(["aws", "s3", "cp", sha_path, staging_location])
     elif isLinux():
         # create the archive structure:
