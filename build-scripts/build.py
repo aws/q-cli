@@ -45,7 +45,7 @@ class NpmBuildOutput:
 @dataclass
 class MacOSBuildOutput:
     dmg_path: pathlib.Path
-    app_path: pathlib.Path
+    app_zip_path: pathlib.Path
 
 
 def build_npm_packages() -> NpmBuildOutput:
@@ -340,7 +340,10 @@ def build_desktop_app(
     if signing_data:
         sign_and_rebundle_macos(app_path=app_path, dmg_path=dmg_path, signing_data=signing_data, is_prod=is_prod)
 
-    return MacOSBuildOutput(dmg_path=dmg_path, app_path=app_path)
+    app_zip_path = shutil.make_archive(str(BUILD_DIR / APP_NAME), "zip", app_path.parent, app_path.name)
+    info(f"Created app zip at {app_zip_path}")
+
+    return MacOSBuildOutput(dmg_path=dmg_path, app_zip_path=pathlib.Path(app_zip_path))
 
 
 def sign_and_rebundle_macos(app_path: pathlib.Path, dmg_path: pathlib.Path, signing_data: CdSigningData, is_prod: bool):
@@ -500,7 +503,7 @@ def build(
             info(f"Build complete, sending to {staging_location}")
 
             run_cmd(["aws", "s3", "cp", build_paths.dmg_path, staging_location])
-            run_cmd(["aws", "s3", "cp", build_paths.app_path, staging_location])
+            run_cmd(["aws", "s3", "cp", build_paths.app_zip_path, staging_location])
             run_cmd(["aws", "s3", "cp", sha_path, staging_location])
     elif isLinux():
         # create the archive structure:
