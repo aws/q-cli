@@ -18,6 +18,9 @@ use fig_util::{
 };
 use tracing::metadata::LevelFilter;
 
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 fn main() -> Result<ExitCode> {
     color_eyre::install()?;
     fig_telemetry::set_dispatch_mode(fig_telemetry::DispatchMode::On);

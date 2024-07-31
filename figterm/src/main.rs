@@ -130,6 +130,9 @@ use crate::term::{
     Terminal,
 };
 
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 const BUFFER_SIZE: usize = 16384;
 
 static INSERT_ON_NEW_CMD: Mutex<Option<(String, bool, bool)>> = Mutex::new(None);
