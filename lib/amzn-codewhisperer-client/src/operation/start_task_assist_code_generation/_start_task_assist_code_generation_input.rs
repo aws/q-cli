@@ -8,6 +8,8 @@ pub struct StartTaskAssistCodeGenerationInput {
     pub conversation_state: ::std::option::Option<crate::types::ConversationState>,
     /// Represents a Workspace state uploaded to S3 for Async Code Actions
     pub workspace_state: ::std::option::Option<crate::types::WorkspaceState>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub task_assist_plan: ::std::option::Option<::std::vec::Vec<crate::types::TaskAssistPlanStep>>,
 }
 impl StartTaskAssistCodeGenerationInput {
     /// Structure to represent the current state of a chat conversation.
@@ -18,6 +20,13 @@ impl StartTaskAssistCodeGenerationInput {
     /// Represents a Workspace state uploaded to S3 for Async Code Actions
     pub fn workspace_state(&self) -> ::std::option::Option<&crate::types::WorkspaceState> {
         self.workspace_state.as_ref()
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    /// If no value was sent for this field, a default will be set. If you want to determine if no
+    /// value was sent, use `.task_assist_plan.is_none()`.
+    pub fn task_assist_plan(&self) -> &[crate::types::TaskAssistPlanStep] {
+        self.task_assist_plan.as_deref().unwrap_or_default()
     }
 }
 impl StartTaskAssistCodeGenerationInput {
@@ -31,11 +40,12 @@ impl StartTaskAssistCodeGenerationInput {
 
 /// A builder for
 /// [`StartTaskAssistCodeGenerationInput`](crate::operation::start_task_assist_code_generation::StartTaskAssistCodeGenerationInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct StartTaskAssistCodeGenerationInputBuilder {
     pub(crate) conversation_state: ::std::option::Option<crate::types::ConversationState>,
     pub(crate) workspace_state: ::std::option::Option<crate::types::WorkspaceState>,
+    pub(crate) task_assist_plan: ::std::option::Option<::std::vec::Vec<crate::types::TaskAssistPlanStep>>,
 }
 impl StartTaskAssistCodeGenerationInputBuilder {
     /// Structure to represent the current state of a chat conversation.
@@ -74,6 +84,31 @@ impl StartTaskAssistCodeGenerationInputBuilder {
         &self.workspace_state
     }
 
+    /// Appends an item to `task_assist_plan`.
+    ///
+    /// To override the contents of this collection use
+    /// [`set_task_assist_plan`](Self::set_task_assist_plan).
+    pub fn task_assist_plan(mut self, input: crate::types::TaskAssistPlanStep) -> Self {
+        let mut v = self.task_assist_plan.unwrap_or_default();
+        v.push(input);
+        self.task_assist_plan = ::std::option::Option::Some(v);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_task_assist_plan(
+        mut self,
+        input: ::std::option::Option<::std::vec::Vec<crate::types::TaskAssistPlanStep>>,
+    ) -> Self {
+        self.task_assist_plan = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_task_assist_plan(&self) -> &::std::option::Option<::std::vec::Vec<crate::types::TaskAssistPlanStep>> {
+        &self.task_assist_plan
+    }
+
     /// Consumes the builder and constructs a
     /// [`StartTaskAssistCodeGenerationInput`](crate::operation::start_task_assist_code_generation::StartTaskAssistCodeGenerationInput).
     pub fn build(
@@ -86,6 +121,7 @@ impl StartTaskAssistCodeGenerationInputBuilder {
             crate::operation::start_task_assist_code_generation::StartTaskAssistCodeGenerationInput {
                 conversation_state: self.conversation_state,
                 workspace_state: self.workspace_state,
+                task_assist_plan: self.task_assist_plan,
             },
         )
     }

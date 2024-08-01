@@ -47,7 +47,7 @@ impl
     }
 }
 impl ExportResultArchiveFluentBuilder {
-    /// Creates a new `ExportResultArchive`.
+    /// Creates a new `ExportResultArchiveFluentBuilder`.
     pub(crate) fn new(handle: ::std::sync::Arc<crate::client::Handle>) -> Self {
         Self {
             handle,

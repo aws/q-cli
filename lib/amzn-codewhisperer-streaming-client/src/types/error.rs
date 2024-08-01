@@ -125,6 +125,8 @@ impl ::aws_types::request_id::RequestId for crate::types::error::ChatResponseStr
     }
 }
 
+pub use crate::types::error::_dry_run_operation_exception::DryRunOperationError;
+
 /// Error type for the `ResultArchiveStreamError` operation.
 #[non_exhaustive]
 #[derive(::std::fmt::Debug)]
@@ -246,6 +248,8 @@ impl ::aws_types::request_id::RequestId for crate::types::error::ResultArchiveSt
 mod _access_denied_exception;
 
 mod _conflict_exception;
+
+mod _dry_run_operation_exception;
 
 mod _internal_server_error;
 

@@ -44,8 +44,8 @@ impl GetCodeAnalysisOutput {
 
 /// A builder for
 /// [`GetCodeAnalysisOutput`](crate::operation::get_code_analysis::GetCodeAnalysisOutput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct GetCodeAnalysisOutputBuilder {
     pub(crate) status: ::std::option::Option<crate::types::CodeAnalysisStatus>,
     pub(crate) error_message: ::std::option::Option<::std::string::String>,

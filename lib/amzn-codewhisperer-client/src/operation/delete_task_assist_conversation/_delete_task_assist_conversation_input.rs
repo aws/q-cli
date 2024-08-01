@@ -24,8 +24,8 @@ impl DeleteTaskAssistConversationInput {
 
 /// A builder for
 /// [`DeleteTaskAssistConversationInput`](crate::operation::delete_task_assist_conversation::DeleteTaskAssistConversationInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct DeleteTaskAssistConversationInputBuilder {
     pub(crate) conversation_id: ::std::option::Option<::std::string::String>,
 }

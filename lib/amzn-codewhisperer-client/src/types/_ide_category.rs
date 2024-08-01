@@ -14,6 +14,8 @@
 /// match idecategory {
 ///     IdeCategory::Cli => { /* ... */ },
 ///     IdeCategory::JetBrains => { /* ... */ },
+///     IdeCategory::JupyterMd => { /* ... */ },
+///     IdeCategory::JupyterSm => { /* ... */ },
 ///     IdeCategory::VsCode => { /* ... */ },
 ///     other @ _ if other.as_str() == "NewFeature" => { /* handles a case for `NewFeature` */ },
 ///     _ => { /* ... */ },
@@ -53,6 +55,10 @@ pub enum IdeCategory {
     #[allow(missing_docs)] // documentation missing in model
     JetBrains,
     #[allow(missing_docs)] // documentation missing in model
+    JupyterMd,
+    #[allow(missing_docs)] // documentation missing in model
+    JupyterSm,
+    #[allow(missing_docs)] // documentation missing in model
     VsCode,
     /// `Unknown` contains new variants that have been added since this code was generated.
     #[deprecated(
@@ -65,6 +71,8 @@ impl ::std::convert::From<&str> for IdeCategory {
         match s {
             "CLI" => IdeCategory::Cli,
             "JETBRAINS" => IdeCategory::JetBrains,
+            "JUPYTER_MD" => IdeCategory::JupyterMd,
+            "JUPYTER_SM" => IdeCategory::JupyterSm,
             "VSCODE" => IdeCategory::VsCode,
             other => IdeCategory::Unknown(crate::primitives::sealed_enum_unknown::UnknownVariantValue(
                 other.to_owned(),
@@ -85,6 +93,8 @@ impl IdeCategory {
         match self {
             IdeCategory::Cli => "CLI",
             IdeCategory::JetBrains => "JETBRAINS",
+            IdeCategory::JupyterMd => "JUPYTER_MD",
+            IdeCategory::JupyterSm => "JUPYTER_SM",
             IdeCategory::VsCode => "VSCODE",
             IdeCategory::Unknown(value) => value.as_str(),
         }
@@ -92,7 +102,7 @@ impl IdeCategory {
 
     /// Returns all the `&str` representations of the enum members.
     pub const fn values() -> &'static [&'static str] {
-        &["CLI", "JETBRAINS", "VSCODE"]
+        &["CLI", "JETBRAINS", "JUPYTER_MD", "JUPYTER_SM", "VSCODE"]
     }
 }
 impl ::std::convert::AsRef<str> for IdeCategory {
@@ -117,6 +127,8 @@ impl ::std::fmt::Display for IdeCategory {
         match self {
             IdeCategory::Cli => write!(f, "CLI"),
             IdeCategory::JetBrains => write!(f, "JETBRAINS"),
+            IdeCategory::JupyterMd => write!(f, "JUPYTER_MD"),
+            IdeCategory::JupyterSm => write!(f, "JUPYTER_SM"),
             IdeCategory::VsCode => write!(f, "VSCODE"),
             IdeCategory::Unknown(value) => write!(f, "{}", value),
         }

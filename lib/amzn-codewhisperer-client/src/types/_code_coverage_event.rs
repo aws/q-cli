@@ -56,8 +56,8 @@ impl CodeCoverageEvent {
 }
 
 /// A builder for [`CodeCoverageEvent`](crate::types::CodeCoverageEvent).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct CodeCoverageEventBuilder {
     pub(crate) customization_arn: ::std::option::Option<::std::string::String>,
     pub(crate) programming_language: ::std::option::Option<crate::types::ProgrammingLanguage>,

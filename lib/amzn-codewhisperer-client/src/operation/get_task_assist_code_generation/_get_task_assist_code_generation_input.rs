@@ -31,8 +31,8 @@ impl GetTaskAssistCodeGenerationInput {
 
 /// A builder for
 /// [`GetTaskAssistCodeGenerationInput`](crate::operation::get_task_assist_code_generation::GetTaskAssistCodeGenerationInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct GetTaskAssistCodeGenerationInputBuilder {
     pub(crate) conversation_id: ::std::option::Option<::std::string::String>,
     pub(crate) code_generation_id: ::std::option::Option<::std::string::String>,

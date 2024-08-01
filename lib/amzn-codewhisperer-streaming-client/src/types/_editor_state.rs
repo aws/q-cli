@@ -8,6 +8,10 @@ pub struct EditorState {
     pub document: ::std::option::Option<crate::types::TextDocument>,
     /// Position of the cursor
     pub cursor_state: ::std::option::Option<crate::types::CursorState>,
+    /// Represents IDE provided relevant files
+    pub relevant_documents: ::std::option::Option<::std::vec::Vec<crate::types::RelevantTextDocument>>,
+    /// Whether service should use relevant document in prompt
+    pub use_relevant_documents: ::std::option::Option<bool>,
 }
 impl EditorState {
     /// Represents currently edited file
@@ -19,6 +23,19 @@ impl EditorState {
     pub fn cursor_state(&self) -> ::std::option::Option<&crate::types::CursorState> {
         self.cursor_state.as_ref()
     }
+
+    /// Represents IDE provided relevant files
+    ///
+    /// If no value was sent for this field, a default will be set. If you want to determine if no
+    /// value was sent, use `.relevant_documents.is_none()`.
+    pub fn relevant_documents(&self) -> &[crate::types::RelevantTextDocument] {
+        self.relevant_documents.as_deref().unwrap_or_default()
+    }
+
+    /// Whether service should use relevant document in prompt
+    pub fn use_relevant_documents(&self) -> ::std::option::Option<bool> {
+        self.use_relevant_documents
+    }
 }
 impl EditorState {
     /// Creates a new builder-style object to manufacture
@@ -29,11 +46,13 @@ impl EditorState {
 }
 
 /// A builder for [`EditorState`](crate::types::EditorState).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct EditorStateBuilder {
     pub(crate) document: ::std::option::Option<crate::types::TextDocument>,
     pub(crate) cursor_state: ::std::option::Option<crate::types::CursorState>,
+    pub(crate) relevant_documents: ::std::option::Option<::std::vec::Vec<crate::types::RelevantTextDocument>>,
+    pub(crate) use_relevant_documents: ::std::option::Option<bool>,
 }
 impl EditorStateBuilder {
     /// Represents currently edited file
@@ -70,11 +89,59 @@ impl EditorStateBuilder {
         &self.cursor_state
     }
 
+    /// Appends an item to `relevant_documents`.
+    ///
+    /// To override the contents of this collection use
+    /// [`set_relevant_documents`](Self::set_relevant_documents).
+    ///
+    /// Represents IDE provided relevant files
+    pub fn relevant_documents(mut self, input: crate::types::RelevantTextDocument) -> Self {
+        let mut v = self.relevant_documents.unwrap_or_default();
+        v.push(input);
+        self.relevant_documents = ::std::option::Option::Some(v);
+        self
+    }
+
+    /// Represents IDE provided relevant files
+    pub fn set_relevant_documents(
+        mut self,
+        input: ::std::option::Option<::std::vec::Vec<crate::types::RelevantTextDocument>>,
+    ) -> Self {
+        self.relevant_documents = input;
+        self
+    }
+
+    /// Represents IDE provided relevant files
+    pub fn get_relevant_documents(
+        &self,
+    ) -> &::std::option::Option<::std::vec::Vec<crate::types::RelevantTextDocument>> {
+        &self.relevant_documents
+    }
+
+    /// Whether service should use relevant document in prompt
+    pub fn use_relevant_documents(mut self, input: bool) -> Self {
+        self.use_relevant_documents = ::std::option::Option::Some(input);
+        self
+    }
+
+    /// Whether service should use relevant document in prompt
+    pub fn set_use_relevant_documents(mut self, input: ::std::option::Option<bool>) -> Self {
+        self.use_relevant_documents = input;
+        self
+    }
+
+    /// Whether service should use relevant document in prompt
+    pub fn get_use_relevant_documents(&self) -> &::std::option::Option<bool> {
+        &self.use_relevant_documents
+    }
+
     /// Consumes the builder and constructs a [`EditorState`](crate::types::EditorState).
     pub fn build(self) -> crate::types::EditorState {
         crate::types::EditorState {
             document: self.document,
             cursor_state: self.cursor_state,
+            relevant_documents: self.relevant_documents,
+            use_relevant_documents: self.use_relevant_documents,
         }
     }
 }

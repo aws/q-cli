@@ -47,8 +47,8 @@ impl SupplementaryWebLink {
 }
 
 /// A builder for [`SupplementaryWebLink`](crate::types::SupplementaryWebLink).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct SupplementaryWebLinkBuilder {
     pub(crate) url: ::std::option::Option<::std::string::String>,
     pub(crate) title: ::std::option::Option<::std::string::String>,

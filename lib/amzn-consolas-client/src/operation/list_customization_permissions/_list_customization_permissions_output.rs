@@ -37,8 +37,8 @@ impl ListCustomizationPermissionsOutput {
 
 /// A builder for
 /// [`ListCustomizationPermissionsOutput`](crate::operation::list_customization_permissions::ListCustomizationPermissionsOutput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct ListCustomizationPermissionsOutputBuilder {
     pub(crate) permissions: ::std::option::Option<::std::vec::Vec<crate::types::CustomizationPermission>>,
     pub(crate) next_token: ::std::option::Option<::std::string::String>,

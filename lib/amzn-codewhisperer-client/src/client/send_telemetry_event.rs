@@ -9,6 +9,7 @@ impl super::Client {
     ///   - [`telemetry_event(TelemetryEvent)`](crate::operation::send_telemetry_event::builders::SendTelemetryEventFluentBuilder::telemetry_event) / [`set_telemetry_event(Option<TelemetryEvent>)`](crate::operation::send_telemetry_event::builders::SendTelemetryEventFluentBuilder::set_telemetry_event):<br>required: **true**<br>(undocumented)<br>
     ///   - [`opt_out_preference(OptOutPreference)`](crate::operation::send_telemetry_event::builders::SendTelemetryEventFluentBuilder::opt_out_preference) / [`set_opt_out_preference(Option<OptOutPreference>)`](crate::operation::send_telemetry_event::builders::SendTelemetryEventFluentBuilder::set_opt_out_preference):<br>required: **false**<br>(undocumented)<br>
     ///   - [`user_context(UserContext)`](crate::operation::send_telemetry_event::builders::SendTelemetryEventFluentBuilder::user_context) / [`set_user_context(Option<UserContext>)`](crate::operation::send_telemetry_event::builders::SendTelemetryEventFluentBuilder::set_user_context):<br>required: **false**<br>(undocumented)<br>
+    ///   - [`profile_arn(impl Into<String>)`](crate::operation::send_telemetry_event::builders::SendTelemetryEventFluentBuilder::profile_arn) / [`set_profile_arn(Option<String>)`](crate::operation::send_telemetry_event::builders::SendTelemetryEventFluentBuilder::set_profile_arn):<br>required: **false**<br>(undocumented)<br>
     /// - On success, responds with
     ///   [`SendTelemetryEventOutput`](crate::operation::send_telemetry_event::SendTelemetryEventOutput)
     /// - On failure, responds with

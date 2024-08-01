@@ -63,8 +63,8 @@ impl TextDocumentDiagnostic {
 }
 
 /// A builder for [`TextDocumentDiagnostic`](crate::types::TextDocumentDiagnostic).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct TextDocumentDiagnosticBuilder {
     pub(crate) document: ::std::option::Option<crate::types::TextDocument>,
     pub(crate) range: ::std::option::Option<crate::types::Range>,

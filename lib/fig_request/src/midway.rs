@@ -377,7 +377,7 @@ mod tests {
         );
 
         let user_line = "midway-auth.amazon.com\tFALSE\t/\tTRUE\t0\tuser_name\tnobody\n";
-        cookie_data.push_str(&user_line);
+        cookie_data.push_str(user_line);
 
         let session_line = format!(
             "#HttpOnly_midway-auth.amazon.com\tFALSE\t/\tTRUE\t{}\tsession\tabracadabragobbledygook\n",
@@ -402,7 +402,7 @@ mod tests {
         assert_eq!(cookie.path().unwrap(), "/");
         assert_eq!(cookie.name(), "user_name");
         assert_eq!(cookie.value(), "nobody");
-        assert_eq!(cookie.secure().unwrap(), true);
+        assert!(cookie.secure().unwrap());
         assert_eq!(cookie.expires(), None);
 
         let (url, cookie) = &jar.cookies[1];
@@ -411,7 +411,7 @@ mod tests {
         assert_eq!(cookie.path().unwrap(), "/");
         assert_eq!(cookie.name(), "session");
         assert_eq!(cookie.value(), "abracadabragobbledygook");
-        assert_eq!(cookie.secure().unwrap(), true);
+        assert!(cookie.secure().unwrap());
         assert_eq!(
             cookie.expires().unwrap().datetime(),
             Some((now + Duration::from_secs(1000)).replace_nanosecond(0).unwrap())

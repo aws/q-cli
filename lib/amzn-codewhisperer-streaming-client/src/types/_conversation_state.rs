@@ -12,6 +12,8 @@ pub struct ConversationState {
     pub current_message: crate::types::ChatMessage,
     /// Trigger Reason for Chat
     pub chat_trigger_type: crate::types::ChatTriggerType,
+    #[allow(missing_docs)] // documentation missing in model
+    pub customization_arn: ::std::option::Option<::std::string::String>,
 }
 impl ConversationState {
     /// Unique identifier for the chat conversation stream
@@ -36,6 +38,11 @@ impl ConversationState {
     pub fn chat_trigger_type(&self) -> &crate::types::ChatTriggerType {
         &self.chat_trigger_type
     }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn customization_arn(&self) -> ::std::option::Option<&str> {
+        self.customization_arn.as_deref()
+    }
 }
 impl ConversationState {
     /// Creates a new builder-style object to manufacture
@@ -46,13 +53,14 @@ impl ConversationState {
 }
 
 /// A builder for [`ConversationState`](crate::types::ConversationState).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct ConversationStateBuilder {
     pub(crate) conversation_id: ::std::option::Option<::std::string::String>,
     pub(crate) history: ::std::option::Option<::std::vec::Vec<crate::types::ChatMessage>>,
     pub(crate) current_message: ::std::option::Option<crate::types::ChatMessage>,
     pub(crate) chat_trigger_type: ::std::option::Option<crate::types::ChatTriggerType>,
+    pub(crate) customization_arn: ::std::option::Option<::std::string::String>,
 }
 impl ConversationStateBuilder {
     /// Unique identifier for the chat conversation stream
@@ -131,6 +139,23 @@ impl ConversationStateBuilder {
         &self.chat_trigger_type
     }
 
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn customization_arn(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
+        self.customization_arn = ::std::option::Option::Some(input.into());
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_customization_arn(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
+        self.customization_arn = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_customization_arn(&self) -> &::std::option::Option<::std::string::String> {
+        &self.customization_arn
+    }
+
     /// Consumes the builder and constructs a
     /// [`ConversationState`](crate::types::ConversationState). This method will fail if any of
     /// the following fields are not set:
@@ -154,6 +179,7 @@ impl ConversationStateBuilder {
                     "chat_trigger_type was not specified but it is required when building ConversationState",
                 )
             })?,
+            customization_arn: self.customization_arn,
         })
     }
 }

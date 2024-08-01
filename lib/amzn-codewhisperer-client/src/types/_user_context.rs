@@ -50,8 +50,8 @@ impl UserContext {
 }
 
 /// A builder for [`UserContext`](crate::types::UserContext).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct UserContextBuilder {
     pub(crate) ide_category: ::std::option::Option<crate::types::IdeCategory>,
     pub(crate) operating_system: ::std::option::Option<crate::types::OperatingSystem>,

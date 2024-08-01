@@ -23,8 +23,8 @@ impl GetTransformationPlanInput {
 
 /// A builder for
 /// [`GetTransformationPlanInput`](crate::operation::get_transformation_plan::GetTransformationPlanInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct GetTransformationPlanInputBuilder {
     pub(crate) transformation_job_id: ::std::option::Option<::std::string::String>,
 }

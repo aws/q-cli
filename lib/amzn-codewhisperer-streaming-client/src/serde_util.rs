@@ -71,6 +71,15 @@ pub(crate) fn assistant_response_event_correct_errors(
     builder
 }
 
+pub(crate) fn code_event_correct_errors(
+    mut builder: crate::types::builders::CodeEventBuilder,
+) -> crate::types::builders::CodeEventBuilder {
+    if builder.content.is_none() {
+        builder.content = Some(Default::default())
+    }
+    builder
+}
+
 pub(crate) fn invalid_state_event_correct_errors(
     mut builder: crate::types::builders::InvalidStateEventBuilder,
 ) -> crate::types::builders::InvalidStateEventBuilder {

@@ -47,7 +47,7 @@ impl
     }
 }
 impl StartTransformationFluentBuilder {
-    /// Creates a new `StartTransformation`.
+    /// Creates a new `StartTransformationFluentBuilder`.
     pub(crate) fn new(handle: ::std::sync::Arc<crate::client::Handle>) -> Self {
         Self {
             handle,

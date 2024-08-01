@@ -22,8 +22,8 @@ impl S3Reference {
 }
 
 /// A builder for [`S3Reference`](crate::types::S3Reference).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct S3ReferenceBuilder {
     pub(crate) uri: ::std::option::Option<::std::string::String>,
 }

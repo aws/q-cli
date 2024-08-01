@@ -84,3 +84,5 @@ mod export_result_archive;
 mod generate_assistant_response;
 
 mod generate_task_assist_plan;
+
+mod send_message;

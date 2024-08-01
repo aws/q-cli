@@ -133,6 +133,8 @@ pub(crate) mod shape_request_headers;
 
 pub(crate) mod shape_supplemental_context;
 
+pub(crate) mod shape_task_assist_plan_step;
+
 pub(crate) mod shape_telemetry_event;
 
 pub(crate) mod shape_transformation_job;
@@ -166,6 +168,8 @@ pub(crate) mod shape_code_scan_remediations_event;
 pub(crate) mod shape_completion;
 
 pub(crate) mod shape_customization;
+
+pub(crate) mod shape_feature_dev_event;
 
 pub(crate) mod shape_feature_evaluation;
 
@@ -217,6 +221,8 @@ pub(crate) mod shape_user_input_message_context;
 
 pub(crate) mod shape_app_studio_state;
 
+pub(crate) mod shape_console_state;
+
 pub(crate) mod shape_diagnostic;
 
 pub(crate) mod shape_editor_state;
@@ -231,9 +237,13 @@ pub(crate) mod shape_span;
 
 pub(crate) mod shape_transformation_progress_update;
 
+pub(crate) mod shape_user_settings;
+
 pub(crate) mod shape_cursor_state;
 
 pub(crate) mod shape_environment_variable;
+
+pub(crate) mod shape_relevant_text_document;
 
 pub(crate) mod shape_runtime_diagnostic;
 

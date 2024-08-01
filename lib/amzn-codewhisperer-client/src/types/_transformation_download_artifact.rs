@@ -28,8 +28,8 @@ impl TransformationDownloadArtifact {
 }
 
 /// A builder for [`TransformationDownloadArtifact`](crate::types::TransformationDownloadArtifact).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct TransformationDownloadArtifactBuilder {
     pub(crate) download_artifact_type: ::std::option::Option<crate::types::TransformationDownloadArtifactType>,
     pub(crate) download_artifact_id: ::std::option::Option<::std::string::String>,

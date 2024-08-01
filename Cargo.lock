@@ -97,7 +97,7 @@ checksum = "5c6cb57a04249c6480766f7f7cef5467412af1490f8d1e243141daddada3264f"
 
 [[package]]
 name = "amzn-codewhisperer-client"
-version = "0.1.148"
+version = "0.1.1100"
 dependencies = [
  "aws-credential-types",
  "aws-runtime",
@@ -116,7 +116,7 @@ dependencies = [
 
 [[package]]
 name = "amzn-codewhisperer-streaming-client"
-version = "0.1.148"
+version = "0.1.1100"
 dependencies = [
  "aws-credential-types",
  "aws-runtime",
@@ -135,7 +135,7 @@ dependencies = [
 
 [[package]]
 name = "amzn-consolas-client"
-version = "0.1.148"
+version = "0.1.1100"
 dependencies = [
  "aws-credential-types",
  "aws-runtime",
@@ -148,6 +148,43 @@ dependencies = [
  "aws-types",
  "bytes",
  "fastrand",
+ "http 0.2.12",
+ "tracing",
+]
+
+[[package]]
+name = "amzn-qdeveloper-client"
+version = "0.1.1100"
+dependencies = [
+ "aws-credential-types",
+ "aws-runtime",
+ "aws-smithy-async",
+ "aws-smithy-http",
+ "aws-smithy-json",
+ "aws-smithy-runtime",
+ "aws-smithy-runtime-api",
+ "aws-smithy-types",
+ "aws-types",
+ "bytes",
+ "http 0.2.12",
+ "tracing",
+]
+
+[[package]]
+name = "amzn-qdeveloper-streaming-client"
+version = "0.1.1100"
+dependencies = [
+ "aws-credential-types",
+ "aws-runtime",
+ "aws-smithy-async",
+ "aws-smithy-eventstream",
+ "aws-smithy-http",
+ "aws-smithy-json",
+ "aws-smithy-runtime",
+ "aws-smithy-runtime-api",
+ "aws-smithy-types",
+ "aws-types",
+ "bytes",
  "http 0.2.12",
  "tracing",
 ]

@@ -46,8 +46,8 @@ impl GenerateCompletionsOutput {
 
 /// A builder for
 /// [`GenerateCompletionsOutput`](crate::operation::generate_completions::GenerateCompletionsOutput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct GenerateCompletionsOutputBuilder {
     pub(crate) completions: ::std::option::Option<::std::vec::Vec<crate::types::Completion>>,
     pub(crate) next_token: ::std::option::Option<::std::string::String>,

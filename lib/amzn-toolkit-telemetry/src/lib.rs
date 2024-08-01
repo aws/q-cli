@@ -1,5 +1,6 @@
 #![allow(deprecated)]
 #![allow(unknown_lints)]
+#![allow(clippy::style)]
 #![allow(clippy::module_inception)]
 #![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::large_enum_variant)]

@@ -221,6 +221,20 @@ pub(crate) fn de_get_task_assist_code_generation(
                             .transpose()?,
                     );
                 },
+                "codeGenerationRemainingIterationCount" => {
+                    builder = builder.set_code_generation_remaining_iteration_count(
+                        ::aws_smithy_json::deserialize::token::expect_number_or_null(tokens.next())?
+                            .map(i32::try_from)
+                            .transpose()?,
+                    );
+                },
+                "codeGenerationTotalIterationCount" => {
+                    builder = builder.set_code_generation_total_iteration_count(
+                        ::aws_smithy_json::deserialize::token::expect_number_or_null(tokens.next())?
+                            .map(i32::try_from)
+                            .transpose()?,
+                    );
+                },
                 _ => ::aws_smithy_json::deserialize::token::skip_value(tokens)?,
             },
             other => {

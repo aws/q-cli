@@ -7,6 +7,8 @@ pub struct ChatInteractWithMessageEvent {
     pub conversation_id: ::std::string::String,
     /// Unique identifier for the chat message
     pub message_id: ::std::string::String,
+    #[allow(missing_docs)] // documentation missing in model
+    pub customization_arn: ::std::option::Option<::std::string::String>,
     /// Chat Message Interaction Type
     pub interaction_type: ::std::option::Option<crate::types::ChatMessageInteractionType>,
     #[allow(missing_docs)] // documentation missing in model
@@ -17,6 +19,8 @@ pub struct ChatInteractWithMessageEvent {
     pub accepted_line_count: ::std::option::Option<i32>,
     #[allow(missing_docs)] // documentation missing in model
     pub accepted_snippet_has_reference: ::std::option::Option<bool>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub has_project_level_context: ::std::option::Option<bool>,
 }
 impl ChatInteractWithMessageEvent {
     /// ID which represents a multi-turn conversation
@@ -29,6 +33,11 @@ impl ChatInteractWithMessageEvent {
     pub fn message_id(&self) -> &str {
         use std::ops::Deref;
         self.message_id.deref()
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn customization_arn(&self) -> ::std::option::Option<&str> {
+        self.customization_arn.as_deref()
     }
 
     /// Chat Message Interaction Type
@@ -55,6 +64,11 @@ impl ChatInteractWithMessageEvent {
     pub fn accepted_snippet_has_reference(&self) -> ::std::option::Option<bool> {
         self.accepted_snippet_has_reference
     }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn has_project_level_context(&self) -> ::std::option::Option<bool> {
+        self.has_project_level_context
+    }
 }
 impl ChatInteractWithMessageEvent {
     /// Creates a new builder-style object to manufacture
@@ -65,16 +79,18 @@ impl ChatInteractWithMessageEvent {
 }
 
 /// A builder for [`ChatInteractWithMessageEvent`](crate::types::ChatInteractWithMessageEvent).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct ChatInteractWithMessageEventBuilder {
     pub(crate) conversation_id: ::std::option::Option<::std::string::String>,
     pub(crate) message_id: ::std::option::Option<::std::string::String>,
+    pub(crate) customization_arn: ::std::option::Option<::std::string::String>,
     pub(crate) interaction_type: ::std::option::Option<crate::types::ChatMessageInteractionType>,
     pub(crate) interaction_target: ::std::option::Option<::std::string::String>,
     pub(crate) accepted_character_count: ::std::option::Option<i32>,
     pub(crate) accepted_line_count: ::std::option::Option<i32>,
     pub(crate) accepted_snippet_has_reference: ::std::option::Option<bool>,
+    pub(crate) has_project_level_context: ::std::option::Option<bool>,
 }
 impl ChatInteractWithMessageEventBuilder {
     /// ID which represents a multi-turn conversation
@@ -111,6 +127,23 @@ impl ChatInteractWithMessageEventBuilder {
     /// Unique identifier for the chat message
     pub fn get_message_id(&self) -> &::std::option::Option<::std::string::String> {
         &self.message_id
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn customization_arn(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
+        self.customization_arn = ::std::option::Option::Some(input.into());
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_customization_arn(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
+        self.customization_arn = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_customization_arn(&self) -> &::std::option::Option<::std::string::String> {
+        &self.customization_arn
     }
 
     /// Chat Message Interaction Type
@@ -201,6 +234,23 @@ impl ChatInteractWithMessageEventBuilder {
         &self.accepted_snippet_has_reference
     }
 
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn has_project_level_context(mut self, input: bool) -> Self {
+        self.has_project_level_context = ::std::option::Option::Some(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_has_project_level_context(mut self, input: ::std::option::Option<bool>) -> Self {
+        self.has_project_level_context = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_has_project_level_context(&self) -> &::std::option::Option<bool> {
+        &self.has_project_level_context
+    }
+
     /// Consumes the builder and constructs a
     /// [`ChatInteractWithMessageEvent`](crate::types::ChatInteractWithMessageEvent).
     /// This method will fail if any of the following fields are not set:
@@ -225,11 +275,13 @@ impl ChatInteractWithMessageEventBuilder {
                     "message_id was not specified but it is required when building ChatInteractWithMessageEvent",
                 )
             })?,
+            customization_arn: self.customization_arn,
             interaction_type: self.interaction_type,
             interaction_target: self.interaction_target,
             accepted_character_count: self.accepted_character_count,
             accepted_line_count: self.accepted_line_count,
             accepted_snippet_has_reference: self.accepted_snippet_has_reference,
+            has_project_level_context: self.has_project_level_context,
         })
     }
 }

@@ -47,7 +47,7 @@ impl
     }
 }
 impl UpdateProfileFluentBuilder {
-    /// Creates a new `UpdateProfile`.
+    /// Creates a new `UpdateProfileFluentBuilder`.
     pub(crate) fn new(handle: ::std::sync::Arc<crate::client::Handle>) -> Self {
         Self {
             handle,
@@ -232,5 +232,22 @@ impl UpdateProfileFluentBuilder {
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_resource_policy(&self) -> &::std::option::Option<crate::types::ResourcePolicy> {
         self.inner.get_resource_policy()
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn target_profile_type(mut self, input: crate::types::ProfileType) -> Self {
+        self.inner = self.inner.target_profile_type(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_target_profile_type(mut self, input: ::std::option::Option<crate::types::ProfileType>) -> Self {
+        self.inner = self.inner.set_target_profile_type(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_target_profile_type(&self) -> &::std::option::Option<crate::types::ProfileType> {
+        self.inner.get_target_profile_type()
     }
 }

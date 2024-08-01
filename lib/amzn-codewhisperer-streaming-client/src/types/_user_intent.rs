@@ -16,6 +16,7 @@
 ///     UserIntent::CiteSources => { /* ... */ },
 ///     UserIntent::ExplainCodeSelection => { /* ... */ },
 ///     UserIntent::ExplainLineByLine => { /* ... */ },
+///     UserIntent::GenerateCloudformationTemplate => { /* ... */ },
 ///     UserIntent::ImproveCode => { /* ... */ },
 ///     UserIntent::ShowExamples => { /* ... */ },
 ///     UserIntent::SuggestAlternateImplementation => { /* ... */ },
@@ -60,6 +61,8 @@ pub enum UserIntent {
     ExplainCodeSelection,
     /// Explain Code Line By Line
     ExplainLineByLine,
+    /// Generate CloudFormation Template
+    GenerateCloudformationTemplate,
     /// Improve Code
     ImproveCode,
     /// Show More Examples
@@ -79,6 +82,7 @@ impl ::std::convert::From<&str> for UserIntent {
             "CITE_SOURCES" => UserIntent::CiteSources,
             "EXPLAIN_CODE_SELECTION" => UserIntent::ExplainCodeSelection,
             "EXPLAIN_LINE_BY_LINE" => UserIntent::ExplainLineByLine,
+            "GENERATE_CLOUDFORMATION_TEMPLATE" => UserIntent::GenerateCloudformationTemplate,
             "IMPROVE_CODE" => UserIntent::ImproveCode,
             "SHOW_EXAMPLES" => UserIntent::ShowExamples,
             "SUGGEST_ALTERNATE_IMPLEMENTATION" => UserIntent::SuggestAlternateImplementation,
@@ -103,6 +107,7 @@ impl UserIntent {
             UserIntent::CiteSources => "CITE_SOURCES",
             UserIntent::ExplainCodeSelection => "EXPLAIN_CODE_SELECTION",
             UserIntent::ExplainLineByLine => "EXPLAIN_LINE_BY_LINE",
+            UserIntent::GenerateCloudformationTemplate => "GENERATE_CLOUDFORMATION_TEMPLATE",
             UserIntent::ImproveCode => "IMPROVE_CODE",
             UserIntent::ShowExamples => "SHOW_EXAMPLES",
             UserIntent::SuggestAlternateImplementation => "SUGGEST_ALTERNATE_IMPLEMENTATION",
@@ -117,6 +122,7 @@ impl UserIntent {
             "CITE_SOURCES",
             "EXPLAIN_CODE_SELECTION",
             "EXPLAIN_LINE_BY_LINE",
+            "GENERATE_CLOUDFORMATION_TEMPLATE",
             "IMPROVE_CODE",
             "SHOW_EXAMPLES",
             "SUGGEST_ALTERNATE_IMPLEMENTATION",
@@ -147,6 +153,7 @@ impl ::std::fmt::Display for UserIntent {
             UserIntent::CiteSources => write!(f, "CITE_SOURCES"),
             UserIntent::ExplainCodeSelection => write!(f, "EXPLAIN_CODE_SELECTION"),
             UserIntent::ExplainLineByLine => write!(f, "EXPLAIN_LINE_BY_LINE"),
+            UserIntent::GenerateCloudformationTemplate => write!(f, "GENERATE_CLOUDFORMATION_TEMPLATE"),
             UserIntent::ImproveCode => write!(f, "IMPROVE_CODE"),
             UserIntent::ShowExamples => write!(f, "SHOW_EXAMPLES"),
             UserIntent::SuggestAlternateImplementation => write!(f, "SUGGEST_ALTERNATE_IMPLEMENTATION"),

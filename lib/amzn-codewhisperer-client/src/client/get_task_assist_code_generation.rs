@@ -11,6 +11,8 @@ impl super::Client {
     ///   - [`conversation_id(String)`](crate::operation::get_task_assist_code_generation::GetTaskAssistCodeGenerationOutput::conversation_id): ID which represents a multi-turn conversation
     ///   - [`code_generation_status(CodeGenerationStatus)`](crate::operation::get_task_assist_code_generation::GetTaskAssistCodeGenerationOutput::code_generation_status): (undocumented)
     ///   - [`code_generation_status_detail(Option<String>)`](crate::operation::get_task_assist_code_generation::GetTaskAssistCodeGenerationOutput::code_generation_status_detail): Detailed message about the code generation status
+    ///   - [`code_generation_remaining_iteration_count(Option<i32>)`](crate::operation::get_task_assist_code_generation::GetTaskAssistCodeGenerationOutput::code_generation_remaining_iteration_count): (undocumented)
+    ///   - [`code_generation_total_iteration_count(Option<i32>)`](crate::operation::get_task_assist_code_generation::GetTaskAssistCodeGenerationOutput::code_generation_total_iteration_count): (undocumented)
     /// - On failure, responds with [`SdkError<GetTaskAssistCodeGenerationError>`](crate::operation::get_task_assist_code_generation::GetTaskAssistCodeGenerationError)
     pub fn get_task_assist_code_generation(
         &self,

@@ -21,5 +21,8 @@ pub fn ser_send_telemetry_event_input_input(
         crate::protocol_serde::shape_user_context::ser_user_context(&mut object_6, var_5)?;
         object_6.finish();
     }
+    if let Some(var_7) = &input.profile_arn {
+        object.key("profileArn").string(var_7.as_str());
+    }
     Ok(())
 }

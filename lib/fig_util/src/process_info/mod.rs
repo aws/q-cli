@@ -113,6 +113,6 @@ mod tests {
 
     #[test]
     fn test_get_parent_process_exe() {
-        dbg!(get_parent_process_exe());
+        get_parent_process_exe();
     }
 }

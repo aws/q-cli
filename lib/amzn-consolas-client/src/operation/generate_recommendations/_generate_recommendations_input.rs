@@ -54,8 +54,8 @@ impl GenerateRecommendationsInput {
 
 /// A builder for
 /// [`GenerateRecommendationsInput`](crate::operation::generate_recommendations::GenerateRecommendationsInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct GenerateRecommendationsInputBuilder {
     pub(crate) file_context: ::std::option::Option<crate::types::FileContext>,
     pub(crate) max_results: ::std::option::Option<i32>,

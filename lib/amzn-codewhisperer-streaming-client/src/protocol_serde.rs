@@ -31,6 +31,8 @@ pub(crate) mod shape_generate_assistant_response;
 
 pub(crate) mod shape_generate_task_assist_plan;
 
+pub(crate) mod shape_send_message;
+
 pub(crate) fn or_empty_doc(data: &[u8]) -> &[u8] {
     if data.is_empty() { b"{}" } else { data }
 }
@@ -38,6 +40,8 @@ pub(crate) fn or_empty_doc(data: &[u8]) -> &[u8] {
 pub(crate) mod shape_access_denied_exception;
 
 pub(crate) mod shape_conflict_exception;
+
+pub(crate) mod shape_dry_run_operation_exception;
 
 pub(crate) mod shape_export_result_archive_input;
 
@@ -54,6 +58,10 @@ pub(crate) mod shape_generate_task_assist_plan_output;
 pub(crate) mod shape_internal_server_error;
 
 pub(crate) mod shape_resource_not_found_exception;
+
+pub(crate) mod shape_send_message_input;
+
+pub(crate) mod shape_send_message_output;
 
 pub(crate) mod shape_service_quota_exceeded_exception;
 
@@ -82,9 +90,13 @@ pub(crate) mod shape_binary_payload_event;
 
 pub(crate) mod shape_chat_message;
 
+pub(crate) mod shape_code_event;
+
 pub(crate) mod shape_code_reference_event;
 
 pub(crate) mod shape_followup_prompt_event;
+
+pub(crate) mod shape_intents_event;
 
 pub(crate) mod shape_invalid_state_event;
 
@@ -102,6 +114,8 @@ pub(crate) mod shape_user_input_message;
 
 pub(crate) mod shape_followup_prompt;
 
+pub(crate) mod shape_intent_map;
+
 pub(crate) mod shape_reference;
 
 pub(crate) mod shape_references;
@@ -114,6 +128,8 @@ pub(crate) mod shape_user_input_message_context;
 
 pub(crate) mod shape_app_studio_state;
 
+pub(crate) mod shape_console_state;
+
 pub(crate) mod shape_diagnostic;
 
 pub(crate) mod shape_editor_state;
@@ -122,13 +138,21 @@ pub(crate) mod shape_env_state;
 
 pub(crate) mod shape_git_state;
 
+pub(crate) mod shape_intent_data;
+
 pub(crate) mod shape_shell_state;
 
 pub(crate) mod shape_span;
 
+pub(crate) mod shape_user_settings;
+
 pub(crate) mod shape_cursor_state;
 
 pub(crate) mod shape_environment_variable;
+
+pub(crate) mod shape_intent_data_type;
+
+pub(crate) mod shape_relevant_text_document;
 
 pub(crate) mod shape_runtime_diagnostic;
 

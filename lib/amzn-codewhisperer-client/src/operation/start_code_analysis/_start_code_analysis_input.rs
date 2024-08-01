@@ -53,8 +53,8 @@ impl StartCodeAnalysisInput {
 
 /// A builder for
 /// [`StartCodeAnalysisInput`](crate::operation::start_code_analysis::StartCodeAnalysisInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct StartCodeAnalysisInputBuilder {
     pub(crate) artifacts:
         ::std::option::Option<::std::collections::HashMap<crate::types::ArtifactType, ::std::string::String>>,

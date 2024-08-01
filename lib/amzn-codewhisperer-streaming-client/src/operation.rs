@@ -9,3 +9,6 @@ pub mod generate_assistant_response;
 
 /// Types for the `GenerateTaskAssistPlan` operation.
 pub mod generate_task_assist_plan;
+
+/// Types for the `SendMessage` operation.
+pub mod send_message;

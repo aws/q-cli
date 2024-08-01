@@ -49,7 +49,7 @@ impl
     }
 }
 impl DisassociateCustomizationPermissionFluentBuilder {
-    /// Creates a new `DisassociateCustomizationPermission`.
+    /// Creates a new `DisassociateCustomizationPermissionFluentBuilder`.
     pub(crate) fn new(handle: ::std::sync::Arc<crate::client::Handle>) -> Self {
         Self {
             handle,

@@ -79,6 +79,12 @@ pub fn ser_telemetry_event(
             )?;
             object_10.finish();
         },
+        crate::types::TelemetryEvent::FeatureDevEvent(inner) => {
+            #[allow(unused_mut)]
+            let mut object_11 = object_3.key("featureDevEvent").start_object();
+            crate::protocol_serde::shape_feature_dev_event::ser_feature_dev_event(&mut object_11, inner)?;
+            object_11.finish();
+        },
         crate::types::TelemetryEvent::Unknown => {
             return Err(::aws_smithy_types::error::operation::SerializationError::unknown_variant("TelemetryEvent"));
         },

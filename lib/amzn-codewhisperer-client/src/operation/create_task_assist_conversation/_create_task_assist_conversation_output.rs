@@ -32,8 +32,8 @@ impl CreateTaskAssistConversationOutput {
 
 /// A builder for
 /// [`CreateTaskAssistConversationOutput`](crate::operation::create_task_assist_conversation::CreateTaskAssistConversationOutput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct CreateTaskAssistConversationOutputBuilder {
     pub(crate) conversation_id: ::std::option::Option<::std::string::String>,
     _request_id: Option<String>,

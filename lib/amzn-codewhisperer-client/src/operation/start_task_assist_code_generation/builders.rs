@@ -47,7 +47,7 @@ impl
     }
 }
 impl StartTaskAssistCodeGenerationFluentBuilder {
-    /// Creates a new `StartTaskAssistCodeGeneration`.
+    /// Creates a new `StartTaskAssistCodeGenerationFluentBuilder`.
     pub(crate) fn new(handle: ::std::sync::Arc<crate::client::Handle>) -> Self {
         Self {
             handle,
@@ -156,5 +156,29 @@ impl StartTaskAssistCodeGenerationFluentBuilder {
     /// Represents a Workspace state uploaded to S3 for Async Code Actions
     pub fn get_workspace_state(&self) -> &::std::option::Option<crate::types::WorkspaceState> {
         self.inner.get_workspace_state()
+    }
+
+    /// Appends an item to `taskAssistPlan`.
+    ///
+    /// To override the contents of this collection use
+    /// [`set_task_assist_plan`](Self::set_task_assist_plan).
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn task_assist_plan(mut self, input: crate::types::TaskAssistPlanStep) -> Self {
+        self.inner = self.inner.task_assist_plan(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_task_assist_plan(
+        mut self,
+        input: ::std::option::Option<::std::vec::Vec<crate::types::TaskAssistPlanStep>>,
+    ) -> Self {
+        self.inner = self.inner.set_task_assist_plan(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_task_assist_plan(&self) -> &::std::option::Option<::std::vec::Vec<crate::types::TaskAssistPlanStep>> {
+        self.inner.get_task_assist_plan()
     }
 }

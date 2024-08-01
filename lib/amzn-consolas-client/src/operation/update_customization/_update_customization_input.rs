@@ -50,8 +50,8 @@ impl UpdateCustomizationInput {
 
 /// A builder for
 /// [`UpdateCustomizationInput`](crate::operation::update_customization::UpdateCustomizationInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct UpdateCustomizationInputBuilder {
     pub(crate) identifier: ::std::option::Option<::std::string::String>,
     pub(crate) operation: ::std::option::Option<crate::types::UpdateOperation>,

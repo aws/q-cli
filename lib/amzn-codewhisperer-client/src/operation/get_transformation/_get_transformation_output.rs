@@ -29,8 +29,8 @@ impl GetTransformationOutput {
 
 /// A builder for
 /// [`GetTransformationOutput`](crate::operation::get_transformation::GetTransformationOutput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct GetTransformationOutputBuilder {
     pub(crate) transformation_job: ::std::option::Option<crate::types::TransformationJob>,
     _request_id: Option<String>,

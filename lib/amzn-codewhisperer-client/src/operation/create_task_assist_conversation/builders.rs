@@ -47,7 +47,7 @@ impl
     }
 }
 impl CreateTaskAssistConversationFluentBuilder {
-    /// Creates a new `CreateTaskAssistConversation`.
+    /// Creates a new `CreateTaskAssistConversationFluentBuilder`.
     pub(crate) fn new(handle: ::std::sync::Arc<crate::client::Handle>) -> Self {
         Self {
             handle,

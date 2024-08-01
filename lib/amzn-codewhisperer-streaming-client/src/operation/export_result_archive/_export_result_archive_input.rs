@@ -37,8 +37,8 @@ impl ExportResultArchiveInput {
 
 /// A builder for
 /// [`ExportResultArchiveInput`](crate::operation::export_result_archive::ExportResultArchiveInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct ExportResultArchiveInputBuilder {
     pub(crate) export_id: ::std::option::Option<::std::string::String>,
     pub(crate) export_intent: ::std::option::Option<crate::types::ExportIntent>,

@@ -9,26 +9,32 @@ pub fn ser_chat_interact_with_message_event(
     {
         object.key("messageId").string(input.message_id.as_str());
     }
-    if let Some(var_1) = &input.interaction_type {
-        object.key("interactionType").string(var_1.as_str());
+    if let Some(var_1) = &input.customization_arn {
+        object.key("customizationArn").string(var_1.as_str());
     }
-    if let Some(var_2) = &input.interaction_target {
-        object.key("interactionTarget").string(var_2.as_str());
+    if let Some(var_2) = &input.interaction_type {
+        object.key("interactionType").string(var_2.as_str());
     }
-    if let Some(var_3) = &input.accepted_character_count {
+    if let Some(var_3) = &input.interaction_target {
+        object.key("interactionTarget").string(var_3.as_str());
+    }
+    if let Some(var_4) = &input.accepted_character_count {
         object.key("acceptedCharacterCount").number(
-            #[allow(clippy::useless_conversion)]
-            ::aws_smithy_types::Number::NegInt((*var_3).into()),
-        );
-    }
-    if let Some(var_4) = &input.accepted_line_count {
-        object.key("acceptedLineCount").number(
             #[allow(clippy::useless_conversion)]
             ::aws_smithy_types::Number::NegInt((*var_4).into()),
         );
     }
-    if let Some(var_5) = &input.accepted_snippet_has_reference {
-        object.key("acceptedSnippetHasReference").boolean(*var_5);
+    if let Some(var_5) = &input.accepted_line_count {
+        object.key("acceptedLineCount").number(
+            #[allow(clippy::useless_conversion)]
+            ::aws_smithy_types::Number::NegInt((*var_5).into()),
+        );
+    }
+    if let Some(var_6) = &input.accepted_snippet_has_reference {
+        object.key("acceptedSnippetHasReference").boolean(*var_6);
+    }
+    if let Some(var_7) = &input.has_project_level_context {
+        object.key("hasProjectLevelContext").boolean(*var_7);
     }
     Ok(())
 }

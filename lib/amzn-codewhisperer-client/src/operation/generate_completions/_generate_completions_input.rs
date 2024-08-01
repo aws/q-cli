@@ -97,8 +97,8 @@ impl GenerateCompletionsInput {
 
 /// A builder for
 /// [`GenerateCompletionsInput`](crate::operation::generate_completions::GenerateCompletionsInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct GenerateCompletionsInputBuilder {
     pub(crate) file_context: ::std::option::Option<crate::types::FileContext>,
     pub(crate) max_results: ::std::option::Option<i32>,

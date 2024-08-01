@@ -38,8 +38,8 @@ impl GenerateAssistantResponseOutput {
 
 /// A builder for
 /// [`GenerateAssistantResponseOutput`](crate::operation::generate_assistant_response::GenerateAssistantResponseOutput).
-#[non_exhaustive]
 #[derive(::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct GenerateAssistantResponseOutputBuilder {
     pub(crate) generate_assistant_response_response: ::std::option::Option<
         crate::event_receiver::EventReceiver<

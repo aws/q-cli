@@ -62,8 +62,8 @@ impl ShellHistoryEntry {
 }
 
 /// A builder for [`ShellHistoryEntry`](crate::types::ShellHistoryEntry).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct ShellHistoryEntryBuilder {
     pub(crate) command: ::std::option::Option<::std::string::String>,
     pub(crate) directory: ::std::option::Option<::std::string::String>,

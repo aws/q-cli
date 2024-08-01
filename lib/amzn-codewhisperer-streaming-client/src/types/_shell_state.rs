@@ -32,8 +32,8 @@ impl ShellState {
 }
 
 /// A builder for [`ShellState`](crate::types::ShellState).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct ShellStateBuilder {
     pub(crate) shell_name: ::std::option::Option<::std::string::String>,
     pub(crate) shell_history: ::std::option::Option<::std::vec::Vec<crate::types::ShellHistoryEntry>>,

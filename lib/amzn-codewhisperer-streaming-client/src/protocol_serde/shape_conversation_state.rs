@@ -27,5 +27,8 @@ pub fn ser_conversation_state(
     {
         object.key("chatTriggerType").string(input.chat_trigger_type.as_str());
     }
+    if let Some(var_7) = &input.customization_arn {
+        object.key("customizationArn").string(var_7.as_str());
+    }
     Ok(())
 }

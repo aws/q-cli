@@ -15,5 +15,20 @@ pub fn ser_editor_state(
         crate::protocol_serde::shape_cursor_state::ser_cursor_state(&mut object_4, var_3)?;
         object_4.finish();
     }
+    if let Some(var_5) = &input.relevant_documents {
+        let mut array_6 = object.key("relevantDocuments").start_array();
+        for item_7 in var_5 {
+            {
+                #[allow(unused_mut)]
+                let mut object_8 = array_6.value().start_object();
+                crate::protocol_serde::shape_relevant_text_document::ser_relevant_text_document(&mut object_8, item_7)?;
+                object_8.finish();
+            }
+        }
+        array_6.finish();
+    }
+    if let Some(var_9) = &input.use_relevant_documents {
+        object.key("useRelevantDocuments").boolean(*var_9);
+    }
     Ok(())
 }

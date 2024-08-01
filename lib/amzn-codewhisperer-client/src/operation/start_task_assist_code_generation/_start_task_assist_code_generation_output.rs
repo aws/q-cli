@@ -39,8 +39,8 @@ impl StartTaskAssistCodeGenerationOutput {
 
 /// A builder for
 /// [`StartTaskAssistCodeGenerationOutput`](crate::operation::start_task_assist_code_generation::StartTaskAssistCodeGenerationOutput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct StartTaskAssistCodeGenerationOutputBuilder {
     pub(crate) conversation_id: ::std::option::Option<::std::string::String>,
     pub(crate) code_generation_id: ::std::option::Option<::std::string::String>,

@@ -20,8 +20,8 @@ impl DisassociateCustomizationPermissionOutput {
 
 /// A builder for
 /// [`DisassociateCustomizationPermissionOutput`](crate::operation::disassociate_customization_permission::DisassociateCustomizationPermissionOutput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct DisassociateCustomizationPermissionOutputBuilder {
     _request_id: Option<String>,
 }

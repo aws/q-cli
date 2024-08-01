@@ -30,8 +30,8 @@ impl StartTransformationInput {
 
 /// A builder for
 /// [`StartTransformationInput`](crate::operation::start_transformation::StartTransformationInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct StartTransformationInputBuilder {
     pub(crate) workspace_state: ::std::option::Option<crate::types::WorkspaceState>,
     pub(crate) transformation_spec: ::std::option::Option<crate::types::TransformationSpec>,

@@ -53,8 +53,8 @@ impl BinaryMetadataEvent {
 }
 
 /// A builder for [`BinaryMetadataEvent`](crate::types::BinaryMetadataEvent).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct BinaryMetadataEventBuilder {
     pub(crate) size: ::std::option::Option<i64>,
     pub(crate) mime_type: ::std::option::Option<::std::string::String>,

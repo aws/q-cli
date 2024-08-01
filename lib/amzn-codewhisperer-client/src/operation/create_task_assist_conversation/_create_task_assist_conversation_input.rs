@@ -15,8 +15,8 @@ impl CreateTaskAssistConversationInput {
 
 /// A builder for
 /// [`CreateTaskAssistConversationInput`](crate::operation::create_task_assist_conversation::CreateTaskAssistConversationInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct CreateTaskAssistConversationInputBuilder {}
 impl CreateTaskAssistConversationInputBuilder {
     /// Consumes the builder and constructs a

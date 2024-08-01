@@ -22,6 +22,7 @@ pub use crate::types::_code_scan_remediations_event::CodeScanRemediationsEvent;
 pub use crate::types::_code_scan_remediations_event_type::CodeScanRemediationsEventType;
 pub use crate::types::_completion::Completion;
 pub use crate::types::_completion_type::CompletionType;
+pub use crate::types::_console_state::ConsoleState;
 pub use crate::types::_content_checksum_type::ContentChecksumType;
 pub use crate::types::_context_truncation_scheme::ContextTruncationScheme;
 pub use crate::types::_conversation_state::ConversationState;
@@ -34,6 +35,7 @@ pub use crate::types::_document_symbol::DocumentSymbol;
 pub use crate::types::_editor_state::EditorState;
 pub use crate::types::_env_state::EnvState;
 pub use crate::types::_environment_variable::EnvironmentVariable;
+pub use crate::types::_feature_dev_event::FeatureDevEvent;
 pub use crate::types::_feature_evaluation::FeatureEvaluation;
 pub use crate::types::_feature_value::FeatureValue;
 pub use crate::types::_file_context::FileContext;
@@ -50,6 +52,7 @@ pub use crate::types::_range::Range;
 pub use crate::types::_recommendations_with_references_preference::RecommendationsWithReferencesPreference;
 pub use crate::types::_reference::Reference;
 pub use crate::types::_reference_tracker_configuration::ReferenceTrackerConfiguration;
+pub use crate::types::_relevant_text_document::RelevantTextDocument;
 pub use crate::types::_runtime_diagnostic::RuntimeDiagnostic;
 pub use crate::types::_shell_history_entry::ShellHistoryEntry;
 pub use crate::types::_shell_state::ShellState;
@@ -58,6 +61,8 @@ pub use crate::types::_suggestion_state::SuggestionState;
 pub use crate::types::_supplemental_context::SupplementalContext;
 pub use crate::types::_supplementary_web_link::SupplementaryWebLink;
 pub use crate::types::_symbol_type::SymbolType;
+pub use crate::types::_task_assist_plan_step::TaskAssistPlanStep;
+pub use crate::types::_task_assist_plan_step_action::TaskAssistPlanStepAction;
 pub use crate::types::_task_assist_planning_upload_context::TaskAssistPlanningUploadContext;
 pub use crate::types::_telemetry_event::TelemetryEvent;
 pub use crate::types::_terminal_user_interaction_event::TerminalUserInteractionEvent;
@@ -92,6 +97,7 @@ pub use crate::types::_user_input_message::UserInputMessage;
 pub use crate::types::_user_input_message_context::UserInputMessageContext;
 pub use crate::types::_user_intent::UserIntent;
 pub use crate::types::_user_modification_event::UserModificationEvent;
+pub use crate::types::_user_settings::UserSettings;
 pub use crate::types::_user_trigger_decision_event::UserTriggerDecisionEvent;
 pub use crate::types::_validation_exception_reason::ValidationExceptionReason;
 pub use crate::types::_workspace_state::WorkspaceState;
@@ -142,6 +148,8 @@ mod _completion;
 
 mod _completion_type;
 
+mod _console_state;
+
 mod _content_checksum_type;
 
 mod _context_truncation_scheme;
@@ -165,6 +173,8 @@ mod _editor_state;
 mod _env_state;
 
 mod _environment_variable;
+
+mod _feature_dev_event;
 
 mod _feature_evaluation;
 
@@ -198,6 +208,8 @@ mod _reference;
 
 mod _reference_tracker_configuration;
 
+mod _relevant_text_document;
+
 mod _runtime_diagnostic;
 
 mod _shell_history_entry;
@@ -213,6 +225,10 @@ mod _supplemental_context;
 mod _supplementary_web_link;
 
 mod _symbol_type;
+
+mod _task_assist_plan_step;
+
+mod _task_assist_plan_step_action;
 
 mod _task_assist_planning_upload_context;
 
@@ -281,6 +297,8 @@ mod _user_input_message_context;
 mod _user_intent;
 
 mod _user_modification_event;
+
+mod _user_settings;
 
 mod _user_trigger_decision_event;
 

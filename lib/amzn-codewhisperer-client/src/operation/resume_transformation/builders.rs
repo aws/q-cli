@@ -47,7 +47,7 @@ impl
     }
 }
 impl ResumeTransformationFluentBuilder {
-    /// Creates a new `ResumeTransformation`.
+    /// Creates a new `ResumeTransformationFluentBuilder`.
     pub(crate) fn new(handle: ::std::sync::Arc<crate::client::Handle>) -> Self {
         Self {
             handle,

@@ -28,8 +28,8 @@ impl GitState {
 }
 
 /// A builder for [`GitState`](crate::types::GitState).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct GitStateBuilder {
     pub(crate) status: ::std::option::Option<::std::string::String>,
 }

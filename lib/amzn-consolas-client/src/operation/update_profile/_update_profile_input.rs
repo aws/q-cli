@@ -15,6 +15,8 @@ pub struct UpdateProfileInput {
     pub kms_key_arn: ::std::option::Option<::std::string::String>,
     #[allow(missing_docs)] // documentation missing in model
     pub resource_policy: ::std::option::Option<crate::types::ResourcePolicy>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub target_profile_type: ::std::option::Option<crate::types::ProfileType>,
 }
 impl UpdateProfileInput {
     #[allow(missing_docs)] // documentation missing in model
@@ -50,6 +52,11 @@ impl UpdateProfileInput {
     pub fn resource_policy(&self) -> ::std::option::Option<&crate::types::ResourcePolicy> {
         self.resource_policy.as_ref()
     }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn target_profile_type(&self) -> ::std::option::Option<&crate::types::ProfileType> {
+        self.target_profile_type.as_ref()
+    }
 }
 impl UpdateProfileInput {
     /// Creates a new builder-style object to manufacture
@@ -60,8 +67,8 @@ impl UpdateProfileInput {
 }
 
 /// A builder for [`UpdateProfileInput`](crate::operation::update_profile::UpdateProfileInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct UpdateProfileInputBuilder {
     pub(crate) profile_arn: ::std::option::Option<::std::string::String>,
     pub(crate) profile_name: ::std::option::Option<::std::string::String>,
@@ -69,6 +76,7 @@ pub struct UpdateProfileInputBuilder {
     pub(crate) active_functionalities: ::std::option::Option<::std::vec::Vec<crate::types::FunctionalityName>>,
     pub(crate) kms_key_arn: ::std::option::Option<::std::string::String>,
     pub(crate) resource_policy: ::std::option::Option<crate::types::ResourcePolicy>,
+    pub(crate) target_profile_type: ::std::option::Option<crate::types::ProfileType>,
 }
 impl UpdateProfileInputBuilder {
     #[allow(missing_docs)] // documentation missing in model
@@ -189,6 +197,23 @@ impl UpdateProfileInputBuilder {
         &self.resource_policy
     }
 
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn target_profile_type(mut self, input: crate::types::ProfileType) -> Self {
+        self.target_profile_type = ::std::option::Option::Some(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_target_profile_type(mut self, input: ::std::option::Option<crate::types::ProfileType>) -> Self {
+        self.target_profile_type = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_target_profile_type(&self) -> &::std::option::Option<crate::types::ProfileType> {
+        &self.target_profile_type
+    }
+
     /// Consumes the builder and constructs a
     /// [`UpdateProfileInput`](crate::operation::update_profile::UpdateProfileInput).
     pub fn build(
@@ -204,6 +229,7 @@ impl UpdateProfileInputBuilder {
             active_functionalities: self.active_functionalities,
             kms_key_arn: self.kms_key_arn,
             resource_policy: self.resource_policy,
+            target_profile_type: self.target_profile_type,
         })
     }
 }

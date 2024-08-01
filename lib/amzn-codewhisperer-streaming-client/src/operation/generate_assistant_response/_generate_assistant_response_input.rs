@@ -30,8 +30,8 @@ impl GenerateAssistantResponseInput {
 
 /// A builder for
 /// [`GenerateAssistantResponseInput`](crate::operation::generate_assistant_response::GenerateAssistantResponseInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct GenerateAssistantResponseInputBuilder {
     pub(crate) conversation_state: ::std::option::Option<crate::types::ConversationState>,
     pub(crate) profile_arn: ::std::option::Option<::std::string::String>,

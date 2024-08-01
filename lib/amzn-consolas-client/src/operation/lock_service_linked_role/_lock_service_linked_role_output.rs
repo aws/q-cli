@@ -44,8 +44,8 @@ impl LockServiceLinkedRoleOutput {
 
 /// A builder for
 /// [`LockServiceLinkedRoleOutput`](crate::operation::lock_service_linked_role::LockServiceLinkedRoleOutput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct LockServiceLinkedRoleOutputBuilder {
     pub(crate) can_be_deleted: ::std::option::Option<bool>,
     pub(crate) reason_of_failure: ::std::option::Option<::std::string::String>,

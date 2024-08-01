@@ -30,8 +30,8 @@ impl ResumeTransformationInput {
 
 /// A builder for
 /// [`ResumeTransformationInput`](crate::operation::resume_transformation::ResumeTransformationInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct ResumeTransformationInputBuilder {
     pub(crate) transformation_job_id: ::std::option::Option<::std::string::String>,
     pub(crate) user_action_status: ::std::option::Option<crate::types::TransformationUserActionStatus>,

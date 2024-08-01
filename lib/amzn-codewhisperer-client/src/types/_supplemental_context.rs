@@ -38,8 +38,8 @@ impl SupplementalContext {
 }
 
 /// A builder for [`SupplementalContext`](crate::types::SupplementalContext).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct SupplementalContextBuilder {
     pub(crate) file_path: ::std::option::Option<::std::string::String>,
     pub(crate) content: ::std::option::Option<::std::string::String>,

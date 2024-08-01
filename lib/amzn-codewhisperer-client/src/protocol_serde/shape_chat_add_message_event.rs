@@ -9,65 +9,71 @@ pub fn ser_chat_add_message_event(
     {
         object.key("messageId").string(input.message_id.as_str());
     }
-    if let Some(var_1) = &input.user_intent {
-        object.key("userIntent").string(var_1.as_str());
+    if let Some(var_1) = &input.customization_arn {
+        object.key("customizationArn").string(var_1.as_str());
     }
-    if let Some(var_2) = &input.has_code_snippet {
-        object.key("hasCodeSnippet").boolean(*var_2);
+    if let Some(var_2) = &input.user_intent {
+        object.key("userIntent").string(var_2.as_str());
     }
-    if let Some(var_3) = &input.programming_language {
+    if let Some(var_3) = &input.has_code_snippet {
+        object.key("hasCodeSnippet").boolean(*var_3);
+    }
+    if let Some(var_4) = &input.programming_language {
         #[allow(unused_mut)]
-        let mut object_4 = object.key("programmingLanguage").start_object();
-        crate::protocol_serde::shape_programming_language::ser_programming_language(&mut object_4, var_3)?;
-        object_4.finish();
+        let mut object_5 = object.key("programmingLanguage").start_object();
+        crate::protocol_serde::shape_programming_language::ser_programming_language(&mut object_5, var_4)?;
+        object_5.finish();
     }
-    if let Some(var_5) = &input.active_editor_total_characters {
+    if let Some(var_6) = &input.active_editor_total_characters {
         object.key("activeEditorTotalCharacters").number(
             #[allow(clippy::useless_conversion)]
-            ::aws_smithy_types::Number::NegInt((*var_5).into()),
+            ::aws_smithy_types::Number::NegInt((*var_6).into()),
         );
     }
-    if let Some(var_6) = &input.time_to_first_chunk_milliseconds {
+    if let Some(var_7) = &input.time_to_first_chunk_milliseconds {
         object.key("timeToFirstChunkMilliseconds").number(
             #[allow(clippy::useless_conversion)]
-            ::aws_smithy_types::Number::Float((*var_6).into()),
+            ::aws_smithy_types::Number::Float((*var_7).into()),
         );
     }
-    if let Some(var_7) = &input.time_between_chunks {
-        let mut array_8 = object.key("timeBetweenChunks").start_array();
-        for item_9 in var_7 {
+    if let Some(var_8) = &input.time_between_chunks {
+        let mut array_9 = object.key("timeBetweenChunks").start_array();
+        for item_10 in var_8 {
             {
-                array_8.value().number(
+                array_9.value().number(
                     #[allow(clippy::useless_conversion)]
-                    ::aws_smithy_types::Number::Float((*item_9).into()),
+                    ::aws_smithy_types::Number::Float((*item_10).into()),
                 );
             }
         }
-        array_8.finish();
+        array_9.finish();
     }
-    if let Some(var_10) = &input.full_responselatency {
+    if let Some(var_11) = &input.full_responselatency {
         object.key("fullResponselatency").number(
             #[allow(clippy::useless_conversion)]
-            ::aws_smithy_types::Number::Float((*var_10).into()),
+            ::aws_smithy_types::Number::Float((*var_11).into()),
         );
     }
-    if let Some(var_11) = &input.request_length {
+    if let Some(var_12) = &input.request_length {
         object.key("requestLength").number(
-            #[allow(clippy::useless_conversion)]
-            ::aws_smithy_types::Number::NegInt((*var_11).into()),
-        );
-    }
-    if let Some(var_12) = &input.response_length {
-        object.key("responseLength").number(
             #[allow(clippy::useless_conversion)]
             ::aws_smithy_types::Number::NegInt((*var_12).into()),
         );
     }
-    if let Some(var_13) = &input.number_of_code_blocks {
-        object.key("numberOfCodeBlocks").number(
+    if let Some(var_13) = &input.response_length {
+        object.key("responseLength").number(
             #[allow(clippy::useless_conversion)]
             ::aws_smithy_types::Number::NegInt((*var_13).into()),
         );
+    }
+    if let Some(var_14) = &input.number_of_code_blocks {
+        object.key("numberOfCodeBlocks").number(
+            #[allow(clippy::useless_conversion)]
+            ::aws_smithy_types::Number::NegInt((*var_14).into()),
+        );
+    }
+    if let Some(var_15) = &input.has_project_level_context {
+        object.key("hasProjectLevelContext").boolean(*var_15);
     }
     Ok(())
 }

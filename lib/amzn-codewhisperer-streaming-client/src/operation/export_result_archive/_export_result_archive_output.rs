@@ -37,8 +37,8 @@ impl ExportResultArchiveOutput {
 
 /// A builder for
 /// [`ExportResultArchiveOutput`](crate::operation::export_result_archive::ExportResultArchiveOutput).
-#[non_exhaustive]
 #[derive(::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct ExportResultArchiveOutputBuilder {
     pub(crate) body: ::std::option::Option<
         crate::event_receiver::EventReceiver<

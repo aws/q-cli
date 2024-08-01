@@ -31,8 +31,8 @@ impl AllowVendedLogDeliveryForResourceInput {
 
 /// A builder for
 /// [`AllowVendedLogDeliveryForResourceInput`](crate::operation::allow_vended_log_delivery_for_resource::AllowVendedLogDeliveryForResourceInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct AllowVendedLogDeliveryForResourceInputBuilder {
     pub(crate) resource_arn_being_authorized: ::std::option::Option<::std::string::String>,
     pub(crate) delivery_source_arn: ::std::option::Option<::std::string::String>,

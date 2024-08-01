@@ -22,8 +22,8 @@ impl GetCustomizationInput {
 
 /// A builder for
 /// [`GetCustomizationInput`](crate::operation::get_customization::GetCustomizationInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct GetCustomizationInputBuilder {
     pub(crate) identifier: ::std::option::Option<::std::string::String>,
 }

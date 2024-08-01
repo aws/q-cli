@@ -36,5 +36,8 @@ pub fn ser_update_profile_input_input(
         crate::protocol_serde::shape_resource_policy::ser_resource_policy(&mut object_10, var_9)?;
         object_10.finish();
     }
+    if let Some(var_11) = &input.target_profile_type {
+        object.key("targetProfileType").string(var_11.as_str());
+    }
     Ok(())
 }

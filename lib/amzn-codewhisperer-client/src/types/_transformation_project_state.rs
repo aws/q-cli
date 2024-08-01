@@ -35,8 +35,8 @@ impl TransformationProjectState {
 }
 
 /// A builder for [`TransformationProjectState`](crate::types::TransformationProjectState).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct TransformationProjectStateBuilder {
     pub(crate) language: ::std::option::Option<crate::types::TransformationLanguage>,
     pub(crate) runtime_env: ::std::option::Option<crate::types::TransformationRuntimeEnv>,

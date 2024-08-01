@@ -55,8 +55,8 @@ impl FileContext {
 }
 
 /// A builder for [`FileContext`](crate::types::FileContext).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct FileContextBuilder {
     pub(crate) left_file_content: ::std::option::Option<::std::string::String>,
     pub(crate) right_file_content: ::std::option::Option<::std::string::String>,

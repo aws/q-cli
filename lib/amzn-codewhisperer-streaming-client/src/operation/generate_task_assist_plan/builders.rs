@@ -47,7 +47,7 @@ impl
     }
 }
 impl GenerateTaskAssistPlanFluentBuilder {
-    /// Creates a new `GenerateTaskAssistPlan`.
+    /// Creates a new `GenerateTaskAssistPlanFluentBuilder`.
     pub(crate) fn new(handle: ::std::sync::Arc<crate::client::Handle>) -> Self {
         Self {
             handle,

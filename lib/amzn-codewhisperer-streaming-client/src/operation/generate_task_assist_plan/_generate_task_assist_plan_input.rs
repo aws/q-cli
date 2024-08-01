@@ -30,8 +30,8 @@ impl GenerateTaskAssistPlanInput {
 
 /// A builder for
 /// [`GenerateTaskAssistPlanInput`](crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct GenerateTaskAssistPlanInputBuilder {
     pub(crate) conversation_state: ::std::option::Option<crate::types::ConversationState>,
     pub(crate) workspace_state: ::std::option::Option<crate::types::WorkspaceState>,

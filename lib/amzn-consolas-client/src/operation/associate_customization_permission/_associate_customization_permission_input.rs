@@ -31,8 +31,8 @@ impl AssociateCustomizationPermissionInput {
 
 /// A builder for
 /// [`AssociateCustomizationPermissionInput`](crate::operation::associate_customization_permission::AssociateCustomizationPermissionInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct AssociateCustomizationPermissionInputBuilder {
     pub(crate) identifier: ::std::option::Option<::std::string::String>,
     pub(crate) permission: ::std::option::Option<crate::types::CustomizationPermission>,

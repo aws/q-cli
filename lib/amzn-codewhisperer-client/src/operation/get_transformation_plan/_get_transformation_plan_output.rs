@@ -29,8 +29,8 @@ impl GetTransformationPlanOutput {
 
 /// A builder for
 /// [`GetTransformationPlanOutput`](crate::operation::get_transformation_plan::GetTransformationPlanOutput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct GetTransformationPlanOutputBuilder {
     pub(crate) transformation_plan: ::std::option::Option<crate::types::TransformationPlan>,
     _request_id: Option<String>,

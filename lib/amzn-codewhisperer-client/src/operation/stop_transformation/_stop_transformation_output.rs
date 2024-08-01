@@ -29,8 +29,8 @@ impl StopTransformationOutput {
 
 /// A builder for
 /// [`StopTransformationOutput`](crate::operation::stop_transformation::StopTransformationOutput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct StopTransformationOutputBuilder {
     pub(crate) transformation_status: ::std::option::Option<crate::types::TransformationStatus>,
     _request_id: Option<String>,

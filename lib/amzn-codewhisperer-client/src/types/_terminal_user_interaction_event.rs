@@ -79,8 +79,8 @@ impl TerminalUserInteractionEvent {
 }
 
 /// A builder for [`TerminalUserInteractionEvent`](crate::types::TerminalUserInteractionEvent).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct TerminalUserInteractionEventBuilder {
     pub(crate) terminal_user_interaction_event_type:
         ::std::option::Option<crate::types::TerminalUserInteractionEventType>,

@@ -23,8 +23,8 @@ impl StopTransformationInput {
 
 /// A builder for
 /// [`StopTransformationInput`](crate::operation::stop_transformation::StopTransformationInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct StopTransformationInputBuilder {
     pub(crate) transformation_job_id: ::std::option::Option<::std::string::String>,
 }

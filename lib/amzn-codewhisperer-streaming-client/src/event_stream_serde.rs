@@ -194,6 +194,31 @@ impl ::aws_smithy_eventstream::frame::UnmarshallMessage for ChatResponseStreamUn
                         crate::types::ChatResponseStream::FollowupPromptEvent(parsed),
                     ))
                 },
+                "codeEvent" => {
+                    let parsed = crate::protocol_serde::shape_code_event::de_code_event_payload(&message.payload()[..])
+                        .map_err(|err| {
+                            ::aws_smithy_eventstream::error::Error::unmarshalling(format!(
+                                "failed to unmarshall CodeEvent: {}",
+                                err
+                            ))
+                        })?;
+                    Ok(::aws_smithy_eventstream::frame::UnmarshalledMessage::Event(
+                        crate::types::ChatResponseStream::CodeEvent(parsed),
+                    ))
+                },
+                "intentsEvent" => {
+                    let parsed =
+                        crate::protocol_serde::shape_intents_event::de_intents_event_payload(&message.payload()[..])
+                            .map_err(|err| {
+                                ::aws_smithy_eventstream::error::Error::unmarshalling(format!(
+                                    "failed to unmarshall IntentsEvent: {}",
+                                    err
+                                ))
+                            })?;
+                    Ok(::aws_smithy_eventstream::frame::UnmarshalledMessage::Event(
+                        crate::types::ChatResponseStream::IntentsEvent(parsed),
+                    ))
+                },
                 "invalidStateEvent" => {
                     let parsed = crate::protocol_serde::shape_invalid_state_event::de_invalid_state_event_payload(
                         &message.payload()[..],

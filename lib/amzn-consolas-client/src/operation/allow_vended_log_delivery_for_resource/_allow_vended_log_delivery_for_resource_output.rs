@@ -28,8 +28,8 @@ impl AllowVendedLogDeliveryForResourceOutput {
 
 /// A builder for
 /// [`AllowVendedLogDeliveryForResourceOutput`](crate::operation::allow_vended_log_delivery_for_resource::AllowVendedLogDeliveryForResourceOutput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct AllowVendedLogDeliveryForResourceOutputBuilder {
     pub(crate) message: ::std::option::Option<::std::string::String>,
     _request_id: Option<String>,

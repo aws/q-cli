@@ -11,6 +11,8 @@ pub struct SendTelemetryEventInput {
     pub opt_out_preference: ::std::option::Option<crate::types::OptOutPreference>,
     #[allow(missing_docs)] // documentation missing in model
     pub user_context: ::std::option::Option<crate::types::UserContext>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub profile_arn: ::std::option::Option<::std::string::String>,
 }
 impl SendTelemetryEventInput {
     #[allow(missing_docs)] // documentation missing in model
@@ -32,6 +34,11 @@ impl SendTelemetryEventInput {
     pub fn user_context(&self) -> ::std::option::Option<&crate::types::UserContext> {
         self.user_context.as_ref()
     }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn profile_arn(&self) -> ::std::option::Option<&str> {
+        self.profile_arn.as_deref()
+    }
 }
 impl SendTelemetryEventInput {
     /// Creates a new builder-style object to manufacture
@@ -43,13 +50,14 @@ impl SendTelemetryEventInput {
 
 /// A builder for
 /// [`SendTelemetryEventInput`](crate::operation::send_telemetry_event::SendTelemetryEventInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct SendTelemetryEventInputBuilder {
     pub(crate) client_token: ::std::option::Option<::std::string::String>,
     pub(crate) telemetry_event: ::std::option::Option<crate::types::TelemetryEvent>,
     pub(crate) opt_out_preference: ::std::option::Option<crate::types::OptOutPreference>,
     pub(crate) user_context: ::std::option::Option<crate::types::UserContext>,
+    pub(crate) profile_arn: ::std::option::Option<::std::string::String>,
 }
 impl SendTelemetryEventInputBuilder {
     #[allow(missing_docs)] // documentation missing in model
@@ -121,6 +129,23 @@ impl SendTelemetryEventInputBuilder {
         &self.user_context
     }
 
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn profile_arn(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
+        self.profile_arn = ::std::option::Option::Some(input.into());
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_profile_arn(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
+        self.profile_arn = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_profile_arn(&self) -> &::std::option::Option<::std::string::String> {
+        &self.profile_arn
+    }
+
     /// Consumes the builder and constructs a
     /// [`SendTelemetryEventInput`](crate::operation::send_telemetry_event::SendTelemetryEventInput).
     pub fn build(
@@ -134,6 +159,7 @@ impl SendTelemetryEventInputBuilder {
             telemetry_event: self.telemetry_event,
             opt_out_preference: self.opt_out_preference,
             user_context: self.user_context,
+            profile_arn: self.profile_arn,
         })
     }
 }

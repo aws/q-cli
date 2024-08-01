@@ -45,8 +45,8 @@ impl ListCodeAnalysisFindingsOutput {
 
 /// A builder for
 /// [`ListCodeAnalysisFindingsOutput`](crate::operation::list_code_analysis_findings::ListCodeAnalysisFindingsOutput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct ListCodeAnalysisFindingsOutputBuilder {
     pub(crate) next_token: ::std::option::Option<::std::string::String>,
     pub(crate) code_analysis_findings: ::std::option::Option<::std::string::String>,

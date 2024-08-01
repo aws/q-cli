@@ -10,6 +10,10 @@ pub struct GetTaskAssistCodeGenerationOutput {
     pub code_generation_status: crate::types::CodeGenerationStatus,
     /// Detailed message about the code generation status
     pub code_generation_status_detail: ::std::option::Option<::std::string::String>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub code_generation_remaining_iteration_count: ::std::option::Option<i32>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub code_generation_total_iteration_count: ::std::option::Option<i32>,
     _request_id: Option<String>,
 }
 impl GetTaskAssistCodeGenerationOutput {
@@ -28,6 +32,16 @@ impl GetTaskAssistCodeGenerationOutput {
     pub fn code_generation_status_detail(&self) -> ::std::option::Option<&str> {
         self.code_generation_status_detail.as_deref()
     }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn code_generation_remaining_iteration_count(&self) -> ::std::option::Option<i32> {
+        self.code_generation_remaining_iteration_count
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn code_generation_total_iteration_count(&self) -> ::std::option::Option<i32> {
+        self.code_generation_total_iteration_count
+    }
 }
 impl ::std::fmt::Debug for GetTaskAssistCodeGenerationOutput {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
@@ -35,6 +49,14 @@ impl ::std::fmt::Debug for GetTaskAssistCodeGenerationOutput {
         formatter.field("conversation_id", &self.conversation_id);
         formatter.field("code_generation_status", &self.code_generation_status);
         formatter.field("code_generation_status_detail", &"*** Sensitive Data Redacted ***");
+        formatter.field(
+            "code_generation_remaining_iteration_count",
+            &self.code_generation_remaining_iteration_count,
+        );
+        formatter.field(
+            "code_generation_total_iteration_count",
+            &self.code_generation_total_iteration_count,
+        );
         formatter.field("_request_id", &self._request_id);
         formatter.finish()
     }
@@ -55,12 +77,14 @@ impl GetTaskAssistCodeGenerationOutput {
 
 /// A builder for
 /// [`GetTaskAssistCodeGenerationOutput`](crate::operation::get_task_assist_code_generation::GetTaskAssistCodeGenerationOutput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct GetTaskAssistCodeGenerationOutputBuilder {
     pub(crate) conversation_id: ::std::option::Option<::std::string::String>,
     pub(crate) code_generation_status: ::std::option::Option<crate::types::CodeGenerationStatus>,
     pub(crate) code_generation_status_detail: ::std::option::Option<::std::string::String>,
+    pub(crate) code_generation_remaining_iteration_count: ::std::option::Option<i32>,
+    pub(crate) code_generation_total_iteration_count: ::std::option::Option<i32>,
     _request_id: Option<String>,
 }
 impl GetTaskAssistCodeGenerationOutputBuilder {
@@ -120,6 +144,40 @@ impl GetTaskAssistCodeGenerationOutputBuilder {
         &self.code_generation_status_detail
     }
 
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn code_generation_remaining_iteration_count(mut self, input: i32) -> Self {
+        self.code_generation_remaining_iteration_count = ::std::option::Option::Some(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_code_generation_remaining_iteration_count(mut self, input: ::std::option::Option<i32>) -> Self {
+        self.code_generation_remaining_iteration_count = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_code_generation_remaining_iteration_count(&self) -> &::std::option::Option<i32> {
+        &self.code_generation_remaining_iteration_count
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn code_generation_total_iteration_count(mut self, input: i32) -> Self {
+        self.code_generation_total_iteration_count = ::std::option::Option::Some(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_code_generation_total_iteration_count(mut self, input: ::std::option::Option<i32>) -> Self {
+        self.code_generation_total_iteration_count = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_code_generation_total_iteration_count(&self) -> &::std::option::Option<i32> {
+        &self.code_generation_total_iteration_count
+    }
+
     pub(crate) fn _request_id(mut self, request_id: impl Into<String>) -> Self {
         self._request_id = Some(request_id.into());
         self
@@ -155,6 +213,8 @@ impl GetTaskAssistCodeGenerationOutputBuilder {
                 )
             })?,
             code_generation_status_detail: self.code_generation_status_detail,
+            code_generation_remaining_iteration_count: self.code_generation_remaining_iteration_count,
+            code_generation_total_iteration_count: self.code_generation_total_iteration_count,
             _request_id: self._request_id,
         })
     }
@@ -165,6 +225,14 @@ impl ::std::fmt::Debug for GetTaskAssistCodeGenerationOutputBuilder {
         formatter.field("conversation_id", &self.conversation_id);
         formatter.field("code_generation_status", &self.code_generation_status);
         formatter.field("code_generation_status_detail", &"*** Sensitive Data Redacted ***");
+        formatter.field(
+            "code_generation_remaining_iteration_count",
+            &self.code_generation_remaining_iteration_count,
+        );
+        formatter.field(
+            "code_generation_total_iteration_count",
+            &self.code_generation_total_iteration_count,
+        );
         formatter.field("_request_id", &self._request_id);
         formatter.finish()
     }

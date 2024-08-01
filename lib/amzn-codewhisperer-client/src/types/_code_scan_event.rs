@@ -43,8 +43,8 @@ impl CodeScanEvent {
 }
 
 /// A builder for [`CodeScanEvent`](crate::types::CodeScanEvent).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct CodeScanEventBuilder {
     pub(crate) programming_language: ::std::option::Option<crate::types::ProgrammingLanguage>,
     pub(crate) code_scan_job_id: ::std::option::Option<::std::string::String>,

@@ -37,8 +37,8 @@ impl GenerateTaskAssistPlanOutput {
 
 /// A builder for
 /// [`GenerateTaskAssistPlanOutput`](crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanOutput).
-#[non_exhaustive]
 #[derive(::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct GenerateTaskAssistPlanOutputBuilder {
     pub(crate) planning_response_stream: ::std::option::Option<
         crate::event_receiver::EventReceiver<

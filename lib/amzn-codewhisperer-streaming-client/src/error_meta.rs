@@ -9,6 +9,8 @@ pub enum Error {
     /// This exception is thrown when the action to perform could not be completed because the
     /// resource is in a conflicting state.
     ConflictError(crate::types::error::ConflictError),
+    /// This exception is translated to a 204 as it succeeded the IAM Auth.
+    DryRunOperationError(crate::types::error::DryRunOperationError),
     /// This exception is thrown when an unexpected error occurred during the processing of a
     /// request.
     InternalServerError(crate::types::error::InternalServerError),
@@ -38,6 +40,7 @@ impl ::std::fmt::Display for Error {
         match self {
             Error::AccessDeniedError(inner) => inner.fmt(f),
             Error::ConflictError(inner) => inner.fmt(f),
+            Error::DryRunOperationError(inner) => inner.fmt(f),
             Error::InternalServerError(inner) => inner.fmt(f),
             Error::ResourceNotFoundError(inner) => inner.fmt(f),
             Error::ServiceQuotaExceededError(inner) => inner.fmt(f),
@@ -68,6 +71,7 @@ impl ::aws_smithy_types::error::metadata::ProvideErrorMetadata for Error {
         match self {
             Self::AccessDeniedError(inner) => inner.meta(),
             Self::ConflictError(inner) => inner.meta(),
+            Self::DryRunOperationError(inner) => inner.meta(),
             Self::InternalServerError(inner) => inner.meta(),
             Self::ResourceNotFoundError(inner) => inner.meta(),
             Self::ServiceQuotaExceededError(inner) => inner.meta(),
@@ -230,6 +234,48 @@ impl From<crate::operation::generate_task_assist_plan::GenerateTaskAssistPlanErr
         }
     }
 }
+impl<R> From<::aws_smithy_runtime_api::client::result::SdkError<crate::operation::send_message::SendMessageError, R>>
+    for Error
+where
+    R: Send + Sync + std::fmt::Debug + 'static,
+{
+    fn from(
+        err: ::aws_smithy_runtime_api::client::result::SdkError<crate::operation::send_message::SendMessageError, R>,
+    ) -> Self {
+        match err {
+            ::aws_smithy_runtime_api::client::result::SdkError::ServiceError(context) => Self::from(context.into_err()),
+            _ => Error::Unhandled(crate::error::sealed_unhandled::Unhandled {
+                meta: ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(&err).clone(),
+                source: err.into(),
+            }),
+        }
+    }
+}
+impl From<crate::operation::send_message::SendMessageError> for Error {
+    fn from(err: crate::operation::send_message::SendMessageError) -> Self {
+        match err {
+            crate::operation::send_message::SendMessageError::ServiceQuotaExceededError(inner) => {
+                Error::ServiceQuotaExceededError(inner)
+            },
+            crate::operation::send_message::SendMessageError::DryRunOperationError(inner) => {
+                Error::DryRunOperationError(inner)
+            },
+            crate::operation::send_message::SendMessageError::ThrottlingError(inner) => Error::ThrottlingError(inner),
+            crate::operation::send_message::SendMessageError::ConflictError(inner) => Error::ConflictError(inner),
+            crate::operation::send_message::SendMessageError::ValidationError(inner) => Error::ValidationError(inner),
+            crate::operation::send_message::SendMessageError::InternalServerError(inner) => {
+                Error::InternalServerError(inner)
+            },
+            crate::operation::send_message::SendMessageError::ResourceNotFoundError(inner) => {
+                Error::ResourceNotFoundError(inner)
+            },
+            crate::operation::send_message::SendMessageError::AccessDeniedError(inner) => {
+                Error::AccessDeniedError(inner)
+            },
+            crate::operation::send_message::SendMessageError::Unhandled(inner) => Error::Unhandled(inner),
+        }
+    }
+}
 impl<R> From<::aws_smithy_runtime_api::client::result::SdkError<crate::types::error::ResultArchiveStreamError, R>>
     for Error
 where
@@ -289,6 +335,7 @@ impl ::std::error::Error for Error {
         match self {
             Error::AccessDeniedError(inner) => inner.source(),
             Error::ConflictError(inner) => inner.source(),
+            Error::DryRunOperationError(inner) => inner.source(),
             Error::InternalServerError(inner) => inner.source(),
             Error::ResourceNotFoundError(inner) => inner.source(),
             Error::ServiceQuotaExceededError(inner) => inner.source(),
@@ -303,6 +350,7 @@ impl ::aws_types::request_id::RequestId for Error {
         match self {
             Self::AccessDeniedError(e) => e.request_id(),
             Self::ConflictError(e) => e.request_id(),
+            Self::DryRunOperationError(e) => e.request_id(),
             Self::InternalServerError(e) => e.request_id(),
             Self::ResourceNotFoundError(e) => e.request_id(),
             Self::ServiceQuotaExceededError(e) => e.request_id(),

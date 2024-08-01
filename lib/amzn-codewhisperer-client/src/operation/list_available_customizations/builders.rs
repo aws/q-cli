@@ -45,7 +45,7 @@ impl
     }
 }
 impl ListAvailableCustomizationsFluentBuilder {
-    /// Creates a new `ListAvailableCustomizations`.
+    /// Creates a new `ListAvailableCustomizationsFluentBuilder`.
     pub(crate) fn new(handle: ::std::sync::Arc<crate::client::Handle>) -> Self {
         Self {
             handle,

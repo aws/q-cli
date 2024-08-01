@@ -47,7 +47,7 @@ impl
     }
 }
 impl CreateArtifactUploadUrlFluentBuilder {
-    /// Creates a new `CreateArtifactUploadUrl`.
+    /// Creates a new `CreateArtifactUploadUrlFluentBuilder`.
     pub(crate) fn new(handle: ::std::sync::Arc<crate::client::Handle>) -> Self {
         Self {
             handle,

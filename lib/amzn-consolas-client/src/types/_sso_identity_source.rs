@@ -29,8 +29,8 @@ impl SsoIdentitySource {
 }
 
 /// A builder for [`SsoIdentitySource`](crate::types::SsoIdentitySource).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct SsoIdentitySourceBuilder {
     pub(crate) instance_arn: ::std::option::Option<::std::string::String>,
     pub(crate) sso_region: ::std::option::Option<::std::string::String>,

@@ -57,8 +57,8 @@ impl TextDocument {
 }
 
 /// A builder for [`TextDocument`](crate::types::TextDocument).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct TextDocumentBuilder {
     pub(crate) relative_file_path: ::std::option::Option<::std::string::String>,
     pub(crate) programming_language: ::std::option::Option<crate::types::ProgrammingLanguage>,

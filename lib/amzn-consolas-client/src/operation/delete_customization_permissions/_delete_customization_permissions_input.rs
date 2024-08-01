@@ -23,8 +23,8 @@ impl DeleteCustomizationPermissionsInput {
 
 /// A builder for
 /// [`DeleteCustomizationPermissionsInput`](crate::operation::delete_customization_permissions::DeleteCustomizationPermissionsInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct DeleteCustomizationPermissionsInputBuilder {
     pub(crate) identifier: ::std::option::Option<::std::string::String>,
 }

@@ -86,8 +86,8 @@ impl CodeScanRemediationsEvent {
 }
 
 /// A builder for [`CodeScanRemediationsEvent`](crate::types::CodeScanRemediationsEvent).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct CodeScanRemediationsEventBuilder {
     pub(crate) programming_language: ::std::option::Option<crate::types::ProgrammingLanguage>,
     pub(crate) code_scan_remediations_event_type: ::std::option::Option<crate::types::CodeScanRemediationsEventType>,

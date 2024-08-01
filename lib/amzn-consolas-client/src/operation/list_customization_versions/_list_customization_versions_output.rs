@@ -37,8 +37,8 @@ impl ListCustomizationVersionsOutput {
 
 /// A builder for
 /// [`ListCustomizationVersionsOutput`](crate::operation::list_customization_versions::ListCustomizationVersionsOutput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct ListCustomizationVersionsOutputBuilder {
     pub(crate) versions: ::std::option::Option<::std::vec::Vec<crate::types::CustomizationVersionSummary>>,
     pub(crate) next_token: ::std::option::Option<::std::string::String>,

@@ -13,6 +13,7 @@
 /// # let transformationdownloadartifacttype = unimplemented!();
 /// match transformationdownloadartifacttype {
 ///     TransformationDownloadArtifactType::ClientInstructions => { /* ... */ },
+///     TransformationDownloadArtifactType::Logs => { /* ... */ },
 ///     other @ _ if other.as_str() == "NewFeature" => { /* handles a case for `NewFeature` */ },
 ///     _ => { /* ... */ },
 /// }
@@ -49,6 +50,8 @@
 pub enum TransformationDownloadArtifactType {
     #[allow(missing_docs)] // documentation missing in model
     ClientInstructions,
+    #[allow(missing_docs)] // documentation missing in model
+    Logs,
     /// `Unknown` contains new variants that have been added since this code was generated.
     #[deprecated(
         note = "Don't directly match on `Unknown`. See the docs on this enum for the correct way to handle unknown variants."
@@ -59,6 +62,7 @@ impl ::std::convert::From<&str> for TransformationDownloadArtifactType {
     fn from(s: &str) -> Self {
         match s {
             "ClientInstructions" => TransformationDownloadArtifactType::ClientInstructions,
+            "Logs" => TransformationDownloadArtifactType::Logs,
             other => TransformationDownloadArtifactType::Unknown(
                 crate::primitives::sealed_enum_unknown::UnknownVariantValue(other.to_owned()),
             ),
@@ -77,13 +81,14 @@ impl TransformationDownloadArtifactType {
     pub fn as_str(&self) -> &str {
         match self {
             TransformationDownloadArtifactType::ClientInstructions => "ClientInstructions",
+            TransformationDownloadArtifactType::Logs => "Logs",
             TransformationDownloadArtifactType::Unknown(value) => value.as_str(),
         }
     }
 
     /// Returns all the `&str` representations of the enum members.
     pub const fn values() -> &'static [&'static str] {
-        &["ClientInstructions"]
+        &["ClientInstructions", "Logs"]
     }
 }
 impl ::std::convert::AsRef<str> for TransformationDownloadArtifactType {
@@ -107,6 +112,7 @@ impl ::std::fmt::Display for TransformationDownloadArtifactType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
         match self {
             TransformationDownloadArtifactType::ClientInstructions => write!(f, "ClientInstructions"),
+            TransformationDownloadArtifactType::Logs => write!(f, "Logs"),
             TransformationDownloadArtifactType::Unknown(value) => write!(f, "{}", value),
         }
     }

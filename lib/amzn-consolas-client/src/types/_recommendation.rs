@@ -49,8 +49,8 @@ impl Recommendation {
 }
 
 /// A builder for [`Recommendation`](crate::types::Recommendation).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct RecommendationBuilder {
     pub(crate) content: ::std::option::Option<::std::string::String>,
     pub(crate) references: ::std::option::Option<::std::vec::Vec<crate::types::Reference>>,

@@ -22,8 +22,8 @@ impl ListFeatureEvaluationsInput {
 
 /// A builder for
 /// [`ListFeatureEvaluationsInput`](crate::operation::list_feature_evaluations::ListFeatureEvaluationsInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct ListFeatureEvaluationsInputBuilder {
     pub(crate) user_context: ::std::option::Option<crate::types::UserContext>,
 }

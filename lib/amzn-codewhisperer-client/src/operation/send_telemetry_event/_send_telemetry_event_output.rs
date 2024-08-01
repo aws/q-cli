@@ -20,8 +20,8 @@ impl SendTelemetryEventOutput {
 
 /// A builder for
 /// [`SendTelemetryEventOutput`](crate::operation::send_telemetry_event::SendTelemetryEventOutput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct SendTelemetryEventOutputBuilder {
     _request_id: Option<String>,
 }

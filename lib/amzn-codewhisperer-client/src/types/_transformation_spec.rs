@@ -35,8 +35,8 @@ impl TransformationSpec {
 }
 
 /// A builder for [`TransformationSpec`](crate::types::TransformationSpec).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct TransformationSpecBuilder {
     pub(crate) transformation_type: ::std::option::Option<crate::types::TransformationType>,
     pub(crate) source: ::std::option::Option<crate::types::TransformationProjectState>,

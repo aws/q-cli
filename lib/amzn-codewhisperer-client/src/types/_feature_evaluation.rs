@@ -37,8 +37,8 @@ impl FeatureEvaluation {
 }
 
 /// A builder for [`FeatureEvaluation`](crate::types::FeatureEvaluation).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct FeatureEvaluationBuilder {
     pub(crate) feature: ::std::option::Option<::std::string::String>,
     pub(crate) variation: ::std::option::Option<::std::string::String>,

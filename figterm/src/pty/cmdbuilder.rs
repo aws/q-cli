@@ -515,7 +515,7 @@ mod tests {
     #[test]
     fn test_unix_command_line() {
         let mut cb = CommandBuilder::new("/bin/sh");
-        cb.args(&["-c", "echo hello"]);
+        cb.args(["-c", "echo hello"]);
         assert_eq!(cb.as_unix_command_line().unwrap(), "/bin/sh -c 'echo hello'");
     }
 }

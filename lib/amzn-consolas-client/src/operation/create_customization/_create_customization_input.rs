@@ -59,8 +59,8 @@ impl CreateCustomizationInput {
 
 /// A builder for
 /// [`CreateCustomizationInput`](crate::operation::create_customization::CreateCustomizationInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct CreateCustomizationInputBuilder {
     pub(crate) data_reference: ::std::option::Option<crate::types::DataReference>,
     pub(crate) customization_name: ::std::option::Option<::std::string::String>,

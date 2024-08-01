@@ -23,8 +23,8 @@ impl ProgrammingLanguage {
 }
 
 /// A builder for [`ProgrammingLanguage`](crate::types::ProgrammingLanguage).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct ProgrammingLanguageBuilder {
     pub(crate) language_name: ::std::option::Option<::std::string::String>,
 }

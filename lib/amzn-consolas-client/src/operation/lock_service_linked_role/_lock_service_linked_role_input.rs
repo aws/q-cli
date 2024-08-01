@@ -29,8 +29,8 @@ impl LockServiceLinkedRoleInput {
 
 /// A builder for
 /// [`LockServiceLinkedRoleInput`](crate::operation::lock_service_linked_role::LockServiceLinkedRoleInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct LockServiceLinkedRoleInputBuilder {
     pub(crate) role_arn: ::std::option::Option<::std::string::String>,
     pub(crate) timeout: ::std::option::Option<i64>,

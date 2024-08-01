@@ -77,8 +77,8 @@ impl CreateArtifactUploadUrlInput {
 
 /// A builder for
 /// [`CreateArtifactUploadUrlInput`](crate::operation::create_artifact_upload_url::CreateArtifactUploadUrlInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct CreateArtifactUploadUrlInputBuilder {
     pub(crate) content_md5: ::std::option::Option<::std::string::String>,
     pub(crate) content_checksum: ::std::option::Option<::std::string::String>,

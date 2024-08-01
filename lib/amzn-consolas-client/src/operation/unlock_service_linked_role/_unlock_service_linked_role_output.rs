@@ -20,8 +20,8 @@ impl UnlockServiceLinkedRoleOutput {
 
 /// A builder for
 /// [`UnlockServiceLinkedRoleOutput`](crate::operation::unlock_service_linked_role::UnlockServiceLinkedRoleOutput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct UnlockServiceLinkedRoleOutputBuilder {
     _request_id: Option<String>,
 }

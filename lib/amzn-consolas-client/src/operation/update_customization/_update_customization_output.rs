@@ -20,8 +20,8 @@ impl UpdateCustomizationOutput {
 
 /// A builder for
 /// [`UpdateCustomizationOutput`](crate::operation::update_customization::UpdateCustomizationOutput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct UpdateCustomizationOutputBuilder {
     _request_id: Option<String>,
 }

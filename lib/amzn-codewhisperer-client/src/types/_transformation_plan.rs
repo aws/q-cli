@@ -22,8 +22,8 @@ impl TransformationPlan {
 }
 
 /// A builder for [`TransformationPlan`](crate::types::TransformationPlan).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct TransformationPlanBuilder {
     pub(crate) transformation_steps: ::std::option::Option<::std::vec::Vec<crate::types::TransformationStep>>,
 }

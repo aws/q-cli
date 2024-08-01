@@ -22,8 +22,8 @@ impl AssociateCustomizationPermissionOutput {
 
 /// A builder for
 /// [`AssociateCustomizationPermissionOutput`](crate::operation::associate_customization_permission::AssociateCustomizationPermissionOutput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct AssociateCustomizationPermissionOutputBuilder {
     _request_id: Option<String>,
 }

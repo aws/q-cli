@@ -1517,6 +1517,9 @@ pub use ::aws_types::region::Region;
 /// Types needed to configure endpoint resolution.
 pub mod endpoint;
 
+/// HTTP request and response types.
+pub mod http;
+
 /// Types needed to implement [`Intercept`](crate::config::Intercept).
 pub mod interceptors;
 

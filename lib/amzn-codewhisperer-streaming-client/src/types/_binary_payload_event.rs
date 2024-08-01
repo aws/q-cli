@@ -29,8 +29,8 @@ impl BinaryPayloadEvent {
 }
 
 /// A builder for [`BinaryPayloadEvent`](crate::types::BinaryPayloadEvent).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct BinaryPayloadEventBuilder {
     pub(crate) bytes: ::std::option::Option<::aws_smithy_types::Blob>,
 }

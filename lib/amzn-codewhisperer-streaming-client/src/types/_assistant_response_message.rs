@@ -68,8 +68,8 @@ impl AssistantResponseMessage {
 }
 
 /// A builder for [`AssistantResponseMessage`](crate::types::AssistantResponseMessage).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct AssistantResponseMessageBuilder {
     pub(crate) message_id: ::std::option::Option<::std::string::String>,
     pub(crate) content: ::std::option::Option<::std::string::String>,

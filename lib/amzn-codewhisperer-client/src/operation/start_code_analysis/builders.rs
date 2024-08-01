@@ -47,7 +47,7 @@ impl
     }
 }
 impl StartCodeAnalysisFluentBuilder {
-    /// Creates a new `StartCodeAnalysis`.
+    /// Creates a new `StartCodeAnalysisFluentBuilder`.
     pub(crate) fn new(handle: ::std::sync::Arc<crate::client::Handle>) -> Self {
         Self {
             handle,

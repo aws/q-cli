@@ -65,8 +65,8 @@ impl CreateArtifactUploadUrlOutput {
 
 /// A builder for
 /// [`CreateArtifactUploadUrlOutput`](crate::operation::create_artifact_upload_url::CreateArtifactUploadUrlOutput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct CreateArtifactUploadUrlOutputBuilder {
     pub(crate) upload_id: ::std::option::Option<::std::string::String>,
     pub(crate) upload_url: ::std::option::Option<::std::string::String>,

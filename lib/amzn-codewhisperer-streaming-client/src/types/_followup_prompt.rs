@@ -38,8 +38,8 @@ impl FollowupPrompt {
 }
 
 /// A builder for [`FollowupPrompt`](crate::types::FollowupPrompt).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct FollowupPromptBuilder {
     pub(crate) content: ::std::option::Option<::std::string::String>,
     pub(crate) user_intent: ::std::option::Option<crate::types::UserIntent>,

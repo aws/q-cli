@@ -56,8 +56,8 @@ impl CustomizationVersionSummary {
 }
 
 /// A builder for [`CustomizationVersionSummary`](crate::types::CustomizationVersionSummary).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct CustomizationVersionSummaryBuilder {
     pub(crate) version: ::std::option::Option<i64>,
     pub(crate) base_version: ::std::option::Option<i64>,

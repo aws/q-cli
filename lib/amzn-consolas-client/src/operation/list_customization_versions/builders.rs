@@ -47,7 +47,7 @@ impl
     }
 }
 impl ListCustomizationVersionsFluentBuilder {
-    /// Creates a new `ListCustomizationVersions`.
+    /// Creates a new `ListCustomizationVersionsFluentBuilder`.
     pub(crate) fn new(handle: ::std::sync::Arc<crate::client::Handle>) -> Self {
         Self {
             handle,

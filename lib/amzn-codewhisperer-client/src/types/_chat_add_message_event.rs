@@ -7,6 +7,8 @@ pub struct ChatAddMessageEvent {
     pub conversation_id: ::std::string::String,
     /// Unique identifier for the chat message
     pub message_id: ::std::string::String,
+    #[allow(missing_docs)] // documentation missing in model
+    pub customization_arn: ::std::option::Option<::std::string::String>,
     /// User Intent
     pub user_intent: ::std::option::Option<crate::types::UserIntent>,
     #[allow(missing_docs)] // documentation missing in model
@@ -27,6 +29,8 @@ pub struct ChatAddMessageEvent {
     pub response_length: ::std::option::Option<i32>,
     #[allow(missing_docs)] // documentation missing in model
     pub number_of_code_blocks: ::std::option::Option<i32>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub has_project_level_context: ::std::option::Option<bool>,
 }
 impl ChatAddMessageEvent {
     /// ID which represents a multi-turn conversation
@@ -39,6 +43,11 @@ impl ChatAddMessageEvent {
     pub fn message_id(&self) -> &str {
         use std::ops::Deref;
         self.message_id.deref()
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn customization_arn(&self) -> ::std::option::Option<&str> {
+        self.customization_arn.as_deref()
     }
 
     /// User Intent
@@ -92,6 +101,11 @@ impl ChatAddMessageEvent {
     pub fn number_of_code_blocks(&self) -> ::std::option::Option<i32> {
         self.number_of_code_blocks
     }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn has_project_level_context(&self) -> ::std::option::Option<bool> {
+        self.has_project_level_context
+    }
 }
 impl ChatAddMessageEvent {
     /// Creates a new builder-style object to manufacture
@@ -102,11 +116,12 @@ impl ChatAddMessageEvent {
 }
 
 /// A builder for [`ChatAddMessageEvent`](crate::types::ChatAddMessageEvent).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct ChatAddMessageEventBuilder {
     pub(crate) conversation_id: ::std::option::Option<::std::string::String>,
     pub(crate) message_id: ::std::option::Option<::std::string::String>,
+    pub(crate) customization_arn: ::std::option::Option<::std::string::String>,
     pub(crate) user_intent: ::std::option::Option<crate::types::UserIntent>,
     pub(crate) has_code_snippet: ::std::option::Option<bool>,
     pub(crate) programming_language: ::std::option::Option<crate::types::ProgrammingLanguage>,
@@ -117,6 +132,7 @@ pub struct ChatAddMessageEventBuilder {
     pub(crate) request_length: ::std::option::Option<i32>,
     pub(crate) response_length: ::std::option::Option<i32>,
     pub(crate) number_of_code_blocks: ::std::option::Option<i32>,
+    pub(crate) has_project_level_context: ::std::option::Option<bool>,
 }
 impl ChatAddMessageEventBuilder {
     /// ID which represents a multi-turn conversation
@@ -153,6 +169,23 @@ impl ChatAddMessageEventBuilder {
     /// Unique identifier for the chat message
     pub fn get_message_id(&self) -> &::std::option::Option<::std::string::String> {
         &self.message_id
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn customization_arn(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
+        self.customization_arn = ::std::option::Option::Some(input.into());
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_customization_arn(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
+        self.customization_arn = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_customization_arn(&self) -> &::std::option::Option<::std::string::String> {
+        &self.customization_arn
     }
 
     /// User Intent
@@ -330,6 +363,23 @@ impl ChatAddMessageEventBuilder {
         &self.number_of_code_blocks
     }
 
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn has_project_level_context(mut self, input: bool) -> Self {
+        self.has_project_level_context = ::std::option::Option::Some(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_has_project_level_context(mut self, input: ::std::option::Option<bool>) -> Self {
+        self.has_project_level_context = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_has_project_level_context(&self) -> &::std::option::Option<bool> {
+        &self.has_project_level_context
+    }
+
     /// Consumes the builder and constructs a
     /// [`ChatAddMessageEvent`](crate::types::ChatAddMessageEvent). This method will fail if any
     /// of the following fields are not set:
@@ -352,6 +402,7 @@ impl ChatAddMessageEventBuilder {
                     "message_id was not specified but it is required when building ChatAddMessageEvent",
                 )
             })?,
+            customization_arn: self.customization_arn,
             user_intent: self.user_intent,
             has_code_snippet: self.has_code_snippet,
             programming_language: self.programming_language,
@@ -362,6 +413,7 @@ impl ChatAddMessageEventBuilder {
             request_length: self.request_length,
             response_length: self.response_length,
             number_of_code_blocks: self.number_of_code_blocks,
+            has_project_level_context: self.has_project_level_context,
         })
     }
 }

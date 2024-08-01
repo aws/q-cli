@@ -27,8 +27,8 @@ impl Import {
 }
 
 /// A builder for [`Import`](crate::types::Import).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct ImportBuilder {
     pub(crate) statement: ::std::option::Option<::std::string::String>,
 }

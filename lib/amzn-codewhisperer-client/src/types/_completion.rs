@@ -48,8 +48,8 @@ impl Completion {
 }
 
 /// A builder for [`Completion`](crate::types::Completion).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct CompletionBuilder {
     pub(crate) content: ::std::option::Option<::std::string::String>,
     pub(crate) references: ::std::option::Option<::std::vec::Vec<crate::types::Reference>>,

@@ -47,7 +47,7 @@ impl
     }
 }
 impl GetTaskAssistCodeGenerationFluentBuilder {
-    /// Creates a new `GetTaskAssistCodeGeneration`.
+    /// Creates a new `GetTaskAssistCodeGenerationFluentBuilder`.
     pub(crate) fn new(handle: ::std::sync::Arc<crate::client::Handle>) -> Self {
         Self {
             handle,

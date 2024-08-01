@@ -6,20 +6,26 @@ pub fn ser_chat_user_modification_event(
     {
         object.key("conversationId").string(input.conversation_id.as_str());
     }
+    if let Some(var_1) = &input.customization_arn {
+        object.key("customizationArn").string(var_1.as_str());
+    }
     {
         object.key("messageId").string(input.message_id.as_str());
     }
-    if let Some(var_1) = &input.programming_language {
+    if let Some(var_2) = &input.programming_language {
         #[allow(unused_mut)]
-        let mut object_2 = object.key("programmingLanguage").start_object();
-        crate::protocol_serde::shape_programming_language::ser_programming_language(&mut object_2, var_1)?;
-        object_2.finish();
+        let mut object_3 = object.key("programmingLanguage").start_object();
+        crate::protocol_serde::shape_programming_language::ser_programming_language(&mut object_3, var_2)?;
+        object_3.finish();
     }
     {
         object.key("modificationPercentage").number(
             #[allow(clippy::useless_conversion)]
             ::aws_smithy_types::Number::Float((input.modification_percentage).into()),
         );
+    }
+    if let Some(var_4) = &input.has_project_level_context {
+        object.key("hasProjectLevelContext").boolean(*var_4);
     }
     Ok(())
 }

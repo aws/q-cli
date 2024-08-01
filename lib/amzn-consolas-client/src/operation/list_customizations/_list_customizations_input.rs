@@ -29,8 +29,8 @@ impl ListCustomizationsInput {
 
 /// A builder for
 /// [`ListCustomizationsInput`](crate::operation::list_customizations::ListCustomizationsInput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct ListCustomizationsInputBuilder {
     pub(crate) max_results: ::std::option::Option<i32>,
     pub(crate) next_token: ::std::option::Option<::std::string::String>,

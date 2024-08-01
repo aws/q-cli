@@ -30,8 +30,8 @@ impl TransformationExportContext {
 }
 
 /// A builder for [`TransformationExportContext`](crate::types::TransformationExportContext).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct TransformationExportContextBuilder {
     pub(crate) download_artifact_id: ::std::option::Option<::std::string::String>,
     pub(crate) download_artifact_type: ::std::option::Option<crate::types::TransformationDownloadArtifactType>,

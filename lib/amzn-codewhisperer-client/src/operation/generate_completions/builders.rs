@@ -47,7 +47,7 @@ impl
     }
 }
 impl GenerateCompletionsFluentBuilder {
-    /// Creates a new `GenerateCompletions`.
+    /// Creates a new `GenerateCompletionsFluentBuilder`.
     pub(crate) fn new(handle: ::std::sync::Arc<crate::client::Handle>) -> Self {
         Self {
             handle,

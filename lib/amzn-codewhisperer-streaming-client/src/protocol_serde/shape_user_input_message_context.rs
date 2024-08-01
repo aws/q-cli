@@ -39,5 +39,17 @@ pub fn ser_user_input_message_context(
         crate::protocol_serde::shape_diagnostic::ser_diagnostic(&mut object_12, var_11)?;
         object_12.finish();
     }
+    if let Some(var_13) = &input.console_state {
+        #[allow(unused_mut)]
+        let mut object_14 = object.key("consoleState").start_object();
+        crate::protocol_serde::shape_console_state::ser_console_state(&mut object_14, var_13)?;
+        object_14.finish();
+    }
+    if let Some(var_15) = &input.user_settings {
+        #[allow(unused_mut)]
+        let mut object_16 = object.key("userSettings").start_object();
+        crate::protocol_serde::shape_user_settings::ser_user_settings(&mut object_16, var_15)?;
+        object_16.finish();
+    }
     Ok(())
 }

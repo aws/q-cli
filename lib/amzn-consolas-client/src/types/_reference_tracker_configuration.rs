@@ -21,8 +21,8 @@ impl ReferenceTrackerConfiguration {
 }
 
 /// A builder for [`ReferenceTrackerConfiguration`](crate::types::ReferenceTrackerConfiguration).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct ReferenceTrackerConfigurationBuilder {
     pub(crate) recommendations_with_references:
         ::std::option::Option<crate::types::RecommendationsWithReferencesPreference>,

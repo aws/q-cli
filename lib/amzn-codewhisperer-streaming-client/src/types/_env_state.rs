@@ -47,8 +47,8 @@ impl EnvState {
 }
 
 /// A builder for [`EnvState`](crate::types::EnvState).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct EnvStateBuilder {
     pub(crate) operating_system: ::std::option::Option<::std::string::String>,
     pub(crate) current_working_directory: ::std::option::Option<::std::string::String>,

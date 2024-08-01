@@ -16,6 +16,10 @@ pub struct UserInputMessageContext {
     pub app_studio_context: ::std::option::Option<crate::types::AppStudioState>,
     /// Diagnostic chat message context.
     pub diagnostic: ::std::option::Option<crate::types::Diagnostic>,
+    /// Contextual information about the environment from which the user is calling.
+    pub console_state: ::std::option::Option<crate::types::ConsoleState>,
+    /// Settings information, e.g., whether the user has enabled cross-region API calls.
+    pub user_settings: ::std::option::Option<crate::types::UserSettings>,
 }
 impl UserInputMessageContext {
     /// Editor state chat message context.
@@ -47,6 +51,16 @@ impl UserInputMessageContext {
     pub fn diagnostic(&self) -> ::std::option::Option<&crate::types::Diagnostic> {
         self.diagnostic.as_ref()
     }
+
+    /// Contextual information about the environment from which the user is calling.
+    pub fn console_state(&self) -> ::std::option::Option<&crate::types::ConsoleState> {
+        self.console_state.as_ref()
+    }
+
+    /// Settings information, e.g., whether the user has enabled cross-region API calls.
+    pub fn user_settings(&self) -> ::std::option::Option<&crate::types::UserSettings> {
+        self.user_settings.as_ref()
+    }
 }
 impl UserInputMessageContext {
     /// Creates a new builder-style object to manufacture
@@ -57,8 +71,8 @@ impl UserInputMessageContext {
 }
 
 /// A builder for [`UserInputMessageContext`](crate::types::UserInputMessageContext).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct UserInputMessageContextBuilder {
     pub(crate) editor_state: ::std::option::Option<crate::types::EditorState>,
     pub(crate) shell_state: ::std::option::Option<crate::types::ShellState>,
@@ -66,6 +80,8 @@ pub struct UserInputMessageContextBuilder {
     pub(crate) env_state: ::std::option::Option<crate::types::EnvState>,
     pub(crate) app_studio_context: ::std::option::Option<crate::types::AppStudioState>,
     pub(crate) diagnostic: ::std::option::Option<crate::types::Diagnostic>,
+    pub(crate) console_state: ::std::option::Option<crate::types::ConsoleState>,
+    pub(crate) user_settings: ::std::option::Option<crate::types::UserSettings>,
 }
 impl UserInputMessageContextBuilder {
     /// Editor state chat message context.
@@ -170,6 +186,40 @@ impl UserInputMessageContextBuilder {
         &self.diagnostic
     }
 
+    /// Contextual information about the environment from which the user is calling.
+    pub fn console_state(mut self, input: crate::types::ConsoleState) -> Self {
+        self.console_state = ::std::option::Option::Some(input);
+        self
+    }
+
+    /// Contextual information about the environment from which the user is calling.
+    pub fn set_console_state(mut self, input: ::std::option::Option<crate::types::ConsoleState>) -> Self {
+        self.console_state = input;
+        self
+    }
+
+    /// Contextual information about the environment from which the user is calling.
+    pub fn get_console_state(&self) -> &::std::option::Option<crate::types::ConsoleState> {
+        &self.console_state
+    }
+
+    /// Settings information, e.g., whether the user has enabled cross-region API calls.
+    pub fn user_settings(mut self, input: crate::types::UserSettings) -> Self {
+        self.user_settings = ::std::option::Option::Some(input);
+        self
+    }
+
+    /// Settings information, e.g., whether the user has enabled cross-region API calls.
+    pub fn set_user_settings(mut self, input: ::std::option::Option<crate::types::UserSettings>) -> Self {
+        self.user_settings = input;
+        self
+    }
+
+    /// Settings information, e.g., whether the user has enabled cross-region API calls.
+    pub fn get_user_settings(&self) -> &::std::option::Option<crate::types::UserSettings> {
+        &self.user_settings
+    }
+
     /// Consumes the builder and constructs a
     /// [`UserInputMessageContext`](crate::types::UserInputMessageContext).
     pub fn build(self) -> crate::types::UserInputMessageContext {
@@ -180,6 +230,8 @@ impl UserInputMessageContextBuilder {
             env_state: self.env_state,
             app_studio_context: self.app_studio_context,
             diagnostic: self.diagnostic,
+            console_state: self.console_state,
+            user_settings: self.user_settings,
         }
     }
 }

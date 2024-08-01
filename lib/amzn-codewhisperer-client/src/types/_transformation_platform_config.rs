@@ -21,8 +21,8 @@ impl TransformationPlatformConfig {
 }
 
 /// A builder for [`TransformationPlatformConfig`](crate::types::TransformationPlatformConfig).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct TransformationPlatformConfigBuilder {
     pub(crate) operating_system_family: ::std::option::Option<crate::types::TransformationOperatingSystemFamily>,
 }

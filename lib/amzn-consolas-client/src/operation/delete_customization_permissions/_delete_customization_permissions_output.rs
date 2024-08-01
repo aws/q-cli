@@ -21,8 +21,8 @@ impl DeleteCustomizationPermissionsOutput {
 
 /// A builder for
 /// [`DeleteCustomizationPermissionsOutput`](crate::operation::delete_customization_permissions::DeleteCustomizationPermissionsOutput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct DeleteCustomizationPermissionsOutputBuilder {
     _request_id: Option<String>,
 }

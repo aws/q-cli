@@ -47,7 +47,7 @@ impl
     }
 }
 impl DeleteTaskAssistConversationFluentBuilder {
-    /// Creates a new `DeleteTaskAssistConversation`.
+    /// Creates a new `DeleteTaskAssistConversationFluentBuilder`.
     pub(crate) fn new(handle: ::std::sync::Arc<crate::client::Handle>) -> Self {
         Self {
             handle,

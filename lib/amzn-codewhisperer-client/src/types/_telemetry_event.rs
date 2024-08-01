@@ -16,6 +16,8 @@ pub enum TelemetryEvent {
     #[allow(missing_docs)] // documentation missing in model
     CodeScanRemediationsEvent(crate::types::CodeScanRemediationsEvent),
     #[allow(missing_docs)] // documentation missing in model
+    FeatureDevEvent(crate::types::FeatureDevEvent),
+    #[allow(missing_docs)] // documentation missing in model
     MetricData(crate::types::MetricData),
     #[allow(missing_docs)] // documentation missing in model
     TerminalUserInteractionEvent(crate::types::TerminalUserInteractionEvent),
@@ -147,6 +149,24 @@ impl TelemetryEvent {
     /// [`CodeScanRemediationsEvent`](crate::types::TelemetryEvent::CodeScanRemediationsEvent).
     pub fn is_code_scan_remediations_event(&self) -> bool {
         self.as_code_scan_remediations_event().is_ok()
+    }
+
+    /// Tries to convert the enum instance into
+    /// [`FeatureDevEvent`](crate::types::TelemetryEvent::FeatureDevEvent), extracting the inner
+    /// [`FeatureDevEvent`](crate::types::FeatureDevEvent). Returns `Err(&Self)` if it can't be
+    /// converted.
+    pub fn as_feature_dev_event(&self) -> ::std::result::Result<&crate::types::FeatureDevEvent, &Self> {
+        if let TelemetryEvent::FeatureDevEvent(val) = &self {
+            ::std::result::Result::Ok(val)
+        } else {
+            ::std::result::Result::Err(self)
+        }
+    }
+
+    /// Returns true if this is a
+    /// [`FeatureDevEvent`](crate::types::TelemetryEvent::FeatureDevEvent).
+    pub fn is_feature_dev_event(&self) -> bool {
+        self.as_feature_dev_event().is_ok()
     }
 
     /// Tries to convert the enum instance into

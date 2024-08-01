@@ -13,6 +13,7 @@
 /// # let functionalityname = unimplemented!();
 /// match functionalityname {
 ///     FunctionalityName::Analysis => { /* ... */ },
+///     FunctionalityName::ChatCustomization => { /* ... */ },
 ///     FunctionalityName::Completions => { /* ... */ },
 ///     FunctionalityName::Conversations => { /* ... */ },
 ///     FunctionalityName::TaskAssist => { /* ... */ },
@@ -53,6 +54,8 @@ pub enum FunctionalityName {
     #[allow(missing_docs)] // documentation missing in model
     Analysis,
     #[allow(missing_docs)] // documentation missing in model
+    ChatCustomization,
+    #[allow(missing_docs)] // documentation missing in model
     Completions,
     #[allow(missing_docs)] // documentation missing in model
     Conversations,
@@ -70,6 +73,7 @@ impl ::std::convert::From<&str> for FunctionalityName {
     fn from(s: &str) -> Self {
         match s {
             "ANALYSIS" => FunctionalityName::Analysis,
+            "CHAT_CUSTOMIZATION" => FunctionalityName::ChatCustomization,
             "COMPLETIONS" => FunctionalityName::Completions,
             "CONVERSATIONS" => FunctionalityName::Conversations,
             "TASK_ASSIST" => FunctionalityName::TaskAssist,
@@ -92,6 +96,7 @@ impl FunctionalityName {
     pub fn as_str(&self) -> &str {
         match self {
             FunctionalityName::Analysis => "ANALYSIS",
+            FunctionalityName::ChatCustomization => "CHAT_CUSTOMIZATION",
             FunctionalityName::Completions => "COMPLETIONS",
             FunctionalityName::Conversations => "CONVERSATIONS",
             FunctionalityName::TaskAssist => "TASK_ASSIST",
@@ -104,6 +109,7 @@ impl FunctionalityName {
     pub const fn values() -> &'static [&'static str] {
         &[
             "ANALYSIS",
+            "CHAT_CUSTOMIZATION",
             "COMPLETIONS",
             "CONVERSATIONS",
             "TASK_ASSIST",
@@ -132,6 +138,7 @@ impl ::std::fmt::Display for FunctionalityName {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
         match self {
             FunctionalityName::Analysis => write!(f, "ANALYSIS"),
+            FunctionalityName::ChatCustomization => write!(f, "CHAT_CUSTOMIZATION"),
             FunctionalityName::Completions => write!(f, "COMPLETIONS"),
             FunctionalityName::Conversations => write!(f, "CONVERSATIONS"),
             FunctionalityName::TaskAssist => write!(f, "TASK_ASSIST"),

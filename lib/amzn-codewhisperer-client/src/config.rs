@@ -1486,6 +1486,9 @@ pub use ::aws_smithy_types::config_bag::{
 /// Types needed to configure endpoint resolution.
 pub mod endpoint;
 
+/// HTTP request and response types.
+pub mod http;
+
 /// Types needed to implement [`Intercept`](crate::config::Intercept).
 pub mod interceptors;
 

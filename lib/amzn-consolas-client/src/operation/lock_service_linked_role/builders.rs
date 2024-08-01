@@ -45,7 +45,7 @@ impl
     }
 }
 impl LockServiceLinkedRoleFluentBuilder {
-    /// Creates a new `LockServiceLinkedRole`.
+    /// Creates a new `LockServiceLinkedRoleFluentBuilder`.
     pub(crate) fn new(handle: ::std::sync::Arc<crate::client::Handle>) -> Self {
         Self {
             handle,

@@ -47,8 +47,8 @@ impl RuntimeDiagnostic {
 }
 
 /// A builder for [`RuntimeDiagnostic`](crate::types::RuntimeDiagnostic).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default)]
+#[non_exhaustive]
 pub struct RuntimeDiagnosticBuilder {
     pub(crate) source: ::std::option::Option<::std::string::String>,
     pub(crate) severity: ::std::option::Option<crate::types::DiagnosticSeverity>,

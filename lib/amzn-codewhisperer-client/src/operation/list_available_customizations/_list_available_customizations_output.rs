@@ -37,8 +37,8 @@ impl ListAvailableCustomizationsOutput {
 
 /// A builder for
 /// [`ListAvailableCustomizationsOutput`](crate::operation::list_available_customizations::ListAvailableCustomizationsOutput).
-#[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
+#[non_exhaustive]
 pub struct ListAvailableCustomizationsOutputBuilder {
     pub(crate) customizations: ::std::option::Option<::std::vec::Vec<crate::types::Customization>>,
     pub(crate) next_token: ::std::option::Option<::std::string::String>,

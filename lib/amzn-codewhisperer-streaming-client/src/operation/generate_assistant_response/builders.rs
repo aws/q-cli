@@ -47,7 +47,7 @@ impl
     }
 }
 impl GenerateAssistantResponseFluentBuilder {
-    /// Creates a new `GenerateAssistantResponse`.
+    /// Creates a new `GenerateAssistantResponseFluentBuilder`.
     pub(crate) fn new(handle: ::std::sync::Arc<crate::client::Handle>) -> Self {
         Self {
             handle,
