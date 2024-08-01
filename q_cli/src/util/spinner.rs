@@ -109,3 +109,18 @@ impl Spinner {
         println!("\x1b[2K\r{msg}");
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_spinner() {
+        let mut spinner = Spinner::new(vec![
+            SpinnerComponent::Spinner,
+            SpinnerComponent::Text("Loading".into()),
+        ]);
+        thread::sleep(Duration::from_secs(1));
+        spinner.stop_with_message("Done".into());
+    }
+}

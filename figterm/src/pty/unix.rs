@@ -33,7 +33,15 @@ use nix::pty::{
     PtyMaster,
     Winsize,
 };
-use nix::sys::stat::Mode;
+use nix::sys::signal::{
+    signal,
+    SigHandler,
+    Signal,
+};
+use nix::sys::stat::{
+    umask,
+    Mode,
+};
 use portable_pty::unix::close_random_fds;
 use portable_pty::{
     Child,
@@ -137,53 +145,52 @@ impl SlavePty for UnixSlavePty {
         let configured_mask = builder.umask;
         let mut cmd = builder.as_command()?;
 
-        unsafe {
-            cmd.stdin(self.fd.as_stdio()?)
-                .stdout(self.fd.as_stdio()?)
-                .stderr(self.fd.as_stdio()?)
-                .pre_exec(move || {
-                    // Clean up a few things before we exec the program
-                    // Clear out any potentially problematic signal
-                    // dispositions that we might have inherited
-                    for signo in &[
-                        libc::SIGCHLD,
-                        libc::SIGHUP,
-                        libc::SIGINT,
-                        libc::SIGQUIT,
-                        libc::SIGTERM,
-                        libc::SIGALRM,
-                    ] {
-                        libc::signal(*signo, libc::SIG_DFL);
-                    }
+        cmd.stdin(self.fd.as_stdio()?)
+            .stdout(self.fd.as_stdio()?)
+            .stderr(self.fd.as_stdio()?);
 
-                    // Establish ourselves as a session leader.
-                    if libc::setsid() == -1 {
-                        return Err(io::Error::last_os_error());
-                    }
+        let pre_exec_fn = move || {
+            // Clean up a few things before we exec the program
+            // Clear out any potentially problematic signal
+            // dispositions that we might have inherited
+            for signo in [
+                Signal::SIGCHLD,
+                Signal::SIGHUP,
+                Signal::SIGINT,
+                Signal::SIGQUIT,
+                Signal::SIGTERM,
+                Signal::SIGALRM,
+            ] {
+                unsafe { signal(signo, SigHandler::SigDfl) }?;
+            }
 
-                    // Clippy wants us to explicitly cast TIOCSCTTY using
-                    // type::from(), but the size and potentially signedness
-                    // are system dependent, which is why we're using `as _`.
-                    // Suppress this lint for this section of code.
-                    {
-                        // Set the pty as the controlling terminal.
-                        // Failure to do this means that delivery of
-                        // SIGWINCH won't happen when we resize the
-                        // terminal, among other undesirable effects.
-                        if libc::ioctl(0, libc::TIOCSCTTY as _, 0) == -1 {
-                            return Err(io::Error::last_os_error());
-                        }
-                    }
+            // Establish ourselves as a session leader.
+            nix::unistd::setsid()?;
 
-                    close_random_fds();
+            // Clippy wants us to explicitly cast TIOCSCTTY using
+            // type::from(), but the size and potentially signedness
+            // are system dependent, which is why we're using `as _`.
+            // Suppress this lint for this section of code.
+            {
+                // Set the pty as the controlling terminal.
+                // Failure to do this means that delivery of
+                // SIGWINCH won't happen when we resize the
+                // terminal, among other undesirable effects.
+                if unsafe { libc::ioctl(0, libc::TIOCSCTTY as _, 0) == -1 } {
+                    return Err(io::Error::last_os_error());
+                }
+            }
 
-                    if let Some(mask) = configured_mask {
-                        libc::umask(mask);
-                    }
+            close_random_fds();
 
-                    Ok(())
-                })
+            if let Some(mode) = configured_mask {
+                umask(mode);
+            }
+
+            Ok(())
         };
+
+        unsafe { cmd.pre_exec(pre_exec_fn) };
 
         let mut child = cmd.spawn()?;
 

@@ -264,6 +264,7 @@ pub async fn start_device_authorization(
     })
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TokenType {
     BuilderId,
     IamIdentityCenter,
@@ -283,6 +284,19 @@ pub struct BuilderIdToken {
 
 impl BuilderIdToken {
     const SECRET_KEY: &'static str = "codewhisperer:odic:token";
+
+    #[cfg(test)]
+    fn test() -> Self {
+        Self {
+            access_token: Secret("test_access_token".to_string()),
+            expires_at: time::OffsetDateTime::now_utc() + time::Duration::minutes(60),
+            refresh_token: Some(Secret("test_refresh_token".to_string())),
+            region: Some(OIDC_BUILDER_ID_REGION.to_string()),
+            start_url: Some(START_URL.to_string()),
+            oauth_flow: OAuthFlow::DeviceCode,
+            scopes: Some(SCOPES.iter().map(|s| (*s).to_owned()).collect()),
+        }
+    }
 
     /// Load the token from the keychain, refresh the token if it is expired and return it
     pub async fn load(secret_store: &SecretStore, force_refresh: bool) -> Result<Option<Self>> {
@@ -591,7 +605,15 @@ mod tests {
             let quoted = format!("\"{}\"", $text);
             assert_eq!(quoted, serde_json::to_string(&$variant).unwrap());
             assert_eq!($variant, serde_json::from_str(&quoted).unwrap());
+
+            assert_eq!($text, format!("{}", $variant));
         };
+    }
+
+    #[test]
+    fn test_oauth_flow_ser_deser() {
+        test_ser_deser!(OAuthFlow, OAuthFlow::DeviceCode, "DeviceCode");
+        test_ser_deser!(OAuthFlow, OAuthFlow::PKCE, "PKCE");
     }
 
     #[test]
@@ -607,9 +629,27 @@ mod tests {
     }
 
     #[test]
-    fn test_oauth_flow_ser_deser() {
-        test_ser_deser!(OAuthFlow, OAuthFlow::DeviceCode, "DeviceCode");
-        test_ser_deser!(OAuthFlow, OAuthFlow::PKCE, "PKCE");
+    fn test_is_expired() {
+        let mut token = BuilderIdToken::test();
+        assert!(!token.is_expired());
+
+        token.expires_at = time::OffsetDateTime::now_utc() - time::Duration::seconds(60);
+        assert!(token.is_expired());
+    }
+
+    #[test]
+    fn test_token_type() {
+        let mut token = BuilderIdToken::test();
+        assert_eq!(token.token_type(), TokenType::BuilderId);
+        assert!(!token.is_amzn_user());
+
+        token.start_url = None;
+        assert_eq!(token.token_type(), TokenType::BuilderId);
+        assert!(!token.is_amzn_user());
+
+        token.start_url = Some(AMZN_START_URL.into());
+        assert_eq!(token.token_type(), TokenType::IamIdentityCenter);
+        assert!(token.is_amzn_user());
     }
 
     #[ignore = "not in ci"]

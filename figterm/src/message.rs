@@ -132,22 +132,15 @@ fn create_command(executable: impl AsRef<Path>, working_directory: impl AsRef<Pa
 
     #[cfg(unix)]
     {
-        use std::io;
-
-        use nix::libc;
+        let pre_exec_fn = || {
+            // Remove controlling terminal.
+            nix::unistd::setsid()?;
+            Ok(())
+        };
 
         // SAFETY: this closure is run after forking the process and only affects the
         // child. setsid is async-signal-safe.
-        unsafe {
-            cmd.pre_exec(|| {
-                // Remove controlling terminal.
-                if libc::setsid() == -1 {
-                    Err(io::Error::last_os_error())
-                } else {
-                    Ok(())
-                }
-            });
-        }
+        unsafe { cmd.pre_exec(pre_exec_fn) };
     }
 
     if !env.is_empty() {
@@ -594,7 +587,22 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn command() {
-        create_command("cargo", "/").output().await.unwrap();
+    async fn test_create_command() {
+        let output = create_command("cargo", "/").output().await.unwrap();
+        assert!(output.status.success());
+
+        let output = create_command("echo", "/").arg("hello world").output().await.unwrap();
+        assert!(output.status.success());
+        assert_eq!(output.stdout, b"hello world\n");
+        assert_eq!(output.stderr, b"");
+
+        let output = create_command("bash", "/")
+            .args(["-c", "echo hello world 1 1>&2; echo hello world 2; exit 25"])
+            .output()
+            .await
+            .unwrap();
+        assert_eq!(output.status.code(), Some(25));
+        assert_eq!(output.stdout, b"hello world 2\n");
+        assert_eq!(output.stderr, b"hello world 1\n");
     }
 }

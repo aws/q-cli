@@ -62,7 +62,7 @@ pub struct CommandBuilder {
     envs: BTreeMap<OsString, EnvEntry>,
     cwd: Option<OsString>,
     #[cfg(unix)]
-    pub umask: Option<libc::mode_t>,
+    pub umask: Option<nix::sys::stat::Mode>,
 }
 
 impl CommandBuilder {
@@ -227,7 +227,7 @@ impl CommandBuilder {
 
 #[cfg(unix)]
 impl CommandBuilder {
-    pub fn umask(&mut self, mask: Option<libc::mode_t>) {
+    pub fn umask(&mut self, mask: Option<nix::sys::stat::Mode>) {
         self.umask = mask;
     }
 
@@ -505,5 +505,17 @@ impl CommandBuilder {
             i += 1;
         }
         cmdline.push('"' as u16);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_unix_command_line() {
+        let mut cb = CommandBuilder::new("/bin/sh");
+        cb.args(&["-c", "echo hello"]);
+        assert_eq!(cb.as_unix_command_line().unwrap(), "/bin/sh -c 'echo hello'");
     }
 }

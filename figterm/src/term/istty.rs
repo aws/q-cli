@@ -24,7 +24,7 @@ pub trait IsTty {
 impl<S: AsRawFd> IsTty for S {
     fn is_tty(&self) -> bool {
         let fd = self.as_raw_fd();
-        unsafe { nix::libc::isatty(fd) == 1 }
+        nix::unistd::isatty(fd).unwrap_or_default()
     }
 }
 
