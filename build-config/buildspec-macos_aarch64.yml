@@ -40,7 +40,6 @@ phases:
 artifacts:
   files:
     - ./*.dmg
-    - ./*.zip
     - ./*.tar.gz
     - ./*.sig
     - ./*.sha256
