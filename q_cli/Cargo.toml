@@ -44,6 +44,7 @@ fig_install.workspace = true
 fig_integrations.workspace = true
 fig_ipc.workspace = true
 fig_log.workspace = true
+fig_os_shim.workspace = true
 fig_proto.workspace = true
 fig_request.workspace = true
 fig_settings.workspace = true

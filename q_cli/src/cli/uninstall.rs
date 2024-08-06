@@ -38,6 +38,7 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<ExitCode> {
 #[cfg(target_os = "macos")]
 async fn uninstall() -> Result<()> {
     use fig_install::UNINSTALL_URL;
+    use fig_os_shim::Env;
     use tracing::error;
 
     if let Err(err) = fig_util::open_url_async(UNINSTALL_URL).await {
@@ -45,7 +46,7 @@ async fn uninstall() -> Result<()> {
     }
 
     auth::logout().await.ok();
-    fig_install::uninstall(fig_install::InstallComponents::all()).await?;
+    fig_install::uninstall(fig_install::InstallComponents::all(), &Env::new()).await?;
 
     Ok(())
 }
@@ -78,7 +79,7 @@ async fn uninstall() -> Result<()> {
     if let Err(err) = auth::logout().await {
         error!(%err, "Failed to logout");
     }
-    fig_install::uninstall(fig_install::InstallComponents::all_linux()).await?;
+    fig_install::uninstall(fig_install::InstallComponents::all_linux(), &fig_os_shim::Env::new()).await?;
     Ok(())
 }
 

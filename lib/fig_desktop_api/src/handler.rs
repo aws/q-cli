@@ -1,6 +1,10 @@
 use std::time::Duration;
 
 use base64::prelude::*;
+use fig_os_shim::{
+    EnvProvider,
+    FsProvider,
+};
 pub use fig_proto::fig::client_originated_message::Submessage as ClientOriginatedSubMessage;
 pub use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
@@ -41,7 +45,7 @@ pub struct Wrapped<Ctx, Req> {
 
 #[async_trait::async_trait]
 pub trait EventHandler {
-    type Ctx: KVStore + Sync + Send;
+    type Ctx: KVStore + EnvProvider + FsProvider + Sync + Send;
 
     async fn notification(&self, request: Wrapped<Self::Ctx, NotificationRequest>) -> RequestResult {
         RequestResult::unimplemented(request.request)
@@ -123,7 +127,7 @@ pub fn response_to_b64(response_message: ServerOriginatedMessage) -> String {
     BASE64_STANDARD.encode(response_message.encode_to_vec())
 }
 
-pub async fn api_request<Ctx: KVStore, E: EventHandler<Ctx = Ctx> + Sync>(
+pub async fn api_request<Ctx: KVStore + EnvProvider + FsProvider, E: EventHandler<Ctx = Ctx> + Sync>(
     event_handler: E,
     ctx: Ctx,
     request: ClientOriginatedMessage,
@@ -152,7 +156,7 @@ pub async fn api_request<Ctx: KVStore, E: EventHandler<Ctx = Ctx> + Sync>(
     })
 }
 
-async fn handle_request<Ctx: KVStore, E: EventHandler<Ctx = Ctx> + Sync>(
+async fn handle_request<Ctx: KVStore + EnvProvider + FsProvider, E: EventHandler<Ctx = Ctx> + Sync>(
     event_handler: E,
     ctx: Ctx,
     message_id: i64,
@@ -228,12 +232,14 @@ async fn handle_request<Ctx: KVStore, E: EventHandler<Ctx = Ctx> + Sync>(
                 // figterm
                 InsertTextRequest(request) => event_handler.insert_text(request!(request)).await,
                 // fs
-                ReadFileRequest(request) => fs::read_file(request).await,
-                WriteFileRequest(request) => fs::write_file(request).await,
-                AppendToFileRequest(request) => fs::append_to_file(request).await,
-                DestinationOfSymbolicLinkRequest(request) => requests::fs::destination_of_symbolic_link(request).await,
-                ContentsOfDirectoryRequest(request) => fs::contents_of_directory(request).await,
-                CreateDirectoryRequest(request) => fs::create_directory_request(request).await,
+                ReadFileRequest(request) => fs::read_file(request, ctx.env(), ctx.fs()).await,
+                WriteFileRequest(request) => fs::write_file(request, ctx.env(), ctx.fs()).await,
+                AppendToFileRequest(request) => fs::append_to_file(request, ctx.env()).await,
+                DestinationOfSymbolicLinkRequest(request) => {
+                    requests::fs::destination_of_symbolic_link(request, ctx.env()).await
+                },
+                ContentsOfDirectoryRequest(request) => fs::contents_of_directory(request, ctx.env()).await,
+                CreateDirectoryRequest(request) => fs::create_directory_request(request, ctx.env(), ctx.fs()).await,
                 // notifications
                 NotificationRequest(request) => event_handler.notification(request!(request)).await,
                 // process
@@ -270,7 +276,7 @@ async fn handle_request<Ctx: KVStore, E: EventHandler<Ctx = Ctx> + Sync>(
                 // onboarding
                 OnboardingRequest(request) => event_handler.onboarding(request!(request)).await,
                 // install
-                InstallRequest(request) => install::install(request).await,
+                InstallRequest(request) => install::install(request, ctx.env()).await,
                 // history
                 HistoryQueryRequest(request) => history::query(request).await,
                 // auth

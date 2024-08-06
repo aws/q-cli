@@ -6,6 +6,7 @@ use std::path::{
 use std::str::FromStr;
 
 use clap::ValueEnum;
+use fig_os_shim::Env;
 use regex::Regex;
 use serde::{
     Deserialize,
@@ -102,17 +103,18 @@ impl Shell {
     }
 
     /// Get the directory for the shell that contains the dotfiles
-    pub fn get_config_directory(&self) -> Result<PathBuf, directories::DirectoryError> {
+    pub fn get_config_directory(&self, env: &Env) -> Result<PathBuf, directories::DirectoryError> {
         match self {
             Shell::Bash => Ok(directories::home_dir()?),
-            Shell::Zsh => match std::env::var_os("ZDOTDIR")
-                .or_else(|| std::env::var_os(Q_ZDOTDIR))
+            Shell::Zsh => match env
+                .get_os("ZDOTDIR")
+                .or_else(|| env.get_os(Q_ZDOTDIR))
                 .map(PathBuf::from)
             {
                 Some(dir) => Ok(dir),
                 None => Ok(directories::home_dir()?),
             },
-            Shell::Fish => match std::env::var_os("__fish_config_dir").map(PathBuf::from) {
+            Shell::Fish => match env.get_os("__fish_config_dir").map(PathBuf::from) {
                 Some(dir) => Ok(dir),
                 None => Ok(directories::home_dir()?.join(".config").join("fish")),
             },

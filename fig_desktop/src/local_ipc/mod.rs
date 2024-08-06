@@ -13,6 +13,7 @@ use fig_ipc::{
     RecvMessage,
     SendMessage,
 };
+use fig_os_shim::Env;
 use fig_proto::local::command_response::Response as CommandResponseTypes;
 use fig_proto::local::local_message::Type as LocalMessageType;
 use fig_proto::local::{
@@ -79,6 +80,7 @@ pub async fn start_local_ipc(
             figterm_state.clone(),
             webview_notifications_state.clone(),
             proxy.clone(),
+            Env::new(),
         ));
     }
 
@@ -91,6 +93,7 @@ async fn handle_local_ipc(
     figterm_state: Arc<FigtermState>,
     webview_notifications_state: Arc<WebviewNotificationsState>,
     proxy: EventLoopProxy,
+    env: Env,
 ) {
     while let Some(message) = stream.recv_message::<LocalMessage>().await.unwrap_or_else(|err| {
         if !err.is_disconnect() {
@@ -136,7 +139,7 @@ async fn handle_local_ipc(
                             Quit(command) => commands::quit(command, &proxy).await,
                             Diagnostics(command) => commands::diagnostic(command, &figterm_state).await,
                             OpenBrowser(command) => commands::open_browser(command).await,
-                            PromptAccessibility(_) => commands::prompt_for_accessibility_permission().await,
+                            PromptAccessibility(_) => commands::prompt_for_accessibility_permission(&env).await,
                             LogLevel(command) => commands::log_level(command),
                             Login(_) => commands::login(&proxy).await,
                             Logout(_) => commands::logout(&proxy).await,

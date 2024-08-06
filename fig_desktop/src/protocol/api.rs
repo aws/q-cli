@@ -1,6 +1,10 @@
 use std::borrow::Cow;
 
 use bytes::Bytes;
+use fig_os_shim::{
+    Env,
+    Fs,
+};
 use fig_proto::fig::ClientOriginatedMessage;
 use fig_proto::prost::Message;
 use wry::http::header::CONTENT_TYPE;
@@ -50,6 +54,8 @@ pub async fn handle(request: Request<Vec<u8>>, window_id: WindowId) -> anyhow::R
             notifications_state: NOTIFICATIONS_STATE.get().unwrap().as_ref(),
             proxy: GLOBAL_PROXY.get().unwrap(),
             dash_kv_store: DASH_KV_STORE.get().unwrap().as_ref(),
+            env: &Env::new(),
+            fs: &Fs::new(),
         },
         client_message,
     )

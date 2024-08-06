@@ -1,3 +1,4 @@
+use fig_os_shim::Env;
 use fig_proto::local::command_response::Response as CommandResponseTypes;
 use fig_proto::local::dump_state_command::Type as DumpStateType;
 use fig_proto::local::{
@@ -157,16 +158,19 @@ pub async fn open_browser(command: OpenBrowserCommand) -> LocalResult {
     Ok(LocalResponse::Success(None))
 }
 
-pub async fn prompt_for_accessibility_permission() -> LocalResult {
+pub async fn prompt_for_accessibility_permission(env: &Env) -> LocalResult {
     cfg_if::cfg_if! {
         if #[cfg(target_os = "macos")] {
             use fig_desktop_api::requests::install::install;
             use fig_proto::fig::{InstallRequest, InstallComponent, InstallAction};
 
-            install(InstallRequest {
-                component: InstallComponent::Accessibility.into(),
-                action: InstallAction::Install.into()
-            }).await.ok();
+            install(
+                InstallRequest {
+                    component: InstallComponent::Accessibility.into(),
+                    action: InstallAction::Install.into()
+                },
+                env
+            ).await.ok();
             Ok(LocalResponse::Success(None))
         } else {
             Err(LocalResponse::Error {

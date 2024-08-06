@@ -20,6 +20,12 @@ pub use fig_desktop_api::requests::{
     RequestResult,
     RequestResultImpl,
 };
+use fig_os_shim::{
+    Env,
+    EnvProvider,
+    Fs,
+    FsProvider,
+};
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
     AggregateSessionMetricActionRequest,
@@ -68,6 +74,8 @@ pub struct Context<'a> {
     pub proxy: &'a EventLoopProxy,
     pub window_id: &'a WindowId,
     pub dash_kv_store: &'a DashKVStore,
+    pub env: &'a Env,
+    pub fs: &'a Fs,
 }
 
 impl KVStore for Context<'_> {
@@ -77,6 +85,18 @@ impl KVStore for Context<'_> {
 
     fn get_raw(&self, key: impl AsRef<[u8]>) -> Option<Vec<u8>> {
         self.dash_kv_store.get_raw(key)
+    }
+}
+
+impl EnvProvider for Context<'_> {
+    fn env(&self) -> &Env {
+        self.env
+    }
+}
+
+impl FsProvider for Context<'_> {
+    fn fs(&self) -> &Fs {
+        self.fs
     }
 }
 
@@ -155,7 +175,7 @@ impl<'a> fig_desktop_api::handler::EventHandler for EventHandler<'a> {
     }
 
     async fn onboarding(&self, request: Wrapped<Self::Ctx, OnboardingRequest>) -> RequestResult {
-        onboarding::onboarding(request.request, request.context.proxy).await
+        onboarding::onboarding(request.request, request.context.proxy, request.context.env).await
     }
 
     async fn run_process(&self, request: Wrapped<Self::Ctx, RunProcessRequest>) -> RequestResult {
@@ -219,6 +239,8 @@ pub async fn api_request(
                     proxy,
                     window_id: &window_id,
                     dash_kv_store,
+                    env: &Env::new(),
+                    fs: &Fs::new(),
                 },
                 request,
             )

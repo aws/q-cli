@@ -44,12 +44,15 @@ dashmap = "6.0.1"
 dirs = "5.0.0"
 fig_api_client = { path = "lib/fig_api_client" }
 fig_aws_common = { path = "lib/fig_aws_common" }
+fig_desktop_api = { path = "lib/fig_desktop_api" }
 fig_diagnostic = { path = "lib/fig_diagnostic" }
 fig_install = { path = "lib/fig_install" }
 fig_integrations = { path = "lib/fig_integrations" }
 fig_ipc = { path = "lib/fig_ipc" }
 fig_log = { path = "lib/fig_log" }
+fig_os_shim = { path = "lib/fig_os_shim" }
 fig_proto = { path = "lib/fig_proto" }
+fig_remote_ipc = { path = "lib/fig_remote_ipc" }
 fig_request = { path = "lib/fig_request" }
 fig_settings = { path = "lib/fig_settings" }
 fig_telemetry = { path = "lib/fig_telemetry" }
@@ -71,6 +74,7 @@ nix = { version = "0.29.0", features = [
 ] }
 once_cell = { version = "1.18.0", features = ["parking_lot"] }
 percent-encoding = "2.2.0"
+portable-pty = "0.8.0"
 rand = "0.8.5"
 regex = "1.7.0"
 reqwest = { version = "0.12.5", default-features = false, features = [

@@ -12,6 +12,7 @@ use fig_install::{
     install,
     InstallComponents,
 };
+use fig_os_shim::Env;
 use fig_util::{
     CLI_BINARY_NAME,
     PRODUCT_NAME,
@@ -22,6 +23,8 @@ use crate::util::choose;
 
 #[cfg_attr(windows, allow(unused_variables))]
 pub async fn install_cli(install_components: InstallComponents, no_confirm: bool, force: bool) -> Result<ExitCode> {
+    let env = Env::new();
+
     #[cfg(unix)]
     {
         use nix::unistd::geteuid;
@@ -53,7 +56,7 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
             )? == 1
         };
         if !manual_install {
-            if let Err(err) = install(InstallComponents::SHELL_INTEGRATIONS).await {
+            if let Err(err) = install(InstallComponents::SHELL_INTEGRATIONS, &env).await {
                 println!("{}", "Could not automatically install:".bold());
                 println!("{err}");
                 manual_install = true;
@@ -78,7 +81,7 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
             println!("zsh:     . \"$HOME/{shell_dir}/zshrc.post.zsh\"");
             println!();
 
-            if let Err(err) = install(InstallComponents::SHELL_INTEGRATIONS).await {
+            if let Err(err) = install(InstallComponents::SHELL_INTEGRATIONS, &env).await {
                 println!("Could not install required files:");
                 println!("{err}");
             }
@@ -100,7 +103,7 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
                 println!();
 
                 if choose("Do you want to enable support for input method backed terminals?", &["Yes", "No"])? == 0 {
-                    install(InstallComponents::INPUT_METHOD).await?;
+                    install(InstallComponents::INPUT_METHOD, &env).await?;
                 }
             }
         }

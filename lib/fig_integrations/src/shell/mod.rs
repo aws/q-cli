@@ -8,6 +8,7 @@ use std::path::PathBuf;
 use async_trait::async_trait;
 use cfg_if::cfg_if;
 use clap::ValueEnum;
+use fig_os_shim::Env;
 use fig_util::{
     directories,
     Shell,
@@ -93,7 +94,7 @@ fn integration_file_name(dotfile_name: &str, when: &When, shell: &Shell) -> Stri
 }
 
 pub trait ShellExt {
-    fn get_shell_integrations(&self) -> Result<Vec<Box<dyn ShellIntegration>>>;
+    fn get_shell_integrations(&self, env: &Env) -> Result<Vec<Box<dyn ShellIntegration>>>;
     /// Script integrations are installed into ~/.fig/shell
     fn get_script_integrations(&self) -> Result<Vec<ShellScriptShellIntegration>>;
     fn get_fig_integration_source(&self, when: &When) -> &'static str;
@@ -124,8 +125,8 @@ impl ShellExt for Shell {
         Ok(integrations)
     }
 
-    fn get_shell_integrations(&self) -> Result<Vec<Box<dyn ShellIntegration>>> {
-        let config_dir = self.get_config_directory()?;
+    fn get_shell_integrations(&self, env: &Env) -> Result<Vec<Box<dyn ShellIntegration>>> {
+        let config_dir = self.get_config_directory(env)?;
 
         let integrations: Vec<Box<dyn ShellIntegration>> = match self {
             Shell::Bash => {

@@ -19,10 +19,11 @@ pin-project-lite = "0.2.12"
 thiserror.workspace = true
 tokio.workspace = true
 tracing.workspace = true
-whoami = "1.3.0"
+whoami.workspace = true
 
 [target.'cfg(unix)'.dependencies]
 nix.workspace = true
 
 [dev-dependencies]
+tempfile.workspace = true
 tokio.workspace = true

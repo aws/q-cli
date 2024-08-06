@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+mod checks;
+
 use std::borrow::Cow;
 use std::ffi::OsStr;
 use std::fmt::Display;
@@ -20,7 +22,11 @@ use anstream::{
     println,
 };
 use async_trait::async_trait;
-use auth::is_amzn_user;
+use checks::{
+    BashVersionCheck,
+    FishVersionCheck,
+    SshdConfigCheck,
+};
 use clap::Args;
 use crossterm::style::Stylize;
 use crossterm::terminal::{
@@ -54,9 +60,9 @@ use fig_ipc::{
     SendMessage,
     SendRecvMessage,
 };
+use fig_os_shim::Env;
 use fig_proto::local::DiagnosticsResponse;
 use fig_settings::JsonStore;
-use fig_util::consts::url::AUTOCOMPLETE_SSH_WIKI;
 use fig_util::desktop::{
     launch_fig_desktop,
     LaunchArgs,
@@ -90,10 +96,7 @@ use futures::future::BoxFuture;
 use futures::FutureExt;
 use owo_colors::OwoColorize;
 use regex::Regex;
-use semver::{
-    Version,
-    VersionReq,
-};
+use semver::Version;
 use spinners::{
     Spinner,
     Spinners,
@@ -350,12 +353,14 @@ enum Platform {
     Other,
 }
 
-fn get_platform() -> Platform {
-    match std::env::consts::OS {
-        "macos" => Platform::MacOs,
-        "linux" => Platform::Linux,
-        "windows" => Platform::Windows,
-        _ => Platform::Other,
+impl Platform {
+    pub fn current() -> Self {
+        match std::env::consts::OS {
+            "macos" => Platform::MacOs,
+            "linux" => Platform::Linux,
+            "windows" => Platform::Windows,
+            _ => Platform::Other,
+        }
     }
 }
 
@@ -1160,93 +1165,6 @@ impl DoctorCheck<()> for SshIntegrationCheck {
     }
 }
 
-struct SshdConfigCheck;
-
-#[async_trait]
-impl DoctorCheck<()> for SshdConfigCheck {
-    fn name(&self) -> Cow<'static, str> {
-        "sshd config".into()
-    }
-
-    async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let info = vec![
-            "The /etc/ssh/sshd_config file needs to have the following line:".into(),
-            "  AcceptEnv Q_SET_PARENT".magenta().to_string().into(),
-            "  AllowStreamLocalForwarding yes".magenta().to_string().into(),
-            "".into(),
-            "If your sshd_config is already configured correctly then:".into(),
-            format!(
-                "  1. Restart sshd, if using systemd: {}",
-                "sudo systemctl restart sshd".bold()
-            )
-            .into(),
-            "  2. Disconnect from the remote host".into(),
-            format!(
-                "  3. Run {} on the local machine",
-                format!("{CLI_BINARY_NAME} integrations install ssh",).bold()
-            )
-            .into(),
-            format!(
-                "  4. Reconnect to the remote host and run {} again",
-                format!("{CLI_BINARY_NAME} doctor").bold()
-            )
-            .into(),
-            "".into(),
-            format!("See {AUTOCOMPLETE_SSH_WIKI} for more info").into(),
-        ];
-
-        let sshd_config_path = "/etc/ssh/sshd_config";
-
-        let sshd_config = match std::fs::read_to_string(sshd_config_path).context("Could not read sshd_config") {
-            Ok(config) => config,
-            Err(_err) if std::env::var_os(Q_PARENT).is_some() => {
-                // We will assume amzn users have this configured correctly and warn other users.
-                if is_amzn_user().await.unwrap_or_default() {
-                    return Ok(());
-                } else {
-                    return Err(doctor_warning!(
-                        "Could not read sshd_config, check {AUTOCOMPLETE_SSH_WIKI} for more info"
-                    ));
-                }
-            },
-            Err(err) => {
-                return Err(DoctorError::Error {
-                    reason: err.to_string().into(),
-                    info: info.clone(),
-                    fix: None,
-                    error: None,
-                });
-            },
-        };
-
-        let accept_env_regex = Regex::new(r"(?m)^\s*AcceptEnv\s+.*(Q_\*|Q_SET_PARENT)([^\S\r\n]+.*$|$)").unwrap();
-
-        let allow_stream_local_forwarding_regex =
-            Regex::new(r"(?m)^\s*AllowStreamLocalForwarding\s+yes([^\S\r\n]+.*$|$)").unwrap();
-
-        let accept_env_match = accept_env_regex.is_match(&sshd_config);
-        let allow_stream_local_forwarding_match = allow_stream_local_forwarding_regex.is_match(&sshd_config);
-
-        if accept_env_match && allow_stream_local_forwarding_match {
-            Ok(())
-        } else {
-            Err(DoctorError::Error {
-                reason: "SSHD config is not set up correctly".into(),
-                info,
-                fix: None,
-                error: None,
-            })
-        }
-    }
-
-    async fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
-        if fig_util::system_info::in_ssh() {
-            DoctorCheckType::NormalCheck
-        } else {
-            DoctorCheckType::NoCheck
-        }
-    }
-}
 struct BundlePathCheck;
 
 #[async_trait]
@@ -1336,10 +1254,10 @@ dev_mode_check!(
 
 dev_mode_check!(PluginDevModeCheck, "Plugin dev mode", state, "plugin.developerMode");
 
-struct FigCLIPathCheck;
+struct CliPathCheck;
 
 #[async_trait]
-impl DoctorCheck<DiagnosticsResponse> for FigCLIPathCheck {
+impl DoctorCheck<DiagnosticsResponse> for CliPathCheck {
     fn name(&self) -> Cow<'static, str> {
         "Valid CLI path".into()
     }
@@ -2034,7 +1952,7 @@ impl DoctorCheck for LoginStatusCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        if !auth::is_logged_in().await {
+        if !fig_util::system_info::in_cloudshell() && !auth::is_logged_in().await {
             return Err(doctor_error!(
                 "Not authenticated. Please run {}",
                 format!("{CLI_BINARY_NAME} login").bold()
@@ -2132,79 +2050,6 @@ impl DoctorCheck for SandboxCheck {
     }
 }
 
-struct BashVersionCheck;
-
-#[async_trait]
-impl DoctorCheck for BashVersionCheck {
-    fn name(&self) -> Cow<'static, str> {
-        "Bash is up to date".into()
-    }
-
-    async fn get_type(&self, _: &(), _platform: Platform) -> DoctorCheckType {
-        if Shell::current_shell() == Some(Shell::Bash) {
-            DoctorCheckType::SoftCheck
-        } else {
-            DoctorCheckType::NoCheck
-        }
-    }
-
-    async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let (_, version) = Shell::current_shell_version()
-            .await
-            .context("Failed to get bash versions")?;
-
-        let version = semver::Version::parse(&version).context("Failed to parse bash version")?;
-
-        let version_req = semver::VersionReq::parse(">=5.0.0").unwrap();
-        if version_req.matches(&version) {
-            Ok(())
-        } else {
-            Err(doctor_warning!(
-                "Using Bash {version} may cause issues, it is recommended to either update to bash >=5 or switch to zsh.
-  - Install Bash 5 with Brew: {}
-  - Change shell default to ZSH: {}",
-                "brew install bash && bash".bright_magenta(),
-                "chsh -s /bin/zsh && zsh".bright_magenta()
-            ))
-        }
-    }
-}
-
-struct FishVersionCheck;
-
-#[async_trait]
-impl DoctorCheck for FishVersionCheck {
-    fn name(&self) -> Cow<'static, str> {
-        "Fish is up to date".into()
-    }
-
-    async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        if which::which("fish").is_err() {
-            // fish is not installed, so we shouldn't check it
-            return Ok(());
-        }
-
-        let output = Command::new("fish")
-            .arg("--version")
-            .output()
-            .context("failed getting fish version")?;
-
-        let version = Version::parse(
-            &String::from_utf8_lossy(&output.stdout)
-                .chars()
-                .filter(|char| char.is_numeric() || char == &'.')
-                .collect::<String>(),
-        )
-        .context("failed parsing fish version")?;
-
-        if !VersionReq::parse(">=3.3.0").unwrap().matches(&version) {
-            doctor_error!("your fish version is outdated (need at least 3.3.0, found {version})");
-        }
-
-        Ok(())
-    }
-}
-
 #[cfg(target_os = "macos")]
 struct ToolboxInstalledCheck;
 
@@ -2249,7 +2094,7 @@ where
     };
     for check in checks {
         let name = check.name();
-        let check_type: DoctorCheckType = check.get_type(&context, get_platform()).await;
+        let check_type: DoctorCheckType = check.get_type(&context, Platform::current()).await;
 
         if check_type == DoctorCheckType::NoCheck {
             continue;
@@ -2410,7 +2255,7 @@ pub async fn doctor_cli(all: bool, strict: bool) -> Result<ExitCode> {
 
     let shell_integrations: Vec<_> = [Shell::Bash, Shell::Zsh, Shell::Fish]
         .into_iter()
-        .map(|shell| shell.get_shell_integrations())
+        .map(|shell| shell.get_shell_integrations(&Env::new()))
         .collect::<Result<Vec<_>, fig_integrations::Error>>()?
         .into_iter()
         .flatten()
@@ -2502,7 +2347,7 @@ pub async fn doctor_cli(all: bool, strict: bool) -> Result<ExitCode> {
                     &ShellCompatibilityCheck,
                     &BundlePathCheck,
                     &AutocompleteEnabledCheck,
-                    &FigCLIPathCheck,
+                    &CliPathCheck,
                     &AccessibilityCheck,
                     &DotfilesSymlinkedCheck,
                 ],

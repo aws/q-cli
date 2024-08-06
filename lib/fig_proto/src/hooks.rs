@@ -180,7 +180,22 @@ mod tests {
     use super::*;
 
     #[test]
-    fn new_edit_buffer_hook_test() {
-        new_edit_buffer_hook(None, "test", 0, 0, None);
+    fn new_hooks() {
+        let context = generate_shell_context(1, "tty", Some("session_id")).unwrap();
+
+        let _ = new_edit_buffer_hook(context.clone(), "text", 0, 0, None);
+        let _ = new_init_hook(context.clone()).unwrap();
+        let _ = new_prompt_hook(context.clone());
+        let _ = new_preexec_hook(context.clone());
+        let _ = new_keyboard_focus_changed_hook("app_identifier", "focused_session_id");
+        let _ = new_ssh_hook(context.clone(), "control_path", "remote_dest").unwrap();
+        let _ = new_integration_ready_hook("identifier");
+        let _ = new_hide_hook();
+        let _ = new_event_hook("event_name", Some("payload".into()), vec!["app".into()]);
+        let _ = new_file_changed_hook(file_changed_hook::FileChanged::Settings, Some("filepath".into()));
+        let _ = new_callback_hook("handler_id", "filepath", 0);
+        let _ = new_intercepted_key_hook(context, "action", "key");
+        let _ = new_caret_position_hook(0.0, 0.0, 0.0, 0.0, caret_position_hook::Origin::BottomLeft);
+        let _ = new_clear_autocomplete_cache(vec!["cli".into()]);
     }
 }

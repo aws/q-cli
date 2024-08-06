@@ -4,6 +4,7 @@ use fig_install::{
     InstallComponents,
     UpdateOptions,
 };
+use fig_os_shim::Env;
 use fig_remote_ipc::figterm::FigtermState;
 use fig_util::consts::PRODUCT_NAME;
 use fig_util::url::USER_MANUAL;
@@ -181,7 +182,7 @@ pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
         },
         "uninstall" => {
             tokio::runtime::Handle::current().spawn(async {
-                fig_install::uninstall(InstallComponents::all()).await.ok();
+                fig_install::uninstall(InstallComponents::all(), &Env::new()).await.ok();
                 #[allow(clippy::exit)]
                 std::process::exit(0);
             });

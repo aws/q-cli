@@ -17,6 +17,7 @@ async-trait.workspace = true
 cfg-if.workspace = true
 clap.workspace = true
 dirs.workspace = true
+fig_os_shim.workspace = true
 fig_util.workspace = true
 indoc.workspace = true
 insta.workspace = true

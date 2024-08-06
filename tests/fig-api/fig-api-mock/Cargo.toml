@@ -9,6 +9,7 @@ version.workspace = true
 [dependencies]
 async-trait.workspace = true
 clap.workspace = true
-fig_desktop_api = { path = "../../../lib/fig_desktop_api" }
+fig_desktop_api.workspace = true
+fig_os_shim.workspace = true
 fig_proto.workspace = true
 tokio.workspace = true

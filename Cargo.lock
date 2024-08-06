@@ -2561,6 +2561,7 @@ dependencies = [
  "async-trait",
  "clap",
  "fig_desktop_api",
+ "fig_os_shim",
  "fig_proto",
  "tokio",
 ]
@@ -2634,6 +2635,7 @@ dependencies = [
  "fig_integrations",
  "fig_ipc",
  "fig_log",
+ "fig_os_shim",
  "fig_proto",
  "fig_remote_ipc",
  "fig_request",
@@ -2706,6 +2708,7 @@ dependencies = [
  "fig_api_client",
  "fig_install",
  "fig_integrations",
+ "fig_os_shim",
  "fig_proto",
  "fig_settings",
  "fig_telemetry",
@@ -2776,6 +2779,7 @@ dependencies = [
  "cookie",
  "fig_integrations",
  "fig_ipc",
+ "fig_os_shim",
  "fig_request",
  "fig_settings",
  "fig_telemetry",
@@ -2811,6 +2815,7 @@ dependencies = [
  "core-foundation",
  "dirs",
  "dispatch",
+ "fig_os_shim",
  "fig_settings",
  "fig_telemetry",
  "fig_util",
@@ -2842,6 +2847,7 @@ dependencies = [
  "fig_util",
  "nix 0.29.0",
  "pin-project-lite",
+ "tempfile",
  "thiserror",
  "tokio",
  "tracing",
@@ -2860,6 +2866,15 @@ dependencies = [
  "tracing",
  "tracing-appender",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "fig_os_shim"
+version = "1.3.3"
+dependencies = [
+ "dirs",
+ "tempfile",
+ "tokio",
 ]
 
 [[package]]
@@ -3023,6 +3038,7 @@ dependencies = [
  "clap",
  "core-foundation",
  "dirs",
+ "fig_os_shim",
  "fig_test",
  "hex",
  "indoc",
@@ -6234,6 +6250,7 @@ dependencies = [
  "fig_integrations",
  "fig_ipc",
  "fig_log",
+ "fig_os_shim",
  "fig_proto",
  "fig_request",
  "fig_settings",

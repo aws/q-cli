@@ -20,6 +20,7 @@ camino.workspace = true
 cfg-if.workspace = true
 cookie = "0.18.0"
 fig_integrations.workspace = true
+fig_os_shim.workspace = true
 fig_request.workspace = true
 fig_settings.workspace = true
 fig_telemetry.workspace = true

@@ -133,6 +133,35 @@ impl BufferedUnixStream {
 mod tests {
     use super::*;
 
+    #[tokio::test]
+    async fn test_validate_socket() {
+        let dir = tempfile::tempdir().unwrap();
+        let socket_path = dir.path().join("socket.sock");
+
+        let socket_thread = tokio::spawn({
+            let socket_path = socket_path.clone();
+            async move {
+                let listener = tokio::net::UnixListener::bind(&socket_path).unwrap();
+                listener.accept().await.unwrap();
+            }
+        });
+
+        assert!(socket_connect(&socket_path).await.is_err());
+
+        #[cfg(unix)]
+        {
+            use std::fs::Permissions;
+            use std::os::unix::fs::PermissionsExt;
+            tokio::fs::set_permissions(&dir, Permissions::from_mode(0o700))
+                .await
+                .unwrap();
+        }
+
+        let _stream = socket_connect(&socket_path).await.expect("Failed to validate socket");
+
+        socket_thread.abort();
+    }
+
     /// If this test fails, we need to reevaluate the permissions model design around our sockets
     /// and double check with security
     #[test]

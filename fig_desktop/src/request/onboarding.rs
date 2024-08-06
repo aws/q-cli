@@ -1,4 +1,5 @@
 use fig_integrations::shell::ShellExt;
+use fig_os_shim::Env;
 use fig_proto::fig::{
     OnboardingAction,
     OnboardingRequest,
@@ -20,12 +21,12 @@ pub async fn post_login() {
     fig_settings::state::set_value("desktop.completedOnboarding", true).ok();
 }
 
-pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> RequestResult {
+pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy, env: &Env) -> RequestResult {
     match request.action() {
         OnboardingAction::InstallationScript => {
             let mut errs: Vec<String> = vec![];
             for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
-                match shell.get_shell_integrations() {
+                match shell.get_shell_integrations(env) {
                     Ok(integrations) => {
                         for integration in integrations {
                             if let Err(err) = integration.install().await {
@@ -52,7 +53,7 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
 
             fig_util::open_url(fig_install::UNINSTALL_URL).ok();
 
-            let result = match uninstall(InstallComponents::all()).await {
+            let result = match uninstall(InstallComponents::all(), env).await {
                 Ok(_) => RequestResult::success(),
                 Err(err) => RequestResult::error(err.to_string()),
             };
@@ -103,7 +104,7 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
                 commands,
                 LocalResponse,
             };
-            let res = commands::prompt_for_accessibility_permission()
+            let res = commands::prompt_for_accessibility_permission(env)
                 .await
                 .unwrap_or_else(|e| e);
             match res {

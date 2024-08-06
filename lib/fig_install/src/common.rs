@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
 use fig_integrations::Integration;
+use fig_os_shim::Env;
 use fig_util::{
     directories,
     Shell,
@@ -36,7 +37,7 @@ impl InstallComponents {
     }
 }
 
-pub async fn uninstall(components: InstallComponents) -> Result<(), Error> {
+pub async fn uninstall(components: InstallComponents, env: &Env) -> Result<(), Error> {
     let ssh_result = if components.contains(InstallComponents::SSH) {
         SshIntegration::new()?.uninstall().await
     } else {
@@ -45,7 +46,7 @@ pub async fn uninstall(components: InstallComponents) -> Result<(), Error> {
 
     let shell_integration_result = {
         for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
-            for integration in shell.get_shell_integrations()? {
+            for integration in shell.get_shell_integrations(env)? {
                 integration.uninstall().await?;
             }
         }
@@ -121,11 +122,11 @@ pub async fn uninstall(components: InstallComponents) -> Result<(), Error> {
         .and(ssh_result.map_err(|e| e.into()))
 }
 
-pub async fn install(components: InstallComponents) -> Result<(), Error> {
+pub async fn install(components: InstallComponents, env: &Env) -> Result<(), Error> {
     if components.contains(InstallComponents::SHELL_INTEGRATIONS) {
         let mut errs: Vec<Error> = vec![];
         for shell in Shell::all() {
-            match shell.get_shell_integrations() {
+            match shell.get_shell_integrations(env) {
                 Ok(integrations) => {
                     for integration in integrations {
                         if let Err(e) = integration.install().await {

@@ -234,7 +234,7 @@ impl AppSubcommand {
                 }
 
                 if !args.only_open {
-                    fig_install::uninstall(args.into()).await?;
+                    fig_install::uninstall(args.into(), &fig_os_shim::Env::new()).await?;
                 }
             },
             #[cfg(not(target_os = "macos"))]

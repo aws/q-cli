@@ -4,6 +4,7 @@ use anstream::adapter::strip_str;
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
 use fig_integrations::Integration;
+use fig_os_shim::Env;
 use fig_proto::fig::install_response::{
     InstallationStatus,
     Response,
@@ -53,12 +54,12 @@ fn integration_result(result: Result<(), impl Display>) -> ServerOriginatedSubMe
     })
 }
 
-pub async fn install(request: InstallRequest) -> RequestResult {
+pub async fn install(request: InstallRequest, env: &Env) -> RequestResult {
     let response = match (request.component(), request.action()) {
         (InstallComponent::Dotfiles, action) => {
             let mut errs: Vec<String> = vec![];
             for shell in Shell::all() {
-                match shell.get_shell_integrations() {
+                match shell.get_shell_integrations(env) {
                     Ok(integrations) => {
                         for integration in integrations {
                             let res = match action {

@@ -42,6 +42,7 @@ use fig_ipc::{
     SendMessage,
     SendRecvMessage,
 };
+use fig_os_shim::Env;
 use fig_proto::figterm::figterm_request_message::Request as FigtermRequest;
 use fig_proto::figterm::{
     FigtermRequestMessage,
@@ -276,6 +277,7 @@ const BUFFER_SIZE: usize = 1024;
 
 impl InternalSubcommand {
     pub async fn execute(self) -> Result<ExitCode> {
+        let env = Env::new();
         match self {
             InternalSubcommand::Install(args) => {
                 let no_confirm = args.no_confirm;
@@ -302,14 +304,14 @@ impl InternalSubcommand {
                     if option_env!("Q_IS_PACKAGE_MANAGED").is_some() {
                         println!("Please uninstall using your package manager");
                     } else {
-                        fig_install::uninstall(InstallComponents::BINARY).await?;
+                        fig_install::uninstall(InstallComponents::BINARY, &env).await?;
                         println!("\n{}\n", "The binary was successfully uninstalled".bold());
                     }
                 }
 
                 let mut components = components;
                 components.set(InstallComponents::BINARY, false);
-                fig_install::uninstall(components).await?;
+                fig_install::uninstall(components, &env).await?;
                 Ok(ExitCode::SUCCESS)
             },
             InternalSubcommand::PreCmd { alias } => Ok(pre_cmd(alias).await),
@@ -785,7 +787,7 @@ impl InternalSubcommand {
                 } else {
                     InstallComponents::SHELL_INTEGRATIONS | InstallComponents::SSH
                 };
-                fig_install::uninstall(components).await.ok();
+                fig_install::uninstall(components, &env).await.ok();
                 Ok(ExitCode::SUCCESS)
             },
             InternalSubcommand::GenerateSsh(args) => {
