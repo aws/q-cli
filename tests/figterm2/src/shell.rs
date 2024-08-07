@@ -44,12 +44,14 @@ struct RemoteHook {
 
 #[async_trait::async_trait]
 impl RemoteHookHandler for RemoteHook {
+    type Error = anyhow::Error;
+
     async fn edit_buffer(
         &mut self,
         edit_buffer_hook: &EditBufferHook,
         _session_id: &FigtermSessionId,
         _figterm_state: &Arc<FigtermState>,
-    ) -> anyhow::Result<Option<clientbound::response::Response>> {
+    ) -> Result<Option<clientbound::response::Response>, Self::Error> {
         *self.buffer.lock().await = Some(edit_buffer_hook.text.clone());
         Ok(None)
     }
@@ -59,7 +61,7 @@ impl RemoteHookHandler for RemoteHook {
         _prompt_hook: &PromptHook,
         _session_id: &FigtermSessionId,
         _figterm_state: &Arc<FigtermState>,
-    ) -> anyhow::Result<Option<clientbound::response::Response>> {
+    ) -> Result<Option<clientbound::response::Response>, Self::Error> {
         Ok(None)
     }
 
@@ -68,7 +70,7 @@ impl RemoteHookHandler for RemoteHook {
         _pre_exec_hook: &PreExecHook,
         _session_id: &FigtermSessionId,
         _figterm_state: &Arc<FigtermState>,
-    ) -> anyhow::Result<Option<clientbound::response::Response>> {
+    ) -> Result<Option<clientbound::response::Response>, Self::Error> {
         Ok(None)
     }
 
@@ -77,26 +79,26 @@ impl RemoteHookHandler for RemoteHook {
         _post_exec_hook: &PostExecHook,
         _session_id: &FigtermSessionId,
         _figterm_state: &Arc<FigtermState>,
-    ) -> anyhow::Result<Option<clientbound::response::Response>> {
+    ) -> Result<Option<clientbound::response::Response>, Self::Error> {
         Ok(None)
     }
 
     async fn intercepted_key(
         &mut self,
         _intercepted_key: InterceptedKeyHook,
-    ) -> anyhow::Result<Option<clientbound::response::Response>> {
+    ) -> Result<Option<clientbound::response::Response>, Self::Error> {
         Ok(None)
     }
 
-    async fn account_info(&mut self) -> anyhow::Result<Option<clientbound::response::Response>> {
+    async fn account_info(&mut self) -> Result<Option<clientbound::response::Response>, Self::Error> {
         Err(anyhow::anyhow!("account_info not implemented"))
     }
 
-    async fn start_exchange_credentials(&mut self) -> anyhow::Result<Option<clientbound::response::Response>> {
+    async fn start_exchange_credentials(&mut self) -> Result<Option<clientbound::response::Response>, Self::Error> {
         Err(anyhow::anyhow!("start_exchange_credentials not implemented"))
     }
 
-    async fn confirm_exchange_credentials(&mut self) -> anyhow::Result<Option<clientbound::response::Response>> {
+    async fn confirm_exchange_credentials(&mut self) -> Result<Option<clientbound::response::Response>, Self::Error> {
         Err(anyhow::anyhow!("confirm_exchange_credentials not implemented"))
     }
 

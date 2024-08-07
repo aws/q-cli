@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use anyhow::Result;
-use auth::builder_id_token;
+use fig_auth::builder_id_token;
 use fig_request::reqwest::Client;
 use fnv::FnvHashSet;
 use futures::prelude::*;

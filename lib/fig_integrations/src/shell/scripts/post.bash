@@ -32,15 +32,15 @@ function __fig_preexec() {
   # changed since we last set it.
   if [[ -n "${Q_USER_PS1+x}" && "${PS1}" = "${Q_LAST_PS1}" ]]; then
     Q_LAST_PS1="${Q_USER_PS1}"
-    export PS1="${Q_USER_PS1}"
+    PS1="${Q_USER_PS1}"
   fi
   if [[ -n "${Q_USER_PS2+x}" && "${PS2}" = "${Q_LAST_PS2}" ]]; then
     Q_LAST_PS2="${Q_USER_PS2}"
-    export PS2="${Q_USER_PS2}"
+    PS2="${Q_USER_PS2}"
   fi
   if [[ -n "${Q_USER_PS3+x}" && "${PS3}" = "${Q_LAST_PS3}" ]]; then
     Q_LAST_PS3="${Q_USER_PS3}"
-    export PS3="${Q_USER_PS3}"
+    PS3="${Q_USER_PS3}"
   fi
 
   _fig_done_preexec="yes"
@@ -105,9 +105,9 @@ function __fig_post_prompt () {
 
   # Reset $? first in case it's used in $Q_USER_PSx.
   __bp_set_ret_value "${__fig_ret_value}" "${__bp_last_argument_prev_command}"
-  export PS1="${START_PROMPT}${Q_USER_PS1}${END_PROMPT}${NEW_CMD}"
-  export PS2="${START_PROMPT}${Q_USER_PS2}${END_PROMPT}"
-  export PS3="${START_PROMPT}${Q_USER_PS3}${END_PROMPT}${NEW_CMD}"
+  PS1="${START_PROMPT}${Q_USER_PS1}${END_PROMPT}${NEW_CMD}"
+  PS2="${START_PROMPT}${Q_USER_PS2}${END_PROMPT}"
+  PS3="${START_PROMPT}${Q_USER_PS3}${END_PROMPT}${NEW_CMD}"
 
   Q_LAST_PS1="${PS1}"
   Q_LAST_PS2="${PS2}"

@@ -506,7 +506,7 @@ impl PlatformStateImpl {
                             && terminal_cursor_backing_installed
                             && !fig_settings::settings::get_bool_or("autocomplete.disable", false)
                             && accessibility_is_enabled();
-                        // && fig_request::auth::is_logged_in();
+                        // && fig_request::fig_auth::is_logged_in();
 
                         enabled_proxy
                             .send_event(Event::WindowEvent {

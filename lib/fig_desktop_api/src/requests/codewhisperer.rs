@@ -1,4 +1,7 @@
-use fig_api_client::Customization;
+use fig_api_client::{
+    Client,
+    Customization,
+};
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
     CodewhispererCustomization,
@@ -9,7 +12,11 @@ use fig_proto::fig::{
 use super::RequestResult;
 
 pub async fn list_customization(_request: CodewhispererListCustomizationRequest) -> RequestResult {
-    let customizations = fig_api_client::ai::list_customizations()
+    let client = Client::new()
+        .await
+        .map_err(|err| format!("failed to create client: {:?}", err))?;
+    let customizations = client
+        .list_customizations()
         .await
         .map_err(|err| format!("list_customizations failed: {:?}", err))?
         .into_iter()

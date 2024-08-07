@@ -36,7 +36,6 @@ hotkey-chat = []
 [dependencies]
 anyhow.workspace = true
 async-trait.workspace = true
-auth.workspace = true
 base64.workspace = true
 bytes.workspace = true
 camino.workspace = true
@@ -44,6 +43,7 @@ cfg-if.workspace = true
 clap.workspace = true
 dashmap.workspace = true
 fig_api_client.workspace = true
+fig_auth.workspace = true
 fig_desktop_api.workspace = true
 fig_install.workspace = true
 fig_integrations = { workspace = true, features = ["dispatch"] }

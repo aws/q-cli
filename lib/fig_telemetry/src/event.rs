@@ -23,7 +23,11 @@ impl AppTelemetryEvent {
     pub async fn new(ty: EventType) -> Self {
         Self(Event {
             ty,
-            credential_start_url: auth::builder_id_token().await.ok().flatten().and_then(|t| t.start_url),
+            credential_start_url: fig_auth::builder_id_token()
+                .await
+                .ok()
+                .flatten()
+                .and_then(|t| t.start_url),
             created_time: Some(SystemTime::now()),
         })
     }
@@ -31,7 +35,11 @@ impl AppTelemetryEvent {
     pub async fn from_event(event: Event) -> Self {
         let credential_start_url = match event.credential_start_url {
             Some(v) => Some(v),
-            None => auth::builder_id_token().await.ok().flatten().and_then(|t| t.start_url),
+            None => fig_auth::builder_id_token()
+                .await
+                .ok()
+                .flatten()
+                .and_then(|t| t.start_url),
         };
         Self(Event {
             ty: event.ty,
@@ -54,7 +62,7 @@ impl AppTelemetryEvent {
 pub struct InlineShellCompletionActionedOptions {}
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use std::time::Duration;
 
     use fig_telemetry_core::{
@@ -173,7 +181,7 @@ mod tests {
         .await
     }
 
-    async fn all_events() -> Vec<AppTelemetryEvent> {
+    pub(crate) async fn all_events() -> Vec<AppTelemetryEvent> {
         vec![
             user_logged_in().await,
             refresh_credentials().await,
@@ -189,6 +197,19 @@ mod tests {
             chat_end().await,
             chat_added_message().await,
         ]
+    }
+
+    #[tokio::test]
+    async fn from_event_test() {
+        let event = Event {
+            ty: EventType::UserLoggedIn {},
+            credential_start_url: Some("https://example.com".into()),
+            created_time: None,
+        };
+        let app_event = AppTelemetryEvent::from_event(event).await;
+        assert_eq!(app_event.ty, EventType::UserLoggedIn {});
+        assert_eq!(app_event.credential_start_url, Some("https://example.com".into()));
+        assert!(app_event.created_time.is_some());
     }
 
     #[tokio::test]

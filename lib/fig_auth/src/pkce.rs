@@ -168,14 +168,14 @@ pub struct PkceRegistration {
     code_verifier: String,
     /// Random value generated for every authentication attempt.
     ///
-    /// https://stackoverflow.com/questions/26132066/what-is-the-purpose-of-the-state-parameter-in-oauth-authorization-request
+    /// <https://stackoverflow.com/questions/26132066/what-is-the-purpose-of-the-state-parameter-in-oauth-authorization-request>
     pub state: String,
     /// Listener for hosting the local HTTP server.
     listener: TcpListener,
     region: Region,
     /// Interchangeable with the "start URL" concept in the device code flow.
     ///
-    /// Reference: https://quip-amazon.com/SlOfAat54xwt/Tinkerbell-Developer-Guide#temp:C:BKFaabeb4c898c747a08f482d209
+    /// Reference: <https://quip-amazon.com/SlOfAat54xwt/Tinkerbell-Developer-Guide#temp:C:BKFaabeb4c898c747a08f482d209>
     issuer_url: String,
     /// Time to wait for [`Self::finish`] to complete. Default is [`DEFAULT_AUTHORIZATION_TIMEOUT`].
     timeout: Duration,

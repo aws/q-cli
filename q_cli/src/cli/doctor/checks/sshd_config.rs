@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
 use async_trait::async_trait;
-use auth::is_amzn_user;
 use eyre::Context;
+use fig_auth::is_amzn_user;
 use fig_util::env_var::Q_PARENT;
 use fig_util::url::AUTOCOMPLETE_SSH_WIKI;
 use fig_util::CLI_BINARY_NAME;

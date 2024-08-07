@@ -1,5 +1,5 @@
 [package]
-name = "auth"
+name = "fig_auth"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true

@@ -861,7 +861,7 @@ impl DebugSubcommand {
             DebugSubcommand::FixPermissions => {
                 fix_permissions::fix_permissions(&env)?;
             },
-            DebugSubcommand::RefreshAuthToken => match auth::refresh_token().await? {
+            DebugSubcommand::RefreshAuthToken => match fig_auth::refresh_token().await? {
                 Some(_) => eprintln!("Refreshed token"),
                 None => {
                     eprintln!("No token to refresh");

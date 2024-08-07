@@ -30,7 +30,10 @@ use amzn_toolkit_telemetry::config::{
 };
 use amzn_toolkit_telemetry::error::DisplayErrorContext;
 use amzn_toolkit_telemetry::types::AwsProduct;
-use amzn_toolkit_telemetry::Config;
+use amzn_toolkit_telemetry::{
+    Client as ToolkitTelemetryClient,
+    Config,
+};
 use aws_credential_types::provider::SharedCredentialsProvider;
 use aws_smithy_types::DateTime;
 use cognito::CognitoProvider;
@@ -45,10 +48,7 @@ pub use event::{
     AppTelemetryEvent,
     InlineShellCompletionActionedOptions,
 };
-use fig_api_client::ai::{
-    cw_client,
-    cw_endpoint,
-};
+use fig_api_client::Client as CodewhispererClient;
 use fig_aws_common::app_name;
 use fig_telemetry_core::TelemetryEmitter;
 pub use fig_telemetry_core::{
@@ -190,14 +190,14 @@ fn opt_out_preference() -> OptOutPreference {
 #[derive(Debug, Clone)]
 pub struct Client {
     client_id: Uuid,
-    toolkit_telemetry_client: amzn_toolkit_telemetry::Client,
-    codewhisperer_client: amzn_codewhisperer_client::Client,
+    toolkit_telemetry_client: Option<ToolkitTelemetryClient>,
+    codewhisperer_client: Option<CodewhispererClient>,
 }
 
 impl Client {
     pub async fn new(telemetry_stage: TelemetryStage) -> Self {
         let client_id = util::get_client_id();
-        let toolkit_telemetry_client = amzn_toolkit_telemetry::Client::from_conf(
+        let toolkit_telemetry_client = Some(amzn_toolkit_telemetry::Client::from_conf(
             Config::builder()
                 .behavior_version(BehaviorVersion::v2024_03_28())
                 .endpoint_resolver(StaticEndpoint(telemetry_stage.endpoint))
@@ -205,9 +205,21 @@ impl Client {
                 .region(telemetry_stage.region.clone())
                 .credentials_provider(SharedCredentialsProvider::new(CognitoProvider::new(telemetry_stage)))
                 .build(),
-        );
+        ));
 
-        let codewhisperer_client = cw_client(cw_endpoint()).await;
+        let codewhisperer_client = CodewhispererClient::new().await.ok();
+
+        Self {
+            client_id,
+            toolkit_telemetry_client,
+            codewhisperer_client,
+        }
+    }
+
+    pub fn mock() -> Self {
+        let client_id = util::get_client_id();
+        let toolkit_telemetry_client = None;
+        let codewhisperer_client = Some(CodewhispererClient::mock());
 
         Self {
             client_id,
@@ -225,8 +237,9 @@ impl Client {
         if telemetry_is_disabled() {
             return;
         }
-
-        let toolkit_telemetry_client = self.toolkit_telemetry_client.clone();
+        let Some(toolkit_telemetry_client) = self.toolkit_telemetry_client.clone() else {
+            return;
+        };
         let client_id = self.client_id;
         let Some(metric_datum) = event.into_metric_datum() else {
             return;
@@ -352,7 +365,9 @@ impl Client {
         shell: Option<String>,
         shell_version: Option<String>,
     ) {
-        let codewhisperer_client = self.codewhisperer_client.clone();
+        let Some(codewhisperer_client) = self.codewhisperer_client.clone() else {
+            return;
+        };
         let user_context = self.user_context().unwrap();
         let opt_out_preference = opt_out_preference();
 
@@ -386,13 +401,11 @@ impl Client {
             let terminal_user_interaction_event = terminal_user_interaction_event_builder.build();
 
             if let Err(err) = codewhisperer_client
-                .send_telemetry_event()
-                .telemetry_event(TelemetryEvent::TerminalUserInteractionEvent(
-                    terminal_user_interaction_event,
-                ))
-                .user_context(user_context)
-                .opt_out_preference(opt_out_preference)
-                .send()
+                .send_telemetry_event(
+                    TelemetryEvent::TerminalUserInteractionEvent(terminal_user_interaction_event),
+                    user_context,
+                    opt_out_preference,
+                )
                 .await
             {
                 error!(err =% DisplayErrorContext(err), "Failed to send telemetry event");
@@ -406,7 +419,9 @@ impl Client {
         terminal: Option<String>,
         shell: Option<String>,
     ) {
-        let codewhisperer_client = self.codewhisperer_client.clone();
+        let Some(codewhisperer_client) = self.codewhisperer_client.clone() else {
+            return;
+        };
         let user_context = self.user_context().unwrap();
         let opt_out_preference = opt_out_preference();
 
@@ -429,13 +444,11 @@ impl Client {
             let terminal_user_interaction_event = terminal_user_interaction_event_builder.build();
 
             if let Err(err) = codewhisperer_client
-                .send_telemetry_event()
-                .telemetry_event(TelemetryEvent::TerminalUserInteractionEvent(
-                    terminal_user_interaction_event,
-                ))
-                .user_context(user_context)
-                .opt_out_preference(opt_out_preference)
-                .send()
+                .send_telemetry_event(
+                    TelemetryEvent::TerminalUserInteractionEvent(terminal_user_interaction_event),
+                    user_context,
+                    opt_out_preference,
+                )
                 .await
             {
                 error!(err =% DisplayErrorContext(err), "Failed to send telemetry event");
@@ -444,7 +457,9 @@ impl Client {
     }
 
     async fn send_cw_telemetry_chat_add_message_event(&self, conversation_id: String, message_id: String) {
-        let codewhisperer_client = self.codewhisperer_client.clone();
+        let Some(codewhisperer_client) = self.codewhisperer_client.clone() else {
+            return;
+        };
         let user_context = self.user_context().unwrap();
         let opt_out_preference = opt_out_preference();
 
@@ -463,11 +478,11 @@ impl Client {
         let mut set = JOIN_SET.lock().await;
         set.spawn(async move {
             if let Err(err) = codewhisperer_client
-                .send_telemetry_event()
-                .telemetry_event(TelemetryEvent::ChatAddMessageEvent(chat_add_message_event))
-                .user_context(user_context)
-                .opt_out_preference(opt_out_preference)
-                .send()
+                .send_telemetry_event(
+                    TelemetryEvent::ChatAddMessageEvent(chat_add_message_event),
+                    user_context,
+                    opt_out_preference,
+                )
                 .await
             {
                 error!(err =% DisplayErrorContext(err), "Failed to send telemetry event");
@@ -483,7 +498,9 @@ impl Client {
         latency: Duration,
         accepted: bool,
     ) {
-        let codewhisperer_client = self.codewhisperer_client.clone();
+        let Some(codewhisperer_client) = self.codewhisperer_client.clone() else {
+            return;
+        };
         let user_context = self.user_context().unwrap();
         let opt_out_preference = opt_out_preference();
 
@@ -521,11 +538,11 @@ impl Client {
         let mut set = JOIN_SET.lock().await;
         set.spawn(async move {
             if let Err(err) = codewhisperer_client
-                .send_telemetry_event()
-                .telemetry_event(TelemetryEvent::UserTriggerDecisionEvent(user_trigger_decision_event))
-                .user_context(user_context)
-                .opt_out_preference(opt_out_preference)
-                .send()
+                .send_telemetry_event(
+                    TelemetryEvent::UserTriggerDecisionEvent(user_trigger_decision_event),
+                    user_context,
+                    opt_out_preference,
+                )
                 .await
             {
                 error!(err =% DisplayErrorContext(err), "Failed to send telemetry event");
@@ -647,6 +664,7 @@ async fn shell() -> (Option<Shell>, Option<String>) {
 
 #[cfg(test)]
 mod test {
+    use event::tests::all_events;
     use fig_util::CLI_BINARY_NAME;
     use uuid::uuid;
 
@@ -668,6 +686,14 @@ mod test {
             Some(uuid!("ffffffff-ffff-ffff-ffff-ffffffffffff").hyphenated().to_string())
         );
         assert_eq!(context.ide_version.as_deref(), Some(PRODUCT_VERSION));
+    }
+
+    #[tokio::test]
+    async fn client_send_event_test() {
+        let client = Client::mock();
+        for event in all_events().await {
+            client.send_event(event).await;
+        }
     }
 
     #[tracing_test::traced_test]
@@ -733,18 +759,22 @@ mod test {
     #[tokio::test]
     #[ignore = "needs auth which is not in CI"]
     async fn test_without_optout() {
-        Client::new(TelemetryStage::BETA)
-            .await
+        let client = Client::new(TelemetryStage::BETA).await;
+        client
             .codewhisperer_client
-            .send_telemetry_event()
-            .telemetry_event(TelemetryEvent::ChatAddMessageEvent(
-                ChatAddMessageEvent::builder()
-                    .conversation_id("debug".to_owned())
-                    .message_id("debug".to_owned())
-                    .build()
-                    .unwrap(),
-            ))
-            .send()
+            .as_ref()
+            .unwrap()
+            .send_telemetry_event(
+                TelemetryEvent::ChatAddMessageEvent(
+                    ChatAddMessageEvent::builder()
+                        .conversation_id("debug".to_owned())
+                        .message_id("debug".to_owned())
+                        .build()
+                        .unwrap(),
+                ),
+                client.user_context().unwrap(),
+                OptOutPreference::OptIn,
+            )
             .await
             .unwrap();
     }

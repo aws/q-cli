@@ -109,7 +109,6 @@ impl Db {
         Ok(Self { pool })
     }
 
-    #[cfg(test)]
     pub(crate) fn mock() -> Self {
         let conn = SqliteConnectionManager::memory();
         let pool = Pool::builder().build(conn).unwrap();

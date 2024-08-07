@@ -19,13 +19,13 @@ use eyre::{
     bail,
     Result,
 };
-use fig_api_client::ai::{
-    request_cw,
-    CodeWhispererFileContext,
-    CodeWhispererRequest,
+use fig_api_client::model::{
+    FileContext,
     LanguageName,
     ProgrammingLanguage,
+    RecommendationsInput,
 };
+use fig_api_client::Client;
 use fig_ipc::{
     BufferedUnixStream,
     SendMessage,
@@ -172,8 +172,8 @@ i=`wc -l $FILENAME|cut -d ' ' -f1`; cat $FILENAME| echo "scale=2;(`paste -sd+`)/
     
 #"#;
 
-    let mut request = CodeWhispererRequest {
-        file_context: CodeWhispererFileContext {
+    let mut input = RecommendationsInput {
+        file_context: FileContext {
             left_file_content: format!("{prompt}{question}\n"),
             right_file_content: "".into(),
             filename: "commands.sh".into(),
@@ -186,23 +186,19 @@ i=`wc -l $FILENAME|cut -d ' ' -f1`; cat $FILENAME| echo "scale=2;(`paste -sd+`)/
     };
 
     let mut completions = vec![];
-
+    let client = Client::new().await?;
     loop {
-        let output = request_cw(request.clone()).await?.output;
-        for comp in output.completions() {
+        let output = client.generate_recommendations(input.clone()).await?;
+        for comp in output.recommendations {
             completions.push(comp.content.clone());
         }
-        if let Some(next_token) = output.next_token() {
-            if !next_token.is_empty() {
-                request.next_token = Some(next_token.into());
-            } else {
-                break;
-            }
-        } else {
-            break;
+        match output.next_token {
+            Some(next_token) if !next_token.is_empty() => {
+                input.next_token = Some(next_token);
+            },
+            _ => break,
         }
     }
-
     Ok(CwResponse { completions })
 }
 
@@ -316,7 +312,7 @@ fn change_blocking_fd(fd: std::os::unix::io::RawFd, is_blocking: bool) -> Result
 
 impl TranslateArgs {
     pub async fn execute(self) -> Result<ExitCode> {
-        if !auth::is_logged_in().await {
+        if !fig_util::system_info::in_cloudshell() && !fig_auth::is_logged_in().await {
             bail!(
                 "You are not logged in. Run {} to login.",
                 format!("{CLI_BINARY_NAME} login").magenta()

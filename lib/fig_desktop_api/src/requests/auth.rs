@@ -1,16 +1,16 @@
 use std::sync::Arc;
 
-use auth::builder_id::{
+use fig_auth::builder_id::{
     PollCreateToken,
     StartDeviceAuthorizationResponse,
     TokenType,
 };
-use auth::pkce::{
+use fig_auth::pkce::{
     Client,
     PkceClient,
     PkceRegistration,
 };
-use auth::secret_store::SecretStore;
+use fig_auth::secret_store::SecretStore;
 use fig_proto::fig::auth_builder_id_poll_create_token_response::PollStatus;
 use fig_proto::fig::auth_status_response::AuthKind;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
@@ -46,7 +46,7 @@ const BUILDER_ID_DATA_KEY: &str = "builder-id-data";
 enum PkceError {
     InvalidRequestId,
     RegistrationCancelled,
-    AuthError(auth::Error),
+    AuthError(fig_auth::Error),
 }
 
 impl std::error::Error for PkceError {}
@@ -61,8 +61,8 @@ impl std::fmt::Display for PkceError {
     }
 }
 
-impl From<auth::Error> for PkceError {
-    fn from(value: auth::Error) -> Self {
+impl From<fig_auth::Error> for PkceError {
+    fn from(value: fig_auth::Error) -> Self {
         Self::AuthError(value)
     }
 }
@@ -85,10 +85,10 @@ struct PkceState<T> {
     new_tx: Sender<(String, PkceRegistration, T, Option<SecretStore>)>,
 
     /// [Sender] for completed PKCE authorizations. Created per authorization attempt.
-    finished_tx: Mutex<Sender<(String, Result<(), auth::Error>)>>,
+    finished_tx: Mutex<Sender<(String, Result<(), fig_auth::Error>)>>,
 
     /// [Receiver] for completed PKCE authorizations. Created per authorization attempt.
-    finished_rx: Mutex<Receiver<(String, Result<(), auth::Error>)>>,
+    finished_rx: Mutex<Receiver<(String, Result<(), fig_auth::Error>)>>,
 }
 
 impl<T: PkceClient + Send + Sync + 'static> PkceState<T> {
@@ -179,7 +179,7 @@ impl<T: PkceClient + Send + Sync + 'static> PkceState<T> {
 }
 
 pub async fn status(_request: AuthStatusRequest) -> RequestResult {
-    let token = auth::builder_id_token().await;
+    let token = fig_auth::builder_id_token().await;
     Ok(ServerOriginatedSubMessage::AuthStatusResponse(AuthStatusResponse {
         authed: matches!(token, Ok(Some(_))),
         auth_kind: match &token {
@@ -210,7 +210,7 @@ pub async fn start_pkce_authorization(
     let secret_store = SecretStore::new()
         .await
         .map_err(|err| format!("Failed to load secret store: {err}"))?;
-    let (client, registration) = auth::pkce::start_pkce_authorization(issuer_url, region)
+    let (client, registration) = fig_auth::pkce::start_pkce_authorization(issuer_url, region)
         .await
         .map_err(|err| format!("Unable to start PKCE authorization: {err}"))?;
     let url = registration.url.clone();
@@ -249,7 +249,7 @@ pub async fn builder_id_start_device_authorization(
         .map_err(|err| format!("Failed to load secret store: {err}"))?;
 
     let builder_init: StartDeviceAuthorizationResponse =
-        auth::builder_id::start_device_authorization(&secret_store, start_url, region)
+        fig_auth::builder_id::start_device_authorization(&secret_store, start_url, region)
             .await
             .map_err(|err| format!("Failed to init auth: {err}"))?;
 
@@ -281,7 +281,7 @@ pub async fn builder_id_poll_create_token(
     let builder_init: StartDeviceAuthorizationResponse =
         ctx.get(&[BUILDER_ID_DATA_KEY, &auth_request_id]).unwrap().unwrap();
 
-    let response = match auth::builder_id::poll_create_token(
+    let response = match fig_auth::builder_id::poll_create_token(
         &secret_store,
         builder_init.device_code,
         Some(builder_init.start_url),
@@ -314,8 +314,8 @@ pub async fn builder_id_poll_create_token(
 
 #[cfg(test)]
 mod tests {
-    use auth::pkce::*;
-    use auth::AMZN_START_URL;
+    use fig_auth::pkce::*;
+    use fig_auth::AMZN_START_URL;
 
     use super::*;
 
@@ -327,7 +327,7 @@ mod tests {
             vec!["scope:1".into(), "scope:2".into()]
         }
 
-        async fn register_client(&self, _: String, _: String) -> Result<RegisterClientResponse, auth::Error> {
+        async fn register_client(&self, _: String, _: String) -> Result<RegisterClientResponse, fig_auth::Error> {
             Ok(RegisterClientResponse {
                 output: RegisterClientOutput::builder()
                     .client_id("test_client_id")
@@ -336,7 +336,7 @@ mod tests {
             })
         }
 
-        async fn create_token(&self, _: CreateTokenArgs) -> Result<CreateTokenResponse, auth::Error> {
+        async fn create_token(&self, _: CreateTokenArgs) -> Result<CreateTokenResponse, fig_auth::Error> {
             Ok(CreateTokenResponse {
                 output: CreateTokenOutput::builder().build(),
             })

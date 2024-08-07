@@ -34,6 +34,10 @@ where
     }
 }
 
+fn is_false(value: &bool) -> bool {
+    !value
+}
+
 #[derive(Debug, Clone, Serialize, Default)]
 #[serde(rename_all = "kebab-case")]
 pub struct BuildDetails {
@@ -161,6 +165,16 @@ pub struct CurrentEnvironment {
     pub terminal: Option<Terminal>,
     #[serde(serialize_with = "serialize_display")]
     pub install_method: InstallMethod,
+    #[serde(skip_serializing_if = "is_false")]
+    pub in_cloudshell: bool,
+    #[serde(skip_serializing_if = "is_false")]
+    pub in_ssh: bool,
+    #[serde(skip_serializing_if = "is_false")]
+    pub in_ci: bool,
+    #[serde(skip_serializing_if = "is_false")]
+    pub in_wsl: bool,
+    #[serde(skip_serializing_if = "is_false")]
+    pub in_codespaces: bool,
 }
 
 impl CurrentEnvironment {
@@ -188,6 +202,12 @@ impl CurrentEnvironment {
         let terminal = Terminal::parent_terminal();
         let install_method = fig_telemetry::get_install_method();
 
+        let in_cloudshell = fig_util::system_info::in_cloudshell();
+        let in_ssh = fig_util::system_info::in_ssh();
+        let in_ci = fig_util::system_info::in_ci();
+        let in_wsl = fig_util::system_info::in_wsl();
+        let in_codespaces = fig_util::system_info::in_codespaces();
+
         CurrentEnvironment {
             shell_path,
             shell_version,
@@ -195,6 +215,11 @@ impl CurrentEnvironment {
             cli_path,
             terminal,
             install_method,
+            in_cloudshell,
+            in_ssh,
+            in_ci,
+            in_wsl,
+            in_codespaces,
         }
     }
 }

@@ -7,7 +7,10 @@ use thiserror::Error;
 use time::OffsetDateTime;
 
 use crate::env_var::Q_PARENT;
-use crate::system_info::is_remote;
+use crate::system_info::{
+    in_cloudshell,
+    is_remote,
+};
 use crate::RUNTIME_DIR_NAME;
 
 macro_rules! utf8_dir {
@@ -270,7 +273,7 @@ pub fn desktop_socket_path() -> Result<PathBuf> {
 /// - Windows: `%APPDATA%/Fig/%USER%/remote.sock`
 pub fn remote_socket_path() -> Result<PathBuf> {
     // TODO(grant): This is only enabled on Linux for now to prevent public dist
-    if is_remote() && cfg!(target_os = "linux") {
+    if is_remote() && !in_cloudshell() && cfg!(target_os = "linux") {
         if let Some(parent_socket) = std::env::var_os(Q_PARENT) {
             Ok(PathBuf::from(parent_socket))
         } else {
@@ -283,8 +286,8 @@ pub fn remote_socket_path() -> Result<PathBuf> {
 
 /// The path to local remote socket
 ///
-/// - MacOS: `$TMPDIR/cwrun/desktop.sock`
-/// - Linux: `$XDG_RUNTIME_DIR/cwrun/desktop.sock`
+/// - MacOS: `$TMPDIR/cwrun/remote.sock`
+/// - Linux: `$XDG_RUNTIME_DIR/cwrun/remote.sock`
 /// - Windows: `%APPDATA%/Fig/%USER%/remote.sock`
 pub fn local_remote_socket_path() -> Result<PathBuf> {
     Ok(host_sockets_dir()?.join("remote.sock"))
@@ -356,6 +359,28 @@ utf8_dir!(manifest_path);
 utf8_dir!(backups_dir);
 utf8_dir!(logs_dir);
 utf8_dir!(settings_path);
+
+#[cfg(test)]
+mod linux_tests {
+    use super::*;
+
+    #[test]
+    fn all_paths() {
+        assert!(home_dir().is_ok());
+        assert!(home_local_bin().is_ok());
+        assert!(fig_data_dir().is_ok());
+        assert!(sockets_dir().is_ok());
+        assert!(remote_socket_path().is_ok());
+        assert!(local_remote_socket_path().is_ok());
+        assert!(figterm_socket_path("test").is_ok());
+        assert!(manifest_path().is_ok());
+        assert!(backups_dir().is_ok());
+        assert!(logs_dir().is_ok());
+        assert!(settings_path().is_ok());
+        assert!(update_lock_path().is_ok());
+        assert!(midway_cookie_path().is_ok());
+    }
+}
 
 // TODO(grant): Add back path tests on linux
 #[cfg(all(test, not(target_os = "linux")))]

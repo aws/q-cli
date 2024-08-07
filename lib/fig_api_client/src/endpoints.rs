@@ -1,37 +1,73 @@
 use std::borrow::Cow;
 
 use aws_config::Region;
+use serde_json::Value;
 
-const PROD_URL: &str = "https://codewhisperer.us-east-1.amazonaws.com";
-const PROD_REGION: Region = Region::from_static("us-east-1");
-
-// const ALPHA_URL: &str = "https://rts.alpha-us-west-2.codewhisperer.ai.aws.dev";
-// const ALPHA_REGION: Region = Region::from_static("us-west-2");
+use crate::consts::{
+    PROD_CODEWHISPERER_ENDPOINT_REGION,
+    PROD_CODEWHISPERER_ENDPOINT_URL,
+    PROD_Q_ENDPOINT_REGION,
+    PROD_Q_ENDPOINT_URL,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[non_exhaustive]
-pub enum Endpoint {
-    /// Prod endpoint for RTS
-    Prod,
-    Custom {
-        url: Cow<'static, str>,
-        region: Cow<'static, str>,
-    },
+pub struct Endpoint {
+    url: Cow<'static, str>,
+    region: Region,
 }
 
 impl Endpoint {
-    pub(crate) fn url(&self) -> &str {
-        match self {
-            Endpoint::Prod => PROD_URL,
-            Endpoint::Custom { url, .. } => url,
+    const PROD_CODEWHISPERER: Self = Self {
+        url: Cow::Borrowed(PROD_CODEWHISPERER_ENDPOINT_URL),
+        region: PROD_CODEWHISPERER_ENDPOINT_REGION,
+    };
+    const PROD_Q: Self = Self {
+        url: Cow::Borrowed(PROD_Q_ENDPOINT_URL),
+        region: PROD_Q_ENDPOINT_REGION,
+    };
+
+    pub fn load_codewhisperer() -> Self {
+        match fig_settings::state::get_value("api.codewhisperer.service") {
+            Ok(Some(Value::Object(o))) => {
+                let endpoint = o.get("endpoint").and_then(|v| v.as_str());
+                let region = o.get("region").and_then(|v| v.as_str());
+
+                match (endpoint, region) {
+                    (Some(endpoint), Some(region)) => Self {
+                        url: endpoint.to_owned().into(),
+                        region: Region::new(region.to_owned()),
+                    },
+                    _ => Endpoint::PROD_CODEWHISPERER,
+                }
+            },
+            _ => Endpoint::PROD_CODEWHISPERER,
         }
     }
 
-    pub(crate) fn region(&self) -> Region {
-        match self {
-            Endpoint::Prod => PROD_REGION,
-            Endpoint::Custom { region, .. } => Region::new(region.clone()),
+    pub fn load_q() -> Self {
+        match fig_settings::state::get_value("api.q.service") {
+            Ok(Some(Value::Object(o))) => {
+                let endpoint = o.get("endpoint").and_then(|v| v.as_str());
+                let region = o.get("region").and_then(|v| v.as_str());
+
+                match (endpoint, region) {
+                    (Some(endpoint), Some(region)) => Self {
+                        url: endpoint.to_owned().into(),
+                        region: Region::new(region.to_owned()),
+                    },
+                    _ => Endpoint::PROD_Q,
+                }
+            },
+            _ => Endpoint::PROD_Q,
         }
+    }
+
+    pub(crate) fn url(&self) -> &str {
+        &self.url
+    }
+
+    pub(crate) fn region(&self) -> &Region {
+        &self.region
     }
 }
 
@@ -43,15 +79,18 @@ mod tests {
 
     #[test]
     fn test_endpoints() {
-        let prod = Endpoint::Prod;
-        Url::parse(prod.url()).unwrap();
-        assert_eq!(prod.region(), PROD_REGION);
+        let _ = Endpoint::load_codewhisperer();
+        let _ = Endpoint::load_q();
 
-        let custom = Endpoint::Custom {
-            region: "us-west-2".into(),
+        let prod = Endpoint::PROD_CODEWHISPERER;
+        Url::parse(prod.url()).unwrap();
+        assert_eq!(prod.region(), &PROD_CODEWHISPERER_ENDPOINT_REGION);
+
+        let custom = Endpoint {
+            region: Region::new("us-west-2"),
             url: "https://example.com".into(),
         };
         Url::parse(custom.url()).unwrap();
-        assert_eq!(custom.region(), Region::new("us-west-2"));
+        assert_eq!(custom.region(), &Region::new("us-west-2"));
     }
 }

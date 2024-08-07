@@ -1,10 +1,10 @@
 use std::env;
 
 use amzn_codewhisperer_streaming_client::operation::RequestId;
-use amzn_codewhisperer_streaming_client::types::{
-    ChatMessage,
+use aws_smithy_types::error::display::DisplayErrorContext;
+use eyre::Result;
+use fig_api_client::model::{
     ChatResponseStream,
-    ChatTriggerType,
     ConversationState,
     EnvState,
     EnvironmentVariable,
@@ -15,10 +15,11 @@ use amzn_codewhisperer_streaming_client::types::{
     UserInputMessageContext,
     UserIntent,
 };
-use amzn_codewhisperer_streaming_client::Client;
-use aws_smithy_types::error::display::DisplayErrorContext;
-use eyre::Result;
-use fig_settings::history::OrderBy;
+use fig_api_client::StreamingClient;
+use fig_settings::history::{
+    History,
+    OrderBy,
+};
 use fig_util::Shell;
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -110,10 +111,10 @@ fn input_to_modifiers(input: String) -> (ContextModifiers, String) {
     (modifiers, input)
 }
 
-fn build_shell_history() -> Option<Vec<ShellHistoryEntry>> {
+fn build_shell_history(history: &History) -> Option<Vec<ShellHistoryEntry>> {
     let mut shell_history = vec![];
 
-    if let Ok(commands) = fig_settings::history::History::new().rows(
+    if let Ok(commands) = history.rows(
         None,
         vec![OrderBy::new(
             fig_settings::history::HistoryColumn::Id,
@@ -125,20 +126,17 @@ fn build_shell_history() -> Option<Vec<ShellHistoryEntry>> {
         for command in commands.into_iter().filter(|c| c.command.is_some()).rev() {
             let command_str = command.command.expect("command is filtered on");
             if !command_str.is_empty() {
-                shell_history.push(
-                    ShellHistoryEntry::builder()
-                        .command(truncate_safe(&command_str, MAX_SHELL_HISTORY_COMMAND_LEN))
-                        .set_directory(command.cwd.and_then(|cwd| {
-                            if !cwd.is_empty() {
-                                Some(truncate_safe(&cwd, MAX_SHELL_HISTORY_DIRECTORY_LEN).into())
-                            } else {
-                                None
-                            }
-                        }))
-                        .set_exit_code(command.exit_code)
-                        .build()
-                        .expect("command is provided"),
-                );
+                shell_history.push(ShellHistoryEntry {
+                    command: truncate_safe(&command_str, MAX_SHELL_HISTORY_COMMAND_LEN).into(),
+                    directory: command.cwd.and_then(|cwd| {
+                        if !cwd.is_empty() {
+                            Some(truncate_safe(&cwd, MAX_SHELL_HISTORY_DIRECTORY_LEN).into())
+                        } else {
+                            None
+                        }
+                    }),
+                    exit_code: command.exit_code,
+                });
             }
         }
     }
@@ -150,53 +148,54 @@ fn build_shell_history() -> Option<Vec<ShellHistoryEntry>> {
     }
 }
 
-fn build_shell_state(shell_history: bool) -> ShellState {
-    let mut shell_state_builder = ShellState::builder();
-
+fn build_shell_state(shell_history: bool, history: &History) -> ShellState {
     // Try to grab the shell from the parent process via the `Shell::current_shell`,
     // then try the `SHELL` env, finally just report bash
-    let shell = Shell::current_shell()
+    let shell_name = Shell::current_shell()
         .or_else(|| {
             let shell_name = env::var("SHELL").ok()?;
             Shell::try_find_shell(shell_name)
         })
-        .unwrap_or(Shell::Bash);
+        .unwrap_or(Shell::Bash)
+        .to_string();
 
-    shell_state_builder = shell_state_builder.shell_name(shell.to_string());
+    let mut shell_state = ShellState {
+        shell_name,
+        shell_history: None,
+    };
 
     if shell_history {
-        shell_state_builder = shell_state_builder.set_shell_history(build_shell_history());
+        shell_state.shell_history = build_shell_history(history);
     }
 
-    shell_state_builder.build().expect("shell name is provided")
+    shell_state
 }
 
 fn build_env_state(modifiers: &ContextModifiers) -> EnvState {
-    let mut env_state_builder = EnvState::builder().operating_system(env::consts::OS);
+    let mut env_state = EnvState {
+        operating_system: Some(env::consts::OS.into()),
+        ..Default::default()
+    };
 
     if modifiers.any() {
         if let Ok(current_dir) = env::current_dir() {
-            env_state_builder = env_state_builder.current_working_directory(truncate_safe(
-                &current_dir.to_string_lossy(),
-                MAX_CURRENT_WORKING_DIRECTORY_LEN,
-            ));
+            env_state.current_working_directory =
+                Some(truncate_safe(&current_dir.to_string_lossy(), MAX_CURRENT_WORKING_DIRECTORY_LEN).into());
         }
     }
 
     if modifiers.env {
         for (key, value) in env::vars().take(MAX_ENV_VAR_LIST_LEN) {
             if !key.is_empty() && !value.is_empty() {
-                env_state_builder = env_state_builder.environment_variables(
-                    EnvironmentVariable::builder()
-                        .key(truncate_safe(&key, MAX_ENV_VAR_KEY_LEN))
-                        .value(truncate_safe(&value, MAX_ENV_VAR_VALUE_LEN))
-                        .build(),
-                );
+                env_state.environment_variables.push(EnvironmentVariable {
+                    key: truncate_safe(&key, MAX_ENV_VAR_KEY_LEN).into(),
+                    value: truncate_safe(&value, MAX_ENV_VAR_VALUE_LEN).into(),
+                });
             }
         }
     }
 
-    env_state_builder.build()
+    env_state
 }
 
 async fn build_git_state() -> Option<GitState> {
@@ -208,45 +207,40 @@ async fn build_git_state() -> Option<GitState> {
         .ok()?;
 
     if output.status.success() && !output.stdout.is_empty() {
-        Some(
-            GitState::builder()
-                .status(truncate_safe(
-                    &String::from_utf8_lossy(&output.stdout),
-                    MAX_GIT_STATUS_LEN,
-                ))
-                .build(),
-        )
+        Some(GitState {
+            status: truncate_safe(&String::from_utf8_lossy(&output.stdout), MAX_GIT_STATUS_LEN).into(),
+        })
     } else {
         None
     }
 }
 
 async fn try_send_message(
-    client: Client,
+    client: StreamingClient,
     tx: &UnboundedSender<ApiResponse>,
     conversation_state: ConversationState,
 ) -> Result<(), String> {
-    let mut res = client
-        .generate_assistant_response()
-        .conversation_state(conversation_state)
-        .send()
+    let mut send_message_output = client
+        .send_message(conversation_state)
         .await
-        .map_err(|err| format!("generate_assistant_response failed: {}", DisplayErrorContext(err)))?;
+        .map_err(|err| format!("send_message failed: {}", DisplayErrorContext(err)))?;
 
-    if let Some(message_id) = res.request_id().map(ToOwned::to_owned) {
+    if let Some(message_id) = send_message_output.request_id().map(ToOwned::to_owned) {
         tx.send(ApiResponse::MessageId(message_id))
             .map_err(|err| format!("tx failed to send ApiResponse::MessageId: {err}"))?;
     }
 
     loop {
-        match res.generate_assistant_response_response.recv().await {
+        #[allow(clippy::collapsible_match)]
+        match send_message_output.recv().await {
             Ok(Some(stream)) => match stream {
-                ChatResponseStream::AssistantResponseEvent(response) => {
-                    tx.send(ApiResponse::Text(response.content))
+                ChatResponseStream::AssistantResponseEvent { content } => {
+                    tx.send(ApiResponse::Text(content))
                         .map_err(|err| format!("tx failed to send ApiResponse::Text: {err}"))?;
                 },
-                ChatResponseStream::MessageMetadataEvent(event) => {
-                    if let Some(id) = event.conversation_id {
+                #[allow(clippy::collapsible_match)]
+                ChatResponseStream::MessageMetadataEvent { conversation_id, .. } => {
+                    if let Some(id) = conversation_id {
                         tx.send(ApiResponse::ConversationId(id))
                             .map_err(|err| format!("tx failed to send ApiResponse::ConversationId: {err}"))?;
                     }
@@ -254,17 +248,14 @@ async fn try_send_message(
                 ChatResponseStream::FollowupPromptEvent(_event) => {},
                 ChatResponseStream::CodeReferenceEvent(_event) => {},
                 ChatResponseStream::SupplementaryWebLinksEvent(_event) => {},
-                ChatResponseStream::InvalidStateEvent(event) => {
-                    error!(reason =% event.reason(), message =% event.message(), "invalid state event");
+                ChatResponseStream::InvalidStateEvent { reason, message } => {
+                    error!(%reason, %message, "invalid state event");
                 },
                 _ => {},
             },
             Ok(None) => break,
             Err(err) => {
-                return Err(format!(
-                    "generate_assistant_response_response.recv failed: {}",
-                    DisplayErrorContext(err)
-                ));
+                return Err(format!("send_message_output.recv failed: {}", DisplayErrorContext(err)));
             },
         }
     }
@@ -273,41 +264,38 @@ async fn try_send_message(
 }
 
 pub(super) async fn send_message(
-    client: Client,
+    client: StreamingClient,
     input: String,
-    conversation_id: &Option<String>,
+    conversation_id: Option<String>,
 ) -> Result<UnboundedReceiver<ApiResponse>> {
     let (ctx, input) = input_to_modifiers(input);
 
     let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
 
-    let mut context_builder = UserInputMessageContext::builder()
-        .shell_state(build_shell_state(ctx.history))
-        .env_state(build_env_state(&ctx));
+    let history = History::new();
+
+    let mut user_input_message_context = UserInputMessageContext {
+        shell_state: Some(build_shell_state(ctx.history, &history)),
+        env_state: Some(build_env_state(&ctx)),
+        ..Default::default()
+    };
 
     if ctx.git {
         if let Some(git_state) = build_git_state().await {
-            context_builder = context_builder.git_state(git_state);
+            user_input_message_context.git_state = Some(git_state);
         }
     }
 
-    let mut user_input_message = UserInputMessage::builder()
-        .content(input)
-        .user_input_message_context(context_builder.build());
+    let user_input_message = UserInputMessage {
+        content: input,
+        user_input_message_context: Some(user_input_message_context),
+        user_intent: ctx.user_intent(),
+    };
 
-    if let Some(intent) = ctx.user_intent() {
-        user_input_message = user_input_message.user_intent(intent);
-    }
-
-    let mut conversation_state = ConversationState::builder()
-        .current_message(ChatMessage::UserInputMessage(user_input_message.build()?))
-        .chat_trigger_type(ChatTriggerType::Manual);
-
-    if let Some(conversation_id) = conversation_id {
-        conversation_state = conversation_state.conversation_id(conversation_id.to_owned());
-    }
-
-    let conversation_state = conversation_state.build()?;
+    let conversation_state = ConversationState {
+        conversation_id,
+        user_input_message,
+    };
 
     tokio::spawn(async move {
         if let Err(err) = try_send_message(client, &tx, conversation_state).await {
@@ -327,10 +315,8 @@ pub(super) async fn send_message(
 
 #[cfg(test)]
 mod tests {
-    use fig_api_client::ai::{
-        cw_endpoint,
-        cw_streaming_client,
-    };
+    use fig_api_client::StreamingClient;
+    use fig_settings::history::CommandInfo;
     use tokio::io::AsyncWriteExt;
 
     use super::*;
@@ -346,10 +332,10 @@ mod tests {
     #[tokio::test]
     #[ignore = "not in ci"]
     async fn test_send_message() {
-        let client = cw_streaming_client(cw_endpoint()).await;
+        let client = StreamingClient::new().await.unwrap();
         let question = "@git Explain my git status.".to_string();
 
-        let mut rx = send_message(client.clone(), question, &None).await.unwrap();
+        let mut rx = send_message(client.clone(), question, None).await.unwrap();
 
         while let Some(res) = rx.recv().await {
             match res {
@@ -357,6 +343,38 @@ mod tests {
                     let mut stderr = tokio::io::stderr();
                     stderr.write_all(text.as_bytes()).await.unwrap();
                     stderr.flush().await.unwrap();
+                },
+                ApiResponse::ConversationId(_) => (),
+                ApiResponse::MessageId(_) => (),
+                ApiResponse::End => break,
+                ApiResponse::Error => panic!(),
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn test_try_send_message() {
+        let client = StreamingClient::mock(vec![
+            ChatResponseStream::MessageMetadataEvent {
+                conversation_id: Some("abc".into()),
+                utterance_id: None,
+            },
+            ChatResponseStream::assistant_response("Hello World"),
+            ChatResponseStream::FollowupPromptEvent(()),
+            ChatResponseStream::CodeReferenceEvent(()),
+            ChatResponseStream::SupplementaryWebLinksEvent(()),
+            ChatResponseStream::InvalidStateEvent {
+                reason: "reason".into(),
+                message: "message".into(),
+            },
+        ]);
+
+        let mut rx = send_message(client.clone(), "Question".into(), None).await.unwrap();
+
+        while let Some(res) = rx.recv().await {
+            match res {
+                ApiResponse::Text(text) => {
+                    println!("{text}");
                 },
                 ApiResponse::ConversationId(_) => (),
                 ApiResponse::MessageId(_) => (),
@@ -399,15 +417,28 @@ mod tests {
 
     #[test]
     fn test_shell_state() {
-        let shell_state = build_shell_state(true);
+        let history = History::mock();
+        history
+            .insert_command_history(
+                &CommandInfo {
+                    command: Some("ls".into()),
+                    cwd: Some("/home/user".into()),
+                    exit_code: Some(0),
+                    ..Default::default()
+                },
+                false,
+            )
+            .unwrap();
 
-        for history in shell_state.shell_history() {
-            println!(
-                "{} {:?} {:?}",
-                history.command(),
-                history.directory(),
-                history.exit_code()
-            );
+        let shell_state = build_shell_state(true, &history);
+
+        for ShellHistoryEntry {
+            command,
+            directory,
+            exit_code,
+        } in shell_state.shell_history.unwrap()
+        {
+            println!("{command} {directory:?} {exit_code:?}");
         }
     }
 
@@ -419,16 +450,16 @@ mod tests {
             history: false,
             git: false,
         });
-        assert!(!env_state.environment_variables().is_empty());
-        assert!(!env_state.current_working_directory().unwrap().is_empty());
-        assert!(!env_state.operating_system().unwrap().is_empty());
+        assert!(!env_state.environment_variables.is_empty());
+        assert!(!env_state.current_working_directory.as_ref().unwrap().is_empty());
+        assert!(!env_state.operating_system.as_ref().unwrap().is_empty());
         println!("{env_state:?}");
 
         // env: false
         let env_state = build_env_state(&ContextModifiers::default());
-        assert!(env_state.environment_variables().is_empty());
-        assert!(env_state.current_working_directory().is_none());
-        assert!(!env_state.operating_system().unwrap().is_empty());
+        assert!(env_state.environment_variables.is_empty());
+        assert!(env_state.current_working_directory.is_none());
+        assert!(!env_state.operating_system.as_ref().unwrap().is_empty());
         println!("{env_state:?}");
     }
 
@@ -461,7 +492,7 @@ mod tests {
 
         let git_state = build_git_state().await.unwrap();
         println!("{git_state:?}");
-        println!("status: {:?}", git_state.status.unwrap());
+        println!("status: {:?}", git_state.status);
 
         let _ = std::fs::remove_file(path);
     }

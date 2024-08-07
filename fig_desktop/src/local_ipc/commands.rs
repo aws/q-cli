@@ -222,7 +222,7 @@ pub async fn login(proxy: &EventLoopProxy) -> LocalResult {
 }
 
 pub async fn logout(proxy: &EventLoopProxy) -> LocalResult {
-    auth::logout().await.ok();
+    fig_auth::logout().await.ok();
 
     proxy
         .send_event(Event::WindowEvent {

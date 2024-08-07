@@ -86,18 +86,27 @@ impl OsRelease {
     }
 
     pub(crate) fn from_str(s: &str) -> OsRelease {
+        // Remove the starting and ending quotes from a string if they match
+        let strip_quotes = |s: &str| -> Option<String> {
+            if s.starts_with('"') && s.ends_with('"') {
+                Some(s[1..s.len() - 1].into())
+            } else {
+                Some(s.into())
+            }
+        };
+
         let mut os_release = OsRelease::default();
         for line in s.lines() {
             if let Some((key, value)) = line.split_once('=') {
                 match key {
-                    "ID" => os_release.id = Some(strip_quotes(value).into()),
-                    "NAME" => os_release.name = Some(strip_quotes(value).into()),
-                    "PRETTY_NAME" => os_release.pretty_name = Some(strip_quotes(value).into()),
-                    "VERSION" => os_release.version = Some(strip_quotes(value).into()),
-                    "VERSION_ID" => os_release.version_id = Some(strip_quotes(value).into()),
-                    "BUILD_ID" => os_release.build_id = Some(strip_quotes(value).into()),
-                    "VARIANT" => os_release.variant = Some(strip_quotes(value).into()),
-                    "VARIANT_ID" => os_release.variant_id = Some(strip_quotes(value).into()),
+                    "ID" => os_release.id = strip_quotes(value),
+                    "NAME" => os_release.name = strip_quotes(value),
+                    "PRETTY_NAME" => os_release.pretty_name = strip_quotes(value),
+                    "VERSION" => os_release.version = strip_quotes(value),
+                    "VERSION_ID" => os_release.version_id = strip_quotes(value),
+                    "BUILD_ID" => os_release.build_id = strip_quotes(value),
+                    "VARIANT" => os_release.variant = strip_quotes(value),
+                    "VARIANT_ID" => os_release.variant_id = strip_quotes(value),
                     _ => {},
                 }
             }
@@ -155,19 +164,11 @@ impl SandboxKind {
     }
 }
 
-/// Remove the starting and ending quotes from a string if they match
-fn strip_quotes(s: &str) -> &str {
-    if s.starts_with('"') && s.ends_with('"') {
-        &s[1..s.len() - 1]
-    } else {
-        s
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
 
+    #[cfg(target_os = "linux")]
     #[test]
     fn os_release() {
         if OsRelease::path().exists() {

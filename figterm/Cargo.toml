@@ -18,7 +18,6 @@ profiling_early_exit = []
 alacritty_terminal = { path = "../lib/alacritty_terminal" }
 anyhow.workspace = true
 async-trait.workspace = true
-auth.workspace = true
 aws-types.workspace = true
 bitflags.workspace = true
 bstr.workspace = true
@@ -28,6 +27,7 @@ clap.workspace = true
 crossterm.workspace = true
 dashmap.workspace = true
 fig_api_client.workspace = true
+fig_auth.workspace = true
 fig_install.workspace = true
 fig_ipc.workspace = true
 fig_log.workspace = true

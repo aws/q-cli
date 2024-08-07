@@ -5,8 +5,10 @@ use anstream::println;
 use clap::Subcommand;
 use crossterm::style::Stylize;
 use eyre::Result;
-use fig_api_client::ai::list_customizations;
-use fig_api_client::Customization;
+use fig_api_client::{
+    Client,
+    Customization,
+};
 use fig_settings::settings;
 
 use super::OutputFormat;
@@ -49,7 +51,7 @@ impl InlineSubcommand {
                 println!("Inline is {}", if enabled { "enabled" } else { "disabled" }.bold());
             },
             InlineSubcommand::SetCustomization { arn } => {
-                let customizations = list_customizations().await?;
+                let customizations = Client::new().await?.list_customizations().await?;
                 if customizations.is_empty() {
                     println!("No customizations found");
                     return Ok(ExitCode::FAILURE);
@@ -96,7 +98,7 @@ impl InlineSubcommand {
                 }
             },
             InlineSubcommand::ShowCustomizations { format } => {
-                let customizations = list_customizations().await?;
+                let customizations = Client::new().await?.list_customizations().await?;
                 format.print(
                     || {
                         if customizations.is_empty() {

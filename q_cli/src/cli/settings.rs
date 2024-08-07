@@ -1,7 +1,6 @@
 use std::process::ExitCode;
 
 use anstream::println;
-use auth::is_logged_in;
 use clap::{
     ArgGroup,
     Args,
@@ -12,6 +11,7 @@ use eyre::{
     Result,
     WrapErr,
 };
+use fig_auth::is_logged_in;
 use fig_ipc::local::open_ui_element;
 use fig_proto::local::UiElement;
 use fig_settings::JsonStore;

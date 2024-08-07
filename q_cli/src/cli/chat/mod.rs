@@ -28,10 +28,7 @@ use eyre::{
     eyre,
     Result,
 };
-use fig_api_client::ai::{
-    cw_endpoint,
-    cw_streaming_client,
-};
+use fig_api_client::StreamingClient;
 use fig_util::CLI_BINARY_NAME;
 use prompt::{
     rl,
@@ -61,7 +58,7 @@ enum ApiResponse {
 }
 
 pub async fn chat(input: String) -> Result<ExitCode> {
-    if !auth::is_logged_in().await {
+    if !fig_auth::is_logged_in().await {
         bail!(
             "You are not logged in, please log in with {}",
             format!("{CLI_BINARY_NAME} login",).bold()
@@ -82,7 +79,7 @@ pub async fn chat(input: String) -> Result<ExitCode> {
 
 async fn try_chat(stderr: &mut Stderr, mut input: String) -> Result<()> {
     let mut rl = rl()?;
-    let client = cw_streaming_client(cw_endpoint()).await;
+    let client = StreamingClient::new().await?;
     let mut rx = None;
     let mut conversation_id: Option<String> = None;
     let mut message_id = None;
@@ -113,7 +110,7 @@ async fn try_chat(stderr: &mut Stderr, mut input: String) -> Result<()> {
                 stderr.queue(style::Print("Using environment\n"))?;
             }
 
-            rx = Some(send_message(client.clone(), input, &conversation_id).await?);
+            rx = Some(send_message(client.clone(), input, conversation_id.clone()).await?);
             stderr
                 .queue(style::SetForegroundColor(Color::Reset))?
                 .execute(style::Print("\n"))?;

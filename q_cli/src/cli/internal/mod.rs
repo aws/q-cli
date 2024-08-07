@@ -1,6 +1,7 @@
 mod generate_ssh;
 mod inline_shell_completion;
 pub mod local_state;
+mod multiplexer;
 pub mod should_figterm_launch;
 
 use std::io::{
@@ -60,7 +61,10 @@ use fig_util::desktop::{
     launch_fig_desktop,
     LaunchArgs,
 };
-use fig_util::directories::figterm_socket_path;
+use fig_util::directories::{
+    figterm_socket_path,
+    logs_dir,
+};
 use fig_util::env_var::QTERM_SESSION_ID;
 use fig_util::{
     directories,
@@ -271,6 +275,7 @@ pub enum InternalSubcommand {
         #[arg(long, allow_hyphen_values = true)]
         suggestion: String,
     },
+    Multiplexer,
 }
 
 const BUFFER_SIZE: usize = 1024;
@@ -797,6 +802,18 @@ impl InternalSubcommand {
             InternalSubcommand::InlineShellCompletion { buffer } => Ok(inline_shell_completion(buffer).await),
             InternalSubcommand::InlineShellCompletionAccept { buffer, suggestion } => {
                 Ok(inline_shell_completion_accept(buffer, suggestion).await)
+            },
+            InternalSubcommand::Multiplexer => match multiplexer::execute().await {
+                Ok(_) => {
+                    error!("quitting multiplexer");
+                    Ok(ExitCode::SUCCESS)
+                },
+                Err(err) => {
+                    error!("{err}");
+                    let path = logs_dir()?.join("mux-crash.log");
+                    tokio::fs::write(path, format!("{err:?}")).await?;
+                    Err(err)
+                },
             },
         }
     }

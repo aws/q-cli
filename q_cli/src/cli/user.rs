@@ -4,17 +4,17 @@ use std::process::ExitCode;
 use std::time::Duration;
 
 use anstream::println;
-use auth::builder_id::{
+use clap::Subcommand;
+use crossterm::style::Stylize;
+use eyre::Result;
+use fig_auth::builder_id::{
     poll_create_token,
     start_device_authorization,
     PollCreateToken,
     TokenType,
 };
-use auth::pkce::start_pkce_authorization;
-use auth::secret_store::SecretStore;
-use clap::Subcommand;
-use crossterm::style::Stylize;
-use eyre::Result;
+use fig_auth::pkce::start_pkce_authorization;
+use fig_auth::secret_store::SecretStore;
 use fig_ipc::local::{
     login_command,
     logout_command,
@@ -72,7 +72,7 @@ impl RootUserSubcommand {
     pub async fn execute(self) -> Result<ExitCode> {
         match self {
             Self::Login => {
-                if auth::is_logged_in().await {
+                if fig_auth::is_logged_in().await {
                     eyre::bail!(
                         "Already logged in, please logout with {} first",
                         format!("{CLI_BINARY_NAME} logout").magenta()
@@ -86,7 +86,7 @@ impl RootUserSubcommand {
             Self::Logout => {
                 let logout_join = logout_command();
 
-                let (_, _) = tokio::join!(logout_join, auth::logout());
+                let (_, _) = tokio::join!(logout_join, fig_auth::logout());
 
                 println!("You are now logged out");
                 println!(
@@ -96,7 +96,7 @@ impl RootUserSubcommand {
                 Ok(ExitCode::SUCCESS)
             },
             Self::Whoami { format } => {
-                let builder_id = auth::builder_id_token().await;
+                let builder_id = fig_auth::builder_id_token().await;
 
                 match builder_id {
                     Ok(Some(token)) => {

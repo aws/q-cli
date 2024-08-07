@@ -70,11 +70,13 @@ mod tests {
         let env = Env::default();
         assert!(env.home().is_some());
         assert!(env.get("PATH").is_ok());
+        assert!(env.get_os("PATH").is_some());
         assert!(env.get("NON_EXISTENT").is_err());
 
         let env = Env::from_slice(&[("HOME", "/home/user"), ("PATH", "/bin:/usr/bin")]);
         assert_eq!(env.home().unwrap(), Path::new("/home/user"));
         assert_eq!(env.get("PATH").unwrap(), "/bin:/usr/bin");
+        assert!(env.get_os("PATH").is_some());
         assert!(env.get("NON_EXISTENT").is_err());
     }
 }

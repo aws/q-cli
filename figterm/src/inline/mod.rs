@@ -8,13 +8,13 @@ use std::time::{
     SystemTime,
 };
 
-use aws_types::request_id::RequestId;
-use fig_api_client::ai::{
-    CodeWhispererFileContext,
-    CwResponse,
+use fig_api_client::model::{
+    FileContext,
     LanguageName,
     ProgrammingLanguage,
+    RecommendationsInput,
 };
+use fig_api_client::Client;
 use fig_proto::figterm::figterm_response_message::Response as FigtermResponse;
 use fig_proto::figterm::{
     FigtermResponseMessage,
@@ -71,7 +71,11 @@ impl TelemetryQueue {
     }
 
     async fn send_all_items(&mut self) {
-        let start_url = auth::builder_id_token().await.ok().flatten().and_then(|t| t.start_url);
+        let start_url = fig_auth::builder_id_token()
+            .await
+            .ok()
+            .flatten()
+            .and_then(|t| t.start_url);
         for item in self.items.drain(..) {
             let TelemetryQueueItem {
                 timestamp,
@@ -161,6 +165,10 @@ pub async fn handle_request(
     let now = SystemTime::now();
     LAST_RECEIVED.lock().await.replace(now);
 
+    let Ok(client) = Client::new().await else {
+        return;
+    };
+
     for _ in 0..3 {
         tokio::time::sleep(debounce_duration).await;
         if *LAST_RECEIVED.lock().await == Some(now) {
@@ -210,8 +218,8 @@ pub async fn handle_request(
 
         let prompt = prompt(&history, buffer);
 
-        let request = fig_api_client::ai::CodeWhispererRequest {
-            file_context: CodeWhispererFileContext {
+        let input = RecommendationsInput {
+            file_context: FileContext {
                 left_file_content: prompt,
                 right_file_content: "".into(),
                 filename: "history.sh".into(),
@@ -225,10 +233,7 @@ pub async fn handle_request(
 
         let start_instant = Instant::now();
 
-        let response = match fig_api_client::ai::request_cw(request)
-            .await
-            .map_err(|err| err.into_service_error())
-        {
+        let response = match client.generate_recommendations(input).await {
             Err(err) if err.is_throttling_error() => {
                 warn!(%err, "Too many requests, trying again in 1 second");
                 tokio::time::sleep(Duration::from_secs(1).saturating_sub(debounce_duration)).await;
@@ -238,9 +243,10 @@ pub async fn handle_request(
         };
 
         let insert_text = match response {
-            Ok(CwResponse { output, session_id }) => {
-                let request_id = output.request_id().unwrap().to_owned();
-                let completions = output.completions.unwrap_or_default();
+            Ok(output) => {
+                let request_id = output.request_id.unwrap_or_default();
+                let session_id = output.session_id.unwrap_or_default();
+                let completions = output.recommendations;
                 let mut completion_cache = COMPLETION_CACHE.lock().await;
 
                 let mut completions = completions
@@ -280,7 +286,7 @@ pub async fn handle_request(
                                 suggested_chars_len: completion.chars().count().try_into().ok(),
                                 suggestion: completion,
                                 timestamp: SystemTime::now(),
-                                session_id: session_id.unwrap_or_default(),
+                                session_id,
                                 request_id,
                                 latency: start_instant.elapsed(),
                                 suggestion_state,

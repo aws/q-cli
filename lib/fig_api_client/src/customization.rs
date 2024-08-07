@@ -1,4 +1,5 @@
-use amzn_codewhisperer_client::types::Customization as CwCustomization;
+use amzn_codewhisperer_client::types::Customization as CodewhispererCustomization;
+use amzn_consolas_client::types::CustomizationSummary as ConsolasCustomization;
 use serde::{
     Deserialize,
     Serialize,
@@ -34,9 +35,9 @@ impl Customization {
     }
 }
 
-impl From<Customization> for CwCustomization {
+impl From<Customization> for CodewhispererCustomization {
     fn from(Customization { arn, name, description }: Customization) -> Self {
-        CwCustomization::builder()
+        CodewhispererCustomization::builder()
             .arn(arn)
             .set_name(name)
             .set_description(description)
@@ -45,8 +46,8 @@ impl From<Customization> for CwCustomization {
     }
 }
 
-impl From<CwCustomization> for Customization {
-    fn from(cw_customization: CwCustomization) -> Self {
+impl From<CodewhispererCustomization> for Customization {
+    fn from(cw_customization: CodewhispererCustomization) -> Self {
         Customization {
             arn: cw_customization.arn,
             name: cw_customization.name,
@@ -55,13 +56,26 @@ impl From<CwCustomization> for Customization {
     }
 }
 
+impl From<ConsolasCustomization> for Customization {
+    fn from(consolas_customization: ConsolasCustomization) -> Self {
+        Customization {
+            arn: consolas_customization.arn,
+            name: Some(consolas_customization.customization_name),
+            description: consolas_customization.description,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use amzn_consolas_client::types::CustomizationStatus;
+    use aws_smithy_types::DateTime;
+
     use super::*;
 
     #[test]
     fn test_customization_from_impls() {
-        let cw_customization = CwCustomization::builder()
+        let cw_customization = CodewhispererCustomization::builder()
             .arn("arn")
             .name("name")
             .description("description")
@@ -69,20 +83,35 @@ mod tests {
             .unwrap();
 
         let custom_from_cw: Customization = cw_customization.into();
-        let cw_from_custom: CwCustomization = custom_from_cw.into();
+        let cw_from_custom: CodewhispererCustomization = custom_from_cw.into();
 
         assert_eq!(cw_from_custom.arn, "arn");
         assert_eq!(cw_from_custom.name, Some("name".into()));
         assert_eq!(cw_from_custom.description, Some("description".into()));
 
-        let cw_customization = CwCustomization::builder().arn("arn").build().unwrap();
+        let cw_customization = CodewhispererCustomization::builder().arn("arn").build().unwrap();
 
         let custom_from_cw: Customization = cw_customization.into();
-        let cw_from_custom: CwCustomization = custom_from_cw.into();
+        let cw_from_custom: CodewhispererCustomization = custom_from_cw.into();
 
         assert_eq!(cw_from_custom.arn, "arn");
         assert_eq!(cw_from_custom.name, None);
         assert_eq!(cw_from_custom.description, None);
+
+        let consolas_customization = ConsolasCustomization::builder()
+            .arn("arn")
+            .customization_name("name")
+            .description("description")
+            .status(CustomizationStatus::Activated)
+            .updated_at(DateTime::from_secs(0))
+            .build()
+            .unwrap();
+
+        let custom_from_consolas: Customization = consolas_customization.into();
+
+        assert_eq!(custom_from_consolas.arn, "arn");
+        assert_eq!(custom_from_consolas.name, Some("name".into()));
+        assert_eq!(custom_from_consolas.description, Some("description".into()));
     }
 
     #[test]

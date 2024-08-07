@@ -45,7 +45,7 @@ async fn uninstall() -> Result<()> {
         error!(%err, %UNINSTALL_URL, "Failed to open uninstall url");
     }
 
-    auth::logout().await.ok();
+    fig_auth::logout().await.ok();
     fig_install::uninstall(fig_install::InstallComponents::all(), &Env::new()).await?;
 
     Ok(())
@@ -76,7 +76,7 @@ async fn uninstall() -> Result<()> {
         bail!("Uninstall is only supported for {CLI_BINARY_NAME:?}, the current executable is {exe_name:?}");
     }
 
-    if let Err(err) = auth::logout().await {
+    if let Err(err) = fig_auth::logout().await {
         error!(%err, "Failed to logout");
     }
     fig_install::uninstall(fig_install::InstallComponents::all_linux(), &fig_os_shim::Env::new()).await?;

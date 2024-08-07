@@ -60,6 +60,8 @@ pub struct RemoteHook {
 
 #[async_trait::async_trait]
 impl fig_remote_ipc::RemoteHookHandler for RemoteHook {
+    type Error = anyhow::Error;
+
     async fn edit_buffer(
         &mut self,
         hook: &EditBufferHook,

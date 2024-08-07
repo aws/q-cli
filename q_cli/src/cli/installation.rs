@@ -109,7 +109,7 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
         }
     }
 
-    if !auth::is_logged_in().await {
+    if !fig_auth::is_logged_in().await {
         if !no_confirm {
             if !dialoguer::console::user_attended() {
                 eyre::bail!("You must run with --no-confirm if unattended");

@@ -7,6 +7,7 @@ use std::path::PathBuf;
 use std::time::SystemTime;
 
 use fig_util::directories;
+use inner::Inner;
 use r2d2::PooledConnection;
 use r2d2_sqlite::SqliteConnectionManager;
 pub use rusqlite;
@@ -48,26 +49,34 @@ pub struct CommandInfo {
 }
 
 #[derive(Debug, Default)]
-pub enum History {
-    Owned(Db),
-    #[default]
-    Global,
+pub struct History(inner::Inner);
+
+mod inner {
+    use crate::sqlite::Db;
+
+    #[derive(Debug, Default)]
+    pub enum Inner {
+        #[default]
+        Global,
+        Owned(Db),
+    }
 }
 
 impl History {
-    #[cfg(test)]
-    fn mock() -> Self {
-        Self::Owned(Db::mock())
-    }
-
     pub fn new() -> Self {
         Self::default()
     }
 
+    pub fn mock() -> Self {
+        let db = Db::mock();
+        db.migrate().expect("Failed to migrate database");
+        Self(inner::Inner::Owned(db))
+    }
+
     fn db(&self) -> Result<&Db> {
-        match self {
-            History::Owned(db) => Ok(db),
-            History::Global => Ok(database()?),
+        match &self.0 {
+            Inner::Owned(db) => Ok(db),
+            Inner::Global => Ok(database()?),
         }
     }
 
@@ -397,6 +406,11 @@ mod tests {
     use fig_util::CLI_BINARY_NAME;
 
     use super::*;
+
+    #[test]
+    fn history_new_test() {
+        let _ = History::new();
+    }
 
     #[test]
     fn migrate_insert_query() {

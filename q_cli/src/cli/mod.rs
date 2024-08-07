@@ -31,7 +31,6 @@ use anstream::{
     eprintln,
     println,
 };
-use auth::is_logged_in;
 use clap::{
     ArgAction,
     CommandFactory,
@@ -45,6 +44,7 @@ use eyre::{
     Result,
     WrapErr,
 };
+use fig_auth::is_logged_in;
 use fig_ipc::local::open_ui_element;
 use fig_log::Logger;
 use fig_proto::local::UiElement;
@@ -58,6 +58,7 @@ use fig_util::{
     CLI_BINARY_NAME,
     PRODUCT_NAME,
 };
+use internal::InternalSubcommand;
 use serde::Serialize;
 use tracing::level_filters::LevelFilter;
 use tracing::{
@@ -263,12 +264,21 @@ impl Cli {
     pub async fn execute(self) -> Result<ExitCode> {
         let mut logger = Logger::new().with_max_file_size(10_000_000);
 
-        if matches!(self.subcommand, Some(CliRootCommands::Chat { .. })) {
-            logger = logger.with_file("chat.log");
-        } else if matches!(self.subcommand, Some(CliRootCommands::Translate(..))) {
-            logger = logger.with_file("translate.log");
-        } else if fig_log::get_max_fig_log_level() >= LevelFilter::DEBUG {
-            logger = logger.with_file("cli.log");
+        match self.subcommand {
+            Some(CliRootCommands::Chat { .. }) => {
+                logger = logger.with_file("chat.log");
+            },
+            Some(CliRootCommands::Translate(..)) => {
+                logger = logger.with_file("translate.log");
+            },
+            Some(CliRootCommands::Internal(InternalSubcommand::Multiplexer)) => {
+                logger = logger.with_file("mux.log");
+            },
+            _ => {
+                if fig_log::get_max_fig_log_level() >= LevelFilter::DEBUG {
+                    logger = logger.with_file("cli.log");
+                }
+            },
         }
 
         if std::env::var_os("Q_LOG_STDOUT").is_some() || self.verbose > 0 {

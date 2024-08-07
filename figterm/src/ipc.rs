@@ -259,61 +259,56 @@ pub async fn spawn_remote_ipc(
                     break;
                 }
                 res = get_forwarded_stream() => {
-                    if let Ok((reader, mut writer, child)) = res {
-                        let mut reader = BufferedReader::new(reader);
-                        info!("Attempting handshake...");
-                        if let Err(err) = writer.send_message(Hostbound {
-                            packet: Some(hostbound::Packet::Handshake(Handshake {
-                                id: session_id.clone(),
-                                parent_id: parent_id.clone(),
-                                secret: secret.clone(),
-                            })),
-                        })
-                        .await
-                        {
-                            error!(%err, "error sending handshake");
+                    let (reader, mut writer, child) = match res {
+                        Ok((reader, writer, child)) => (reader, writer, child),
+                        Err(err) => {
+                            error!("failed to get forwarded stream: {err}");
                             continue;
-                        }
-                        let mut handshake_success = false;
-                        info!("Awaiting handshake response...");
-                        while let Some(message) = reader.recv_message::<Clientbound>().await.unwrap_or_else(|err| {
-                            error!(%err, "failed receiving handshake response");
-                            None
-                        }) {
-                            if let Some(clientbound::Packet::HandshakeResponse(response)) = message.packet {
-                                handshake_success = response.success;
-                                break;
-                            }
-                        }
-                        if !handshake_success {
-                            error!("failed performing handshake");
-                            continue;
-                        }
-                        info!("Handshake succeeded");
+                        },
+                    };
 
-                        // send outgoing messages
-                        outgoing_rx.drain();
-                        let outgoing_rx = outgoing_rx.clone();
-                        let main_loop_sender = main_loop_sender.clone();
-                        let outgoing_task = tokio::spawn(async move {
-                            while let Ok(message) = outgoing_rx.recv_async().await {
-                                trace!(?message, "Sending remote message");
-                                match writer.send_message(message).await {
-                                    Ok(()) => {
-                                        if let Err(err) = writer.flush().await {
-                                            error!(%err, "Failed to flush socket");
-                                            main_loop_sender
-                                                .send(MainLoopEvent::Insert {
-                                                    insert: Vec::new(),
-                                                    unlock: true,
-                                                    bracketed: false,
-                                                    execute: false,
-                                                })
-                                                .unwrap();
-                                        }
-                                    }
-                                    Err(err) => {
-                                        error!(%err, "Failed to send message");
+                    let mut reader = BufferedReader::new(reader);
+                    info!("Attempting handshake...");
+                    if let Err(err) = writer.send_message(Hostbound {
+                        packet: Some(hostbound::Packet::Handshake(Handshake {
+                            id: session_id.clone(),
+                            parent_id: parent_id.clone(),
+                            secret: secret.clone(),
+                        })),
+                    })
+                    .await
+                    {
+                        error!(%err, "error sending handshake");
+                        continue;
+                    }
+                    let mut handshake_success = false;
+                    info!("Awaiting handshake response...");
+                    while let Some(message) = reader.recv_message::<Clientbound>().await.unwrap_or_else(|err| {
+                        error!(%err, "failed receiving handshake response");
+                        None
+                    }) {
+                        if let Some(clientbound::Packet::HandshakeResponse(response)) = message.packet {
+                            handshake_success = response.success;
+                            break;
+                        }
+                    }
+                    if !handshake_success {
+                        error!("failed performing handshake");
+                        continue;
+                    }
+                    info!("Handshake succeeded");
+
+                    // send outgoing messages
+                    outgoing_rx.drain();
+                    let outgoing_rx = outgoing_rx.clone();
+                    let main_loop_sender = main_loop_sender.clone();
+                    let outgoing_task = tokio::spawn(async move {
+                        while let Ok(message) = outgoing_rx.recv_async().await {
+                            trace!(?message, "Sending remote message");
+                            match writer.send_message(message).await {
+                                Ok(()) => {
+                                    if let Err(err) = writer.flush().await {
+                                        error!(%err, "Failed to flush socket");
                                         main_loop_sender
                                             .send(MainLoopEvent::Insert {
                                                 insert: Vec::new(),
@@ -322,35 +317,46 @@ pub async fn spawn_remote_ipc(
                                                 execute: false,
                                             })
                                             .unwrap();
-                                        let _ = writer.shutdown().await;
-                                        break;
                                     }
                                 }
-                            }
-                            debug!("outgoing_task exited");
-                        });
-
-                        // receive incoming messages
-                        let incoming_tx = incoming_tx.clone();
-                        let incoming_task = tokio::spawn(async move {
-                            while let Some(message) = reader.recv_message().await.unwrap_or_else(|err| {
-                                error!("failed receiving message from host: {err}");
-                                None
-                            }) {
-                                debug!(?message, "Received remote message");
-                                if let Err(err) = incoming_tx.send(message) {
-                                    error!("no more listeners for incoming messages: {err}");
+                                Err(err) => {
+                                    error!(%err, "Failed to send message");
+                                    main_loop_sender
+                                        .send(MainLoopEvent::Insert {
+                                            insert: Vec::new(),
+                                            unlock: true,
+                                            bracketed: false,
+                                            execute: false,
+                                        })
+                                        .unwrap();
+                                    let _ = writer.shutdown().await;
                                     break;
                                 }
                             }
-                            debug!("incoming_task exited");
-                        });
-
-                        if let Some(child) = child {
-                            let _ = join!(outgoing_task, incoming_task, child);
-                        } else {
-                            let _ = join!(outgoing_task, incoming_task);
                         }
+                        debug!("outgoing_task exited");
+                    });
+
+                    // receive incoming messages
+                    let incoming_tx = incoming_tx.clone();
+                    let incoming_task = tokio::spawn(async move {
+                        while let Some(message) = reader.recv_message().await.unwrap_or_else(|err| {
+                            error!("failed receiving message from host: {err}");
+                            None
+                        }) {
+                            debug!(?message, "Received remote message");
+                            if let Err(err) = incoming_tx.send(message) {
+                                error!("no more listeners for incoming messages: {err}");
+                                break;
+                            }
+                        }
+                        debug!("incoming_task exited");
+                    });
+
+                    if let Some(child) = child {
+                        let _ = join!(outgoing_task, incoming_task, child);
+                    } else {
+                        let _ = join!(outgoing_task, incoming_task);
                     }
                 }
             }
