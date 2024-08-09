@@ -9,6 +9,7 @@ use std::ffi::{
 };
 use std::path::PathBuf;
 
+use crate::Shim;
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Env(inner::Inner);
 
@@ -65,6 +66,16 @@ impl Env {
 
     pub fn in_ssh(&self) -> bool {
         self.get("SSH_CLIENT").is_ok() || self.get("SSH_CONNECTION").is_ok() || self.get("SSH_TTY").is_ok()
+    }
+
+    pub fn in_codespaces(&self) -> bool {
+        self.get_os("CODESPACES").is_some() || self.get_os("Q_CODESPACES").is_some()
+    }
+}
+
+impl Shim for Env {
+    fn is_real(&self) -> bool {
+        matches!(self.0, inner::Inner::Real)
     }
 }
 

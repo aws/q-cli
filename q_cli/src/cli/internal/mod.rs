@@ -43,7 +43,10 @@ use fig_ipc::{
     SendMessage,
     SendRecvMessage,
 };
-use fig_os_shim::Env;
+use fig_os_shim::{
+    Context as OsContext,
+    Env,
+};
 use fig_proto::figterm::figterm_request_message::Request as FigtermRequest;
 use fig_proto::figterm::{
     FigtermRequestMessage,
@@ -389,7 +392,9 @@ impl InternalSubcommand {
                 }
                 Ok(ExitCode::FAILURE)
             },
-            InternalSubcommand::ShouldFigtermLaunch => Ok(should_figterm_launch::should_figterm_launch()),
+            InternalSubcommand::ShouldFigtermLaunch => {
+                Ok(should_figterm_launch::should_figterm_launch(&OsContext::new()))
+            },
             InternalSubcommand::Event { payload, apps, name } => {
                 let hook = new_event_hook(name, payload, apps);
                 send_hook_to_socket(hook).await?;

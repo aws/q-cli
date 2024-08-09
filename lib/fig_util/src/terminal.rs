@@ -346,7 +346,7 @@ impl Terminal {
             Terminal::Rio => &["rio"],
 
             Terminal::Ssh => &["sshd"],
-            Terminal::Tmux => &["tmux"],
+            Terminal::Tmux => &["tmux", "tmux: server"],
             Terminal::Vim => &["vim"],
             Terminal::Nvim => &["nvim"],
             Terminal::Zellij => &["zellij"],

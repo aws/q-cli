@@ -15,6 +15,7 @@ use fig_integrations::shell::{
     ShellExt,
     When,
 };
+use fig_os_shim::Context;
 use fig_util::env_var::Q_SHELL;
 use fig_util::{
     get_parent_process_exe,
@@ -146,7 +147,7 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
         let status = if *IS_SNAPSHOT_TEST {
             0
         } else {
-            should_figterm_launch_exit_status(true)
+            should_figterm_launch_exit_status(&Context::new(), true)
         };
         to_source.push(assign_shell_variable(shell, "SHOULD_QTERM_LAUNCH", status, false));
     }

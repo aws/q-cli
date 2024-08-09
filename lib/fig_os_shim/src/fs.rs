@@ -11,6 +11,8 @@ use std::sync::{
 
 use tokio::fs;
 
+use crate::Shim;
+
 #[derive(Debug, Clone, Default)]
 pub struct Fs(inner::Inner);
 
@@ -99,6 +101,25 @@ impl Fs {
         }
     }
 
+    pub fn read_to_string_sync(&self, path: impl AsRef<Path>) -> io::Result<String> {
+        use inner::Inner;
+        match &self.0 {
+            Inner::Real => std::fs::read_to_string(path),
+            Inner::Fake(map) => {
+                let Ok(lock) = map.lock() else {
+                    return Err(io::Error::new(io::ErrorKind::Other, "poisoned lock"));
+                };
+                let Some(data) = lock.get(path.as_ref()) else {
+                    return Err(io::Error::new(io::ErrorKind::NotFound, "not found"));
+                };
+                match String::from_utf8(data.clone()) {
+                    Ok(string) => Ok(string),
+                    Err(err) => Err(io::Error::new(io::ErrorKind::InvalidData, err)),
+                }
+            },
+        }
+    }
+
     pub async fn write(&self, path: impl AsRef<Path>, contents: impl AsRef<[u8]>) -> io::Result<()> {
         use inner::Inner;
         match &self.0 {
@@ -111,6 +132,12 @@ impl Fs {
                 Ok(())
             },
         }
+    }
+}
+
+impl Shim for Fs {
+    fn is_real(&self) -> bool {
+        matches!(self.0, inner::Inner::Real)
     }
 }
 
@@ -128,5 +155,54 @@ mod tests {
         fs.write(dir.path().join("write"), b"write").await.unwrap();
         fs.read(dir.path().join("write")).await.unwrap();
         fs.read_to_string(dir.path().join("write")).await.unwrap();
+    }
+
+    #[test]
+    fn default_impl_is_real() {
+        let fs = Fs::default();
+        assert!(matches!(fs.0, inner::Inner::Real));
+    }
+
+    #[tokio::test]
+    async fn test_read_to_string() {
+        let fs = Fs::new_fake();
+        fs.write("fake", "contents").await.unwrap();
+        fs.write("invalid_utf8", &[255]).await.unwrap();
+
+        // async tests
+        assert_eq!(
+            fs.read_to_string("fake").await.unwrap(),
+            "contents",
+            "should read fake file"
+        );
+        assert!(
+            fs.read_to_string("unknown")
+                .await
+                .is_err_and(|err| err.kind() == io::ErrorKind::NotFound),
+            "unknown path should return NotFound"
+        );
+        assert!(
+            fs.read_to_string("invalid_utf8")
+                .await
+                .is_err_and(|err| err.kind() == io::ErrorKind::InvalidData),
+            "invalid utf8 should return InvalidData"
+        );
+
+        // sync tests
+        assert_eq!(
+            fs.read_to_string_sync("fake").unwrap(),
+            "contents",
+            "should read fake file"
+        );
+        assert!(
+            fs.read_to_string_sync("unknown")
+                .is_err_and(|err| err.kind() == io::ErrorKind::NotFound),
+            "unknown path should return NotFound"
+        );
+        assert!(
+            fs.read_to_string_sync("invalid_utf8")
+                .is_err_and(|err| err.kind() == io::ErrorKind::InvalidData),
+            "invalid utf8 should return InvalidData"
+        );
     }
 }

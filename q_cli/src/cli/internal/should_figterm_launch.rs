@@ -6,11 +6,19 @@ use std::io::{
 };
 use std::process::ExitCode;
 
+use fig_os_shim::Context;
+
+const Q_FORCE_FIGTERM_LAUNCH: &str = "Q_FORCE_FIGTERM_LAUNCH";
+const INSIDE_EMACS: &str = "INSIDE_EMACS";
+const TERM_PROGRAM: &str = "TERM_PROGRAM";
+const WARP_TERMINAL: &str = "WarpTerminal";
+
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 #[allow(dead_code)]
 struct ProcessInfo {
-    pid: fig_util::process_info::Pid,
-    name: String,
+    pid: Box<fig_os_shim::process_info::Pid>,
+    exe_name: String,
+    cmdline_name: Option<String>,
     is_valid: bool,
     is_special: bool,
 }
@@ -43,10 +51,9 @@ impl Status {
     }
 }
 
-#[cfg(any(target_os = "macos", target_os = "linux"))]
-fn parent_status(current_pid: fig_util::process_info::Pid) -> Status {
+fn parent_status(ctx: &Context, current_pid: fig_os_shim::process_info::Pid) -> Status {
     use fig_util::env_var::Q_TERM;
-    use fig_util::process_info::PidExt;
+    let env = ctx.env();
 
     let parent_pid = match current_pid.parent() {
         Some(pid) => pid,
@@ -68,12 +75,12 @@ fn parent_status(current_pid: fig_util::process_info::Pid) -> Status {
 
     let valid_parent = ["zsh", "bash", "fish", "nu"].contains(&parent_name);
 
-    if fig_util::system_info::in_ssh() && std::env::var_os(Q_TERM).is_none() {
+    if env.in_ssh() && env.get_os(Q_TERM).is_none() {
         return Status::Launch(format!("In SSH and {Q_TERM} is not set").into());
     }
 
-    if fig_util::system_info::in_codespaces() {
-        return match std::env::var_os(Q_TERM) {
+    if env.in_codespaces() {
+        return match env.get_os(Q_TERM) {
             Some(_) => Status::DontLaunch(format!("In Codespaces and {Q_TERM} is set").into()),
             None => Status::Launch(format!("In Codespaces and {Q_TERM} is not set").into()),
         };
@@ -81,18 +88,15 @@ fn parent_status(current_pid: fig_util::process_info::Pid) -> Status {
 
     Status::Process(ProcessInfo {
         pid: parent_pid,
-        name: parent_name.into(),
+        exe_name: parent_name.into(),
+        cmdline_name: None,
         is_valid: valid_parent,
         is_special: false,
     })
 }
 
-#[cfg(any(target_os = "macos", target_os = "linux"))]
-fn grandparent_status(parent_pid: fig_util::process_info::Pid) -> Status {
-    #[cfg(target_os = "linux")]
-    use fig_util::process_info::LinuxExt;
-    use fig_util::process_info::PidExt;
-    use fig_util::Terminal;
+fn grandparent_status(ctx: &Context, parent_pid: fig_os_shim::process_info::Pid) -> Status {
+    let current_os = ctx.platform().os();
 
     let Some(grandparent_pid) = parent_pid.parent() else {
         return Status::DontLaunch("No grandparent PID".into());
@@ -110,102 +114,105 @@ fn grandparent_status(parent_pid: fig_util::process_info::Pid) -> Status {
         None => return Status::DontLaunch("No grandparent name".into()),
     };
 
-    // The function to check if the grandparent is a terminal that valid
-
-    #[cfg(target_os = "macos")]
-    let check_fn = |terminal: &Terminal| terminal.executable_names().contains(&grandparent_name);
-
-    #[cfg(target_os = "linux")]
-    let Some(grandparent_cmdline) = grandparent_pid.cmdline() else {
-        return Status::DontLaunch("No grandparent cmdline".into());
-    };
-    #[cfg(target_os = "linux")]
-    let Some(grandparent_exe) = grandparent_cmdline.split('/').last() else {
-        return Status::DontLaunch("No grandparent exe".into());
-    };
-
-    #[cfg(target_os = "linux")]
-    let check_fn = |terminal: &Terminal| {
-        terminal.executable_names().contains(&grandparent_name)
-            || terminal.executable_names().contains(&grandparent_exe)
+    let grandparent_cmdline_name = if let Some(cmdline) = grandparent_pid.cmdline() {
+        cmdline
+            .split(' ')
+            .take(1)
+            .next()
+            .and_then(|cmd| cmd.split('/').last())
+            .map(str::to_string)
+    } else {
+        None
     };
 
     // The terminals the platform supports
+    let mut terminals = match current_os {
+        fig_os_shim::Os::Mac => fig_util::terminal::MACOS_TERMINALS,
+        fig_os_shim::Os::Linux => fig_util::terminal::LINUX_TERMINALS,
+        _ => panic!("unsupported os"),
+    }
+    .iter()
+    .chain(fig_util::terminal::SPECIAL_TERMINALS);
 
-    #[cfg(target_os = "macos")]
-    let terminals = fig_util::terminal::MACOS_TERMINALS;
-    #[cfg(target_os = "linux")]
-    let terminals = fig_util::terminal::LINUX_TERMINALS;
-
-    let valid_grandparent = terminals
-        .iter()
-        .chain(fig_util::terminal::SPECIAL_TERMINALS.iter())
-        .find(|term| check_fn(term));
+    // Try to find if any of the supported terminals matches the current grandparent process
+    let valid_grandparent = match current_os {
+        fig_os_shim::Os::Mac => terminals.find(|terminal| terminal.executable_names().contains(&grandparent_name)),
+        fig_os_shim::Os::Linux => terminals.find(|terminal| {
+            terminal.executable_names().contains(&grandparent_name)
+                || grandparent_cmdline_name
+                    .as_ref()
+                    .is_some_and(|name| terminal.executable_names().contains(&name.as_str()))
+        }),
+        _ => panic!("unsupported os"),
+    };
 
     Status::Process(ProcessInfo {
         pid: grandparent_pid,
-        name: grandparent_name.into(),
+        exe_name: grandparent_name.into(),
+        cmdline_name: grandparent_cmdline_name,
         is_valid: valid_grandparent.is_some(),
         is_special: valid_grandparent.is_some_and(|term| term.is_special()),
     })
 }
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
-fn should_launch(quiet: bool) -> u8 {
-    use fig_util::process_info::PidExt;
+fn should_launch(ctx: &Context, quiet: bool) -> u8 {
+    use fig_os_shim::Os;
 
-    let current_pid = fig_util::process_info::Pid::current();
-    let parent_info = match parent_status(current_pid).exit_status(quiet) {
+    let process_info = ctx.process_info();
+    let current_pid = process_info.current_pid();
+
+    let parent_info = match parent_status(ctx, current_pid).exit_status(quiet) {
         Ok(info) => info,
         Err(i) => return i,
     };
-    let grandparent_info = match grandparent_status(parent_info.pid).exit_status(quiet) {
+    let grandparent_info = match grandparent_status(ctx, *parent_info.pid.clone()).exit_status(quiet) {
         Ok(info) => info,
         Err(i) => return i,
     };
 
     if !quiet {
         let ancestry = format!(
-            "{} {} ({}) <- {} {} ({})",
+            "{} {} | {} ({}) <- {} {} ({})",
             if grandparent_info.is_valid { "✅" } else { "❌" },
-            grandparent_info.name,
-            grandparent_info.pid,
+            grandparent_info.exe_name,
+            grandparent_info.cmdline_name.unwrap_or_default(),
+            grandparent_info.pid.clone(),
             if parent_info.is_valid { "✅" } else { "❌" },
-            parent_info.name,
-            parent_info.pid,
+            parent_info.exe_name,
+            parent_info.pid.clone(),
         );
 
         writeln!(stdout(), "{ancestry}").ok();
     }
 
-    #[cfg(target_os = "macos")]
-    {
-        if !grandparent_info.is_special {
-            if !quiet {
-                writeln!(stdout(), "🟡 Falling back to old mechanism since on macOS").ok();
-            }
-            return 2;
+    if matches!(ctx.platform().os(), Os::Mac) && !grandparent_info.is_special {
+        if !quiet {
+            writeln!(stdout(), "🟡 Falling back to old mechanism since on macOS").ok();
         }
+        return 2;
     }
 
     u8::from(!(grandparent_info.is_valid && parent_info.is_valid))
 }
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
-pub fn should_figterm_launch_exit_status(quiet: bool) -> u8 {
+pub fn should_figterm_launch_exit_status(ctx: &Context, quiet: bool) -> u8 {
     use fig_util::env_var::{
         PROCESS_LAUNCHED_BY_Q,
         Q_PARENT,
     };
 
-    if std::env::var_os("Q_FORCE_FIGTERM_LAUNCH").is_some() {
+    let env = ctx.env();
+
+    if env.get_os(Q_FORCE_FIGTERM_LAUNCH).is_some() {
         if !quiet {
-            writeln!(stdout(), "✅ Q_FORCE_FIGTERM_LAUNCH").ok();
+            writeln!(stdout(), "✅ {Q_FORCE_FIGTERM_LAUNCH}").ok();
         }
         return 0;
     }
 
-    if std::env::var_os(PROCESS_LAUNCHED_BY_Q).is_some() {
+    if env.get_os(PROCESS_LAUNCHED_BY_Q).is_some() {
         if !quiet {
             writeln!(stdout(), "❌ {PROCESS_LAUNCHED_BY_Q}").ok();
         }
@@ -213,7 +220,7 @@ pub fn should_figterm_launch_exit_status(quiet: bool) -> u8 {
     }
 
     // Check if inside Emacs
-    if std::env::var_os("INSIDE_EMACS").is_some() {
+    if env.get_os(INSIDE_EMACS).is_some() {
         if !quiet {
             writeln!(stdout(), "❌ INSIDE_EMACS").ok();
         }
@@ -221,17 +228,17 @@ pub fn should_figterm_launch_exit_status(quiet: bool) -> u8 {
     }
 
     // Check for Warp Terminal
-    if let Ok(term_program) = std::env::var("TERM_PROGRAM") {
-        if term_program == "WarpTerminal" {
+    if let Ok(term_program) = env.get(TERM_PROGRAM) {
+        if term_program == WARP_TERMINAL {
             if !quiet {
-                writeln!(stdout(), "❌ TERM_PROGRAM = WarpTerminal").ok();
+                writeln!(stdout(), "❌ {TERM_PROGRAM} = {WARP_TERMINAL}").ok();
             }
             return 1;
         }
     }
 
     // Check for SecureCRT
-    if let Ok(cf_bundle_identifier) = std::env::var("__CFBundleIdentifier") {
+    if let Ok(cf_bundle_identifier) = env.get("__CFBundleIdentifier") {
         if cf_bundle_identifier == "com.vandyke.SecureCRT" {
             if !quiet {
                 writeln!(stdout(), "❌ __CFBundleIdentifier = com.vandyke.SecureCRT").ok();
@@ -241,7 +248,7 @@ pub fn should_figterm_launch_exit_status(quiet: bool) -> u8 {
     }
 
     // PWSH var is set when launched by `pwsh -Login`, in which case we don't want to init.
-    if std::env::var_os("__PWSH_LOGIN_CHECKED").is_some() {
+    if env.get_os("__PWSH_LOGIN_CHECKED").is_some() {
         if !quiet {
             writeln!(stdout(), "❌ __PWSH_LOGIN_CHECKED").ok();
         }
@@ -257,9 +264,9 @@ pub fn should_figterm_launch_exit_status(quiet: bool) -> u8 {
     }
 
     // If we are in SSH and there is no Q_PARENT dont launch
-    if fig_util::system_info::in_ssh() && std::env::var_os(Q_PARENT).is_none() {
+    if env.in_ssh() && env.get_os(Q_PARENT).is_none() {
         if !quiet {
-            writeln!(stdout(), "❌ In SSH without Q_PARENT").ok();
+            writeln!(stdout(), "❌ In SSH without {Q_PARENT}").ok();
         }
         return 1;
     }
@@ -270,13 +277,13 @@ pub fn should_figterm_launch_exit_status(quiet: bool) -> u8 {
         }
         2
     } else {
-        should_launch(quiet)
+        should_launch(ctx, quiet)
     }
 }
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
-pub fn should_figterm_launch() -> ExitCode {
-    ExitCode::from(should_figterm_launch_exit_status(false))
+pub fn should_figterm_launch(ctx: &Context) -> ExitCode {
+    ExitCode::from(should_figterm_launch_exit_status(ctx, false))
 }
 
 #[cfg(target_os = "windows")]
@@ -293,4 +300,233 @@ pub fn should_qterm_launch() -> ExitCode {
 #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
 pub fn should_qterm_launch() -> ExitCode {
     ExitCode::from(2);
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(non_snake_case)]
+
+    use std::path::PathBuf;
+
+    use fig_os_shim::process_info::{
+        FakePid,
+        Pid,
+        ProcessInfo,
+    };
+    use fig_os_shim::{
+        ContextBuilder,
+        Env,
+        Os,
+        Platform,
+    };
+    use fig_util::env_var::{
+        PROCESS_LAUNCHED_BY_Q,
+        Q_PARENT,
+        Q_TERM,
+    };
+
+    use super::*;
+
+    macro_rules! assert_exit_code {
+        ($ctx:expr, $exit_code:expr, $msg:expr) => {
+            assert_eq!(
+                should_figterm_launch_exit_status(&$ctx, true),
+                $exit_code,
+                "{}",
+                $msg
+            );
+            assert_eq!(
+                should_figterm_launch_exit_status(&$ctx, false),
+                $exit_code,
+                "{}",
+                $msg
+            );
+        };
+    }
+
+    #[derive(Default, Debug)]
+    struct Test {
+        name: String,
+        os: Option<Os>,
+        env: Option<Env>,
+        parent: Option<FakePid>,
+        grandparent_exe: Option<PathBuf>,
+        grandparent_cmdline: Option<String>,
+        expected_exit_code: u8,
+    }
+
+    impl Test {
+        fn os(mut self, os: Os) -> Self {
+            self.os = Some(os);
+            self
+        }
+
+        fn env(mut self, slice: &[(&str, &str)]) -> Self {
+            self.env = Some(Env::from_slice(slice));
+            self
+        }
+
+        fn parent_exe(mut self, exe: impl Into<PathBuf>) -> Self {
+            self.parent = Some(FakePid {
+                exe: Some(exe.into()),
+                ..Default::default()
+            });
+            self
+        }
+
+        fn grandparent_exe(mut self, exe: impl Into<PathBuf>) -> Self {
+            self.grandparent_exe = Some(exe.into());
+            self
+        }
+
+        fn grandparent_cmdline(mut self, cmdline: impl Into<String>) -> Self {
+            self.grandparent_cmdline = Some(cmdline.into());
+            self
+        }
+
+        fn expect(mut self, expected_exit_code: u8) -> Self {
+            self.expected_exit_code = expected_exit_code;
+            self
+        }
+
+        fn run(self) {
+            let ctx = {
+                let mut ctx = ContextBuilder::new();
+                if let Some(env) = self.env {
+                    ctx = ctx.with_env(env);
+                }
+
+                // Create fake ProcessInfo
+                let mut current_pid = FakePid::default();
+                if let Some(mut parent) = self.parent {
+                    if let Some(grandparent_exe) = self.grandparent_exe {
+                        let grandparent = FakePid {
+                            exe: Some(grandparent_exe),
+                            cmdline: self.grandparent_cmdline,
+                            ..Default::default()
+                        };
+                        parent.parent = Some(Box::new(Pid::new_fake(grandparent)));
+                    }
+                    current_pid.parent = Some(Box::new(Pid::new_fake(parent)));
+                }
+                ctx = ctx.with_process_info(ProcessInfo::new_fake(current_pid));
+
+                let os = self.os.unwrap_or(Os::Mac);
+                ctx = ctx.with_platform(Platform::new_fake(os));
+
+                ctx.build()
+            };
+
+            assert_exit_code!(ctx, self.expected_exit_code, self.name);
+        }
+    }
+
+    fn test(name: impl Into<String>) -> Test {
+        Test {
+            name: name.into(),
+            ..Default::default()
+        }
+    }
+
+    /// Tests for basic override logic where the state of the parent
+    /// and grandparent processes don't matter.
+    #[test]
+    fn override_tests() {
+        let tests = [
+            test(Q_FORCE_FIGTERM_LAUNCH)
+                .env(&[(Q_FORCE_FIGTERM_LAUNCH, "1")])
+                .expect(0),
+            test(PROCESS_LAUNCHED_BY_Q)
+                .env(&[(PROCESS_LAUNCHED_BY_Q, "1")])
+                .expect(1),
+            test(INSIDE_EMACS).env(&[(INSIDE_EMACS, "1")]).expect(1),
+            test(WARP_TERMINAL).env(&[(TERM_PROGRAM, WARP_TERMINAL)]).expect(1),
+            test(WARP_TERMINAL).env(&[(TERM_PROGRAM, WARP_TERMINAL)]).expect(1),
+            test(format!("In ssh without {Q_PARENT}"))
+                .env(&[("SSH_CLIENT", "1")])
+                .expect(1),
+            test("__PWSH_LOGIN_CHECKED")
+                .env(&[("__PWSH_LOGIN_CHECKED", "1")])
+                .expect(1),
+            test("SecureCRT")
+                .env(&[("__CFBundleIdentifier", "com.vandyke.SecureCRT")])
+                .expect(1),
+        ];
+        for test in tests {
+            test.run();
+        }
+    }
+
+    /// Tests for when the parent process is not valid.
+    #[test]
+    fn invalid_parent_tests() {
+        let tests = [
+            test("no parent id").expect(1),
+            test("invalid parent").parent_exe("/usr/bin/invalid").expect(1),
+            test(format!("In Codespaces with {Q_TERM}"))
+                .parent_exe("/usr/bin/zsh")
+                .env(&[("CODESPACES", "1")])
+                .env(&[(Q_TERM, "1")])
+                .expect(1),
+        ];
+        for test in tests {
+            test.run();
+        }
+    }
+
+    /// Tests for when the grandparent process is not valid.
+    #[test]
+    fn invalid_grandparent_tests() {
+        let tests = [
+            test("no grandparentparent id").parent_exe("/usr/bin/zsh").expect(1),
+            test("on mac with valid parent and invalid grandparent")
+                .os(Os::Mac)
+                .parent_exe("/usr/bin/zsh")
+                .grandparent_exe("/usr/bin/invalid")
+                .expect(2),
+            test("on linux with valid parent and invalid grandparent")
+                .os(Os::Linux)
+                .parent_exe("/usr/bin/zsh")
+                .grandparent_exe("/usr/bin/invalid")
+                .expect(1),
+        ];
+        for test in tests {
+            test.run();
+        }
+    }
+
+    /// Tests for when the app should launch, ignoring any of the overrides
+    /// captured under override_tests below.
+    #[test]
+    fn should_launch_tests() {
+        let tests = [
+            test("on linux with valid parent and valid grandparent exe")
+                .os(Os::Linux)
+                .parent_exe("/usr/bin/zsh")
+                .grandparent_exe("/usr/bin/wezterm")
+                .expect(0),
+            test("on linux with valid parent, invalid grandparent exe, and valid grandparent cmdline")
+                .os(Os::Linux)
+                .parent_exe("/usr/bin/zsh")
+                .grandparent_exe("/usr/bin/ld-2.26.so")
+                .grandparent_cmdline("/usr/bin/tmux random args here")
+                .expect(0),
+            test("on mac with valid parent and special grandparent")
+                .os(Os::Mac)
+                .parent_exe("/usr/bin/zsh")
+                .grandparent_exe("/usr/bin/tmux")
+                .expect(0),
+            test(format!("In Codespaces without {Q_TERM}"))
+                .parent_exe("/usr/bin/zsh")
+                .env(&[("CODESPACES", "1")])
+                .expect(0),
+            test(format!("In ssh and {Q_TERM} is not set"))
+                .parent_exe("/usr/bin/zsh")
+                .env(&[("SSH_CLIENT", "1"), (Q_PARENT, "1")])
+                .expect(0),
+        ];
+        for test in tests {
+            test.run();
+        }
+    }
 }

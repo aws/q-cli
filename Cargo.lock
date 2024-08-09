@@ -2741,6 +2741,7 @@ dependencies = [
  "cfg-if",
  "clap",
  "fig_ipc",
+ "fig_os_shim",
  "fig_proto",
  "fig_telemetry",
  "fig_util",
@@ -2878,7 +2879,10 @@ dependencies = [
 name = "fig_os_shim"
 version = "1.3.3"
 dependencies = [
+ "cfg-if",
  "dirs",
+ "nix 0.29.0",
+ "sysinfo",
  "tempfile",
  "tokio",
 ]

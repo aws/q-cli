@@ -13,6 +13,7 @@ workspace = true
 cfg-if.workspace = true
 clap.workspace = true
 fig_ipc.workspace = true
+fig_os_shim.workspace = true
 fig_proto.workspace = true
 fig_telemetry.workspace = true
 fig_util.workspace = true
