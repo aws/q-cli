@@ -33,6 +33,7 @@ pub trait EventListener {
     fn log_level_event(&self, _level: Option<String>) {}
 }
 
-/// Placeholder implementation for tests.
-#[cfg(test)]
-impl EventListener for () {}
+/// Null sink for events.
+pub struct VoidListener;
+
+impl EventListener for VoidListener {}

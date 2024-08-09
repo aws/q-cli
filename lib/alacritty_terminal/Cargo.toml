@@ -24,3 +24,6 @@ shell-color.workspace = true
 tracing.workspace = true
 unicode-width = "0.1"
 vte = { version = "0.13.0", default-features = false }
+
+[dev-dependencies]
+serde_json.workspace = true

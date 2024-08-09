@@ -337,6 +337,11 @@ impl<T> Term<T> {
         }
     }
 
+    pub fn new_test(size: SizeInfo, event_proxy: T, max_scroll_limit: usize) -> Term<T> {
+        let session_id = "test-session-123".to_string();
+        Self::new(size, event_proxy, max_scroll_limit, session_id)
+    }
+
     /// Convert range between two points to a String.
     pub fn bounds_to_string(&self, start: Point, end: Point) -> String {
         let mut res = String::new();
@@ -363,7 +368,7 @@ impl<T> Term<T> {
         let line_length = min(grid_line.line_length(), cols.end + 1);
 
         // Include wide char when trailing spacer is selected.
-        if grid_line[cols.start].shell_flags.contains(ShellFlags::WIDE_CHAR_SPACER) {
+        if grid_line[cols.start].flags.contains(ShellFlags::WIDE_CHAR_SPACER) {
             cols.start -= 1;
         }
 
@@ -385,7 +390,7 @@ impl<T> Term<T> {
             }
 
             if !cell
-                .shell_flags
+                .flags
                 .intersects(ShellFlags::WIDE_CHAR_SPACER | ShellFlags::LEADING_WIDE_CHAR_SPACER)
             {
                 // Push cells primary character.
@@ -399,10 +404,7 @@ impl<T> Term<T> {
         }
 
         if cols.end >= self.columns() - 1
-            && (line_length.0 == 0
-                || !self.grid[line][line_length - 1]
-                    .shell_flags
-                    .contains(ShellFlags::WRAPLINE))
+            && (line_length.0 == 0 || !self.grid[line][line_length - 1].flags.contains(ShellFlags::WRAPLINE))
         {
             text.push('\n');
         }
@@ -411,7 +413,7 @@ impl<T> Term<T> {
         if line_length == self.columns()
             && line_length.0 >= 2
             && grid_line[line_length - 1]
-                .shell_flags
+                .flags
                 .contains(ShellFlags::LEADING_WIDE_CHAR_SPACER)
             && include_wrapped_wide
         {
@@ -574,7 +576,7 @@ impl<T> Term<T> {
 
     /// Jump to the end of a wide cell.
     pub fn expand_wide(&self, mut point: Point, direction: Direction) -> Point {
-        let flags = self.grid[point.line][point.column].shell_flags;
+        let flags = self.grid[point.line][point.column].flags;
 
         match direction {
             Direction::Right if flags.contains(ShellFlags::LEADING_WIDE_CHAR_SPACER) => {
@@ -590,10 +592,7 @@ impl<T> Term<T> {
                 }
 
                 let prev = point.sub(self, Boundary::Grid, 1);
-                if self.grid[prev]
-                    .shell_flags
-                    .contains(ShellFlags::LEADING_WIDE_CHAR_SPACER)
-                {
+                if self.grid[prev].flags.contains(ShellFlags::LEADING_WIDE_CHAR_SPACER) {
                     point = prev;
                 }
             },
@@ -615,7 +614,7 @@ impl<T> Term<T> {
 
         trace!("Wrapping input");
 
-        self.grid.cursor_cell().shell_flags.insert(ShellFlags::WRAPLINE);
+        self.grid.cursor_cell().flags.insert(ShellFlags::WRAPLINE);
 
         if self.grid.cursor.point.line + 1 >= self.scroll_region.end {
             self.linefeed();
@@ -633,22 +632,22 @@ impl<T> Term<T> {
         let c = self.grid.cursor.charsets[self.active_charset].map(c);
         let fg = self.grid.cursor.template.fg;
         let bg = self.grid.cursor.template.bg;
-        let shell_flags = self.grid.cursor.template.shell_flags;
+        let shell_flags = self.grid.cursor.template.flags;
         let fig_flags = self.grid.cursor.template.fig_flags;
 
         let mut cursor_cell = self.grid.cursor_cell();
 
         // Clear all related cells when overwriting a fullwidth cell.
         if cursor_cell
-            .shell_flags
+            .flags
             .intersects(ShellFlags::WIDE_CHAR | ShellFlags::WIDE_CHAR_SPACER)
         {
             // Remove wide char and spacer.
-            let wide = cursor_cell.shell_flags.contains(ShellFlags::WIDE_CHAR);
+            let wide = cursor_cell.flags.contains(ShellFlags::WIDE_CHAR);
             let point = self.grid.cursor.point;
             if wide && point.column < self.last_column() {
                 self.grid[point.line][point.column + 1]
-                    .shell_flags
+                    .flags
                     .remove(ShellFlags::WIDE_CHAR_SPACER);
             } else if point.column > 0 {
                 self.grid[point.line][point.column - 1].clear_wide();
@@ -658,7 +657,7 @@ impl<T> Term<T> {
             if point.column <= 1 && point.line != self.topmost_line() {
                 let column = self.last_column();
                 self.grid[point.line - 1i32][column]
-                    .shell_flags
+                    .flags
                     .remove(ShellFlags::LEADING_WIDE_CHAR_SPACER);
             }
 
@@ -670,7 +669,7 @@ impl<T> Term<T> {
         cursor_cell.c = c;
         cursor_cell.fg = fg;
         cursor_cell.bg = bg;
-        cursor_cell.shell_flags = shell_flags;
+        cursor_cell.flags = shell_flags;
         cursor_cell.fig_flags = fig_flags;
     }
 
@@ -927,10 +926,7 @@ impl<T: EventListener> Handler for Term<T> {
 
             // Put zerowidth characters over first fullwidth character cell.
             let line = self.grid.cursor.point.line;
-            if self.grid[line][column]
-                .shell_flags
-                .contains(ShellFlags::WIDE_CHAR_SPACER)
-            {
+            if self.grid[line][column].flags.contains(ShellFlags::WIDE_CHAR_SPACER) {
                 column.0 = column.saturating_sub(1);
             }
 
@@ -964,13 +960,13 @@ impl<T: EventListener> Handler for Term<T> {
                     self.grid
                         .cursor
                         .template
-                        .shell_flags
+                        .flags
                         .insert(ShellFlags::LEADING_WIDE_CHAR_SPACER);
                     self.write_at_cursor(' ');
                     self.grid
                         .cursor
                         .template
-                        .shell_flags
+                        .flags
                         .remove(ShellFlags::LEADING_WIDE_CHAR_SPACER);
                     self.wrapline();
                 } else {
@@ -981,23 +977,15 @@ impl<T: EventListener> Handler for Term<T> {
             }
 
             // Write full width glyph to current cursor cell.
-            self.grid.cursor.template.shell_flags.insert(ShellFlags::WIDE_CHAR);
+            self.grid.cursor.template.flags.insert(ShellFlags::WIDE_CHAR);
             self.write_at_cursor(c);
-            self.grid.cursor.template.shell_flags.remove(ShellFlags::WIDE_CHAR);
+            self.grid.cursor.template.flags.remove(ShellFlags::WIDE_CHAR);
 
             // Write spacer to cell following the wide glyph.
             self.grid.cursor.point.column += 1;
-            self.grid
-                .cursor
-                .template
-                .shell_flags
-                .insert(ShellFlags::WIDE_CHAR_SPACER);
+            self.grid.cursor.template.flags.insert(ShellFlags::WIDE_CHAR_SPACER);
             self.write_at_cursor(' ');
-            self.grid
-                .cursor
-                .template
-                .shell_flags
-                .remove(ShellFlags::WIDE_CHAR_SPACER);
+            self.grid.cursor.template.flags.remove(ShellFlags::WIDE_CHAR_SPACER);
         }
 
         if self.grid.cursor.point.column + 1 < columns {
@@ -1516,35 +1504,35 @@ impl<T: EventListener> Handler for Term<T> {
             Attr::Reset => {
                 cursor.template.fg = Color::Named(NamedColor::Foreground);
                 cursor.template.bg = Color::Named(NamedColor::Background);
-                cursor.template.shell_flags = ShellFlags::empty();
+                cursor.template.flags = ShellFlags::empty();
                 set_in_suggestion!();
             },
-            Attr::Reverse => cursor.template.shell_flags.insert(ShellFlags::INVERSE),
-            Attr::CancelReverse => cursor.template.shell_flags.remove(ShellFlags::INVERSE),
-            Attr::Bold => cursor.template.shell_flags.insert(ShellFlags::BOLD),
-            Attr::CancelBold => cursor.template.shell_flags.remove(ShellFlags::BOLD),
-            Attr::Dim => cursor.template.shell_flags.insert(ShellFlags::DIM),
-            Attr::CancelBoldDim => cursor.template.shell_flags.remove(ShellFlags::BOLD | ShellFlags::DIM),
-            Attr::Italic => cursor.template.shell_flags.insert(ShellFlags::ITALIC),
-            Attr::CancelItalic => cursor.template.shell_flags.remove(ShellFlags::ITALIC),
+            Attr::Reverse => cursor.template.flags.insert(ShellFlags::INVERSE),
+            Attr::CancelReverse => cursor.template.flags.remove(ShellFlags::INVERSE),
+            Attr::Bold => cursor.template.flags.insert(ShellFlags::BOLD),
+            Attr::CancelBold => cursor.template.flags.remove(ShellFlags::BOLD),
+            Attr::Dim => cursor.template.flags.insert(ShellFlags::DIM),
+            Attr::CancelBoldDim => cursor.template.flags.remove(ShellFlags::BOLD | ShellFlags::DIM),
+            Attr::Italic => cursor.template.flags.insert(ShellFlags::ITALIC),
+            Attr::CancelItalic => cursor.template.flags.remove(ShellFlags::ITALIC),
             Attr::Underline => {
-                cursor.template.shell_flags.remove(ShellFlags::DOUBLE_UNDERLINE);
-                cursor.template.shell_flags.insert(ShellFlags::UNDERLINE);
+                cursor.template.flags.remove(ShellFlags::DOUBLE_UNDERLINE);
+                cursor.template.flags.insert(ShellFlags::UNDERLINE);
             },
             Attr::DoubleUnderline => {
-                cursor.template.shell_flags.remove(ShellFlags::UNDERLINE);
-                cursor.template.shell_flags.insert(ShellFlags::DOUBLE_UNDERLINE);
+                cursor.template.flags.remove(ShellFlags::UNDERLINE);
+                cursor.template.flags.insert(ShellFlags::DOUBLE_UNDERLINE);
             },
             Attr::CancelUnderline => {
                 cursor
                     .template
-                    .shell_flags
+                    .flags
                     .remove(ShellFlags::UNDERLINE | ShellFlags::DOUBLE_UNDERLINE);
             },
-            Attr::Hidden => cursor.template.shell_flags.insert(ShellFlags::HIDDEN),
-            Attr::CancelHidden => cursor.template.shell_flags.remove(ShellFlags::HIDDEN),
-            Attr::Strike => cursor.template.shell_flags.insert(ShellFlags::STRIKEOUT),
-            Attr::CancelStrike => cursor.template.shell_flags.remove(ShellFlags::STRIKEOUT),
+            Attr::Hidden => cursor.template.flags.insert(ShellFlags::HIDDEN),
+            Attr::CancelHidden => cursor.template.flags.remove(ShellFlags::HIDDEN),
+            Attr::Strike => cursor.template.flags.insert(ShellFlags::STRIKEOUT),
+            Attr::CancelStrike => cursor.template.flags.remove(ShellFlags::STRIKEOUT),
             _ => {
                 trace!("Term got unhandled attr: {:?}", attr);
             },
@@ -2023,7 +2011,7 @@ impl RenderableCursor {
     fn new<T>(term: &Term<T>) -> Self {
         // Cursor position.
         let mut point = term.grid.cursor.point;
-        if term.grid[point].shell_flags.contains(ShellFlags::WIDE_CHAR_SPACER) {
+        if term.grid[point].flags.contains(ShellFlags::WIDE_CHAR_SPACER) {
             point.column -= 1;
         }
 
@@ -2096,9 +2084,7 @@ pub mod test {
         for (line, text) in lines.iter().enumerate() {
             let line = Line(line as i32);
             if !text.ends_with('\r') && line + 1 != lines.len() {
-                term.grid[line][Column(num_cols - 1)]
-                    .shell_flags
-                    .insert(ShellFlags::WRAPLINE);
+                term.grid[line][Column(num_cols - 1)].flags.insert(ShellFlags::WRAPLINE);
             }
 
             let mut index = 0;
@@ -2108,9 +2094,9 @@ pub mod test {
                 // Handle fullwidth characters.
                 let width = c.width().unwrap();
                 if width == 2 {
-                    term.grid[line][Column(index)].shell_flags.insert(ShellFlags::WIDE_CHAR);
+                    term.grid[line][Column(index)].flags.insert(ShellFlags::WIDE_CHAR);
                     term.grid[line][Column(index + 1)]
-                        .shell_flags
+                        .flags
                         .insert(ShellFlags::WIDE_CHAR_SPACER);
                 }
 
@@ -2122,274 +2108,231 @@ pub mod test {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ansi::{
+        self,
+        CharsetIndex,
+        Handler,
+        StandardCharset,
+    };
+    use crate::event::VoidListener;
+    use crate::grid::Scroll;
+    use crate::index::{
+        Column,
+        Point,
+    };
 
-//     use crate::ansi::{self, CharsetIndex, Handler, StandardCharset};
-//     use crate::grid::Scroll;
-//     use crate::index::{Column, Point};
+    #[test]
+    fn scroll_display_page_up() {
+        let size = SizeInfo::new(10, 5);
+        let mut term = Term::new_test(size, VoidListener, 10_000);
 
-//     #[test]
-//     fn scroll_display_page_up() {
-//         let size = SizeInfo::new(5., 10., 1.0, 1.0, 0.0, 0.0, false);
-//         let mut term = Term::new(size, (), 10_000);
+        // Create 11 lines of scrollback.
+        for _ in 0..20 {
+            term.newline();
+        }
 
-//         // Create 11 lines of scrollback.
-//         for _ in 0..20 {
-//             term.newline();
-//         }
+        // Scrollable amount to top is 11.
+        term.scroll_display(Scroll::PageUp);
+        assert_eq!(term.grid.display_offset(), 10);
 
-//         // Scrollable amount to top is 11.
-//         term.scroll_display(Scroll::PageUp);
-//         assert_eq!(term.grid.display_offset(), 10);
+        // Scrollable amount to top is 1.
+        term.scroll_display(Scroll::PageUp);
+        assert_eq!(term.grid.display_offset(), 11);
 
-//         // Scrollable amount to top is 1.
-//         term.scroll_display(Scroll::PageUp);
-//         assert_eq!(term.grid.display_offset(), 11);
+        // Scrollable amount to top is 0.
+        term.scroll_display(Scroll::PageUp);
+        assert_eq!(term.grid.display_offset(), 11);
+    }
 
-//         // Scrollable amount to top is 0.
-//         term.scroll_display(Scroll::PageUp);
-//         assert_eq!(term.grid.display_offset(), 11);
-//     }
+    #[test]
+    fn scroll_display_page_down() {
+        let size = SizeInfo::new(10, 5);
+        let mut term = Term::new_test(size, VoidListener, 10_000);
 
-//     #[test]
-//     fn scroll_display_page_down() {
-//         let size = SizeInfo::new(5., 10., 1.0, 1.0, 0.0, 0.0, false);
-//         let mut term = Term::new(size, (), 10_000);
+        // Create 11 lines of scrollback.
+        for _ in 0..20 {
+            term.newline();
+        }
 
-//         // Create 11 lines of scrollback.
-//         for _ in 0..20 {
-//             term.newline();
-//         }
+        // Change display_offset to topmost.
+        term.grid_mut().scroll_display(Scroll::Top);
 
-//         // Change display_offset to topmost.
-//         term.grid_mut().scroll_display(Scroll::Top);
+        // Scrollable amount to bottom is 11.
+        term.scroll_display(Scroll::PageDown);
+        assert_eq!(term.grid.display_offset(), 1);
 
-//         // Scrollable amount to bottom is 11.
-//         term.scroll_display(Scroll::PageDown);
-//         assert_eq!(term.grid.display_offset(), 1);
+        // Scrollable amount to bottom is 1.
+        term.scroll_display(Scroll::PageDown);
+        assert_eq!(term.grid.display_offset(), 0);
 
-//         // Scrollable amount to bottom is 1.
-//         term.scroll_display(Scroll::PageDown);
-//         assert_eq!(term.grid.display_offset(), 0);
+        // Scrollable amount to bottom is 0.
+        term.scroll_display(Scroll::PageDown);
+        assert_eq!(term.grid.display_offset(), 0);
+    }
 
-//         // Scrollable amount to bottom is 0.
-//         term.scroll_display(Scroll::PageDown);
-//         assert_eq!(term.grid.display_offset(), 0);
-//     }
+    #[test]
+    fn input_line_drawing_character() {
+        let size = SizeInfo::new(51, 21);
+        let mut term = Term::new_test(size, VoidListener, 10_000);
+        let cursor = Point::new(Line(0), Column(0));
+        term.configure_charset(CharsetIndex::G0, StandardCharset::SpecialCharacterAndLineDrawing);
+        term.input('a');
 
-//     #[test]
-//     fn input_line_drawing_character() {
-//         let size = SizeInfo::new(21.0, 51.0, 3.0, 3.0, 0.0, 0.0, false);
-//         let mut term = Term::new(size, (), 10_000);
-//         let cursor = Point::new(Line(0), Column(0));
-//         term.configure_charset(
-//             CharsetIndex::G0,
-//             StandardCharset::SpecialCharacterAndLineDrawing,
-//         );
-//         term.input('a');
+        assert_eq!(term.grid()[cursor].c, '▒');
+    }
 
-//         assert_eq!(term.grid()[cursor].c, '▒');
-//     }
+    #[test]
+    fn clear_viewport_set_vi_cursor_into_viewport() {
+        let size = SizeInfo::new(20, 10);
+        let mut term = Term::new_test(size, VoidListener, 10_000);
 
-//     #[test]
-//     fn clear_viewport_set_vi_cursor_into_viewport() {
-//         let size = SizeInfo::new(10.0, 20.0, 1.0, 1.0, 0.0, 0.0, false);
-//         let mut term = Term::new(size, (), 10_000);
+        // Create 10 lines of scrollback.
+        for _ in 0..29 {
+            term.newline();
+        }
 
-//         // Create 10 lines of scrollback.
-//         for _ in 0..29 {
-//             term.newline();
-//         }
+        // Change the display area and the vi cursor position.
+        term.scroll_display(Scroll::Top);
 
-//         // Change the display area and the vi cursor position.
-//         term.scroll_display(Scroll::Top);
+        // Clear the viewport.
+        term.clear_screen(ansi::ClearMode::All);
 
-//         // Clear the viewport.
-//         term.clear_screen(ansi::ClearMode::All);
+        assert_eq!(term.grid.display_offset(), 0);
+    }
 
-//         assert_eq!(term.grid.display_offset(), 0);
-//     }
+    #[test]
+    fn clear_scrollback_set_vi_cursor_into_viewport() {
+        let size = SizeInfo::new(20, 10);
+        let mut term = Term::new_test(size, VoidListener, 10_000);
 
-//     #[test]
-//     fn clear_scrollback_set_vi_cursor_into_viewport() {
-//         let size = SizeInfo::new(10.0, 20.0, 1.0, 1.0, 0.0, 0.0, false);
-//         let mut term = Term::new(size, (), 10_000);
+        // Create 10 lines of scrollback.
+        for _ in 0..29 {
+            term.newline();
+        }
 
-//         // Create 10 lines of scrollback.
-//         for _ in 0..29 {
-//             term.newline();
-//         }
+        // Change the display area and the vi cursor position.
+        term.scroll_display(Scroll::Top);
 
-//         // Change the display area and the vi cursor position.
-//         term.scroll_display(Scroll::Top);
+        // Clear the scrollback buffer.
+        term.clear_screen(ansi::ClearMode::Saved);
 
-//         // Clear the scrollback buffer.
-//         term.clear_screen(ansi::ClearMode::Saved);
+        assert_eq!(term.grid.display_offset(), 0);
+    }
 
-//         assert_eq!(term.grid.display_offset(), 0);
-//     }
+    #[test]
+    fn clear_saved_lines() {
+        let size = SizeInfo::new(51, 21);
+        let mut term = Term::new_test(size, VoidListener, 10_000);
 
-//     #[test]
-//     fn clear_saved_lines() {
-//         let size = SizeInfo::new(21.0, 51.0, 3.0, 3.0, 0.0, 0.0, false);
-//         let mut term = Term::new(size, (), 10_000);
+        // Add one line of scrollback.
+        term.grid.scroll_up(&(Line(0)..Line(1)), 1);
 
-//         // Add one line of scrollback.
-//         term.grid.scroll_up(&(Line(0)..Line(1)), 1);
+        // Clear the history.
+        term.clear_screen(ansi::ClearMode::Saved);
 
-//         // Clear the history.
-//         term.clear_screen(ansi::ClearMode::Saved);
+        // Make sure that scrolling does not change the grid.
+        let mut scrolled_grid = term.grid.clone();
+        scrolled_grid.scroll_display(Scroll::Top);
 
-//         // Make sure that scrolling does not change the grid.
-//         let mut scrolled_grid = term.grid.clone();
-//         scrolled_grid.scroll_display(Scroll::Top);
+        // Truncate grids for comparison.
+        scrolled_grid.truncate();
+        term.grid.truncate();
 
-//         // Truncate grids for comparison.
-//         scrolled_grid.truncate();
-//         term.grid.truncate();
+        assert_eq!(term.grid, scrolled_grid);
+    }
 
-//         assert_eq!(term.grid, scrolled_grid);
-//     }
+    #[test]
+    fn grow_lines_updates_active_cursor_pos() {
+        let mut size = SizeInfo::new(10, 100);
+        let mut term = Term::new_test(size, VoidListener, 10_000);
 
-//     #[test]
-//     fn grow_lines_updates_active_cursor_pos() {
-//         let mut size = SizeInfo::new(100.0, 10.0, 1.0, 1.0, 0.0, 0.0, false);
-//         let mut term = Term::new(size, (), 10_000);
+        // Create 10 lines of scrollback.
+        for _ in 0..19 {
+            term.newline();
+        }
+        assert_eq!(term.history_size(), 10);
+        assert_eq!(term.grid.cursor.point, Point::new(Line(9), Column(0)));
 
-//         // Create 10 lines of scrollback.
-//         for _ in 0..19 {
-//             term.newline();
-//         }
-//         assert_eq!(term.history_size(), 10);
-//         assert_eq!(term.grid.cursor.point, Point::new(Line(9), Column(0)));
+        // Increase visible lines.
+        size.screen_lines = 30;
+        term.resize(size);
 
-//         // Increase visible lines.
-//         size.screen_lines = 30;
-//         term.resize(size);
+        assert_eq!(term.history_size(), 0);
+        assert_eq!(term.grid.cursor.point, Point::new(Line(19), Column(0)));
+    }
 
-//         assert_eq!(term.history_size(), 0);
-//         assert_eq!(term.grid.cursor.point, Point::new(Line(19), Column(0)));
-//     }
+    #[test]
+    fn grow_lines_updates_inactive_cursor_pos() {
+        let mut size = SizeInfo::new(10, 100);
+        let mut term = Term::new_test(size, VoidListener, 10_000);
 
-//     #[test]
-//     fn grow_lines_updates_inactive_cursor_pos() {
-//         let mut size = SizeInfo::new(100.0, 10.0, 1.0, 1.0, 0.0, 0.0, false);
-//         let mut term = Term::new(size, (), 10_000);
+        // Create 10 lines of scrollback.
+        for _ in 0..19 {
+            term.newline();
+        }
+        assert_eq!(term.history_size(), 10);
+        assert_eq!(term.grid.cursor.point, Point::new(Line(9), Column(0)));
 
-//         // Create 10 lines of scrollback.
-//         for _ in 0..19 {
-//             term.newline();
-//         }
-//         assert_eq!(term.history_size(), 10);
-//         assert_eq!(term.grid.cursor.point, Point::new(Line(9), Column(0)));
+        // Enter alt screen.
+        term.set_mode(ansi::Mode::SwapScreenAndSetRestoreCursor);
 
-//         // Enter alt screen.
-//         term.set_mode(ansi::Mode::SwapScreenAndSetRestoreCursor);
+        // Increase visible lines.
+        size.screen_lines = 30;
+        term.resize(size);
 
-//         // Increase visible lines.
-//         size.screen_lines = 30;
-//         term.resize(size);
+        // Leave alt screen.
+        term.unset_mode(ansi::Mode::SwapScreenAndSetRestoreCursor);
 
-//         // Leave alt screen.
-//         term.unset_mode(ansi::Mode::SwapScreenAndSetRestoreCursor);
+        assert_eq!(term.history_size(), 0);
+        assert_eq!(term.grid.cursor.point, Point::new(Line(19), Column(0)));
+    }
 
-//         assert_eq!(term.history_size(), 0);
-//         assert_eq!(term.grid.cursor.point, Point::new(Line(19), Column(0)));
-//     }
+    #[test]
+    fn shrink_lines_updates_active_cursor_pos() {
+        let mut size = SizeInfo::new(10, 100);
+        let mut term = Term::new_test(size, VoidListener, 10_000);
 
-//     #[test]
-//     fn shrink_lines_updates_active_cursor_pos() {
-//         let mut size = SizeInfo::new(100.0, 10.0, 1.0, 1.0, 0.0, 0.0, false);
-//         let mut term = Term::new(size, (), 10_000);
+        // Create 10 lines of scrollback.
+        for _ in 0..19 {
+            term.newline();
+        }
+        assert_eq!(term.history_size(), 10);
+        assert_eq!(term.grid.cursor.point, Point::new(Line(9), Column(0)));
 
-//         // Create 10 lines of scrollback.
-//         for _ in 0..19 {
-//             term.newline();
-//         }
-//         assert_eq!(term.history_size(), 10);
-//         assert_eq!(term.grid.cursor.point, Point::new(Line(9), Column(0)));
+        // Increase visible lines.
+        size.screen_lines = 5;
+        term.resize(size);
 
-//         // Increase visible lines.
-//         size.screen_lines = 5;
-//         term.resize(size);
+        assert_eq!(term.history_size(), 15);
+        assert_eq!(term.grid.cursor.point, Point::new(Line(4), Column(0)));
+    }
 
-//         assert_eq!(term.history_size(), 15);
-//         assert_eq!(term.grid.cursor.point, Point::new(Line(4), Column(0)));
-//     }
+    #[test]
+    fn shrink_lines_updates_inactive_cursor_pos() {
+        let mut size = SizeInfo::new(10, 100);
+        let mut term = Term::new_test(size, VoidListener, 10_000);
 
-//     #[test]
-//     fn shrink_lines_updates_inactive_cursor_pos() {
-//         let mut size = SizeInfo::new(100.0, 10.0, 1.0, 1.0, 0.0, 0.0, false);
-//         let mut term = Term::new(size, (), 10_000);
+        // Create 10 lines of scrollback.
+        for _ in 0..19 {
+            term.newline();
+        }
+        assert_eq!(term.history_size(), 10);
+        assert_eq!(term.grid.cursor.point, Point::new(Line(9), Column(0)));
 
-//         // Create 10 lines of scrollback.
-//         for _ in 0..19 {
-//             term.newline();
-//         }
-//         assert_eq!(term.history_size(), 10);
-//         assert_eq!(term.grid.cursor.point, Point::new(Line(9), Column(0)));
+        // Enter alt screen.
+        term.set_mode(ansi::Mode::SwapScreenAndSetRestoreCursor);
 
-//         // Enter alt screen.
-//         term.set_mode(ansi::Mode::SwapScreenAndSetRestoreCursor);
+        // Increase visible lines.
+        size.screen_lines = 5;
+        term.resize(size);
 
-//         // Increase visible lines.
-//         size.screen_lines = 5;
-//         term.resize(size);
+        // Leave alt screen.
+        term.unset_mode(ansi::Mode::SwapScreenAndSetRestoreCursor);
 
-//         // Leave alt screen.
-//         term.unset_mode(ansi::Mode::SwapScreenAndSetRestoreCursor);
-
-//         assert_eq!(term.history_size(), 15);
-//         assert_eq!(term.grid.cursor.point, Point::new(Line(4), Column(0)));
-//     }
-
-//     #[test]
-//     fn window_title() {
-//         let size = SizeInfo::new(21.0, 51.0, 3.0, 3.0, 0.0, 0.0, false);
-//         let mut term = Term::new(size, (), 10_000);
-
-//         // Title None by default.
-//         assert_eq!(term.title, None);
-
-//         // Title can be set.
-//         term.set_title(Some("Test".into()));
-//         assert_eq!(term.title, Some("Test".into()));
-
-//         // Title can be pushed onto stack.
-//         term.push_title();
-//         term.set_title(Some("Next".into()));
-//         assert_eq!(term.title, Some("Next".into()));
-//         assert_eq!(term.title_stack.get(0).unwrap(), &Some("Test".into()));
-
-//         // Title can be popped from stack and set as the window title.
-//         term.pop_title();
-//         assert_eq!(term.title, Some("Test".into()));
-//         assert!(term.title_stack.is_empty());
-
-//         // Title stack doesn't grow infinitely.
-//         for _ in 0..4097 {
-//             term.push_title();
-//         }
-//         assert_eq!(term.title_stack.len(), 4096);
-
-//         // Title and title stack reset when terminal state is reset.
-//         term.push_title();
-//         term.reset_state();
-//         assert_eq!(term.title, None);
-//         assert!(term.title_stack.is_empty());
-
-//         // Title stack pops back to default.
-//         term.title = None;
-//         term.push_title();
-//         term.set_title(Some("Test".into()));
-//         term.pop_title();
-//         assert_eq!(term.title, None);
-
-//         // Title can be reset to default.
-//         term.title = Some("Test".into());
-//         term.set_title(None);
-//         assert_eq!(term.title, None);
-//     }
-// }
+        assert_eq!(term.history_size(), 15);
+        assert_eq!(term.grid.cursor.point, Point::new(Line(4), Column(0)));
+    }
+}

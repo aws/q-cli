@@ -360,6 +360,6 @@ fn cell(c: char) -> Cell {
 
 fn wrap_cell(c: char) -> Cell {
     let mut cell = cell(c);
-    cell.shell_flags.insert(ShellFlags::WRAPLINE);
+    cell.flags.insert(ShellFlags::WRAPLINE);
     cell
 }

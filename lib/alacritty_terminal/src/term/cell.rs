@@ -37,7 +37,7 @@ bitflags! {
 }
 
 bitflags! {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default)]
     pub struct FigFlags: u8 {
         const IN_PROMPT = 0b0000_0001;
         const IN_SUGGESTION = 0b0000_0010;
@@ -78,7 +78,8 @@ pub struct Cell {
     pub c: char,
     pub fg: Color,
     pub bg: Color,
-    pub shell_flags: ShellFlags,
+    pub flags: ShellFlags,
+    #[serde(default)]
     pub fig_flags: FigFlags,
     #[serde(default)]
     extra: Option<Box<CellExtra>>,
@@ -91,7 +92,7 @@ impl Default for Cell {
             c: ' ',
             bg: Color::Named(NamedColor::Background),
             fg: Color::Named(NamedColor::Foreground),
-            shell_flags: ShellFlags::empty(),
+            flags: ShellFlags::empty(),
             fig_flags: FigFlags::empty(),
             extra: None,
         }
@@ -122,7 +123,7 @@ impl Cell {
     /// Remove all wide char data from a cell.
     #[inline(never)]
     pub fn clear_wide(&mut self) {
-        self.shell_flags.remove(ShellFlags::WIDE_CHAR);
+        self.flags.remove(ShellFlags::WIDE_CHAR);
         self.drop_extra();
         self.c = ' ';
     }
@@ -134,7 +135,7 @@ impl GridCell for Cell {
         (self.c == ' ' || self.c == '\t')
             && self.bg == Color::Named(NamedColor::Background)
             && self.fg == Color::Named(NamedColor::Foreground)
-            && !self.shell_flags.intersects(
+            && !self.flags.intersects(
                 ShellFlags::INVERSE
                     | ShellFlags::UNDERLINE
                     | ShellFlags::DOUBLE_UNDERLINE
@@ -148,12 +149,12 @@ impl GridCell for Cell {
 
     #[inline]
     fn flags(&self) -> &ShellFlags {
-        &self.shell_flags
+        &self.flags
     }
 
     #[inline]
     fn flags_mut(&mut self) -> &mut ShellFlags {
-        &mut self.shell_flags
+        &mut self.flags
     }
 
     #[inline]
@@ -185,7 +186,7 @@ impl LineLength for grid::Row<Cell> {
     fn line_length(&self) -> Column {
         let mut length = Column(0);
 
-        if self[Column(self.len() - 1)].shell_flags.contains(ShellFlags::WRAPLINE) {
+        if self[Column(self.len() - 1)].flags.contains(ShellFlags::WRAPLINE) {
             return Column(self.len());
         }
 
@@ -220,7 +221,7 @@ mod tests {
     #[test]
     fn line_length_works_with_wrapline() {
         let mut row = Row::<Cell>::new(10);
-        row[Column(9)].shell_flags.insert(super::ShellFlags::WRAPLINE);
+        row[Column(9)].flags.insert(super::ShellFlags::WRAPLINE);
 
         assert_eq!(row.line_length(), Column(10));
     }

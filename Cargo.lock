@@ -76,6 +76,7 @@ dependencies = [
  "bitflags 2.6.0",
  "camino",
  "serde",
+ "serde_json",
  "serde_yaml",
  "shell-color",
  "tracing",
