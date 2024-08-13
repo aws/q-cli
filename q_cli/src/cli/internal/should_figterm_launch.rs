@@ -391,10 +391,7 @@ mod tests {
 
         fn run(self) {
             let ctx = {
-                let mut ctx = ContextBuilder::new();
-                if let Some(env) = self.env {
-                    ctx = ctx.with_env(env);
-                }
+                let mut ctx = ContextBuilder::new().with_env(self.env.unwrap_or(Env::from_slice(&[])));
 
                 // Create fake ProcessInfo
                 let mut current_pid = FakePid::default();
