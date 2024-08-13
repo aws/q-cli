@@ -256,7 +256,7 @@ pub fn should_figterm_launch_exit_status(ctx: &Context, quiet: bool) -> u8 {
     }
 
     // Make sure we're not in CI
-    if fig_util::system_info::in_ci() {
+    if env.in_ci() {
         if !quiet {
             writeln!(stdout(), "❌ In CI").ok();
         }
@@ -442,6 +442,7 @@ mod tests {
             test(INSIDE_EMACS).env(&[(INSIDE_EMACS, "1")]).expect(1),
             test(WARP_TERMINAL).env(&[(TERM_PROGRAM, WARP_TERMINAL)]).expect(1),
             test(WARP_TERMINAL).env(&[(TERM_PROGRAM, WARP_TERMINAL)]).expect(1),
+            test("In CI").env(&[("CI", "1")]).expect(1),
             test(format!("In ssh without {Q_PARENT}"))
                 .env(&[("SSH_CLIENT", "1")])
                 .expect(1),

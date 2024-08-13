@@ -71,6 +71,10 @@ impl Env {
     pub fn in_codespaces(&self) -> bool {
         self.get_os("CODESPACES").is_some() || self.get_os("Q_CODESPACES").is_some()
     }
+
+    pub fn in_ci(&self) -> bool {
+        self.get_os("CI").is_some() || self.get_os("Q_CI").is_some()
+    }
 }
 
 impl Shim for Env {
