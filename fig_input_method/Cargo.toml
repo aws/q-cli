@@ -20,7 +20,7 @@ input_method_type = "palette"
 plist = "1.4.0"
 serde.workspace = true
 toml.workspace = true
-apple-bundle = "*"
+apple-bundle = "0.1.4"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc = "0.2.7"

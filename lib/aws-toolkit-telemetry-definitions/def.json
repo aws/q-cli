@@ -76,6 +76,11 @@
       "description": "The user shell"
     },
     {
+      "name": "codewhispererterminal_inCloudshell",
+      "type": "boolean",
+      "description": "Whether the CLI is running in the AWS CloudShell environment"
+    },
+    {
       "name": "codewhispererterminal_shellVersion",
       "type": "string",
       "description": "The user shell version"
@@ -112,7 +117,8 @@
       "description": "Captures start of the conversation with amazonq /dev",
       "metadata": [
         { "type": "amazonqConversationId" },
-        { "type": "credentialStartUrl", "required": false }
+        { "type": "credentialStartUrl", "required": false },
+        { "type": "codewhispererterminal_inCloudshell" }
       ]
     },
     {
@@ -120,7 +126,8 @@
       "description": "Captures active usage with Q Chat in shell",
       "metadata": [
         { "type": "amazonqConversationId" },
-        { "type": "credentialStartUrl", "required": false }
+        { "type": "credentialStartUrl", "required": false },
+        { "type": "codewhispererterminal_inCloudshell" }
       ]
     },
     {
@@ -128,25 +135,30 @@
       "description": "Captures end of the conversation with amazonq /dev",
       "metadata": [
         { "type": "amazonqConversationId" },
-        { "type": "credentialStartUrl", "required": false }
+        { "type": "credentialStartUrl", "required": false },
+        { "type": "codewhispererterminal_inCloudshell" }
       ]
     },
     {
       "name": "codewhispererterminal_userLoggedIn",
       "description": "Emitted when users log in",
       "passive": false,
-      "metadata": [{ "type": "credentialStartUrl" }]
+      "metadata": [
+        { "type": "credentialStartUrl" },
+        { "type": "codewhispererterminal_inCloudshell" }
+      ]
     },
     {
       "name": "codewhispererterminal_refreshCredentials",
       "description": "Emitted when users refresh their credentials",
       "passive": false,
       "metadata": [
-          { "type": "credentialStartUrl" },
-          { "type": "requestId" },
-          { "type": "oauthFlow" },
-          { "type": "result" },
-          { "type": "reason", "required": false }
+        { "type": "credentialStartUrl" },
+        { "type": "requestId" },
+        { "type": "oauthFlow" },
+        { "type": "result" },
+        { "type": "reason", "required": false },
+        { "type": "codewhispererterminal_inCloudshell" }
       ]
     },
     {
@@ -160,7 +172,8 @@
         { "type": "codewhispererterminal_shell" },
         { "type": "codewhispererterminal_shellVersion" },
         { "type": "codewhispererterminal_command" },
-        { "type": "codewhispererterminal_duration" }
+        { "type": "codewhispererterminal_duration" },
+        { "type": "codewhispererterminal_inCloudshell" }
       ]
     },
     {
@@ -177,7 +190,8 @@
         { "type": "codewhispererterminal_accepted" },
         { "type": "codewhispererterminal_typedCount" },
         { "type": "codewhispererterminal_suggestedCount" },
-        { "type": "codewhispererterminal_suggestionState"}
+        { "type": "codewhispererterminal_suggestionState" },
+        { "type": "codewhispererterminal_inCloudshell" }
       ]
     },
     {
@@ -192,7 +206,8 @@
         { "type": "codewhispererterminal_shellVersion" },
         { "type": "codewhispererterminal_duration" },
         { "type": "codewhispererterminal_timeToSuggestion" },
-        { "type": "codewhispererterminal_accepted" }
+        { "type": "codewhispererterminal_accepted" },
+        { "type": "codewhispererterminal_inCloudshell" }
       ]
     },
     {
@@ -205,7 +220,8 @@
         { "type": "codewhispererterminal_terminalVersion" },
         { "type": "codewhispererterminal_shell" },
         { "type": "codewhispererterminal_shellVersion" },
-        { "type": "codewhispererterminal_subcommand" }
+        { "type": "codewhispererterminal_subcommand" },
+        { "type": "codewhispererterminal_inCloudshell" }
       ]
     },
     {
@@ -218,7 +234,8 @@
         { "type": "codewhispererterminal_terminalVersion" },
         { "type": "codewhispererterminal_shell" },
         { "type": "codewhispererterminal_shellVersion" },
-        { "type": "codewhispererterminal_doctorCheck" }
+        { "type": "codewhispererterminal_doctorCheck" },
+        { "type": "codewhispererterminal_inCloudshell" }
       ]
     },
     {

@@ -12,6 +12,7 @@ use aws_credential_types::provider::error::CredentialsError;
 use aws_smithy_runtime_api::client::orchestrator::HttpResponse;
 use aws_smithy_runtime_api::client::result::SdkError;
 use aws_smithy_types::event_stream::RawMessage;
+use fig_aws_common::SdkErrorDisplay;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -20,33 +21,31 @@ pub enum Error {
     Credentials(CredentialsError),
 
     // Generate completions errors
-    #[error(transparent)]
+    #[error("{}", SdkErrorDisplay(.0))]
     GenerateCompletions(#[from] SdkError<GenerateCompletionsError, HttpResponse>),
-    #[error(transparent)]
+    #[error("{}", SdkErrorDisplay(.0))]
     GenerateRecommendations(#[from] SdkError<GenerateRecommendationsError, HttpResponse>),
 
     // List customizations error
-    #[error(transparent)]
+    #[error("{}", SdkErrorDisplay(.0))]
     ListAvailableCustomizations(#[from] SdkError<ListAvailableCustomizationsError, HttpResponse>),
-    #[error(transparent)]
+    #[error("{}", SdkErrorDisplay(.0))]
     ListAvailableServices(#[from] SdkError<ListCustomizationsError, HttpResponse>),
 
     // Send message errors
-    #[error(transparent)]
+    #[error("{}", SdkErrorDisplay(.0))]
     CodewhispererGenerateAssistantResponse(#[from] SdkError<GenerateAssistantResponseError, HttpResponse>),
-    #[error(transparent)]
+    #[error("{}", SdkErrorDisplay(.0))]
     QDeveloperSendMessage(#[from] SdkError<QDeveloperSendMessageError, HttpResponse>),
 
     // chat stream errors
-    #[error(transparent)]
+    #[error("{}", SdkErrorDisplay(.0))]
     CodewhispererChatResponseStream(#[from] SdkError<CodewhispererChatResponseStreamError, RawMessage>),
-    #[error(transparent)]
+    #[error("{}", SdkErrorDisplay(.0))]
     QDeveloperChatResponseStream(#[from] SdkError<QDeveloperChatResponseStreamError, RawMessage>),
 
-    #[error("Unsupported action by consolas: {0}")]
+    #[error("unsupported action by consolas: {0}")]
     UnsupportedConsolas(&'static str),
-    #[error("Unsupported action by codewhisperer: {0}")]
-    UnsupportedCodewhisperer(&'static str),
 }
 
 impl Error {
@@ -63,8 +62,90 @@ impl Error {
             Error::QDeveloperSendMessage(e) => e.as_service_error().map_or(false, |e| e.is_throttling_error()),
             Error::CodewhispererChatResponseStream(_)
             | Error::QDeveloperChatResponseStream(_)
-            | Error::UnsupportedConsolas(_)
-            | Error::UnsupportedCodewhisperer(_) => false,
+            | Error::UnsupportedConsolas(_) => false,
+        }
+    }
+
+    pub fn is_service_error(&self) -> bool {
+        match self {
+            Error::Credentials(_) => false,
+            Error::GenerateCompletions(e) => e.as_service_error().is_some(),
+            Error::GenerateRecommendations(e) => e.as_service_error().is_some(),
+            Error::ListAvailableCustomizations(e) => e.as_service_error().is_some(),
+            Error::ListAvailableServices(e) => e.as_service_error().is_some(),
+            Error::CodewhispererGenerateAssistantResponse(e) => e.as_service_error().is_some(),
+            Error::QDeveloperSendMessage(e) => e.as_service_error().is_some(),
+            Error::CodewhispererChatResponseStream(_)
+            | Error::QDeveloperChatResponseStream(_)
+            | Error::UnsupportedConsolas(_) => false,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::error::Error as _;
+
+    use aws_smithy_runtime_api::http::Response;
+    use aws_smithy_types::body::SdkBody;
+    use aws_smithy_types::event_stream::Message;
+
+    use super::*;
+
+    fn response() -> Response {
+        Response::new(500.try_into().unwrap(), SdkBody::empty())
+    }
+
+    fn raw_message() -> RawMessage {
+        RawMessage::Decoded(Message::new(b"<payload>".to_vec()))
+    }
+
+    fn all_errors() -> Vec<Error> {
+        vec![
+            Error::Credentials(CredentialsError::unhandled("<unhandled>")),
+            Error::GenerateCompletions(SdkError::service_error(
+                GenerateCompletionsError::unhandled("<unhandled>"),
+                response(),
+            )),
+            Error::GenerateRecommendations(SdkError::service_error(
+                GenerateRecommendationsError::unhandled("<unhandled>"),
+                response(),
+            )),
+            Error::ListAvailableCustomizations(SdkError::service_error(
+                ListAvailableCustomizationsError::unhandled("<unhandled>"),
+                response(),
+            )),
+            Error::ListAvailableServices(SdkError::service_error(
+                ListCustomizationsError::unhandled("<unhandled>"),
+                response(),
+            )),
+            Error::CodewhispererGenerateAssistantResponse(SdkError::service_error(
+                GenerateAssistantResponseError::unhandled("<unhandled>"),
+                response(),
+            )),
+            Error::QDeveloperSendMessage(SdkError::service_error(
+                QDeveloperSendMessageError::unhandled("<unhandled>"),
+                response(),
+            )),
+            Error::CodewhispererChatResponseStream(SdkError::service_error(
+                CodewhispererChatResponseStreamError::unhandled("<unhandled>"),
+                raw_message(),
+            )),
+            Error::QDeveloperChatResponseStream(SdkError::service_error(
+                QDeveloperChatResponseStreamError::unhandled("<unhandled>"),
+                raw_message(),
+            )),
+            Error::UnsupportedConsolas("test"),
+        ]
+    }
+
+    #[test]
+    fn test_errors() {
+        for error in all_errors() {
+            let _ = error.is_throttling_error();
+            let _ = error.is_service_error();
+            let _ = error.source();
+            println!("{error} {error:?}");
         }
     }
 }

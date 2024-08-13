@@ -400,7 +400,13 @@ impl TranslateArgs {
                 ]);
 
                 let response_time_start = Instant::now();
-                let res = generate_response(&question, n).await?;
+                let res = match generate_response(&question, n).await {
+                    Ok(res) => res,
+                    Err(err) => {
+                        spinner.stop_with_message("".into());
+                        return Err(err);
+                    },
+                };
                 let response_latency = response_time_start.elapsed();
 
                 // Prevents any buffered "enter" or "space" key presses from

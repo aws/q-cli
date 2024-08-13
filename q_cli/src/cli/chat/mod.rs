@@ -53,12 +53,12 @@ enum ApiResponse {
     Text(String),
     ConversationId(String),
     MessageId(String),
+    Error(Option<String>),
     End,
-    Error,
 }
 
 pub async fn chat(input: String) -> Result<ExitCode> {
-    if !fig_auth::is_logged_in().await {
+    if !fig_util::system_info::in_cloudshell() && !fig_auth::is_logged_in().await {
         bail!(
             "You are not logged in, please log in with {}",
             format!("{CLI_BINARY_NAME} login",).bold()
@@ -171,14 +171,24 @@ You can include additional context by adding the following to your prompt:
                         ApiResponse::End => {
                             ended = true;
                         },
-                        ApiResponse::Error => {
+                        ApiResponse::Error(error) => {
                             drop(spinner.take());
-                            stderr
-                                .queue(cursor::MoveToColumn(0))?
-                                .queue(style::Print(
+                            stderr.queue(cursor::MoveToColumn(0))?;
+
+                            match error {
+                                Some(error) => stderr
+                                    .queue(style::SetForegroundColor(Color::Red))?
+                                    .queue(style::SetAttribute(Attribute::Bold))?
+                                    .queue(style::Print("error"))?
+                                    .queue(style::SetForegroundColor(Color::Reset))?
+                                    .queue(style::SetAttribute(Attribute::Reset))?
+                                    .queue(style::Print(format!(": {error}\n")))?,
+                                None => stderr.queue(style::Print(
                                     "Amazon Q is having trouble responding right now. Try again later.",
-                                ))?
-                                .flush()?;
+                                ))?,
+                            };
+
+                            stderr.flush()?;
                             ended = true;
                         },
                     }

@@ -9,13 +9,13 @@ use std::ffi::{
 };
 use std::path::PathBuf;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Env(inner::Inner);
 
 mod inner {
     use std::collections::HashMap;
 
-    #[derive(Debug, Clone, Default)]
+    #[derive(Debug, Clone, Default, PartialEq, Eq)]
     pub(super) enum Inner {
         #[default]
         Real,
@@ -26,6 +26,13 @@ mod inner {
 impl Env {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Create a fake process environment from a slice of tuples.
+    pub fn from_slice(vars: &[(&str, &str)]) -> Self {
+        use inner::Inner;
+        let map: HashMap<_, _> = vars.iter().map(|(k, v)| ((*k).to_owned(), (*v).to_owned())).collect();
+        Self(Inner::Fake(map))
     }
 
     pub fn get<K: AsRef<str>>(&self, key: K) -> Result<String, VarError> {
@@ -51,11 +58,13 @@ impl Env {
         }
     }
 
-    /// Create a fake process environment from a slice of tuples.
-    pub fn from_slice(vars: &[(&str, &str)]) -> Self {
-        use inner::Inner;
-        let map: HashMap<_, _> = vars.iter().map(|(k, v)| ((*k).to_owned(), (*v).to_owned())).collect();
-        Self(Inner::Fake(map))
+    pub fn in_cloudshell(&self) -> bool {
+        self.get("AWS_EXECUTION_ENV")
+            .map_or(false, |v| v.trim().eq_ignore_ascii_case("cloudshell"))
+    }
+
+    pub fn in_ssh(&self) -> bool {
+        self.get("SSH_CLIENT").is_ok() || self.get("SSH_CONNECTION").is_ok() || self.get("SSH_TTY").is_ok()
     }
 }
 
@@ -66,8 +75,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_get() {
+    fn test_new() {
+        let env = Env::new();
+        assert_eq!(env, Env(inner::Inner::Real));
+
         let env = Env::default();
+        assert_eq!(env, Env(inner::Inner::Real));
+    }
+
+    #[test]
+    fn test_get() {
+        let env = Env::new();
         assert!(env.home().is_some());
         assert!(env.get("PATH").is_ok());
         assert!(env.get_os("PATH").is_some());
@@ -78,5 +96,20 @@ mod tests {
         assert_eq!(env.get("PATH").unwrap(), "/bin:/usr/bin");
         assert!(env.get_os("PATH").is_some());
         assert!(env.get("NON_EXISTENT").is_err());
+    }
+
+    #[test]
+    fn test_in_envs() {
+        let env = Env::from_slice(&[]);
+        assert!(!env.in_cloudshell());
+        assert!(!env.in_ssh());
+
+        let env = Env::from_slice(&[("AWS_EXECUTION_ENV", "CloudShell"), ("SSH_CLIENT", "1")]);
+        assert!(env.in_cloudshell());
+        assert!(env.in_ssh());
+
+        let env = Env::from_slice(&[("AWS_EXECUTION_ENV", "CLOUDSHELL\n")]);
+        assert!(env.in_cloudshell());
+        assert!(!env.in_ssh());
     }
 }

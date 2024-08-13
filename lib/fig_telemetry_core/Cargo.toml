@@ -11,6 +11,7 @@ amzn-codewhisperer-client = { path = "../amzn-codewhisperer-client" }
 amzn-toolkit-telemetry = { path = "../amzn-toolkit-telemetry" }
 async-trait.workspace = true
 aws-toolkit-telemetry-definitions = { path = "../aws-toolkit-telemetry-definitions" }
+fig_util.workspace = true
 serde.workspace = true
 strum.workspace = true
 tokio.workspace = true

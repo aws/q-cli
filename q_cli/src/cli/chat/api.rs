@@ -220,10 +220,19 @@ async fn try_send_message(
     tx: &UnboundedSender<ApiResponse>,
     conversation_state: ConversationState,
 ) -> Result<(), String> {
-    let mut send_message_output = client
-        .send_message(conversation_state)
-        .await
-        .map_err(|err| format!("send_message failed: {}", DisplayErrorContext(err)))?;
+    let mut send_message_output = match client.send_message(conversation_state).await {
+        Ok(output) => output,
+        Err(err) => {
+            if err.is_service_error() {
+                error!(err =% DisplayErrorContext(&err), "send_message failed");
+                tx.send(ApiResponse::Error(Some(err.to_string())))
+                    .map_err(|err| format!("tx failed to send ApiResponse::Error: {err}"))?;
+                return Ok(());
+            } else {
+                return Err(format!("send_message failed: {}", DisplayErrorContext(err)));
+            }
+        },
+    };
 
     if let Some(message_id) = send_message_output.request_id().map(ToOwned::to_owned) {
         tx.send(ApiResponse::MessageId(message_id))
@@ -300,7 +309,7 @@ pub(super) async fn send_message(
     tokio::spawn(async move {
         if let Err(err) = try_send_message(client, &tx, conversation_state).await {
             error!(%err, "try_send_message failed");
-            if let Err(err) = tx.send(ApiResponse::Error) {
+            if let Err(err) = tx.send(ApiResponse::Error(None)) {
                 error!(%err, "tx failed to send ApiResponse::Error");
             };
             return;
@@ -346,8 +355,8 @@ mod tests {
                 },
                 ApiResponse::ConversationId(_) => (),
                 ApiResponse::MessageId(_) => (),
+                ApiResponse::Error(err) => panic!("{err:?}"),
                 ApiResponse::End => break,
-                ApiResponse::Error => panic!(),
             }
         }
     }
@@ -378,8 +387,8 @@ mod tests {
                 },
                 ApiResponse::ConversationId(_) => (),
                 ApiResponse::MessageId(_) => (),
+                ApiResponse::Error(err) => panic!("{err:?}"),
                 ApiResponse::End => break,
-                ApiResponse::Error => panic!(),
             }
         }
     }

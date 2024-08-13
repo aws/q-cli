@@ -21,6 +21,7 @@ use aws_toolkit_telemetry_definitions::metrics::{
     CodewhispererterminalTranslationActioned,
     CodewhispererterminalUserLoggedIn,
 };
+use aws_toolkit_telemetry_definitions::types::CodewhispererterminalInCloudshell;
 use aws_toolkit_telemetry_definitions::IntoMetricDatum;
 use strum::{
     Display,
@@ -96,6 +97,7 @@ impl Event {
                     create_time: self.created_time,
                     value: None,
                     credential_start_url: self.credential_start_url.map(Into::into),
+                    codewhispererterminal_in_cloudshell: in_cloudshell(),
                 }
                 .into_metric_datum(),
             ),
@@ -113,6 +115,7 @@ impl Event {
                     result: Some(result.to_string().into()),
                     reason: reason.map(Into::into),
                     oauth_flow: Some(oauth_flow.into()),
+                    codewhispererterminal_in_cloudshell: in_cloudshell(),
                 }
                 .into_metric_datum(),
             ),
@@ -131,6 +134,7 @@ impl Event {
                     codewhispererterminal_shell_version: None,
                     codewhispererterminal_command: Some(command.into()),
                     codewhispererterminal_duration: None,
+                    codewhispererterminal_in_cloudshell: in_cloudshell(),
                 }
                 .into_metric_datum(),
             ),
@@ -157,6 +161,7 @@ impl Event {
                     codewhispererterminal_shell: shell.map(Into::into),
                     codewhispererterminal_shell_version: shell_version.map(Into::into),
                     codewhispererterminal_suggestion_state: Some(suggestion_state.as_str().to_owned().into()),
+                    codewhispererterminal_in_cloudshell: in_cloudshell(),
                 }
                 .into_metric_datum(),
             ),
@@ -179,6 +184,7 @@ impl Event {
                     codewhispererterminal_duration: None,
                     codewhispererterminal_time_to_suggestion: None,
                     codewhispererterminal_accepted: Some(suggestion_state.is_accepted().into()),
+                    codewhispererterminal_in_cloudshell: in_cloudshell(),
                 }
                 .into_metric_datum(),
             ),
@@ -198,6 +204,7 @@ impl Event {
                     codewhispererterminal_shell: shell.map(Into::into),
                     codewhispererterminal_shell_version: shell_version.map(Into::into),
                     codewhispererterminal_subcommand: Some(subcommand.into()),
+                    codewhispererterminal_in_cloudshell: in_cloudshell(),
                 }
                 .into_metric_datum(),
             ),
@@ -217,6 +224,7 @@ impl Event {
                     codewhispererterminal_shell: shell.map(Into::into),
                     codewhispererterminal_shell_version: shell_version.map(Into::into),
                     codewhispererterminal_doctor_check: Some(doctor_check.into()),
+                    codewhispererterminal_in_cloudshell: in_cloudshell(),
                 }
                 .into_metric_datum(),
             ),
@@ -252,6 +260,7 @@ impl Event {
                     value: None,
                     credential_start_url: self.credential_start_url.map(Into::into),
                     amazonq_conversation_id: Some(conversation_id.into()),
+                    codewhispererterminal_in_cloudshell: in_cloudshell(),
                 }
                 .into_metric_datum(),
             ),
@@ -261,6 +270,7 @@ impl Event {
                     value: None,
                     credential_start_url: self.credential_start_url.map(Into::into),
                     amazonq_conversation_id: Some(conversation_id.into()),
+                    codewhispererterminal_in_cloudshell: in_cloudshell(),
                 }
                 .into_metric_datum(),
             ),
@@ -270,6 +280,7 @@ impl Event {
                     value: None,
                     amazonq_conversation_id: Some(conversation_id.into()),
                     credential_start_url: self.credential_start_url.map(Into::into),
+                    codewhispererterminal_in_cloudshell: in_cloudshell(),
                 }
                 .into_metric_datum(),
             ),
@@ -384,6 +395,10 @@ impl From<SuggestionState> for amzn_codewhisperer_client::types::SuggestionState
 pub enum TelemetryResult {
     Succeeded,
     Failed,
+}
+
+fn in_cloudshell() -> Option<CodewhispererterminalInCloudshell> {
+    Some(fig_util::system_info::in_cloudshell().into())
 }
 
 #[cfg(test)]

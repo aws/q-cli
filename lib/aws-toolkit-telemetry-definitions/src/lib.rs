@@ -24,6 +24,7 @@ mod tests {
                 codewhispererterminal_shell_version: Some("4.5.6".to_owned().into()),
                 codewhispererterminal_command: Some("git".to_owned().into()),
                 codewhispererterminal_duration: Some(123.into()),
+                codewhispererterminal_in_cloudshell: Some(false.into()),
             });
 
         let s = serde_json::to_string_pretty(&metric_datum_init).unwrap();

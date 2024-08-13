@@ -4,6 +4,7 @@ use std::borrow::Cow;
 use std::sync::OnceLock;
 
 use cfg_if::cfg_if;
+use fig_os_shim::Env;
 use serde::{
     Deserialize,
     Serialize,
@@ -248,11 +249,7 @@ pub fn os_version() -> Option<&'static OSVersion> {
 
 pub fn in_ssh() -> bool {
     static IN_SSH: OnceLock<bool> = OnceLock::new();
-    *IN_SSH.get_or_init(|| {
-        std::env::var_os("SSH_CLIENT").is_some()
-            || std::env::var_os("SSH_CONNECTION").is_some()
-            || std::env::var_os("SSH_TTY").is_some()
-    })
+    *IN_SSH.get_or_init(|| Env::new().in_ssh())
 }
 
 /// Test if the program is running under WSL
@@ -290,11 +287,7 @@ pub fn has_parent() -> bool {
 /// This true if the env var `AWS_EXECUTION_ENV=CloudShell`
 pub fn in_cloudshell() -> bool {
     static IN_CLOUDSHELL: OnceLock<bool> = OnceLock::new();
-    *IN_CLOUDSHELL.get_or_init(|| {
-        std::env::var_os("AWS_EXECUTION_ENV").map_or(false, |v| {
-            v.to_string_lossy().to_ascii_lowercase().trim() == "cloudshell"
-        })
-    })
+    *IN_CLOUDSHELL.get_or_init(|| Env::new().in_cloudshell())
 }
 
 pub fn in_codespaces() -> bool {
