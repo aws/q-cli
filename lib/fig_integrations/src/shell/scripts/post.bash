@@ -1,11 +1,11 @@
-if [[ -n "$BASH" ]]; then
+if [[ -n "${BASH:-}" ]]; then
 
 # add ~/.local/bin to PATH
 if [[ -d "${HOME}/.local/bin" ]] && [[ ":$PATH:" != *":${HOME}/.local/bin:"* ]]; then
   PATH="${PATH:+"$PATH:"}${HOME}/.local/bin"
 fi
 
-if [[ -z "${TTY}" ]]; then
+if [[ -z "${TTY:-}" ]]; then
   TTY=$(tty)
 fi
 export TTY
@@ -16,7 +16,7 @@ Q_LAST_PS1="$PS1"
 Q_LAST_PS2="$PS2"
 Q_LAST_PS3="$PS3"
 
-if [[ -z "${Q_SHELL}" ]]; then
+if [[ -z "${Q_SHELL:-}" ]]; then
   Q_SHELL=$(q _ get-shell)
 fi
 
@@ -135,7 +135,7 @@ __fig_reset_hooks() {
 
   # shellcheck disable=SC2178
   PROMPT_COMMAND=""
-  if [[ -n "$existing_prompt_command" ]]; then
+  if [[ -n "${existing_prompt_command:-}" ]]; then
         # shellcheck disable=SC2179
       PROMPT_COMMAND+=${existing_prompt_command}$'\n'
   fi;
@@ -174,7 +174,7 @@ if [[ "${TERM_PROGRAM}" != "WarpTerminal" ]]; then
   __bp_install_after_session_init
 fi
 __fig_reset_hooks
-if [[ -n "${PROCESS_LAUNCHED_BY_Q}" ]]; then
+if [[ -n "${PROCESS_LAUNCHED_BY_Q:-}" ]]; then
   fig_osc DoneSourcing
 fi
 
