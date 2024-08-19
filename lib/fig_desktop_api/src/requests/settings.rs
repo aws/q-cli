@@ -7,7 +7,7 @@ use fig_proto::fig::{
 use fig_settings::{
     settings,
     JsonStore,
-    Settings,
+    OldSettings,
 };
 
 use super::{
@@ -22,7 +22,7 @@ pub async fn get(request: GetSettingsPropertyRequest) -> RequestResult {
                 .map_err(|err| format!("Failed getting settings value for {key}: {err}"))?
                 .ok_or_else(|| format!("No value for key '{key}'"))?,
         ),
-        None => Settings::load()
+        None => OldSettings::load()
             .map(|s| serde_json::to_string(&*s.map()))
             .map_err(|err| format!("Failed getting settings: {err}"))?,
     };

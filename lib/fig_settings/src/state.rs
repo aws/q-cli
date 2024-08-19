@@ -4,105 +4,181 @@ use serde_json::{
     Value,
 };
 
-use crate::sqlite::database;
+use crate::sqlite::{
+    database,
+    Db,
+};
 use crate::Result;
 
+#[derive(Default)]
+pub struct State(inner::Inner);
+
+mod inner {
+    #[derive(Default)]
+    pub enum Inner {
+        #[default]
+        Real,
+        Fake(crate::sqlite::Db),
+    }
+}
+
+impl State {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn new_fake() -> Self {
+        let db = Db::mock();
+        db.migrate().unwrap();
+        Self(inner::Inner::Fake(db))
+    }
+
+    pub fn from_slice(slice: &[(&str, Value)]) -> Self {
+        let fake = Self::new_fake();
+        for (key, value) in slice {
+            fake.set_value(key, value.clone()).unwrap();
+        }
+        fake
+    }
+
+    fn database(&self) -> Result<&Db> {
+        match &self.0 {
+            inner::Inner::Real => Ok(database()?),
+            inner::Inner::Fake(db) => Ok(db),
+        }
+    }
+
+    pub fn all(&self) -> Result<Map<String, Value>> {
+        self.database()?.all_state_values()
+    }
+
+    pub fn set_value(&self, key: impl AsRef<str>, value: impl Into<Value>) -> Result<()> {
+        self.database()?.set_state_value(key, value)?;
+        Ok(())
+    }
+
+    pub fn remove_value(&self, key: impl AsRef<str>) -> Result<()> {
+        self.database()?.unset_state_value(key)?;
+        Ok(())
+    }
+
+    pub fn get_value(&self, key: impl AsRef<str>) -> Result<Option<Value>> {
+        self.database()?.get_state_value(key)
+    }
+
+    pub fn get<T: DeserializeOwned>(&self, key: impl AsRef<str>) -> Result<Option<T>> {
+        Ok(self
+            .database()?
+            .get_state_value(key)?
+            .map(|value| serde_json::from_value(value.clone()))
+            .transpose()?)
+    }
+
+    pub fn get_bool(&self, key: impl AsRef<str>) -> Result<Option<bool>> {
+        Ok(self.database()?.get_state_value(key)?.and_then(|value| value.as_bool()))
+    }
+
+    pub fn get_bool_or(&self, key: impl AsRef<str>, default: bool) -> bool {
+        self.get_bool(key).ok().flatten().unwrap_or(default)
+    }
+
+    pub fn get_string(&self, key: impl AsRef<str>) -> Result<Option<String>> {
+        Ok(self.database()?.get_state_value(key)?.and_then(|value| match value {
+            Value::String(s) => Some(s),
+            _ => None,
+        }))
+    }
+
+    pub fn get_string_or(&self, key: impl AsRef<str>, default: impl Into<String>) -> String {
+        self.get_string(key).ok().flatten().unwrap_or_else(|| default.into())
+    }
+
+    pub fn get_int(&self, key: impl AsRef<str>) -> Result<Option<i64>> {
+        Ok(self.database()?.get_state_value(key)?.and_then(|value| value.as_i64()))
+    }
+
+    pub fn get_int_or(&self, key: impl AsRef<str>, default: i64) -> i64 {
+        self.get_int(key).ok().flatten().unwrap_or(default)
+    }
+}
+
 pub fn all() -> Result<Map<String, Value>> {
-    database()?.all_state_values()
+    State::new().all()
 }
 
 pub fn set_value(key: impl AsRef<str>, value: impl Into<Value>) -> Result<()> {
-    database()?.set_state_value(key, value)?;
-    Ok(())
+    State::new().set_value(key, value)
 }
 
 pub fn remove_value(key: impl AsRef<str>) -> Result<()> {
-    database()?.unset_state_value(key)?;
-    Ok(())
+    State::new().remove_value(key)
 }
 
 pub fn get_value(key: impl AsRef<str>) -> Result<Option<Value>> {
-    database()?.get_state_value(key)
+    State::new().get_value(key)
 }
 
 pub fn get<T: DeserializeOwned>(key: impl AsRef<str>) -> Result<Option<T>> {
-    Ok(database()?
-        .get_state_value(key)?
-        .map(|value| serde_json::from_value(value.clone()))
-        .transpose()?)
+    State::new().get(key)
 }
 
 pub fn get_bool(key: impl AsRef<str>) -> Result<Option<bool>> {
-    Ok(database()?.get_state_value(key)?.and_then(|value| value.as_bool()))
+    State::new().get_bool(key)
 }
 
 pub fn get_bool_or(key: impl AsRef<str>, default: bool) -> bool {
-    get_bool(key).ok().flatten().unwrap_or(default)
+    State::new().get_bool_or(key, default)
 }
 
 pub fn get_string(key: impl AsRef<str>) -> Result<Option<String>> {
-    Ok(database()?.get_state_value(key)?.and_then(|value| match value {
-        Value::String(s) => Some(s),
-        _ => None,
-    }))
+    State::new().get_string(key)
 }
 
 pub fn get_string_or(key: impl AsRef<str>, default: impl Into<String>) -> String {
-    get_string(key).ok().flatten().unwrap_or_else(|| default.into())
+    State::new().get_string_or(key, default)
 }
 
 pub fn get_int(key: impl AsRef<str>) -> Result<Option<i64>> {
-    Ok(database()?.get_state_value(key)?.and_then(|value| value.as_i64()))
+    State::new().get_int(key)
 }
 
 pub fn get_int_or(key: impl AsRef<str>, default: i64) -> i64 {
-    get_int(key).ok().flatten().unwrap_or(default)
+    State::new().get_int_or(key, default)
 }
 
-pub fn create_anonymous_id() -> Result<String> {
-    let anonymous_id = uuid::Uuid::new_v4().as_hyphenated().to_string();
-    set_value("anonymousId", anonymous_id.clone())?;
-    Ok(anonymous_id)
-}
+#[cfg(test)]
+mod tests {
+    use super::{
+        Result,
+        State,
+    };
 
-pub fn get_or_create_anonymous_id() -> Result<String> {
-    if let Ok(Some(anonymous_id)) = get_string("anonymousId") {
-        return Ok(anonymous_id);
+    /// General read/write state test
+    #[test]
+    fn test_state() -> Result<()> {
+        let state = State::new_fake();
+
+        assert!(state.get_value("test").unwrap().is_none());
+        assert!(state.get::<String>("test").unwrap().is_none());
+        state.set_value("test", "hello :)")?;
+        assert!(state.get_value("test").unwrap().is_some());
+        assert!(state.get::<String>("test").unwrap().is_some());
+        state.remove_value("test")?;
+        assert!(state.get_value("test").unwrap().is_none());
+        assert!(state.get::<String>("test").unwrap().is_none());
+
+        assert!(!state.get_bool_or("bool", false));
+        state.set_value("bool", true).unwrap();
+        assert!(state.get_bool("bool").unwrap().unwrap());
+
+        assert_eq!(state.get_string_or("string", "hi"), "hi");
+        state.set_value("string", "hi").unwrap();
+        assert_eq!(state.get_string("string").unwrap().unwrap(), "hi");
+
+        assert_eq!(state.get_int_or("int", 32), 32);
+        state.set_value("int", 32).unwrap();
+        assert_eq!(state.get_int("int").unwrap().unwrap(), 32);
+
+        Ok(())
     }
-
-    create_anonymous_id()
 }
-
-//     /// General read/write state test
-//     #[fig_test::test]
-//     fn test_state() -> Result<()> {
-//         let path = tempfile::tempdir().unwrap().into_path().join("local.json");
-//         std::env::set_var("FIG_DIRECTORIES_STATE_PATH", &path);
-
-//         local_settings()?;
-//         get_map()?;
-
-//         assert!(get_value("test").unwrap().is_none());
-//         assert!(get::<String>("test").unwrap().is_none());
-//         set_value("test", "hello :)")?;
-//         assert!(get_value("test").unwrap().is_some());
-//         assert!(get::<String>("test").unwrap().is_some());
-//         remove_value("test")?;
-//         assert!(get_value("test").unwrap().is_none());
-//         assert!(get::<String>("test").unwrap().is_none());
-
-//         assert!(!get_bool_or("bool", false));
-//         set_value("bool", true).unwrap();
-//         assert!(get_bool("bool").unwrap().unwrap());
-
-//         assert!(get_string_or("string", "hi") == "hi");
-//         set_value("string", "hi").unwrap();
-//         assert!(get_string("string").unwrap().unwrap() == "hi");
-
-//         assert!(get_int_or("int", 32) == 32);
-//         set_value("int", 32).unwrap();
-//         assert!(get_int("int").unwrap().unwrap() == 32);
-
-//         Ok(())
-//     }
-// }

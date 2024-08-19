@@ -1,10 +1,13 @@
 use crossterm::style::Stylize;
+use fig_os_shim::{
+    Context,
+    Os,
+};
 use fig_settings::settings::get_bool_or;
 use fig_telemetry::{
     get_install_method,
     InstallMethod,
 };
-use fig_util::system_info::get_platform;
 use fig_util::CLI_BINARY_NAME;
 use semver::Version;
 use tracing::warn;
@@ -24,9 +27,9 @@ fn print_update_message(version: &Version) {
     );
 }
 
-pub fn check_for_update() {
+pub fn check_for_update(context: &Context) {
     // only show on Linux
-    if get_platform() != "linux" {
+    if context.platform().os() != Os::Linux {
         return;
     }
 

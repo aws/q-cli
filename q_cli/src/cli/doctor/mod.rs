@@ -565,7 +565,7 @@ impl DoctorCheck for SettingsCorruptionCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        fig_settings::Settings::load().map_err(|_err| DoctorError::Error {
+        fig_settings::OldSettings::load().map_err(|_err| DoctorError::Error {
             reason: format!("{PRODUCT_NAME} settings file is corrupted").into(),
             info: vec![],
             fix: Some(DoctorFix::Sync(Box::new(|| {

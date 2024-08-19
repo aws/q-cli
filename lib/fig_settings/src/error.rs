@@ -1,3 +1,5 @@
+use std::sync::PoisonError;
+
 use fig_util::directories;
 use thiserror::Error;
 
@@ -26,6 +28,42 @@ pub enum Error {
     R2d2(#[from] r2d2::Error),
     #[error(transparent)]
     DbOpenError(#[from] DbOpenError),
+    #[error("{}", .0)]
+    PoisonError(String),
+}
+
+impl<T> From<PoisonError<T>> for Error {
+    fn from(value: PoisonError<T>) -> Self {
+        Self::PoisonError(value.to_string())
+    }
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn all_errors() -> Vec<Error> {
+        vec![
+            std::io::Error::new(std::io::ErrorKind::InvalidData, "oops").into(),
+            serde_json::from_str::<()>("oops").unwrap_err().into(),
+            fig_util::Error::UnsupportedPlatform.into(),
+            Error::SettingsNotObject,
+            directories::DirectoryError::NoHomeDirectory.into(),
+            Error::MemoryBackendNotUsed,
+            rusqlite::Error::SqliteSingleThreadedMode.into(),
+            // r2d2::Error
+            DbOpenError("oops".into()).into(),
+            PoisonError::<()>::new(()).into(),
+        ]
+    }
+
+    #[test]
+    fn test_error_display_debug() {
+        for error in all_errors() {
+            eprintln!("{}", error);
+            eprintln!("{:?}", error);
+        }
+    }
+}

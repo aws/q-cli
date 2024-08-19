@@ -29,6 +29,10 @@ impl Env {
         Self::default()
     }
 
+    pub fn new_fake() -> Self {
+        Self(inner::Inner::Fake(HashMap::new()))
+    }
+
     /// Create a fake process environment from a slice of tuples.
     pub fn from_slice(vars: &[(&str, &str)]) -> Self {
         use inner::Inner;

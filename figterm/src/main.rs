@@ -36,13 +36,14 @@ use alacritty_terminal::term::{
 use alacritty_terminal::Term;
 use anyhow::{
     anyhow,
-    Context,
+    Context as _,
     Result,
 };
 use bytes::BytesMut;
 use cfg_if::cfg_if;
 use clap::Parser;
 use cli::Cli;
+use fig_os_shim::Context;
 use fig_proto::local::{
     self,
     EnvironmentVariable,
@@ -458,6 +459,8 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
     fig_settings::settings::init_global().ok();
     fig_telemetry::init_global_telemetry_emitter();
 
+    let context = Context::new();
+
     let session_id = match std::env::var("MOCK_QTERM_SESSION_ID") {
         Ok(id) => id,
         Err(_) => uuid::Uuid::new_v4().simple().to_string(),
@@ -528,7 +531,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
         .build()?;
 
     let runtime_result = runtime.block_on(async {
-        update::check_for_update();
+        update::check_for_update(&context);
 
         terminal.set_raw_mode()?;
 

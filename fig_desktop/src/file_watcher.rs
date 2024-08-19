@@ -94,7 +94,7 @@ pub async fn setup_listeners(notifications_state: Arc<WebviewNotificationsState>
             if let Some(settings_path) = &settings_path {
                 if event.paths.contains(settings_path) {
                     if let EventKind::Create(_) | EventKind::Modify(_) = event.kind {
-                        match fig_settings::Settings::load_from_file() {
+                        match fig_settings::OldSettings::load_from_file() {
                             Ok(settings) => {
                                 debug!("Settings file changed");
 
@@ -113,7 +113,7 @@ pub async fn setup_listeners(notifications_state: Arc<WebviewNotificationsState>
                                     .await
                                     .unwrap();
 
-                                let mut mem_settings = fig_settings::Settings::load().expect("Failed to load state");
+                                let mut mem_settings = fig_settings::OldSettings::load().expect("Failed to load state");
 
                                 json_map_diff(
                                     &mem_settings.map(),

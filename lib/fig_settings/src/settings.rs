@@ -1,116 +1,237 @@
+use std::sync::{
+    Arc,
+    Mutex,
+};
+
 use serde::de::DeserializeOwned;
+use serde_json::{
+    Map,
+    Value,
+};
 
 use crate::{
     JsonStore,
+    OldSettings,
     Result,
-    Settings,
 };
 
-pub fn init_global() -> Result<()> {
-    Settings::load_into_global()
-}
+#[derive(Debug, Clone, Default)]
+pub struct Settings(inner::Inner);
 
-/// Do not use this if you want to update remote settings, use
-/// fig_api_client::settings::update
-pub fn set_value(key: impl Into<String>, value: impl Into<serde_json::Value>) -> Result<()> {
-    let mut settings = Settings::load()?;
-    settings.set(key, value);
-    settings.save_to_file()?;
-    Ok(())
-}
+mod inner {
+    use std::sync::{
+        Arc,
+        Mutex,
+    };
 
-/// Do not use this if you want to update remote settings_path, use
-/// fig_api_client::settings::delete
-pub fn remove_value(key: impl AsRef<str>) -> Result<()> {
-    let mut settings = Settings::load()?;
-    settings.remove(&key);
-    settings.save_to_file()?;
-    Ok(())
-}
+    use serde_json::{
+        Map,
+        Value,
+    };
 
-pub fn get_value(key: impl AsRef<str>) -> Result<Option<serde_json::Value>> {
-    Ok(Settings::load()?.get(key).map(|v| v.clone()))
-}
-
-pub fn get<T: DeserializeOwned>(key: impl AsRef<str>) -> Result<Option<T>> {
-    let settings = Settings::load()?;
-    let v = settings.get(key);
-    match v.as_deref() {
-        Some(value) => Ok(Some(serde_json::from_value(value.clone())?)),
-        None => Ok(None),
+    #[derive(Debug, Clone, Default)]
+    pub enum Inner {
+        #[default]
+        Real,
+        Fake(Arc<Mutex<Map<String, Value>>>),
     }
 }
 
+impl Settings {
+    pub fn new() -> Self {
+        Self(inner::Inner::Real)
+    }
+
+    pub fn new_fake() -> Self {
+        Self(inner::Inner::Fake(Arc::new(Mutex::new(Map::new()))))
+    }
+
+    pub fn from_slice(slice: &[(&str, Value)]) -> Self {
+        Self(inner::Inner::Fake(Arc::new(Mutex::new(
+            slice.iter().map(|(k, v)| ((*k).to_owned(), v.clone())).collect(),
+        ))))
+    }
+
+    pub fn set_value(&self, key: impl Into<String>, value: impl Into<serde_json::Value>) -> Result<()> {
+        match &self.0 {
+            inner::Inner::Real => {
+                let mut settings = OldSettings::load()?;
+                settings.set(key, value);
+                settings.save_to_file()?;
+                Ok(())
+            },
+            inner::Inner::Fake(map) => {
+                map.lock()?.insert(key.into(), value.into());
+                Ok(())
+            },
+        }
+    }
+
+    pub fn remove_value(&self, key: impl AsRef<str>) -> Result<()> {
+        match &self.0 {
+            inner::Inner::Real => {
+                let mut settings = OldSettings::load()?;
+                settings.remove(key);
+                settings.save_to_file()?;
+                Ok(())
+            },
+            inner::Inner::Fake(map) => {
+                map.lock()?.remove(key.as_ref());
+                Ok(())
+            },
+        }
+    }
+
+    pub fn get_value(&self, key: impl AsRef<str>) -> Result<Option<serde_json::Value>> {
+        match &self.0 {
+            inner::Inner::Real => Ok(OldSettings::load()?.get(key.as_ref()).map(|v| v.clone())),
+            inner::Inner::Fake(map) => Ok(map.lock()?.get(key.as_ref()).cloned()),
+        }
+    }
+
+    pub fn get<T: DeserializeOwned>(&self, key: impl AsRef<str>) -> Result<Option<T>> {
+        match &self.0 {
+            inner::Inner::Real => {
+                let settings = OldSettings::load()?;
+                let v = settings.get(key);
+                match v.as_deref() {
+                    Some(value) => Ok(Some(serde_json::from_value(value.clone())?)),
+                    None => Ok(None),
+                }
+            },
+            inner::Inner::Fake(map) => {
+                let value = map.lock()?.get(key.as_ref()).cloned();
+                match value {
+                    Some(value) => Ok(Some(serde_json::from_value(value)?)),
+                    None => Ok(None),
+                }
+            },
+        }
+    }
+
+    pub fn get_bool(&self, key: impl AsRef<str>) -> Result<Option<bool>> {
+        match &self.0 {
+            inner::Inner::Real => Ok(OldSettings::load()?.get_bool(key.as_ref())),
+            inner::Inner::Fake(map) => Ok(map.lock()?.get(key.as_ref()).cloned().and_then(|v| v.as_bool())),
+        }
+    }
+
+    pub fn get_bool_or(&self, key: impl AsRef<str>, default: bool) -> bool {
+        self.get_bool(key).ok().flatten().unwrap_or(default)
+    }
+
+    pub fn get_string(&self, key: impl AsRef<str>) -> Result<Option<String>> {
+        match &self.0 {
+            inner::Inner::Real => Ok(OldSettings::load()?.get_string(key.as_ref())),
+            inner::Inner::Fake(map) => Ok(map
+                .lock()?
+                .get(key.as_ref())
+                .cloned()
+                .and_then(|v| v.as_str().map(|s| s.to_owned()))),
+        }
+    }
+
+    pub fn get_string_opt(&self, key: impl AsRef<str>) -> Option<String> {
+        self.get_string(key).ok().flatten()
+    }
+
+    pub fn get_string_or(&self, key: impl AsRef<str>, default: String) -> String {
+        self.get_string(key).ok().flatten().unwrap_or(default)
+    }
+
+    pub fn get_int(&self, key: impl AsRef<str>) -> Result<Option<i64>> {
+        match &self.0 {
+            inner::Inner::Real => Ok(OldSettings::load()?.get_int(key.as_ref())),
+            inner::Inner::Fake(map) => Ok(map.lock()?.get(key.as_ref()).cloned().and_then(|v| v.as_i64())),
+        }
+    }
+
+    pub fn get_int_or(&self, key: impl AsRef<str>, default: i64) -> i64 {
+        self.get_int(key).ok().flatten().unwrap_or(default)
+    }
+}
+
+pub fn init_global() -> Result<()> {
+    OldSettings::load_into_global()
+}
+
+pub fn set_value(key: impl Into<String>, value: impl Into<serde_json::Value>) -> Result<()> {
+    Settings::new().set_value(key, value)
+}
+
+pub fn remove_value(key: impl AsRef<str>) -> Result<()> {
+    Settings::new().remove_value(key)
+}
+
+pub fn get_value(key: impl AsRef<str>) -> Result<Option<serde_json::Value>> {
+    Settings::new().get_value(key)
+}
+
+pub fn get<T: DeserializeOwned>(key: impl AsRef<str>) -> Result<Option<T>> {
+    Settings::new().get(key)
+}
+
 pub fn get_bool(key: impl AsRef<str>) -> Result<Option<bool>> {
-    Ok(Settings::load()?.get_bool(key))
+    Settings::new().get_bool(key)
 }
 
 pub fn get_bool_or(key: impl AsRef<str>, default: bool) -> bool {
-    get_bool(key).ok().flatten().unwrap_or(default)
+    Settings::new().get_bool_or(key, default)
 }
 
 pub fn get_string(key: impl AsRef<str>) -> Result<Option<String>> {
-    Ok(Settings::load()?.get_string(key))
+    Settings::new().get_string(key)
 }
 
 pub fn get_string_opt(key: impl AsRef<str>) -> Option<String> {
-    get_string(key).ok().flatten()
+    Settings::new().get_string_opt(key)
 }
 
 pub fn get_string_or(key: impl AsRef<str>, default: String) -> String {
-    get_string(key).ok().flatten().unwrap_or(default)
+    Settings::new().get_string_or(key, default)
 }
 
 pub fn get_int(key: impl AsRef<str>) -> Result<Option<i64>> {
-    Ok(Settings::load()?.get_int(key))
+    Settings::new().get_int(key)
 }
 
 pub fn get_int_or(key: impl AsRef<str>, default: i64) -> i64 {
-    get_int(key).ok().flatten().unwrap_or(default)
+    Settings::new().get_int_or(key, default)
 }
 
-// #[cfg(test)]
-// mod test {
-//     use super::*;
+#[cfg(test)]
+mod test {
+    use super::{
+        Result,
+        Settings,
+    };
 
-//     /// General read/write settings test
-//     #[fig_test::test]
-//     fn test_settings() -> Result<()> {
-//         let path = tempfile::tempdir().unwrap().into_path().join("local.json");
-//         std::env::set_var("FIG_DIRECTORIES_SETTINGS_PATH", &path);
+    /// General read/write settings test
+    #[test]
+    fn test_settings() -> Result<()> {
+        let settings = Settings::from_slice(&[]);
 
-//         local_settings()?;
-//         get_map()?;
+        assert!(settings.get_value("test").unwrap().is_none());
+        assert!(settings.get::<String>("test").unwrap().is_none());
+        settings.set_value("test", "hello :)")?;
+        assert!(settings.get_value("test").unwrap().is_some());
+        assert!(settings.get::<String>("test").unwrap().is_some());
+        settings.remove_value("test")?;
+        assert!(settings.get_value("test").unwrap().is_none());
+        assert!(settings.get::<String>("test").unwrap().is_none());
 
-//         assert!(get_value("test").unwrap().is_none());
-//         assert!(get::<String>("test").unwrap().is_none());
-//         set_value("test", "hello :)")?;
-//         assert!(get_value("test").unwrap().is_some());
-//         assert!(get::<String>("test").unwrap().is_some());
-//         remove_value("test")?;
-//         assert!(get_value("test").unwrap().is_none());
-//         assert!(get::<String>("test").unwrap().is_none());
+        assert!(!settings.get_bool_or("bool", false));
+        settings.set_value("bool", true).unwrap();
+        assert!(settings.get_bool("bool").unwrap().unwrap());
 
-//         assert!(!get_bool_or("bool", false));
-//         set_value("bool", true).unwrap();
-//         assert!(get_bool("bool").unwrap().unwrap());
+        assert_eq!(settings.get_string_or("string", "hi".into()), "hi");
+        settings.set_value("string", "hi").unwrap();
+        assert_eq!(settings.get_string("string").unwrap().unwrap(), "hi");
 
-//         assert!(get_string_or("string", "hi".into()) == "hi");
-//         set_value("string", "hi").unwrap();
-//         assert!(get_string("string").unwrap().unwrap() == "hi");
+        assert_eq!(settings.get_int_or("int", 32), 32);
+        settings.set_value("int", 32).unwrap();
+        assert_eq!(settings.get_int("int").unwrap().unwrap(), 32);
 
-//         assert!(get_int_or("int", 32) == 32);
-//         set_value("int", 32).unwrap();
-//         assert!(get_int("int").unwrap().unwrap() == 32);
-
-//         Ok(())
-//     }
-
-//     /// Sanity test over product gates
-//     #[fig_test::test]
-//     fn test_product_gate() -> Result<()> {
-//         product_gate("test_product", Some("hello"))?;
-//         product_gate("test_product", None::<String>)?;
-//         Ok(())
-//     }
-// }
+        Ok(())
+    }
+}

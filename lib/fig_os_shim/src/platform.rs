@@ -1,3 +1,5 @@
+use std::fmt;
+
 use cfg_if::cfg_if;
 
 use crate::Shim;
@@ -7,6 +9,25 @@ use crate::Shim;
 pub enum Os {
     Mac,
     Linux,
+}
+
+impl Os {
+    pub fn all() -> &'static [Self] {
+        &[Self::Mac, Self::Linux]
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Mac => "macos",
+            Self::Linux => "linux",
+        }
+    }
+}
+
+impl fmt::Display for Os {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
 }
 
 #[derive(Default, Debug, Clone)]
@@ -52,5 +73,25 @@ impl Platform {
 impl Shim for Platform {
     fn is_real(&self) -> bool {
         matches!(self.0, inner::Inner::Real)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_platform() {
+        let platform = Platform::default();
+        assert!(platform.is_real());
+
+        for os in Os::all() {
+            let platform = Platform::new_fake(*os);
+            assert!(!platform.is_real());
+            assert_eq!(&platform.os(), os);
+
+            let _ = os.as_str();
+            println!("{os:?} {os}");
+        }
     }
 }

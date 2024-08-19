@@ -1,8 +1,12 @@
 use std::env;
+use std::path::Path;
 
 use amzn_codewhisperer_streaming_client::operation::RequestId;
 use aws_smithy_types::error::display::DisplayErrorContext;
-use eyre::Result;
+use eyre::{
+    bail,
+    Result,
+};
 use fig_api_client::model::{
     ChatResponseStream,
     ConversationState,
@@ -198,20 +202,21 @@ fn build_env_state(modifiers: &ContextModifiers) -> EnvState {
     env_state
 }
 
-async fn build_git_state() -> Option<GitState> {
+async fn build_git_state(dir: Option<&Path>) -> Result<GitState> {
     // git status --porcelain=v1 -b
-    let output = tokio::process::Command::new("git")
-        .args(["status", "--porcelain=v1", "-b"])
-        .output()
-        .await
-        .ok()?;
+    let mut command = tokio::process::Command::new("git");
+    command.args(["status", "--porcelain=v1", "-b"]);
+    if let Some(dir) = dir {
+        command.current_dir(dir);
+    }
+    let output = command.output().await?;
 
     if output.status.success() && !output.stdout.is_empty() {
-        Some(GitState {
+        Ok(GitState {
             status: truncate_safe(&String::from_utf8_lossy(&output.stdout), MAX_GIT_STATUS_LEN).into(),
         })
     } else {
-        None
+        bail!("git status failed: {output:?}")
     }
 }
 
@@ -290,7 +295,7 @@ pub(super) async fn send_message(
     };
 
     if ctx.git {
-        if let Some(git_state) = build_git_state().await {
+        if let Ok(git_state) = build_git_state(None).await {
             user_input_message_context.git_state = Some(git_state);
         }
     }
@@ -472,37 +477,35 @@ mod tests {
         println!("{env_state:?}");
     }
 
-    async fn init_git_repo() {
-        // if there is no .git run git init
-        if !std::path::Path::new(".git").exists() {
-            let output = tokio::process::Command::new("git").arg("init").output().await.unwrap();
-            assert!(output.status.success());
-        }
-
-        // run git status to see in test logs
+    async fn init_git_repo(dir: &Path) {
         let output = tokio::process::Command::new("git")
-            .args(["status", "--porcelain=v1", "-b"])
+            .arg("init")
+            .current_dir(dir)
             .output()
             .await
             .unwrap();
-
+        println!("== git init ==");
         println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
         println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
-        println!("{}", output.status);
+        assert!(output.status.success());
     }
 
     #[tokio::test]
     async fn test_git_state() {
+        let tempdir = tempfile::tempdir().unwrap();
+        let dir_path = tempdir.path();
+
         // write a file to the repo to ensure git status has a change
-        let path = "test.txt";
+        let path = dir_path.join("test.txt");
         std::fs::write(path, "test").unwrap();
 
-        init_git_repo().await;
+        let git_state_err = build_git_state(Some(dir_path)).await.unwrap_err();
+        println!("git_state_err: {git_state_err}");
+        assert!(git_state_err.to_string().contains("git status failed"));
 
-        let git_state = build_git_state().await.unwrap();
-        println!("{git_state:?}");
-        println!("status: {:?}", git_state.status);
+        init_git_repo(dir_path).await;
 
-        let _ = std::fs::remove_file(path);
+        let git_state = build_git_state(Some(dir_path)).await.unwrap();
+        println!("git_state: {git_state:?}");
     }
 }

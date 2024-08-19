@@ -78,7 +78,7 @@ impl SettingsArgs {
                 Ok(ExitCode::SUCCESS)
             },
             Some(SettingsSubcommands::All { format }) => {
-                let settings = fig_settings::Settings::load()?.map().clone();
+                let settings = fig_settings::OldSettings::load()?.map().clone();
 
                 match format {
                     OutputFormat::Plain => {
@@ -123,7 +123,7 @@ impl SettingsArgs {
                     },
                     (None, true) => {
                         let glob = Glob::new(key).context("Could not create glob")?.compile_matcher();
-                        let settings = fig_settings::Settings::load()?;
+                        let settings = fig_settings::OldSettings::load()?;
                         let map = settings.map();
                         let keys_to_remove = map.keys().filter(|key| glob.is_match(key)).collect::<Vec<_>>();
 

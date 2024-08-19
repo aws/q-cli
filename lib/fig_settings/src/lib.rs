@@ -31,6 +31,8 @@ use parking_lot::{
     RwLockWriteGuard,
 };
 use serde_json::Value;
+pub use settings::Settings;
+pub use state::State;
 use thiserror::Error;
 use tracing::error;
 
@@ -40,6 +42,7 @@ static SETTINGS_FILE_LOCK: RwLock<()> = RwLock::new(());
 
 static SETTINGS_DATA: RwLock<Option<Map>> = RwLock::new(None);
 
+#[derive(Debug, Clone)]
 pub enum Backend {
     Global,
     Memory(Map),
@@ -337,11 +340,11 @@ pub trait JsonStore: Sized {
     }
 }
 
-pub struct Settings {
-    inner: Backend,
+pub struct OldSettings {
+    pub(crate) inner: Backend,
 }
 
-impl JsonStore for Settings {
+impl JsonStore for OldSettings {
     fn path() -> Result<PathBuf> {
         Ok(directories::settings_path()?)
     }

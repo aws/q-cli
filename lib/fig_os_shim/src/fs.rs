@@ -145,6 +145,24 @@ impl Shim for Fs {
 mod tests {
     use super::*;
 
+    #[test]
+    fn default_impl_is_real() {
+        let fs = Fs::default();
+        assert!(matches!(fs.0, inner::Inner::Real));
+    }
+
+    #[tokio::test]
+    async fn test_fake() {
+        let dir = PathBuf::from("/dir");
+        let fs = Fs::from_slice(&[("/test", "test")]);
+
+        fs.create_dir(dir.join("create_dir")).await.unwrap_err();
+        fs.create_dir_all(dir.join("create/dir/all")).await.unwrap_err();
+        fs.write(dir.join("write"), b"write").await.unwrap();
+        assert_eq!(fs.read(dir.join("write")).await.unwrap(), b"write");
+        assert_eq!(fs.read_to_string(dir.join("write")).await.unwrap(), "write");
+    }
+
     #[tokio::test]
     async fn test_real() {
         let dir = tempfile::tempdir().unwrap();
@@ -153,14 +171,8 @@ mod tests {
         fs.create_dir(dir.path().join("create_dir")).await.unwrap();
         fs.create_dir_all(dir.path().join("create/dir/all")).await.unwrap();
         fs.write(dir.path().join("write"), b"write").await.unwrap();
-        fs.read(dir.path().join("write")).await.unwrap();
-        fs.read_to_string(dir.path().join("write")).await.unwrap();
-    }
-
-    #[test]
-    fn default_impl_is_real() {
-        let fs = Fs::default();
-        assert!(matches!(fs.0, inner::Inner::Real));
+        assert_eq!(fs.read(dir.path().join("write")).await.unwrap(), b"write");
+        assert_eq!(fs.read_to_string(dir.path().join("write")).await.unwrap(), "write");
     }
 
     #[tokio::test]

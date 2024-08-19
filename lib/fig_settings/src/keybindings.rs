@@ -8,7 +8,7 @@ use serde::{
 use crate::{
     Error,
     JsonStore,
-    Settings,
+    OldSettings,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -83,7 +83,7 @@ impl KeyBindings {
     }
 
     pub fn load_from_settings(product_namespace: impl Display) -> Result<Self, Error> {
-        let settings = Settings::load()?;
+        let settings = OldSettings::load()?;
         let map = settings.map();
         Ok(Self::load_from_json_map(&map, product_namespace))
     }

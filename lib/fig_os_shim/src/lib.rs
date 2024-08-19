@@ -48,6 +48,10 @@ impl Context {
         })
     }
 
+    pub fn builder() -> ContextBuilder {
+        ContextBuilder::new()
+    }
+
     pub fn fs(&self) -> &Fs {
         &self.fs
     }
@@ -75,7 +79,7 @@ pub struct ContextBuilder {
 
 impl ContextBuilder {
     pub fn new() -> Self {
-        Self { ..Default::default() }
+        Self::default()
     }
 
     /// Builds an immutable [Context] using real implementations for each field by default.
@@ -97,6 +101,11 @@ impl ContextBuilder {
 
     pub fn with_env(mut self, env: Env) -> Self {
         self.env = Some(env);
+        self
+    }
+
+    pub fn with_fs(mut self, fs: Fs) -> Self {
+        self.fs = Some(fs);
         self
     }
 
