@@ -29,7 +29,7 @@ fn stalled_stream_protection_config() -> StalledStreamProtectionConfig {
     // @ptrucks recommends using the same configuration as here
     // https://code.amazon.com/packages/MynahChatTests/blobs/b3e23c24e5abce0150f872883f80efc0df50ebbc/--/src/main.rs#L37-L41
     StalledStreamProtectionConfig::enabled()
-        .grace_period(Duration::from_secs(20))
+        .grace_period(Duration::from_secs(100))
         .build()
 }
 
