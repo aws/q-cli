@@ -9,7 +9,7 @@ from const import CLI_PACKAGE_NAME, DESKTOP_PACKAGE_NAME, PTY_PACKAGE_NAME
 def run_clippy(
     features: Mapping[str, Sequence[str]] | None = None, target: str | None = None, fail_on_warn: bool = False
 ):
-    args = [cargo_cmd_name(), "clippy", "--locked", "--workspace"]
+    args = [cargo_cmd_name(), "clippy", "--locked", "--workspace", "--exclude", "zbus", "--exclude", "zbus_names"]
 
     if target:
         args.extend(["--target", target])
