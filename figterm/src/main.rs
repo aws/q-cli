@@ -43,6 +43,10 @@ use bytes::BytesMut;
 use cfg_if::cfg_if;
 use clap::Parser;
 use cli::Cli;
+use fig_log::{
+    initialize_logging,
+    LogArgs,
+};
 use fig_os_shim::Context;
 use fig_proto::local::{
     self,
@@ -68,6 +72,7 @@ use fig_util::process_info::{
     PidExt,
 };
 use fig_util::{
+    directories,
     Terminal as FigTerminal,
     PRODUCT_NAME,
     PTY_BINARY_NAME,
@@ -484,12 +489,12 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
 
     let pty_name = pty.slave.get_name().unwrap_or_else(|| session_id.clone());
 
-    let _logger_guard = match fig_log::Logger::new()
-        .with_file(format!("{PTY_BINARY_NAME}{pty_name}.log"))
-        .with_delete_old_log_file()
-        .init()
-        .context("Failed to init logger")
-    {
+    let _log_guard = match initialize_logging(LogArgs {
+        log_level: None,
+        log_to_stdout: false,
+        log_file_path: Some(directories::logs_dir()?.join(format!("{PTY_BINARY_NAME}{pty_name}.log"))),
+        delete_old_log_file: true,
+    }) {
         Ok(logger_guard) => Some(logger_guard),
         Err(err) => {
             if !fig_settings::state::get_bool_or("pty.suppress_log_error", false) {
@@ -952,17 +957,10 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
 }
 
 fn main() {
-    // let _guard = fig_telemetry::init_sentry(
-    //     release_name!(),
-    //     "https://633267fac776481296eadbcc7093af4a@o436453.ingest.sentry.io/6187825",
-    //     1.0,
-    //     false,
-    // );
-
     let cli = Cli::parse();
     let command = cli.command.as_deref();
 
-    logger::stdio_debug_log(format!("{Q_LOG_LEVEL}={}", fig_log::get_fig_log_level()));
+    logger::stdio_debug_log(format!("{Q_LOG_LEVEL}={}", fig_log::get_log_level()));
 
     if !state::get_bool_or("qterm.enabled", true) {
         println!("[NOTE] qterm is disabled. Autocomplete will not work.");

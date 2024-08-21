@@ -90,7 +90,7 @@ For MacOS:
 
 ```shell
 xcode-select --install
-brew install rtx pnpm protobuf zsh bash fish shellcheck typos-cli jq
+brew install rtx pnpm protobuf zsh bash fish shellcheck jq
 ```
 
 ### 2. Install Rust toolchain using [Rustup](https://rustup.rs):
@@ -98,8 +98,9 @@ brew install rtx pnpm protobuf zsh bash fish shellcheck typos-cli jq
 ```shell
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 rustup toolchain default stable
-# for nightly cargo fmt
+# for pre-commit hooks the two following commands are required
 rustup toolchain install nightly
+cargo install typos-cli
 ```
 
 For MacOS development make sure the right targets are installed:

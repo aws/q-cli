@@ -1,10 +1,6 @@
-use std::fs::{
-    self,
-    File,
-};
-use std::path::PathBuf;
+use std::fs::File;
+use std::path::Path;
 
-use fig_util::directories;
 use fig_util::env_var::Q_LOG_LEVEL;
 use parking_lot::Mutex;
 use thiserror::Error;
@@ -19,7 +15,7 @@ use tracing_subscriber::{
     Registry,
 };
 
-const DEFAULT_MAX_FILE_SIZE: u64 = 10 * 1024 * 1024;
+const MAX_FILE_SIZE: u64 = 10 * 1024 * 1024;
 const DEFAULT_FILTER: LevelFilter = LevelFilter::ERROR;
 
 static Q_LOG_LEVEL_GLOBAL: Mutex<Option<String>> = Mutex::new(None);
@@ -27,49 +23,141 @@ static MAX_LEVEL: Mutex<Option<LevelFilter>> = Mutex::new(None);
 static ENV_FILTER_RELOADABLE_HANDLE: Mutex<Option<tracing_subscriber::reload::Handle<EnvFilter, Registry>>> =
     Mutex::new(None);
 
-type Result<T, E = Error> = std::result::Result<T, E>;
-
+// A logging error
 #[derive(Debug, Error)]
 pub enum Error {
     #[error(transparent)]
     Io(#[from] std::io::Error),
     #[error(transparent)]
-    Dir(#[from] fig_util::directories::DirectoryError),
-    #[error(transparent)]
     TracingReload(#[from] tracing_subscriber::reload::Error),
 }
 
-fn log_path(log_file_name: impl AsRef<str>) -> Result<PathBuf> {
-    Ok(directories::logs_dir()?.join(log_file_name.as_ref().replace(['/', '\\'], "_")))
+/// Arguments to the initialize_logging function
+#[derive(Debug)]
+pub struct LogArgs<T: AsRef<Path>> {
+    /// The log level to use. When not set, the default log level is used.
+    pub log_level: Option<String>,
+    /// Whether or not we log to stdout.
+    pub log_to_stdout: bool,
+    /// The log file path which we write logs to. When not set, we do not write to a file.
+    pub log_file_path: Option<T>,
+    /// Whether we should delete the log file at each launch.
+    pub delete_old_log_file: bool,
 }
 
-fn try_fig_log_level() -> Option<String> {
-    Q_LOG_LEVEL_GLOBAL
-        .lock()
-        .clone()
-        .or_else(|| std::env::var(Q_LOG_LEVEL).ok())
+/// The log guard maintains tracing guards which send log information to other threads.
+///
+/// This must be kept alive for logging to function as expected.
+#[must_use]
+#[derive(Debug)]
+pub struct LogGuard {
+    _file_guard: Option<WorkerGuard>,
+    _stdout_guard: Option<WorkerGuard>,
 }
 
-fn fig_log_level() -> String {
+/// Initialize our application level logging using the given LogArgs.
+///
+/// # Returns
+///
+/// On success, this returns a guard which must be kept alive.
+#[inline]
+pub fn initialize_logging<T: AsRef<Path>>(args: LogArgs<T>) -> Result<LogGuard, Error> {
+    let filter_layer = create_filter_layer();
+    let (reloadable_filter_layer, reloadable_handle) = tracing_subscriber::reload::Layer::new(filter_layer);
+    ENV_FILTER_RELOADABLE_HANDLE.lock().replace(reloadable_handle);
+
+    // First we construct the file logging layer if a file name was provided.
+    let (file_layer, _file_guard) = match args.log_file_path {
+        Some(log_file_path) => {
+            let log_path = log_file_path.as_ref();
+
+            // Make the log path parent directory if it doesn't exist.
+            if let Some(parent) = log_path.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+
+            // We delete the old log file when requested each time the logger is initialized, otherwise we only
+            // delete the file when it has grown too large.
+            if args.delete_old_log_file {
+                std::fs::remove_file(log_path).ok();
+            } else if log_path.exists() && std::fs::metadata(log_path)?.len() > MAX_FILE_SIZE {
+                std::fs::remove_file(log_path)?;
+            }
+
+            // Create the new log file or append to the existing one.
+            let file = if args.delete_old_log_file {
+                File::create(log_path)?
+            } else {
+                File::options().append(true).create(true).open(log_path)?
+            };
+
+            // On posix-like systems, we modify permissions so that only the owner has access.
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                if let Ok(metadata) = file.metadata() {
+                    let mut permissions = metadata.permissions();
+                    permissions.set_mode(0o600);
+                    file.set_permissions(permissions).ok();
+                }
+            }
+
+            let (non_blocking, guard) = tracing_appender::non_blocking(file);
+            let file_layer = fmt::layer().with_line_number(true).with_writer(non_blocking);
+
+            (Some(file_layer), Some(guard))
+        },
+        None => (None, None),
+    };
+
+    // If we log to stdout, we need to add this layer to our logger.
+    let (stdout_layer, _stdout_guard) = if args.log_to_stdout {
+        let (non_blocking, guard) = tracing_appender::non_blocking(std::io::stdout());
+        let stdout_layer = fmt::layer().with_line_number(true).with_writer(non_blocking);
+        (Some(stdout_layer), Some(guard))
+    } else {
+        (None, None)
+    };
+
+    if let Some(level) = args.log_level {
+        set_log_level(level)?;
+    }
+
+    // Finally, initialize our logging
+    tracing_subscriber::registry()
+        .with(reloadable_filter_layer)
+        .with(file_layer)
+        .with(stdout_layer)
+        .init();
+
+    Ok(LogGuard {
+        _file_guard,
+        _stdout_guard,
+    })
+}
+
+/// Get the current log level by first seeing if it is set in application, then environment, then
+/// otherwise using the default
+///
+/// # Returns
+///
+/// Returns a string identifying the current log level.
+pub fn get_log_level() -> String {
     Q_LOG_LEVEL_GLOBAL
         .lock()
         .clone()
         .unwrap_or_else(|| std::env::var(Q_LOG_LEVEL).unwrap_or_else(|_| DEFAULT_FILTER.to_string()))
 }
 
-fn create_filter_layer() -> EnvFilter {
-    match try_fig_log_level() {
-        Some(level) => EnvFilter::builder()
-            .with_default_directive(DEFAULT_FILTER.into())
-            .parse_lossy(level),
-        None => EnvFilter::default().add_directive(Directive::from(DEFAULT_FILTER)),
-    }
-}
-
-pub fn set_fig_log_level(level: String) -> Result<String> {
+/// Set the log level to the given level.
+///
+/// # Returns
+///
+/// On success, returns the old log level.
+pub fn set_log_level(level: String) -> Result<String, Error> {
     info!("Setting log level to {level:?}");
 
-    let old_level = fig_log_level();
+    let old_level = get_log_level();
     *Q_LOG_LEVEL_GLOBAL.lock() = Some(level);
 
     let filter_layer = create_filter_layer();
@@ -78,17 +166,18 @@ pub fn set_fig_log_level(level: String) -> Result<String> {
     ENV_FILTER_RELOADABLE_HANDLE
         .lock()
         .as_ref()
-        .expect("set_fig_log_level called before init_logger")
+        .expect("set_log_level must not be called before logging is initialized")
         .reload(filter_layer)?;
 
     Ok(old_level)
 }
 
-pub fn get_fig_log_level() -> String {
-    fig_log_level()
-}
-
-pub fn get_max_fig_log_level() -> LevelFilter {
+/// Get the current max log level
+///
+/// # Returns
+///
+/// The max log level which is set every time the log level is set.
+pub fn get_log_level_max() -> LevelFilter {
     let max_level = *MAX_LEVEL.lock();
     match max_level {
         Some(level) => level,
@@ -100,138 +189,73 @@ pub fn get_max_fig_log_level() -> LevelFilter {
     }
 }
 
-#[must_use]
-pub struct LoggerGuard {
-    _file_guard: Option<WorkerGuard>,
-    _stdout_guard: Option<WorkerGuard>,
-}
+fn create_filter_layer() -> EnvFilter {
+    let directive = Directive::from(DEFAULT_FILTER);
 
-#[derive(Debug, Default)]
-pub struct Logger {
-    log_file_name: Option<String>,
-    stdout_logger: bool,
-    max_file_size: Option<u64>,
-    delete_old_log_file: bool,
-}
+    let log_level = Q_LOG_LEVEL_GLOBAL
+        .lock()
+        .clone()
+        .or_else(|| std::env::var(Q_LOG_LEVEL).ok());
 
-impl Logger {
-    pub fn new() -> Logger {
-        Logger::default()
-    }
-
-    pub fn with_stdout(mut self) -> Logger {
-        self.stdout_logger = true;
-        self
-    }
-
-    pub fn with_file(mut self, file_name: impl Into<String>) -> Logger {
-        self.log_file_name = Some(file_name.into());
-        self
-    }
-
-    pub fn with_max_file_size(mut self, size: u64) -> Logger {
-        self.max_file_size = Some(size);
-        self
-    }
-
-    pub fn with_delete_old_log_file(mut self) -> Logger {
-        self.delete_old_log_file = true;
-        self
-    }
-
-    pub fn init(self) -> Result<LoggerGuard> {
-        let registry = tracing_subscriber::registry();
-
-        // #[cfg(feature = "console")]
-        // let registry = registry.with(console_subscriber::spawn());
-
-        let filter_layer = create_filter_layer();
-        let (reloadable_filter_layer, reloadable_handle) = tracing_subscriber::reload::Layer::new(filter_layer);
-        ENV_FILTER_RELOADABLE_HANDLE.lock().replace(reloadable_handle);
-        let registry = registry.with(reloadable_filter_layer);
-
-        let (file_layer, _file_guard) = match self.log_file_name {
-            Some(log_file_name) => {
-                let log_path = log_path(log_file_name)?;
-
-                // Make folder if it doesn't exist
-                if let Some(parent) = log_path.parent() {
-                    fs::create_dir_all(parent)?;
-                }
-
-                if self.delete_old_log_file {
-                    fs::remove_file(&log_path).ok();
-                } else if log_path.exists() {
-                    let metadata = std::fs::metadata(&log_path)?;
-                    if metadata.len() > self.max_file_size.unwrap_or(DEFAULT_MAX_FILE_SIZE) {
-                        std::fs::remove_file(&log_path)?;
-                    }
-                }
-
-                let file = if self.delete_old_log_file {
-                    File::create(&log_path)?
-                } else {
-                    File::options().append(true).create(true).open(log_path)?
-                };
-
-                #[cfg(unix)]
-                {
-                    use std::os::unix::fs::PermissionsExt;
-                    if let Ok(metadata) = file.metadata() {
-                        let mut permissions = metadata.permissions();
-                        permissions.set_mode(0o600);
-                        file.set_permissions(permissions).ok();
-                    }
-                }
-
-                let (non_blocking, guard) = tracing_appender::non_blocking(file);
-                let file_layer = fmt::layer().with_line_number(true).with_writer(non_blocking);
-
-                (Some(file_layer), Some(guard))
-            },
-            None => (None, None),
-        };
-        let registry = registry.with(file_layer);
-
-        let (stdout_layer, _stdout_guard) = if self.stdout_logger {
-            let (non_blocking, guard) = tracing_appender::non_blocking(std::io::stdout());
-            let stdout_layer = fmt::layer().with_line_number(true).with_writer(non_blocking);
-            (Some(stdout_layer), Some(guard))
-        } else {
-            (None, None)
-        };
-        let registry = registry.with(stdout_layer);
-
-        // #[cfg(feature = "sentry")]
-        // let registry = registry.with(sentry_tracing::layer().event_filter(|md| match md.level() {
-        //     &tracing::Level::ERROR | &tracing::Level::WARN => sentry_tracing::EventFilter::Breadcrumb,
-        //     _ => sentry_tracing::EventFilter::Ignore,
-        // }));
-
-        registry.init();
-
-        Ok(LoggerGuard {
-            _file_guard,
-            _stdout_guard,
-        })
+    match log_level {
+        Some(level) => EnvFilter::builder()
+            .with_default_directive(directive)
+            .parse_lossy(level),
+        None => EnvFilter::default().add_directive(directive),
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use directories::logs_dir;
+    use std::fs::read_to_string;
+    use std::time::Duration;
+
+    use tempfile::TempPath;
+    use tracing::{
+        debug,
+        error,
+        trace,
+        warn,
+    };
 
     use super::*;
 
     #[test]
-    fn test_log_path() {
-        let path = log_path("test/abc\\def.log").unwrap();
-        println!("{}", path.display());
-        assert_eq!(path.parent().unwrap(), logs_dir().unwrap());
-    }
+    fn test_logging() {
+        // Create a temp path for where we write logs to.
+        let tmp = TempPath::from_path("fig.log");
 
-    #[test]
-    fn test_fig_log_level() {
-        println!("{}", fig_log_level());
+        // Assert that initialize logging simply doesn't panic.
+        let _guard = initialize_logging(LogArgs {
+            log_level: Some("trace".to_owned()),
+            log_to_stdout: true,
+            log_file_path: Some(&tmp),
+            delete_old_log_file: true,
+        })
+        .unwrap();
+
+        // Test that get log level functions as expected.
+        assert_eq!(get_log_level(), "trace");
+
+        // Write some log messages out to file. (and stderr)
+        trace!("abc");
+        debug!("def");
+        info!("ghi");
+        warn!("jkl");
+        error!("mno");
+
+        // Test that set log level functions as expected.
+        // This also restores the default log level.
+        set_log_level(DEFAULT_FILTER.to_string()).unwrap();
+        assert_eq!(get_log_level(), DEFAULT_FILTER.to_string());
+
+        // Sleep in order to ensure logs get written to file, then assert on the contents
+        std::thread::sleep(Duration::from_secs(1));
+        let logs = read_to_string(&tmp).unwrap();
+        for i in [
+            "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "abc", "def", "ghi", "jkl", "mno",
+        ] {
+            assert!(logs.contains(i));
+        }
     }
 }

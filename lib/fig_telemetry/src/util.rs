@@ -113,6 +113,6 @@ mod tests {
         assert_eq!(
             get_client_id_inner(false, &env, &settings).to_string(),
             settings.get_string("telemetryClientId").unwrap().unwrap()
-        )
+        );
     }
 }

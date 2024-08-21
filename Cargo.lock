@@ -2869,6 +2869,7 @@ dependencies = [
  "fig_util",
  "once_cell",
  "parking_lot",
+ "tempfile",
  "thiserror",
  "tracing",
  "tracing-appender",

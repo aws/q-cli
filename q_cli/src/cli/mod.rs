@@ -46,13 +46,17 @@ use eyre::{
 };
 use fig_auth::is_logged_in;
 use fig_ipc::local::open_ui_element;
-use fig_log::Logger;
+use fig_log::{
+    initialize_logging,
+    LogArgs,
+};
 use fig_proto::local::UiElement;
 use fig_util::desktop::{
     launch_fig_desktop,
     LaunchArgs,
 };
 use fig_util::{
+    directories,
     manifest,
     system_info,
     CLI_BINARY_NAME,
@@ -60,7 +64,6 @@ use fig_util::{
 };
 use internal::InternalSubcommand;
 use serde::Serialize;
-use tracing::level_filters::LevelFilter;
 use tracing::{
     debug,
     Level,
@@ -262,41 +265,33 @@ pub struct Cli {
 
 impl Cli {
     pub async fn execute(self) -> Result<ExitCode> {
-        let mut logger = Logger::new().with_max_file_size(10_000_000);
-
-        match self.subcommand {
-            Some(CliRootCommands::Chat { .. }) => {
-                logger = logger.with_file("chat.log");
+        // Initialize our logger and keep around the guard so logging can perform as expected.
+        let _log_guard = initialize_logging(LogArgs {
+            log_level: match self.verbose > 0 {
+                true => Some(
+                    match self.verbose {
+                        1 => Level::WARN,
+                        2 => Level::INFO,
+                        3 => Level::DEBUG,
+                        _ => Level::TRACE,
+                    }
+                    .to_string(),
+                ),
+                false => None,
             },
-            Some(CliRootCommands::Translate(..)) => {
-                logger = logger.with_file("translate.log");
-            },
-            Some(CliRootCommands::Internal(InternalSubcommand::Multiplexer)) => {
-                logger = logger.with_file("mux.log");
-            },
-            _ => {
-                if fig_log::get_max_fig_log_level() >= LevelFilter::DEBUG {
-                    logger = logger.with_file("cli.log");
-                }
-            },
-        }
-
-        if std::env::var_os("Q_LOG_STDOUT").is_some() || self.verbose > 0 {
-            logger = logger.with_stdout();
-        }
-
-        let _logger_guard = logger.init().expect("Failed to init logger");
-        if self.verbose > 0 {
-            let _ = fig_log::set_fig_log_level(
-                match self.verbose {
-                    1 => Level::WARN,
-                    2 => Level::INFO,
-                    3 => Level::DEBUG,
-                    _ => Level::TRACE,
-                }
-                .to_string(),
-            );
-        }
+            log_to_stdout: std::env::var_os("Q_LOG_STDOUT").is_some() || self.verbose > 0,
+            log_file_path: match self.subcommand {
+                Some(CliRootCommands::Chat { .. }) => Some("chat.log".to_owned()),
+                Some(CliRootCommands::Translate(..)) => Some("translate.log".to_owned()),
+                Some(CliRootCommands::Internal(InternalSubcommand::Multiplexer)) => Some("mux.log".to_owned()),
+                _ => match fig_log::get_log_level_max() >= Level::DEBUG {
+                    true => Some("cli.log".to_owned()),
+                    false => None,
+                },
+            }
+            .map(|name| directories::logs_dir().expect("home dir must be set").join(name)),
+            delete_old_log_file: false,
+        });
 
         debug!(command =? std::env::args().collect::<Vec<_>>(), "Command ran");
 

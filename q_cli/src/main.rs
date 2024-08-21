@@ -11,7 +11,7 @@ use clap::error::{
 use clap::Parser;
 use crossterm::style::Stylize;
 use eyre::Result;
-use fig_log::get_max_fig_log_level;
+use fig_log::get_log_level_max;
 use fig_util::{
     CLI_BINARY_NAME,
     PRODUCT_NAME,
@@ -75,7 +75,7 @@ fn main() -> Result<ExitCode> {
     match result {
         Ok(exit_code) => Ok(exit_code),
         Err(err) => {
-            if verbose || get_max_fig_log_level() > LevelFilter::INFO {
+            if verbose || get_log_level_max() > LevelFilter::INFO {
                 eprintln!("{} {err:?}", "error:".bold().red());
             } else {
                 eprintln!("{} {err}", "error:".bold().red());

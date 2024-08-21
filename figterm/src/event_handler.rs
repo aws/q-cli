@@ -139,7 +139,7 @@ impl EventListener for EventHandler {
     }
 
     fn log_level_event(&self, level: Option<String>) {
-        if let Err(err) = fig_log::set_fig_log_level(level.unwrap_or_else(|| LevelFilter::INFO.to_string())) {
+        if let Err(err) = fig_log::set_log_level(level.unwrap_or_else(|| LevelFilter::INFO.to_string())) {
             error!(%err, "Failed to set log level");
         }
     }

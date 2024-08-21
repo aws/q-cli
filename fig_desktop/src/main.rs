@@ -20,12 +20,18 @@ use std::process::exit;
 
 use clap::Parser;
 use event::Event;
-use fig_log::Logger;
+use fig_log::{
+    initialize_logging,
+    LogArgs,
+};
 use fig_util::consts::{
     APP_PROCESS_NAME,
     PRODUCT_NAME,
 };
-use fig_util::URL_SCHEMA;
+use fig_util::{
+    directories,
+    URL_SCHEMA,
+};
 use parking_lot::RwLock;
 use platform::PlatformState;
 use sysinfo::{
@@ -93,11 +99,17 @@ pub type EventLoopWindowTarget = WryEventLoopWindowTarget<Event>;
 async fn main() {
     let cli = cli::Cli::parse();
 
-    let _logger_guard = Logger::new()
-        .with_stdout()
-        .with_file("fig_desktop.log")
-        .init()
-        .expect("Failed to init logger");
+    let _log_guard = initialize_logging(LogArgs {
+        log_level: None,
+        log_to_stdout: true,
+        log_file_path: Some(
+            directories::logs_dir()
+                .expect("home dir must be set")
+                .join("fig_desktop.log"),
+        ),
+        delete_old_log_file: false,
+    })
+    .expect("Failed to init logging");
 
     fig_telemetry::init_global_telemetry_emitter();
 

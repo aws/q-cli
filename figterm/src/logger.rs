@@ -1,10 +1,10 @@
 use std::fmt::Display;
 
-use fig_log::get_max_fig_log_level;
+use fig_log::get_log_level_max;
 use tracing::Level;
 
 pub fn stdio_debug_log(s: impl Display) {
-    if get_max_fig_log_level() >= Level::DEBUG {
+    if get_log_level_max() >= Level::DEBUG {
         println!("{s}");
     }
 }

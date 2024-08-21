@@ -22,14 +22,19 @@ async fn main() {
         NSString,
     };
     use fig_log::{
-        set_fig_log_level,
-        Logger,
+        initialize_logging,
+        LogArgs,
     };
+    use fig_util::directories;
     use tracing::info;
 
-    let logger = Logger::new().with_file("imk.log").with_stdout();
-    let _logger_guard = logger.init().expect("Failed to init logger");
-    set_fig_log_level("trace".to_string()).ok();
+    let _log_guard = initialize_logging(LogArgs {
+        log_level: Some("trace".to_owned()),
+        log_to_stdout: true,
+        log_file_path: Some(directories::logs_dir().expect("home dir must be set").join("imk.log")),
+        delete_old_log_file: false,
+    });
+
     info!("HI THERE");
 
     imk::register_controller();

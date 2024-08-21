@@ -183,7 +183,6 @@ mod tests {
         let text = match *result {
             ServerOriginatedSubMessage::ReadFileResponse(ReadFileResponse {
                 r#type: Some(Type::Text(text)),
-                ..
             }) => text,
             _ => panic!("Unexpected response type"),
         };
@@ -195,7 +194,6 @@ mod tests {
         let data = match *result {
             ServerOriginatedSubMessage::ReadFileResponse(ReadFileResponse {
                 r#type: Some(Type::Data(data)),
-                ..
             }) => data,
             _ => panic!("Unexpected response type"),
         };
