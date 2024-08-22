@@ -1,13 +1,30 @@
-use serde::{Deserialize, Serialize};
-use static_assertions::assert_impl_all;
 use std::num::NonZeroU32;
-use zbus_names::{BusName, ErrorName, InterfaceName, MemberName, UniqueName};
-use zvariant::{ObjectPath, Signature, Type};
 
-use crate::{
-    message::{Field, FieldCode, Header, Message},
-    Result,
+use serde::{
+    Deserialize,
+    Serialize,
 };
+use static_assertions::assert_impl_all;
+use zbus_names::{
+    BusName,
+    ErrorName,
+    InterfaceName,
+    MemberName,
+    UniqueName,
+};
+use zvariant::{
+    ObjectPath,
+    Signature,
+    Type,
+};
+
+use crate::message::{
+    Field,
+    FieldCode,
+    Header,
+    Message,
+};
+use crate::Result;
 
 // It's actually 10 (and even not that) but let's round it to next 8-byte alignment
 const MAX_FIELDS_IN_MESSAGE: usize = 16;
@@ -71,7 +88,7 @@ impl<'m> Fields<'m> {
                 self.0.remove(i);
 
                 true
-            }
+            },
             None => false,
         }
     }
@@ -124,18 +141,13 @@ impl FieldPos {
         T::Error: std::fmt::Debug,
     {
         match self {
-            Self {
-                start: 0..=1,
-                end: 0,
-            } => None,
+            Self { start: 0..=1, end: 0 } => None,
             Self { start, end } => {
                 let s = std::str::from_utf8(&msg_buf[(*start as usize)..(*end as usize)])
                     .expect("Invalid utf8 when reconstructing string");
                 // We already check the fields during the construction of `Self`.
-                T::try_from(s)
-                    .map(Some)
-                    .expect("Invalid field reconstruction")
-            }
+                T::try_from(s).map(Some).expect("Invalid field reconstruction")
+            },
         }
     }
 }
@@ -222,7 +234,10 @@ impl<'m> std::ops::Deref for Fields<'m> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Field, Fields};
+    use super::{
+        Field,
+        Fields,
+    };
 
     #[test]
     fn test() {

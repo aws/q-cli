@@ -1,22 +1,49 @@
-use std::{
-    io::{Cursor, Write},
-    sync::Arc,
+use std::io::{
+    Cursor,
+    Write,
+};
+use std::sync::Arc;
+
+use enumflags2::BitFlags;
+use zbus_names::{
+    BusName,
+    ErrorName,
+    InterfaceName,
+    MemberName,
+    UniqueName,
 };
 #[cfg(unix)]
 use zvariant::OwnedFd;
-
-use enumflags2::BitFlags;
-use zbus_names::{BusName, ErrorName, InterfaceName, MemberName, UniqueName};
-use zvariant::{serialized, Endian};
-
-use crate::{
-    message::{Field, FieldCode, Fields, Flags, Header, Message, PrimaryHeader, Sequence, Type},
-    utils::padding_for_8_bytes,
-    zvariant::{serialized::Context, DynamicType, ObjectPath, Signature},
-    EndianSig, Error, Result,
+use zvariant::{
+    serialized,
+    Endian,
 };
 
-use crate::message::{fields::QuickFields, header::MAX_MESSAGE_SIZE};
+use crate::message::fields::QuickFields;
+use crate::message::header::MAX_MESSAGE_SIZE;
+use crate::message::{
+    Field,
+    FieldCode,
+    Fields,
+    Flags,
+    Header,
+    Message,
+    PrimaryHeader,
+    Sequence,
+    Type,
+};
+use crate::utils::padding_for_8_bytes;
+use crate::zvariant::serialized::Context;
+use crate::zvariant::{
+    DynamicType,
+    ObjectPath,
+    Signature,
+};
+use crate::{
+    EndianSig,
+    Error,
+    Result,
+};
 
 #[cfg(unix)]
 type BuildGenericResult = Vec<OwnedFd>;
@@ -25,7 +52,7 @@ type BuildGenericResult = Vec<OwnedFd>;
 type BuildGenericResult = ();
 
 macro_rules! dbus_context {
-    ($self:ident, $n_bytes_before: expr) => {
+    ($self:ident, $n_bytes_before:expr) => {
         Context::new_dbus($self.header.primary().endian_sig().into(), $n_bytes_before)
     };
 }
@@ -67,10 +94,7 @@ impl<'a> Builder<'a> {
         I::Error: Into<Error>,
         M::Error: Into<Error>,
     {
-        Self::new(Type::Signal)
-            .path(path)?
-            .interface(interface)?
-            .member(name)
+        Self::new(Type::Signal).path(path)?.interface(interface)?.member(name)
     }
 
     /// Create a message of type [`Type::MethodReturn`].
@@ -95,8 +119,7 @@ impl<'a> Builder<'a> {
     ///
     /// The function will return an error if invalid flags are given for the message type.
     pub fn with_flags(mut self, flag: Flags) -> Result<Self> {
-        if self.header.message_type() != Type::MethodCall
-            && BitFlags::from_flag(flag).contains(Flags::NoReplyExpected)
+        if self.header.message_type() != Type::MethodCall && BitFlags::from_flag(flag).contains(Flags::NoReplyExpected)
         {
             return Err(Error::InvalidField);
         }
@@ -170,9 +193,9 @@ impl<'a> Builder<'a> {
         D: TryInto<BusName<'d>>,
         D::Error: Into<Error>,
     {
-        self.header.fields_mut().replace(Field::Destination(
-            destination.try_into().map_err(Into::into)?,
-        ));
+        self.header
+            .fields_mut()
+            .replace(Field::Destination(destination.try_into().map_err(Into::into)?));
         Ok(self)
     }
 
@@ -261,19 +284,15 @@ impl<'a> Builder<'a> {
             body_size.set_num_fds(num_fds)
         };
 
-        self.build_generic(
-            signature,
-            body_size,
-            move |cursor: &mut Cursor<&mut Vec<u8>>| {
-                cursor.write_all(body_bytes)?;
+        self.build_generic(signature, body_size, move |cursor: &mut Cursor<&mut Vec<u8>>| {
+            cursor.write_all(body_bytes)?;
 
-                #[cfg(unix)]
-                return Ok::<Vec<OwnedFd>, Error>(fds);
+            #[cfg(unix)]
+            return Ok::<Vec<OwnedFd>, Error>(fds);
 
-                #[cfg(not(unix))]
-                return Ok::<(), Error>(());
-            },
-        )
+            #[cfg(not(unix))]
+            return Ok::<(), Error>(());
+        })
     }
 
     fn build_generic<WriteFunc>(
@@ -362,9 +381,10 @@ impl<'m> From<Header<'m>> for Builder<'m> {
 
 #[cfg(test)]
 mod tests {
+    use test_log::test;
+
     use super::Message;
     use crate::Error;
-    use test_log::test;
 
     #[test]
     fn test_raw() -> Result<(), Error> {

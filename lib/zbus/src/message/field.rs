@@ -1,14 +1,32 @@
 use std::num::NonZeroU32;
 
-use serde::{
-    de::{Deserialize, Deserializer, Error},
-    ser::{Serialize, Serializer},
+use serde::de::{
+    Deserialize,
+    Deserializer,
+    Error,
 };
-use serde_repr::{Deserialize_repr, Serialize_repr};
-
+use serde::ser::{
+    Serialize,
+    Serializer,
+};
+use serde_repr::{
+    Deserialize_repr,
+    Serialize_repr,
+};
 use static_assertions::assert_impl_all;
-use zbus_names::{BusName, ErrorName, InterfaceName, MemberName, UniqueName};
-use zvariant::{ObjectPath, Signature, Type, Value};
+use zbus_names::{
+    BusName,
+    ErrorName,
+    InterfaceName,
+    MemberName,
+    UniqueName,
+};
+use zvariant::{
+    ObjectPath,
+    Signature,
+    Type,
+    Value,
+};
 
 /// The message field code.
 ///
@@ -23,23 +41,23 @@ use zvariant::{ObjectPath, Signature, Type, Value};
 #[derive(Copy, Clone, Debug, Deserialize_repr, PartialEq, Eq, Serialize_repr, Type)]
 pub(crate) enum FieldCode {
     /// Code for [`Field::Path`](enum.Field.html#variant.Path).
-    Path = 1,
+    Path        = 1,
     /// Code for [`Field::Interface`](enum.Field.html#variant.Interface).
-    Interface = 2,
+    Interface   = 2,
     /// Code for [`Field::Member`](enum.Field.html#variant.Member).
-    Member = 3,
+    Member      = 3,
     /// Code for [`Field::ErrorName`](enum.Field.html#variant.ErrorName).
-    ErrorName = 4,
+    ErrorName   = 4,
     /// Code for [`Field::ReplySerial`](enum.Field.html#variant.ReplySerial).
     ReplySerial = 5,
     /// Code for [`Field::Destination`](enum.Field.html#variant.Destination).
     Destination = 6,
     /// Code for [`Field::Sender`](enum.Field.html#variant.Sender).
-    Sender = 7,
+    Sender      = 7,
     /// Code for [`Field::Signature`](enum.Field.html#variant.Signature).
-    Signature = 8,
+    Signature   = 8,
     /// Code for [`Field::UnixFDs`](enum.Field.html#variant.UnixFDs).
-    UnixFDs = 9,
+    UnixFDs     = 9,
 }
 
 assert_impl_all!(FieldCode: Send, Sync, Unpin);
@@ -131,36 +149,22 @@ impl<'de: 'f, 'f> Deserialize<'de> for Field<'f> {
         let (code, value) = <(FieldCode, Value<'_>)>::deserialize(deserializer)?;
         Ok(match code {
             FieldCode::Path => Field::Path(ObjectPath::try_from(value).map_err(D::Error::custom)?),
-            FieldCode::Interface => {
-                Field::Interface(InterfaceName::try_from(value).map_err(D::Error::custom)?)
-            }
-            FieldCode::Member => {
-                Field::Member(MemberName::try_from(value).map_err(D::Error::custom)?)
-            }
-            FieldCode::ErrorName => Field::ErrorName(
-                ErrorName::try_from(value)
-                    .map(Into::into)
-                    .map_err(D::Error::custom)?,
-            ),
+            FieldCode::Interface => Field::Interface(InterfaceName::try_from(value).map_err(D::Error::custom)?),
+            FieldCode::Member => Field::Member(MemberName::try_from(value).map_err(D::Error::custom)?),
+            FieldCode::ErrorName => {
+                Field::ErrorName(ErrorName::try_from(value).map(Into::into).map_err(D::Error::custom)?)
+            },
             FieldCode::ReplySerial => {
                 let value = u32::try_from(value)
                     .map_err(D::Error::custom)
                     .and_then(|v| v.try_into().map_err(D::Error::custom))?;
                 Field::ReplySerial(value)
-            }
-            FieldCode::Destination => Field::Destination(
-                BusName::try_from(value)
-                    .map(Into::into)
-                    .map_err(D::Error::custom)?,
-            ),
-            FieldCode::Sender => Field::Sender(
-                UniqueName::try_from(value)
-                    .map(Into::into)
-                    .map_err(D::Error::custom)?,
-            ),
-            FieldCode::Signature => {
-                Field::Signature(Signature::try_from(value).map_err(D::Error::custom)?)
-            }
+            },
+            FieldCode::Destination => {
+                Field::Destination(BusName::try_from(value).map(Into::into).map_err(D::Error::custom)?)
+            },
+            FieldCode::Sender => Field::Sender(UniqueName::try_from(value).map(Into::into).map_err(D::Error::custom)?),
+            FieldCode::Signature => Field::Signature(Signature::try_from(value).map_err(D::Error::custom)?),
             FieldCode::UnixFDs => Field::UnixFDs(u32::try_from(value).map_err(D::Error::custom)?),
         })
     }

@@ -1,20 +1,31 @@
-use std::{
-    pin::Pin,
-    sync::Arc,
-    task::{Context, Poll},
+use std::pin::Pin;
+use std::sync::Arc;
+use std::task::{
+    Context,
+    Poll,
 };
 
 use async_broadcast::Receiver as ActiveReceiver;
 use futures_core::stream;
 use futures_util::stream::FusedStream;
-use ordered_stream::{OrderedStream, PollResult};
+use ordered_stream::{
+    OrderedStream,
+    PollResult,
+};
 use static_assertions::assert_impl_all;
 use tracing::warn;
 
+use crate::connection::ConnectionInner;
+use crate::message::{
+    Message,
+    Sequence,
+};
 use crate::{
-    connection::ConnectionInner,
-    message::{Message, Sequence},
-    AsyncDrop, Connection, MatchRule, OwnedMatchRule, Result,
+    AsyncDrop,
+    Connection,
+    MatchRule,
+    OwnedMatchRule,
+    Result,
 };
 
 /// A [`stream::Stream`] implementation that yields [`Message`] items.
@@ -58,8 +69,22 @@ impl MessageStream {
     ///
     /// ```no_run
     /// use async_io::Timer;
-    /// use zbus::{AsyncDrop, Connection, MatchRule, MessageStream, fdo::NameOwnerChanged};
-    /// use futures_util::{TryStreamExt, future::select, future::Either::{Left, Right}, pin_mut};
+    /// use futures_util::future::select;
+    /// use futures_util::future::Either::{
+    ///     Left,
+    ///     Right,
+    /// };
+    /// use futures_util::{
+    ///     pin_mut,
+    ///     TryStreamExt,
+    /// };
+    /// use zbus::fdo::NameOwnerChanged;
+    /// use zbus::{
+    ///     AsyncDrop,
+    ///     Connection,
+    ///     MatchRule,
+    ///     MessageStream,
+    /// };
     ///
     /// # zbus::block_on(async {
     /// let conn = Connection::session().await?;
@@ -75,7 +100,8 @@ impl MessageStream {
     ///     &conn,
     ///     // For such a specific match rule, we don't need a big queue.
     ///     Some(1),
-    /// ).await?;
+    /// )
+    /// .await?;
     ///
     /// let rule_str = "type='signal',sender='org.freedesktop.DBus',\
     ///                 interface='org.freedesktop.DBus',member='NameOwnerChanged',\
@@ -98,15 +124,18 @@ impl MessageStream {
     ///
     /// let msg = stream.try_next().await?.unwrap();
     /// let signal = NameOwnerChanged::from_message(msg).unwrap();
-    /// assert_eq!(signal.args()?.name(), "org.freedesktop.zbus.MatchRuleStreamTest42");
+    /// assert_eq!(
+    ///     signal.args()?.name(),
+    ///     "org.freedesktop.zbus.MatchRuleStreamTest42"
+    /// );
     /// stream.async_drop().await;
     ///
     /// // Ensure the match rule is deregistered and this connection doesn't receive
     /// // `NameOwnerChanged` signals.
-    /// let stream = MessageStream::from(&conn).try_filter_map(|msg| async move {
-    ///     Ok(NameOwnerChanged::from_message(msg))
-    /// });
-    /// conn.release_name("org.freedesktop.zbus.MatchRuleStreamTest42").await?;
+    /// let stream = MessageStream::from(&conn)
+    ///     .try_filter_map(|msg| async move { Ok(NameOwnerChanged::from_message(msg)) });
+    /// conn.release_name("org.freedesktop.zbus.MatchRuleStreamTest42")
+    ///     .await?;
     ///
     /// pin_mut!(stream);
     /// let next = stream.try_next();
@@ -114,8 +143,8 @@ impl MessageStream {
     /// let timeout = Timer::after(std::time::Duration::from_millis(50));
     /// pin_mut!(timeout);
     /// match select(next, timeout).await {
-    ///    Left((msg, _)) => unreachable!("unexpected message: {:?}", msg),
-    ///    Right((_, _)) => (),
+    ///     Left((msg, _)) => unreachable!("unexpected message: {:?}", msg),
+    ///     Right((_, _)) => (),
     /// }
     ///
     /// # Ok::<(), zbus::Error>(())
@@ -125,11 +154,7 @@ impl MessageStream {
     /// # Caveats
     ///
     /// Since this method relies on [`MatchRule::matches`], it inherits its caveats.
-    pub async fn for_match_rule<R>(
-        rule: R,
-        conn: &Connection,
-        max_queued: Option<usize>,
-    ) -> Result<Self>
+    pub async fn for_match_rule<R>(rule: R, conn: &Connection, max_queued: Option<usize>) -> Result<Self>
     where
         R: TryInto<OwnedMatchRule>,
         R::Error: Into<crate::Error>,
@@ -137,11 +162,7 @@ impl MessageStream {
         let rule = rule.try_into().map_err(Into::into)?;
         let msg_receiver = conn.add_match(rule.clone(), max_queued).await?;
 
-        Ok(Self::for_subscription_channel(
-            msg_receiver,
-            Some(rule),
-            conn,
-        ))
+        Ok(Self::for_subscription_channel(msg_receiver, Some(rule), conn))
     }
 
     /// The associated match rule, if any.
@@ -215,7 +236,7 @@ impl OrderedStream for MessageStream {
                 // This ensures that ordered_stream::Join will never return Pending while it
                 // has a message buffered.
                 Poll::Ready(PollResult::NoneBefore)
-            }
+            },
             Poll::Pending => Poll::Pending,
             Poll::Ready(Some(Ok(msg))) => Poll::Ready(PollResult::Item {
                 ordering: msg.recv_position(),

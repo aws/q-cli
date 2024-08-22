@@ -1,23 +1,44 @@
-use std::{
-    num::NonZeroU32,
-    sync::atomic::{AtomicU32, Ordering::SeqCst},
+use std::num::NonZeroU32;
+use std::sync::atomic::AtomicU32;
+use std::sync::atomic::Ordering::SeqCst;
+
+use enumflags2::{
+    bitflags,
+    BitFlags,
 };
-
-use enumflags2::{bitflags, BitFlags};
-use serde::{Deserialize, Serialize};
-use serde_repr::{Deserialize_repr, Serialize_repr};
-
+use serde::{
+    Deserialize,
+    Serialize,
+};
+use serde_repr::{
+    Deserialize_repr,
+    Serialize_repr,
+};
 use static_assertions::assert_impl_all;
-use zbus_names::{BusName, ErrorName, InterfaceName, MemberName, UniqueName};
+use zbus_names::{
+    BusName,
+    ErrorName,
+    InterfaceName,
+    MemberName,
+    UniqueName,
+};
+use zvariant::serialized::{
+    self,
+    Context,
+};
 use zvariant::{
-    serialized::{self, Context},
-    Endian, ObjectPath, Signature, Type as VariantType,
+    Endian,
+    ObjectPath,
+    Signature,
+    Type as VariantType,
 };
 
-use crate::{
-    message::{Field, FieldCode, Fields},
-    Error,
+use crate::message::{
+    Field,
+    FieldCode,
+    Fields,
 };
+use crate::Error;
 
 pub(crate) const PRIMARY_HEADER_SIZE: usize = 12;
 pub(crate) const MIN_MESSAGE_SIZE: usize = PRIMARY_HEADER_SIZE + 4;
@@ -28,7 +49,7 @@ pub(crate) const MAX_MESSAGE_SIZE: usize = 128 * 1024 * 1024; // 128 MiB
 #[derive(Debug, Copy, Clone, Deserialize_repr, PartialEq, Eq, Serialize_repr, VariantType)]
 pub enum EndianSig {
     /// The D-Bus message is in big-endian (network) byte order.
-    Big = b'B',
+    Big    = b'B',
 
     /// The D-Bus message is in little-endian byte order.
     Little = b'l',
@@ -76,18 +97,16 @@ impl From<EndianSig> for Endian {
 
 /// Message header representing the D-Bus type of the message.
 #[repr(u8)]
-#[derive(
-    Debug, Copy, Clone, Deserialize_repr, PartialEq, Eq, Hash, Serialize_repr, VariantType,
-)]
+#[derive(Debug, Copy, Clone, Deserialize_repr, PartialEq, Eq, Hash, Serialize_repr, VariantType)]
 pub enum Type {
     /// Method call. This message type may prompt a reply (and typically does).
-    MethodCall = 1,
+    MethodCall   = 1,
     /// A reply to a method call.
     MethodReturn = 2,
     /// An error in response to a method call.
-    Error = 3,
+    Error        = 3,
     /// Signal emission.
-    Signal = 4,
+    Signal       = 4,
 }
 
 assert_impl_all!(Type: Send, Sync, Unpin);
@@ -104,9 +123,9 @@ pub enum Flags {
     /// specification that can expect a reply, so the presence or absence of this flag in the other
     /// three message types that are currently documented is meaningless: replies to those message
     /// types should not be sent, whether this flag is present or not.
-    NoReplyExpected = 0x1,
+    NoReplyExpected      = 0x1,
     /// The bus must not launch an owner for the destination name in response to this message.
-    NoAutoStart = 0x2,
+    NoAutoStart          = 0x2,
     /// This flag may be set on a method call message to inform the receiving side that the caller
     /// is prepared to wait for interactive authorization, which might take a considerable time to
     /// complete. For instance, if this flag is set, it would be appropriate to query the user for
@@ -157,9 +176,7 @@ impl PrimaryHeader {
         Self::read_from_data(&data)
     }
 
-    pub(crate) fn read_from_data(
-        data: &serialized::Data<'_, '_>,
-    ) -> Result<(PrimaryHeader, u32), Error> {
+    pub(crate) fn read_from_data(data: &serialized::Data<'_, '_>) -> Result<(PrimaryHeader, u32), Error> {
         let (primary_header, size) = data.deserialize()?;
         assert_eq!(size, PRIMARY_HEADER_SIZE);
         let (fields_len, _) = data.slice(PRIMARY_HEADER_SIZE..).deserialize()?;
@@ -362,12 +379,25 @@ static SERIAL_NUM: AtomicU32 = AtomicU32::new(0);
 
 #[cfg(test)]
 mod tests {
-    use crate::message::{Field, Fields, Header, PrimaryHeader, Type};
-
     use std::error::Error;
+
     use test_log::test;
-    use zbus_names::{InterfaceName, MemberName};
-    use zvariant::{ObjectPath, Signature};
+    use zbus_names::{
+        InterfaceName,
+        MemberName,
+    };
+    use zvariant::{
+        ObjectPath,
+        Signature,
+    };
+
+    use crate::message::{
+        Field,
+        Fields,
+        Header,
+        PrimaryHeader,
+        Type,
+    };
 
     #[test]
     fn header() -> Result<(), Box<dyn Error>> {

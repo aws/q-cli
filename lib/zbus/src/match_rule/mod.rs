@@ -1,19 +1,34 @@
 //! Bus match rule API.
 
-use std::{
-    fmt::{Display, Write},
-    ops::Deref,
+use std::fmt::{
+    Display,
+    Write,
 };
+use std::ops::Deref;
 
-use serde::{de, Deserialize, Serialize};
+use serde::{
+    de,
+    Deserialize,
+    Serialize,
+};
 use static_assertions::assert_impl_all;
 use zvariant::Structure;
 
+use crate::message::Type;
+use crate::names::{
+    BusName,
+    InterfaceName,
+    MemberName,
+    UniqueName,
+};
+use crate::zvariant::{
+    ObjectPath,
+    Str,
+    Type as VariantType,
+};
 use crate::{
-    message::Type,
-    names::{BusName, InterfaceName, MemberName, UniqueName},
-    zvariant::{ObjectPath, Str, Type as VariantType},
-    Error, Result,
+    Error,
+    Result,
 };
 
 mod builder;
@@ -165,11 +180,7 @@ impl<'m> MatchRule<'m> {
             path_spec: self.path_spec.as_ref().map(|p| p.to_owned()),
             destination: self.destination.as_ref().map(|d| d.to_owned()),
             args: self.args.iter().map(|(i, s)| (*i, s.to_owned())).collect(),
-            arg_paths: self
-                .arg_paths
-                .iter()
-                .map(|(i, p)| (*i, p.to_owned()))
-                .collect(),
+            arg_paths: self.arg_paths.iter().map(|(i, p)| (*i, p.to_owned())).collect(),
             arg0ns: self.arg0ns.as_ref().map(|a| a.to_owned()),
         }
     }
@@ -183,16 +194,8 @@ impl<'m> MatchRule<'m> {
             member: self.member.map(|m| m.into_owned()),
             path_spec: self.path_spec.map(|p| p.into_owned()),
             destination: self.destination.map(|d| d.into_owned()),
-            args: self
-                .args
-                .into_iter()
-                .map(|(i, s)| (i, s.into_owned()))
-                .collect(),
-            arg_paths: self
-                .arg_paths
-                .into_iter()
-                .map(|(i, p)| (i, p.into_owned()))
-                .collect(),
+            args: self.args.into_iter().map(|(i, s)| (i, s.into_owned())).collect(),
+            arg_paths: self.arg_paths.into_iter().map(|(i, p)| (i, p.into_owned())).collect(),
             arg0ns: self.arg0ns.map(|a| a.into_owned()),
         }
     }
@@ -223,7 +226,7 @@ impl<'m> MatchRule<'m> {
             match sender {
                 BusName::Unique(name) if Some(name) != hdr.sender() => {
                     return Ok(false);
-                }
+                },
                 BusName::Unique(_) => (),
                 // We can't match against a well-known name.
                 BusName::WellKnown(_) => (),
@@ -253,7 +256,7 @@ impl<'m> MatchRule<'m> {
             match hdr.destination() {
                 Some(BusName::Unique(name)) if destination != name => {
                     return Ok(false);
-                }
+                },
                 Some(BusName::Unique(_)) | None => (),
                 // We can't match against a well-known name.
                 Some(BusName::WellKnown(_)) => (),
@@ -270,7 +273,7 @@ impl<'m> MatchRule<'m> {
                 PathSpec::Path(path) if path != msg_path => return Ok(false),
                 PathSpec::PathNamespace(path_ns) if !msg_path.starts_with(path_ns.as_str()) => {
                     return Ok(false);
-                }
+                },
                 PathSpec::Path(_) | PathSpec::PathNamespace(_) => (),
             }
         }
@@ -410,11 +413,7 @@ impl<'m> TryFrom<&'m str> for MatchRule<'m> {
         let mut builder = MatchRule::builder();
         for component in components {
             let (key, value) = component.split_once('=').ok_or(Error::InvalidMatchRule)?;
-            if key.is_empty()
-                || value.len() < 2
-                || !value.starts_with('\'')
-                || !value.ends_with('\'')
-            {
+            if key.is_empty() || value.len() < 2 || !value.starts_with('\'') || !value.ends_with('\'') {
                 return Err(Error::InvalidMatchRule);
             }
             let value = &value[1..value.len() - 1];
@@ -428,7 +427,7 @@ impl<'m> TryFrom<&'m str> for MatchRule<'m> {
                         _ => return Err(Error::InvalidMatchRule),
                     };
                     builder.msg_type(msg_type)
-                }
+                },
                 "sender" => builder.sender(value)?,
                 "interface" => builder.interface(value)?,
                 "member" => builder.member(value)?,
@@ -443,12 +442,10 @@ impl<'m> TryFrom<&'m str> for MatchRule<'m> {
                             .map_err(|_| Error::InvalidMatchRule)?;
                         builder.arg_path(idx, value)?
                     } else {
-                        let idx = key[3..]
-                            .parse::<u8>()
-                            .map_err(|_| Error::InvalidMatchRule)?;
+                        let idx = key[3..].parse::<u8>().map_err(|_| Error::InvalidMatchRule)?;
                         builder.arg(idx, value)?
                     }
-                }
+                },
                 _ => return Err(Error::InvalidMatchRule),
             };
         }

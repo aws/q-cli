@@ -1,21 +1,35 @@
 //! The client-side proxy API.
 
+use std::fmt;
+use std::ops::Deref;
+
 use enumflags2::BitFlags;
 use futures_util::StreamExt;
 use static_assertions::assert_impl_all;
-use std::{fmt, ops::Deref};
-use zbus_names::{BusName, InterfaceName, MemberName, UniqueName};
-use zvariant::{ObjectPath, OwnedValue, Value};
-
-use crate::{
-    blocking::Connection,
-    message::Message,
-    proxy::{MethodFlags, ProxyDefault},
-    utils::block_on,
-    Error, Result,
+use zbus_names::{
+    BusName,
+    InterfaceName,
+    MemberName,
+    UniqueName,
+};
+use zvariant::{
+    ObjectPath,
+    OwnedValue,
+    Value,
 };
 
-use crate::fdo;
+use crate::blocking::Connection;
+use crate::message::Message;
+use crate::proxy::{
+    MethodFlags,
+    ProxyDefault,
+};
+use crate::utils::block_on;
+use crate::{
+    fdo,
+    Error,
+    Result,
+};
 
 mod builder;
 pub use builder::Builder;
@@ -28,9 +42,13 @@ pub use builder::Builder;
 /// # Example
 ///
 /// ```no_run
-/// use std::result::Result;
 /// use std::error::Error;
-/// use zbus::blocking::{Connection, Proxy};
+/// use std::result::Result;
+///
+/// use zbus::blocking::{
+///     Connection,
+///     Proxy,
+/// };
 ///
 /// fn main() -> Result<(), Box<dyn Error>> {
 ///     let connection = Connection::session()?;
@@ -81,12 +99,7 @@ assert_impl_all!(Proxy<'_>: Send, Sync, Unpin);
 
 impl<'a> Proxy<'a> {
     /// Create a new `Proxy` for the given destination/path/interface.
-    pub fn new<D, P, I>(
-        conn: &Connection,
-        destination: D,
-        path: P,
-        interface: I,
-    ) -> Result<Proxy<'a>>
+    pub fn new<D, P, I>(conn: &Connection, destination: D, path: P, interface: I) -> Result<Proxy<'a>>
     where
         D: TryInto<BusName<'a>>,
         P: TryInto<ObjectPath<'a>>,
@@ -95,12 +108,7 @@ impl<'a> Proxy<'a> {
         P::Error: Into<Error>,
         I::Error: Into<Error>,
     {
-        let proxy = block_on(crate::Proxy::new(
-            conn.inner(),
-            destination,
-            path,
-            interface,
-        ))?;
+        let proxy = block_on(crate::Proxy::new(conn.inner(), destination, path, interface))?;
 
         Ok(Self {
             conn: conn.clone(),
@@ -110,12 +118,7 @@ impl<'a> Proxy<'a> {
 
     /// Create a new `Proxy` for the given destination/path/interface, taking ownership of all
     /// passed arguments.
-    pub fn new_owned<D, P, I>(
-        conn: Connection,
-        destination: D,
-        path: P,
-        interface: I,
-    ) -> Result<Proxy<'a>>
+    pub fn new_owned<D, P, I>(conn: Connection, destination: D, path: P, interface: I) -> Result<Proxy<'a>>
     where
         D: TryInto<BusName<'static>>,
         P: TryInto<ObjectPath<'static>>,
@@ -301,11 +304,7 @@ impl<'a> Proxy<'a> {
     /// types.
     ///
     /// The arguments are passed as tuples of argument index and expected value.
-    pub fn receive_signal_with_args<'m, M>(
-        &self,
-        signal_name: M,
-        args: &[(u8, &str)],
-    ) -> Result<SignalIterator<'m>>
+    pub fn receive_signal_with_args<'m, M>(&self, signal_name: M, args: &[(u8, &str)]) -> Result<SignalIterator<'m>>
     where
         M: TryInto<MemberName<'m>>,
         M::Error: Into<Error>,
@@ -339,10 +338,7 @@ impl<'a> Proxy<'a> {
     ///
     /// Note that zbus doesn't queue the updates. If the listener is slower than the receiver, it
     /// will only receive the last update.
-    pub fn receive_property_changed<'name: 'a, T>(
-        &self,
-        name: &'name str,
-    ) -> PropertyIterator<'a, T> {
+    pub fn receive_property_changed<'name: 'a, T>(&self, name: &'name str) -> PropertyIterator<'a, T> {
         PropertyIterator(block_on(self.inner().receive_property_changed(name)))
     }
 
@@ -366,8 +362,8 @@ impl<'a> Proxy<'a> {
 }
 
 impl ProxyDefault for Proxy<'_> {
-    const INTERFACE: Option<&'static str> = None;
     const DESTINATION: Option<&'static str> = None;
+    const INTERFACE: Option<&'static str> = None;
     const PATH: Option<&'static str> = None;
 }
 
@@ -518,10 +514,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::blocking;
     use ntest::timeout;
     use test_log::test;
+
+    use super::*;
+    use crate::blocking;
 
     #[ignore = "fails in ci"]
     #[test]
@@ -537,9 +534,7 @@ mod tests {
         let mut owner_changed = proxy
             .receive_name_owner_changed_with_args(&[(0, well_known), (2, unique_name.as_str())])
             .unwrap();
-        let mut name_acquired = proxy
-            .receive_name_acquired_with_args(&[(0, well_known)])
-            .unwrap();
+        let mut name_acquired = proxy.receive_name_acquired_with_args(&[(0, well_known)]).unwrap();
 
         blocking::fdo::DBusProxy::new(&conn)
             .unwrap()

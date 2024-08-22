@@ -4,32 +4,46 @@ pub mod channel;
 pub use channel::Channel;
 
 mod split;
-pub use split::{BoxedSplit, Split};
+pub use split::{
+    BoxedSplit,
+    Split,
+};
 
 mod tcp;
 mod unix;
 mod vsock;
 
-#[cfg(not(feature = "tokio"))]
-use async_io::Async;
+#[cfg(unix)]
+use std::os::fd::{
+    AsFd,
+    BorrowedFd,
+    OwnedFd,
+};
 #[cfg(not(feature = "tokio"))]
 use std::sync::Arc;
-use std::{io, mem};
-use tracing::trace;
-
-use crate::{
-    fdo::ConnectionCredentials,
-    message::{
-        header::{MAX_MESSAGE_SIZE, MIN_MESSAGE_SIZE},
-        PrimaryHeader,
-    },
-    padding_for_8_bytes, Message,
+use std::{
+    io,
+    mem,
 };
-#[cfg(unix)]
-use std::os::fd::{AsFd, BorrowedFd, OwnedFd};
-use zvariant::{
-    serialized::{self, Context},
-    Endian,
+
+#[cfg(not(feature = "tokio"))]
+use async_io::Async;
+use tracing::trace;
+use zvariant::serialized::{
+    self,
+    Context,
+};
+use zvariant::Endian;
+
+use crate::fdo::ConnectionCredentials;
+use crate::message::header::{
+    MAX_MESSAGE_SIZE,
+    MIN_MESSAGE_SIZE,
+};
+use crate::message::PrimaryHeader;
+use crate::{
+    padding_for_8_bytes,
+    Message,
 };
 
 #[cfg(unix)]
@@ -120,11 +134,9 @@ pub trait ReadHalf: std::fmt::Debug + Send + Sync + 'static {
                 };
                 pos += len;
                 if len == 0 {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::UnexpectedEof,
-                        "failed to receive message",
-                    )
-                    .into());
+                    return Err(
+                        std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "failed to receive message").into(),
+                    );
                 }
             }
 
@@ -170,11 +182,7 @@ pub trait ReadHalf: std::fmt::Debug + Send + Sync + 'static {
             pos += read;
             if read == 0 {
                 return Err(crate::Error::InputOutput(
-                    std::io::Error::new(
-                        std::io::ErrorKind::UnexpectedEof,
-                        "failed to receive message",
-                    )
-                    .into(),
+                    std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "failed to receive message").into(),
                 ));
             }
         }
@@ -184,11 +192,11 @@ pub trait ReadHalf: std::fmt::Debug + Send + Sync + 'static {
 
         #[cfg(unix)]
         if !already_received_fds.is_empty() {
-            use crate::message::{header::PRIMARY_HEADER_SIZE, Field};
+            use crate::message::header::PRIMARY_HEADER_SIZE;
+            use crate::message::Field;
 
             let ctxt = Context::new_dbus(endian, PRIMARY_HEADER_SIZE);
-            let encoded_fields =
-                serialized::Data::new(&bytes[PRIMARY_HEADER_SIZE..header_len], ctxt);
+            let encoded_fields = serialized::Data::new(&bytes[PRIMARY_HEADER_SIZE..header_len], ctxt);
             let fields: crate::message::Fields<'_> = encoded_fields.deserialize()?.0;
             let num_required_fds = match fields.get_field(crate::message::FieldCode::UnixFDs) {
                 Some(Field::UnixFDs(num_fds)) => *num_fds as usize,
@@ -290,11 +298,7 @@ pub trait WriteHalf: std::fmt::Debug + Send + Sync + 'static {
     ///
     /// The default implementation simply panics. Implementers must override either `send_message`
     /// or this method.
-    async fn sendmsg(
-        &mut self,
-        _buffer: &[u8],
-        #[cfg(unix)] _fds: &[BorrowedFd<'_>],
-    ) -> io::Result<usize> {
+    async fn sendmsg(&mut self, _buffer: &[u8], #[cfg(unix)] _fds: &[BorrowedFd<'_>]) -> io::Result<usize> {
         unimplemented!("`WriteHalf` implementers must either override `send_message` or `sendmsg`");
     }
 
@@ -362,11 +366,7 @@ impl WriteHalf for Box<dyn WriteHalf> {
         (**self).send_message(msg).await
     }
 
-    async fn sendmsg(
-        &mut self,
-        buffer: &[u8],
-        #[cfg(unix)] fds: &[BorrowedFd<'_>],
-    ) -> io::Result<usize> {
+    async fn sendmsg(&mut self, buffer: &[u8], #[cfg(unix)] fds: &[BorrowedFd<'_>]) -> io::Result<usize> {
         (**self)
             .sendmsg(
                 buffer,

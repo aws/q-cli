@@ -1,16 +1,38 @@
-use crate::{
-    utils::{impl_str_basic, impl_try_from},
-    Error, Result,
+use std::borrow::{
+    Borrow,
+    Cow,
 };
-use serde::{de, Deserialize, Serialize};
+use std::fmt::{
+    self,
+    Debug,
+    Display,
+    Formatter,
+};
+use std::ops::Deref;
+use std::sync::Arc;
+
+use serde::{
+    de,
+    Deserialize,
+    Serialize,
+};
 use static_assertions::assert_impl_all;
-use std::{
-    borrow::{Borrow, Cow},
-    fmt::{self, Debug, Display, Formatter},
-    ops::Deref,
-    sync::Arc,
+use zvariant::{
+    NoneValue,
+    OwnedValue,
+    Str,
+    Type,
+    Value,
 };
-use zvariant::{NoneValue, OwnedValue, Str, Type, Value};
+
+use crate::utils::{
+    impl_str_basic,
+    impl_try_from,
+};
+use crate::{
+    Error,
+    Result,
+};
 
 /// String that identifies a [property][pn] name on the bus.
 ///
@@ -31,9 +53,7 @@ use zvariant::{NoneValue, OwnedValue, Str, Type, Value};
 /// ```
 ///
 /// [pn]: https://dbus.freedesktop.org/doc/dbus-specification.html#standard-interfaces-properties
-#[derive(
-    Clone, Debug, Hash, PartialEq, Eq, Serialize, Type, Value, PartialOrd, Ord, OwnedValue,
-)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Type, Value, PartialOrd, Ord, OwnedValue)]
 pub struct PropertyName<'name>(Str<'name>);
 
 assert_impl_all!(PropertyName<'_>: Send, Sync, Unpin);
@@ -282,9 +302,7 @@ impl PartialEq<PropertyName<'_>> for OwnedPropertyName {
 
 impl Debug for OwnedPropertyName {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("OwnedPropertyName")
-            .field(&self.as_str())
-            .finish()
+        f.debug_tuple("OwnedPropertyName").field(&self.as_str()).finish()
     }
 }
 

@@ -1,11 +1,21 @@
 use static_assertions::assert_impl_all;
 
+use crate::match_rule::PathSpec;
+use crate::message::Type;
+use crate::names::{
+    BusName,
+    InterfaceName,
+    MemberName,
+    UniqueName,
+};
+use crate::zvariant::{
+    ObjectPath,
+    Str,
+};
 use crate::{
-    match_rule::PathSpec,
-    message::Type,
-    names::{BusName, InterfaceName, MemberName, UniqueName},
-    zvariant::{ObjectPath, Str},
-    Error, MatchRule, Result,
+    Error,
+    MatchRule,
+    Result,
 };
 
 const MAX_ARGS: u8 = 64;
@@ -73,11 +83,7 @@ impl<'m> Builder<'m> {
         P: TryInto<ObjectPath<'m>>,
         P::Error: Into<Error>,
     {
-        self.0.path_spec = path
-            .try_into()
-            .map(PathSpec::Path)
-            .map(Some)
-            .map_err(Into::into)?;
+        self.0.path_spec = path.try_into().map(PathSpec::Path).map(Some).map_err(Into::into)?;
 
         Ok(self)
     }
@@ -146,7 +152,7 @@ impl<'m> Builder<'m> {
                 self.0.args.remove(i);
 
                 i
-            }
+            },
             Err(i) => i,
         };
         self.0.args.insert(vec_idx, value);
@@ -192,7 +198,7 @@ impl<'m> Builder<'m> {
                 self.0.arg_paths.remove(i);
 
                 i
-            }
+            },
             Err(i) => i,
         };
         self.0.arg_paths.insert(vec_idx, value);
@@ -210,7 +216,9 @@ impl<'m> Builder<'m> {
     /// ```
     /// # use zbus::MatchRule;
     /// // Valid namespaces
-    /// MatchRule::builder().arg0ns("org.mpris.MediaPlayer2").unwrap();
+    /// MatchRule::builder()
+    ///     .arg0ns("org.mpris.MediaPlayer2")
+    ///     .unwrap();
     /// MatchRule::builder().arg0ns("org").unwrap();
     /// MatchRule::builder().arg0ns(":org").unwrap();
     /// MatchRule::builder().arg0ns(":1org").unwrap();

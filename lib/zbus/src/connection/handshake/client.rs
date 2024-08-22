@@ -1,14 +1,37 @@
-use async_trait::async_trait;
 use std::collections::VecDeque;
-use tracing::{debug, instrument, trace, warn};
 
-use sha1::{Digest, Sha1};
-
-use crate::{conn::socket::ReadHalf, is_flatpak, names::OwnedUniqueName, Message};
+use async_trait::async_trait;
+use sha1::{
+    Digest,
+    Sha1,
+};
+use tracing::{
+    debug,
+    instrument,
+    trace,
+    warn,
+};
 
 use super::{
-    random_ascii, sasl_auth_id, AuthMechanism, Authenticated, BoxedSplit, Command, Common, Cookie,
-    Error, Handshake, OwnedGuid, Result, Str,
+    random_ascii,
+    sasl_auth_id,
+    AuthMechanism,
+    Authenticated,
+    BoxedSplit,
+    Command,
+    Common,
+    Cookie,
+    Error,
+    Handshake,
+    OwnedGuid,
+    Result,
+    Str,
+};
+use crate::conn::socket::ReadHalf;
+use crate::names::OwnedUniqueName;
+use crate::{
+    is_flatpak,
+    Message,
 };
 
 /// A representation of an in-progress handshake, client-side
@@ -49,8 +72,8 @@ impl Client {
     ///
     /// Returns the next command to send to the server.
     async fn handle_cookie_challenge(&mut self, data: Vec<u8>) -> Result<Command> {
-        let context = std::str::from_utf8(&data)
-            .map_err(|_| Error::Handshake("Cookie context was not valid UTF-8".into()))?;
+        let context =
+            std::str::from_utf8(&data).map_err(|_| Error::Handshake("Cookie context was not valid UTF-8".into()))?;
         let mut split = context.split_ascii_whitespace();
         let context = split
             .next()
@@ -82,7 +105,7 @@ impl Client {
                 return Err(Error::Handshake(format!(
                     "Server GUID mismatch: expected {server_guid}, got {guid}",
                 )));
-            }
+            },
             Some(_) => (),
             None => self.server_guid = Some(guid),
         }
@@ -97,9 +120,11 @@ impl Client {
     async fn send_zero_byte(&mut self) -> Result<()> {
         let write = self.common.socket_mut().write_mut();
 
-        let written = match write.send_zero_byte().await.map_err(|e| {
-            Error::Handshake(format!("Could not send zero byte with credentials: {}", e))
-        })? {
+        let written = match write
+            .send_zero_byte()
+            .await
+            .map_err(|e| Error::Handshake(format!("Could not send zero byte with credentials: {}", e)))?
+        {
             // This likely means that the socket type is unable to send SCM_CREDS.
             // Let's try to send the 0 byte as a regular message.
             None => write.sendmsg(&[0], &[]).await?,
@@ -126,13 +151,8 @@ impl Client {
             trace!("Trying {mechanism} mechanism");
             let auth_cmd = match mechanism {
                 AuthMechanism::Anonymous => Command::Auth(Some(mechanism), Some("zbus".into())),
-                AuthMechanism::External => {
-                    Command::Auth(Some(mechanism), Some(sasl_auth_id()?.into_bytes()))
-                }
-                AuthMechanism::Cookie => Command::Auth(
-                    Some(AuthMechanism::Cookie),
-                    Some(sasl_auth_id()?.into_bytes()),
-                ),
+                AuthMechanism::External => Command::Auth(Some(mechanism), Some(sasl_auth_id()?.into_bytes())),
+                AuthMechanism::Cookie => Command::Auth(Some(AuthMechanism::Cookie), Some(sasl_auth_id()?.into_bytes())),
             };
             self.common.write_command(auth_cmd).await?;
 
@@ -142,23 +162,17 @@ impl Client {
                     self.set_guid(guid)?;
 
                     return Ok(None);
-                }
+                },
                 Command::Data(data) if mechanism == AuthMechanism::Cookie => {
-                    let data = data.ok_or_else(|| {
-                        Error::Handshake("Received DATA with no data from server".into())
-                    })?;
+                    let data = data.ok_or_else(|| Error::Handshake("Received DATA with no data from server".into()))?;
                     trace!("Received cookie challenge from server");
                     let response = self.handle_cookie_challenge(data).await?;
 
                     return Ok(Some(response));
-                }
+                },
                 Command::Rejected(_) => debug!("{mechanism} rejected by the server"),
                 Command::Error(e) => debug!("Received error from server: {e}"),
-                cmd => {
-                    return Err(Error::Handshake(format!(
-                        "Unexpected command from server: {cmd}"
-                    )))
-                }
+                cmd => return Err(Error::Handshake(format!("Unexpected command from server: {cmd}"))),
             }
         }
     }
@@ -168,10 +182,7 @@ impl Client {
     /// This includes the challenge response for cookie auth, if any and returns the number of
     /// responses expected from the server.
     #[instrument(skip(self))]
-    async fn send_secondary_commands(
-        &mut self,
-        challenge_response: Option<Command>,
-    ) -> Result<usize> {
+    async fn send_secondary_commands(&mut self, challenge_response: Option<Command>) -> Result<usize> {
         let mut commands = Vec::with_capacity(4);
         if let Some(response) = challenge_response {
             commands.push(response);
@@ -187,11 +198,7 @@ impl Client {
                 match self.common.read_command().await? {
                     Command::AgreeUnixFD => self.common.set_cap_unix_fd(true),
                     Command::Error(e) => warn!("UNIX file descriptor passing rejected: {e}"),
-                    cmd => {
-                        return Err(Error::Handshake(format!(
-                            "Unexpected command from server: {cmd}"
-                        )))
-                    }
+                    cmd => return Err(Error::Handshake(format!("Unexpected command from server: {cmd}"))),
                 }
             } else {
                 commands.push(Command::NegotiateUnixFD);
@@ -219,7 +226,7 @@ impl Client {
                 Command::Ok(guid) => {
                     trace!("Received OK from server");
                     self.set_guid(guid)?;
-                }
+                },
                 Command::AgreeUnixFD => self.common.set_cap_unix_fd(true),
                 Command::Error(e) => warn!("UNIX file descriptor passing rejected: {e}"),
                 // This also covers "REJECTED", which would mean that the server has rejected the
@@ -227,11 +234,7 @@ impl Client {
                 // mechanism. Theoretically we should be just trying the next auth mechanism but
                 // this most likely means something is very wrong and we're already too deep into
                 // the handshake to recover.
-                cmd => {
-                    return Err(Error::Handshake(format!(
-                        "Unexpected command from server: {cmd}"
-                    )))
-                }
+                cmd => return Err(Error::Handshake(format!("Unexpected command from server: {cmd}"))),
             }
         }
 
@@ -252,8 +255,7 @@ impl Handshake for Client {
         let expected_n_responses = self.send_secondary_commands(challenge_response).await?;
 
         if expected_n_responses > 0 {
-            self.receive_secondary_responses(expected_n_responses)
-                .await?;
+            self.receive_secondary_responses(expected_n_responses).await?;
         }
 
         trace!("Handshake done");
@@ -297,10 +299,7 @@ fn create_hello_method_call() -> Message {
         .unwrap()
 }
 
-async fn receive_hello_response(
-    read: &mut Box<dyn ReadHalf>,
-    recv_buffer: &mut Vec<u8>,
-) -> Result<OwnedUniqueName> {
+async fn receive_hello_response(read: &mut Box<dyn ReadHalf>, recv_buffer: &mut Vec<u8>) -> Result<OwnedUniqueName> {
     use crate::message::Type;
 
     let reply = read

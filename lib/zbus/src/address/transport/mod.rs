@@ -2,16 +2,22 @@
 //!
 //! This module provides the trasport information for D-Bus addresses.
 
-#[cfg(windows)]
-use crate::win32::autolaunch_bus_address;
-use crate::{Error, Result};
-#[cfg(not(feature = "tokio"))]
-use async_io::Async;
 use std::collections::HashMap;
+use std::fmt::{
+    Display,
+    Formatter,
+};
 #[cfg(not(feature = "tokio"))]
 use std::net::TcpStream;
 #[cfg(unix)]
-use std::os::unix::net::{SocketAddr, UnixStream};
+use std::os::unix::net::{
+    SocketAddr,
+    UnixStream,
+};
+use std::str::from_utf8_unchecked;
+
+#[cfg(not(feature = "tokio"))]
+use async_io::Async;
 #[cfg(feature = "tokio")]
 use tokio::net::TcpStream;
 #[cfg(feature = "tokio-vsock")]
@@ -21,36 +27,42 @@ use uds_windows::UnixStream;
 #[cfg(all(feature = "vsock", not(feature = "tokio")))]
 use vsock::VsockStream;
 
-use std::{
-    fmt::{Display, Formatter},
-    str::from_utf8_unchecked,
+#[cfg(windows)]
+use crate::win32::autolaunch_bus_address;
+use crate::{
+    Error,
+    Result,
 };
 
 mod unix;
-pub use unix::{Unix, UnixSocket};
+pub use unix::{
+    Unix,
+    UnixSocket,
+};
 mod tcp;
-pub use tcp::{Tcp, TcpTransportFamily};
+pub use tcp::{
+    Tcp,
+    TcpTransportFamily,
+};
 #[cfg(windows)]
 mod autolaunch;
 #[cfg(windows)]
-pub use autolaunch::{Autolaunch, AutolaunchScope};
+pub use autolaunch::{
+    Autolaunch,
+    AutolaunchScope,
+};
 #[cfg(target_os = "macos")]
 mod launchd;
 #[cfg(target_os = "macos")]
 pub use launchd::Launchd;
-#[cfg(any(
-    all(feature = "vsock", not(feature = "tokio")),
-    feature = "tokio-vsock"
-))]
+#[cfg(any(all(feature = "vsock", not(feature = "tokio")), feature = "tokio-vsock"))]
 #[path = "vsock.rs"]
 // Gotta rename to avoid name conflict with the `vsock` crate.
 mod vsock_transport;
 #[cfg(target_os = "linux")]
 use std::os::linux::net::SocketAddrExt;
-#[cfg(any(
-    all(feature = "vsock", not(feature = "tokio")),
-    feature = "tokio-vsock"
-))]
+
+#[cfg(any(all(feature = "vsock", not(feature = "tokio")), feature = "tokio-vsock"))]
 pub use vsock_transport::Vsock;
 
 /// The transport properties of a D-Bus address.
@@ -67,10 +79,7 @@ pub enum Transport {
     /// A launchd D-Bus address.
     #[cfg(target_os = "macos")]
     Launchd(Launchd),
-    #[cfg(any(
-        all(feature = "vsock", not(feature = "tokio")),
-        feature = "tokio-vsock"
-    ))]
+    #[cfg(any(all(feature = "vsock", not(feature = "tokio")), feature = "tokio-vsock"))]
     /// A VSOCK address.
     ///
     /// This variant is only available when either the `vsock` or `tokio-vsock` feature is enabled.
@@ -92,13 +101,11 @@ impl Transport {
                     #[cfg(windows)]
                     UnixSocket::File(path) => path,
                     #[cfg(target_os = "linux")]
-                    UnixSocket::Abstract(name) => {
-                        SocketAddr::from_abstract_name(name.as_encoded_bytes())?
-                    }
+                    UnixSocket::Abstract(name) => SocketAddr::from_abstract_name(name.as_encoded_bytes())?,
                     UnixSocket::Dir(_) | UnixSocket::TmpDir(_) => {
                         // you can't connect to a unix:dir
                         return Err(Error::Unsupported);
-                    }
+                    },
                 };
                 let stream = crate::Task::spawn_blocking(
                     move || -> Result<_> {
@@ -135,12 +142,12 @@ impl Transport {
                         Err(Error::Unsupported)
                     }
                 }
-            }
+            },
             #[cfg(all(feature = "vsock", not(feature = "tokio")))]
             Transport::Vsock(addr) => {
                 let stream = VsockStream::connect_with_cid_port(addr.cid(), addr.port())?;
                 Async::new(stream).map(Stream::Vsock).map_err(Into::into)
-            }
+            },
 
             #[cfg(feature = "tokio-vsock")]
             Transport::Vsock(addr) => VsockStream::connect(addr.cid(), addr.port())
@@ -160,9 +167,8 @@ impl Transport {
                     };
 
                     #[cfg(windows)]
-                    let nonce_file = std::str::from_utf8(&nonce_file).map_err(|_| {
-                        Error::Address("nonce file path is invalid UTF-8".to_owned())
-                    })?;
+                    let nonce_file = std::str::from_utf8(&nonce_file)
+                        .map_err(|_| Error::Address("nonce file path is invalid UTF-8".to_owned()))?;
 
                     #[cfg(not(feature = "tokio"))]
                     {
@@ -170,9 +176,7 @@ impl Transport {
                         let mut nonce = &nonce[..];
 
                         while !nonce.is_empty() {
-                            let len = stream
-                                .write_with(|mut s| std::io::Write::write(&mut s, nonce))
-                                .await?;
+                            let len = stream.write_with(|mut s| std::io::Write::write(&mut s, nonce)).await?;
                             nonce = &nonce[len..];
                         }
                     }
@@ -184,26 +188,24 @@ impl Transport {
                     }
 
                     Ok(Stream::Tcp(stream))
-                }
+                },
                 None => addr.connect().await.map(Stream::Tcp),
             },
 
             #[cfg(windows)]
             Transport::Autolaunch(Autolaunch { scope }) => match scope {
-                Some(_) => Err(Error::Address(
-                    "Autolaunch scopes are currently unsupported".to_owned(),
-                )),
+                Some(_) => Err(Error::Address("Autolaunch scopes are currently unsupported".to_owned())),
                 None => {
                     let addr = autolaunch_bus_address()?;
                     addr.connect().await
-                }
+                },
             },
 
             #[cfg(target_os = "macos")]
             Transport::Launchd(launchd) => {
                 let addr = launchd.bus_address().await?;
                 addr.connect().await
-            }
+            },
         }
     }
 
@@ -213,19 +215,14 @@ impl Transport {
             "unix" => Unix::from_options(options).map(Self::Unix),
             "tcp" => Tcp::from_options(options, false).map(Self::Tcp),
             "nonce-tcp" => Tcp::from_options(options, true).map(Self::Tcp),
-            #[cfg(any(
-                all(feature = "vsock", not(feature = "tokio")),
-                feature = "tokio-vsock"
-            ))]
+            #[cfg(any(all(feature = "vsock", not(feature = "tokio")), feature = "tokio-vsock"))]
             "vsock" => Vsock::from_options(options).map(Self::Vsock),
             #[cfg(windows)]
             "autolaunch" => Autolaunch::from_options(options).map(Self::Autolaunch),
             #[cfg(target_os = "macos")]
             "launchd" => Launchd::from_options(options).map(Self::Launchd),
 
-            _ => Err(Error::Address(format!(
-                "unsupported transport '{transport}'"
-            ))),
+            _ => Err(Error::Address(format!("unsupported transport '{transport}'"))),
         }
     }
 }
@@ -270,13 +267,14 @@ pub(crate) fn decode_percents(value: &str) -> Result<Vec<u8>> {
             decoded.push(c as u8)
         } else if c == '%' {
             decoded.push(
-                decode_hex(iter.next().ok_or_else(|| {
-                    Error::Address("incomplete percent-encoded sequence".to_owned())
-                })?)?
-                    << 4
-                    | decode_hex(iter.next().ok_or_else(|| {
-                        Error::Address("incomplete percent-encoded sequence".to_owned())
-                    })?)?,
+                decode_hex(
+                    iter.next()
+                        .ok_or_else(|| Error::Address("incomplete percent-encoded sequence".to_owned()))?,
+                )? << 4
+                    | decode_hex(
+                        iter.next()
+                            .ok_or_else(|| Error::Address("incomplete percent-encoded sequence".to_owned()))?,
+                    )?,
             );
         } else {
             return Err(Error::Address("Invalid character in address".to_owned()));
@@ -334,10 +332,7 @@ impl Display for Transport {
         match self {
             Self::Tcp(tcp) => write!(f, "{}", tcp)?,
             Self::Unix(unix) => write!(f, "{}", unix)?,
-            #[cfg(any(
-                all(feature = "vsock", not(feature = "tokio")),
-                feature = "tokio-vsock"
-            ))]
+            #[cfg(any(all(feature = "vsock", not(feature = "tokio")), feature = "tokio-vsock"))]
             Self::Vsock(vsock) => write!(f, "{}", vsock)?,
             #[cfg(windows)]
             Self::Autolaunch(autolaunch) => write!(f, "{}", autolaunch)?,

@@ -1,16 +1,38 @@
-use crate::{
-    utils::{impl_str_basic, impl_try_from},
-    Error, Result,
+use std::borrow::{
+    Borrow,
+    Cow,
 };
-use serde::{de, Deserialize, Serialize};
+use std::fmt::{
+    self,
+    Debug,
+    Display,
+    Formatter,
+};
+use std::ops::Deref;
+use std::sync::Arc;
+
+use serde::{
+    de,
+    Deserialize,
+    Serialize,
+};
 use static_assertions::assert_impl_all;
-use std::{
-    borrow::{Borrow, Cow},
-    fmt::{self, Debug, Display, Formatter},
-    ops::Deref,
-    sync::Arc,
+use zvariant::{
+    NoneValue,
+    OwnedValue,
+    Str,
+    Type,
+    Value,
 };
-use zvariant::{NoneValue, OwnedValue, Str, Type, Value};
+
+use crate::utils::{
+    impl_str_basic,
+    impl_try_from,
+};
+use crate::{
+    Error,
+    Result,
+};
 
 /// String that identifies an [interface name][in] on the bus.
 ///
@@ -38,9 +60,7 @@ use zvariant::{NoneValue, OwnedValue, Str, Type, Value};
 /// ```
 ///
 /// [in]: https://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-names-interface
-#[derive(
-    Clone, Debug, Hash, PartialEq, Eq, Serialize, Type, Value, PartialOrd, Ord, OwnedValue,
-)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Type, Value, PartialOrd, Ord, OwnedValue)]
 pub struct InterfaceName<'name>(Str<'name>);
 
 impl_str_basic!(InterfaceName<'_>);
@@ -200,18 +220,14 @@ fn ensure_correct_interface_name(name: &str) -> Result<()> {
                 "each element must not start with a digit",
             )));
         } else if !c.is_ascii_alphanumeric() && c != '_' {
-            return Err(Error::InvalidInterfaceName(format!(
-                "`{c}` character not allowed"
-            )));
+            return Err(Error::InvalidInterfaceName(format!("`{c}` character not allowed")));
         }
 
         prev = Some(c);
     }
 
     if no_dot {
-        return Err(Error::InvalidInterfaceName(String::from(
-            "must contain at least 1 `.`",
-        )));
+        return Err(Error::InvalidInterfaceName(String::from("must contain at least 1 `.`")));
     }
 
     Ok(())
@@ -324,9 +340,7 @@ impl PartialEq<InterfaceName<'_>> for OwnedInterfaceName {
 
 impl Debug for OwnedInterfaceName {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("OwnedInterfaceName")
-            .field(&self.as_str())
-            .finish()
+        f.debug_tuple("OwnedInterfaceName").field(&self.as_str()).finish()
     }
 }
 

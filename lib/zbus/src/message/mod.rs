@@ -1,17 +1,34 @@
 //! D-Bus Message.
-use std::{fmt, num::NonZeroU32, sync::Arc};
+use std::fmt;
+use std::num::NonZeroU32;
+use std::sync::Arc;
 
 use static_assertions::assert_impl_all;
-use zbus_names::{ErrorName, InterfaceName, MemberName};
-use zvariant::{serialized, Endian};
+use zbus_names::{
+    ErrorName,
+    InterfaceName,
+    MemberName,
+};
+use zvariant::{
+    serialized,
+    Endian,
+};
 
-use crate::{utils::padding_for_8_bytes, zvariant::ObjectPath, Error, Result};
+use crate::utils::padding_for_8_bytes;
+use crate::zvariant::ObjectPath;
+use crate::{
+    Error,
+    Result,
+};
 
 mod builder;
 pub use builder::Builder;
 
 mod field;
-pub(crate) use field::{Field, FieldCode};
+pub(crate) use field::{
+    Field,
+    FieldCode,
+};
 
 mod fields;
 pub(crate) use fields::Fields;
@@ -22,7 +39,14 @@ pub use body::Body;
 
 pub(crate) mod header;
 use header::MIN_MESSAGE_SIZE;
-pub use header::{EndianSig, Flags, Header, PrimaryHeader, Type, NATIVE_ENDIAN_SIG};
+pub use header::{
+    EndianSig,
+    Flags,
+    Header,
+    PrimaryHeader,
+    Type,
+    NATIVE_ENDIAN_SIG,
+};
 
 /// A position in the stream of [`Message`] objects received by a single [`zbus::Connection`].
 ///
@@ -82,11 +106,7 @@ impl Message {
     }
 
     /// Create a builder for a message of type [`Type::Signal`].
-    pub fn signal<'b, 'p: 'b, 'i: 'b, 'm: 'b, P, I, M>(
-        path: P,
-        iface: I,
-        signal_name: M,
-    ) -> Result<Builder<'b>>
+    pub fn signal<'b, 'p: 'b, 'i: 'b, 'm: 'b, P, I, M>(path: P, iface: I, signal_name: M) -> Result<Builder<'b>>
     where
         P: TryInto<ObjectPath<'p>>,
         I: TryInto<InterfaceName<'i>>,
@@ -129,10 +149,7 @@ impl Message {
     }
 
     /// Create a message from its full contents.
-    pub(crate) fn from_raw_parts(
-        bytes: serialized::Data<'static, 'static>,
-        recv_seq: u64,
-    ) -> Result<Self> {
+    pub(crate) fn from_raw_parts(bytes: serialized::Data<'static, 'static>, recv_seq: u64) -> Result<Self> {
         let endian = Endian::from(EndianSig::try_from(bytes[0])?);
         if endian != bytes.context().endian() {
             return Err(Error::IncorrectEndian);
@@ -205,10 +222,7 @@ impl Message {
     }
 
     /// The object to send a call to, or the object a signal is emitted from.
-    #[deprecated(
-        since = "4.0.0",
-        note = "Use `Message::header` with `message::Header::path` instead"
-    )]
+    #[deprecated(since = "4.0.0", note = "Use `Message::header` with `message::Header::path` instead")]
     pub fn path(&self) -> Option<ObjectPath<'_>> {
         self.inner.quick_fields.path(self)
     }
@@ -260,17 +274,14 @@ impl Message {
     /// assert!(matches!(fields[2], zvariant::Value::Array(_)));
     ///
     /// let reply_body = Message::method_reply(&message)?.build(&body)?.body();
-    /// let reply_value : (i32, (i32, &str), Vec<String>) = reply_body.deserialize()?;
+    /// let reply_value: (i32, (i32, &str), Vec<String>) = reply_body.deserialize()?;
     ///
     /// assert_eq!(reply_value.0, 7);
     /// assert_eq!(reply_value.2.len(), 1);
     /// # Ok(()) })().unwrap()
     /// ```
     pub fn body(&self) -> Body {
-        Body::new(
-            self.inner.bytes.slice(self.inner.body_offset..),
-            self.clone(),
-        )
+        Body::new(self.inner.bytes.slice(self.inner.body_offset..), self.clone())
     }
 
     /// Get a reference to the underlying byte encoding of the message.
@@ -338,10 +349,10 @@ impl fmt::Display for Message {
                 if let Some(m) = member {
                     write!(f, " {m}")?;
                 }
-            }
+            },
             Type::MethodReturn => {
                 write!(f, "Method return")?;
-            }
+            },
             Type::Error => {
                 write!(f, "Error")?;
                 if let Some(e) = error_name {
@@ -353,13 +364,13 @@ impl fmt::Display for Message {
                 if let Ok(msg) = msg {
                     write!(f, ": {msg}")?;
                 }
-            }
+            },
             Type::Signal => {
                 write!(f, "Signal")?;
                 if let Some(m) = member {
                     write!(f, " {m}")?;
                 }
-            }
+            },
         }
 
         if let Some(s) = sender {
@@ -373,7 +384,11 @@ impl fmt::Display for Message {
 #[cfg(test)]
 mod tests {
     #[cfg(unix)]
-    use std::os::fd::{AsFd, AsRawFd};
+    use std::os::fd::{
+        AsFd,
+        AsRawFd,
+    };
+
     use test_log::test;
     #[cfg(unix)]
     use zvariant::Fd;
@@ -414,10 +429,7 @@ mod tests {
         ));
 
         assert_eq!(m.to_string(), "Method call do from :1.72");
-        let r = Message::method_reply(&m)
-            .unwrap()
-            .build(&("all fine!"))
-            .unwrap();
+        let r = Message::method_reply(&m).unwrap().build(&("all fine!")).unwrap();
         assert_eq!(r.to_string(), "Method return");
         let e = Message::method_error(&m, "org.freedesktop.zbus.Error")
             .unwrap()

@@ -1,8 +1,13 @@
 use std::io;
 
-use async_broadcast::{broadcast, Receiver, Sender};
+use async_broadcast::{
+    broadcast,
+    Receiver,
+    Sender,
+};
 
-use crate::{fdo::ConnectionCredentials, Message};
+use crate::fdo::ConnectionCredentials;
+use crate::Message;
 
 /// An in-process channel-based socket.
 ///
@@ -64,9 +69,10 @@ impl super::ReadHalf for Reader {
         _already_received_bytes: &mut Vec<u8>,
         #[cfg(unix)] _already_received_fds: &mut Vec<std::os::fd::OwnedFd>,
     ) -> crate::Result<Message> {
-        self.0.recv().await.map_err(|e| {
-            crate::Error::InputOutput(io::Error::new(io::ErrorKind::BrokenPipe, e).into())
-        })
+        self.0
+            .recv()
+            .await
+            .map_err(|e| crate::Error::InputOutput(io::Error::new(io::ErrorKind::BrokenPipe, e).into()))
     }
 
     async fn peer_credentials(&mut self) -> io::Result<ConnectionCredentials> {
@@ -86,9 +92,7 @@ impl super::WriteHalf for Writer {
         self.0
             .broadcast_direct(msg.clone())
             .await
-            .map_err(|e| {
-                crate::Error::InputOutput(io::Error::new(io::ErrorKind::BrokenPipe, e).into())
-            })
+            .map_err(|e| crate::Error::InputOutput(io::Error::new(io::ErrorKind::BrokenPipe, e).into()))
             .map(|removed| {
                 // We don't enable `overflow` mode so items should never be removed.
                 assert!(removed.is_none());
@@ -112,7 +116,10 @@ async fn self_credentials() -> io::Result<ConnectionCredentials> {
 
     #[cfg(unix)]
     {
-        use nix::unistd::{Gid, Uid};
+        use nix::unistd::{
+            Gid,
+            Uid,
+        };
 
         creds = creds
             .set_unix_user_id(Uid::effective().into())

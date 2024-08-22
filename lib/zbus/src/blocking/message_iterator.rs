@@ -1,8 +1,13 @@
 use futures_util::StreamExt;
 use static_assertions::assert_impl_all;
 
+use crate::blocking::Connection;
+use crate::message::Message;
+use crate::utils::block_on;
 use crate::{
-    blocking::Connection, message::Message, utils::block_on, MatchRule, OwnedMatchRule, Result,
+    MatchRule,
+    OwnedMatchRule,
+    Result,
 };
 
 /// A blocking wrapper of [`crate::MessageStream`].
@@ -40,7 +45,12 @@ impl MessageIterator {
     /// # Example
     ///
     /// ```no_run
-    /// use zbus::{blocking::{Connection, MessageIterator}, MatchRule, fdo::NameOwnerChanged};
+    /// use zbus::blocking::{
+    ///     Connection,
+    ///     MessageIterator,
+    /// };
+    /// use zbus::fdo::NameOwnerChanged;
+    /// use zbus::MatchRule;
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let conn = Connection::session()?;
@@ -77,7 +87,10 @@ impl MessageIterator {
     ///
     /// let msg = iter.next().unwrap()?;
     /// let signal = NameOwnerChanged::from_message(msg).unwrap();
-    /// assert_eq!(signal.args()?.name(), "org.freedesktop.zbus.MatchRuleIteratorTest42");
+    /// assert_eq!(
+    ///     signal.args()?.name(),
+    ///     "org.freedesktop.zbus.MatchRuleIteratorTest42"
+    /// );
     ///
     /// # Ok(())
     /// # }
@@ -91,21 +104,14 @@ impl MessageIterator {
         R: TryInto<OwnedMatchRule>,
         R::Error: Into<crate::Error>,
     {
-        block_on(crate::MessageStream::for_match_rule(
-            rule,
-            conn.inner(),
-            max_queued,
-        ))
-        .map(Some)
-        .map(|s| Self { azync: s })
+        block_on(crate::MessageStream::for_match_rule(rule, conn.inner(), max_queued))
+            .map(Some)
+            .map(|s| Self { azync: s })
     }
 
     /// The associated match rule, if any.
     pub fn match_rule(&self) -> Option<MatchRule<'_>> {
-        self.azync
-            .as_ref()
-            .expect("Inner stream is `None`")
-            .match_rule()
+        self.azync.as_ref().expect("Inner stream is `None`").match_rule()
     }
 }
 

@@ -2,31 +2,59 @@
 use std::collections::HashMap;
 #[cfg(all(unix, not(feature = "tokio"), feature = "p2p"))]
 use std::os::unix::net::UnixStream;
-#[cfg(all(unix, feature = "tokio", feature = "p2p"))]
-use tokio::net::UnixStream;
 
 use event_listener::Event;
-use futures_util::{StreamExt, TryStreamExt};
+use futures_util::{
+    StreamExt,
+    TryStreamExt,
+};
 use ntest::timeout;
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 use test_log::test;
-use tokio::sync::mpsc::{channel, Sender};
-use tracing::{debug, instrument};
+#[cfg(all(unix, feature = "tokio", feature = "p2p"))]
+use tokio::net::UnixStream;
+use tokio::sync::mpsc::{
+    channel,
+    Sender,
+};
+use tracing::{
+    debug,
+    instrument,
+};
+use zbus::fdo::{
+    ObjectManager,
+    ObjectManagerProxy,
+};
+use zbus::message::Header;
+use zbus::object_server::{
+    InterfaceRef,
+    ResponseDispatchNotifier,
+    SignalContext,
+};
+use zbus::proxy::CacheProperties;
 use zbus::{
     block_on,
-    fdo::{ObjectManager, ObjectManagerProxy},
+    connection,
+    interface,
     message,
-    object_server::ResponseDispatchNotifier,
-    DBusError, Error, Message, MessageStream,
+    Connection,
+    DBusError,
+    Error,
+    Message,
+    MessageStream,
+    ObjectServer,
 };
-use zvariant::{DeserializeDict, Optional, OwnedValue, SerializeDict, Str, Type, Value};
-
-use zbus::{
-    connection, interface,
-    message::Header,
-    object_server::{InterfaceRef, SignalContext},
-    proxy::CacheProperties,
-    Connection, ObjectServer,
+use zvariant::{
+    DeserializeDict,
+    Optional,
+    OwnedValue,
+    SerializeDict,
+    Str,
+    Type,
+    Value,
 };
 
 #[derive(Debug, Deserialize, Serialize, Type)]
@@ -137,11 +165,7 @@ impl MyIface {
     }
 
     #[instrument]
-    fn test_single_struct_arg(
-        &self,
-        arg: ArgStructTest,
-        #[zbus(header)] header: Header<'_>,
-    ) -> zbus::fdo::Result<()> {
+    fn test_single_struct_arg(&self, arg: ArgStructTest, #[zbus(header)] header: Header<'_>) -> zbus::fdo::Result<()> {
         debug!("`TestSingleStructArg` called.");
         assert_eq!(header.signature().unwrap(), "(is)");
         assert_eq!(arg.foo, 1);
@@ -205,24 +229,14 @@ impl MyIface {
     #[instrument]
     async fn create_obj(&self, key: &str) {
         debug!("`CreateObj` called.");
-        self.next_tx
-            .send(NextAction::CreateObj(key.into()))
-            .await
-            .unwrap();
+        self.next_tx.send(NextAction::CreateObj(key.into())).await.unwrap();
     }
 
     #[instrument]
-    async fn create_obj_inside(
-        &self,
-        #[zbus(object_server)] object_server: &ObjectServer,
-        key: String,
-    ) {
+    async fn create_obj_inside(&self, #[zbus(object_server)] object_server: &ObjectServer, key: String) {
         debug!("`CreateObjInside` called.");
         object_server
-            .at(
-                format!("/zbus/test/{key}"),
-                MyIface::new(self.next_tx.clone()),
-            )
+            .at(format!("/zbus/test/{key}"), MyIface::new(self.next_tx.clone()))
             .await
             .unwrap();
     }
@@ -230,10 +244,7 @@ impl MyIface {
     #[instrument]
     async fn destroy_obj(&self, key: &str) {
         debug!("`DestroyObj` called.");
-        self.next_tx
-            .send(NextAction::DestroyObj(key.into()))
-            .await
-            .unwrap();
+        self.next_tx.send(NextAction::DestroyObj(key.into())).await.unwrap();
     }
 
     #[cfg(feature = "option-as-array")]
@@ -271,9 +282,7 @@ impl MyIface {
     #[instrument]
     #[zbus(property)]
     async fn fail_property(&self) -> zbus::fdo::Result<u32> {
-        Err(zbus::fdo::Error::UnknownProperty(
-            "FailProperty".to_string(),
-        ))
+        Err(zbus::fdo::Error::UnknownProperty("FailProperty".to_string()))
     }
 
     #[instrument]
@@ -306,10 +315,7 @@ impl MyIface {
     fn address_data2(&self) -> HashMap<String, OwnedValue> {
         debug!("`AddressData2` getter called.");
         let mut map = HashMap::new();
-        map.insert(
-            "address".into(),
-            Value::from("127.0.0.1").try_into().unwrap(),
-        );
+        map.insert("address".into(), Value::from("127.0.0.1").try_into().unwrap());
         map.insert("prefix".into(), 1234u32.into());
 
         map
@@ -330,9 +336,7 @@ impl MyIface {
     #[instrument]
     #[zbus(property)]
     fn ref_prop(&self) -> RefType<'_> {
-        RefType {
-            field1: "Hello".into(),
-        }
+        RefType { field1: "Hello".into() }
     }
 
     #[instrument]
@@ -346,10 +350,7 @@ impl MyIface {
     fn test_no_reply(&self, #[zbus(header)] header: Header<'_>) {
         debug!("`TestNoReply` called");
         assert_eq!(header.message_type(), zbus::message::Type::MethodCall);
-        assert!(header
-            .primary()
-            .flags()
-            .contains(zbus::message::Flags::NoReplyExpected));
+        assert!(header.primary().flags().contains(zbus::message::Flags::NoReplyExpected));
     }
 
     #[instrument]
@@ -357,10 +358,7 @@ impl MyIface {
     fn test_no_autostart(&self, #[zbus(header)] header: Header<'_>) {
         debug!("`TestNoAutostart` called");
         assert_eq!(header.message_type(), zbus::message::Type::MethodCall);
-        assert!(header
-            .primary()
-            .flags()
-            .contains(zbus::message::Flags::NoAutoStart));
+        assert!(header.primary().flags().contains(zbus::message::Flags::NoAutoStart));
     }
 
     #[instrument]
@@ -368,10 +366,12 @@ impl MyIface {
     fn test_interactive_auth(&self, #[zbus(header)] header: Header<'_>) {
         debug!("`TestInteractiveAuth` called");
         assert_eq!(header.message_type(), zbus::message::Type::MethodCall);
-        assert!(header
-            .primary()
-            .flags()
-            .contains(zbus::message::Flags::AllowInteractiveAuth));
+        assert!(
+            header
+                .primary()
+                .flags()
+                .contains(zbus::message::Flags::AllowInteractiveAuth)
+        );
     }
 
     #[zbus(signal)]
@@ -459,13 +459,10 @@ fn check_hash_map(map: HashMap<String, String>) {
 }
 
 fn check_ipv4_address(address: IP4Adress) {
-    assert_eq!(
-        address,
-        IP4Adress {
-            address: "127.0.0.1".to_string(),
-            prefix: 1234,
-        }
-    );
+    assert_eq!(address, IP4Adress {
+        address: "127.0.0.1".to_string(),
+        prefix: 1234,
+    });
 }
 
 fn check_ipv4_address_hashmap(address: HashMap<String, OwnedValue>) {
@@ -512,8 +509,7 @@ async fn my_iface_test(conn: Connection, event: Event) -> zbus::Result<u32> {
     debug!("Created: {:?}", root_introspect_proxy);
 
     let root_xml = root_introspect_proxy.introspect().await?;
-    let root_node = zbus_xml::Node::from_reader(root_xml.as_bytes())
-        .map_err(|e| Error::Failure(e.to_string()))?;
+    let root_node = zbus_xml::Node::from_reader(root_xml.as_bytes()).map_err(|e| Error::Failure(e.to_string()))?;
     let mut node = &root_node;
     for name in ["org", "freedesktop", "MyService"] {
         node = node
@@ -522,10 +518,7 @@ async fn my_iface_test(conn: Connection, event: Event) -> zbus::Result<u32> {
             .find(|&n| n.name().is_some_and(|n| n == name))
             .expect("Child node not exist");
     }
-    assert!(node
-        .interfaces()
-        .iter()
-        .any(|i| i.name() == "org.freedesktop.MyIface"));
+    assert!(node.interfaces().iter().any(|i| i.name() == "org.freedesktop.MyIface"));
 
     let proxy = MyIfaceProxy::builder(&conn)
         .destination("org.freedesktop.MyService")?
@@ -539,11 +532,7 @@ async fn my_iface_test(conn: Connection, event: Event) -> zbus::Result<u32> {
     // First let's call a non-existent method. It should immediately fail.
     // There was a regression where object server would just not reply in this case:
     // https://github.com/dbus2/zbus/issues/905
-    assert!(proxy
-        .inner()
-        .call::<_, _, ()>("NonExistantMethod", &())
-        .await
-        .is_err());
+    assert!(proxy.inner().call::<_, _, ()>("NonExistantMethod", &()).await.is_err());
 
     let props_proxy = zbus::fdo::PropertiesProxy::builder(&conn)
         .destination("org.freedesktop.MyService")?
@@ -559,11 +548,8 @@ async fn my_iface_test(conn: Connection, event: Event) -> zbus::Result<u32> {
 
     match props_changed_stream.next().await {
         Some(changed) => {
-            assert_eq!(
-                *changed.args()?.changed_properties().keys().next().unwrap(),
-                "Count"
-            );
-        }
+            assert_eq!(*changed.args()?.changed_properties().keys().next().unwrap(), "Count");
+        },
         None => panic!(""),
     };
     drop(props_changed_stream);
@@ -605,22 +591,16 @@ async fn my_iface_test(conn: Connection, event: Event) -> zbus::Result<u32> {
     let err = proxy.fail_property().await;
     assert_eq!(
         err.unwrap_err(),
-        zbus::Error::FDO(Box::new(zbus::fdo::Error::UnknownProperty(
-            "FailProperty".into()
-        )))
+        zbus::Error::FDO(Box::new(zbus::fdo::Error::UnknownProperty("FailProperty".into())))
     );
 
     assert_eq!(proxy.optional_property().await?, Some(42).into());
 
     let xml = proxy.inner().introspect().await?;
     debug!("Introspection: {}", xml);
-    let node =
-        zbus_xml::Node::from_reader(xml.as_bytes()).map_err(|e| Error::Failure(e.to_string()))?;
+    let node = zbus_xml::Node::from_reader(xml.as_bytes()).map_err(|e| Error::Failure(e.to_string()))?;
     let ifaces = node.interfaces();
-    let iface = ifaces
-        .iter()
-        .find(|i| i.name() == "org.freedesktop.MyIface")
-        .unwrap();
+    let iface = ifaces.iter().find(|i| i.name() == "org.freedesktop.MyIface").unwrap();
     let methods = iface.methods();
     for method in methods {
         if method.name() != "TestSingleStructRet" && method.name() != "TestMultiRet" {
@@ -675,10 +655,7 @@ async fn my_iface_test(conn: Connection, event: Event) -> zbus::Result<u32> {
     #[cfg(feature = "option-as-array")]
     {
         assert!(proxy.optional_args(None).await.unwrap().is_none());
-        assert_eq!(
-            proxy.optional_args(Some("🚌")).await.unwrap().unwrap(),
-            "Hello 🚌",
-        );
+        assert_eq!(proxy.optional_args(Some("🚌")).await.unwrap().unwrap(), "Hello 🚌",);
     }
 
     assert_eq!(ifaces_added.args()?.object_path(), "/zbus/test/MyObj");
@@ -733,10 +710,7 @@ async fn my_iface_test(conn: Connection, event: Event) -> zbus::Result<u32> {
 
     // Make sure methods modifying the ObjectServer can be called without
     // deadlocks.
-    proxy
-        .inner()
-        .call_method("CreateObjInside", &("CreatedInside"))
-        .await?;
+    proxy.inner().call_method("CreateObjInside", &("CreatedInside")).await?;
     let created_inside_proxy = MyIfaceProxy::builder(&conn)
         .destination("org.freedesktop.MyService")?
         .path("/zbus/test/CreatedInside")?
@@ -750,9 +724,7 @@ async fn my_iface_test(conn: Connection, event: Event) -> zbus::Result<u32> {
     let mut props_changed = props_proxy.receive_properties_changed().await?;
     let expected_property_value = 4;
 
-    proxy
-        .set_emits_changed_default(expected_property_value)
-        .await?;
+    proxy.set_emits_changed_default(expected_property_value).await?;
     let changed = props_changed.next().await.unwrap();
     let expected_property_key = "EmitsChangedDefault";
     let args = changed.args()?;
@@ -768,9 +740,7 @@ async fn my_iface_test(conn: Connection, event: Event) -> zbus::Result<u32> {
     );
     assert!(args.invalidated_properties().is_empty());
 
-    proxy
-        .set_emits_changed_true(expected_property_value)
-        .await?;
+    proxy.set_emits_changed_true(expected_property_value).await?;
     let changed = props_changed.next().await.unwrap();
     let expected_property_key = "EmitsChangedTrue";
     let args = changed.args()?;
@@ -786,51 +756,36 @@ async fn my_iface_test(conn: Connection, event: Event) -> zbus::Result<u32> {
     );
     assert!(args.invalidated_properties().is_empty());
 
-    proxy
-        .set_emits_changed_invalidates(expected_property_value)
-        .await?;
+    proxy.set_emits_changed_invalidates(expected_property_value).await?;
     let changed = props_changed.next().await.unwrap();
     let expected_property_key = "EmitsChangedInvalidates";
     let args = changed.args()?;
-    assert_eq!(
-        args.invalidated_properties(),
-        &vec![expected_property_key.to_string()]
-    );
+    assert_eq!(args.invalidated_properties(), &vec![expected_property_key.to_string()]);
     assert!(args.changed_properties().is_empty());
 
     // First set a property for which we don't expect a signal
     // then set a property for which we do (and we checked above
     // that we receive it. The next item in the iter should correspond
     // to the second property we set.
-    proxy
-        .set_emits_changed_const(expected_property_value)
-        .await?;
-    proxy
-        .set_emits_changed_true(expected_property_value)
-        .await?;
+    proxy.set_emits_changed_const(expected_property_value).await?;
+    proxy.set_emits_changed_true(expected_property_value).await?;
     let changed = props_changed.next().await.unwrap();
     let unexpected_property_key = "EmitsChangedConst";
     let args = changed.args()?;
-    assert_ne!(
-        args.invalidated_properties(),
-        &vec![unexpected_property_key.to_string()]
-    );
+    assert_ne!(args.invalidated_properties(), &vec![
+        unexpected_property_key.to_string()
+    ]);
     assert!(!args.changed_properties().is_empty());
     assert!(args.invalidated_properties().is_empty());
 
-    proxy
-        .set_emits_changed_false(expected_property_value)
-        .await?;
-    proxy
-        .set_emits_changed_true(expected_property_value)
-        .await?;
+    proxy.set_emits_changed_false(expected_property_value).await?;
+    proxy.set_emits_changed_true(expected_property_value).await?;
     let changed = props_changed.next().await.unwrap();
     let unexpected_property_key = "EmitsChangedFalse";
     let args = changed.args()?;
-    assert_ne!(
-        args.invalidated_properties(),
-        &vec![unexpected_property_key.to_string()]
-    );
+    assert_ne!(args.invalidated_properties(), &vec![
+        unexpected_property_key.to_string()
+    ]);
     assert!(!args.changed_properties().is_empty());
     assert!(args.invalidated_properties().is_empty());
 
@@ -881,10 +836,7 @@ async fn iface_and_proxy_(#[allow(unused)] p2p: bool) {
             let (p0, p1) = UnixStream::pair().unwrap();
 
             (
-                connection::Builder::unix_stream(p0)
-                    .server(guid)
-                    .unwrap()
-                    .p2p(),
+                connection::Builder::unix_stream(p0).server(guid).unwrap().p2p(),
                 connection::Builder::unix_stream(p1).p2p(),
             )
         }
@@ -899,10 +851,7 @@ async fn iface_and_proxy_(#[allow(unused)] p2p: bool) {
                 let p0 = listener.incoming().next().unwrap().unwrap();
 
                 (
-                    connection::Builder::tcp_stream(p0)
-                        .server(guid)
-                        .unwrap()
-                        .p2p(),
+                    connection::Builder::tcp_stream(p0).server(guid).unwrap().p2p(),
                     connection::Builder::tcp_stream(p1).p2p(),
                 )
             }
@@ -915,10 +864,7 @@ async fn iface_and_proxy_(#[allow(unused)] p2p: bool) {
                 let p0 = listener.accept().await.unwrap().0;
 
                 (
-                    connection::Builder::tcp_stream(p0)
-                        .server(guid)
-                        .unwrap()
-                        .p2p(),
+                    connection::Builder::tcp_stream(p0).server(guid).unwrap().p2p(),
                     connection::Builder::tcp_stream(p1).p2p(),
                 )
             }
@@ -929,14 +875,8 @@ async fn iface_and_proxy_(#[allow(unused)] p2p: bool) {
     #[cfg(not(feature = "p2p"))]
     let (service_conn_builder, client_conn_builder) = session_conns_build();
 
-    debug!(
-        "Client connection builder created: {:?}",
-        client_conn_builder
-    );
-    debug!(
-        "Service connection builder created: {:?}",
-        service_conn_builder
-    );
+    debug!("Client connection builder created: {:?}", client_conn_builder);
+    debug!("Service connection builder created: {:?}", service_conn_builder);
     let (next_tx, mut next_rx) = channel(64);
     let iface = MyIface::new(next_tx.clone());
     let service_conn_builder = service_conn_builder
@@ -947,8 +887,7 @@ async fn iface_and_proxy_(#[allow(unused)] p2p: bool) {
     debug!("ObjectServer set-up.");
 
     let (service_conn, client_conn) =
-        futures_util::try_join!(service_conn_builder.build(), client_conn_builder.build(),)
-            .unwrap();
+        futures_util::try_join!(service_conn_builder.build(), client_conn_builder.build(),).unwrap();
     debug!("Client connection created: {:?}", client_conn);
     debug!("Service connection created: {:?}", service_conn);
 
@@ -966,18 +905,11 @@ async fn iface_and_proxy_(#[allow(unused)] p2p: bool) {
         .interface("/org/freedesktop/MyService")
         .await
         .unwrap();
-    iface
-        .get()
-        .await
-        .count_changed(iface.signal_context())
-        .await
-        .unwrap();
+    iface.get().await.count_changed(iface.signal_context()).await.unwrap();
     debug!("`PropertiesChanged` emitted for `Count` property.");
 
     loop {
-        MyIface::alert_count(iface.signal_context(), 51)
-            .await
-            .unwrap();
+        MyIface::alert_count(iface.signal_context(), 51).await.unwrap();
         debug!("`AlertCount` signal emitted.");
 
         match next_rx.recv().await.unwrap() {
@@ -990,7 +922,7 @@ async fn iface_and_proxy_(#[allow(unused)] p2p: bool) {
                     .await
                     .unwrap();
                 debug!("Object `{path}` added.");
-            }
+            },
             NextAction::DestroyObj(key) => {
                 let path = format!("/zbus/test/{key}");
                 service_conn
@@ -999,7 +931,7 @@ async fn iface_and_proxy_(#[allow(unused)] p2p: bool) {
                     .await
                     .unwrap();
                 debug!("Object `{path}` removed.");
-            }
+            },
         }
     }
     debug!("Server done.");
@@ -1018,22 +950,15 @@ async fn iface_and_proxy_(#[allow(unused)] p2p: bool) {
     }
 
     // Release primary name explicitly and let others be released implicitly.
-    assert_eq!(
-        service_conn.release_name("org.freedesktop.MyService").await,
-        Ok(true)
-    );
+    assert_eq!(service_conn.release_name("org.freedesktop.MyService").await, Ok(true));
     debug!("Bus name `org.freedesktop.MyService` released.");
     assert_eq!(
-        service_conn
-            .release_name("org.freedesktop.MyService.foo")
-            .await,
+        service_conn.release_name("org.freedesktop.MyService.foo").await,
         Ok(true)
     );
     debug!("Bus name `org.freedesktop.MyService.foo` released.");
     assert_eq!(
-        service_conn
-            .release_name("org.freedesktop.MyService.bar")
-            .await,
+        service_conn.release_name("org.freedesktop.MyService.bar").await,
         Ok(true)
     );
     debug!("Bus name `org.freedesktop.MyService.bar` released.");

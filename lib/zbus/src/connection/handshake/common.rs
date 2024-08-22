@@ -1,8 +1,19 @@
 use std::collections::VecDeque;
-use tracing::{instrument, trace};
 
-use super::{AuthMechanism, BoxedSplit, Command};
-use crate::{Error, Result};
+use tracing::{
+    instrument,
+    trace,
+};
+
+use super::{
+    AuthMechanism,
+    BoxedSplit,
+    Command,
+};
+use crate::{
+    Error,
+    Result,
+};
 
 // Common code for the client and server side of the handshake.
 #[derive(Debug)]
@@ -66,27 +77,19 @@ impl Common {
     }
 
     #[instrument(skip(self))]
-    pub async fn write_commands(
-        &mut self,
-        commands: &[Command],
-        extra_bytes: Option<&[u8]>,
-    ) -> Result<()> {
-        let mut send_buffer =
-            commands
-                .iter()
-                .map(Vec::<u8>::from)
-                .fold(vec![], |mut acc, mut c| {
-                    if self.first_command {
-                        // The first command is sent by the client so we can assume it's the client.
-                        self.first_command = false;
-                        // leading 0 is sent separately for `freebsd` and `dragonfly`.
-                        #[cfg(not(any(target_os = "freebsd", target_os = "dragonfly")))]
-                        acc.push(b'\0');
-                    }
-                    acc.append(&mut c);
-                    acc.extend_from_slice(b"\r\n");
-                    acc
-                });
+    pub async fn write_commands(&mut self, commands: &[Command], extra_bytes: Option<&[u8]>) -> Result<()> {
+        let mut send_buffer = commands.iter().map(Vec::<u8>::from).fold(vec![], |mut acc, mut c| {
+            if self.first_command {
+                // The first command is sent by the client so we can assume it's the client.
+                self.first_command = false;
+                // leading 0 is sent separately for `freebsd` and `dragonfly`.
+                #[cfg(not(any(target_os = "freebsd", target_os = "dragonfly")))]
+                acc.push(b'\0');
+            }
+            acc.append(&mut c);
+            acc.extend_from_slice(b"\r\n");
+            acc
+        });
         if let Some(extra_bytes) = extra_bytes {
             send_buffer.extend_from_slice(extra_bytes);
         }
@@ -108,9 +111,7 @@ impl Common {
 
     #[instrument(skip(self))]
     pub async fn read_command(&mut self) -> Result<Command> {
-        self.read_commands(1)
-            .await
-            .map(|cmds| cmds.into_iter().next().unwrap())
+        self.read_commands(1).await.map(|cmds| cmds.into_iter().next().unwrap())
     }
 
     #[instrument(skip(self))]
@@ -129,9 +130,7 @@ impl Common {
                     // The first command is sent by the client so we can assume it's the server.
                     self.first_command = false;
                     if self.recv_buffer[0] != b'\0' {
-                        return Err(Error::Handshake(
-                            "First client byte is not NUL!".to_string(),
-                        ));
+                        return Err(Error::Handshake("First client byte is not NUL!".to_string()));
                     }
 
                     start_index = 1;

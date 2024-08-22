@@ -1,16 +1,38 @@
-use crate::{
-    utils::{impl_str_basic, impl_try_from},
-    Error, Result,
+use std::borrow::{
+    Borrow,
+    Cow,
 };
-use serde::{de, Deserialize, Serialize};
+use std::fmt::{
+    self,
+    Debug,
+    Display,
+    Formatter,
+};
+use std::ops::Deref;
+use std::sync::Arc;
+
+use serde::{
+    de,
+    Deserialize,
+    Serialize,
+};
 use static_assertions::assert_impl_all;
-use std::{
-    borrow::{Borrow, Cow},
-    fmt::{self, Debug, Display, Formatter},
-    ops::Deref,
-    sync::Arc,
+use zvariant::{
+    NoneValue,
+    OwnedValue,
+    Str,
+    Type,
+    Value,
 };
-use zvariant::{NoneValue, OwnedValue, Str, Type, Value};
+
+use crate::utils::{
+    impl_str_basic,
+    impl_try_from,
+};
+use crate::{
+    Error,
+    Result,
+};
 
 /// String that identifies a [unique bus name][ubn].
 ///
@@ -35,9 +57,7 @@ use zvariant::{NoneValue, OwnedValue, Str, Type, Value};
 /// ```
 ///
 /// [ubn]: https://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-names-bus
-#[derive(
-    Clone, Debug, Hash, PartialEq, Eq, Serialize, Type, Value, PartialOrd, Ord, OwnedValue,
-)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Type, Value, PartialOrd, Ord, OwnedValue)]
 pub struct UniqueName<'name>(Str<'name>);
 
 assert_impl_all!(UniqueName<'_>: Send, Sync, Unpin);
@@ -175,37 +195,29 @@ fn ensure_correct_unique_name(name: &str) -> Result<()> {
         first @ ':' => first,
         _ => {
             println!("WARNING: Invalid unique name detected: {}", name);
-            return Err(Error::InvalidUniqueName(format!(
-                "must start with a `:` | {name}",
-            )));
-        }
+            return Err(Error::InvalidUniqueName(format!("must start with a `:` | {name}",)));
+        },
     };
 
     let mut no_dot = true;
     for c in chars {
         if c == '.' {
             if prev == '.' {
-                return Err(Error::InvalidUniqueName(String::from(
-                    "must not contain a double `.`",
-                )));
+                return Err(Error::InvalidUniqueName(String::from("must not contain a double `.`")));
             }
 
             if no_dot {
                 no_dot = false;
             }
         } else if !c.is_ascii_alphanumeric() && c != '_' && c != '-' {
-            return Err(Error::InvalidUniqueName(format!(
-                "`{c}` character not allowed"
-            )));
+            return Err(Error::InvalidUniqueName(format!("`{c}` character not allowed")));
         }
 
         prev = c;
     }
 
     if no_dot {
-        return Err(Error::InvalidUniqueName(String::from(
-            "must contain at least 1 `.`",
-        )));
+        return Err(Error::InvalidUniqueName(String::from("must contain at least 1 `.`")));
     }
 
     Ok(())
@@ -339,9 +351,7 @@ impl NoneValue for OwnedUniqueName {
 
 impl Debug for OwnedUniqueName {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("OwnedUniqueName")
-            .field(&self.as_str())
-            .finish()
+        f.debug_tuple("OwnedUniqueName").field(&self.as_str()).finish()
     }
 }
 

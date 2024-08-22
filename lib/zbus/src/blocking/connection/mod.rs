@@ -1,18 +1,33 @@
 //! Blocking connection API.
 
+use std::io;
+use std::ops::Deref;
+
 use enumflags2::BitFlags;
 use event_listener::EventListener;
 use static_assertions::assert_impl_all;
-use std::{io, ops::Deref};
-use zbus_names::{BusName, ErrorName, InterfaceName, MemberName, OwnedUniqueName, WellKnownName};
+use zbus_names::{
+    BusName,
+    ErrorName,
+    InterfaceName,
+    MemberName,
+    OwnedUniqueName,
+    WellKnownName,
+};
 use zvariant::ObjectPath;
 
+use crate::blocking::ObjectServer;
+use crate::fdo::{
+    ConnectionCredentials,
+    RequestNameFlags,
+    RequestNameReply,
+};
+use crate::message::Message;
+use crate::utils::block_on;
 use crate::{
-    blocking::ObjectServer,
-    fdo::{ConnectionCredentials, RequestNameFlags, RequestNameReply},
-    message::Message,
-    utils::block_on,
-    DBusError, Error, Result,
+    DBusError,
+    Error,
+    Result,
 };
 
 mod builder;
@@ -90,10 +105,7 @@ impl Connection {
         M::Error: Into<Error>,
         B: serde::ser::Serialize + zvariant::DynamicType,
     {
-        block_on(
-            self.inner
-                .call_method(destination, path, iface, method_name, body),
-        )
+        block_on(self.inner.call_method(destination, path, iface, method_name, body))
     }
 
     /// Emit a signal.
@@ -118,10 +130,7 @@ impl Connection {
         M::Error: Into<Error>,
         B: serde::ser::Serialize + zvariant::DynamicType,
     {
-        block_on(
-            self.inner
-                .emit_signal(destination, path, iface, signal_name, body),
-        )
+        block_on(self.inner.emit_signal(destination, path, iface, signal_name, body))
     }
 
     /// Reply to a message.
@@ -156,11 +165,7 @@ impl Connection {
     /// using one of the standard interface reply types.
     ///
     /// Returns the message serial number.
-    pub fn reply_dbus_error(
-        &self,
-        call: &zbus::message::Header<'_>,
-        err: impl DBusError,
-    ) -> Result<()> {
+    pub fn reply_dbus_error(&self, call: &zbus::message::Header<'_>, err: impl DBusError) -> Result<()> {
         block_on(self.inner.reply_dbus_error(call, err))
     }
 
@@ -276,21 +281,21 @@ impl From<crate::Connection> for Connection {
 #[cfg(feature = "p2p")]
 #[cfg(all(test, unix))]
 mod tests {
-    use event_listener::Listener;
-    use ntest::timeout;
     #[cfg(all(unix, not(feature = "tokio")))]
     use std::os::unix::net::UnixStream;
     use std::thread;
+
+    use event_listener::Listener;
+    use ntest::timeout;
     use test_log::test;
     #[cfg(all(unix, feature = "tokio"))]
     use tokio::net::UnixStream;
     #[cfg(all(windows, not(feature = "tokio")))]
     use uds_windows::UnixStream;
 
-    use crate::{
-        blocking::{connection::Builder, MessageIterator},
-        Guid,
-    };
+    use crate::blocking::connection::Builder;
+    use crate::blocking::MessageIterator;
+    use crate::Guid;
 
     #[test]
     #[timeout(15000)]
@@ -302,12 +307,7 @@ mod tests {
 
         let (tx, rx) = std::sync::mpsc::channel();
         let server_thread = thread::spawn(move || {
-            let c = Builder::unix_stream(p0)
-                .server(guid)
-                .unwrap()
-                .p2p()
-                .build()
-                .unwrap();
+            let c = Builder::unix_stream(p0).server(guid).unwrap().p2p().build().unwrap();
             rx.recv().unwrap();
             let reply = c
                 .call_method(None::<()>, "/", Some("org.zbus.p2p"), "Test", &())
@@ -337,10 +337,7 @@ mod tests {
         // eventually, nothing happens and it will timeout
         loop {
             let listener = c.monitor_activity();
-            if listener
-                .wait_timeout(std::time::Duration::from_millis(10))
-                .is_none()
-            {
+            if listener.wait_timeout(std::time::Duration::from_millis(10)).is_none() {
                 break;
             }
         }

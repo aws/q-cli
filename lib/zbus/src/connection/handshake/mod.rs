@@ -6,27 +6,35 @@ mod cookies;
 #[cfg(feature = "p2p")]
 mod server;
 
+use std::collections::VecDeque;
+use std::fmt::Debug;
+
 use async_trait::async_trait;
-#[cfg(unix)]
-use nix::unistd::Uid;
-use std::{collections::VecDeque, fmt::Debug};
-use zbus_names::OwnedUniqueName;
-use zvariant::Str;
-
-#[cfg(windows)]
-use crate::win32;
-use crate::{Error, OwnedGuid, Result};
-
-use super::socket::{BoxedSplit, ReadHalf, WriteHalf};
-
 pub use auth_mechanism::AuthMechanism;
 use client::Client;
 use command::Command;
 use common::Common;
 use cookies::Cookie;
 pub(crate) use cookies::CookieContext;
+#[cfg(unix)]
+use nix::unistd::Uid;
 #[cfg(feature = "p2p")]
 use server::Server;
+use zbus_names::OwnedUniqueName;
+use zvariant::Str;
+
+use super::socket::{
+    BoxedSplit,
+    ReadHalf,
+    WriteHalf,
+};
+#[cfg(windows)]
+use crate::win32;
+use crate::{
+    Error,
+    OwnedGuid,
+    Result,
+};
 
 /// The result of a finalized handshake
 ///
@@ -58,9 +66,7 @@ impl Authenticated {
         mechanisms: Option<VecDeque<AuthMechanism>>,
         bus: bool,
     ) -> Result<Self> {
-        Client::new(socket, mechanisms, server_guid, bus)
-            .perform()
-            .await
+        Client::new(socket, mechanisms, server_guid, bus).perform().await
     }
 
     /// Create a server-side `Authenticated` for the given `socket`.
@@ -104,8 +110,13 @@ pub trait Handshake {
 }
 
 fn random_ascii(len: usize) -> String {
-    use rand::{distributions::Alphanumeric, thread_rng, Rng};
     use std::iter;
+
+    use rand::distributions::Alphanumeric;
+    use rand::{
+        thread_rng,
+        Rng,
+    };
 
     let mut rng = thread_rng();
     iter::repeat(())
@@ -135,22 +146,31 @@ fn sasl_auth_id() -> Result<String> {
 #[cfg(unix)]
 #[cfg(test)]
 mod tests {
-    use futures_util::future::join;
-    #[cfg(not(feature = "tokio"))]
-    use futures_util::io::{AsyncWrite, AsyncWriteExt};
-    use ntest::timeout;
     #[cfg(not(feature = "tokio"))]
     use std::os::unix::net::UnixStream;
+
+    use futures_util::future::join;
+    #[cfg(not(feature = "tokio"))]
+    use futures_util::io::{
+        AsyncWrite,
+        AsyncWriteExt,
+    };
+    use ntest::timeout;
     use test_log::test;
     #[cfg(feature = "tokio")]
     use tokio::{
-        io::{AsyncWrite, AsyncWriteExt},
+        io::{
+            AsyncWrite,
+            AsyncWriteExt,
+        },
         net::UnixStream,
     };
 
     use super::*;
-
-    use crate::{Guid, Socket};
+    use crate::{
+        Guid,
+        Socket,
+    };
 
     fn create_async_socket_pair() -> (impl AsyncWrite + Socket, impl AsyncWrite + Socket) {
         // Tokio needs us to call the sync function from async context. :shrug:
@@ -162,10 +182,7 @@ mod tests {
             p0.set_nonblocking(true).unwrap();
             p1.set_nonblocking(true).unwrap();
 
-            (
-                async_io::Async::new(p0).unwrap(),
-                async_io::Async::new(p1).unwrap(),
-            )
+            (async_io::Async::new(p0).unwrap(), async_io::Async::new(p1).unwrap())
         };
 
         (p0, p1)
@@ -190,10 +207,10 @@ mod tests {
         .unwrap();
 
         // proceed to the handshakes
-        let (client, server) = crate::utils::block_on(join(
-            async move { client.perform().await.unwrap() },
-            async move { server.perform().await.unwrap() },
-        ));
+        let (client, server) =
+            crate::utils::block_on(join(async move { client.perform().await.unwrap() }, async move {
+                server.perform().await.unwrap()
+            }));
 
         assert_eq!(client.server_guid, server.server_guid);
         assert_eq!(client.cap_unix_fd, server.cap_unix_fd);
@@ -310,8 +327,7 @@ mod tests {
         )
         .unwrap();
 
-        crate::utils::block_on(p0.write_all(b"\0AUTH ANONYMOUS\r\nDATA abcd\r\nBEGIN\r\n"))
-            .unwrap();
+        crate::utils::block_on(p0.write_all(b"\0AUTH ANONYMOUS\r\nDATA abcd\r\nBEGIN\r\n")).unwrap();
         crate::utils::block_on(server.perform()).unwrap();
     }
 }

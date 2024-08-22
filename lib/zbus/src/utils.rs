@@ -24,8 +24,8 @@ pub trait ResultAdapter {
 }
 
 impl<T, E> ResultAdapter for Result<T, E> {
-    type Ok = T;
     type Err = E;
+    type Ok = T;
 }
 
 #[cfg(not(feature = "tokio"))]

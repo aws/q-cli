@@ -1,15 +1,31 @@
-use std::{
-    borrow::{Borrow, Cow},
-    fmt::{self, Debug, Display, Formatter},
-    iter::repeat_with,
-    ops::Deref,
-    str::FromStr,
-    time::{SystemTime, UNIX_EPOCH},
+use std::borrow::{
+    Borrow,
+    Cow,
+};
+use std::fmt::{
+    self,
+    Debug,
+    Display,
+    Formatter,
+};
+use std::iter::repeat_with;
+use std::ops::Deref;
+use std::str::FromStr;
+use std::time::{
+    SystemTime,
+    UNIX_EPOCH,
 };
 
-use serde::{de, Deserialize, Serialize};
+use serde::{
+    de,
+    Deserialize,
+    Serialize,
+};
 use static_assertions::assert_impl_all;
-use zvariant::{Str, Type};
+use zvariant::{
+    Str,
+    Type,
+};
 
 /// A D-Bus server GUID.
 ///
@@ -125,8 +141,7 @@ impl<'de> Deserialize<'de> for Guid<'de> {
     where
         D: serde::Deserializer<'de>,
     {
-        <Cow<'de, str>>::deserialize(deserializer)
-            .and_then(|s| s.try_into().map_err(serde::de::Error::custom))
+        <Cow<'de, str>>::deserialize(deserializer).and_then(|s| s.try_into().map_err(serde::de::Error::custom))
     }
 }
 
@@ -211,7 +226,7 @@ impl From<Guid<'_>> for OwnedGuid {
 
 impl From<OwnedGuid> for Str<'_> {
     fn from(value: OwnedGuid) -> Self {
-        value.0 .0
+        value.0.0
     }
 }
 
@@ -246,8 +261,9 @@ impl Display for OwnedGuid {
 
 #[cfg(test)]
 mod tests {
-    use crate::Guid;
     use test_log::test;
+
+    use crate::Guid;
 
     #[test]
     fn generate() {

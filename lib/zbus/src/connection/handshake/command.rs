@@ -1,6 +1,13 @@
-use std::{fmt, str::FromStr};
+use std::fmt;
+use std::str::FromStr;
 
-use crate::{AuthMechanism, Error, Guid, OwnedGuid, Result};
+use crate::{
+    AuthMechanism,
+    Error,
+    Guid,
+    OwnedGuid,
+    Result,
+};
 
 // The plain-text SASL profile authentication protocol described here:
 // <https://dbus.freedesktop.org/doc/dbus-specification.html#auth-protocol>
@@ -46,13 +53,9 @@ impl fmt::Display for Command {
                 write!(
                     f,
                     "REJECTED {}",
-                    mechs
-                        .iter()
-                        .map(|m| m.to_string())
-                        .collect::<Vec<_>>()
-                        .join(" ")
+                    mechs.iter().map(|m| m.to_string()).collect::<Vec<_>>().join(" ")
                 )
-            }
+            },
             Command::Ok(guid) => write!(f, "OK {guid}"),
             Command::AgreeUnixFD => write!(f, "AGREE_UNIX_FD"),
         }
@@ -76,7 +79,7 @@ impl FromStr for Command {
                     None => None,
                 };
                 Command::Auth(mech, resp)
-            }
+            },
             Some("CANCEL") => Command::Cancel,
             Some("BEGIN") => Command::Begin,
             Some("DATA") => {
@@ -86,19 +89,19 @@ impl FromStr for Command {
                 };
 
                 Command::Data(data)
-            }
+            },
             Some("ERROR") => Command::Error(s.into()),
             Some("NEGOTIATE_UNIX_FD") => Command::NegotiateUnixFD,
             Some("REJECTED") => {
                 let mechs = words.map(|m| m.parse()).collect::<Result<_>>()?;
                 Command::Rejected(mechs)
-            }
+            },
             Some("OK") => {
                 let guid = words
                     .next()
                     .ok_or_else(|| Error::Handshake("Missing OK server GUID!".into()))?;
                 Command::Ok(Guid::from_str(guid)?.into())
-            }
+            },
             Some("AGREE_UNIX_FD") => Command::AgreeUnixFD,
             _ => return Err(Error::Handshake(format!("Unknown command: {s}"))),
         };

@@ -1,16 +1,21 @@
+use std::future::Future;
+use std::pin::Pin;
+#[cfg(not(feature = "tokio"))]
+use std::sync::Arc;
+use std::task::{
+    Context,
+    Poll,
+};
+#[cfg(feature = "tokio")]
+use std::{
+    future::pending,
+    marker::PhantomData,
+};
+
 #[cfg(not(feature = "tokio"))]
 use async_executor::Executor as AsyncExecutor;
 #[cfg(not(feature = "tokio"))]
 use async_task::Task as AsyncTask;
-#[cfg(not(feature = "tokio"))]
-use std::sync::Arc;
-#[cfg(feature = "tokio")]
-use std::{future::pending, marker::PhantomData};
-use std::{
-    future::Future,
-    pin::Pin,
-    task::{Context, Poll},
-};
 #[cfg(feature = "tokio")]
 use tokio::task::JoinHandle;
 
@@ -49,13 +54,11 @@ impl<'a> Executor<'a> {
         {
             #[cfg(tokio_unstable)]
             {
-                Task(Some(
-                    tokio::task::Builder::new()
+                Task(Some(tokio::task::Builder::new()
                         .name(name)
                         .spawn(future)
                         // SAFETY: Looking at the code, this call always returns an `Ok`.
-                        .unwrap(),
-                ))
+                        .unwrap()))
             }
             #[cfg(not(tokio_unstable))]
             {
@@ -103,9 +106,7 @@ impl<'a> Executor<'a> {
 
         #[cfg(feature = "tokio")]
         {
-            Self {
-                phantom: PhantomData,
-            }
+            Self { phantom: PhantomData }
         }
     }
 
@@ -176,13 +177,11 @@ where
         {
             #[cfg(tokio_unstable)]
             {
-                Self(Some(
-                    tokio::task::Builder::new()
+                Self(Some(tokio::task::Builder::new()
                         .name(name)
                         .spawn_blocking(f)
                         // SAFETY: Looking at the code, this call always returns an `Ok`.
-                        .unwrap(),
-                ))
+                        .unwrap()))
             }
             #[cfg(not(tokio_unstable))]
             {
@@ -214,15 +213,9 @@ impl<T> Future for Task<T> {
 
         #[cfg(feature = "tokio")]
         {
-            Pin::new(
-                &mut self
-                    .get_mut()
-                    .0
-                    .as_mut()
-                    .expect("tokio::task::JoinHandle is none"),
-            )
-            .poll(cx)
-            .map(|r| r.expect("tokio::task::JoinHandle error"))
+            Pin::new(&mut self.get_mut().0.as_mut().expect("tokio::task::JoinHandle is none"))
+                .poll(cx)
+                .map(|r| r.expect("tokio::task::JoinHandle error"))
         }
     }
 }

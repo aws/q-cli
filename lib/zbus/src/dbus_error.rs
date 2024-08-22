@@ -1,8 +1,9 @@
-use crate::{
-    message::{Header, Message},
-    names::ErrorName,
-    Result,
+use crate::message::{
+    Header,
+    Message,
 };
+use crate::names::ErrorName;
+use crate::Result;
 
 /// A trait that needs to be implemented by error types to be returned from D-Bus methods.
 ///

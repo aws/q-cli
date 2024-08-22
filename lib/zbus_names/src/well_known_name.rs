@@ -1,16 +1,38 @@
-use crate::{
-    utils::{impl_str_basic, impl_try_from},
-    Error, Result,
+use std::borrow::{
+    Borrow,
+    Cow,
 };
-use serde::{de, Deserialize, Serialize};
+use std::fmt::{
+    self,
+    Debug,
+    Display,
+    Formatter,
+};
+use std::ops::Deref;
+use std::sync::Arc;
+
+use serde::{
+    de,
+    Deserialize,
+    Serialize,
+};
 use static_assertions::assert_impl_all;
-use std::{
-    borrow::{Borrow, Cow},
-    fmt::{self, Debug, Display, Formatter},
-    ops::Deref,
-    sync::Arc,
+use zvariant::{
+    NoneValue,
+    OwnedValue,
+    Str,
+    Type,
+    Value,
 };
-use zvariant::{NoneValue, OwnedValue, Str, Type, Value};
+
+use crate::utils::{
+    impl_str_basic,
+    impl_try_from,
+};
+use crate::{
+    Error,
+    Result,
+};
 
 /// String that identifies a [well-known bus name][wbn].
 ///
@@ -36,9 +58,7 @@ use zvariant::{NoneValue, OwnedValue, Str, Type, Value};
 /// ```
 ///
 /// [wbn]: https://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-names-bus
-#[derive(
-    Clone, Debug, Hash, PartialEq, Eq, Serialize, Type, Value, PartialOrd, Ord, OwnedValue,
-)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Type, Value, PartialOrd, Ord, OwnedValue)]
 pub struct WellKnownName<'name>(Str<'name>);
 
 impl_str_basic!(WellKnownName<'_>);
@@ -189,18 +209,14 @@ fn ensure_correct_well_known_name(name: &str) -> Result<()> {
                 "each element must not start with a digit",
             )));
         } else if !c.is_ascii_alphanumeric() && c != '_' && c != '-' {
-            return Err(Error::InvalidWellKnownName(format!(
-                "`{c}` character not allowed"
-            )));
+            return Err(Error::InvalidWellKnownName(format!("`{c}` character not allowed")));
         }
 
         prev = Some(c);
     }
 
     if no_dot {
-        return Err(Error::InvalidWellKnownName(String::from(
-            "must contain at least 1 `.`",
-        )));
+        return Err(Error::InvalidWellKnownName(String::from("must contain at least 1 `.`")));
     }
 
     Ok(())
@@ -278,9 +294,7 @@ impl AsRef<str> for OwnedWellKnownName {
 
 impl Debug for OwnedWellKnownName {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("OwnedWellKnownName")
-            .field(&self.as_str())
-            .finish()
+        f.debug_tuple("OwnedWellKnownName").field(&self.as_str()).finish()
     }
 }
 

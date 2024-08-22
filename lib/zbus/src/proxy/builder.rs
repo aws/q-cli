@@ -1,10 +1,24 @@
-use std::{collections::HashSet, marker::PhantomData, sync::Arc};
+use std::collections::HashSet;
+use std::marker::PhantomData;
+use std::sync::Arc;
 
 use static_assertions::assert_impl_all;
-use zbus_names::{BusName, InterfaceName};
-use zvariant::{ObjectPath, Str};
+use zbus_names::{
+    BusName,
+    InterfaceName,
+};
+use zvariant::{
+    ObjectPath,
+    Str,
+};
 
-use crate::{proxy::ProxyInner, Connection, Error, Proxy, Result};
+use crate::proxy::ProxyInner;
+use crate::{
+    Connection,
+    Error,
+    Proxy,
+    Result,
+};
 
 /// The properties caching mode.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -97,9 +111,7 @@ impl<'a, T> Builder<'a, T> {
 
     pub(crate) fn build_internal(self) -> Result<Proxy<'a>> {
         let conn = self.conn;
-        let destination = self
-            .destination
-            .ok_or(Error::MissingParameter("destination"))?;
+        let destination = self.destination.ok_or(Error::MissingParameter("destination"))?;
         let path = self.path.ok_or(Error::MissingParameter("path"))?;
         let interface = self.interface.ok_or(Error::MissingParameter("interface"))?;
         let cache = self.cache;
@@ -151,11 +163,9 @@ where
     pub fn new(conn: &Connection) -> Self {
         Self {
             conn: conn.clone(),
-            destination: T::DESTINATION
-                .map(|d| BusName::from_static_str(d).expect("invalid bus name")),
+            destination: T::DESTINATION.map(|d| BusName::from_static_str(d).expect("invalid bus name")),
             path: T::PATH.map(|p| ObjectPath::from_static_str(p).expect("invalid default path")),
-            interface: T::INTERFACE
-                .map(|i| InterfaceName::from_static_str(i).expect("invalid interface name")),
+            interface: T::INTERFACE.map(|i| InterfaceName::from_static_str(i).expect("invalid interface name")),
             cache: CacheProperties::default(),
             uncached_properties: None,
             proxy_type: PhantomData,
@@ -186,15 +196,16 @@ pub trait ProxyDefault {
 }
 
 impl ProxyDefault for Proxy<'_> {
-    const INTERFACE: Option<&'static str> = None;
     const DESTINATION: Option<&'static str> = None;
+    const INTERFACE: Option<&'static str> = None;
     const PATH: Option<&'static str> = None;
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use test_log::test;
+
+    use super::*;
 
     #[ignore = "fails in ci"]
     #[test]
@@ -214,10 +225,7 @@ mod tests {
             .interface("org.freedesktop.Interface")
             .unwrap()
             .cache_properties(CacheProperties::No);
-        assert!(matches!(
-            builder.clone().destination.unwrap(),
-            BusName::Unique(_),
-        ));
+        assert!(matches!(builder.clone().destination.unwrap(), BusName::Unique(_),));
         let proxy = builder.build().await.unwrap();
         assert!(matches!(proxy.inner.destination, BusName::Unique(_)));
     }

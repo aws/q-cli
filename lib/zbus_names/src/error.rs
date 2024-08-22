@@ -1,5 +1,10 @@
+use std::convert::Infallible;
+use std::{
+    error,
+    fmt,
+};
+
 use static_assertions::assert_impl_all;
-use std::{convert::Infallible, error, fmt};
 use zvariant::Error as VariantError;
 
 /// The error type for `zbus_names`.
@@ -68,7 +73,7 @@ impl fmt::Display for Error {
                     f,
                     "Neither a valid unique ({unique_err}) nor a well-known ({well_known_err}) bus name"
                 )
-            }
+            },
             Error::InvalidWellKnownName(s) => write!(f, "Invalid well-known bus name: {s}"),
             Error::InvalidUniqueName(s) => write!(f, "Invalid unique bus name: {s}"),
             Error::InvalidInterfaceName(s) => write!(f, "Invalid interface or error name: {s}"),

@@ -1,16 +1,38 @@
-use crate::{
-    utils::{impl_str_basic, impl_try_from},
-    Error, Result,
+use std::borrow::{
+    Borrow,
+    Cow,
 };
-use serde::{de, Deserialize, Serialize};
+use std::fmt::{
+    self,
+    Debug,
+    Display,
+    Formatter,
+};
+use std::ops::Deref;
+use std::sync::Arc;
+
+use serde::{
+    de,
+    Deserialize,
+    Serialize,
+};
 use static_assertions::assert_impl_all;
-use std::{
-    borrow::{Borrow, Cow},
-    fmt::{self, Debug, Display, Formatter},
-    ops::Deref,
-    sync::Arc,
+use zvariant::{
+    NoneValue,
+    OwnedValue,
+    Str,
+    Type,
+    Value,
 };
-use zvariant::{NoneValue, OwnedValue, Str, Type, Value};
+
+use crate::utils::{
+    impl_str_basic,
+    impl_try_from,
+};
+use crate::{
+    Error,
+    Result,
+};
 
 /// String that identifies an [member (method or signal) name][in] on the bus.
 ///
@@ -36,9 +58,7 @@ use zvariant::{NoneValue, OwnedValue, Str, Type, Value};
 /// ```
 ///
 /// [in]: https://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-names-member
-#[derive(
-    Clone, Debug, Hash, PartialEq, Eq, Serialize, Type, Value, PartialOrd, Ord, OwnedValue,
-)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Type, Value, PartialOrd, Ord, OwnedValue)]
 pub struct MemberName<'name>(Str<'name>);
 
 assert_impl_all!(MemberName<'_>: Send, Sync, Unpin);
@@ -179,16 +199,12 @@ fn ensure_correct_member_name(name: &str) -> Result<()> {
 
     // SAFETY: We established above that there is at least 1 character so unwrap is fine.
     if name.chars().next().unwrap().is_ascii_digit() {
-        return Err(Error::InvalidMemberName(String::from(
-            "must not start with a digit",
-        )));
+        return Err(Error::InvalidMemberName(String::from("must not start with a digit")));
     }
 
     for c in name.chars() {
         if !c.is_ascii_alphanumeric() && c != '_' {
-            return Err(Error::InvalidMemberName(format!(
-                "`{c}` character not allowed"
-            )));
+            return Err(Error::InvalidMemberName(format!("`{c}` character not allowed")));
         }
     }
 
@@ -302,9 +318,7 @@ impl PartialEq<MemberName<'_>> for OwnedMemberName {
 
 impl Debug for OwnedMemberName {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("OwnedMemberName")
-            .field(&self.as_str())
-            .finish()
+        f.debug_tuple("OwnedMemberName").field(&self.as_str()).finish()
     }
 }
 

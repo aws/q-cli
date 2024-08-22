@@ -3,10 +3,16 @@
 use static_assertions::assert_impl_all;
 use zvariant::ObjectPath;
 
+use crate::object_server::{
+    Interface,
+    InterfaceDeref,
+    InterfaceDerefMut,
+    SignalContext,
+};
+use crate::utils::block_on;
 use crate::{
-    object_server::{Interface, InterfaceDeref, InterfaceDerefMut, SignalContext},
-    utils::block_on,
-    Error, Result,
+    Error,
+    Result,
 };
 
 /// Wrapper over an interface, along with its corresponding `SignalContext`
@@ -52,10 +58,10 @@ where
     ///
     /// #[interface(name = "org.myiface.MyIface")]
     /// impl MyIface {
-    ///    #[zbus(property)]
-    ///    fn count(&self) -> u32 {
-    ///        self.0
-    ///    }
+    ///     #[zbus(property)]
+    ///     fn count(&self) -> u32 {
+    ///         self.0
+    ///     }
     /// }
     /// // Set up connection and object_server etc here and then in another part of the code:
     /// #
@@ -89,8 +95,12 @@ where
 ///
 /// ```no_run
 /// # use std::error::Error;
-/// use zbus::{blocking::Connection, interface};
-/// use event_listener::{Event, Listener};
+/// use event_listener::{
+///     Event,
+///     Listener,
+/// };
+/// use zbus::blocking::Connection;
+/// use zbus::interface;
 ///
 /// struct Example {
 ///     // Interfaces are owned by the ObjectServer. They can have
@@ -120,9 +130,7 @@ where
 /// let quit_event = Event::new();
 /// let quit_listener = quit_event.listen();
 /// let interface = Example::new(quit_event);
-/// connection
-///     .object_server()
-///     .at("/org/zbus/path", interface)?;
+/// connection.object_server().at("/org/zbus/path", interface)?;
 ///
 /// quit_listener.wait();
 /// # Ok::<_, Box<dyn Error + Send + Sync>>(())
@@ -208,9 +216,7 @@ impl ObjectServer {
     /// #
     /// # let path = "/org/zbus/path";
     /// # connection.object_server().at(path, MyIface)?;
-    /// let iface_ref = connection
-    ///     .object_server()
-    ///     .interface::<_, MyIface>(path)?;
+    /// let iface_ref = connection.object_server().interface::<_, MyIface>(path)?;
     /// block_on(MyIface::emit_signal(iface_ref.signal_context()))?;
     /// #
     /// #

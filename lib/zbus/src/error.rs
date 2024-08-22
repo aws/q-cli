@@ -1,11 +1,26 @@
-use static_assertions::assert_impl_all;
-use std::{convert::Infallible, error, fmt, io, sync::Arc};
-use zbus_names::{Error as NamesError, InterfaceName, OwnedErrorName};
-use zvariant::{Error as VariantError, ObjectPath};
+use std::convert::Infallible;
+use std::sync::Arc;
+use std::{
+    error,
+    fmt,
+    io,
+};
 
-use crate::{
-    fdo,
-    message::{Message, Type},
+use static_assertions::assert_impl_all;
+use zbus_names::{
+    Error as NamesError,
+    InterfaceName,
+    OwnedErrorName,
+};
+use zvariant::{
+    Error as VariantError,
+    ObjectPath,
+};
+
+use crate::fdo;
+use crate::message::{
+    Message,
+    Type,
 };
 
 /// The error type for `zbus`.
@@ -149,7 +164,7 @@ impl fmt::Display for Error {
             Error::Failure(e) => write!(f, "{e}"),
             Error::MissingParameter(p) => {
                 write!(f, "Parameter `{}` was not specified but it is required", p)
-            }
+            },
             Error::InvalidSerial => write!(f, "Serial number in the message header is 0"),
             Error::InterfaceExists(i, p) => write!(f, "Interface `{i}` already exists at `{p}`"),
         }
@@ -170,9 +185,7 @@ impl Clone for Error {
             Error::Names(e) => Error::Names(e.clone()),
             Error::InvalidReply => Error::InvalidReply,
             Error::MissingField => Error::MissingField,
-            Error::MethodError(name, detail, reply) => {
-                Error::MethodError(name.clone(), detail.clone(), reply.clone())
-            }
+            Error::MethodError(name, detail, reply) => Error::MethodError(name.clone(), detail.clone(), reply.clone()),
             Error::InvalidGUID => Error::InvalidGUID,
             Error::Unsupported => Error::Unsupported,
             Error::FDO(e) => Error::FDO(e.clone()),

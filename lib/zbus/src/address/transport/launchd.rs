@@ -1,6 +1,12 @@
-use super::{Transport, Unix, UnixSocket};
-use crate::{process::run, Result};
 use std::collections::HashMap;
+
+use super::{
+    Transport,
+    Unix,
+    UnixSocket,
+};
+use crate::process::run;
+use crate::Result;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
@@ -12,9 +18,7 @@ pub struct Launchd {
 impl Launchd {
     /// Create a new launchd D-Bus address.
     pub fn new(env: &str) -> Self {
-        Self {
-            env: env.to_string(),
-        }
+        Self { env: env.to_string() }
     }
 
     /// The path of the unix domain socket for the launchd created dbus-daemon.
@@ -35,21 +39,16 @@ impl Launchd {
             )));
         }
 
-        let addr = String::from_utf8(output.stdout).map_err(|e| {
-            crate::Error::Address(format!("Unable to parse launchctl output as UTF-8: {}", e))
-        })?;
+        let addr = String::from_utf8(output.stdout)
+            .map_err(|e| crate::Error::Address(format!("Unable to parse launchctl output as UTF-8: {}", e)))?;
 
-        Ok(Transport::Unix(Unix::new(UnixSocket::File(
-            addr.trim().into(),
-        ))))
+        Ok(Transport::Unix(Unix::new(UnixSocket::File(addr.trim().into()))))
     }
 
     pub(super) fn from_options(opts: HashMap<&str, &str>) -> Result<Self> {
         opts.get("env")
             .ok_or_else(|| crate::Error::Address("missing env key".into()))
-            .map(|env| Self {
-                env: env.to_string(),
-            })
+            .map(|env| Self { env: env.to_string() })
     }
 }
 

@@ -18,7 +18,7 @@ fn main() {
             } else {
                 panic!("Expected either '+' or '-' argument. Got: {}", s);
             }
-        }
+        },
         None => "StepUp",
     };
 

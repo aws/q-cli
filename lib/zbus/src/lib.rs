@@ -31,7 +31,9 @@
 #[cfg(all(not(feature = "async-io"), not(feature = "tokio")))]
 mod error_message {
     #[cfg(windows)]
-    compile_error!("Either \"async-io\" (default) or \"tokio\" must be enabled. On Windows \"async-io\" is (currently) required for UNIX socket support");
+    compile_error!(
+        "Either \"async-io\" (default) or \"tokio\" must be enabled. On Windows \"async-io\" is (currently) required for UNIX socket support"
+    );
 
     #[cfg(not(windows))]
     compile_error!("Either \"async-io\" (default) or \"tokio\" must be enabled.");
@@ -53,8 +55,6 @@ mod guid;
 pub use guid::*;
 
 pub mod message;
-pub use message::Message;
-
 #[deprecated(since = "4.0.0", note = "Use `message::Builder` instead")]
 #[doc(hidden)]
 pub use message::Builder as MessageBuilder;
@@ -66,6 +66,7 @@ pub use message::Flags as MessageFlags;
 #[deprecated(since = "4.0.0", note = "Use `message::Header` instead")]
 #[doc(hidden)]
 pub use message::Header as MessageHeader;
+pub use message::Message;
 #[deprecated(since = "4.0.0", note = "Use `message::PrimaryHeader` instead")]
 #[doc(hidden)]
 pub use message::PrimaryHeader as MessagePrimaryHeader;
@@ -82,11 +83,11 @@ pub use message::NATIVE_ENDIAN_SIG;
 pub mod connection;
 /// Alias for `connection` module, for convenience.
 pub use connection as conn;
-pub use connection::{handshake::AuthMechanism, Connection};
-
+pub use connection::handshake::AuthMechanism;
 #[deprecated(since = "4.0.0", note = "Use `connection::Builder` instead")]
 #[doc(hidden)]
 pub use connection::Builder as ConnectionBuilder;
+pub use connection::Connection;
 
 mod message_stream;
 pub use message_stream::*;
@@ -94,18 +95,18 @@ mod abstractions;
 pub use abstractions::*;
 
 pub mod match_rule;
-pub use match_rule::{MatchRule, OwnedMatchRule};
-
 #[deprecated(since = "4.0.0", note = "Use `match_rule::Builder` instead")]
 #[doc(hidden)]
 pub use match_rule::Builder as MatchRuleBuilder;
 #[deprecated(since = "4.0.0", note = "Use `match_rule::PathSpec` instead")]
 #[doc(hidden)]
 pub use match_rule::PathSpec as MatchRulePathSpec;
+pub use match_rule::{
+    MatchRule,
+    OwnedMatchRule,
+};
 
 pub mod proxy;
-pub use proxy::Proxy;
-
 #[deprecated(since = "4.0.0", note = "Use `proxy::Builder` instead")]
 #[doc(hidden)]
 pub use proxy::Builder as ProxyBuilder;
@@ -124,13 +125,12 @@ pub use proxy::PropertyChanged;
 #[deprecated(since = "4.0.0", note = "Use `proxy::PropertyStream` instead")]
 #[doc(hidden)]
 pub use proxy::PropertyStream;
+pub use proxy::Proxy;
 #[deprecated(since = "4.0.0", note = "Use `proxy::ProxyDefault` instead")]
 #[doc(hidden)]
 pub use proxy::ProxyDefault;
 
 pub mod object_server;
-pub use object_server::ObjectServer;
-
 #[deprecated(since = "4.0.0", note = "Use `object_server::DispatchResult` instead")]
 #[doc(hidden)]
 pub use object_server::DispatchResult;
@@ -140,19 +140,14 @@ pub use object_server::Interface;
 #[deprecated(since = "4.0.0", note = "Use `object_server::InterfaceDeref` instead")]
 #[doc(hidden)]
 pub use object_server::InterfaceDeref;
-#[deprecated(
-    since = "4.0.0",
-    note = "Use `object_server::InterfaceDerefMut` instead"
-)]
+#[deprecated(since = "4.0.0", note = "Use `object_server::InterfaceDerefMut` instead")]
 #[doc(hidden)]
 pub use object_server::InterfaceDerefMut;
 #[deprecated(since = "4.0.0", note = "Use `object_server::InterfaceRef` instead")]
 #[doc(hidden)]
 pub use object_server::InterfaceRef;
-#[deprecated(
-    since = "4.0.0",
-    note = "Use `object_server::ResponseDispatchNotifier` instead"
-)]
+pub use object_server::ObjectServer;
+#[deprecated(since = "4.0.0", note = "Use `object_server::ResponseDispatchNotifier` instead")]
 #[doc(hidden)]
 pub use object_server::ResponseDispatchNotifier;
 #[deprecated(since = "4.0.0", note = "Use `object_server::SignalContext` instead")]
@@ -171,9 +166,16 @@ pub use connection::Socket;
 
 pub mod blocking;
 
-pub use zbus_macros::{interface, proxy, DBusError};
 // Old names used for backwards compatibility
-pub use zbus_macros::{dbus_interface, dbus_proxy};
+pub use zbus_macros::{
+    dbus_interface,
+    dbus_proxy,
+};
+pub use zbus_macros::{
+    interface,
+    proxy,
+    DBusError,
+};
 
 // Required for the macros to function within this crate.
 extern crate self as zbus;
@@ -181,40 +183,61 @@ extern crate self as zbus;
 // Macro support module, not part of the public API.
 #[doc(hidden)]
 pub mod export {
-    pub use async_trait;
-    pub use futures_core;
-    pub use futures_util;
-    pub use ordered_stream;
-    pub use serde;
-    pub use static_assertions;
+    pub use {
+        async_trait,
+        futures_core,
+        futures_util,
+        ordered_stream,
+        serde,
+        static_assertions,
+    };
 }
 
-pub use zbus_names as names;
-pub use zvariant;
+pub use {
+    zbus_names as names,
+    zvariant,
+};
 
 #[cfg(test)]
 mod tests {
-    use std::{
-        collections::HashMap,
-        sync::{mpsc::channel, Arc, Condvar, Mutex},
+    use std::collections::HashMap;
+    use std::sync::mpsc::channel;
+    use std::sync::{
+        Arc,
+        Condvar,
+        Mutex,
     };
 
-    use crate::utils::block_on;
     use enumflags2::BitFlags;
     use event_listener::Event;
     use ntest::timeout;
     use test_log::test;
-    use tracing::{debug, instrument, trace};
-
+    use tracing::{
+        debug,
+        instrument,
+        trace,
+    };
     use zbus_names::UniqueName;
-    use zvariant::{OwnedObjectPath, OwnedValue, Type};
+    use zvariant::{
+        OwnedObjectPath,
+        OwnedValue,
+        Type,
+    };
 
+    use crate::blocking::{
+        self,
+        MessageIterator,
+    };
+    use crate::fdo::{
+        RequestNameFlags,
+        RequestNameReply,
+    };
+    use crate::message::Message;
+    use crate::object_server::SignalContext;
+    use crate::utils::block_on;
     use crate::{
-        blocking::{self, MessageIterator},
-        fdo::{RequestNameFlags, RequestNameReply},
-        message::Message,
-        object_server::SignalContext,
-        Connection, Result,
+        Connection,
+        Result,
     };
 
     #[test]
@@ -295,7 +318,9 @@ mod tests {
     #[test]
     #[timeout(15000)]
     fn fdpass_systemd() {
-        use std::{fs::File, os::unix::io::AsRawFd};
+        use std::fs::File;
+        use std::os::unix::io::AsRawFd;
+
         use zvariant::OwnedFd;
 
         let connection = blocking::Connection::system().unwrap();
@@ -549,10 +574,7 @@ mod tests {
         let serial = msg.primary_header().serial_num();
         client_conn.send(&msg).unwrap();
 
-        crate::blocking::fdo::DBusProxy::new(&conn)
-            .unwrap()
-            .get_id()
-            .unwrap();
+        crate::blocking::fdo::DBusProxy::new(&conn).unwrap().get_id().unwrap();
 
         for m in stream {
             let msg = m.unwrap();
@@ -573,7 +595,10 @@ mod tests {
         // with multiple out arguments, ending up with double parenthesis around the signature of
         // the return type and zbus only removing the outer `()` only and then it not matching the
         // signature we receive on the reply message.
-        use zvariant::{ObjectPath, Value};
+        use zvariant::{
+            ObjectPath,
+            Value,
+        };
 
         struct Secret;
         #[super::interface(name = "org.freedesktop.Secret.Service")]
@@ -585,9 +610,7 @@ mod tests {
             ) -> zbus::fdo::Result<(OwnedValue, OwnedObjectPath)> {
                 Ok((
                     OwnedValue::try_from(input).unwrap(),
-                    ObjectPath::try_from("/org/freedesktop/secrets/Blah")
-                        .unwrap()
-                        .into(),
+                    ObjectPath::try_from("/org/freedesktop/secrets/Blah").unwrap().into(),
                 ))
             }
         }
@@ -705,11 +728,12 @@ mod tests {
     #[ignore]
     fn issue_81() {
         use zbus::proxy;
-        use zvariant::{OwnedValue, Type};
+        use zvariant::{
+            OwnedValue,
+            Type,
+        };
 
-        #[derive(
-            Debug, PartialEq, Eq, Clone, Type, OwnedValue, serde::Serialize, serde::Deserialize,
-        )]
+        #[derive(Debug, PartialEq, Eq, Clone, Type, OwnedValue, serde::Serialize, serde::Deserialize)]
         pub struct DbusPath {
             id: String,
             path: OwnedObjectPath,
@@ -810,10 +834,12 @@ mod tests {
             fn cached_prop(&self) -> bool {
                 self.0
             }
+
             #[zbus(property)]
             fn uncached_prop(&self) -> bool {
                 self.0
             }
+
             async fn set_inner_to_true(&mut self) -> zbus::fdo::Result<()> {
                 self.0 = true;
                 Ok(())
@@ -886,10 +912,7 @@ mod tests {
 
             connection.request_name("org.zbus.Issue260").await?;
 
-            futures_util::try_join!(
-                issue_260_service(&connection),
-                issue_260_client(&connection),
-            )?;
+            futures_util::try_join!(issue_260_service(&connection), issue_260_client(&connection),)?;
 
             Ok::<(), zbus::Error>(())
         })
@@ -908,7 +931,7 @@ mod tests {
                     connection.reply(&msg, &()).await?;
 
                     break;
-                }
+                },
                 _ => continue,
             }
         }
@@ -938,9 +961,12 @@ mod tests {
         // side and since the underlying tokio API doesn't provide a `close` method on the sender,
         // the async-channel abstraction was achieving this through calling `close` on receiver,
         // which is behind an async mutex and we end up with a deadlock.
-        use crate::{connection::Builder, MessageStream};
-        use futures_util::{stream::TryStreamExt, try_join};
+        use futures_util::stream::TryStreamExt;
+        use futures_util::try_join;
         use tokio::net::UnixStream;
+
+        use crate::connection::Builder;
+        use crate::MessageStream;
 
         let guid = crate::Guid::generate();
         let (p0, p1) = UnixStream::pair().unwrap();
@@ -974,16 +1000,11 @@ mod tests {
         impl Station {
             #[zbus(property)]
             fn connected_network(&self) -> OwnedObjectPath {
-                format!("/net/connman/iwd/0/33/Network/{}", self.0)
-                    .try_into()
-                    .unwrap()
+                format!("/net/connman/iwd/0/33/Network/{}", self.0).try_into().unwrap()
             }
         }
 
-        #[zbus::proxy(
-            interface = "net.connman.iwd.Station",
-            default_service = "net.connman.iwd"
-        )]
+        #[zbus::proxy(interface = "net.connman.iwd.Station", default_service = "net.connman.iwd")]
         trait Station {
             #[zbus(property)]
             fn connected_network(&self) -> zbus::Result<OwnedObjectPath>;
@@ -1038,12 +1059,7 @@ mod tests {
         while last_received < 9 {
             let change = changes.next().await.unwrap();
             let path = change.get().await.unwrap();
-            let received: u64 = path
-                .split('/')
-                .last()
-                .unwrap()
-                .parse()
-                .expect("invalid path");
+            let received: u64 = path.split('/').last().unwrap().parse().expect("invalid path");
             assert!(received >= last_received);
             last_received = received;
             event.notify(1);
@@ -1055,10 +1071,7 @@ mod tests {
     fn issue_466() {
         #[crate::proxy(interface = "org.Some.Thing1", assume_defaults = true)]
         trait MyGreeter {
-            fn foo(
-                &self,
-                arg: &(u32, zbus::zvariant::Value<'_>),
-            ) -> zbus::Result<(u32, zbus::zvariant::OwnedValue)>;
+            fn foo(&self, arg: &(u32, zbus::zvariant::Value<'_>)) -> zbus::Result<(u32, zbus::zvariant::OwnedValue)>;
 
             #[zbus(property)]
             fn bar(&self) -> zbus::Result<(u32, zbus::zvariant::OwnedValue)>;
@@ -1136,15 +1149,19 @@ mod tests {
         // We test this by manually sending out the auth commands together with 2 method calls with
         // 1 FD each. Before a fix for this issue, the server handshake would fail with an
         // `Unexpected FDs during handshake` error.
-        use crate::{conn::socket::WriteHalf, connection::Builder};
-        use futures_util::try_join;
-        use nix::unistd::Uid;
+        use std::os::fd::AsFd;
         #[cfg(not(feature = "tokio"))]
         use std::os::unix::net::UnixStream;
-        use std::{os::fd::AsFd, vec};
+        use std::vec;
+
+        use futures_util::try_join;
+        use nix::unistd::Uid;
         #[cfg(feature = "tokio")]
         use tokio::net::UnixStream;
         use zvariant::Fd;
+
+        use crate::conn::socket::WriteHalf;
+        use crate::connection::Builder;
 
         #[derive(Debug)]
         struct Issue813Iface {
@@ -1183,13 +1200,10 @@ mod tests {
                 let _conn = Builder::unix_stream(p0)
                     .server(guid)?
                     .p2p()
-                    .serve_at(
-                        "/org/zbus/Issue813",
-                        Issue813Iface {
-                            event: server_event,
-                            call_count: 0,
-                        },
-                    )?
+                    .serve_at("/org/zbus/Issue813", Issue813Iface {
+                        event: server_event,
+                        call_count: 0,
+                    })?
                     .name("org.zbus.Issue813")?
                     .build()
                     .await?;

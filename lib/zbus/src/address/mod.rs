@@ -11,15 +11,25 @@
 
 pub mod transport;
 
-use crate::{Error, Guid, OwnedGuid, Result};
+use std::collections::HashMap;
+use std::env;
+use std::fmt::{
+    Display,
+    Formatter,
+};
+use std::str::FromStr;
+
 #[cfg(all(unix, not(target_os = "macos")))]
 use nix::unistd::Uid;
-use std::{collections::HashMap, env, str::FromStr};
-
-use std::fmt::{Display, Formatter};
 
 use self::transport::Stream;
 pub use self::transport::Transport;
+use crate::{
+    Error,
+    Guid,
+    OwnedGuid,
+    Result,
+};
 
 /// A bus address.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -32,10 +42,7 @@ pub struct Address {
 impl Address {
     /// Create a new `Address` from a `Transport`.
     pub fn new(transport: Transport) -> Self {
-        Self {
-            transport,
-            guid: None,
-        }
+        Self { transport, guid: None }
     }
 
     /// Set the GUID for this address.
@@ -71,8 +78,8 @@ impl Address {
 
                 #[cfg(all(unix, not(target_os = "macos")))]
                 {
-                    let runtime_dir = env::var("XDG_RUNTIME_DIR")
-                        .unwrap_or_else(|_| format!("/run/user/{}", Uid::effective()));
+                    let runtime_dir =
+                        env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| format!("/run/user/{}", Uid::effective()));
                     let path = format!("unix:path={runtime_dir}/bus");
 
                     Self::from_str(&path)
@@ -80,7 +87,7 @@ impl Address {
 
                 #[cfg(target_os = "macos")]
                 return Self::from_str("launchd:env=DBUS_LAUNCHD_SESSION_BUS_SOCKET");
-            }
+            },
         }
     }
 
@@ -99,7 +106,7 @@ impl Address {
 
                 #[cfg(target_os = "macos")]
                 return Self::from_str("launchd:env=DBUS_LAUNCHD_SESSION_BUS_SOCKET");
-            }
+            },
         }
     }
 
@@ -136,16 +143,10 @@ impl FromStr for Address {
             for kv in address[col + 1..].split(',') {
                 let (k, v) = match kv.find('=') {
                     Some(eq) => (&kv[..eq], &kv[eq + 1..]),
-                    None => {
-                        return Err(Error::Address(
-                            "missing = when parsing key/value".to_owned(),
-                        ))
-                    }
+                    None => return Err(Error::Address("missing = when parsing key/value".to_owned())),
                 };
                 if options.insert(k, v).is_some() {
-                    return Err(Error::Address(format!(
-                        "Key `{k}` specified multiple times"
-                    )));
+                    return Err(Error::Address(format!("Key `{k}` specified multiple times")));
                 }
             }
         }
@@ -176,20 +177,28 @@ impl From<Transport> for Address {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        transport::{Tcp, TcpTransportFamily, Transport},
-        Address,
+    use std::str::FromStr;
+
+    use test_log::test;
+
+    use super::transport::{
+        Tcp,
+        TcpTransportFamily,
+        Transport,
     };
+    use super::Address;
     #[cfg(target_os = "macos")]
     use crate::address::transport::Launchd;
     #[cfg(windows)]
-    use crate::address::transport::{Autolaunch, AutolaunchScope};
-    use crate::{
-        address::transport::{Unix, UnixSocket},
-        Error,
+    use crate::address::transport::{
+        Autolaunch,
+        AutolaunchScope,
     };
-    use std::str::FromStr;
-    use test_log::test;
+    use crate::address::transport::{
+        Unix,
+        UnixSocket,
+    };
+    use crate::Error;
 
     #[test]
     fn parse_dbus_addresses() {
@@ -229,7 +238,7 @@ mod tests {
         match Address::from_str("unix:path=/tmp,abstract=foo").unwrap_err() {
             Error::Address(e) => {
                 assert_eq!(e, "unix: address is invalid")
-            }
+            },
             _ => panic!(),
         }
         assert_eq!(
@@ -244,11 +253,9 @@ mod tests {
         let guid = crate::Guid::generate();
         assert_eq!(
             Address::from_str(&format!("unix:path=/tmp/dbus-foo,guid={guid}")).unwrap(),
-            Address::from(Transport::Unix(Unix::new(UnixSocket::File(
-                "/tmp/dbus-foo".into()
-            ))))
-            .set_guid(guid.clone())
-            .unwrap(),
+            Address::from(Transport::Unix(Unix::new(UnixSocket::File("/tmp/dbus-foo".into()))))
+                .set_guid(guid.clone())
+                .unwrap(),
         );
         assert_eq!(
             Address::from_str("tcp:host=localhost,port=4142").unwrap(),
@@ -256,17 +263,14 @@ mod tests {
         );
         assert_eq!(
             Address::from_str("tcp:host=localhost,port=4142,family=ipv4").unwrap(),
-            Transport::Tcp(Tcp::new("localhost", 4142).set_family(Some(TcpTransportFamily::Ipv4)))
-                .into(),
+            Transport::Tcp(Tcp::new("localhost", 4142).set_family(Some(TcpTransportFamily::Ipv4))).into(),
         );
         assert_eq!(
             Address::from_str("tcp:host=localhost,port=4142,family=ipv6").unwrap(),
-            Transport::Tcp(Tcp::new("localhost", 4142).set_family(Some(TcpTransportFamily::Ipv6)))
-                .into(),
+            Transport::Tcp(Tcp::new("localhost", 4142).set_family(Some(TcpTransportFamily::Ipv6))).into(),
         );
         assert_eq!(
-            Address::from_str("tcp:host=localhost,port=4142,family=ipv6,noncefile=/a/file/path")
-                .unwrap(),
+            Address::from_str("tcp:host=localhost,port=4142,family=ipv6,noncefile=/a/file/path").unwrap(),
             Transport::Tcp(
                 Tcp::new("localhost", 4142)
                     .set_family(Some(TcpTransportFamily::Ipv6))
@@ -283,7 +287,8 @@ mod tests {
                 Tcp::new("localhost", 4142)
                     .set_family(Some(TcpTransportFamily::Ipv6))
                     .set_nonce_file(Some(b"/a/file/path to file 1234".to_vec()))
-            ).into()
+            )
+            .into()
         );
         #[cfg(windows)]
         assert_eq!(
@@ -294,8 +299,7 @@ mod tests {
         assert_eq!(
             Address::from_str("autolaunch:scope=*my_cool_scope*").unwrap(),
             Transport::Autolaunch(
-                Autolaunch::new()
-                    .set_scope(Some(AutolaunchScope::Other("*my_cool_scope*".to_string())))
+                Autolaunch::new().set_scope(Some(AutolaunchScope::Other("*my_cool_scope*".to_string())))
             )
             .into(),
         );
@@ -325,33 +329,21 @@ mod tests {
     #[test]
     fn stringify_dbus_addresses() {
         assert_eq!(
-            Address::from(Transport::Unix(Unix::new(UnixSocket::File(
-                "/tmp/dbus-foo".into()
-            ))))
-            .to_string(),
+            Address::from(Transport::Unix(Unix::new(UnixSocket::File("/tmp/dbus-foo".into())))).to_string(),
             "unix:path=/tmp/dbus-foo",
         );
         assert_eq!(
-            Address::from(Transport::Unix(Unix::new(UnixSocket::Dir(
-                "/tmp/dbus-foo".into()
-            ))))
-            .to_string(),
+            Address::from(Transport::Unix(Unix::new(UnixSocket::Dir("/tmp/dbus-foo".into())))).to_string(),
             "unix:dir=/tmp/dbus-foo",
         );
         assert_eq!(
-            Address::from(Transport::Unix(Unix::new(UnixSocket::TmpDir(
-                "/tmp/dbus-foo".into()
-            ))))
-            .to_string(),
+            Address::from(Transport::Unix(Unix::new(UnixSocket::TmpDir("/tmp/dbus-foo".into())))).to_string(),
             "unix:tmpdir=/tmp/dbus-foo"
         );
         // FIXME: figure out how to handle abstract on Windows
         #[cfg(target_os = "linux")]
         assert_eq!(
-            Address::from(Transport::Unix(Unix::new(UnixSocket::Abstract(
-                "/tmp/dbus-foo".into()
-            ))))
-            .to_string(),
+            Address::from(Transport::Unix(Unix::new(UnixSocket::Abstract("/tmp/dbus-foo".into())))).to_string(),
             "unix:abstract=/tmp/dbus-foo"
         );
         assert_eq!(
@@ -373,10 +365,11 @@ mod tests {
             "tcp:host=localhost,port=4142,family=ipv6"
         );
         assert_eq!(
-            Address::from(Transport::Tcp(Tcp::new("localhost", 4142)
-                .set_family(Some(TcpTransportFamily::Ipv6))
-                .set_nonce_file(Some(b"/a/file/path to file 1234".to_vec())
-            )))
+            Address::from(Transport::Tcp(
+                Tcp::new("localhost", 4142)
+                    .set_family(Some(TcpTransportFamily::Ipv6))
+                    .set_nonce_file(Some(b"/a/file/path to file 1234".to_vec()))
+            ))
             .to_string(),
             "nonce-tcp:noncefile=/a/file/path%20to%20file%201234,host=localhost,port=4142,family=ipv6"
         );
@@ -387,9 +380,9 @@ mod tests {
         );
         #[cfg(windows)]
         assert_eq!(
-            Address::from(Transport::Autolaunch(Autolaunch::new().set_scope(Some(
-                AutolaunchScope::Other("*my_cool_scope*".to_string())
-            ))))
+            Address::from(Transport::Autolaunch(
+                Autolaunch::new().set_scope(Some(AutolaunchScope::Other("*my_cool_scope*".to_string())))
+            ))
             .to_string(),
             "autolaunch:scope=*my_cool_scope*"
         );
@@ -440,10 +433,7 @@ mod tests {
         let mut cookie = tempfile::NamedTempFile::new().unwrap();
         cookie.as_file_mut().write_all(TEST_COOKIE).unwrap();
 
-        let encoded_path = format!(
-            "{}",
-            PercentEncoded(cookie.path().to_str().unwrap().as_ref())
-        );
+        let encoded_path = format!("{}", PercentEncoded(cookie.path().to_str().unwrap().as_ref()));
 
         let addr = Address::from_str(&format!(
             "nonce-tcp:host=localhost,port={port},noncefile={encoded_path}"
@@ -469,9 +459,6 @@ mod tests {
             .recv_timeout(std::time::Duration::from_millis(100))
             .expect("nonce file content hasn't been received by server thread in time");
 
-        assert!(
-            saw_cookie,
-            "nonce file content has been received, but was invalid"
-        );
+        assert!(saw_cookie, "nonce file content has been received, but was invalid");
     }
 }

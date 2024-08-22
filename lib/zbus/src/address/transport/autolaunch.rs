@@ -1,5 +1,9 @@
-use crate::{Error, Result};
 use std::collections::HashMap;
+
+use crate::{
+    Error,
+    Result,
+};
 
 /// Transport properties of an autolaunch D-Bus address.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -51,9 +55,7 @@ impl Autolaunch {
                     b"user" => Ok(AutolaunchScope::User),
                     _ => String::from_utf8(decoded)
                         .map(AutolaunchScope::Other)
-                        .map_err(|_| {
-                            Error::Address("autolaunch scope is not valid UTF-8".to_owned())
-                        }),
+                        .map_err(|_| Error::Address("autolaunch scope is not valid UTF-8".to_owned())),
                 }
             })
             .transpose()

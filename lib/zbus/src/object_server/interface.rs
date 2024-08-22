@@ -1,22 +1,38 @@
-use std::{
-    any::{Any, TypeId},
-    collections::HashMap,
-    fmt::{self, Write},
-    future::Future,
-    pin::Pin,
-    sync::Arc,
+use std::any::{
+    Any,
+    TypeId,
 };
+use std::collections::HashMap;
+use std::fmt::{
+    self,
+    Write,
+};
+use std::future::Future;
+use std::pin::Pin;
+use std::sync::Arc;
 
 use async_trait::async_trait;
-use zbus::message::Flags;
-use zbus_names::{InterfaceName, MemberName};
-use zvariant::{DynamicType, OwnedValue, Value};
-
-use crate::{
-    async_lock::RwLock, fdo, message::Message, object_server::SignalContext, Connection,
-    ObjectServer, Result,
-};
 use tracing::trace;
+use zbus::message::Flags;
+use zbus_names::{
+    InterfaceName,
+    MemberName,
+};
+use zvariant::{
+    DynamicType,
+    OwnedValue,
+    Value,
+};
+
+use crate::async_lock::RwLock;
+use crate::message::Message;
+use crate::object_server::SignalContext;
+use crate::{
+    fdo,
+    Connection,
+    ObjectServer,
+    Result,
+};
 
 /// A helper type returned by [`Interface`] callbacks.
 pub enum DispatchResult<'a> {
@@ -165,8 +181,7 @@ impl ArcInterface {
 
 impl fmt::Debug for ArcInterface {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Arc<RwLock<dyn Interface>>")
-            .finish_non_exhaustive()
+        f.debug_struct("Arc<RwLock<dyn Interface>>").finish_non_exhaustive()
     }
 }
 

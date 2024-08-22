@@ -1,34 +1,90 @@
 //! Connection API.
-use async_broadcast::{broadcast, InactiveReceiver, Receiver, Sender as Broadcaster};
-use enumflags2::BitFlags;
-use event_listener::{Event, EventListener};
-use ordered_stream::{OrderedFuture, OrderedStream, PollResult};
-use static_assertions::assert_impl_all;
-use std::{
-    collections::HashMap,
-    io::{self, ErrorKind},
-    num::NonZeroU32,
-    ops::Deref,
-    pin::Pin,
-    sync::{Arc, OnceLock, Weak},
-    task::{Context, Poll},
+use std::collections::HashMap;
+use std::io::{
+    self,
+    ErrorKind,
 };
-use tracing::{debug, info_span, instrument, trace, trace_span, warn, Instrument};
-use zbus_names::{BusName, ErrorName, InterfaceName, MemberName, OwnedUniqueName, WellKnownName};
-use zvariant::ObjectPath;
+use std::num::NonZeroU32;
+use std::ops::Deref;
+use std::pin::Pin;
+use std::sync::{
+    Arc,
+    OnceLock,
+    Weak,
+};
+use std::task::{
+    Context,
+    Poll,
+};
 
+use async_broadcast::{
+    broadcast,
+    InactiveReceiver,
+    Receiver,
+    Sender as Broadcaster,
+};
+use enumflags2::BitFlags;
+use event_listener::{
+    Event,
+    EventListener,
+};
 use futures_core::Future;
 use futures_util::StreamExt;
+use ordered_stream::{
+    OrderedFuture,
+    OrderedStream,
+    PollResult,
+};
+use static_assertions::assert_impl_all;
+use tracing::{
+    debug,
+    info_span,
+    instrument,
+    trace,
+    trace_span,
+    warn,
+    Instrument,
+};
+use zbus_names::{
+    BusName,
+    ErrorName,
+    InterfaceName,
+    MemberName,
+    OwnedUniqueName,
+    WellKnownName,
+};
+use zvariant::ObjectPath;
 
+use crate::async_lock::{
+    Mutex,
+    Semaphore,
+    SemaphorePermit,
+};
+use crate::fdo::{
+    self,
+    ConnectionCredentials,
+    RequestNameFlags,
+    RequestNameReply,
+};
+use crate::message::{
+    Flags,
+    Message,
+    Type,
+};
+use crate::proxy::CacheProperties;
 use crate::{
-    async_lock::{Mutex, Semaphore, SemaphorePermit},
     blocking,
-    fdo::{self, ConnectionCredentials, RequestNameFlags, RequestNameReply},
     is_flatpak,
-    message::{Flags, Message, Type},
-    proxy::CacheProperties,
-    DBusError, Error, Executor, MatchRule, MessageStream, ObjectServer, OwnedGuid, OwnedMatchRule,
-    Result, Task,
+    DBusError,
+    Error,
+    Executor,
+    MatchRule,
+    MessageStream,
+    ObjectServer,
+    OwnedGuid,
+    OwnedMatchRule,
+    Result,
+    Task,
 };
 
 mod builder;
@@ -170,7 +226,10 @@ pub(crate) type MsgBroadcaster = Broadcaster<Result<Message>>;
 /// ```rust,no_run
 /// # zbus::block_on(async {
 /// use futures_util::stream::TryStreamExt;
-/// use zbus::{Connection, MessageStream};
+/// use zbus::{
+///     Connection,
+///     MessageStream,
+/// };
 ///
 /// let connection = Connection::session().await?;
 ///
@@ -240,8 +299,8 @@ impl Future for PendingMethodCall {
 }
 
 impl OrderedFuture for PendingMethodCall {
-    type Output = Result<Message>;
     type Ordering = zbus::message::Sequence;
+    type Output = Result<Message>;
 
     fn poll_before(
         self: Pin<&mut Self>,
@@ -266,20 +325,17 @@ impl OrderedFuture for PendingMethodCall {
                         };
                         this.stream = None;
                         return Poll::Ready(Some((ordering, res)));
-                    }
-                    Poll::Ready(PollResult::Item {
-                        data: Err(e),
-                        ordering,
-                    }) => {
+                    },
+                    Poll::Ready(PollResult::Item { data: Err(e), ordering }) => {
                         return Poll::Ready(Some((ordering, Err(e))));
-                    }
+                    },
 
                     Poll::Ready(PollResult::NoneBefore) => {
                         return Poll::Ready(None);
-                    }
+                    },
                     Poll::Ready(PollResult::Terminated) => {
                         return Poll::Ready(None);
-                    }
+                    },
                     Poll::Pending => return Poll::Pending,
                 }
             }
@@ -327,17 +383,10 @@ impl Connection {
         M::Error: Into<Error>,
         B: serde::ser::Serialize + zvariant::DynamicType,
     {
-        self.call_method_raw(
-            destination,
-            path,
-            interface,
-            method_name,
-            BitFlags::empty(),
-            body,
-        )
-        .await?
-        .expect("no reply")
-        .await
+        self.call_method_raw(destination, path, interface, method_name, BitFlags::empty(), body)
+            .await?
+            .expect("no reply")
+            .await
     }
 
     /// Send a method call.
@@ -481,11 +530,7 @@ impl Connection {
     ///
     /// Given an existing message (likely a method call), send an error reply back to the caller
     /// using one of the standard interface reply types.
-    pub async fn reply_dbus_error(
-        &self,
-        call: &zbus::message::Header<'_>,
-        err: impl DBusError,
-    ) -> Result<()> {
+    pub async fn reply_dbus_error(&self, call: &zbus::message::Header<'_>, err: impl DBusError) -> Result<()> {
         let _permit = acquire_serial_num_semaphore().await;
 
         let m = err.create_reply(call)?;
@@ -552,9 +597,14 @@ impl Connection {
     /// ```no_run
     /// #
     /// # zbus::block_on(async {
-    /// use zbus::{Connection, fdo::{DBusProxy, RequestNameFlags, RequestNameReply}};
     /// use enumflags2::BitFlags;
     /// use futures_util::stream::StreamExt;
+    /// use zbus::fdo::{
+    ///     DBusProxy,
+    ///     RequestNameFlags,
+    ///     RequestNameReply,
+    /// };
+    /// use zbus::Connection;
     ///
     /// let name = "org.freedesktop.zbus.QueuedNameTest";
     /// let conn1 = Connection::session().await?;
@@ -588,10 +638,7 @@ impl Connection {
     ///
     /// // conn2 made the mistake of being too nice and allowed name replacemnt, so conn1 should be
     /// // able to take it back.
-    /// let mut lost_stream = DBusProxy::new(&conn2)
-    ///     .await?
-    ///     .receive_name_lost()
-    ///     .await?;
+    /// let mut lost_stream = DBusProxy::new(&conn2).await?.receive_name_lost().await?;
     /// conn1.request_name(name).await?;
     /// let lost = lost_stream.next().await.unwrap();
     /// assert_eq!(lost.args().unwrap().name, name);
@@ -639,9 +686,7 @@ impl Connection {
             .await?;
         let mut acquired_stream = dbus_proxy.receive_name_acquired().await?;
         let mut lost_stream = dbus_proxy.receive_name_lost().await?;
-        let reply = dbus_proxy
-            .request_name(well_known_name.clone(), flags)
-            .await?;
+        let reply = dbus_proxy.request_name(well_known_name.clone(), flags).await?;
         let lost_task_name = format!("monitor name {well_known_name} lost");
         let name_lost_fut = if flags.contains(RequestNameFlags::AllowReplacement) {
             let weak_conn = WeakConnection::from(self);
@@ -668,7 +713,7 @@ impl Connection {
                                     inner.registered_names.lock().await.remove(&well_known_name);
 
                                     break;
-                                }
+                                },
                                 Ok(_) => (),
                                 Err(e) => warn!("Failed to parse `NameLost` signal: {}", e),
                             },
@@ -683,7 +728,7 @@ impl Connection {
                                 // `Connection` instance will go away soon anyway and hence this
                                 // strange state along with it.
                                 break;
-                            }
+                            },
                         }
                     }
                 }
@@ -710,15 +755,14 @@ impl Connection {
                                     Ok(args) if args.name == well_known_name => {
                                         let mut names = inner.registered_names.lock().await;
                                         if let Some(status) = names.get_mut(&well_known_name) {
-                                            let task = name_lost_fut.map(|fut| {
-                                                inner.executor.spawn(fut, &lost_task_name)
-                                            });
+                                            let task =
+                                                name_lost_fut.map(|fut| inner.executor.spawn(fut, &lost_task_name));
                                             *status = NameStatus::Owner(task);
 
                                             break;
                                         }
                                         // else the name was released in the meantime. :shrug:
-                                    }
+                                    },
                                     Ok(_) => (),
                                     Err(e) => warn!("Failed to parse `NameAcquired` signal: {}", e),
                                 },
@@ -727,7 +771,7 @@ impl Connection {
                                     // See comment above for similar state in case of `NameLost`
                                     // stream.
                                     break;
-                                }
+                                },
                             }
                         }
                     }
@@ -736,12 +780,12 @@ impl Connection {
                 );
 
                 NameStatus::Queued(task)
-            }
+            },
             RequestNameReply::PrimaryOwner | RequestNameReply::AlreadyOwner => {
                 let task = name_lost_fut.map(|fut| self.executor().spawn(fut, &lost_task_name));
 
                 NameStatus::Owner(task)
-            }
+            },
             RequestNameReply::Exists => return Err(Error::NameTaken),
         };
 
@@ -854,8 +898,8 @@ impl Connection {
     /// Here is how one would typically run the zbus executor through tokio's scheduler:
     ///
     /// ```no_run
-    /// use zbus::connection::Builder;
     /// use tokio::task::spawn;
+    /// use zbus::connection::Builder;
     ///
     /// # struct SomeIface;
     /// #
@@ -875,12 +919,12 @@ impl Connection {
     ///         .await
     ///         .unwrap();
     ///     {
-    ///        let conn = conn.clone();
-    ///        spawn(async move {
-    ///            loop {
-    ///                conn.executor().tick().await;
-    ///            }
-    ///        });
+    ///         let conn = conn.clone();
+    ///         spawn(async move {
+    ///             loop {
+    ///                 conn.executor().tick().await;
+    ///             }
+    ///         });
     ///     }
     ///
     ///     // All your other async code goes here.
@@ -920,21 +964,13 @@ impl Connection {
         Wrapper(self.sync_object_server(true, None))
     }
 
-    pub(crate) fn sync_object_server(
-        &self,
-        start: bool,
-        started_event: Option<Event>,
-    ) -> &blocking::ObjectServer {
+    pub(crate) fn sync_object_server(&self, start: bool, started_event: Option<Event>) -> &blocking::ObjectServer {
         self.inner
             .object_server
             .get_or_init(move || self.setup_object_server(start, started_event))
     }
 
-    fn setup_object_server(
-        &self,
-        start: bool,
-        started_event: Option<Event>,
-    ) -> blocking::ObjectServer {
+    fn setup_object_server(&self, start: bool, started_event: Option<Event>) -> blocking::ObjectServer {
         if start {
             self.start_object_server(started_event);
         }
@@ -965,14 +1001,14 @@ impl Connection {
                                     debug!("Failed to create message stream: {}", e);
 
                                     return;
-                                }
+                                },
                             }
-                        }
+                        },
                         None => {
                             trace!("Connection is gone, stopping associated object server task");
 
                             return;
-                        }
+                        },
                     };
                     if let Some(started_event) = started_event {
                         started_event.notify(1);
@@ -999,22 +1035,16 @@ impl Connection {
                                         // (probably means the name is registered through external
                                         // means).
                                         if !names.is_empty() && !names.contains_key(dest) {
-                                            trace!(
-                                                "Got a method call for a different destination: {}",
-                                                dest
-                                            );
+                                            trace!("Got a method call for a different destination: {}", dest);
 
                                             continue;
                                         }
-                                    }
+                                    },
                                 }
                             }
                             let server = conn.object_server();
                             if let Err(e) = server.dispatch_call(&msg, &hdr).await {
-                                debug!(
-                                    "Error dispatching message. Message: {:?}, error: {:?}",
-                                    msg, e
-                                );
+                                debug!("Error dispatching message. Message: {:?}, error: {:?}", msg, e);
                             }
                         } else {
                             // If connection is completely gone, no reason to keep running the task
@@ -1061,14 +1091,10 @@ impl Connection {
                         .await?;
                 }
                 e.insert((1, receiver.clone().deactivate()));
-                self.inner
-                    .msg_senders
-                    .lock()
-                    .await
-                    .insert(Some(rule), sender);
+                self.inner.msg_senders.lock().await.insert(Some(rule), sender);
 
                 Ok(receiver)
-            }
+            },
             Entry::Occupied(mut e) => {
                 let (num_subscriptions, receiver) = e.get_mut();
                 *num_subscriptions += 1;
@@ -1079,7 +1105,7 @@ impl Connection {
                 }
 
                 Ok(receiver.activate_cloned())
-            }
+            },
         }
     }
 
@@ -1104,22 +1130,17 @@ impl Connection {
                             .await?;
                     }
                     e.remove();
-                    self.inner
-                        .msg_senders
-                        .lock()
-                        .await
-                        .remove(&Some(rule.into()));
+                    self.inner.msg_senders.lock().await.remove(&Some(rule.into()));
                 }
                 Ok(true)
-            }
+            },
         }
     }
 
     pub(crate) fn queue_remove_match(&self, rule: OwnedMatchRule) {
         let conn = self.clone();
         let task_name = format!("Remove match `{}`", *rule);
-        let remove_match =
-            async move { conn.remove_match(rule).await }.instrument(trace_span!("{}", task_name));
+        let remove_match = async move { conn.remove_match(rule).await }.instrument(trace_span!("{}", task_name));
         self.inner.executor.spawn(remove_match, &task_name).detach()
     }
 
@@ -1148,10 +1169,7 @@ impl Connection {
         // The special method return & error channel.
         let (method_return_sender, method_return_receiver) =
             create_msg_broadcast_channel!(DEFAULT_MAX_METHOD_RETURN_QUEUED);
-        let rule = MatchRule::builder()
-            .msg_type(Type::MethodReturn)
-            .build()
-            .into();
+        let rule = MatchRule::builder().msg_type(Type::MethodReturn).build().into();
         msg_senders.insert(Some(rule), method_return_sender.clone());
         let rule = MatchRule::builder().msg_type(Type::Error).build().into();
         msg_senders.insert(Some(rule), method_return_sender);
@@ -1214,12 +1232,7 @@ impl Connection {
     ///
     /// Currently `unix_group_ids` and `linux_security_label` fields are not populated.
     pub async fn peer_credentials(&self) -> io::Result<ConnectionCredentials> {
-        self.inner
-            .socket_write
-            .lock()
-            .await
-            .peer_credentials()
-            .await
+        self.inner.socket_write.lock().await.peer_credentials().await
     }
 
     /// Close the connection.
@@ -1227,13 +1240,7 @@ impl Connection {
     /// After this call, all reading and writing operations will fail.
     pub async fn close(self) -> Result<()> {
         self.inner.activity_event.notify(usize::MAX);
-        self.inner
-            .socket_write
-            .lock()
-            .await
-            .close()
-            .await
-            .map_err(Into::into)
+        self.inner.socket_write.lock().await.close().await.map_err(Into::into)
     }
 
     /// Gracefully close the connection, waiting for all other references to be dropped.
@@ -1368,17 +1375,19 @@ async fn acquire_serial_num_semaphore() -> Option<SemaphorePermit<'static>> {
 
 #[cfg(test)]
 mod tests {
+    use std::pin::pin;
+    use std::time::Duration;
+
+    use ntest::timeout;
+    use test_log::test;
+
     use super::*;
     use crate::fdo::DBusProxy;
-    use ntest::timeout;
-    use std::{pin::pin, time::Duration};
-    use test_log::test;
 
     #[cfg(windows)]
     #[test]
     fn connect_autolaunch_session_bus() {
-        let addr =
-            crate::win32::autolaunch_bus_address().expect("Unable to get session bus address");
+        let addr = crate::win32::autolaunch_bus_address().expect("Unable to get session bus address");
 
         crate::block_on(async { addr.connect().await }).expect("Unable to connect to session bus");
     }
@@ -1387,11 +1396,13 @@ mod tests {
     #[test]
     #[ignore = "fails in ci"]
     fn connect_launchd_session_bus() {
-        use crate::address::{transport::Launchd, Address, Transport};
+        use crate::address::transport::Launchd;
+        use crate::address::{
+            Address,
+            Transport,
+        };
         crate::block_on(async {
-            let addr = Address::from(Transport::Launchd(Launchd::new(
-                "DBUS_LAUNCHD_SESSION_BUS_SOCKET",
-            )));
+            let addr = Address::from(Transport::Launchd(Launchd::new("DBUS_LAUNCHD_SESSION_BUS_SOCKET")));
             addr.connect().await
         })
         .expect("Unable to connect to session bus");
@@ -1544,11 +1555,16 @@ mod p2p_tests {
     use futures_util::stream::TryStreamExt;
     use ntest::timeout;
     use test_log::test;
-    use zvariant::{Endian, NATIVE_ENDIAN};
-
-    use crate::{AuthMechanism, Guid};
+    use zvariant::{
+        Endian,
+        NATIVE_ENDIAN,
+    };
 
     use super::*;
+    use crate::{
+        AuthMechanism,
+        Guid,
+    };
 
     // Same numbered client and server are already paired up.
     async fn test_p2p(
@@ -1710,6 +1726,7 @@ mod p2p_tests {
     async fn unix_p2p_pipe() -> Result<(Connection, Connection)> {
         #[cfg(not(feature = "tokio"))]
         use std::os::unix::net::UnixStream;
+
         #[cfg(feature = "tokio")]
         use tokio::net::UnixStream;
         #[cfg(all(windows, not(feature = "tokio")))]
@@ -1726,10 +1743,7 @@ mod p2p_tests {
     }
 
     // Compile-test only since we don't have a VM setup to run this with/in.
-    #[cfg(any(
-        all(feature = "vsock", not(feature = "tokio")),
-        feature = "tokio-vsock"
-    ))]
+    #[cfg(any(all(feature = "vsock", not(feature = "tokio")), feature = "tokio-vsock"))]
     #[test]
     #[timeout(15000)]
     #[ignore]
@@ -1737,10 +1751,7 @@ mod p2p_tests {
         crate::utils::block_on(test_vsock_p2p()).unwrap();
     }
 
-    #[cfg(any(
-        all(feature = "vsock", not(feature = "tokio")),
-        feature = "tokio-vsock"
-    ))]
+    #[cfg(any(all(feature = "vsock", not(feature = "tokio")), feature = "tokio-vsock"))]
     async fn test_vsock_p2p() -> Result<()> {
         let (server1, client1) = vsock_p2p_pipe().await?;
         let (server2, client2) = vsock_p2p_pipe().await?;
@@ -1790,17 +1801,27 @@ mod p2p_tests {
     #[test]
     #[timeout(15000)]
     fn unix_p2p_cookie_auth() {
-        use crate::utils::block_on;
-        use std::{
-            fs::{create_dir_all, remove_file, write},
-            time::{SystemTime as Time, UNIX_EPOCH},
+        use std::fs::{
+            create_dir_all,
+            remove_file,
+            write,
+        };
+        use std::time::{
+            SystemTime as Time,
+            UNIX_EPOCH,
         };
         #[cfg(unix)]
         use std::{
-            fs::{set_permissions, Permissions},
+            fs::{
+                set_permissions,
+                Permissions,
+            },
             os::unix::fs::PermissionsExt,
         };
+
         use xdg_home::home_dir;
+
+        use crate::utils::block_on;
 
         let cookie_context = "zbus-test-cookie-context";
         let cookie_id = 123456789;
@@ -1831,12 +1852,10 @@ mod p2p_tests {
     }
 
     #[cfg(any(unix, not(feature = "tokio")))]
-    async fn test_unix_p2p_cookie_auth(
-        cookie_context: &'static str,
-        cookie_id: Option<usize>,
-    ) -> Result<()> {
+    async fn test_unix_p2p_cookie_auth(cookie_context: &'static str, cookie_id: Option<usize>) -> Result<()> {
         #[cfg(all(unix, not(feature = "tokio")))]
         use std::os::unix::net::UnixStream;
+
         #[cfg(all(unix, feature = "tokio"))]
         use tokio::net::UnixStream;
         #[cfg(all(windows, not(feature = "tokio")))]
@@ -1856,11 +1875,7 @@ mod p2p_tests {
             server_builder = server_builder.cookie_id(cookie_id);
         }
 
-        futures_util::try_join!(
-            Builder::unix_stream(p1).p2p().build(),
-            server_builder.build(),
-        )
-        .map(|_| ())
+        futures_util::try_join!(Builder::unix_stream(p1).p2p().build(), server_builder.build(),).map(|_| ())
     }
 
     #[test]

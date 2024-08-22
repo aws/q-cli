@@ -1,11 +1,16 @@
-use std::{fmt, path::PathBuf};
+use std::fmt;
+use std::path::PathBuf;
 
 use futures_util::StreamExt;
 use tracing::trace;
 use xdg_home::home_dir;
 use zvariant::Str;
 
-use crate::{file::FileLines, Error, Result};
+use crate::file::FileLines;
+use crate::{
+    Error,
+    Result,
+};
 
 #[derive(Debug)]
 pub(super) struct Cookie {
@@ -24,8 +29,7 @@ impl Cookie {
     }
 
     fn keyring_path() -> Result<PathBuf> {
-        let mut path = home_dir()
-            .ok_or_else(|| Error::Handshake("Failed to determine home directory".into()))?;
+        let mut path = home_dir().ok_or_else(|| Error::Handshake("Failed to determine home directory".into()))?;
         path.push(".dbus-keyrings");
         Ok(path)
     }
@@ -38,9 +42,7 @@ impl Cookie {
 
             let perms = crate::file::metadata(&path).await?.permissions().mode();
             if perms & 0o066 != 0 {
-                return Err(Error::Handshake(
-                    "DBus keyring has invalid permissions".into(),
-                ));
+                return Err(Error::Handshake("DBus keyring has invalid permissions".into()));
             }
         }
         #[cfg(not(unix))]
@@ -56,12 +58,7 @@ impl Cookie {
             let mut split = line.split_whitespace();
             let id = split
                 .next()
-                .ok_or_else(|| {
-                    Error::Handshake(format!(
-                        "DBus cookie `{}` missing ID at line {n}",
-                        path.display(),
-                    ))
-                })?
+                .ok_or_else(|| Error::Handshake(format!("DBus cookie `{}` missing ID at line {n}", path.display(),)))?
                 .parse()
                 .map_err(|e| {
                     Error::Handshake(format!(
@@ -119,9 +116,7 @@ impl<'c> TryFrom<Str<'c>> for CookieContext<'c> {
         if value.is_empty() {
             return Err(Error::Handshake("Empty cookie context".into()));
         } else if !value.is_ascii() || value.contains(['/', '\\', ' ', '\n', '\r', '\t', '.']) {
-            return Err(Error::Handshake(
-                "Invalid characters in cookie context".into(),
-            ));
+            return Err(Error::Handshake("Invalid characters in cookie context".into()));
         }
 
         Ok(Self(value))

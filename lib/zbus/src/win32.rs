@@ -1,54 +1,75 @@
-use std::{
-    ffi::{CStr, OsStr},
-    io::{Error, ErrorKind},
-    net::SocketAddr,
-    os::windows::{
-        io::{AsRawHandle, FromRawHandle, OwnedHandle, RawHandle},
-        prelude::OsStrExt,
-    },
-    ptr,
+use std::ffi::{
+    CStr,
+    OsStr,
 };
+use std::io::{
+    Error,
+    ErrorKind,
+};
+use std::net::SocketAddr;
+use std::os::windows::io::{
+    AsRawHandle,
+    FromRawHandle,
+    OwnedHandle,
+    RawHandle,
+};
+use std::os::windows::prelude::OsStrExt;
+use std::ptr;
 
-use windows_sys::Win32::{
-    Foundation::{
-        LocalFree, ERROR_INSUFFICIENT_BUFFER, FALSE, HANDLE, NO_ERROR, WAIT_ABANDONED,
-        WAIT_OBJECT_0,
-    },
-    NetworkManagement::IpHelper::{GetTcpTable2, MIB_TCPTABLE2, MIB_TCP_STATE_ESTAB},
-    Networking::WinSock::INADDR_LOOPBACK,
-    Security::{
-        Authorization::ConvertSidToStringSidA, GetTokenInformation, IsValidSid, TokenUser,
-        TOKEN_QUERY, TOKEN_USER,
-    },
-    System::{
-        Memory::{MapViewOfFile, OpenFileMappingW, FILE_MAP_READ},
-        Threading::{
-            CreateMutexW, GetCurrentProcess, OpenProcess, OpenProcessToken, ReleaseMutex,
-            WaitForSingleObject, INFINITE, PROCESS_ACCESS_RIGHTS,
-            PROCESS_QUERY_LIMITED_INFORMATION,
-        },
-    },
+#[cfg(not(feature = "tokio"))]
+use uds_windows::UnixStream;
+use windows_sys::Win32::Foundation::{
+    LocalFree,
+    ERROR_INSUFFICIENT_BUFFER,
+    FALSE,
+    HANDLE,
+    NO_ERROR,
+    WAIT_ABANDONED,
+    WAIT_OBJECT_0,
+};
+use windows_sys::Win32::NetworkManagement::IpHelper::{
+    GetTcpTable2,
+    MIB_TCPTABLE2,
+    MIB_TCP_STATE_ESTAB,
+};
+use windows_sys::Win32::Networking::WinSock::INADDR_LOOPBACK;
+use windows_sys::Win32::Security::Authorization::ConvertSidToStringSidA;
+use windows_sys::Win32::Security::{
+    GetTokenInformation,
+    IsValidSid,
+    TokenUser,
+    TOKEN_QUERY,
+    TOKEN_USER,
+};
+use windows_sys::Win32::System::Memory::{
+    MapViewOfFile,
+    OpenFileMappingW,
+    FILE_MAP_READ,
+};
+use windows_sys::Win32::System::Threading::{
+    CreateMutexW,
+    GetCurrentProcess,
+    OpenProcess,
+    OpenProcessToken,
+    ReleaseMutex,
+    WaitForSingleObject,
+    INFINITE,
+    PROCESS_ACCESS_RIGHTS,
+    PROCESS_QUERY_LIMITED_INFORMATION,
 };
 
 use crate::Address;
-#[cfg(not(feature = "tokio"))]
-use uds_windows::UnixStream;
 
 struct Mutex(OwnedHandle);
 
 impl Mutex {
     pub fn new(name: &str) -> Result<Self, crate::Error> {
-        let name_wide = OsStr::new(name)
-            .encode_wide()
-            .chain([0])
-            .collect::<Vec<_>>();
+        let name_wide = OsStr::new(name).encode_wide().chain([0]).collect::<Vec<_>>();
 
         let handle = unsafe { CreateMutexW(ptr::null_mut(), FALSE, name_wide.as_ptr()) };
 
         // SAFETY: We have exclusive ownership over the mutex handle
-        Ok(Self(unsafe {
-            OwnedHandle::from_raw_handle(handle as RawHandle)
-        }))
+        Ok(Self(unsafe { OwnedHandle::from_raw_handle(handle as RawHandle) }))
     }
 
     pub fn lock(&self) -> MutexGuard<'_> {
@@ -63,7 +84,7 @@ struct MutexGuard<'a>(&'a Mutex);
 
 impl Drop for MutexGuard<'_> {
     fn drop(&mut self) {
-        unsafe { ReleaseMutex(self.0 .0.as_raw_handle()) };
+        unsafe { ReleaseMutex(self.0.0.as_raw_handle()) };
     }
 }
 
@@ -72,10 +93,7 @@ pub struct ProcessHandle(OwnedHandle);
 
 impl ProcessHandle {
     /// Open the process associated with the process_id (if None, the current process).
-    pub fn open(
-        process_id: Option<u32>,
-        desired_access: PROCESS_ACCESS_RIGHTS,
-    ) -> Result<Self, Error> {
+    pub fn open(process_id: Option<u32>, desired_access: PROCESS_ACCESS_RIGHTS) -> Result<Self, Error> {
         let process = if let Some(process_id) = process_id {
             unsafe { OpenProcess(desired_access, false.into(), process_id) }
         } else {
@@ -86,9 +104,7 @@ impl ProcessHandle {
             Err(Error::last_os_error())
         } else {
             // SAFETY: We have exclusive ownership over the process handle
-            Ok(Self(unsafe {
-                OwnedHandle::from_raw_handle(process as RawHandle)
-            }))
+            Ok(Self(unsafe { OwnedHandle::from_raw_handle(process as RawHandle) }))
         }
     }
 }
@@ -107,13 +123,7 @@ impl ProcessToken {
         let mut process_token: HANDLE = ptr::null_mut();
         let process = ProcessHandle::open(process_id, PROCESS_QUERY_LIMITED_INFORMATION)?;
 
-        if unsafe {
-            OpenProcessToken(
-                process.0.as_raw_handle(),
-                TOKEN_QUERY,
-                ptr::addr_of_mut!(process_token),
-            ) == 0
-        } {
+        if unsafe { OpenProcessToken(process.0.as_raw_handle(), TOKEN_QUERY, ptr::addr_of_mut!(process_token)) == 0 } {
             Err(Error::last_os_error())
         } else {
             // SAFETY: We have exclusive ownership over the process handle
@@ -200,14 +210,10 @@ pub fn socket_addr_get_pid(addr: &SocketAddr) -> Result<u32, Error> {
     }
 
     let tcp_table = tcp_table.as_mut_ptr().cast::<MIB_TCPTABLE2>();
-    let entries = unsafe {
-        std::slice::from_raw_parts(
-            (*tcp_table).table.as_ptr(),
-            (*tcp_table).dwNumEntries as usize,
-        )
-    };
+    let entries =
+        unsafe { std::slice::from_raw_parts((*tcp_table).table.as_ptr(), (*tcp_table).dwNumEntries as usize) };
     for entry in entries {
-        let port = (entry.dwLocalPort & 0xFFFF) as u16;
+        let port = (entry.dwLocalPort & 0xffff) as u16;
         let port = u16::from_be(port);
 
         if entry.dwState == MIB_TCP_STATE_ESTAB as u32
@@ -242,7 +248,13 @@ fn last_err() -> std::io::Error {
 #[cfg(not(feature = "tokio"))]
 pub fn unix_stream_get_peer_pid(stream: &UnixStream) -> Result<u32, Error> {
     use std::os::windows::io::AsRawSocket;
-    use windows_sys::Win32::Networking::WinSock::{WSAIoctl, IOC_OUT, IOC_VENDOR, SOCKET_ERROR};
+
+    use windows_sys::Win32::Networking::WinSock::{
+        WSAIoctl,
+        IOC_OUT,
+        IOC_VENDOR,
+        SOCKET_ERROR,
+    };
 
     macro_rules! _WSAIOR {
         ($x:expr, $y:expr) => {
@@ -278,10 +290,7 @@ pub fn unix_stream_get_peer_pid(stream: &UnixStream) -> Result<u32, Error> {
 
 fn read_shm(name: &str) -> Result<Vec<u8>, crate::Error> {
     let handle = {
-        let wide_name = OsStr::new(name)
-            .encode_wide()
-            .chain([0])
-            .collect::<Vec<_>>();
+        let wide_name = OsStr::new(name).encode_wide().chain([0]).collect::<Vec<_>>();
 
         let res = unsafe { OpenFileMappingW(FILE_MAP_READ, FALSE, wide_name.as_ptr()) };
 
@@ -289,9 +298,7 @@ fn read_shm(name: &str) -> Result<Vec<u8>, crate::Error> {
             // SAFETY: We have exclusive ownership over the file mapping handle
             unsafe { OwnedHandle::from_raw_handle(res as RawHandle) }
         } else {
-            return Err(crate::Error::Address(
-                "Unable to open shared memory".to_owned(),
-            ));
+            return Err(crate::Error::Address("Unable to open shared memory".to_owned()));
         }
     };
 

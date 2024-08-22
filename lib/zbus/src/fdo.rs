@@ -3,21 +3,48 @@
 //! The D-Bus specification defines the message bus messages and some standard interfaces that may
 //! be useful across various D-Bus applications. This module provides their proxy.
 
-use enumflags2::{bitflags, BitFlags};
-use serde::{Deserialize, Serialize};
-use serde_repr::{Deserialize_repr, Serialize_repr};
-use static_assertions::assert_impl_all;
 use std::collections::HashMap;
+
+use enumflags2::{
+    bitflags,
+    BitFlags,
+};
+use serde::{
+    Deserialize,
+    Serialize,
+};
+use serde_repr::{
+    Deserialize_repr,
+    Serialize_repr,
+};
+use static_assertions::assert_impl_all;
 use zbus_names::{
-    BusName, InterfaceName, OwnedBusName, OwnedInterfaceName, OwnedUniqueName, UniqueName,
+    BusName,
+    InterfaceName,
+    OwnedBusName,
+    OwnedInterfaceName,
+    OwnedUniqueName,
+    UniqueName,
     WellKnownName,
 };
 use zvariant::{
-    DeserializeDict, ObjectPath, Optional, OwnedObjectPath, OwnedValue, SerializeDict, Type, Value,
+    DeserializeDict,
+    ObjectPath,
+    Optional,
+    OwnedObjectPath,
+    OwnedValue,
+    SerializeDict,
+    Type,
+    Value,
 };
 
+use crate::message::Header;
+use crate::object_server::SignalContext;
 use crate::{
-    interface, message::Header, object_server::SignalContext, proxy, DBusError, ObjectServer,
+    interface,
+    proxy,
+    DBusError,
+    ObjectServer,
     OwnedGuid,
 };
 
@@ -130,16 +157,10 @@ impl Properties {
         let iface = root
             .get_child(path)
             .and_then(|node| node.interface_lock(interface_name.as_ref()))
-            .ok_or_else(|| {
-                Error::UnknownInterface(format!("Unknown interface '{interface_name}'"))
-            })?;
+            .ok_or_else(|| Error::UnknownInterface(format!("Unknown interface '{interface_name}'")))?;
 
         let res = iface.instance.read().await.get(property_name).await;
-        res.unwrap_or_else(|| {
-            Err(Error::UnknownProperty(format!(
-                "Unknown property '{property_name}'"
-            )))
-        })
+        res.unwrap_or_else(|| Err(Error::UnknownProperty(format!("Unknown property '{property_name}'"))))
     }
 
     async fn set(
@@ -156,37 +177,19 @@ impl Properties {
         let iface = root
             .get_child(path)
             .and_then(|node| node.interface_lock(interface_name.as_ref()))
-            .ok_or_else(|| {
-                Error::UnknownInterface(format!("Unknown interface '{interface_name}'"))
-            })?;
+            .ok_or_else(|| Error::UnknownInterface(format!("Unknown interface '{interface_name}'")))?;
 
-        match iface
-            .instance
-            .read()
-            .await
-            .set(property_name, &value, &ctxt)
-        {
-            zbus::object_server::DispatchResult::RequiresMut => {}
+        match iface.instance.read().await.set(property_name, &value, &ctxt) {
+            zbus::object_server::DispatchResult::RequiresMut => {},
             zbus::object_server::DispatchResult::NotFound => {
-                return Err(Error::UnknownProperty(format!(
-                    "Unknown property '{property_name}'"
-                )));
-            }
+                return Err(Error::UnknownProperty(format!("Unknown property '{property_name}'")));
+            },
             zbus::object_server::DispatchResult::Async(f) => {
                 return f.await.map_err(Into::into);
-            }
+            },
         }
-        let res = iface
-            .instance
-            .write()
-            .await
-            .set_mut(property_name, &value, &ctxt)
-            .await;
-        res.unwrap_or_else(|| {
-            Err(Error::UnknownProperty(format!(
-                "Unknown property '{property_name}'"
-            )))
-        })
+        let res = iface.instance.write().await.set_mut(property_name, &value, &ctxt).await;
+        res.unwrap_or_else(|| Err(Error::UnknownProperty(format!("Unknown property '{property_name}'"))))
     }
 
     async fn get_all(
@@ -200,9 +203,7 @@ impl Properties {
         let iface = root
             .get_child(path)
             .and_then(|node| node.interface_lock(interface_name.as_ref()))
-            .ok_or_else(|| {
-                Error::UnknownInterface(format!("Unknown interface '{interface_name}'"))
-            })?;
+            .ok_or_else(|| Error::UnknownInterface(format!("Unknown interface '{interface_name}'")))?;
 
         let res = iface.instance.read().await.get_all().await?;
         Ok(res)
@@ -220,8 +221,7 @@ impl Properties {
 }
 
 /// The type returned by the [`ObjectManagerProxy::get_managed_objects`] method.
-pub type ManagedObjects =
-    HashMap<OwnedObjectPath, HashMap<OwnedInterfaceName, HashMap<String, OwnedValue>>>;
+pub type ManagedObjects = HashMap<OwnedObjectPath, HashMap<OwnedInterfaceName, HashMap<String, OwnedValue>>>;
 
 #[rustfmt::skip]
 macro_rules! gen_object_manager_proxy {
@@ -372,7 +372,7 @@ impl Peer {
                         "Failed to read from /var/lib/dbus/machine-id or /etc/machine-id: {e}"
                     )));
                 }
-            }
+            },
         };
 
         let len = id.trim_end().len();
@@ -484,7 +484,7 @@ pub enum RequestNameFlags {
     /// [`AllowReplacement`].
     ///
     /// [`AllowReplacement`]: enum.RequestNameFlags.html#variant.AllowReplacement
-    ReplaceExisting = 0x02,
+    ReplaceExisting  = 0x02,
     /// Without this flag, if an application requests a name that is already owned, the
     /// application will be placed in a queue to own the name when the current owner gives it
     /// up. If this flag is given, the application will not be placed in the queue; the
@@ -492,7 +492,7 @@ pub enum RequestNameFlags {
     /// application is replaced as name owner; by default the application moves back into the
     /// waiting queue, unless this flag was provided when the application became the name
     /// owner.
-    DoNotQueue = 0x04,
+    DoNotQueue       = 0x04,
 }
 
 assert_impl_all!(RequestNameFlags: Send, Sync, Unpin);
@@ -517,7 +517,7 @@ pub enum RequestNameReply {
     /// [`DoNotQueue`]: enum.RequestNameFlags.html#variant.DoNotQueue
     /// [`ReplaceExisting`]: enum.RequestNameFlags.html#variant.ReplaceExisting
     /// [`AllowReplacement`]: enum.RequestNameFlags.html#variant.AllowReplacement
-    InQueue = 0x02,
+    InQueue      = 0x02,
     /// The name already had an owner, [`DoNotQueue`] was specified, and either
     /// [`AllowReplacement`] was not specified by the current owner, or [`ReplaceExisting`] was
     /// not specified by the requesting application.
@@ -525,7 +525,7 @@ pub enum RequestNameReply {
     /// [`DoNotQueue`]: enum.RequestNameFlags.html#variant.DoNotQueue
     /// [`ReplaceExisting`]: enum.RequestNameFlags.html#variant.ReplaceExisting
     /// [`AllowReplacement`]: enum.RequestNameFlags.html#variant.AllowReplacement
-    Exists = 0x03,
+    Exists       = 0x03,
     /// The application trying to request ownership of a name is already the owner of it.
     AlreadyOwner = 0x04,
 }
@@ -542,12 +542,12 @@ pub enum ReleaseNameReply {
     /// owner of the name, and the name is now unused or taken by somebody waiting in the queue for
     /// the name, or the caller was waiting in the queue for the name and has now been removed from
     /// the queue.
-    Released = 0x01,
+    Released    = 0x01,
     /// The given name does not exist on this bus.
     NonExistent = 0x02,
     /// The caller was not the primary owner of this name, and was also not waiting in the queue to
     /// own this name.
-    NotOwner = 0x03,
+    NotOwner    = 0x03,
 }
 
 assert_impl_all!(ReleaseNameReply: Send, Sync, Unpin);
@@ -659,9 +659,7 @@ impl ConnectionCredentials {
     ///
     /// See [`ConnectionCredentials::unix_group_ids`] for more information.
     pub fn add_unix_group_id(mut self, unix_group_id: u32) -> Self {
-        self.unix_group_ids
-            .get_or_insert_with(Vec::new)
-            .push(unix_group_id);
+        self.unix_group_ids.get_or_insert_with(Vec::new).push(unix_group_id);
 
         self
     }
@@ -1000,12 +998,18 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[cfg(test)]
 mod tests {
-    use crate::{fdo, message::Message, DBusError, Error};
     use futures_util::StreamExt;
     use ntest::timeout;
     use test_log::test;
     use tokio::runtime;
     use zbus_names::WellKnownName;
+
+    use crate::message::Message;
+    use crate::{
+        fdo,
+        DBusError,
+        Error,
+    };
 
     #[test]
     fn error_from_zerror() {
@@ -1054,30 +1058,19 @@ mod tests {
             .await
             .unwrap();
 
-        let name_acquired_stream = proxy
-            .receive_name_acquired_with_args(&[(0, well_known)])
-            .await
-            .unwrap();
+        let name_acquired_stream = proxy.receive_name_acquired_with_args(&[(0, well_known)]).await.unwrap();
         let mut stream = owner_change_stream.zip(name_acquired_stream);
 
         let well_known: WellKnownName<'static> = well_known.try_into().unwrap();
         proxy
-            .request_name(
-                well_known.as_ref(),
-                fdo::RequestNameFlags::ReplaceExisting.into(),
-            )
+            .request_name(well_known.as_ref(), fdo::RequestNameFlags::ReplaceExisting.into())
             .await
             .unwrap();
 
         let (name_owner_changed, name_acquired) = stream.next().await.unwrap();
         assert_eq!(name_owner_changed.args().unwrap().name(), &well_known);
         assert_eq!(
-            *name_owner_changed
-                .args()
-                .unwrap()
-                .new_owner()
-                .as_ref()
-                .unwrap(),
+            *name_owner_changed.args().unwrap().new_owner().as_ref().unwrap(),
             *unique_name
         );
         assert_eq!(name_acquired.args().unwrap().name(), &well_known);
@@ -1088,13 +1081,10 @@ mod tests {
         let result = proxy.release_name(well_known).await.unwrap();
         assert_eq!(result, fdo::ReleaseNameReply::NonExistent);
 
-        let _stream = proxy
-            .receive_features_changed()
-            .await
-            .filter_map(|changed| async move {
-                let v = changed.get().await.ok();
-                dbg!(v)
-            });
+        let _stream = proxy.receive_features_changed().await.filter_map(|changed| async move {
+            let v = changed.get().await.ok();
+            dbg!(v)
+        });
     }
 
     #[ignore = "fails in ci"]
@@ -1136,10 +1126,7 @@ mod tests {
             .unwrap()
             .serve_at("/org/zbus/NoObjectManagerSignalsBeforeHello/Obj", TestObj)
             .unwrap()
-            .serve_at(
-                "/org/zbus/NoObjectManagerSignalsBeforeHello",
-                super::ObjectManager,
-            )
+            .serve_at("/org/zbus/NoObjectManagerSignalsBeforeHello", super::ObjectManager)
             .unwrap()
             .build()
             .unwrap();
@@ -1151,9 +1138,7 @@ mod tests {
             signal.args().unwrap().interfaces_and_properties,
             vec![(
                 "org.zbus.TestObj",
-                vec![("Test", zvariant::Value::new("test"))]
-                    .into_iter()
-                    .collect()
+                vec![("Test", zvariant::Value::new("test"))].into_iter().collect()
             )]
             .into_iter()
             .collect()

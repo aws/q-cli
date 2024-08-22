@@ -1,9 +1,17 @@
+use zvariant::serialized::{
+    self,
+    Data,
+};
 use zvariant::{
-    serialized::{self, Data},
-    Signature, Type,
+    Signature,
+    Type,
 };
 
-use crate::{Error, Message, Result};
+use crate::{
+    Error,
+    Message,
+    Result,
+};
 
 /// The body of a message.
 ///

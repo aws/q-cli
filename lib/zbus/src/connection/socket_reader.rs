@@ -1,13 +1,22 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
+use std::sync::Arc;
 
 use event_listener::Event;
-use tracing::{debug, instrument, trace};
-
-use crate::{
-    async_lock::Mutex, connection::MsgBroadcaster, Executor, Message, OwnedMatchRule, Task,
+use tracing::{
+    debug,
+    instrument,
+    trace,
 };
 
 use super::socket::ReadHalf;
+use crate::async_lock::Mutex;
+use crate::connection::MsgBroadcaster;
+use crate::{
+    Executor,
+    Message,
+    OwnedMatchRule,
+    Task,
+};
 
 #[derive(Debug)]
 pub(crate) struct SocketReader {
@@ -65,7 +74,7 @@ impl SocketReader {
                                 debug!("Error matching message against rule: {:?}", e);
 
                                 continue;
-                            }
+                            },
                         }
                     }
                 }
@@ -77,11 +86,7 @@ impl SocketReader {
                     // 2. No active receivers.
                     //
                     // In either case, just log it.
-                    trace!(
-                        "Error broadcasting message to stream for `{:?}`: {:?}",
-                        rule,
-                        e
-                    );
+                    trace!("Error broadcasting message to stream for `{:?}`: {:?}", rule, e);
                 }
             }
             trace!("Broadcasted to all streams: {:?}", msg);

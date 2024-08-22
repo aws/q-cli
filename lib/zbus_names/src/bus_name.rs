@@ -1,17 +1,37 @@
-use core::{
-    borrow::Borrow,
-    fmt::{self, Debug, Display, Formatter},
-    ops::Deref,
+use core::borrow::Borrow;
+use core::fmt::{
+    self,
+    Debug,
+    Display,
+    Formatter,
 };
-use std::{borrow::Cow, sync::Arc};
+use core::ops::Deref;
+use std::borrow::Cow;
+use std::sync::Arc;
 
+use serde::{
+    de,
+    Deserialize,
+    Serialize,
+};
+use static_assertions::assert_impl_all;
+use zvariant::{
+    NoneValue,
+    OwnedValue,
+    Str,
+    Type,
+    Value,
+};
+
+use crate::utils::impl_str_basic;
 use crate::{
-    utils::impl_str_basic, Error, OwnedUniqueName, OwnedWellKnownName, Result, UniqueName,
+    Error,
+    OwnedUniqueName,
+    OwnedWellKnownName,
+    Result,
+    UniqueName,
     WellKnownName,
 };
-use serde::{de, Deserialize, Serialize};
-use static_assertions::assert_impl_all;
-use zvariant::{NoneValue, OwnedValue, Str, Type, Value};
 
 /// String that identifies a [bus name].
 ///
@@ -96,9 +116,7 @@ impl<'name> BusName<'name> {
     pub fn from_static_str(name: &'static str) -> Result<Self> {
         match Self::try_from(name)? {
             BusName::Unique(_) => Ok(BusName::Unique(UniqueName::from_static_str_unchecked(name))),
-            BusName::WellKnown(_) => Ok(BusName::WellKnown(
-                WellKnownName::from_static_str_unchecked(name),
-            )),
+            BusName::WellKnown(_) => Ok(BusName::WellKnown(WellKnownName::from_static_str_unchecked(name))),
         }
     }
 }
@@ -120,14 +138,8 @@ impl Borrow<str> for BusName<'_> {
 impl Debug for BusName<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            BusName::Unique(name) => f
-                .debug_tuple("BusName::Unique")
-                .field(&name.as_str())
-                .finish(),
-            BusName::WellKnown(name) => f
-                .debug_tuple("BusName::WellKnown")
-                .field(&name.as_str())
-                .finish(),
+            BusName::Unique(name) => f.debug_tuple("BusName::Unique").field(&name.as_str()).finish(),
+            BusName::WellKnown(name) => f.debug_tuple("BusName::WellKnown").field(&name.as_str()).finish(),
         }
     }
 }
@@ -220,7 +232,7 @@ impl<'s> TryFrom<Str<'s>> for BusName<'s> {
             Err(Error::InvalidUniqueName(unique_err)) => match WellKnownName::try_from(value) {
                 Err(Error::InvalidWellKnownName(well_known_err)) => {
                     Err(Error::InvalidBusName(unique_err, well_known_err))
-                }
+                },
                 Err(e) => Err(e),
                 Ok(name) => Ok(BusName::WellKnown(name)),
             },
@@ -258,9 +270,7 @@ impl<'s> TryFrom<Value<'s>> for BusName<'s> {
     type Error = Error;
 
     fn try_from(value: Value<'s>) -> Result<Self> {
-        Str::try_from(value)
-            .map_err(Into::into)
-            .and_then(TryInto::try_into)
+        Str::try_from(value).map_err(Into::into).and_then(TryInto::try_into)
     }
 }
 
@@ -310,9 +320,7 @@ impl TryFrom<OwnedValue> for BusName<'_> {
     type Error = Error;
 
     fn try_from(value: OwnedValue) -> Result<Self> {
-        Str::try_from(value)
-            .map_err(Into::into)
-            .and_then(TryInto::try_into)
+        Str::try_from(value).map_err(Into::into).and_then(TryInto::try_into)
     }
 }
 
@@ -387,14 +395,8 @@ impl Borrow<str> for OwnedBusName {
 impl Debug for OwnedBusName {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match &self.0 {
-            BusName::Unique(name) => f
-                .debug_tuple("OwnedBusName::Unique")
-                .field(&name.as_str())
-                .finish(),
-            BusName::WellKnown(name) => f
-                .debug_tuple("OwnedBusName::WellKnown")
-                .field(&name.as_str())
-                .finish(),
+            BusName::Unique(name) => f.debug_tuple("OwnedBusName::Unique").field(&name.as_str()).finish(),
+            BusName::WellKnown(name) => f.debug_tuple("OwnedBusName::WellKnown").field(&name.as_str()).finish(),
         }
     }
 }

@@ -2,21 +2,37 @@
 //!
 //! Provides blocking versions of the proxy types in [`zbus::fdo`] module.
 
+use std::collections::HashMap;
+
 use enumflags2::BitFlags;
 use static_assertions::assert_impl_all;
-use std::collections::HashMap;
 use zbus_names::{
-    BusName, InterfaceName, OwnedBusName, OwnedInterfaceName, OwnedUniqueName, UniqueName,
+    BusName,
+    InterfaceName,
+    OwnedBusName,
+    OwnedInterfaceName,
+    OwnedUniqueName,
+    UniqueName,
     WellKnownName,
 };
-use zvariant::{ObjectPath, Optional, OwnedValue, Value};
+use zvariant::{
+    ObjectPath,
+    Optional,
+    OwnedValue,
+    Value,
+};
 
+use crate::fdo::{
+    ConnectionCredentials,
+    ManagedObjects,
+    ReleaseNameReply,
+    RequestNameFlags,
+    RequestNameReply,
+    Result,
+};
 use crate::{
-    fdo::{
-        ConnectionCredentials, ManagedObjects, ReleaseNameReply, RequestNameFlags,
-        RequestNameReply, Result,
-    },
-    proxy, OwnedGuid,
+    proxy,
+    OwnedGuid,
 };
 
 gen_introspectable_proxy!(false, true);

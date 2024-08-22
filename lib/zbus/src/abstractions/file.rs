@@ -4,11 +4,12 @@
 
 #[cfg(unix)]
 use std::fs::Metadata;
-use std::{
-    io::Result,
-    path::Path,
-    pin::Pin,
-    task::{Context, Poll},
+use std::io::Result;
+use std::path::Path;
+use std::pin::Pin;
+use std::task::{
+    Context,
+    Poll,
 };
 
 use futures_core::Stream;

@@ -1,14 +1,25 @@
-#[cfg(not(feature = "tokio"))]
-use async_io::Async;
 use std::io;
 #[cfg(unix)]
 use std::os::fd::BorrowedFd;
 #[cfg(not(feature = "tokio"))]
-use std::{net::TcpStream, sync::Arc};
+use std::{
+    net::TcpStream,
+    sync::Arc,
+};
 
-use super::{ReadHalf, RecvmsgResult, WriteHalf};
+#[cfg(not(feature = "tokio"))]
+use async_io::Async;
+
+use super::{
+    ReadHalf,
+    RecvmsgResult,
+    WriteHalf,
+};
 #[cfg(feature = "tokio")]
-use super::{Socket, Split};
+use super::{
+    Socket,
+    Split,
+};
 
 #[cfg(not(feature = "tokio"))]
 #[async_trait::async_trait]
@@ -22,7 +33,7 @@ impl ReadHalf for Arc<Async<TcpStream>> {
                 #[cfg(not(unix))]
                 let ret = len;
                 Ok(ret)
-            }
+            },
         }
     }
 
@@ -31,7 +42,10 @@ impl ReadHalf for Arc<Async<TcpStream>> {
         let stream = self.clone();
         crate::Task::spawn_blocking(
             move || {
-                use crate::win32::{tcp_stream_get_peer_pid, ProcessToken};
+                use crate::win32::{
+                    tcp_stream_get_peer_pid,
+                    ProcessToken,
+                };
 
                 let pid = tcp_stream_get_peer_pid(stream.get_ref())? as _;
                 let sid = ProcessToken::open(if pid != 0 { Some(pid as _) } else { None })
@@ -51,11 +65,7 @@ impl ReadHalf for Arc<Async<TcpStream>> {
 #[cfg(not(feature = "tokio"))]
 #[async_trait::async_trait]
 impl WriteHalf for Arc<Async<TcpStream>> {
-    async fn sendmsg(
-        &mut self,
-        buf: &[u8],
-        #[cfg(unix)] fds: &[BorrowedFd<'_>],
-    ) -> io::Result<usize> {
+    async fn sendmsg(&mut self, buf: &[u8], #[cfg(unix)] fds: &[BorrowedFd<'_>]) -> io::Result<usize> {
         #[cfg(unix)]
         if !fds.is_empty() {
             return Err(io::Error::new(
@@ -97,7 +107,10 @@ impl Socket for tokio::net::TcpStream {
 #[async_trait::async_trait]
 impl ReadHalf for tokio::net::tcp::OwnedReadHalf {
     async fn recvmsg(&mut self, buf: &mut [u8]) -> RecvmsgResult {
-        use tokio::io::{AsyncReadExt, ReadBuf};
+        use tokio::io::{
+            AsyncReadExt,
+            ReadBuf,
+        };
 
         let mut read_buf = ReadBuf::new(buf);
         self.read_buf(&mut read_buf).await.map(|_| {
@@ -112,22 +125,14 @@ impl ReadHalf for tokio::net::tcp::OwnedReadHalf {
     #[cfg(windows)]
     async fn peer_credentials(&mut self) -> io::Result<crate::fdo::ConnectionCredentials> {
         let peer_addr = self.peer_addr()?.clone();
-        crate::Task::spawn_blocking(
-            move || win32_credentials_from_addr(&peer_addr),
-            "peer credentials",
-        )
-        .await
+        crate::Task::spawn_blocking(move || win32_credentials_from_addr(&peer_addr), "peer credentials").await
     }
 }
 
 #[cfg(feature = "tokio")]
 #[async_trait::async_trait]
 impl WriteHalf for tokio::net::tcp::OwnedWriteHalf {
-    async fn sendmsg(
-        &mut self,
-        buf: &[u8],
-        #[cfg(unix)] fds: &[BorrowedFd<'_>],
-    ) -> io::Result<usize> {
+    async fn sendmsg(&mut self, buf: &[u8], #[cfg(unix)] fds: &[BorrowedFd<'_>]) -> io::Result<usize> {
         use tokio::io::AsyncWriteExt;
 
         #[cfg(unix)]
@@ -148,20 +153,17 @@ impl WriteHalf for tokio::net::tcp::OwnedWriteHalf {
     #[cfg(windows)]
     async fn peer_credentials(&mut self) -> io::Result<crate::fdo::ConnectionCredentials> {
         let peer_addr = self.peer_addr()?.clone();
-        crate::Task::spawn_blocking(
-            move || win32_credentials_from_addr(&peer_addr),
-            "peer credentials",
-        )
-        .await
+        crate::Task::spawn_blocking(move || win32_credentials_from_addr(&peer_addr), "peer credentials").await
     }
 }
 
 #[cfg(feature = "tokio")]
 #[cfg(windows)]
-fn win32_credentials_from_addr(
-    addr: &std::net::SocketAddr,
-) -> io::Result<crate::fdo::ConnectionCredentials> {
-    use crate::win32::{socket_addr_get_pid, ProcessToken};
+fn win32_credentials_from_addr(addr: &std::net::SocketAddr) -> io::Result<crate::fdo::ConnectionCredentials> {
+    use crate::win32::{
+        socket_addr_get_pid,
+        ProcessToken,
+    };
 
     let pid = socket_addr_get_pid(addr)? as _;
     let sid = ProcessToken::open(if pid != 0 { Some(pid as _) } else { None })

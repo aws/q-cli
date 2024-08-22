@@ -1,10 +1,11 @@
+use std::ffi::OsStr;
 #[cfg(target_os = "linux")]
 use std::ffi::OsString;
-use std::{
-    ffi::OsStr,
-    fmt::{Display, Formatter},
-    path::PathBuf,
+use std::fmt::{
+    Display,
+    Formatter,
 };
+use std::path::PathBuf;
 
 #[cfg(unix)]
 use super::encode_percents;
@@ -45,12 +46,12 @@ impl Unix {
                 return Err(crate::Error::Address(
                     "abstract sockets currently Linux-only".to_owned(),
                 ));
-            }
+            },
             (None, None, Some(p), None) => UnixSocket::Dir(PathBuf::from(p)),
             (None, None, None, Some(p)) => UnixSocket::TmpDir(PathBuf::from(p)),
             _ => {
                 return Err(crate::Error::Address("unix: address is invalid".to_owned()));
-            }
+            },
         };
 
         Ok(Self::new(path))
@@ -108,20 +109,20 @@ impl Display for UnixSocket {
             UnixSocket::File(path) => {
                 f.write_str("path=")?;
                 fmt_unix_path(f, path.as_os_str())?;
-            }
+            },
             #[cfg(target_os = "linux")]
             UnixSocket::Abstract(name) => {
                 f.write_str("abstract=")?;
                 fmt_unix_path(f, name)?;
-            }
+            },
             UnixSocket::Dir(path) => {
                 f.write_str("dir=")?;
                 fmt_unix_path(f, path.as_os_str())?;
-            }
+            },
             UnixSocket::TmpDir(path) => {
                 f.write_str("tmpdir=")?;
                 fmt_unix_path(f, path.as_os_str())?;
-            }
+            },
         }
 
         Ok(())

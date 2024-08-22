@@ -1,16 +1,38 @@
-use crate::{
-    utils::{impl_str_basic, impl_try_from},
-    Error, Result,
+use std::borrow::{
+    Borrow,
+    Cow,
 };
-use serde::{de, Deserialize, Serialize};
+use std::fmt::{
+    self,
+    Debug,
+    Display,
+    Formatter,
+};
+use std::ops::Deref;
+use std::sync::Arc;
+
+use serde::{
+    de,
+    Deserialize,
+    Serialize,
+};
 use static_assertions::assert_impl_all;
-use std::{
-    borrow::{Borrow, Cow},
-    fmt::{self, Debug, Display, Formatter},
-    ops::Deref,
-    sync::Arc,
+use zvariant::{
+    NoneValue,
+    OwnedValue,
+    Str,
+    Type,
+    Value,
 };
-use zvariant::{NoneValue, OwnedValue, Str, Type, Value};
+
+use crate::utils::{
+    impl_str_basic,
+    impl_try_from,
+};
+use crate::{
+    Error,
+    Result,
+};
 
 /// String that identifies an [error name][en] on the bus.
 ///
@@ -24,8 +46,12 @@ use zvariant::{NoneValue, OwnedValue, Str, Type, Value};
 /// // Valid error names.
 /// let name = ErrorName::try_from("org.gnome.Error_for_you").unwrap();
 /// assert_eq!(name, "org.gnome.Error_for_you");
-/// let name = ErrorName::try_from("a.very.loooooooooooooooooo_ooooooo_0000o0ng.ErrorName").unwrap();
-/// assert_eq!(name, "a.very.loooooooooooooooooo_ooooooo_0000o0ng.ErrorName");
+/// let name =
+///     ErrorName::try_from("a.very.loooooooooooooooooo_ooooooo_0000o0ng.ErrorName").unwrap();
+/// assert_eq!(
+///     name,
+///     "a.very.loooooooooooooooooo_ooooooo_0000o0ng.ErrorName"
+/// );
 ///
 /// // Invalid error names
 /// ErrorName::try_from("").unwrap_err();
@@ -40,9 +66,7 @@ use zvariant::{NoneValue, OwnedValue, Str, Type, Value};
 /// ```
 ///
 /// [en]: https://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-names-error
-#[derive(
-    Clone, Debug, Hash, PartialEq, Eq, Serialize, Type, Value, PartialOrd, Ord, OwnedValue,
-)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Type, Value, PartialOrd, Ord, OwnedValue)]
 pub struct ErrorName<'name>(Str<'name>);
 
 assert_impl_all!(ErrorName<'_>: Send, Sync, Unpin);
@@ -183,9 +207,7 @@ fn ensure_correct_error_name(name: &str) -> Result<()> {
     for c in name.chars() {
         if c == '.' {
             if prev.is_none() || prev == Some('.') {
-                return Err(Error::InvalidErrorName(String::from(
-                    "must not contain a double `.`",
-                )));
+                return Err(Error::InvalidErrorName(String::from("must not contain a double `.`")));
             }
 
             if no_dot {
@@ -196,18 +218,14 @@ fn ensure_correct_error_name(name: &str) -> Result<()> {
                 "each element must not start with a digit",
             )));
         } else if !c.is_ascii_alphanumeric() && c != '_' {
-            return Err(Error::InvalidErrorName(format!(
-                "`{c}` character not allowed"
-            )));
+            return Err(Error::InvalidErrorName(format!("`{c}` character not allowed")));
         }
 
         prev = Some(c);
     }
 
     if no_dot {
-        return Err(Error::InvalidErrorName(String::from(
-            "must contain at least 1 `.`",
-        )));
+        return Err(Error::InvalidErrorName(String::from("must contain at least 1 `.`")));
     }
 
     Ok(())
@@ -326,9 +344,7 @@ impl PartialEq<ErrorName<'_>> for OwnedErrorName {
 
 impl Debug for OwnedErrorName {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("OwnedErrorName")
-            .field(&self.as_str())
-            .finish()
+        f.debug_tuple("OwnedErrorName").field(&self.as_str()).finish()
     }
 }
 

@@ -1,22 +1,32 @@
-use static_assertions::assert_impl_all;
 #[cfg(not(feature = "tokio"))]
 use std::net::TcpStream;
 #[cfg(all(unix, not(feature = "tokio")))]
 use std::os::unix::net::UnixStream;
+
+use static_assertions::assert_impl_all;
 #[cfg(feature = "tokio")]
 use tokio::net::TcpStream;
 #[cfg(all(unix, feature = "tokio"))]
 use tokio::net::UnixStream;
 #[cfg(all(windows, not(feature = "tokio")))]
 use uds_windows::UnixStream;
+use zvariant::{
+    ObjectPath,
+    Str,
+};
 
-use zvariant::{ObjectPath, Str};
-
+use crate::address::Address;
+use crate::blocking::Connection;
+use crate::connection::socket::BoxedSplit;
+use crate::names::WellKnownName;
+use crate::object_server::Interface;
+use crate::utils::block_on;
 #[cfg(feature = "p2p")]
 use crate::Guid;
 use crate::{
-    address::Address, blocking::Connection, connection::socket::BoxedSplit, names::WellKnownName,
-    object_server::Interface, utils::block_on, AuthMechanism, Error, Result,
+    AuthMechanism,
+    Error,
+    Result,
 };
 
 /// A builder for [`zbus::blocking::Connection`].
@@ -167,9 +177,7 @@ impl<'a> Builder<'a> {
     /// # use std::error::Error;
     /// # use zbus::blocking::connection;
     /// #
-    /// let conn = connection::Builder::session()?
-    ///     .max_queued(30)
-    ///     .build()?;
+    /// let conn = connection::Builder::session()?.max_queued(30).build()?;
     /// assert_eq!(conn.max_queued(), 30);
     ///
     /// // Do something useful with `conn`..

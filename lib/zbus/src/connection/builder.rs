@@ -1,15 +1,18 @@
-#[cfg(not(feature = "tokio"))]
-use async_io::Async;
-use event_listener::Event;
-use static_assertions::assert_impl_all;
+use std::collections::{
+    HashMap,
+    HashSet,
+    VecDeque,
+};
 #[cfg(not(feature = "tokio"))]
 use std::net::TcpStream;
 #[cfg(all(unix, not(feature = "tokio")))]
 use std::os::unix::net::UnixStream;
-use std::{
-    collections::{HashMap, HashSet, VecDeque},
-    vec,
-};
+use std::vec;
+
+#[cfg(not(feature = "tokio"))]
+use async_io::Async;
+use event_listener::Event;
+use static_assertions::assert_impl_all;
 #[cfg(feature = "tokio")]
 use tokio::net::TcpStream;
 #[cfg(all(unix, feature = "tokio"))]
@@ -20,19 +23,40 @@ use tokio_vsock::VsockStream;
 use uds_windows::UnixStream;
 #[cfg(all(feature = "vsock", not(feature = "tokio")))]
 use vsock::VsockStream;
-
-use zvariant::{ObjectPath, Str};
-
-use crate::{
-    address::{self, Address},
-    names::{InterfaceName, WellKnownName},
-    object_server::{ArcInterface, Interface},
-    Connection, Error, Executor, Guid, OwnedGuid, Result,
+use zvariant::{
+    ObjectPath,
+    Str,
 };
 
-use super::{
-    handshake::{AuthMechanism, Authenticated},
-    socket::{BoxedSplit, ReadHalf, Split, WriteHalf},
+use super::handshake::{
+    AuthMechanism,
+    Authenticated,
+};
+use super::socket::{
+    BoxedSplit,
+    ReadHalf,
+    Split,
+    WriteHalf,
+};
+use crate::address::{
+    self,
+    Address,
+};
+use crate::names::{
+    InterfaceName,
+    WellKnownName,
+};
+use crate::object_server::{
+    ArcInterface,
+    Interface,
+};
+use crate::{
+    Connection,
+    Error,
+    Executor,
+    Guid,
+    OwnedGuid,
+    Result,
 };
 
 const DEFAULT_MAX_QUEUED: usize = 64;
@@ -42,10 +66,7 @@ enum Target {
     #[cfg(any(unix, not(feature = "tokio")))]
     UnixStream(UnixStream),
     TcpStream(TcpStream),
-    #[cfg(any(
-        all(feature = "vsock", not(feature = "tokio")),
-        feature = "tokio-vsock"
-    ))]
+    #[cfg(any(all(feature = "vsock", not(feature = "tokio")), feature = "tokio-vsock"))]
     VsockStream(VsockStream),
     Address(Address),
     Socket(Split<Box<dyn ReadHalf>, Box<dyn WriteHalf>>),
@@ -102,9 +123,7 @@ impl<'a> Builder<'a> {
     /// let addr = "unix:\
     ///     path=/home/zeenix/.cache/ibus/dbus-ET0Xzrk9,\
     ///     guid=fdd08e811a6c7ebe1fef0d9e647230da";
-    /// let conn = Builder::address(addr)?
-    ///     .build()
-    ///     .await?;
+    /// let conn = Builder::address(addr)?.build().await?;
     ///
     /// // Do something useful with `conn`..
     /// #     drop(conn);
@@ -123,9 +142,7 @@ impl<'a> Builder<'a> {
         A: TryInto<Address>,
         A::Error: Into<Error>,
     {
-        Ok(Self::new(Target::Address(
-            address.try_into().map_err(Into::into)?,
-        )))
+        Ok(Self::new(Target::Address(address.try_into().map_err(Into::into)?)))
     }
 
     /// Create a builder for a connection that will use the given unix stream.
@@ -157,10 +174,7 @@ impl<'a> Builder<'a> {
     /// This method is only available when either `vsock` or `tokio-vsock` feature is enabled. The
     /// type of `stream` is `vsock::VsockStream` with `vsock` feature and `tokio_vsock::VsockStream`
     /// with `tokio-vsock` feature.
-    #[cfg(any(
-        all(feature = "vsock", not(feature = "tokio")),
-        feature = "tokio-vsock"
-    ))]
+    #[cfg(any(all(feature = "vsock", not(feature = "tokio")), feature = "tokio-vsock"))]
     pub fn vsock_stream(stream: VsockStream) -> Self {
         Self::new(Target::VsockStream(stream))
     }
@@ -275,10 +289,7 @@ impl<'a> Builder<'a> {
     /// # use zbus::block_on;
     /// #
     /// # block_on(async {
-    /// let conn = Builder::session()?
-    ///     .max_queued(30)
-    ///     .build()
-    ///     .await?;
+    /// let conn = Builder::session()?.max_queued(30).build().await?;
     /// assert_eq!(conn.max_queued(), 30);
     ///
     /// #     Ok::<(), zbus::Error>(())
@@ -417,9 +428,8 @@ impl<'a> Builder<'a> {
             match self.guid {
                 None => {
                     // SASL Handshake
-                    Authenticated::client(stream, server_guid, self.auth_mechanisms, is_bus_conn)
-                        .await?
-                }
+                    Authenticated::client(stream, server_guid, self.auth_mechanisms, is_bus_conn).await?
+                },
                 Some(guid) => {
                     if !self.p2p {
                         return Err(Error::Unsupported);
@@ -444,7 +454,7 @@ impl<'a> Builder<'a> {
                         unique_name,
                     )
                     .await?
-                }
+                },
             }
 
             #[cfg(not(feature = "p2p"))]
@@ -538,19 +548,16 @@ impl<'a> Builder<'a> {
                     #[cfg(any(unix, not(feature = "tokio")))]
                     address::transport::Stream::Unix(stream) => stream.into(),
                     address::transport::Stream::Tcp(stream) => stream.into(),
-                    #[cfg(any(
-                        all(feature = "vsock", not(feature = "tokio")),
-                        feature = "tokio-vsock"
-                    ))]
+                    #[cfg(any(all(feature = "vsock", not(feature = "tokio")), feature = "tokio-vsock"))]
                     address::transport::Stream::Vsock(stream) => stream.into(),
                 }
-            }
+            },
             Target::Socket(stream) => stream,
             Target::AuthenticatedSocket(stream) => {
                 authenticated = true;
                 guid = self.guid.take().map(Into::into);
                 stream
-            }
+            },
         };
 
         Ok((split, guid, authenticated))

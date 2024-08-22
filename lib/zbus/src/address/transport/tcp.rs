@@ -1,16 +1,26 @@
-use super::encode_percents;
-use crate::{Error, Result};
+use std::collections::HashMap;
+use std::fmt::{
+    Display,
+    Formatter,
+};
+#[cfg(not(feature = "tokio"))]
+use std::net::{
+    SocketAddr,
+    TcpStream,
+    ToSocketAddrs,
+};
+use std::str::FromStr;
+
 #[cfg(not(feature = "tokio"))]
 use async_io::Async;
-#[cfg(not(feature = "tokio"))]
-use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
-use std::{
-    collections::HashMap,
-    fmt::{Display, Formatter},
-    str::FromStr,
-};
 #[cfg(feature = "tokio")]
 use tokio::net::TcpStream;
+
+use super::encode_percents;
+use crate::{
+    Error,
+    Result,
+};
 
 /// A TCP transport in a D-Bus address.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -85,10 +95,7 @@ impl Tcp {
         self.nonce_file.take()
     }
 
-    pub(super) fn from_options(
-        opts: HashMap<&str, &str>,
-        nonce_tcp_required: bool,
-    ) -> Result<Self> {
+    pub(super) fn from_options(opts: HashMap<&str, &str>, nonce_tcp_required: bool) -> Result<Self> {
         let bind = None;
         if opts.contains_key("bind") {
             return Err(Error::Address("`bind` isn't yet supported".into()));
@@ -108,14 +115,9 @@ impl Tcp {
             .get("family")
             .map(|f| TcpTransportFamily::from_str(f))
             .transpose()?;
-        let nonce_file = opts
-            .get("noncefile")
-            .map(|f| super::decode_percents(f))
-            .transpose()?;
+        let nonce_file = opts.get("noncefile").map(|f| super::decode_percents(f)).transpose()?;
         if nonce_tcp_required && nonce_file.is_none() {
-            return Err(Error::Address(
-                "nonce-tcp address is missing `noncefile`".into(),
-            ));
+            return Err(Error::Address("nonce-tcp address is missing `noncefile`".into()));
         }
 
         Ok(Self {
@@ -176,7 +178,7 @@ impl Display for Tcp {
                 f.write_str("nonce-tcp:noncefile=")?;
                 encode_percents(f, nonce_file)?;
                 f.write_str(",")?;
-            }
+            },
             None => f.write_str("tcp:")?,
         }
         f.write_str("host=")?;
@@ -212,9 +214,7 @@ impl FromStr for TcpTransportFamily {
         match family {
             "ipv4" => Ok(Self::Ipv4),
             "ipv6" => Ok(Self::Ipv6),
-            _ => Err(Error::Address(format!(
-                "invalid tcp address `family`: {family}"
-            ))),
+            _ => Err(Error::Address(format!("invalid tcp address `family`: {family}"))),
         }
     }
 }

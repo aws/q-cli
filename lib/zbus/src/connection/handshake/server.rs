@@ -1,18 +1,33 @@
-use async_trait::async_trait;
-use sha1::{Digest, Sha1};
 use std::collections::VecDeque;
-use tracing::{instrument, trace};
 
-use crate::names::OwnedUniqueName;
-
-use super::{
-    random_ascii, sasl_auth_id, AuthMechanism, Authenticated, BoxedSplit, Command, Common, Cookie,
-    CookieContext, Error, Handshake, OwnedGuid, Result,
+use async_trait::async_trait;
+use sha1::{
+    Digest,
+    Sha1,
+};
+use tracing::{
+    instrument,
+    trace,
 };
 
-/*
- * Server-side handshake logic
- */
+use super::{
+    random_ascii,
+    sasl_auth_id,
+    AuthMechanism,
+    Authenticated,
+    BoxedSplit,
+    Command,
+    Common,
+    Cookie,
+    CookieContext,
+    Error,
+    Handshake,
+    OwnedGuid,
+    Result,
+};
+use crate::names::OwnedUniqueName;
+
+// Server-side handshake logic
 #[derive(Debug, PartialEq)]
 #[allow(clippy::upper_case_acronyms)]
 enum ServerHandshakeStep {
@@ -57,7 +72,7 @@ impl<'s> Server<'s> {
                 mechanisms.push_back(AuthMechanism::External);
 
                 mechanisms
-            }
+            },
         };
 
         Ok(Server {
@@ -87,8 +102,7 @@ impl<'s> Server<'s> {
 
     async fn check_external_auth(&mut self, sasl_id: &[u8]) -> Result<()> {
         let auth_ok = {
-            let id = std::str::from_utf8(sasl_id)
-                .map_err(|e| Error::Handshake(format!("Invalid ID: {e}")))?;
+            let id = std::str::from_utf8(sasl_id).map_err(|e| Error::Handshake(format!("Invalid ID: {e}")))?;
             #[cfg(unix)]
             {
                 let uid = id
@@ -115,8 +129,7 @@ impl<'s> Server<'s> {
             Some(cookie_id) => Cookie::lookup(&self.cookie_context, cookie_id).await?,
             None => Cookie::first(&self.cookie_context).await?,
         };
-        let id = std::str::from_utf8(sasl_id)
-            .map_err(|e| Error::Handshake(format!("Invalid ID: {e}")))?;
+        let id = std::str::from_utf8(sasl_id).map_err(|e| Error::Handshake(format!("Invalid ID: {e}")))?;
         if sasl_auth_id()? != id {
             // While the spec will make you believe that DBUS_COOKIE_SHA1 can be used to
             // authenticate any user, it is not even possible (or correct) for the server to manage
@@ -136,9 +149,8 @@ impl<'s> Server<'s> {
             Command::Data(data) => data,
             _ => None,
         };
-        let auth_data = auth_data.ok_or_else(|| {
-            Error::Handshake("Expected DBUS_COOKIE_SHA1 authentication challenge response".into())
-        })?;
+        let auth_data = auth_data
+            .ok_or_else(|| Error::Handshake("Expected DBUS_COOKIE_SHA1 authentication challenge response".into()))?;
         let client_auth = std::str::from_utf8(&auth_data)
             .map_err(|e| Error::Handshake(format!("Invalid COOKIE authentication data: {e}")))?;
         let mut split = client_auth.split_ascii_whitespace();
@@ -206,23 +218,23 @@ impl<'s> Server<'s> {
                         trace!("Sending data request");
                         self.common.write_command(Command::Data(None)).await?;
                         self.step = ServerHandshakeStep::WaitingForData(mech);
-                    }
+                    },
                     (Some(AuthMechanism::Anonymous), Some(_)) => {
                         self.auth_ok().await?;
-                    }
+                    },
                     (Some(AuthMechanism::External), Some(sasl_id)) => {
                         self.check_external_auth(sasl_id).await?;
-                    }
+                    },
                     (Some(AuthMechanism::Cookie), Some(sasl_id)) => {
                         self.check_cookie_auth(sasl_id).await?;
-                    }
+                    },
                     _ => self.rejected_error().await?,
                 }
-            }
+            },
             Command::Cancel | Command::Error(_) => {
                 trace!("Received CANCEL or ERROR command from the client");
                 self.rejected_error().await?;
-            }
+            },
             _ => self.unsupported_command_error().await?,
         }
 
@@ -240,7 +252,7 @@ impl<'s> Server<'s> {
             (AuthMechanism::External, Command::Data(None)) => self.auth_ok().await?,
             (AuthMechanism::External, Command::Data(Some(data))) => {
                 self.check_external_auth(&data).await?;
-            }
+            },
             (AuthMechanism::Anonymous, Command::Data(_)) => self.auth_ok().await?,
             (_, Command::Data(_)) => self.rejected_error().await?,
             (_, _) => self.unsupported_command_error().await?,
@@ -259,11 +271,11 @@ impl<'s> Server<'s> {
             Command::Begin => {
                 trace!("Received Begin command from the client");
                 self.step = ServerHandshakeStep::Done;
-            }
+            },
             Command::Cancel | Command::Error(_) => {
                 trace!("Received CANCEL or ERROR command from the client");
                 self.rejected_error().await?;
-            }
+            },
             #[cfg(unix)]
             Command::NegotiateUnixFD => {
                 trace!("Received NEGOTIATE_UNIX_FD command from the client");
@@ -273,11 +285,10 @@ impl<'s> Server<'s> {
                     self.common.write_command(Command::AgreeUnixFD).await?;
                 } else {
                     trace!("FD transmission not possible on this socket type. Rejecting..");
-                    let cmd =
-                        Command::Error("FD-passing not possible on this socket type".to_string());
+                    let cmd = Command::Error("FD-passing not possible on this socket type".to_string());
                     self.common.write_command(cmd).await?;
                 }
-            }
+            },
             _ => self.unsupported_command_error().await?,
         }
 

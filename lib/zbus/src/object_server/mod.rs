@@ -1,32 +1,71 @@
 //! The object server API.
 
-use event_listener::{Event, EventListener};
-use serde::{Deserialize, Serialize};
-use std::{
-    collections::{hash_map::Entry, HashMap},
-    fmt::Write,
-    marker::PhantomData,
-    ops::{Deref, DerefMut},
-    sync::Arc,
+use std::collections::hash_map::Entry;
+use std::collections::HashMap;
+use std::fmt::Write;
+use std::marker::PhantomData;
+use std::ops::{
+    Deref,
+    DerefMut,
 };
-use tracing::{debug, instrument, trace, trace_span, Instrument};
+use std::sync::Arc;
 
+use event_listener::{
+    Event,
+    EventListener,
+};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 use static_assertions::assert_impl_all;
+use tracing::{
+    debug,
+    instrument,
+    trace,
+    trace_span,
+    Instrument,
+};
 use zbus_names::InterfaceName;
-use zvariant::{ObjectPath, OwnedObjectPath, OwnedValue, Signature, Type, Value};
+use zvariant::{
+    ObjectPath,
+    OwnedObjectPath,
+    OwnedValue,
+    Signature,
+    Type,
+    Value,
+};
 
+use crate::async_lock::{
+    RwLock,
+    RwLockReadGuard,
+    RwLockWriteGuard,
+};
+use crate::connection::WeakConnection;
+use crate::fdo::{
+    Introspectable,
+    ManagedObjects,
+    ObjectManager,
+    Peer,
+    Properties,
+};
+use crate::message::{
+    Header,
+    Message,
+};
 use crate::{
-    async_lock::{RwLock, RwLockReadGuard, RwLockWriteGuard},
-    connection::WeakConnection,
     fdo,
-    fdo::{Introspectable, ManagedObjects, ObjectManager, Peer, Properties},
-    message::{Header, Message},
-    Connection, Error, Result,
+    Connection,
+    Error,
+    Result,
 };
 
 mod interface;
 pub(crate) use interface::ArcInterface;
-pub use interface::{DispatchResult, Interface};
+pub use interface::{
+    DispatchResult,
+    Interface,
+};
 
 mod signal_context;
 pub use signal_context::SignalContext;
@@ -96,9 +135,7 @@ where
     pub async fn get(&self) -> InterfaceDeref<'_, I> {
         let iface = self.lock.read().await;
 
-        iface
-            .downcast_ref::<I>()
-            .expect("Unexpected interface type");
+        iface.downcast_ref::<I>().expect("Unexpected interface type");
 
         InterfaceDeref {
             iface,
@@ -128,10 +165,10 @@ where
     ///
     /// #[interface(name = "org.myiface.MyIface")]
     /// impl MyIface {
-    ///    #[zbus(property)]
-    ///    async fn count(&self) -> u32 {
-    ///        self.0
-    ///    }
+    ///     #[zbus(property)]
+    ///     async fn count(&self) -> u32 {
+    ///         self.0
+    ///     }
     /// }
     ///
     /// # block_on(async {
@@ -153,12 +190,8 @@ where
     pub async fn get_mut(&self) -> InterfaceDerefMut<'_, I> {
         let mut iface = self.lock.write().await;
 
-        iface
-            .downcast_ref::<I>()
-            .expect("Unexpected interface type");
-        iface
-            .downcast_mut::<I>()
-            .expect("Unexpected interface type");
+        iface.downcast_ref::<I>().expect("Unexpected interface type");
+        iface.downcast_mut::<I>().expect("Unexpected interface type");
 
         InterfaceDerefMut {
             iface,
@@ -222,11 +255,7 @@ impl Node {
     ///
     /// This also returns the path of the parent node that implements ObjectManager (if any). If
     /// multiple parents implement it (they shouldn't), then the closest one is returned.
-    fn get_child_mut(
-        &mut self,
-        path: &ObjectPath<'_>,
-        create: bool,
-    ) -> (Option<&mut Node>, Option<ObjectPath<'_>>) {
+    fn get_child_mut(&mut self, path: &ObjectPath<'_>, create: bool) -> (Option<&mut Node>, Option<ObjectPath<'_>>) {
         let mut node = self;
         let mut node_path = String::new();
         let mut obj_manager_path = None;
@@ -249,7 +278,7 @@ impl Node {
                     } else {
                         return (None, obj_manager_path);
                     }
-                }
+                },
                 Entry::Occupied(e) => node = e.into_mut(),
             }
         }
@@ -283,7 +312,7 @@ impl Node {
             Entry::Vacant(e) => {
                 e.insert(arc_iface);
                 true
-            }
+            },
             Entry::Occupied(_) => false,
         }
     }
@@ -340,27 +369,16 @@ impl Node {
                         )
                         .unwrap();
                     } else {
-                        writeln!(
-                            writer,
-                            "{:indent$}<node name=\"{}\">",
-                            "",
-                            name,
-                            indent = level
-                        )
-                        .unwrap();
+                        writeln!(writer, "{:indent$}<node name=\"{}\">", "", name, indent = level).unwrap();
                     }
 
                     for iface in node.interfaces.values() {
-                        iface
-                            .instance
-                            .read()
-                            .await
-                            .introspect_to_writer(writer, level + 2);
+                        iface.instance.read().await.introspect_to_writer(writer, level + 2);
                     }
-                }
+                },
                 Fragment::End { level } => {
                     writeln!(writer, "{:indent$}</node>", "", indent = level).unwrap();
-                }
+                },
             }
         }
     }
@@ -397,10 +415,7 @@ impl Node {
         Ok(managed_objects)
     }
 
-    async fn get_properties(
-        &self,
-        interface_name: InterfaceName<'_>,
-    ) -> fdo::Result<HashMap<String, OwnedValue>> {
+    async fn get_properties(&self, interface_name: InterfaceName<'_>) -> fdo::Result<HashMap<String, OwnedValue>> {
         self.interface_lock(interface_name)
             .expect("Interface was added but not found")
             .instance
@@ -425,8 +440,11 @@ impl Node {
 ///
 /// ```no_run
 /// # use std::error::Error;
-/// use zbus::{Connection, interface};
 /// use event_listener::Event;
+/// use zbus::{
+///     interface,
+///     Connection,
+/// };
 /// # use async_io::block_on;
 ///
 /// struct Example {
@@ -503,8 +521,7 @@ impl ObjectServer {
         P: TryInto<ObjectPath<'p>>,
         P::Error: Into<Error>,
     {
-        self.add_arc_interface(path, I::name(), ArcInterface::new(iface))
-            .await
+        self.add_arc_interface(path, I::name(), ArcInterface::new(iface)).await
     }
 
     pub(crate) async fn add_arc_interface<'p, P>(
@@ -581,13 +598,8 @@ impl ObjectServer {
         if node.is_empty() {
             let mut path_parts = path.rsplit('/').filter(|i| !i.is_empty());
             let last_part = path_parts.next().unwrap();
-            let ppath = ObjectPath::from_string_unchecked(
-                path_parts.fold(String::new(), |a, p| format!("/{p}{a}")),
-            );
-            root.get_child_mut(&ppath, false)
-                .0
-                .unwrap()
-                .remove_node(last_part);
+            let ppath = ObjectPath::from_string_unchecked(path_parts.fold(String::new(), |a, p| format!("/{p}{a}")));
+            root.get_child_mut(&ppath, false).0.unwrap().remove_node(last_part);
             return Ok(true);
         }
         Ok(false)
@@ -613,10 +625,10 @@ impl ObjectServer {
     ///
     /// #[interface(name = "org.myiface.MyIface")]
     /// impl MyIface {
-    ///      #[zbus(property)]
-    ///      async fn count(&self) -> u32 {
-    ///          self.0
-    ///      }
+    ///     #[zbus(property)]
+    ///     async fn count(&self) -> u32 {
+    ///         self.0
+    ///     }
     /// }
     ///
     /// # block_on(async {
@@ -626,7 +638,8 @@ impl ObjectServer {
     /// # connection.object_server().at(path, MyIface(0)).await?;
     /// let iface_ref = connection
     ///     .object_server()
-    ///     .interface::<_, MyIface>(path).await?;
+    ///     .interface::<_, MyIface>(path)
+    ///     .await?;
     /// let mut iface = iface_ref.get_mut().await;
     /// iface.0 = 42;
     /// iface.count_changed(iface_ref.signal_context()).await?;
@@ -652,10 +665,7 @@ impl ObjectServer {
             .clone();
 
         // Ensure what we return can later be dowcasted safely.
-        lock.read()
-            .await
-            .downcast_ref::<I>()
-            .ok_or(Error::InterfaceNotFound)?;
+        lock.read().await.downcast_ref::<I>().ok_or(Error::InterfaceNotFound)?;
 
         let conn = self.connection();
         // SAFETY: We know that there is a valid path on the node as we already converted w/o error.
@@ -687,36 +697,32 @@ impl ObjectServer {
         trace!("acquired read lock on interface `{}`", iface_name);
         match read_lock.call(self, connection, msg, member.as_ref()) {
             DispatchResult::NotFound => {
-                return Err(fdo::Error::UnknownMethod(format!(
-                    "Unknown method '{member}'"
-                )));
-            }
+                return Err(fdo::Error::UnknownMethod(format!("Unknown method '{member}'")));
+            },
             DispatchResult::Async(f) => {
                 return f.await.map_err(|e| match e {
                     Error::FDO(e) => *e,
                     e => fdo::Error::Failed(format!("{e}")),
                 });
-            }
-            DispatchResult::RequiresMut => {}
+            },
+            DispatchResult::RequiresMut => {},
         }
         drop(read_lock);
         trace!("acquiring write lock on interface `{}`", iface_name);
         let mut write_lock = iface.write().await;
         trace!("acquired write lock on interface `{}`", iface_name);
         match write_lock.call_mut(self, connection, msg, member.as_ref()) {
-            DispatchResult::NotFound => {}
-            DispatchResult::RequiresMut => {}
+            DispatchResult::NotFound => {},
+            DispatchResult::RequiresMut => {},
             DispatchResult::Async(f) => {
                 return f.await.map_err(|e| match e {
                     Error::FDO(e) => *e,
                     e => fdo::Error::Failed(format!("{e}")),
                 });
-            }
+            },
         }
         drop(write_lock);
-        Err(fdo::Error::UnknownMethod(format!(
-            "Unknown method '{member}'"
-        )))
+        Err(fdo::Error::UnknownMethod(format!("Unknown method '{member}'")))
     }
 
     async fn dispatch_method_call_try(
@@ -752,9 +758,9 @@ impl ObjectServer {
                 .get_child(path)
                 .ok_or_else(|| fdo::Error::UnknownObject(format!("Unknown object '{path}'")))?;
 
-            let iface = node.interface_lock(iface_name.as_ref()).ok_or_else(|| {
-                fdo::Error::UnknownInterface(format!("Unknown interface '{iface_name}'"))
-            })?;
+            let iface = node
+                .interface_lock(iface_name.as_ref())
+                .ok_or_else(|| fdo::Error::UnknownInterface(format!("Unknown interface '{iface_name}'")))?;
             (iface.instance, iface.spawn_tasks_for_methods)
         };
 
@@ -768,17 +774,11 @@ impl ObjectServer {
                     async move {
                         let server = connection.object_server();
                         let hdr = msg.header();
-                        if let Err(e) = server
-                            .dispatch_call_to_iface(iface, &connection, &msg, &hdr)
-                            .await
-                        {
+                        if let Err(e) = server.dispatch_call_to_iface(iface, &connection, &msg, &hdr).await {
                             // When not spawning a task, this error is handled by the caller.
                             debug!("Returning error: {}", e);
                             if let Err(e) = connection.reply_dbus_error(&hdr, e).await {
-                                debug!(
-                                    "Error dispatching message. Message: {:?}, error: {:?}",
-                                    msg, e
-                                );
+                                debug!("Error dispatching message. Message: {:?}, error: {:?}", msg, e);
                             }
                         }
                     }
@@ -788,8 +788,7 @@ impl ObjectServer {
                 .detach();
             Ok(())
         } else {
-            self.dispatch_call_to_iface(iface, connection, msg, hdr)
-                .await
+            self.dispatch_call_to_iface(iface, connection, msg, hdr).await
         }
     }
 

@@ -1,33 +1,97 @@
 //! The client-side proxy API.
 
-use enumflags2::{bitflags, BitFlags};
-use event_listener::{Event, EventListener};
-use futures_core::{ready, stream};
-use futures_util::{future::Either, stream::Map};
-use ordered_stream::{join as join_streams, FromFuture, Join, OrderedStream, PollResult};
-use static_assertions::assert_impl_all;
-use std::{
-    collections::{HashMap, HashSet},
-    fmt,
-    future::Future,
-    ops::Deref,
-    pin::Pin,
-    sync::{Arc, OnceLock, RwLock, RwLockReadGuard},
-    task::{Context, Poll},
+use std::collections::{
+    HashMap,
+    HashSet,
 };
-use tracing::{debug, info_span, instrument, trace, Instrument};
+use std::fmt;
+use std::future::Future;
+use std::ops::Deref;
+use std::pin::Pin;
+use std::sync::{
+    Arc,
+    OnceLock,
+    RwLock,
+    RwLockReadGuard,
+};
+use std::task::{
+    Context,
+    Poll,
+};
 
-use zbus_names::{BusName, InterfaceName, MemberName, UniqueName};
-use zvariant::{ObjectPath, OwnedValue, Str, Value};
+use enumflags2::{
+    bitflags,
+    BitFlags,
+};
+use event_listener::{
+    Event,
+    EventListener,
+};
+use futures_core::{
+    ready,
+    stream,
+};
+use futures_util::future::Either;
+use futures_util::stream::Map;
+use ordered_stream::{
+    join as join_streams,
+    FromFuture,
+    Join,
+    OrderedStream,
+    PollResult,
+};
+use static_assertions::assert_impl_all;
+use tracing::{
+    debug,
+    info_span,
+    instrument,
+    trace,
+    Instrument,
+};
+use zbus_names::{
+    BusName,
+    InterfaceName,
+    MemberName,
+    UniqueName,
+};
+use zvariant::{
+    ObjectPath,
+    OwnedValue,
+    Str,
+    Value,
+};
 
+use crate::fdo::{
+    self,
+    IntrospectableProxy,
+    NameOwnerChanged,
+    PropertiesChangedStream,
+    PropertiesProxy,
+};
+use crate::message::{
+    Flags,
+    Message,
+    Sequence,
+    Type,
+};
 use crate::{
-    fdo::{self, IntrospectableProxy, NameOwnerChanged, PropertiesChangedStream, PropertiesProxy},
-    message::{Flags, Message, Sequence, Type},
-    AsyncDrop, Connection, Error, Executor, MatchRule, MessageStream, OwnedMatchRule, Result, Task,
+    AsyncDrop,
+    Connection,
+    Error,
+    Executor,
+    MatchRule,
+    MessageStream,
+    OwnedMatchRule,
+    Result,
+    Task,
 };
 
 mod builder;
-pub use builder::{Builder, CacheProperties, ProxyDefault};
+pub use builder::{
+    Builder,
+    CacheProperties,
+    ProxyDefault,
+};
 
 /// A client-side interface proxy.
 ///
@@ -36,9 +100,13 @@ pub use builder::{Builder, CacheProperties, ProxyDefault};
 /// # Example
 ///
 /// ```no_run
-/// use std::result::Result;
 /// use std::error::Error;
-/// use zbus::{Connection, Proxy};
+/// use std::result::Result;
+///
+/// use zbus::{
+///     Connection,
+///     Proxy,
+/// };
 ///
 /// #[tokio::main]
 /// async fn main() -> Result<(), Box<dyn Error>> {
@@ -48,7 +116,8 @@ pub use builder::{Builder, CacheProperties, ProxyDefault};
 ///         "org.freedesktop.DBus",
 ///         "/org/freedesktop/DBus",
 ///         "org.freedesktop.DBus",
-///     ).await?;
+///     )
+///     .await?;
 ///     // owned return value
 ///     let _id: String = p.call("GetId", &()).await?;
 ///     // borrowed return value
@@ -83,10 +152,7 @@ pub(crate) struct ProxyInnerStatic {
 impl fmt::Debug for ProxyInnerStatic {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ProxyInnerStatic")
-            .field(
-                "dest_owner_change_match_rule",
-                &self.dest_owner_change_match_rule,
-            )
+            .field("dest_owner_change_match_rule", &self.dest_owner_change_match_rule)
             .finish_non_exhaustive()
     }
 }
@@ -275,17 +341,13 @@ impl PropertiesCache {
     ) -> (Arc<Self>, Task<()>) {
         let cache = Arc::new(PropertiesCache {
             values: Default::default(),
-            caching_result: RwLock::new(CachingResult::Caching {
-                ready: Event::new(),
-            }),
+            caching_result: RwLock::new(CachingResult::Caching { ready: Event::new() }),
         });
 
         let cache_clone = cache.clone();
         let task_name = format!("{interface} proxy caching");
         let proxy_caching = async move {
-            let result = cache_clone
-                .init(proxy, interface, uncached_properties)
-                .await;
+            let result = cache_clone.init(proxy, interface, uncached_properties).await;
             let (prop_changes, interface, uncached_properties) = {
                 let mut caching_result = cache_clone.caching_result.write().expect("lock poisoned");
                 let ready = match &*caching_result {
@@ -300,13 +362,13 @@ impl PropertiesCache {
                         *caching_result = CachingResult::Cached { result: Ok(()) };
 
                         (prop_changes, interface, uncached_properties)
-                    }
+                    },
                     Err(e) => {
                         ready.notify(usize::MAX);
                         *caching_result = CachingResult::Cached { result: Err(e) };
 
                         return;
-                    }
+                    },
                 }
             };
 
@@ -358,13 +420,13 @@ impl PropertiesCache {
             match join.next().await {
                 Some(Either::Left(_update)) => {
                     // discard updates prior to the initial population
-                }
+                },
                 Some(Either::Right(populate)) => {
                     populate?.body().deserialize().map(|values| {
                         self.update_cache(&uncached_properties, &values, Vec::new(), &interface);
                     })?;
                     break;
-                }
+                },
                 None => break,
             }
         }
@@ -428,10 +490,7 @@ impl PropertiesCache {
 
         for inval in invalidated {
             if uncached_properties.contains(&Str::from(inval)) {
-                debug!(
-                    "Ignoring invalidation of uncached property `{}.{}`",
-                    interface, inval
-                );
+                debug!("Ignoring invalidation of uncached property `{}.{}`", interface, inval);
                 continue;
             }
             trace!("Property `{interface}.{inval}` invalidated");
@@ -444,10 +503,7 @@ impl PropertiesCache {
 
         for (property_name, value) in changed {
             if uncached_properties.contains(&Str::from(*property_name)) {
-                debug!(
-                    "Ignoring update of uncached property `{}.{}`",
-                    interface, property_name
-                );
+                debug!("Ignoring update of uncached property `{}.{}`", interface, property_name);
                 continue;
             }
             trace!("Property `{interface}.{property_name}` updated");
@@ -457,11 +513,9 @@ impl PropertiesCache {
             let value = match OwnedValue::try_from(value) {
                 Ok(value) => value,
                 Err(e) => {
-                    debug!(
-                        "Failed to convert property `{interface}.{property_name}` to OwnedValue: {e}"
-                    );
+                    debug!("Failed to convert property `{interface}.{property_name}` to OwnedValue: {e}");
                     continue;
-                }
+                },
             };
             entry.value = Some(value);
             entry.event.notify(usize::MAX);
@@ -526,12 +580,7 @@ impl<'a> ProxyInner<'a> {
             BusName::Unique(_) => return Ok(()),
         };
 
-        if self
-            .inner_without_borrows
-            .dest_owner_change_match_rule
-            .get()
-            .is_some()
-        {
+        if self.inner_without_borrows.dest_owner_change_match_rule.get().is_some() {
             // Already watching over the bus for any name updates so nothing to do here.
             return Ok(());
         }
@@ -548,11 +597,8 @@ impl<'a> ProxyInner<'a> {
             .to_owned()
             .into();
 
-        conn.add_match(
-            signal_rule.clone(),
-            Some(MAX_NAME_OWNER_CHANGED_SIGNALS_QUEUED),
-        )
-        .await?;
+        conn.add_match(signal_rule.clone(), Some(MAX_NAME_OWNER_CHANGED_SIGNALS_QUEUED))
+            .await?;
 
         if self
             .inner_without_borrows
@@ -572,12 +618,7 @@ const MAX_NAME_OWNER_CHANGED_SIGNALS_QUEUED: usize = 8;
 
 impl<'a> Proxy<'a> {
     /// Create a new `Proxy` for the given destination/path/interface.
-    pub async fn new<D, P, I>(
-        conn: &Connection,
-        destination: D,
-        path: P,
-        interface: I,
-    ) -> Result<Proxy<'a>>
+    pub async fn new<D, P, I>(conn: &Connection, destination: D, path: P, interface: I) -> Result<Proxy<'a>>
     where
         D: TryInto<BusName<'a>>,
         P: TryInto<ObjectPath<'a>>,
@@ -596,12 +637,7 @@ impl<'a> Proxy<'a> {
 
     /// Create a new `Proxy` for the given destination/path/interface, taking ownership of all
     /// passed arguments.
-    pub async fn new_owned<D, P, I>(
-        conn: Connection,
-        destination: D,
-        path: P,
-        interface: I,
-    ) -> Result<Proxy<'a>>
+    pub async fn new_owned<D, P, I>(conn: Connection, destination: D, path: P, interface: I) -> Result<Proxy<'a>>
     where
         D: TryInto<BusName<'static>>,
         P: TryInto<ObjectPath<'static>>,
@@ -694,12 +730,8 @@ impl<'a> Proxy<'a> {
         let (cache, _) = &cache.get_or_init(|| {
             let proxy = self.owned_properties_proxy();
             let interface = self.interface().to_owned();
-            let uncached_properties: HashSet<zvariant::Str<'static>> = self
-                .inner
-                .uncached_properties
-                .iter()
-                .map(|s| s.to_owned())
-                .collect();
+            let uncached_properties: HashSet<zvariant::Str<'static>> =
+                self.inner.uncached_properties.iter().map(|s| s.to_owned()).collect();
             let executor = self.connection().executor();
 
             PropertiesCache::new(proxy, interface, executor, uncached_properties)
@@ -763,10 +795,7 @@ impl<'a> Proxy<'a> {
                 }
             }
 
-            Some(Wrapper {
-                values,
-                property_name,
-            })
+            Some(Wrapper { values, property_name })
         } else {
             None
         }
@@ -932,11 +961,7 @@ impl<'a> Proxy<'a> {
     /// types.
     ///
     /// The arguments are passed as tuples of argument index and expected value.
-    pub async fn receive_signal_with_args<'m, M>(
-        &self,
-        signal_name: M,
-        args: &[(u8, &str)],
-    ) -> Result<SignalStream<'m>>
+    pub async fn receive_signal_with_args<'m, M>(&self, signal_name: M, args: &[(u8, &str)]) -> Result<SignalStream<'m>>
     where
         M: TryInto<MemberName<'m>>,
         M::Error: Into<Error>,
@@ -966,16 +991,11 @@ impl<'a> Proxy<'a> {
     /// will only receive the last update.
     ///
     /// If caching is not enabled on this proxy, the resulting stream will not return any events.
-    pub async fn receive_property_changed<'name: 'a, T>(
-        &self,
-        name: &'name str,
-    ) -> PropertyStream<'a, T> {
+    pub async fn receive_property_changed<'name: 'a, T>(&self, name: &'name str) -> PropertyStream<'a, T> {
         let properties = self.get_property_cache();
         let changed_listener = if let Some(properties) = &properties {
             let mut values = properties.values.write().expect("lock poisoned");
-            let entry = values
-                .entry(name.to_string())
-                .or_insert_with(PropertyValue::default);
+            let entry = values.entry(name.to_string()).or_insert_with(PropertyValue::default);
             entry.event.listen()
         } else {
             Event::new().listen()
@@ -1040,7 +1060,7 @@ pub enum MethodFlags {
     /// Errors encountered while *making* the call will still be returned as
     /// an `Err` variant, but any errors that are triggered by the receiver's
     /// handling of the call will not be delivered.
-    NoReplyExpected = 0x1,
+    NoReplyExpected      = 0x1,
 
     /// When set on a call whose destination is a message bus, this flag will instruct
     /// the bus not to [launch][al] a service to handle the call if no application
@@ -1049,7 +1069,7 @@ pub enum MethodFlags {
     /// This flag is ignored when using a peer-to-peer connection.
     ///
     /// [al]: https://dbus.freedesktop.org/doc/dbus-specification.html#message-bus-starting-services
-    NoAutoStart = 0x2,
+    NoAutoStart          = 0x2,
 
     /// Indicates to the receiver that this client is prepared to wait for interactive
     /// authorization, which might take a considerable time to complete. For example, the receiver
@@ -1143,10 +1163,7 @@ impl<'a> SignalStream<'a> {
         let (src_unique_name, stream) = match proxy.destination().to_owned() {
             BusName::Unique(name) => (
                 Some(name),
-                join_streams(
-                    MessageStream::for_match_rule(signal_rule, conn, None).await?,
-                    None,
-                ),
+                join_streams(MessageStream::for_match_rule(signal_rule, conn, None).await?, None),
             ),
             BusName::WellKnown(name) => {
                 use ordered_stream::OrderedStreamExt;
@@ -1196,26 +1213,22 @@ impl<'a> SignalStream<'a> {
                                     .as_ref()
                                     .map(UniqueName::to_owned);
                             }
-                        }
+                        },
                         Some(Either::Left(Err(_))) => (),
                         Some(Either::Right(Ok(response))) => {
-                            break Some(response.body().deserialize::<UniqueName<'_>>()?.to_owned())
-                        }
+                            break Some(response.body().deserialize::<UniqueName<'_>>()?.to_owned());
+                        },
                         Some(Either::Right(Err(e))) => {
                             // Probably the name is not owned. Not a problem but let's still log it.
                             debug!("Failed to get owner of {name}: {e}");
 
                             break None;
-                        }
+                        },
                         None => {
                             return Err(Error::InputOutput(
-                                std::io::Error::new(
-                                    std::io::ErrorKind::BrokenPipe,
-                                    "connection closed",
-                                )
-                                .into(),
-                            ))
-                        }
+                                std::io::Error::new(std::io::ErrorKind::BrokenPipe, "connection closed").into(),
+                            ));
+                        },
                     }
                 };
 
@@ -1230,7 +1243,7 @@ impl<'a> SignalStream<'a> {
                             match (args.name(), args.new_owner().deref()) {
                                 (BusName::WellKnown(n), Some(new_owner)) if n == &name => {
                                     src_unique_name = Some(new_owner.to_owned());
-                                }
+                                },
                                 _ => (),
                             }
                         }
@@ -1244,7 +1257,7 @@ impl<'a> SignalStream<'a> {
                 );
 
                 (src_unique_name, stream)
-            }
+            },
         };
 
         Ok(SignalStream {
@@ -1292,21 +1305,14 @@ impl<'a> OrderedStream for SignalStream<'a> {
     ) -> Poll<PollResult<Self::Ordering, Self::Data>> {
         let this = self.get_mut();
         loop {
-            match ready!(OrderedStream::poll_next_before(
-                Pin::new(&mut this.stream),
-                cx,
-                before
-            )) {
+            match ready!(OrderedStream::poll_next_before(Pin::new(&mut this.stream), cx, before)) {
                 PollResult::Item { data, ordering } => {
                     if let Ok(msg) = data {
                         if let Ok(true) = this.filter(&msg) {
-                            return Poll::Ready(PollResult::Item {
-                                data: msg,
-                                ordering,
-                            });
+                            return Poll::Ready(PollResult::Item { data: msg, ordering });
                         }
                     }
-                }
+                },
                 PollResult::Terminated => return Poll::Ready(PollResult::Terminated),
                 PollResult::NoneBefore => return Poll::Ready(PollResult::NoneBefore),
             }
@@ -1355,11 +1361,18 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::{connection, interface, object_server::SignalContext, proxy, utils::block_on};
     use futures_util::StreamExt;
     use ntest::timeout;
     use test_log::test;
+
+    use super::*;
+    use crate::object_server::SignalContext;
+    use crate::utils::block_on;
+    use crate::{
+        connection,
+        interface,
+        proxy,
+    };
 
     #[ignore = "fails in ci"]
     #[test]
@@ -1409,10 +1422,7 @@ mod tests {
         assert_eq!(&new_owner.unwrap().unwrap(), &*unique_name);
 
         let acquired_signal = acquired_signal.unwrap();
-        assert_eq!(
-            acquired_signal.body().deserialize::<&str>().unwrap(),
-            well_known
-        );
+        assert_eq!(acquired_signal.body().deserialize::<&str>().unwrap(), well_known);
 
         let proxy = Proxy::new(&conn, &unique_name, "/does/not/matter", "does.not.matter").await?;
         let mut unique_name_changed_stream = proxy.receive_owner_changed().await?;
@@ -1471,10 +1481,7 @@ mod tests {
             .build()
             .await?;
 
-        let client_conn = connection::Builder::session()?
-            .max_queued(1)
-            .build()
-            .await?;
+        let client_conn = connection::Builder::session()?.max_queued(1).build().await?;
 
         let test_proxy = TestProxy::new(&client_conn).await?;
         let test_prop_proxy = PropertiesProxy::builder(&client_conn)
@@ -1493,7 +1500,6 @@ mod tests {
 
                 #[cfg(not(feature = "tokio"))]
                 use async_io::Timer;
-
                 #[cfg(feature = "tokio")]
                 use tokio::time::sleep;
 
@@ -1506,9 +1512,7 @@ mod tests {
                 let context = iface_ref.signal_context();
                 while !tx.is_closed() {
                     for _ in 0..10 {
-                        TestIface::my_signal(context, "This is a test")
-                            .await
-                            .unwrap();
+                        TestIface::my_signal(context, "This is a test").await.unwrap();
                     }
 
                     #[cfg(not(feature = "tokio"))]
