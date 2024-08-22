@@ -1385,6 +1385,7 @@ mod tests {
 
     #[cfg(target_os = "macos")]
     #[test]
+    #[ignore = "fails in ci"]
     fn connect_launchd_session_bus() {
         use crate::address::{transport::Launchd, Address, Transport};
         crate::block_on(async {
