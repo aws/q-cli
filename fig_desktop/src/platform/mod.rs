@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 #[cfg(target_os = "macos")]
 use macos_utils::window_server::ApplicationSpecifier;
+use serde::Serialize;
 use tao::dpi::Position;
 
 use crate::protocol::icons::{
@@ -44,7 +45,7 @@ pub struct PlatformWindow {
     // pub inner: ExternalPlatformWindowImpl
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct PlatformState(Arc<PlatformStateImpl>);
 
 impl PlatformState {

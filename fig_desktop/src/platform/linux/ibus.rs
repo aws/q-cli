@@ -19,7 +19,10 @@ use tracing::{
 };
 use zbus::export::futures_util::TryStreamExt;
 use zbus::fdo::DBusProxy;
-use zbus::MessageStream;
+use zbus::{
+    MatchRule,
+    MessageStream,
+};
 
 use super::PlatformStateImpl;
 use crate::event::{
@@ -35,20 +38,29 @@ use crate::{
 
 pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStateImpl>) -> Result<()> {
     let ibus_connection = ibus_bus_new().await?;
-    debug!("Connected to ibus");
-    #[allow(deprecated)]
+    debug!("Connected to ibus: {:?}", ibus_connection);
     DBusProxy::new(&ibus_connection)
         .await?
-        .add_match("eavesdrop=true")
+        .add_match_rule(
+            // TODO: verify no eavesdrop works as expected
+            MatchRule::builder()
+                .interface("org.freedesktop.IBus.InputContext")?
+                .build(),
+        )
         .await?;
     debug!("Added eavesdrop to ibus proxy");
     let mut stream = MessageStream::from(ibus_connection);
     tokio::spawn(async move {
+        // TODO: wezterm only emits "FocusIn" on the first launch on X11, test if it's safe for the
+        // logic to be updated to not require focus in/out events.
         let mut active_input_contexts = HashSet::new();
         loop {
             match stream.try_next().await {
                 Ok(Some(msg)) => {
-                    if let (Some(member), Some(interface), Some(path)) = (msg.member(), msg.interface(), msg.path()) {
+                    let header = msg.header();
+                    if let (Some(member), Some(interface), Some(path)) =
+                        (header.member(), header.interface(), header.path())
+                    {
                         if interface.as_str() == "org.freedesktop.IBus.InputContext" {
                             match member.as_str() {
                                 "FocusIn" => {
@@ -64,7 +76,7 @@ pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStat
                                         debug!("SetCursorLocation rejected on {}", path.as_str());
                                         continue;
                                     }
-                                    let body: (i32, i32, i32, i32) = match msg.body() {
+                                    let body = match msg.body().deserialize::<(i32, i32, i32, i32)>() {
                                         Ok(body) => body,
                                         Err(err) => {
                                             error!(%err, "Failed deserializing message body");
@@ -84,8 +96,7 @@ pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStat
                                             .active_terminal
                                             .lock()
                                             .as_ref()
-                                            .map(|x| x.positioning_kind())
-                                            .unwrap_or(PositioningKind::Physical);
+                                            .map_or(PositioningKind::Physical, |x| x.positioning_kind());
 
                                         let (caret_position, caret_size): (Position, Size) = match positioning_kind {
                                             PositioningKind::Logical => (
@@ -121,7 +132,7 @@ pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStat
                                         debug!("SetCursorLocationRelative rejected on {}", path.as_str());
                                         continue;
                                     }
-                                    let body: (i32, i32, i32, i32) = match msg.body() {
+                                    let body = match msg.body().deserialize::<(i32, i32, i32, i32)>() {
                                         Ok(body) => body,
                                         Err(err) => {
                                             error!(%err, "Failed deserializing message body");

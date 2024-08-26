@@ -90,7 +90,7 @@ url = "2.3.1"
 uuid.workspace = true
 which.workspace = true
 whoami.workspace = true
-wry = { version = "0.40.0", default-features = false, features = [
+wry = { version = "0.41.0", default-features = false, features = [
     # "tao",
     "protocol",
     "devtools",
@@ -124,7 +124,7 @@ dbus = { path = "../lib/dbus" }
 freedesktop-icons = "0.2.2"
 gtk = "0.18"
 x11rb = "0.13.0"
-zbus = "4.1.1"
+zbus = { path = "../lib/zbus" }
 
 [target.'cfg(target_os="macos")'.dependencies]
 accessibility-sys = { path = "../lib/macos-utils/accessibility-master/accessibility-sys", version = "0.1.3" }

@@ -27,6 +27,7 @@ use crate::event::{
     Event,
     WindowEvent,
 };
+use crate::platform::PlatformState;
 use crate::webview::notification::WebviewNotificationsState;
 use crate::webview::DASHBOARD_SIZE;
 use crate::{
@@ -158,6 +159,7 @@ pub async fn open_browser(command: OpenBrowserCommand) -> LocalResult {
     Ok(LocalResponse::Success(None))
 }
 
+#[allow(unused_variables)]
 pub async fn prompt_for_accessibility_permission(env: &Env) -> LocalResult {
     cfg_if::cfg_if! {
         if #[cfg(target_os = "macos")] {
@@ -244,6 +246,7 @@ pub fn dump_state(
     command: DumpStateCommand,
     figterm_state: &FigtermState,
     webview_notifications_state: &WebviewNotificationsState,
+    platform_state: &PlatformState,
 ) -> LocalResult {
     let json = match command.r#type() {
         DumpStateType::DumpStateFigterm => {
@@ -251,6 +254,9 @@ pub fn dump_state(
         },
         DumpStateType::DumpStateWebNotifications => serde_json::to_string_pretty(&webview_notifications_state)
             .unwrap_or_else(|err| format!("unable to dump: {err}")),
+        DumpStateType::DumpStatePlatform => {
+            serde_json::to_string_pretty(&platform_state).unwrap_or_else(|err| format!("unable to dump: {err}"))
+        },
     };
 
     LocalResult::Ok(LocalResponse::Message(Box::new(CommandResponseTypes::DumpState(

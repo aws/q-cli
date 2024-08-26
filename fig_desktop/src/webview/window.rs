@@ -1,5 +1,4 @@
 use std::fmt::Display;
-use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 use base64::prelude::*;
@@ -25,6 +24,7 @@ use tao::dpi::{
     LogicalSize,
     Position,
 };
+#[cfg(target_os = "macos")]
 use tao::platform::macos::WindowExtMacOS;
 use tao::window::Window;
 use tokio::sync::mpsc::UnboundedSender;
@@ -53,6 +53,7 @@ use crate::platform::{
     PlatformState,
 };
 use crate::utils::Rect;
+#[allow(unused_imports)]
 use crate::{
     EventLoopWindowTarget,
     AUTOCOMPLETE_ID,
@@ -317,6 +318,7 @@ impl WindowState {
 
     #[allow(clippy::only_used_in_recursion)]
     #[allow(clippy::too_many_arguments)]
+    #[allow(unused_variables)]
     pub fn handle(
         &self,
         event: WindowEvent,
@@ -528,55 +530,15 @@ impl WindowState {
                     error!(%err, "Failed to drag window");
                 }
             },
+            #[allow(unused_variables)]
             WindowEvent::OpenContextMenu { x, y, windows } => {
-                use std::io::Cursor;
-
-                use image::ImageFormat;
-                use muda::{
-                    ContextMenu,
-                    IconMenuItemBuilder,
-                };
-
-                let Some(current_context_menu) = context_menu else {
-                    return;
-                };
-
-                let mut num_items = current_context_menu.items().len();
-
-                while num_items > 12 {
-                    current_context_menu.remove_at(0);
-                    num_items -= 1;
+                cfg_if::cfg_if! {
+                    if #[cfg(target_os = "macos")] {
+                        self.open_context_menu(x, y, windows, context_menu);
+                    } else {
+                        error!("unsupported event: OpenContextMenu");
+                    }
                 }
-
-                for (window, app) in windows {
-                    let path_str = format!("/Applications/{}.app", app);
-                    let path = Path::new(&path_str);
-                    let Some(bytes) = (unsafe { macos_utils::image::png_for_path(path) }) else {
-                        continue;
-                    };
-                    let cursor = Cursor::new(bytes);
-                    let img = match image::load(cursor, ImageFormat::Png) {
-                        Ok(img) => img.into_rgba8(),
-                        Err(err) => panic!("Failed to load PNG: {}", err),
-                    };
-                    let (width, height) = img.dimensions();
-                    let raw_pixels = img.into_raw();
-                    let icon = muda::Icon::from_rgba(raw_pixels, width, height).expect("Failed to open icon");
-
-                    current_context_menu
-                        .prepend(
-                            &IconMenuItemBuilder::new()
-                                .icon(Some(icon))
-                                .text(window.clone())
-                                .id(window.into())
-                                .enabled(true)
-                                .build(),
-                        )
-                        .unwrap();
-                }
-
-                current_context_menu
-                    .show_context_menu_for_nsview(self.window.ns_view().cast(), Some(Position::Logical((x, y).into())));
             },
             WindowEvent::Batch(events) => {
                 for event in events {
@@ -648,5 +610,58 @@ impl WindowState {
     #[allow(clippy::unused_self)]
     pub fn set_theme(&self, _theme: Option<Theme>) {
         // TODO: blocked on https://github.com/tauri-apps/tao/issues/582
+    }
+
+    #[cfg(target_os = "macos")]
+    fn open_context_menu(&self, x: f32, y: f32, windows: Vec<(String, String)>, context_menu: Option<&Submenu>) {
+        use std::io::Cursor;
+        use std::path::Path;
+
+        use image::ImageFormat;
+        use muda::{
+            ContextMenu,
+            IconMenuItemBuilder,
+        };
+
+        let Some(current_context_menu) = context_menu else {
+            return;
+        };
+
+        let mut num_items = current_context_menu.items().len();
+
+        while num_items > 12 {
+            current_context_menu.remove_at(0);
+            num_items -= 1;
+        }
+
+        for (window, app) in windows {
+            let path_str = format!("/Applications/{}.app", app);
+            let path = Path::new(&path_str);
+            let Some(bytes) = (unsafe { macos_utils::image::png_for_path(path) }) else {
+                continue;
+            };
+            let cursor = Cursor::new(bytes);
+            let img = match image::load(cursor, ImageFormat::Png) {
+                Ok(img) => img.into_rgba8(),
+                Err(err) => panic!("Failed to load PNG: {}", err),
+            };
+            let (width, height) = img.dimensions();
+            let raw_pixels = img.into_raw();
+            let icon = muda::Icon::from_rgba(raw_pixels, width, height).expect("Failed to open icon");
+
+            current_context_menu
+                .prepend(
+                    &IconMenuItemBuilder::new()
+                        .icon(Some(icon))
+                        .text(window.clone())
+                        .id(window.into())
+                        .enabled(true)
+                        .build(),
+                )
+                .unwrap();
+        }
+
+        current_context_menu
+            .show_context_menu_for_nsview(self.window.ns_view().cast(), Some(Position::Logical((x, y).into())));
     }
 }

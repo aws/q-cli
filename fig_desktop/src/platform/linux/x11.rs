@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use dashmap::DashMap;
 use parking_lot::Mutex;
+use serde::Serialize;
 use tao::dpi::{
     PhysicalPosition,
     PhysicalSize,
@@ -40,6 +41,7 @@ use super::{
     WM_REVICED_DATA,
 };
 use crate::event::WindowEvent;
+use crate::platform::linux::FIG_WM_CLASS;
 use crate::utils::Rect;
 use crate::{
     Event,
@@ -49,10 +51,12 @@ use crate::{
 
 const WM_WINDOW_ROLE: &[u8] = b"WM_WINDOW_ROLE";
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct X11State {
     pub active_window: Mutex<Option<X11WindowData>>,
+    #[serde(skip)]
     pub atom_cache_a2b: DashMap<Atom, Vec<u8>>,
+    #[serde(skip)]
     pub atom_cache_b2a: DashMap<Vec<u8>, Atom>,
 }
 
@@ -80,7 +84,7 @@ impl X11State {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct X11WindowData {
     pub id: x11rb::protocol::xproto::Window,
     pub window_geometry: Option<Rect>,
@@ -164,10 +168,15 @@ fn process_window(
         let wm_class = WmClass::get(conn, window)?.reply();
 
         let wm_class = String::from_utf8_lossy(&match wm_class {
-            Ok(class_raw) => class_raw.class().to_owned(),
+            Ok(Some(class_raw)) => class_raw.class().to_owned(),
+            // hide if missing wm class
+            Ok(None) => {
+                debug!("No wm class");
+                hide()?;
+                return Ok(());
+            },
             Err(err) => {
-                debug!("No wm class {err:?}");
-                // hide if missing wm class
+                debug!("Error getting wm class: {err:?}");
                 hide()?;
                 return Ok(());
             },
@@ -202,7 +211,7 @@ fn process_window(
         }),
     });
 
-    if wm_class == "Codewhisperer" {
+    if wm_class == FIG_WM_CLASS {
         // get wm_role
         let reply = get_property(
             conn,

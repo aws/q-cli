@@ -15,6 +15,7 @@ use bytes::{
 use fig_util::Terminal;
 use flume::Receiver;
 use parking_lot::Mutex;
+use serde::Serialize;
 use serde_json::{
     json,
     Value,
@@ -36,10 +37,11 @@ use super::integrations::GSE_ALLOWLIST;
 use crate::utils::Rect;
 use crate::EventLoopProxy;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct SwayState {
     pub active_window_rect: Mutex<Option<Rect>>,
     pub active_terminal: Mutex<Option<Terminal>>,
+    #[serde(skip)]
     pub sway_tx: flume::Sender<SwayCommand>,
 }
 
@@ -178,7 +180,7 @@ pub async fn handle_incoming(conn: &mut UnixStream, buf: &mut BytesMut, sway_sta
             } => {
                 let payload = match payload {
                     Payload::Json(value) => value,
-                    Payload::Bytes(_) => todo!(),
+                    Payload::Bytes(_) => panic!("unimplemented"),
                 };
 
                 trace!(%payload_type, %payload, "Received event");

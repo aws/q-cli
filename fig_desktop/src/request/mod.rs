@@ -4,6 +4,7 @@ mod notifications;
 mod onboarding;
 mod process;
 mod properties;
+#[cfg(target_os = "macos")]
 mod screen;
 mod telemetry;
 mod user;
@@ -16,7 +17,9 @@ use fig_desktop_api::kv::{
     DashKVStore,
     KVStore,
 };
+#[allow(unused_imports)]
 pub use fig_desktop_api::requests::{
+    Error,
     RequestResult,
     RequestResultImpl,
 };
@@ -162,16 +165,30 @@ impl<'a> fig_desktop_api::handler::EventHandler for EventHandler<'a> {
         .await
     }
 
+    #[allow(unused_variables)]
     async fn get_screenshot(&self, request: Wrapped<Self::Ctx, GetScreenshotRequest>) -> RequestResult {
-        screen::get_screenshot(request.request, request.context.window_id.clone())
+        cfg_if::cfg_if! {
+            if #[cfg(target_os = "macos")] {
+                screen::get_screenshot(request.request, request.context.window_id.clone())
+            } else {
+                Err(Error::Custom("unsupported request".into()))
+            }
+        }
     }
 
+    #[allow(unused_variables)]
     async fn open_context_menu(&self, request: Wrapped<Self::Ctx, OpenContextMenuRequest>) -> RequestResult {
-        screen::open_context_menu(
-            request.request,
-            request.context.window_id.clone(),
-            request.context.proxy,
-        )
+        cfg_if::cfg_if! {
+            if #[cfg(target_os = "macos")] {
+                screen::open_context_menu(
+                    request.request,
+                    request.context.window_id.clone(),
+                    request.context.proxy,
+                )
+            } else {
+                Err(Error::Custom("unsupported request".into()))
+            }
+        }
     }
 
     async fn onboarding(&self, request: Wrapped<Self::Ctx, OnboardingRequest>) -> RequestResult {

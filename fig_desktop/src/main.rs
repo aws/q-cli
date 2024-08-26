@@ -256,8 +256,9 @@ async fn main() {
     {
         match std::env::var("Q_BACKEND").ok().as_deref() {
             Some("default") => {},
-            Some(backend) => std::env::set_var("GDK_BACKEND", backend),
-            None => std::env::set_var("GDK_BACKEND", "x11"),
+            // SAFETY: we are calling set_var in a single-threaded context.
+            Some(backend) => unsafe { std::env::set_var("GDK_BACKEND", backend) },
+            None => unsafe { std::env::set_var("GDK_BACKEND", "x11") },
         }
 
         platform::gtk::init().expect("Failed initializing GTK");

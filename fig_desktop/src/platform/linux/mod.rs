@@ -19,6 +19,7 @@ use fig_util::system_info::linux::{
 };
 use fig_util::Terminal;
 use parking_lot::Mutex;
+use serde::Serialize;
 use tao::dpi::{
     LogicalPosition,
     PhysicalPosition,
@@ -48,9 +49,18 @@ use crate::{
     EventLoopWindowTarget,
 };
 
+/// Whether or not the desktop app has received a request containing
+/// window data (e.g. window focus, position, etc.). Essentially if this
+/// is false, then we know autocomplete is not working.
+///
+/// From where we receive requests depends on the display server protocol in use:
+/// - X11: directly from a connection with X Server
+/// - Wayland (GNOME): from the GNOME shell extension
 static WM_REVICED_DATA: AtomicBool = AtomicBool::new(false);
 
-#[derive(Debug)]
+const FIG_WM_CLASS: &str = "Amazon-q";
+
+#[derive(Debug, Serialize)]
 #[allow(dead_code)] // we will definitely need inner_x and inner_y at some point
 pub(super) struct ActiveWindowData {
     inner_x: i32,
@@ -60,19 +70,27 @@ pub(super) struct ActiveWindowData {
     scale: f32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub(super) enum DisplayServerState {
     X11(Arc<x11::X11State>),
+    /// Not supported
     Sway(Arc<sway::SwayState>),
 }
 
 #[derive(Debug)]
 pub struct PlatformWindowImpl;
 
+#[derive(Debug, Serialize)]
 pub(super) struct PlatformStateImpl {
+    #[serde(skip)]
     pub(super) proxy: EventLoopProxy,
     pub(super) active_window_data: Mutex<Option<ActiveWindowData>>,
+
+    /// State associated with the detected display server.
     pub(super) display_server_state: Mutex<Option<DisplayServerState>>,
+
+    /// The terminal emulator currently in focus. Note that this does
+    /// not include "special" terminals like tmux.
     pub(super) active_terminal: Mutex<Option<Terminal>>,
 }
 
@@ -113,8 +131,8 @@ impl PlatformStateImpl {
                             info!("Detected Wayland server");
 
                             match get_desktop_environment() {
-                                Ok(env @ DesktopEnvironment::Gnome | env @ DesktopEnvironment::Plasma) => {
-                                    info!("Detected {env:?}")
+                                Ok(env @ (DesktopEnvironment::Gnome | DesktopEnvironment::Plasma)) => {
+                                    info!("Detected {env:?}");
                                 },
                                 Ok(DesktopEnvironment::Sway) => {
                                     if let Ok(sway_socket) = std::env::var("SWAYSOCK") {
@@ -128,7 +146,7 @@ impl PlatformStateImpl {
                                         *platform_state.display_server_state.lock() =
                                             Some(DisplayServerState::Sway(sway_state.clone()));
                                         tokio::spawn(async {
-                                            sway::handle_sway(proxy_, sway_state, sway_socket, sway_rx).await
+                                            sway::handle_sway(proxy_, sway_state, sway_socket, sway_rx).await;
                                         });
                                     }
                                 },
@@ -207,6 +225,7 @@ impl PlatformStateImpl {
         Ok(())
     }
 
+    #[allow(clippy::unused_self)]
     pub(super) fn get_cursor_position(&self) -> Option<crate::utils::Rect> {
         None
     }
@@ -223,13 +242,11 @@ impl PlatformStateImpl {
         }
     }
 
-    pub(super) async fn icon_lookup(asset: &AssetSpecifier) -> Option<ProcessedAsset> {
+    pub(super) async fn icon_lookup(asset: &AssetSpecifier<'_>) -> Option<ProcessedAsset> {
         match asset {
             AssetSpecifier::Named(name) => icons::lookup(name).await,
-            AssetSpecifier::PathBased(path) => path
-                .metadata()
-                .ok()
-                .and_then(|metadata| {
+            AssetSpecifier::PathBased(path) => {
+                if let Ok(metadata) = path.metadata() {
                     let name = if metadata.is_dir() {
                         Some("folder")
                     } else if metadata.is_file() {
@@ -237,15 +254,20 @@ impl PlatformStateImpl {
                     } else {
                         None
                     };
-                    name.and_then(icons::lookup)
-                })
-                .or_else(|| {
+                    if let Some(name) = name {
+                        icons::lookup(name).await
+                    } else {
+                        None
+                    }
+                } else {
                     icons::lookup(if path.to_str().map(|x| x.ends_with('/')).unwrap_or_default() {
                         "folder"
                     } else {
                         "text-x-generic-template"
                     })
-                }),
+                    .await
+                }
+            },
         }
     }
 
@@ -268,6 +290,14 @@ pub fn autocomplete_active() -> bool {
 }
 
 pub mod gtk {
+    use super::FIG_WM_CLASS;
+
+    /// Initializes gtk, setting the X11 WM_CLASS to [FIG_WM_CLASS]. This should be called before
+    /// creating any windows or webviews.
+    ///
+    /// This does almost the exact same as [gtk::init] except we need
+    /// to keep the WM_CLASS consistent by always using [FIG_WM_CLASS]
+    /// instead of the program name.
     pub fn init() -> Result<(), gtk::glib::BoolError> {
         use gtk::glib::translate::{
             from_glib,
@@ -286,7 +316,7 @@ pub mod gtk {
             panic!("Attempted to initialize GTK from two different threads.");
         }
         unsafe {
-            let name = ["codewhisperer"];
+            let name = [FIG_WM_CLASS];
             if from_glib(ffi::gtk_init_check(&mut 1, &mut name.to_glib_none().0)) {
                 let result: bool = from_glib(glib::ffi::g_main_context_acquire(
                     gtk::glib::ffi::g_main_context_default(),

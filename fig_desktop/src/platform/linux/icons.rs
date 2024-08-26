@@ -15,7 +15,7 @@ use crate::protocol::icons::{
     ProcessedAsset,
 };
 
-static SELECTED_THEME: Mutex<Cow<str>> = parking_lot::const_mutex(Cow::Borrowed("hicolor"));
+static SELECTED_THEME: Mutex<Cow<'_, str>> = parking_lot::const_mutex(Cow::Borrowed("hicolor"));
 
 pub fn init() -> Result<()> {
     let mut use_local = true;

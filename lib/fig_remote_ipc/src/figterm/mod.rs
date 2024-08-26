@@ -55,7 +55,7 @@ impl SessionMetrics {
 
 #[derive(Debug, Default, Serialize)]
 pub struct InnerFigtermState {
-    /// All current sessions of `[FigtermSession]`s.
+    /// All current sessions of [FigtermSession]'s.
     pub linked_sessions: HashMap<FigtermSessionId, FigtermSession>,
     /// The most recent figterm session
     pub most_recent: Option<FigtermSessionId>,

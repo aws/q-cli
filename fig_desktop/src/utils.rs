@@ -38,6 +38,7 @@ use crate::webview::window_id::WindowIdProvider;
 use crate::webview::WindowId;
 
 /// Determines if the build is ran in debug mode
+#[allow(dead_code)]
 pub fn is_cargo_debug_build() -> bool {
     cfg!(debug_assertions) && !fig_settings::state::get_bool_or("developer.override-cargo-debug", false)
 }

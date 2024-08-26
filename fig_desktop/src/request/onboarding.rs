@@ -8,6 +8,7 @@ use fig_util::Shell;
 use tao::event_loop::ControlFlow;
 #[cfg(target_os = "macos")]
 use tokio::process::Command;
+#[allow(unused_imports)]
 use tracing::error;
 
 use super::{

@@ -3,6 +3,7 @@ use cfg_if::cfg_if;
 use fig_install::check_for_updates;
 use fig_integrations::ssh::SshIntegration;
 use fig_integrations::Integration;
+#[cfg(target_os = "macos")]
 use fig_util::directories::fig_data_dir;
 #[cfg(target_os = "macos")]
 use macos_utils::bundle::get_bundle_path_for_executable;
@@ -12,9 +13,12 @@ use tracing::{
     info,
 };
 
+#[allow(unused_imports)]
 use crate::utils::is_cargo_debug_build;
 
 const PREVIOUS_VERSION_KEY: &str = "desktop.versionAtPreviousLaunch";
+
+#[cfg(target_os = "macos")]
 const MIGRATED_KEY: &str = "desktop.migratedFromFig";
 
 #[cfg(target_os = "macos")]
@@ -100,7 +104,6 @@ pub async fn run_install(_ignore_immediate_update: bool) {
             tokio::spawn(async {
                 use sysinfo::{
                     ProcessRefreshKind,
-                    SystemExt,
                 };
                 let mut s = sysinfo::System::new();
                 s.refresh_processes_specifics(ProcessRefreshKind::new());
@@ -110,7 +113,7 @@ pub async fn run_install(_ignore_immediate_update: bool) {
                         Ok(true) => tracing::debug!("shell extension already installed"),
                         Ok(false) => {
                             if let Err(err) = dbus::gnome_shell::install_extension().await {
-                                error!(%err, "Failed to install shell extension")
+                                error!(%err, "Failed to install shell extension");
                             }
                         },
                         Err(err) => error!(%err, "Failed to check shell extensions"),
@@ -441,7 +444,6 @@ async fn launch_ibus() {
         ProcessRefreshKind,
         RefreshKind,
         System,
-        SystemExt,
     };
     use tokio::process::Command;
 
@@ -484,6 +486,7 @@ async fn launch_ibus() {
     error!("Timed out after 2 sec waiting for ibus activation");
 }
 
+#[cfg(target_os = "macos")]
 fn should_run_install_script() -> bool {
     let current_version = current_version();
     let previous_version = match previous_version() {
@@ -500,6 +503,7 @@ fn current_version() -> Version {
 }
 
 /// The previous version of the desktop app stored in local state
+#[cfg(target_os = "macos")]
 fn previous_version() -> Option<Version> {
     fig_settings::state::get_string(PREVIOUS_VERSION_KEY)
         .ok()
@@ -521,6 +525,7 @@ mod test {
         current_version();
     }
 
+    #[cfg(target_os = "macos")]
     #[tokio::test]
     async fn test_symlink() {
         use tempfile::tempdir;

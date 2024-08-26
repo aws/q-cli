@@ -68,6 +68,7 @@ use parking_lot::{
     Mutex,
     RwLock,
 };
+use serde::Serialize;
 use tao::dpi::{
     LogicalPosition,
     LogicalSize,
@@ -145,9 +146,11 @@ struct Unmanaged {
     window_server: RwLock<Option<Arc<Mutex<WindowServer>>>>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub(super) struct PlatformStateImpl {
+    #[serde(skip)]
     proxy: EventLoopProxy,
+    #[serde(skip)]
     focused_window: Mutex<Option<PlatformWindowImpl>>,
 }
 

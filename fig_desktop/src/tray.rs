@@ -200,6 +200,7 @@ pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
     tokio::spawn(fig_telemetry::send_menu_bar_actioned(Some(menu_event.id().0.clone())));
 }
 
+#[allow(dead_code)]
 #[cfg(target_os = "linux")]
 fn load_icon(path: impl AsRef<std::path::Path>) -> Option<Icon> {
     let image = image::open(path).ok()?.into_rgba8();

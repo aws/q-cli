@@ -397,6 +397,7 @@ impl WebviewManager {
             error!(%err, "Failed to set tray visible");
         }
 
+        #[allow(unused_variables)]
         let menu_bar = menu_bar();
 
         // TODO: fix these
@@ -738,7 +739,18 @@ pub fn build_dashboard(
         url.set_path(&page);
     }
 
-    let webview = WebViewBuilder::new(&window)
+    cfg_if! {
+        if #[cfg(target_os = "linux")] {
+            use tao::platform::unix::WindowExtUnix;
+            use wry::WebViewBuilderExtUnix;
+            let vbox = window.default_vbox().unwrap();
+            let webview_builder = WebViewBuilder::new_gtk(vbox);
+        } else {
+            let webview_builder = WebViewBuilder::new(&window);
+        }
+    };
+
+    let webview = webview_builder
         .with_web_context(web_context)
         .with_url(url.as_str())
         .with_ipc_handler(move |payload| {
@@ -785,7 +797,6 @@ pub fn build_autocomplete(
         .with_transparent(true)
         .with_decorations(false)
         .with_always_on_top(true)
-        .with_visible(false)
         .with_focused(false)
         .with_window_icon(Some(utils::ICON.clone()))
         .with_inner_size(LogicalSize::new(1.0, 1.0))
@@ -797,10 +808,10 @@ pub fn build_autocomplete(
             window_builder = window_builder.with_resizable(true).with_skip_taskbar(true);
         } else if #[cfg(target_os = "macos")] {
             use tao::platform::macos::WindowBuilderExtMacOS;
-            window_builder = window_builder.with_resizable(false).with_has_shadow(false);
+            window_builder = window_builder.with_resizable(false).with_has_shadow(false).with_visible(false);
         } else if #[cfg(target_os = "windows")] {
             use tao::platform::windows::WindowBuilderExtWindows;
-            window_builder = window_builder.with_resizable(false).with_skip_taskbar(true);
+            window_builder = window_builder.with_resizable(false).with_skip_taskbar(true).with_visible(false);
         }
     );
 
@@ -827,7 +838,18 @@ pub fn build_autocomplete(
 
     let proxy = event_loop.create_proxy();
 
-    let webview = WebViewBuilder::new(&window)
+    cfg_if! {
+        if #[cfg(target_os = "linux")] {
+            use tao::platform::unix::WindowExtUnix;
+            use wry::WebViewBuilderExtUnix;
+            let vbox = window.default_vbox().unwrap();
+            let webview_builder = WebViewBuilder::new_gtk(vbox);
+        } else {
+            let webview_builder = WebViewBuilder::new(&window);
+        }
+    };
+
+    let webview = webview_builder
         .with_url(autocomplete::url().as_str())
         .with_web_context(web_context)
         .with_ipc_handler(move |payload| {

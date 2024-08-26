@@ -1,4 +1,6 @@
+#[allow(unused_imports)]
 use fig_util::consts::PRODUCT_NAME;
+#[allow(unused_imports)]
 use muda::{
     Menu,
     MenuEvent,
@@ -172,6 +174,11 @@ pub fn menu_bar() -> MenuBar {
     menu_bar.add_submenu("Edit", true, edit_submenu);
 
     menu_bar
+}
+
+#[cfg(target_os = "linux")]
+pub fn menu_bar() -> Menu {
+    Menu::new()
 }
 
 pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {

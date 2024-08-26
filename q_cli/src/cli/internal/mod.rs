@@ -148,6 +148,7 @@ impl From<InstallArgs> for InstallComponents {
 pub enum StateComponent {
     Figterm,
     WebNotifications,
+    Platform,
 }
 
 #[derive(Debug, PartialEq, Eq, Subcommand)]
@@ -702,6 +703,7 @@ impl InternalSubcommand {
                 let state = fig_ipc::local::dump_state_command(match component {
                     StateComponent::Figterm => StateCommandType::DumpStateFigterm,
                     StateComponent::WebNotifications => StateCommandType::DumpStateWebNotifications,
+                    StateComponent::Platform => StateCommandType::DumpStatePlatform,
                 })
                 .await
                 .context("Failed to send dump state command")?;

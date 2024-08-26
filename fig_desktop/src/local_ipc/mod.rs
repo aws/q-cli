@@ -143,9 +143,12 @@ async fn handle_local_ipc(
                             LogLevel(command) => commands::log_level(command),
                             Login(_) => commands::login(&proxy).await,
                             Logout(_) => commands::logout(&proxy).await,
-                            DumpState(command) => {
-                                commands::dump_state(command, &figterm_state, &webview_notifications_state)
-                            },
+                            DumpState(command) => commands::dump_state(
+                                command,
+                                &figterm_state,
+                                &webview_notifications_state,
+                                &platform_state,
+                            ),
                             Update(_) => fig_install::update(
                                 Some(Box::new(move |_| {
                                     debug!("Updating from proto");
