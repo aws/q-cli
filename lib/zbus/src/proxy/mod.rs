@@ -354,7 +354,7 @@ impl PropertiesCache {
                     CachingResult::Caching { ready } => ready,
                     // SAFETY: This is the only part of the code that changes this state and it's
                     // only run once.
-                    _ => unreachable!(),
+                    CachingResult::Cached { .. } => unreachable!(),
                 };
                 match result {
                     Ok((prop_changes, interface, uncached_properties)) => {
@@ -508,7 +508,7 @@ impl PropertiesCache {
             }
             trace!("Property `{interface}.{property_name}` updated");
 
-            let entry = values.entry(property_name.to_string()).or_default();
+            let entry = values.entry((*property_name).to_string()).or_default();
 
             let value = match OwnedValue::try_from(value) {
                 Ok(value) => value,
@@ -790,7 +790,7 @@ impl<'a> Proxy<'a> {
                     self.values
                         .get(self.property_name)
                         .and_then(|e| e.value.as_ref())
-                        .map(|v| v.deref())
+                        .map(|v| &**v)
                         .expect("inexistent property")
                 }
             }
@@ -1240,7 +1240,7 @@ impl<'a> SignalStream<'a> {
                 }) {
                     if let Some(signal) = NameOwnerChanged::from_message(msg) {
                         if let Ok(args) = signal.args() {
-                            match (args.name(), args.new_owner().deref()) {
+                            match (args.name(), &**args.new_owner()) {
                                 (BusName::WellKnown(n), Some(new_owner)) if n == &name => {
                                     src_unique_name = Some(new_owner.to_owned());
                                 },
@@ -1409,7 +1409,7 @@ mod tests {
             .await
             .filter_map(|changed| async move {
                 let v: Option<u32> = changed.get().await.ok();
-                dbg!(v)
+                v
             });
         drop(proxy);
         drop(prop_stream);

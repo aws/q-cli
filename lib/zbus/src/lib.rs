@@ -170,8 +170,6 @@ pub mod blocking;
 pub use zbus_macros::{
     dbus_interface,
     dbus_proxy,
-};
-pub use zbus_macros::{
     interface,
     proxy,
     DBusError,
@@ -603,6 +601,7 @@ mod tests {
         struct Secret;
         #[super::interface(name = "org.freedesktop.Secret.Service")]
         impl Secret {
+            #[allow(clippy::unused_self)]
             fn open_session(
                 &self,
                 _algorithm: &str,
@@ -1135,7 +1134,7 @@ mod tests {
 
             // Now while the `method1` is in progress, a call to `method2` should just work.
             proxy.method2().await.unwrap();
-        })
+        });
     }
 
     #[cfg(all(unix, feature = "p2p"))]

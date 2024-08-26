@@ -62,7 +62,7 @@ impl Connection {
 
     /// Set the capacity of the main (unfiltered) queue.
     pub fn set_max_queued(mut self, max: usize) {
-        self.inner.set_max_queued(max)
+        self.inner.set_max_queued(max);
     }
 
     /// The server's GUID.
@@ -268,7 +268,7 @@ impl Connection {
     /// Blocking version of [`crate::Connection::graceful_shutdown`]. See docs there for
     /// more details and caveats.
     pub fn graceful_shutdown(self) {
-        block_on(self.inner.graceful_shutdown())
+        block_on(self.inner.graceful_shutdown());
     }
 }
 

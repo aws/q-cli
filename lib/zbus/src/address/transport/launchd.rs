@@ -48,7 +48,9 @@ impl Launchd {
     pub(super) fn from_options(opts: HashMap<&str, &str>) -> Result<Self> {
         opts.get("env")
             .ok_or_else(|| crate::Error::Address("missing env key".into()))
-            .map(|env| Self { env: env.to_string() })
+            .map(|env| Self {
+                env: (*env).to_string(),
+            })
     }
 }
 

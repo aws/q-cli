@@ -154,7 +154,7 @@ impl fmt::Display for Error {
                 f,
                 "{}: {}",
                 **name,
-                detail.as_ref().map(|s| s.as_str()).unwrap_or("no details")
+                detail.as_ref().map_or("no details", |s| s.as_str())
             ),
             Error::InvalidGUID => write!(f, "Invalid GUID"),
             Error::Unsupported => write!(f, "Connection support is lacking"),

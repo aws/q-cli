@@ -359,8 +359,10 @@ pub(crate) struct Peer;
 /// [ObjectServer](crate::ObjectServer).
 #[interface(name = "org.freedesktop.DBus.Peer")]
 impl Peer {
+    #[allow(clippy::unused_self)]
     fn ping(&self) {}
 
+    #[allow(clippy::unused_self)]
     fn get_machine_id(&self) -> Result<String> {
         let mut id = match std::fs::read_to_string("/var/lib/dbus/machine-id") {
             Ok(id) => id,
@@ -1081,10 +1083,10 @@ mod tests {
         let result = proxy.release_name(well_known).await.unwrap();
         assert_eq!(result, fdo::ReleaseNameReply::NonExistent);
 
-        let _stream = proxy.receive_features_changed().await.filter_map(|changed| async move {
-            let v = changed.get().await.ok();
-            dbg!(v)
-        });
+        let _stream = proxy
+            .receive_features_changed()
+            .await
+            .filter_map(|changed| async move { changed.get().await.ok() });
     }
 
     #[ignore = "fails in ci"]
@@ -1115,6 +1117,7 @@ mod tests {
         struct TestObj;
         #[super::interface(name = "org.zbus.TestObj")]
         impl TestObj {
+            #[allow(clippy::unused_self)]
             #[zbus(property)]
             fn test(&self) -> String {
                 "test".into()

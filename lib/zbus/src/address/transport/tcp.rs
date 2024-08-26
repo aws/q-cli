@@ -101,16 +101,16 @@ impl Tcp {
             return Err(Error::Address("`bind` isn't yet supported".into()));
         }
 
-        let host = opts
+        let host = (*opts
             .get("host")
-            .ok_or_else(|| Error::Address("tcp address is missing `host`".into()))?
-            .to_string();
+            .ok_or_else(|| Error::Address("tcp address is missing `host`".into()))?)
+        .to_string();
         let port = opts
             .get("port")
             .ok_or_else(|| Error::Address("tcp address is missing `port`".into()))?;
         let port = port
             .parse::<u16>()
-            .map_err(|_| Error::Address("invalid tcp `port`".into()))?;
+            .map_err(|_err| Error::Address("invalid tcp `port`".into()))?;
         let family = opts
             .get("family")
             .map(|f| TcpTransportFamily::from_str(f))

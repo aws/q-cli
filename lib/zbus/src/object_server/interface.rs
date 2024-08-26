@@ -197,7 +197,7 @@ impl dyn Interface {
     pub(crate) fn downcast_ref<T: Any>(&self) -> Option<&T> {
         if <dyn Interface as Any>::type_id(self) == TypeId::of::<T>() {
             // SAFETY: If type ID matches, it means object is of type T
-            Some(unsafe { &*(self as *const dyn Interface as *const T) })
+            Some(unsafe { &*(self as *const dyn Interface).cast::<T>() })
         } else {
             None
         }
@@ -207,7 +207,7 @@ impl dyn Interface {
     pub(crate) fn downcast_mut<T: Any>(&mut self) -> Option<&mut T> {
         if <dyn Interface as Any>::type_id(self) == TypeId::of::<T>() {
             // SAFETY: If type ID matches, it means object is of type T
-            Some(unsafe { &mut *(self as *mut dyn Interface as *mut T) })
+            Some(unsafe { &mut *(self as *mut dyn Interface).cast::<T>() })
         } else {
             None
         }

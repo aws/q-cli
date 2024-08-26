@@ -73,7 +73,7 @@ impl Client {
     /// Returns the next command to send to the server.
     async fn handle_cookie_challenge(&mut self, data: Vec<u8>) -> Result<Command> {
         let context =
-            std::str::from_utf8(&data).map_err(|_| Error::Handshake("Cookie context was not valid UTF-8".into()))?;
+            std::str::from_utf8(&data).map_err(|_err| Error::Handshake("Cookie context was not valid UTF-8".into()))?;
         let mut split = context.split_ascii_whitespace();
         let context = split
             .next()

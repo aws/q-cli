@@ -154,7 +154,7 @@ impl FromStr for Address {
         Ok(Self {
             guid: options
                 .remove("guid")
-                .map(|s| Guid::from_str(s).map(|guid| OwnedGuid::from(guid).to_owned()))
+                .map(|s| Guid::from_str(s).map(|guid| OwnedGuid::from(guid).clone()))
                 .transpose()?,
             transport: Transport::from_options(transport, options)?,
         })

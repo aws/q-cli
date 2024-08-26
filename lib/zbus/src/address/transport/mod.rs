@@ -264,7 +264,7 @@ pub(crate) fn decode_percents(value: &str) -> Result<Vec<u8>> {
 
     while let Some(c) = iter.next() {
         if matches!(c, '-' | '0'..='9' | 'A'..='Z' | 'a'..='z' | '_' | '/' | '.' | '\\' | '*') {
-            decoded.push(c as u8)
+            decoded.push(c as u8);
         } else if c == '%' {
             decoded.push(
                 decode_hex(

@@ -82,7 +82,7 @@ impl Cookie {
                     ))
                 })?
                 .to_string();
-            cookies.push(Cookie { id, cookie })
+            cookies.push(Cookie { id, cookie });
         }
         trace!("Loaded keyring {:?}", cookies);
         Ok(cookies)

@@ -356,7 +356,7 @@ impl Node {
                             name,
                             node,
                             level: level + 2,
-                        })
+                        });
                     }
 
                     if level == 0 {

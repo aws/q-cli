@@ -439,10 +439,10 @@ impl<'m> TryFrom<&'m str> for MatchRule<'m> {
                     if let Some(trailing_idx) = key.find("path") {
                         let idx = key[3..trailing_idx]
                             .parse::<u8>()
-                            .map_err(|_| Error::InvalidMatchRule)?;
+                            .map_err(|_err| Error::InvalidMatchRule)?;
                         builder.arg_path(idx, value)?
                     } else {
-                        let idx = key[3..].parse::<u8>().map_err(|_| Error::InvalidMatchRule)?;
+                        let idx = key[3..].parse::<u8>().map_err(|_err| Error::InvalidMatchRule)?;
                         builder.arg(idx, value)?
                     }
                 },

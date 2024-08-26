@@ -289,11 +289,14 @@ impl Future for PendingMethodCall {
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         self.poll_before(cx, None).map(|ret| {
-            ret.map(|(_, r)| r).unwrap_or_else(|| {
-                Err(crate::Error::InputOutput(
-                    io::Error::new(ErrorKind::BrokenPipe, "socket closed").into(),
-                ))
-            })
+            ret.map_or_else(
+                || {
+                    Err(crate::Error::InputOutput(
+                        io::Error::new(ErrorKind::BrokenPipe, "socket closed").into(),
+                    ))
+                },
+                |(_, r)| r,
+            )
         })
     }
 }
@@ -423,13 +426,13 @@ impl Connection {
 
         let mut builder = Message::method(path, method_name)?;
         if let Some(sender) = self.unique_name() {
-            builder = builder.sender(sender)?
+            builder = builder.sender(sender)?;
         }
         if let Some(destination) = destination {
-            builder = builder.destination(destination)?
+            builder = builder.destination(destination)?;
         }
         if let Some(interface) = interface {
-            builder = builder.interface(interface)?
+            builder = builder.interface(interface)?;
         }
         for flag in flags {
             builder = builder.with_flags(flag)?;
@@ -1141,7 +1144,7 @@ impl Connection {
         let conn = self.clone();
         let task_name = format!("Remove match `{}`", *rule);
         let remove_match = async move { conn.remove_match(rule).await }.instrument(trace_span!("{}", task_name));
-        self.inner.executor.spawn(remove_match, &task_name).detach()
+        self.inner.executor.spawn(remove_match, &task_name).detach();
     }
 
     pub(crate) async fn new(
@@ -1423,6 +1426,7 @@ mod tests {
 
         #[crate::interface(name = "dev.peelz.FooBar.Baz")]
         impl MyInterface {
+            #[allow(clippy::unused_self)]
             fn do_thing(&self) {}
         }
         let name = "dev.peelz.foobar";

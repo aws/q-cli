@@ -735,7 +735,7 @@ async fn my_iface_test(conn: Connection, event: Event) -> zbus::Result<u32> {
 
     let changed_value = &args.changed_properties()[expected_property_key];
     assert_eq!(
-        <&Value as TryInto<u32>>::try_into(changed_value).unwrap(),
+        <&Value<'_> as TryInto<u32>>::try_into(changed_value).unwrap(),
         expected_property_value
     );
     assert!(args.invalidated_properties().is_empty());
@@ -751,7 +751,7 @@ async fn my_iface_test(conn: Connection, event: Event) -> zbus::Result<u32> {
 
     let changed_value = &args.changed_properties()[expected_property_key];
     assert_eq!(
-        <&Value as TryInto<u32>>::try_into(changed_value).unwrap(),
+        <&Value<'_> as TryInto<u32>>::try_into(changed_value).unwrap(),
         expected_property_value
     );
     assert!(args.invalidated_properties().is_empty());

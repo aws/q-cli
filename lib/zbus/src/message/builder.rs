@@ -280,7 +280,7 @@ impl<'a> Builder<'a> {
         let body_size = serialized::Size::new(body_bytes.len(), dbus_context!(self, 0));
         #[cfg(unix)]
         let body_size = {
-            let num_fds = fds.len().try_into().map_err(|_| Error::ExcessData)?;
+            let num_fds = fds.len().try_into().map_err(|_err| Error::ExcessData)?;
             body_size.set_num_fds(num_fds)
         };
 
@@ -315,7 +315,7 @@ impl<'a> Builder<'a> {
             header.fields_mut().add(Field::Signature(signature));
         }
 
-        let body_len_u32 = body_size.size().try_into().map_err(|_| Error::ExcessData)?;
+        let body_len_u32 = body_size.size().try_into().map_err(|_err| Error::ExcessData)?;
         header.primary_mut().set_body_len(body_len_u32);
 
         #[cfg(unix)]

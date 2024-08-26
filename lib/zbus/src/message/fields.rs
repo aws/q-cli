@@ -127,7 +127,7 @@ impl FieldPos {
         T: std::ops::Deref<Target = str>,
     {
         field
-            .and_then(|f| Self::build(msg_buf, f.deref()))
+            .and_then(|f| Self::build(msg_buf, f))
             .unwrap_or_else(Self::new_not_present)
     }
 

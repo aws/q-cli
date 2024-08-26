@@ -86,7 +86,7 @@ impl<'a> Executor<'a> {
     pub async fn tick(&self) {
         #[cfg(not(feature = "tokio"))]
         {
-            self.executor.tick().await
+            self.executor.tick().await;
         }
 
         #[cfg(feature = "tokio")]
@@ -148,7 +148,7 @@ impl<T> Task<T> {
     pub fn detach(mut self) {
         #[cfg(not(feature = "tokio"))]
         {
-            self.0.take().expect("async_task::Task is none").detach()
+            self.0.take().expect("async_task::Task is none").detach();
         }
 
         #[cfg(feature = "tokio")]

@@ -580,7 +580,7 @@ fn start_internal_executor(executor: &Executor<'static>, internal_executor: bool
                     while !executor.is_empty() {
                         executor.tick().await;
                     }
-                })
+                });
             })?;
     }
 
