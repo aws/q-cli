@@ -36,7 +36,7 @@ async fn watch_systemd_jobs() -> zbus::Result<()> {
 
     while let Some(msg) = new_jobs_stream.next().await {
         // struct `JobNewArgs` is generated from `job_new` signal function arguments
-        let args: JobNewArgs = msg.args().expect("Error parsing message");
+        let args: JobNewArgs<'_> = msg.args().expect("Error parsing message");
 
         println!("JobNew received: unit={} id={} path={}", args.unit, args.id, args.job);
     }

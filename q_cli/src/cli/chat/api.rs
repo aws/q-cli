@@ -88,12 +88,15 @@ impl ContextModifiers {
     }
 
     /// Returns a [`UserIntent`] that disables RAG if any context modifiers are set
+    #[allow(clippy::unused_self)]
     fn user_intent(&self) -> Option<UserIntent> {
-        if self.any() {
-            Some(UserIntent::ApplyCommonBestPractices)
-        } else {
-            None
-        }
+        // disabled while user intents all change prompt
+        // if self.any() {
+        //     Some(UserIntent::ApplyCommonBestPractices)
+        // } else {
+        //     None
+        // }
+        None
     }
 }
 
