@@ -45,6 +45,9 @@ pub mod build {
     /// The variant of the current build
     pub const VARIANT: Option<&str> = option_env!("AMAZON_Q_BUILD_VARIANT");
 
+    /// How the build was packaged
+    pub const PACKAGED_AS: Option<&str> = option_env!("AMAZON_Q_PACKAGED_AS");
+
     /// A git full sha hash of the current build
     pub const HASH: Option<&str> = option_env!("AMAZON_Q_BUILD_HASH");
 

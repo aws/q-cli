@@ -3,6 +3,10 @@ use std::fmt::Display;
 use std::path::PathBuf;
 
 use camino::Utf8PathBuf;
+use fig_os_shim::{
+    Context,
+    Shim,
+};
 use thiserror::Error;
 use time::OffsetDateTime;
 
@@ -61,12 +65,38 @@ pub fn home_dir() -> Result<PathBuf> {
     dirs::home_dir().ok_or(DirectoryError::NoHomeDirectory)
 }
 
+pub fn home_dir_ctx(ctx: &Context) -> Result<PathBuf> {
+    if ctx.env().is_real() {
+        home_dir()
+    } else {
+        ctx.env()
+            .get("HOME")
+            .map_err(|_err| DirectoryError::NoHomeDirectory)
+            .and_then(|h| {
+                if h.is_empty() {
+                    Err(DirectoryError::NoHomeDirectory)
+                } else {
+                    Ok(h)
+                }
+            })
+            .map(PathBuf::from)
+        // .map(|p| ctx.fs().chroot_path(p))
+    }
+}
+
 /// The directory of the users `$HOME/.local/bin` directory
 ///
 /// MacOS and Linux path: `$HOME/.local/bin``
 #[cfg(unix)]
 pub fn home_local_bin() -> Result<PathBuf> {
     let mut path = home_dir()?;
+    path.push(".local/bin");
+    Ok(path)
+}
+
+#[cfg(unix)]
+pub fn home_local_bin_ctx(ctx: &Context) -> Result<PathBuf> {
+    let mut path = home_dir_ctx(ctx)?;
     path.push(".local/bin");
     Ok(path)
 }

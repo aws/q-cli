@@ -13,7 +13,10 @@ use strum::{
     EnumString,
 };
 
-use crate::build::TARGET_TRIPLE;
+use crate::build::{
+    PACKAGED_AS,
+    TARGET_TRIPLE,
+};
 use crate::consts::build::VARIANT;
 
 #[derive(Deserialize)]
@@ -26,6 +29,7 @@ pub struct Manifest {
     pub variant: Variant,
     #[serde(deserialize_with = "deser_enum_other")]
     pub default_channel: Channel,
+    pub packaged_as: PackagedAs,
     pub packaged_at: String,
     pub packaged_by: String,
 }
@@ -127,6 +131,7 @@ pub enum FileType {
     TarXz,
     TarZst,
     Zip,
+    AppImage,
     #[strum(default)]
     Other(String),
 }
@@ -189,6 +194,27 @@ impl Display for Channel {
     }
 }
 
+/// How the application was packaged.
+///
+/// Note this is separate from distribution. For example, the app may be
+/// packaged as a `.dmg` file but installed through public download links
+/// or through toolbox.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Display, EnumString, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+#[strum(serialize_all = "camelCase")]
+pub enum PackagedAs {
+    /// Apple Disk Image, strictly for macOS.
+    Dmg,
+    /// AppImage, a universal installer for Linux distributions.
+    AppImage,
+    /// The deb format, for Debian-based Linux distributions.
+    Deb,
+    /// No packaging/bundling method was used. This would fit instances where
+    /// the app binaries were distributed directly (e.g., directly within an
+    /// archive format like `.zip`).
+    None,
+}
+
 fn deser_enum_other<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
     D: Deserializer<'de>,
@@ -213,6 +239,10 @@ pub fn manifest() -> &'static Manifest {
         variant: match VARIANT.map(|s| s.to_ascii_lowercase()).as_deref() {
             Some("minimal") => Variant::Minimal,
             _ => Variant::Full,
+        },
+        packaged_as: match PACKAGED_AS {
+            Some(packaged_as) => packaged_as.parse().expect("parsing PackagedAs should not fail"),
+            None => PackagedAs::None,
         },
         default_channel: Channel::Stable,
         packaged_at: "unknown".into(),
@@ -321,6 +351,7 @@ mod tests {
         test_ser_deser!(FileType, FileType::TarXz, "tarXz");
         test_ser_deser!(FileType, FileType::TarZst, "tarZst");
         test_ser_deser!(FileType, FileType::Zip, "zip");
+        test_ser_deser!(FileType, FileType::AppImage, "appImage");
     }
 
     #[test]
@@ -344,5 +375,13 @@ mod tests {
         test_ser_deser!(Channel, Channel::Beta, "beta");
         test_ser_deser!(Channel, Channel::Qa, "qa");
         test_ser_deser!(Channel, Channel::Nightly, "nightly");
+    }
+
+    #[test]
+    fn test_packaged_as_serialize_deserialize() {
+        test_ser_deser!(PackagedAs, PackagedAs::Dmg, "dmg");
+        test_ser_deser!(PackagedAs, PackagedAs::AppImage, "appImage");
+        test_ser_deser!(PackagedAs, PackagedAs::Deb, "deb");
+        test_ser_deser!(PackagedAs, PackagedAs::None, "none");
     }
 }

@@ -7,20 +7,45 @@ use std::ffi::{
     OsStr,
     OsString,
 };
+use std::io;
 use std::path::PathBuf;
+use std::sync::{
+    Arc,
+    Mutex,
+};
 
 use crate::Shim;
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default)]
 pub struct Env(inner::Inner);
 
 mod inner {
     use std::collections::HashMap;
+    use std::path::PathBuf;
+    use std::sync::{
+        Arc,
+        Mutex,
+    };
 
-    #[derive(Debug, Clone, Default, PartialEq, Eq)]
+    #[derive(Debug, Clone, Default)]
     pub(super) enum Inner {
         #[default]
         Real,
-        Fake(HashMap<String, String>),
+        Fake(Arc<Mutex<Fake>>),
+    }
+
+    #[derive(Debug, Clone)]
+    pub(super) struct Fake {
+        pub vars: HashMap<String, String>,
+        pub cwd: PathBuf,
+    }
+
+    impl Default for Fake {
+        fn default() -> Self {
+            Self {
+                vars: HashMap::default(),
+                cwd: PathBuf::from("/"),
+            }
+        }
     }
 }
 
@@ -30,21 +55,30 @@ impl Env {
     }
 
     pub fn new_fake() -> Self {
-        Self(inner::Inner::Fake(HashMap::new()))
+        Self(inner::Inner::Fake(Arc::new(Mutex::new(inner::Fake::default()))))
     }
 
     /// Create a fake process environment from a slice of tuples.
     pub fn from_slice(vars: &[(&str, &str)]) -> Self {
         use inner::Inner;
         let map: HashMap<_, _> = vars.iter().map(|(k, v)| ((*k).to_owned(), (*v).to_owned())).collect();
-        Self(Inner::Fake(map))
+        Self(Inner::Fake(Arc::new(Mutex::new(inner::Fake {
+            vars: map,
+            ..Default::default()
+        }))))
     }
 
     pub fn get<K: AsRef<str>>(&self, key: K) -> Result<String, VarError> {
         use inner::Inner;
         match &self.0 {
             Inner::Real => env::var(key.as_ref()),
-            Inner::Fake(map) => map.get(key.as_ref()).cloned().ok_or(VarError::NotPresent),
+            Inner::Fake(fake) => fake
+                .lock()
+                .unwrap()
+                .vars
+                .get(key.as_ref())
+                .cloned()
+                .ok_or(VarError::NotPresent),
         }
     }
 
@@ -52,14 +86,47 @@ impl Env {
         use inner::Inner;
         match &self.0 {
             Inner::Real => env::var_os(key.as_ref()),
-            Inner::Fake(map) => map.get(key.as_ref().to_str()?).cloned().map(OsString::from),
+            Inner::Fake(fake) => fake
+                .lock()
+                .unwrap()
+                .vars
+                .get(key.as_ref().to_str()?)
+                .cloned()
+                .map(OsString::from),
+        }
+    }
+
+    /// Sets the environment variable `key` to the value `value` for the currently running
+    /// process.
+    ///
+    /// # Safety
+    ///
+    /// See [std::env::set_var] for the safety requirements.
+    pub unsafe fn set_var(&self, key: impl AsRef<OsStr>, value: impl AsRef<OsStr>) {
+        use inner::Inner;
+        match &self.0 {
+            Inner::Real => std::env::set_var(key, value),
+            Inner::Fake(fake) => {
+                fake.lock().unwrap().vars.insert(
+                    key.as_ref().to_str().expect("key must be valid str").to_string(),
+                    value.as_ref().to_str().expect("key must be valid str").to_string(),
+                );
+            },
         }
     }
 
     pub fn home(&self) -> Option<PathBuf> {
         match &self.0 {
             inner::Inner::Real => dirs::home_dir(),
-            inner::Inner::Fake(map) => map.get("HOME").map(PathBuf::from),
+            inner::Inner::Fake(fake) => fake.lock().unwrap().vars.get("HOME").map(PathBuf::from),
+        }
+    }
+
+    pub fn current_dir(&self) -> Result<PathBuf, io::Error> {
+        use inner::Inner;
+        match &self.0 {
+            Inner::Real => std::env::current_dir(),
+            Inner::Fake(fake) => Ok(fake.lock().unwrap().cwd.clone()),
         }
     }
 
@@ -96,10 +163,10 @@ mod tests {
     #[test]
     fn test_new() {
         let env = Env::new();
-        assert_eq!(env, Env(inner::Inner::Real));
+        assert!(matches!(env, Env(inner::Inner::Real)));
 
         let env = Env::default();
-        assert_eq!(env, Env(inner::Inner::Real));
+        assert!(matches!(env, Env(inner::Inner::Real)));
     }
 
     #[test]
@@ -130,5 +197,11 @@ mod tests {
         let env = Env::from_slice(&[("AWS_EXECUTION_ENV", "CLOUDSHELL\n")]);
         assert!(env.in_cloudshell());
         assert!(!env.in_ssh());
+    }
+
+    #[test]
+    fn test_default_current_dir() {
+        let env = Env::new_fake();
+        assert_eq!(env.current_dir().unwrap(), PathBuf::from("/"));
     }
 }

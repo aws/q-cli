@@ -1,5 +1,7 @@
 use std::collections::HashMap;
+use std::fs::Permissions;
 use std::io;
+use std::os::unix::ffi::OsStrExt;
 use std::path::{
     Path,
     PathBuf,
@@ -9,6 +11,7 @@ use std::sync::{
     Mutex,
 };
 
+use tempfile::TempDir;
 use tokio::fs;
 
 use crate::Shim;
@@ -24,10 +27,15 @@ mod inner {
         Mutex,
     };
 
+    use tempfile::TempDir;
+
     #[derive(Debug, Clone, Default)]
     pub(super) enum Inner {
         #[default]
         Real,
+        /// Uses the real filesystem except acts as if the process has
+        /// a different root directory by using [TempDir]
+        Chroot(Arc<TempDir>),
         Fake(Arc<Mutex<HashMap<PathBuf, Vec<u8>>>>),
     }
 }
@@ -39,6 +47,15 @@ impl Fs {
 
     pub fn new_fake() -> Self {
         Self(inner::Inner::Fake(Arc::new(Mutex::new(HashMap::new()))))
+    }
+
+    pub fn new_chroot() -> Self {
+        let tempdir = tempfile::tempdir().expect("failed creating temporary directory");
+        Self(inner::Inner::Chroot(tempdir.into()))
+    }
+
+    pub fn is_chroot(&self) -> bool {
+        matches!(self.0, inner::Inner::Chroot(_))
     }
 
     pub fn from_slice(vars: &[(&str, &str)]) -> Self {
@@ -54,6 +71,7 @@ impl Fs {
         use inner::Inner;
         match &self.0 {
             Inner::Real => fs::create_dir(path).await,
+            Inner::Chroot(root) => fs::create_dir(append(root.path(), path)).await,
             Inner::Fake(_) => Err(io::Error::new(io::ErrorKind::Other, "unimplemented")),
         }
     }
@@ -62,6 +80,7 @@ impl Fs {
         use inner::Inner;
         match &self.0 {
             Inner::Real => fs::create_dir_all(path).await,
+            Inner::Chroot(root) => fs::create_dir_all(append(root.path(), path)).await,
             Inner::Fake(_) => Err(io::Error::new(io::ErrorKind::Other, "unimplemented")),
         }
     }
@@ -70,6 +89,7 @@ impl Fs {
         use inner::Inner;
         match &self.0 {
             Inner::Real => fs::read(path).await,
+            Inner::Chroot(root) => fs::read(append(root.path(), path)).await,
             Inner::Fake(map) => {
                 let Ok(lock) = map.lock() else {
                     return Err(io::Error::new(io::ErrorKind::Other, "poisoned lock"));
@@ -86,6 +106,7 @@ impl Fs {
         use inner::Inner;
         match &self.0 {
             Inner::Real => fs::read_to_string(path).await,
+            Inner::Chroot(root) => fs::read_to_string(append(root.path(), path)).await,
             Inner::Fake(map) => {
                 let Ok(lock) = map.lock() else {
                     return Err(io::Error::new(io::ErrorKind::Other, "poisoned lock"));
@@ -105,6 +126,7 @@ impl Fs {
         use inner::Inner;
         match &self.0 {
             Inner::Real => std::fs::read_to_string(path),
+            Inner::Chroot(root) => std::fs::read_to_string(append(root.path(), path)),
             Inner::Fake(map) => {
                 let Ok(lock) = map.lock() else {
                     return Err(io::Error::new(io::ErrorKind::Other, "poisoned lock"));
@@ -120,10 +142,15 @@ impl Fs {
         }
     }
 
+    /// Creates a future that will open a file for writing and write the entire
+    /// contents of `contents` to it.
+    ///
+    /// This is a proxy to [`tokio::fs::write`].
     pub async fn write(&self, path: impl AsRef<Path>, contents: impl AsRef<[u8]>) -> io::Result<()> {
         use inner::Inner;
         match &self.0 {
             Inner::Real => fs::write(path, contents).await,
+            Inner::Chroot(root) => fs::write(append(root.path(), path), contents).await,
             Inner::Fake(map) => {
                 let Ok(mut lock) = map.lock() else {
                     return Err(io::Error::new(io::ErrorKind::Other, "poisoned lock"));
@@ -133,12 +160,184 @@ impl Fs {
             },
         }
     }
+
+    /// Removes a file from the filesystem.
+    ///
+    /// Note that there is no guarantee that the file is immediately deleted (e.g.
+    /// depending on platform, other open file descriptors may prevent immediate
+    /// removal).
+    ///
+    /// This is a proxy to [`tokio::fs::remove_file`].
+    pub async fn remove_file(&self, path: impl AsRef<Path>) -> io::Result<()> {
+        use inner::Inner;
+        match &self.0 {
+            Inner::Real => fs::remove_file(path).await,
+            Inner::Chroot(root) => fs::remove_file(append(root.path(), path)).await,
+            Inner::Fake(_) => panic!("unimplemented"),
+        }
+    }
+
+    /// Removes a directory at this path, after removing all its contents. Use carefully!
+    ///
+    /// This is a proxy to [`tokio::fs::remove_dir_all`].
+    pub async fn remove_dir_all(&self, path: impl AsRef<Path>) -> io::Result<()> {
+        use inner::Inner;
+        match &self.0 {
+            Inner::Real => fs::remove_dir_all(path).await,
+            Inner::Chroot(root) => fs::remove_dir_all(append(root.path(), path)).await,
+            Inner::Fake(_) => panic!("unimplemented"),
+        }
+    }
+
+    /// Copies the contents of one file to another. This function will also copy the permission bits
+    /// of the original file to the destination file.
+    /// This function will overwrite the contents of to.
+    ///
+    /// This is a proxy to [`tokio::fs::copy`].
+    pub async fn copy(&self, from: impl AsRef<Path>, to: impl AsRef<Path>) -> io::Result<u64> {
+        use inner::Inner;
+        match &self.0 {
+            Inner::Real => fs::copy(from, to).await,
+            Inner::Chroot(root) => fs::copy(append(root.path(), from), append(root.path(), to)).await,
+            Inner::Fake(_) => panic!("unimplemented"),
+        }
+    }
+
+    /// Returns `Ok(true)` if the path points at an existing entity.
+    ///
+    /// This function will traverse symbolic links to query information about the
+    /// destination file. In case of broken symbolic links this will return `Ok(false)`.
+    ///
+    /// This is a proxy to [`tokio::fs::try_exists`].
+    pub async fn try_exists(&self, path: impl AsRef<Path>) -> Result<bool, io::Error> {
+        use inner::Inner;
+        match &self.0 {
+            Inner::Real => fs::try_exists(path).await,
+            Inner::Chroot(root) => fs::try_exists(append(root.path(), path)).await,
+            Inner::Fake(_) => panic!("unimplemented"),
+        }
+    }
+
+    /// Returns `true` if the path points at an existing entity.
+    ///
+    /// This is a proxy to [std::path::Path::exists]. See the related doc comment in std
+    /// on the pitfalls of using this versus [std::path::Path::try_exists].
+    pub fn exists(&self, path: impl AsRef<Path>) -> bool {
+        use inner::Inner;
+        match &self.0 {
+            Inner::Real => path.as_ref().exists(),
+            Inner::Chroot(root) => append(root.path(), path).exists(),
+            Inner::Fake(_) => panic!("unimplemented"),
+        }
+    }
+
+    pub async fn create_tempdir(&self) -> io::Result<TempDir> {
+        use inner::Inner;
+        match &self.0 {
+            Inner::Real => TempDir::new(),
+            Inner::Chroot(root) => TempDir::new_in(root.path()),
+            Inner::Fake(_) => panic!("unimplemented"),
+        }
+    }
+
+    /// Creates a new symbolic link on the filesystem.
+    ///
+    /// The `dst` path will be a symbolic link pointing to the `src` path.
+    ///
+    /// This is a proxy to [`tokio::fs::symlink`].
+    #[cfg(unix)]
+    pub async fn symlink(&self, original: impl AsRef<Path>, link: impl AsRef<Path>) -> io::Result<()> {
+        use inner::Inner;
+        match &self.0 {
+            Inner::Real => fs::symlink(original, link).await,
+            Inner::Chroot(root) => fs::symlink(append(root.path(), original), append(root.path(), link)).await,
+            Inner::Fake(_) => panic!("unimplemented"),
+        }
+    }
+
+    /// Returns a stream over the entries within a directory.
+    ///
+    /// This is a proxy to [`std::fs::read_dir`].
+    pub async fn read_dir(&self, path: impl AsRef<Path>) -> Result<fs::ReadDir, io::Error> {
+        use inner::Inner;
+        match &self.0 {
+            Inner::Real => fs::read_dir(path).await,
+            Inner::Chroot(root) => fs::read_dir(append(root.path(), path)).await,
+            Inner::Fake(_) => panic!("unimplemented"),
+        }
+    }
+
+    /// Returns the canonical, absolute form of a path with all intermediate
+    /// components normalized and symbolic links resolved.
+    ///
+    /// This is a proxy to [`tokio::fs::canonicalize`].
+    pub async fn canonicalize(&self, path: impl AsRef<Path>) -> Result<PathBuf, io::Error> {
+        use inner::Inner;
+        match &self.0 {
+            Inner::Real => fs::canonicalize(path).await,
+            Inner::Chroot(root) => fs::canonicalize(append(root.path(), path)).await,
+            Inner::Fake(_) => panic!("unimplemented"),
+        }
+    }
+
+    /// Changes the permissions found on a file or a directory.
+    ///
+    /// This is a proxy to [`tokio::fs::set_permissions`]
+    pub async fn set_permissions(&self, path: impl AsRef<Path>, perm: Permissions) -> Result<(), io::Error> {
+        use inner::Inner;
+        match &self.0 {
+            Inner::Real => fs::set_permissions(path, perm).await,
+            Inner::Chroot(root) => fs::set_permissions(append(root.path(), path), perm).await,
+            Inner::Fake(_) => panic!("unimplemented"),
+        }
+    }
+
+    /// For test [Fs]'s that use a different root, returns an absolute path.
+    ///
+    /// This must be used for any paths indirectly used by code using a chroot
+    /// [Fs].
+    pub fn chroot_path(&self, path: impl AsRef<Path>) -> PathBuf {
+        use inner::Inner;
+        match &self.0 {
+            Inner::Chroot(root) => append(root.path(), path),
+            _ => path.as_ref().to_path_buf(),
+        }
+    }
+
+    /// See [Fs::chroot_path].
+    pub fn chroot_path_str(&self, path: impl AsRef<Path>) -> String {
+        use inner::Inner;
+        match &self.0 {
+            Inner::Chroot(root) => append(root.path(), path).to_string_lossy().to_string(),
+            _ => path.as_ref().to_path_buf().to_string_lossy().to_string(),
+        }
+    }
 }
 
 impl Shim for Fs {
     fn is_real(&self) -> bool {
         matches!(self.0, inner::Inner::Real)
     }
+}
+
+/// Performs `a.join(b)`, except:
+/// - if `b` is an absolute path, then the resulting path will equal `/a/b`
+/// - if the prefix of `b` contains some `n` copies of a, then the resulting path will equal `/a/b`
+fn append(a: impl AsRef<Path>, b: impl AsRef<Path>) -> PathBuf {
+    use std::ffi::OsString;
+    use std::os::unix::ffi::OsStringExt;
+
+    // Have to use byte slices since rust seems to always append
+    // a forward slash at the end of a path...
+    let a = a.as_ref().as_os_str().as_bytes();
+    let mut b = b.as_ref().as_os_str().as_bytes();
+    while b.starts_with(a) {
+        b = b.strip_prefix(a).unwrap();
+    }
+    while b.starts_with(&[b'/']) {
+        b = b.strip_prefix(&[b'/']).unwrap();
+    }
+    PathBuf::from(OsString::from_vec(a.to_vec())).join(PathBuf::from(OsString::from_vec(b.to_vec())))
 }
 
 #[cfg(test)]
@@ -173,6 +372,19 @@ mod tests {
         fs.write(dir.path().join("write"), b"write").await.unwrap();
         assert_eq!(fs.read(dir.path().join("write")).await.unwrap(), b"write");
         assert_eq!(fs.read_to_string(dir.path().join("write")).await.unwrap(), "write");
+    }
+
+    #[test]
+    fn test_append() {
+        macro_rules! assert_append {
+            ($a:expr, $b:expr, $expected:expr) => {
+                assert_eq!(append($a, $b), PathBuf::from($expected));
+            };
+        }
+        assert_append!("/abc/test", "/test", "/abc/test/test");
+        assert_append!("/tmp/.dir", "/tmp/.dir/home/myuser", "/tmp/.dir/home/myuser");
+        assert_append!("/tmp/.dir", "/tmp/hello", "/tmp/.dir/tmp/hello");
+        assert_append!("/tmp/.dir", "/tmp/.dir/tmp/.dir/home/user", "/tmp/.dir/home/user");
     }
 
     #[tokio::test]
@@ -216,5 +428,54 @@ mod tests {
                 .is_err_and(|err| err.kind() == io::ErrorKind::InvalidData),
             "invalid utf8 should return InvalidData"
         );
+    }
+
+    #[tokio::test]
+    #[cfg(unix)]
+    async fn test_chroot_file_operations_for_unix() {
+        if nix::unistd::Uid::effective().is_root() {
+            panic!("don't run this test as root");
+        }
+
+        let fs = Fs::new_chroot();
+        assert!(fs.is_chroot());
+
+        fs.write("/fake", "contents").await.unwrap();
+        assert_eq!(fs.read_to_string("/fake").await.unwrap(), "contents");
+        assert_eq!(fs.read_to_string_sync("/fake").unwrap(), "contents");
+
+        assert!(!fs.try_exists("/etc").await.unwrap());
+
+        fs.create_dir_all("/etc/b/c").await.unwrap();
+        assert!(fs.try_exists("/etc").await.unwrap());
+        let mut read_dir = fs.read_dir("/etc").await.unwrap();
+        let e = read_dir.next_entry().await.unwrap();
+        assert!(e.unwrap().metadata().await.unwrap().is_dir());
+        assert!(read_dir.next_entry().await.unwrap().is_none());
+
+        fs.remove_dir_all("/etc").await.unwrap();
+        assert!(!fs.try_exists("/etc").await.unwrap());
+
+        fs.copy("/fake", "/fake_copy").await.unwrap();
+        assert_eq!(fs.read_to_string("/fake_copy").await.unwrap(), "contents");
+        assert_eq!(fs.read_to_string_sync("/fake_copy").unwrap(), "contents");
+
+        fs.remove_file("/fake_copy").await.unwrap();
+        assert!(!fs.try_exists("/fake_copy").await.unwrap());
+
+        fs.symlink("/fake", "/fake_symlink").await.unwrap();
+        assert_eq!(fs.read_to_string("/fake_symlink").await.unwrap(), "contents");
+        assert_eq!(fs.read_to_string_sync("/fake_symlink").unwrap(), "contents");
+    }
+
+    #[tokio::test]
+    async fn test_chroot_tempdir() {
+        let fs = Fs::new_chroot();
+        let tempdir = fs.create_tempdir().await.unwrap();
+        if let Fs(inner::Inner::Chroot(root)) = fs {
+            assert_eq!(tempdir.path().parent().unwrap(), root.path());
+        } else {
+            panic!("tempdir should be created under root");
+        }
     }
 }

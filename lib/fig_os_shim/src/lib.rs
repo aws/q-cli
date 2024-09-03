@@ -118,6 +118,29 @@ impl ContextBuilder {
         self.process_info = Some(process_info);
         self
     }
+
+    /// Creates a chroot filesystem and fake environment so that `$HOME`
+    /// points to `<tempdir>/home/testuser`. Note that this replaces the
+    /// [Fs] and [Env] currently set with the builder.
+    pub async fn with_test_home(mut self) -> Result<Self, std::io::Error> {
+        let home = "/home/testuser";
+        let fs = Fs::new_chroot();
+        fs.create_dir_all(home).await?;
+        self.fs = Some(fs);
+        self.env = Some(Env::from_slice(&[("HOME", "/home/testuser"), ("USER", "testuser")]));
+        Ok(self)
+    }
+
+    pub fn with_env_var(mut self, key: &str, value: &str) -> Self {
+        self.env = match self.env {
+            Some(env) if !env.is_real() => {
+                unsafe { env.set_var(key, value) };
+                Some(env)
+            },
+            _ => Some(Env::from_slice(&[(key, value)])),
+        };
+        self
+    }
 }
 
 #[cfg(test)]
@@ -131,5 +154,18 @@ mod tests {
         assert!(ctx.env().is_real());
         assert!(ctx.process_info().is_real());
         assert!(ctx.platform().is_real());
+    }
+
+    #[tokio::test]
+    async fn test_context_builder_with_test_home() {
+        let ctx = ContextBuilder::new()
+            .with_test_home()
+            .await
+            .unwrap()
+            .with_env_var("hello", "world")
+            .build();
+        assert!(ctx.fs().try_exists("/home/testuser").await.unwrap());
+        assert_eq!(ctx.env().get("HOME").unwrap(), "/home/testuser");
+        assert_eq!(ctx.env().get("hello").unwrap(), "world");
     }
 }

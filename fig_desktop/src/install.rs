@@ -1,8 +1,11 @@
+use std::sync::Arc;
+
 use cfg_if::cfg_if;
 #[cfg(not(target_os = "linux"))]
 use fig_install::check_for_updates;
 use fig_integrations::ssh::SshIntegration;
 use fig_integrations::Integration;
+use fig_os_shim::Context;
 #[cfg(target_os = "macos")]
 use fig_util::directories::fig_data_dir;
 #[cfg(target_os = "macos")]
@@ -68,10 +71,8 @@ fn run_input_method_migration() {
 }
 
 /// Run items at launch
-pub async fn run_install(_ignore_immediate_update: bool) {
-    #[cfg(not(target_os = "linux"))]
-    let ignore_immediate_update = _ignore_immediate_update;
-
+#[allow(unused_variables)]
+pub async fn run_install(ctx: Arc<Context>, ignore_immediate_update: bool) {
     #[cfg(target_os = "macos")]
     {
         initialize_fig_dir(&fig_os_shim::Env::new()).await.ok();
@@ -92,6 +93,16 @@ pub async fn run_install(_ignore_immediate_update: bool) {
     // Add any items that are only once per version
     if should_run_install_script() {
         run_input_method_migration();
+    }
+
+    #[cfg(target_os = "linux")]
+    if fig_util::manifest::manifest().packaged_as == fig_util::manifest::PackagedAs::AppImage {
+        tokio::spawn(async move {
+            install_appimage_binaries(&ctx)
+                .await
+                .map_err(|err| error!(?err, "Unable to install binaries under the local bin directory"))
+                .ok();
+        });
     }
 
     if let Err(err) = set_previous_version(current_version()) {
@@ -401,6 +412,99 @@ pub async fn initialize_fig_dir(env: &fig_os_shim::Env) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Installs the CLI and PTY under the user's local bin directory from the AppImage, if required.
+#[cfg(target_os = "linux")]
+async fn install_appimage_binaries(ctx: &Context) -> anyhow::Result<()> {
+    use fig_util::consts::{
+        CLI_BINARY_NAME,
+        PTY_BINARY_NAME,
+    };
+    use fig_util::directories::home_local_bin_ctx;
+    use tokio::process::Command;
+
+    if !home_local_bin_ctx(ctx)?.exists() {
+        ctx.fs().create_dir_all(home_local_bin_ctx(ctx)?).await?;
+    }
+
+    // Extract and install the CLI + PTY under home local bin, if required.
+    for binary_name in &[CLI_BINARY_NAME, PTY_BINARY_NAME] {
+        let local_binary_path = home_local_bin_ctx(ctx)?.join(binary_name);
+        if local_binary_path.exists() {
+            let output = Command::new(&local_binary_path).arg("--version").output().await.ok();
+
+            let installed_version = output
+                .as_ref()
+                .and_then(|output| std::str::from_utf8(&output.stdout).ok())
+                .map(parse_version);
+
+            match installed_version {
+                Some(installed_version) => {
+                    let app_version = env!("CARGO_PKG_VERSION");
+                    if installed_version != app_version {
+                        info!(
+                            "Installed version {} for binary {} is different than application version {}",
+                            installed_version,
+                            local_binary_path.to_string_lossy(),
+                            app_version
+                        );
+                        copy_binary_from_appimage_mount(ctx, binary_name, local_binary_path).await?;
+                    }
+                },
+                None => error!(
+                    "Unable to parse the version of the binary at: {}",
+                    local_binary_path.to_string_lossy()
+                ),
+            }
+        } else {
+            copy_binary_from_appimage_mount(ctx, binary_name, local_binary_path).await?;
+        }
+    }
+
+    Ok(())
+}
+
+/// The AppImage is executed by mounting to a temporary directory and running the desktop binary.
+/// The current working directory of the desktop app essentially looks like this:
+/// - <tempdir>/bin/q
+/// - <tempdir>/bin/qterm
+///
+/// Thus, we can access and copy the bundled binaries from the AppImage to the provided
+/// `destination`.
+#[cfg(target_os = "linux")]
+async fn copy_binary_from_appimage_mount(
+    ctx: &Context,
+    binary_name: &str,
+    destination: impl AsRef<std::path::Path>,
+) -> anyhow::Result<()> {
+    use anyhow::Context;
+    use tracing::debug;
+
+    let cwd = ctx.env().current_dir()?;
+    let binary_path = cwd.join(format!("bin/{binary_name}"));
+    debug!(
+        "Copying {} to {}",
+        binary_path.to_string_lossy(),
+        destination.as_ref().to_string_lossy()
+    );
+    ctx.fs()
+        .copy(&binary_path, destination)
+        .await
+        .context(format!("Unable to copy {binary_name}"))?;
+
+    Ok(())
+}
+
+/// Parses the semver portion of a string of the form: `"<binary-name> <semver>"`.
+#[cfg(target_os = "linux")]
+fn parse_version(output: &str) -> String {
+    output
+        .chars()
+        .skip_while(|c| !c.is_ascii_digit())
+        .collect::<String>()
+        .trim()
+        .to_string()
+}
+
 #[cfg(target_os = "linux")]
 #[derive(Debug)]
 enum SystemdUserService {
@@ -570,5 +674,97 @@ mod test {
         symlink(&src_file_2, &dst_file).await.unwrap();
         assert!(dst_file.exists());
         assert_eq!(std::fs::read_to_string(&dst_file).unwrap(), "content 2");
+    }
+
+    #[cfg(target_os = "linux")]
+    mod linux_appimage_tests {
+        use std::fs::Permissions;
+        use std::os::unix::fs::PermissionsExt;
+        use std::path::Path;
+
+        use fig_util::directories::home_local_bin_ctx;
+        use fig_util::{
+            CLI_BINARY_NAME,
+            PTY_BINARY_NAME,
+        };
+        use tokio::process::Command;
+
+        use super::*;
+
+        /// Writes a test script for the CLI/PTY binaries to `directory` that prints
+        /// `"<binaryname> version"`.
+        async fn write_test_binaries(ctx: &Context, version: &str, destination: impl AsRef<Path>) {
+            let fs = ctx.fs();
+            if !fs.exists(&destination) {
+                fs.create_dir_all(&destination).await.unwrap();
+            }
+            for binary_name in &[CLI_BINARY_NAME, PTY_BINARY_NAME] {
+                let path = destination.as_ref().join(binary_name);
+                fs.write(
+                    &path,
+                    format!(
+                        r#"#!/usr/bin/env sh
+echo "{binary_name} {version}"
+            "#
+                    ),
+                )
+                .await
+                .unwrap();
+                fs.set_permissions(&path, Permissions::from_mode(0o700)).await.unwrap();
+            }
+        }
+
+        async fn assert_binaries_installed(ctx: &Context, expected_version: &str) {
+            for binary_name in &[CLI_BINARY_NAME, PTY_BINARY_NAME] {
+                let binary_path = home_local_bin_ctx(ctx).unwrap().join(binary_name);
+                let stdout = Command::new(ctx.fs().chroot_path(binary_path))
+                    .output()
+                    .await
+                    .unwrap()
+                    .stdout;
+                let stdout = std::str::from_utf8(&stdout).unwrap();
+                assert!(ctx.fs().exists(home_local_bin_ctx(ctx).unwrap().join(binary_name)));
+                assert_eq!(parse_version(stdout), expected_version);
+            }
+        }
+
+        #[test]
+        fn test_linux_parse_version() {
+            assert_eq!(parse_version("cli 1.2.3"), "1.2.3");
+        }
+
+        #[tokio::test]
+        async fn test_linux_appimage_install_on_fresh_system() {
+            tracing_subscriber::fmt::try_init().ok();
+
+            // Given
+            let ctx = Context::builder().with_test_home().await.unwrap().build();
+            let current_version = current_version().to_string();
+            write_test_binaries(&ctx, &current_version, "/bin").await;
+
+            // When
+            install_appimage_binaries(&ctx).await.unwrap();
+
+            // Then
+            assert_binaries_installed(&ctx, &current_version).await;
+        }
+
+        #[tokio::test]
+        async fn test_linux_appimage_install_when_installed_binaries_have_old_version() {
+            tracing_subscriber::fmt::try_init().ok();
+
+            // Given
+            let ctx = Context::builder().with_test_home().await.unwrap().build();
+            let current_version = current_version().to_string();
+            let old_version = "0.0.1";
+            write_test_binaries(&ctx, &current_version, "/bin").await;
+            write_test_binaries(&ctx, old_version, home_local_bin_ctx(&ctx).unwrap()).await;
+
+            // When
+            install_appimage_binaries(&ctx).await.unwrap();
+
+            // Then
+            assert_binaries_installed(&ctx, &current_version).await;
+        }
     }
 }

@@ -17,6 +17,7 @@ mod webview;
 
 use std::path::Path;
 use std::process::exit;
+use std::sync::Arc;
 
 use clap::Parser;
 use event::Event;
@@ -24,6 +25,7 @@ use fig_log::{
     initialize_logging,
     LogArgs,
 };
+use fig_os_shim::Context;
 use fig_util::consts::{
     APP_PROCESS_NAME,
     PRODUCT_NAME,
@@ -250,7 +252,8 @@ async fn main() {
     //     .ok();
     // });
 
-    install::run_install(cli.ignore_immediate_update).await;
+    let ctx = Arc::new(Context::new());
+    install::run_install(Arc::clone(&ctx), cli.ignore_immediate_update).await;
 
     #[cfg(target_os = "linux")]
     {

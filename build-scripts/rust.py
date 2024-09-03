@@ -72,6 +72,7 @@ def rust_env(release: bool, linker=None) -> Dict[str, str]:
     env["AMAZON_Q_BUILD_VARIANT"] = get_variant().name
     env["AMAZON_Q_BUILD_HASH"] = build_hash()
     env["AMAZON_Q_BUILD_DATETIME"] = build_datetime()
+    env["AMAZON_Q_PACKAGED_AS"] = "dmg" if isDarwin() else "none"
 
     # Test related env vars:
     env["Q_TELEMETRY_CLIENT_ID"] = "ffffffff-ffff-ffff-ffff-ffffffffffff"

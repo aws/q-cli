@@ -290,12 +290,19 @@ impl WebviewManager {
         // TODO(mia): implement
         // tokio::spawn(figterm::clean_figterm_cache(self.figterm_state.clone()));
 
-        tokio::spawn(local_ipc::start_local_ipc(
-            self.platform_state.clone(),
-            self.figterm_state.clone(),
-            self.notifications_state.clone(),
-            self.event_loop.create_proxy(),
-        ));
+        // Start the local ipc task, listens for requests to the desktop socket.
+        {
+            let platform_state = self.platform_state.clone();
+            let figterm_state = self.figterm_state.clone();
+            let notifications_state = self.notifications_state.clone();
+            let event_loop = self.event_loop.create_proxy();
+            tokio::spawn(async move {
+                match local_ipc::start_local_ipc(platform_state, figterm_state, notifications_state, event_loop).await {
+                    Ok(_) => (),
+                    Err(err) => error!("Unable to start local ipc: {:?}", err),
+                }
+            });
+        }
 
         tokio::spawn(fig_remote_ipc::remote::start_remote_ipc(
             fig_util::directories::local_remote_socket_path().unwrap(),

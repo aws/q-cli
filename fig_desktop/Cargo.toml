@@ -98,6 +98,9 @@ wry = { version = "0.41.0", default-features = false, features = [
     "linux-body",
 ] }
 
+[dev-dependencies]
+tracing-subscriber.workspace = true
+
 [target.'cfg(target_os = "windows")'.dependencies.windows]
 version = "0.54.0"
 features = [
