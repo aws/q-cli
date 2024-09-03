@@ -434,7 +434,8 @@ mod tests {
     #[cfg(unix)]
     async fn test_chroot_file_operations_for_unix() {
         if nix::unistd::Uid::effective().is_root() {
-            panic!("don't run this test as root");
+            println!("currently running as root, skipping.");
+            return;
         }
 
         let fs = Fs::new_chroot();
