@@ -123,9 +123,12 @@ pub struct InstallArgs {
     /// Don't confirm automatic installation.
     #[arg(long)]
     pub no_confirm: bool,
-    /// Force installation of fig
+    /// Force installation of q
     #[arg(long)]
     pub force: bool,
+    /// Install q globally
+    #[arg(long)]
+    pub global: bool,
 }
 
 impl From<InstallArgs> for InstallComponents {
@@ -291,7 +294,8 @@ impl InternalSubcommand {
             InternalSubcommand::Install(args) => {
                 let no_confirm = args.no_confirm;
                 let force = args.force;
-                install_cli(args.into(), no_confirm, force).await
+                let global = args.global;
+                install_cli(args.into(), no_confirm, force, global).await
             },
             InternalSubcommand::Uninstall {
                 dotfiles,

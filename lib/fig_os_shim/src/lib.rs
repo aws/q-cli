@@ -12,6 +12,7 @@ pub use platform::{
     Os,
     Platform,
 };
+use process_info::FakePid;
 pub use process_info::ProcessInfo;
 pub use providers::{
     EnvProvider,
@@ -45,6 +46,15 @@ impl Context {
             env: Default::default(),
             platform: Default::default(),
             process_info: ProcessInfo::new(ctx.clone()),
+        })
+    }
+
+    pub fn new_fake() -> Arc<Self> {
+        Arc::new(Self {
+            fs: Fs::new_fake(),
+            env: Env::new_fake(),
+            platform: Platform::new_fake(Os::current()),
+            process_info: ProcessInfo::new_fake(FakePid::default()),
         })
     }
 

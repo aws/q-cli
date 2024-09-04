@@ -1,5 +1,6 @@
 use amzn_codewhisperer_client::types::Customization as CodewhispererCustomization;
 use amzn_consolas_client::types::CustomizationSummary as ConsolasCustomization;
+use fig_settings::State;
 use serde::{
     Deserialize,
     Serialize,
@@ -20,18 +21,18 @@ pub struct Customization {
 
 impl Customization {
     /// Load the currently selected customization from state
-    pub fn load_selected() -> Result<Option<Self>, fig_settings::Error> {
-        fig_settings::state::get(CUSTOMIZATION_STATE_KEY)
+    pub fn load_selected(state: &State) -> Result<Option<Self>, fig_settings::Error> {
+        state.get(CUSTOMIZATION_STATE_KEY)
     }
 
     /// Save the currently selected customization to state
-    pub fn save_selected(&self) -> Result<(), fig_settings::Error> {
-        fig_settings::state::set_value(CUSTOMIZATION_STATE_KEY, serde_json::to_value(self)?)
+    pub fn save_selected(&self, state: &State) -> Result<(), fig_settings::Error> {
+        state.set_value(CUSTOMIZATION_STATE_KEY, serde_json::to_value(self)?)
     }
 
     /// Delete the currently selected customization from state
-    pub fn delete_selected() -> Result<(), fig_settings::Error> {
-        fig_settings::state::remove_value(CUSTOMIZATION_STATE_KEY)
+    pub fn delete_selected(state: &State) -> Result<(), fig_settings::Error> {
+        state.remove_value(CUSTOMIZATION_STATE_KEY)
     }
 }
 
@@ -116,22 +117,19 @@ mod tests {
 
     #[test]
     fn test_customization_save_load() {
-        let old_value = Customization::load_selected().unwrap();
+        let state = State::new_fake();
 
-        let new_value = Customization {
+        let value = Customization {
             arn: "arn".into(),
             name: Some("name".into()),
             description: Some("description".into()),
         };
 
-        new_value.save_selected().unwrap();
-        let loaded_value = Customization::load_selected().unwrap();
-        assert_eq!(loaded_value, Some(new_value));
+        value.save_selected(&state).unwrap();
+        let loaded_value = Customization::load_selected(&state).unwrap();
+        assert_eq!(loaded_value, Some(value));
 
-        Customization::delete_selected().unwrap();
-        if let Some(old_value) = old_value {
-            old_value.save_selected().unwrap();
-        }
+        Customization::delete_selected(&state).unwrap();
     }
 
     #[test]

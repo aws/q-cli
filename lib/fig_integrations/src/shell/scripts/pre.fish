@@ -3,9 +3,6 @@ command mkdir -p ~/.local/bin >/dev/null
 builtin contains $HOME/.local/bin $PATH
 or set --append PATH $HOME/.local/bin
 
-builtin contains $HOME/.local/bin $PATH
-or set --append PATH $HOME/.local/bin
-
 if not test -z "$Q_NEW_SESSION"
     set --erase QTERM_SESSION_ID
     set --erase Q_TERM

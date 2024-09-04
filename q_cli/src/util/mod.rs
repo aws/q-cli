@@ -1,3 +1,4 @@
+mod cli_context;
 pub mod spinner;
 
 use std::env;
@@ -17,6 +18,7 @@ use std::time::Duration;
 use anstream::println;
 use anstream::stream::IsTerminal;
 use cfg_if::cfg_if;
+pub use cli_context::CliContext;
 use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Select;

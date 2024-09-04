@@ -21,6 +21,7 @@ use fig_proto::figterm::{
     InlineShellCompletionAcceptRequest,
     InlineShellCompletionRequest,
     InlineShellCompletionResponse,
+    InlineShellCompletionSetEnabledRequest,
 };
 use fig_settings::history::CommandInfo;
 use fig_telemetry::{
@@ -49,12 +50,14 @@ use crate::history::{
     HistorySender,
 };
 
+static INLINE_ENABLED: Mutex<bool> = Mutex::const_new(true);
+
 static LAST_RECEIVED: Mutex<Option<SystemTime>> = Mutex::const_new(None);
 
 static CACHE_ENABLED: Lazy<bool> = Lazy::new(|| std::env::var_os("Q_INLINE_SHELL_COMPLETION_CACHE_DISABLE").is_none());
 static COMPLETION_CACHE: Lazy<Mutex<CompletionCache>> = Lazy::new(|| Mutex::new(CompletionCache::new()));
 
-static TELEMETRY_QUEUE: Lazy<Mutex<TelemetryQueue>> = Lazy::new(|| Mutex::new(TelemetryQueue::new()));
+static TELEMETRY_QUEUE: Mutex<TelemetryQueue> = Mutex::const_new(TelemetryQueue::new());
 
 pub async fn on_prompt() {
     COMPLETION_CACHE.lock().await.clear();
@@ -66,7 +69,7 @@ struct TelemetryQueue {
 }
 
 impl TelemetryQueue {
-    fn new() -> Self {
+    const fn new() -> Self {
         Self { items: Vec::new() }
     }
 
@@ -133,6 +136,10 @@ pub async fn handle_request(
     response_tx: Sender<FigtermResponseMessage>,
     history_sender: HistorySender,
 ) {
+    if !*INLINE_ENABLED.lock().await {
+        return;
+    }
+
     let buffer = figterm_request.buffer.trim_start();
 
     if *CACHE_ENABLED {
@@ -338,6 +345,10 @@ pub async fn handle_accept(figterm_request: InlineShellCompletionAcceptRequest, 
         }
     }
     queue.send_all_items().await;
+}
+
+pub async fn handle_set_enabled(figterm_request: InlineShellCompletionSetEnabledRequest, _session_id: String) {
+    *INLINE_ENABLED.lock().await = figterm_request.enabled;
 }
 
 fn prompt(history: &[CommandInfo], buffer: &str) -> String {

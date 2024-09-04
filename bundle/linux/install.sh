@@ -87,7 +87,6 @@ EOF
     fi
 }
 
-
 # checks that uname matches the target triple
 if [ "$(uname)" != "$(target_triple_uname)" ]; then
     log_error "This archive is built for a $(target_triple_uname) system."
@@ -99,9 +98,16 @@ if is_target_triple_gnu && ! check_glibc_version; then
     exit 1
 fi
 
-mkdir -p "$HOME/.local/bin"
+if [ -n "$Q_INSTALL_GLOBAL" ]; then
+    install -m 755 "$SCRIPT_DIR/bin/q" /usr/local/bin/
+    install -m 755 "$SCRIPT_DIR/bin/qterm" /usr/local/bin/
 
-install -m 755 "$SCRIPT_DIR/bin/q" "$HOME/.local/bin/"
-install -m 755 "$SCRIPT_DIR/bin/qterm" "$HOME/.local/bin/"
+    /usr/local/bin/q setup --global
+else
+    mkdir -p "$HOME/.local/bin"
 
-"$HOME/.local/bin/q" setup 
+    install -m 755 "$SCRIPT_DIR/bin/q" "$HOME/.local/bin/"
+    install -m 755 "$SCRIPT_DIR/bin/qterm" "$HOME/.local/bin/"
+
+    "$HOME/.local/bin/q" setup
+fi

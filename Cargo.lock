@@ -2661,6 +2661,7 @@ dependencies = [
  "aws-smithy-types",
  "aws-types",
  "http 0.2.12",
+ "tracing",
 ]
 
 [[package]]

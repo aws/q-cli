@@ -48,7 +48,7 @@ if [[ -z "${BASH_VERSINFO-}" ]] || (( BASH_VERSINFO[0] < 3 || (BASH_VERSINFO[0] 
 fi
 
 # Avoid duplicate inclusion
-if [[ -n "${bash_preexec_imported:-}" ]]; then
+if [[ -n "${bash_preexec_imported:-}" || -n "${__bp_imported:-}" ]]; then
     return 0
 fi
 bash_preexec_imported="defined"
@@ -223,9 +223,9 @@ __bp_preexec_invoke_exec() {
         return
     fi
 
-    if [[ -n "${COMP_LINE:-}" ]]; then
-        # We're in the middle of a completer. This obviously can't be
-        # an interactively issued command.
+    if [[ -n "${COMP_POINT:-}" || -n "${READLINE_POINT:-}" ]]; then
+        # We're in the middle of a completer or a keybinding set up by "bind
+        # -x".  This obviously can't be an interactively issued command.
         return
     fi
     if [[ -z "${__bp_preexec_interactive_mode:-}" ]]; then

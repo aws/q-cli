@@ -9,9 +9,20 @@ use fig_api_client::{
     Client,
     Customization,
 };
-use fig_settings::settings;
+use fig_ipc::{
+    BufferedUnixStream,
+    SendMessage,
+};
+use fig_proto::figterm::figterm_request_message::Request;
+use fig_proto::figterm::{
+    FigtermRequestMessage,
+    InlineShellCompletionSetEnabledRequest,
+};
+use fig_util::env_var::QTERM_SESSION_ID;
+use tracing::error;
 
 use super::OutputFormat;
+use crate::util::CliContext;
 
 const INLINE_ENABLED_SETTINGS_KEY: &str = "inline.enabled";
 
@@ -36,18 +47,27 @@ pub enum InlineSubcommand {
 }
 
 impl InlineSubcommand {
-    pub async fn execute(&self) -> Result<ExitCode> {
+    pub async fn execute(&self, cli_context: &CliContext) -> Result<ExitCode> {
+        let settings = cli_context.settings();
+        let state = cli_context.state();
+
         match self {
             InlineSubcommand::Enable => {
-                settings::set_value(INLINE_ENABLED_SETTINGS_KEY, true)?;
+                settings.set_value(INLINE_ENABLED_SETTINGS_KEY, true)?;
+                if let Err(err) = send_set_enabled(true).await {
+                    error!("Failed to send set enabled message: {err}");
+                }
                 println!("{}", "Inline enabled".magenta());
             },
             InlineSubcommand::Disable => {
-                settings::set_value(INLINE_ENABLED_SETTINGS_KEY, false)?;
+                settings.set_value(INLINE_ENABLED_SETTINGS_KEY, false)?;
+                if let Err(err) = send_set_enabled(false).await {
+                    error!("Failed to send set enabled message: {err}");
+                }
                 println!("{}", "Inline disabled".magenta());
             },
             InlineSubcommand::Status => {
-                let enabled = settings::get_bool(INLINE_ENABLED_SETTINGS_KEY)?.unwrap_or(true);
+                let enabled = settings.get_bool(INLINE_ENABLED_SETTINGS_KEY)?.unwrap_or(true);
                 println!("Inline is {}", if enabled { "enabled" } else { "disabled" }.bold());
             },
             InlineSubcommand::SetCustomization { arn } => {
@@ -64,7 +84,7 @@ impl InlineSubcommand {
                         return Ok(ExitCode::FAILURE);
                     };
 
-                    customization.save_selected()?;
+                    customization.save_selected(state)?;
                     println!(
                         "Customization {} selected",
                         customization.name.as_deref().unwrap_or_default().bold()
@@ -87,10 +107,10 @@ impl InlineSubcommand {
                 let select = crate::util::choose("Select a customization", &names)?;
 
                 if select == customizations.len() {
-                    Customization::delete_selected()?;
+                    Customization::delete_selected(state)?;
                     println!("Customization unset");
                 } else {
-                    customizations[select].save_selected()?;
+                    customizations[select].save_selected(state)?;
                     println!(
                         "Customization {} selected",
                         customizations[select].name.as_deref().unwrap_or_default().bold()
@@ -123,6 +143,19 @@ impl InlineSubcommand {
     }
 }
 
+async fn send_set_enabled(enabled: bool) -> Result<()> {
+    let session_id = std::env::var(QTERM_SESSION_ID)?;
+    let figterm_socket_path = fig_util::directories::figterm_socket_path(&session_id)?;
+    let mut conn = BufferedUnixStream::connect(figterm_socket_path).await?;
+    conn.send_message(FigtermRequestMessage {
+        request: Some(Request::InlineShellCompletionSetEnabled(
+            InlineShellCompletionSetEnabledRequest { enabled },
+        )),
+    })
+    .await?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -130,18 +163,15 @@ mod tests {
     #[tokio::test]
 
     async fn test_subcommands() {
-        let old_setting = settings::get_bool(INLINE_ENABLED_SETTINGS_KEY).unwrap();
+        let cli_context = CliContext::new_fake();
+        let settings = cli_context.settings();
 
-        InlineSubcommand::Enable.execute().await.unwrap();
-        assert!(settings::get_bool(INLINE_ENABLED_SETTINGS_KEY).unwrap().unwrap());
-        InlineSubcommand::Status.execute().await.unwrap();
+        InlineSubcommand::Enable.execute(&cli_context).await.unwrap();
+        assert!(settings.get_bool(INLINE_ENABLED_SETTINGS_KEY).unwrap().unwrap());
+        InlineSubcommand::Status.execute(&cli_context).await.unwrap();
 
-        InlineSubcommand::Disable.execute().await.unwrap();
-        assert!(!settings::get_bool(INLINE_ENABLED_SETTINGS_KEY).unwrap().unwrap());
-        InlineSubcommand::Status.execute().await.unwrap();
-
-        // Testing customizations is not possible since we dont have auth in CI
-
-        settings::set_value(INLINE_ENABLED_SETTINGS_KEY, old_setting).unwrap();
+        InlineSubcommand::Disable.execute(&cli_context).await.unwrap();
+        assert!(!settings.get_bool(INLINE_ENABLED_SETTINGS_KEY).unwrap().unwrap());
+        InlineSubcommand::Status.execute(&cli_context).await.unwrap();
     }
 }

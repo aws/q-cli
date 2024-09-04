@@ -3,6 +3,7 @@ use std::error::Error;
 use std::fmt;
 
 use aws_runtime::user_agent::{
+    AdditionalMetadata,
     ApiMetadata,
     AwsUserAgent,
 };
@@ -17,6 +18,11 @@ use http::header::{
     InvalidHeaderValue,
     USER_AGENT,
 };
+use tracing::warn;
+
+/// The environment variable name of additional user agent metadata we include in the user agent
+/// string. This is used in AWS CloudShell where they want to track usage by version.
+const AWS_TOOLING_USER_AGENT: &str = "AWS_TOOLING_USER_AGENT";
 
 #[derive(Debug)]
 enum UserAgentOverrideInterceptorError {
@@ -50,12 +56,18 @@ impl From<InvalidHeaderValue> for UserAgentOverrideInterceptorError {
 /// Generates and attaches the AWS SDK's user agent to a HTTP request
 #[non_exhaustive]
 #[derive(Debug, Default)]
-pub struct UserAgentOverrideInterceptor {}
+pub struct UserAgentOverrideInterceptor {
+    env: Env,
+}
 
 impl UserAgentOverrideInterceptor {
     /// Creates a new `UserAgentInterceptor`
-    pub const fn new() -> Self {
-        UserAgentOverrideInterceptor {}
+    pub fn new() -> Self {
+        Self { env: Env::real() }
+    }
+
+    pub fn from_env(env: Env) -> Self {
+        Self { env }
     }
 }
 
@@ -70,6 +82,8 @@ impl Intercept for UserAgentOverrideInterceptor {
         _runtime_components: &RuntimeComponents,
         cfg: &mut ConfigBag,
     ) -> Result<(), BoxError> {
+        let env = self.env.clone();
+
         // Allow for overriding the user agent by an earlier interceptor (so, for example,
         // tests can use `AwsUserAgent::for_tests()`) by attempting to grab one out of the
         // config bag before creating one.
@@ -78,12 +92,23 @@ impl Intercept for UserAgentOverrideInterceptor {
                 let api_metadata = cfg
                     .load::<ApiMetadata>()
                     .ok_or(UserAgentOverrideInterceptorError::MissingApiMetadata)?;
-                let mut ua = AwsUserAgent::new_from_environment(Env::real(), api_metadata.clone());
+
+                let aws_tooling_user_agent = env.get(AWS_TOOLING_USER_AGENT);
+                let mut ua = AwsUserAgent::new_from_environment(env, api_metadata.clone());
 
                 let maybe_app_name = cfg.load::<AppName>();
                 if let Some(app_name) = maybe_app_name {
                     ua.set_app_name(app_name.clone());
                 }
+                if let Ok(val) = aws_tooling_user_agent {
+                    match AdditionalMetadata::new(clean_metadata(&val)) {
+                        Ok(md) => {
+                            ua.add_additional_metadata(md);
+                        },
+                        Err(err) => warn!(%err, %val, "Failed to parse {AWS_TOOLING_USER_AGENT}"),
+                    };
+                }
+
                 Ok(Cow::Owned(ua))
             },
             Result::<_, UserAgentOverrideInterceptorError>::Ok,
@@ -93,6 +118,17 @@ impl Intercept for UserAgentOverrideInterceptor {
         headers.insert(USER_AGENT, ua.aws_ua_header());
         Ok(())
     }
+}
+
+fn clean_metadata(s: &str) -> String {
+    let valid_character = |c: char| -> bool {
+        match c {
+            _ if c.is_ascii_alphanumeric() => true,
+            '!' | '#' | '$' | '%' | '&' | '\'' | '*' | '+' | '-' | '.' | '^' | '_' | '`' | '|' | '~' => true,
+            _ => false,
+        }
+    };
+    s.chars().map(|c| if valid_character(c) { c } else { '-' }).collect()
 }
 
 #[cfg(test)]
@@ -122,8 +158,7 @@ mod tests {
         println!("{err}");
     }
 
-    #[test]
-    fn user_agent_override_test() {
+    fn user_agent_base() -> (RuntimeComponents, ConfigBag, InterceptorContext) {
         let rc = RuntimeComponentsBuilder::for_tests().build().unwrap();
         let mut cfg = ConfigBag::base();
 
@@ -135,6 +170,12 @@ mod tests {
         let mut context = InterceptorContext::new(Input::erase(()));
         context.set_request(aws_smithy_runtime_api::http::Request::empty());
 
+        (rc, cfg, context)
+    }
+
+    #[test]
+    fn user_agent_override_test() {
+        let (rc, mut cfg, mut context) = user_agent_base();
         let mut context = BeforeTransmitInterceptorContextMut::from(&mut context);
         let interceptor = UserAgentOverrideInterceptor::new();
         println!("Interceptor: {}", interceptor.name());
@@ -144,6 +185,27 @@ mod tests {
 
         let ua = context.request().headers().get(USER_AGENT).unwrap();
         println!("User-Agent: {ua}");
-        assert!(ua.contains(APP_NAME_STR));
+        assert!(ua.contains(&format!("app/{APP_NAME_STR}")));
+    }
+
+    #[test]
+    fn user_agent_override_cloudshell_test() {
+        let (rc, mut cfg, mut context) = user_agent_base();
+        let mut context = BeforeTransmitInterceptorContextMut::from(&mut context);
+        let env = Env::from_slice(&[
+            ("AWS_EXECUTION_ENV", "CloudShell"),
+            (AWS_TOOLING_USER_AGENT, "AWS-CloudShell/2024.08.29"),
+        ]);
+        let interceptor = UserAgentOverrideInterceptor::from_env(env);
+        println!("Interceptor: {}", interceptor.name());
+        interceptor
+            .modify_before_signing(&mut context, &rc, &mut cfg)
+            .expect("success");
+
+        let ua = context.request().headers().get(USER_AGENT).unwrap();
+        println!("User-Agent: {ua}");
+        assert!(ua.contains(&format!("app/{APP_NAME_STR}")));
+        assert!(ua.contains("exec-env/CloudShell"));
+        assert!(ua.contains("md/AWS-CloudShell-2024.08.29"));
     }
 }

@@ -302,6 +302,9 @@ pub async fn process_figterm_request(
         FigtermRequest::InlineShellCompletionAccept(_) => {
             anyhow::bail!("InlineShellCompletionAccept is not supported over remote")
         },
+        FigtermRequest::InlineShellCompletionSetEnabled(_) => {
+            anyhow::bail!("InlineShellCompletionSetEnabled is not supported over remote")
+        },
         FigtermRequest::Telemtety(_) => anyhow::bail!("Telemetry is not supported over remote"),
     }
 }
@@ -327,6 +330,9 @@ pub async fn process_figterm_message(
         },
         Some(FigtermRequest::InlineShellCompletionAccept(request)) => {
             tokio::spawn(inline::handle_accept(request, session_id.to_owned()));
+        },
+        Some(FigtermRequest::InlineShellCompletionSetEnabled(request)) => {
+            tokio::spawn(inline::handle_set_enabled(request, session_id.to_owned()));
         },
         Some(FigtermRequest::Telemtety(TelemetryRequest { event_blob })) => {
             match fig_telemetry::AppTelemetryEvent::from_json(&event_blob) {

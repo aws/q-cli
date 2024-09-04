@@ -12,6 +12,18 @@ pub enum Os {
 }
 
 impl Os {
+    pub fn current() -> Self {
+        cfg_if! {
+            if #[cfg(target_os = "macos")] {
+                Self::Mac
+            } else if #[cfg(target_os = "linux")] {
+                Self::Linux
+            } else {
+                compile_error!("unsupported platform");
+            }
+        }
+    }
+
     pub fn all() -> &'static [Self] {
         &[Self::Mac, Self::Linux]
     }
@@ -54,17 +66,7 @@ impl Platform {
     pub fn os(&self) -> Os {
         use inner::Inner;
         match &self.0 {
-            Inner::Real => {
-                cfg_if! {
-                    if #[cfg(target_os = "macos")] {
-                        Os::Mac
-                    } else if #[cfg(target_os = "linux")] {
-                        Os::Linux
-                    } else {
-                        compile_error!("unsupported platform");
-                    }
-                }
-            },
+            Inner::Real => Os::current(),
             Inner::Fake(os) => *os,
         }
     }

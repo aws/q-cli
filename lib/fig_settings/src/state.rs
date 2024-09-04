@@ -10,11 +10,11 @@ use crate::sqlite::{
 };
 use crate::Result;
 
-#[derive(Default)]
+#[derive(Debug, Clone, Default)]
 pub struct State(inner::Inner);
 
 mod inner {
-    #[derive(Default)]
+    #[derive(Debug, Clone, Default)]
     pub enum Inner {
         #[default]
         Real,

@@ -16,6 +16,7 @@ message FigtermRequestMessage {
     InlineShellCompletionRequest inline_shell_completion = 8;
     InlineShellCompletionAcceptRequest inline_shell_completion_accept = 9;
     TelemetryRequest telemtety = 10;
+    InlineShellCompletionSetEnabledRequest inline_shell_completion_set_enabled = 11;
   }
 }
 
@@ -165,6 +166,10 @@ message InlineShellCompletionResponse {
 message InlineShellCompletionAcceptRequest {
   string buffer = 1;
   string suggestion = 2;
+}
+
+message InlineShellCompletionSetEnabledRequest {
+  bool enabled = 1;
 }
 
 message TelemetryRequest {

@@ -1,9 +1,6 @@
 builtin contains $HOME/.local/bin $PATH
 or set --append PATH $HOME/.local/bin
 
-builtin contains $HOME/.local/bin $PATH
-or set --append PATH $HOME/.local/bin
-
 set --query TTY; or set TTY (command tty)
 set --export TTY
 

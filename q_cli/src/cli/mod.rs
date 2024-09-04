@@ -69,9 +69,9 @@ use tracing::{
     Level,
 };
 
-use self::app::AppSubcommand;
 use self::integrations::IntegrationsSubcommands;
 use self::user::RootUserSubcommand;
+use crate::util::CliContext;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, ValueEnum)]
 pub enum OutputFormat {
@@ -110,9 +110,6 @@ pub enum Processes {
 #[deny(missing_docs)]
 #[derive(Debug, PartialEq, Subcommand)]
 pub enum CliRootCommands {
-    /// Interact with the desktop app
-    #[command(subcommand, hide = true)]
-    App(app::AppSubcommand),
     /// Hook commands
     #[command(subcommand, hide = true)]
     Hook(hook::HookSubcommand),
@@ -168,9 +165,6 @@ pub enum CliRootCommands {
         #[arg(value_enum, default_value_t = Processes::App, hide = true)]
         process: Processes,
     },
-    /// Run the tutorial
-    #[command(hide = true)]
-    Onboarding,
     /// Manage system integrations
     #[command(subcommand, alias("integration"))]
     Integrations(IntegrationsSubcommands),
@@ -199,7 +193,6 @@ pub enum CliRootCommands {
 impl CliRootCommands {
     fn name(&self) -> &'static str {
         match self {
-            CliRootCommands::App(_) => "app",
             CliRootCommands::Hook(_) => "hook",
             CliRootCommands::Debug(_) => "debug",
             CliRootCommands::Settings(_) => "settings",
@@ -220,7 +213,6 @@ impl CliRootCommands {
             CliRootCommands::Launch => "launch",
             CliRootCommands::Quit => "quit",
             CliRootCommands::Restart { .. } => "restart",
-            CliRootCommands::Onboarding => "onboarding",
             CliRootCommands::Integrations(_) => "integrations",
             CliRootCommands::Translate(_) => "translate",
             CliRootCommands::Telemetry(_) => "telemetry",
@@ -301,12 +293,15 @@ impl Cli {
             return self.print_help_all();
         }
 
+        let cli_context = CliContext::new();
+
         match self.subcommand {
             Some(subcommand) => match subcommand {
                 CliRootCommands::Setup(args) => {
                     let no_confirm = args.no_confirm;
                     let force = args.force;
-                    installation::install_cli(args.into(), no_confirm, force).await
+                    let global = args.global;
+                    installation::install_cli(args.into(), no_confirm, force, global).await
                 },
                 CliRootCommands::Uninstall { no_confirm } => uninstall::uninstall_command(no_confirm).await,
                 CliRootCommands::Update(args) => args.execute().await,
@@ -315,7 +310,6 @@ impl Cli {
                 CliRootCommands::User(user) => user.execute().await,
                 CliRootCommands::RootUser(root_user) => root_user.execute().await,
                 CliRootCommands::Doctor(args) => args.execute().await,
-                CliRootCommands::App(app_subcommand) => app_subcommand.execute().await,
                 CliRootCommands::Hook(hook_subcommand) => hook_subcommand.execute().await,
                 CliRootCommands::Theme(theme_args) => theme_args.execute().await,
                 CliRootCommands::Settings(settings_args) => settings_args.execute().await,
@@ -329,14 +323,13 @@ impl Cli {
                     app::restart_fig().await?;
                     launch_dashboard(false).await
                 },
-                CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
                 CliRootCommands::Integrations(subcommand) => subcommand.execute().await,
                 CliRootCommands::Translate(args) => args.execute().await,
                 CliRootCommands::Telemetry(subcommand) => subcommand.execute().await,
                 CliRootCommands::Version => Self::print_version(),
                 CliRootCommands::Dashboard => launch_dashboard(false).await,
                 CliRootCommands::Chat { input } => chat::chat(input.unwrap_or_default()).await,
-                CliRootCommands::Inline(subcommand) => subcommand.execute().await,
+                CliRootCommands::Inline(subcommand) => subcommand.execute(&cli_context).await,
             },
             // Root command
             None => launch_dashboard(true).await,

@@ -23,6 +23,7 @@ use fig_aws_common::{
     app_name,
     UserAgentOverrideInterceptor,
 };
+use fig_settings::State;
 use tracing::error;
 
 use super::shared::{
@@ -180,7 +181,7 @@ async fn codewhisperer_generate_recommendation_inner(
 ) -> Result<RecommendationsOutput, SdkError<GenerateCompletionsError, HttpResponse>> {
     let session_id_lock = Arc::new(Mutex::new(None));
 
-    let customization_arn = match Customization::load_selected() {
+    let customization_arn = match Customization::load_selected(&State::new()) {
         Ok(opt) => opt.map(|Customization { arn, .. }| arn),
         Err(err) => {
             error!(%err, "Failed to load selected customization");
@@ -248,7 +249,7 @@ async fn codewhisperer_generate_recommendation(
             ) =>
         {
             error!(err =% DisplayErrorContext(err), "Access denied for selected customization, clearing selection and trying again");
-            if let Err(err) = Customization::delete_selected() {
+            if let Err(err) = Customization::delete_selected(&State::new()) {
                 error!(%err, "Failed to delete selected customization");
             }
             codewhisperer_generate_recommendation_inner(client, input).await?

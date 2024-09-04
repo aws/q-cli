@@ -22,13 +22,18 @@ use super::user::login_interactive;
 use crate::util::choose;
 
 #[cfg_attr(windows, allow(unused_variables))]
-pub async fn install_cli(install_components: InstallComponents, no_confirm: bool, force: bool) -> Result<ExitCode> {
+pub async fn install_cli(
+    install_components: InstallComponents,
+    no_confirm: bool,
+    force: bool,
+    global: bool,
+) -> Result<ExitCode> {
     let env = Env::new();
 
     #[cfg(unix)]
     {
         use nix::unistd::geteuid;
-        if geteuid().is_root() {
+        if geteuid().is_root() && !global {
             eprintln!("{}", "Installing as root is not supported.".red().bold());
             if !force {
                 eprintln!(
@@ -40,7 +45,7 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
         }
     }
 
-    if install_components.contains(InstallComponents::SHELL_INTEGRATIONS) {
+    if install_components.contains(InstallComponents::SHELL_INTEGRATIONS) && !global {
         let mut manual_install = if no_confirm {
             false
         } else {
@@ -88,7 +93,12 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
         }
     }
 
-    if install_components.contains(InstallComponents::INPUT_METHOD) && !no_confirm {
+    if install_components.contains(InstallComponents::SHELL_INTEGRATIONS) && global {
+        // TODO: will implement in next PR, this will be a large change so decoupling these
+        eyre::bail!("Global install not supported for shell integrations");
+    }
+
+    if install_components.contains(InstallComponents::INPUT_METHOD) && !no_confirm && !global {
         cfg_if::cfg_if! {
             if #[cfg(target_os = "macos")] {
                 if !dialoguer::console::user_attended() {
@@ -109,7 +119,7 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
         }
     }
 
-    if !fig_auth::is_logged_in().await {
+    if !fig_auth::is_logged_in().await && !global {
         if !no_confirm {
             if !dialoguer::console::user_attended() {
                 eyre::bail!("You must run with --no-confirm if unattended");

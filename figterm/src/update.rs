@@ -28,17 +28,13 @@ fn print_update_message(version: &Version) {
 }
 
 pub fn check_for_update(context: &Context) {
-    // only show on Linux
-    if context.platform().os() != Os::Linux {
-        return;
-    }
+    let not_linux = context.platform().os() != Os::Linux;
+    let in_cloudshell = context.env().in_cloudshell();
+    let autoupdate_disabled = !get_bool_or("app.disableAutoupdates", true);
+    let installed_via_toolbox = get_install_method() == InstallMethod::Toolbox;
 
-    // If updates are disabled, don't check for updates
-    if !get_bool_or("app.disableAutoupdates", true) {
-        return;
-    }
-
-    if get_install_method() == InstallMethod::Toolbox {
+    // If any of the previous conditions, do not show the update notification
+    if not_linux | in_cloudshell | autoupdate_disabled | installed_via_toolbox {
         return;
     }
 

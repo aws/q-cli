@@ -68,7 +68,7 @@ const MIGRATIONS: &[Migration] = migrations![
     "005_auth_table"
 ];
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Db {
     pub(crate) pool: Pool<SqliteConnectionManager>,
 }
