@@ -194,7 +194,7 @@ def cd_sign_file(file: pathlib.Path, type: CdSigningType, signing_data: CdSignin
 
     info("Downloading...")
     run_cmd(["aws", "s3", "cp", f"s3://{signing_data.bucket_name}/signed/signed.zip", "signed.zip"])
-    run_cmd(["unzip", "signed.zip"])
+    run_cmd(["unzip", "signed.zip", "-d", "Payload"])
 
     # find child of Payload
     children = list(pathlib.Path("Payload").iterdir())
