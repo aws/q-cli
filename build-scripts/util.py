@@ -5,8 +5,8 @@ import os
 import shlex
 import subprocess
 import platform
-from typing import Mapping, Sequence
-from const import DESKTOP_PACKAGE_NAME
+from typing import List, Mapping, Sequence
+from const import DESKTOP_PACKAGE_NAME, TAURI_PRODUCT_NAME
 
 
 INFO = "\033[92;1m"
@@ -56,6 +56,16 @@ def version() -> str:
         if pkg["name"] == DESKTOP_PACKAGE_NAME:
             return pkg["version"]
     raise ValueError("Version not found")
+
+
+@cache
+def tauri_product_name() -> str:
+    """
+        Derived from the `package.productName` configured in the tauri.conf.json file.
+
+    Tauri build output paths replace underscores with dashes.
+    """
+    return TAURI_PRODUCT_NAME.replace("_", "-")
 
 
 def log(*value: object, title: str, color: str | None):
@@ -112,11 +122,14 @@ class Variant(Enum):
 
 
 @cache
-def get_variant() -> Variant:
+def get_variants() -> List[Variant]:
     match platform.system():
         case "Darwin":
-            return Variant.FULL
+            return [Variant.FULL]
         case "Linux":
-            return Variant.MINIMAL
+            if isMusl():
+                return [Variant.MINIMAL]
+            else:
+                return [Variant.MINIMAL, Variant.FULL]
         case other:
             raise ValueError(f"Unsupported platform {other}")

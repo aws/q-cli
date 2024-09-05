@@ -12,6 +12,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Result;
+use fig_os_shim::Context;
 use image::imageops::FilterType;
 use image::{
     GenericImage,
@@ -169,7 +170,11 @@ fn scale(a: u8, b: u8) -> u8 {
     (a as f32 * (b as f32 / 256.0)) as u8
 }
 
-pub async fn handle(request: Request<Vec<u8>>, _: WindowId) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
+pub async fn handle(
+    _ctx: Arc<Context>,
+    request: Request<Vec<u8>>,
+    _: WindowId,
+) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
     debug!(uri =% request.uri(), "Fig protocol request");
     let url = Url::parse(&request.uri().to_string())?;
     let domain = url.domain();

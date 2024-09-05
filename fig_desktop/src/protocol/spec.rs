@@ -1,7 +1,9 @@
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use anyhow::Result;
 use fig_auth::builder_id_token;
+use fig_os_shim::Context;
 use fig_request::reqwest::Client;
 use fnv::FnvHashSet;
 use futures::prelude::*;
@@ -187,7 +189,11 @@ async fn merged_index_json(client: &Client) -> Result<SpecIndex> {
 }
 
 // handle `spec://localhost/spec.js`
-pub async fn handle(request: Request<Vec<u8>>, _: WindowId) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
+pub async fn handle(
+    _ctx: Arc<Context>,
+    request: Request<Vec<u8>>,
+    _: WindowId,
+) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
     let Some(client) = fig_request::client() else {
         return Ok(res_404());
     };

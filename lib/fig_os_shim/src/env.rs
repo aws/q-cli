@@ -146,6 +146,13 @@ impl Env {
     pub fn in_ci(&self) -> bool {
         self.get_os("CI").is_some() || self.get_os("Q_CI").is_some()
     }
+
+    /// Whether or not the current executable is run from an AppImage.
+    ///
+    /// See: https://docs.appimage.org/packaging-guide/environment-variables.html
+    pub fn in_appimage(&self) -> bool {
+        self.get_os("APPIMAGE").is_some()
+    }
 }
 
 impl Shim for Env {
@@ -197,6 +204,9 @@ mod tests {
         let env = Env::from_slice(&[("AWS_EXECUTION_ENV", "CLOUDSHELL\n")]);
         assert!(env.in_cloudshell());
         assert!(!env.in_ssh());
+
+        let env = Env::from_slice(&[("APPIMAGE", "/tmp/.mount-asdf/usr")]);
+        assert!(env.in_appimage());
     }
 
     #[test]

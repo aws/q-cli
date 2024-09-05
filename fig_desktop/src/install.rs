@@ -96,7 +96,7 @@ pub async fn run_install(ctx: Arc<Context>, ignore_immediate_update: bool) {
     }
 
     #[cfg(target_os = "linux")]
-    if fig_util::manifest::manifest().packaged_as == fig_util::manifest::PackagedAs::AppImage {
+    if ctx.env().in_appimage() {
         tokio::spawn(async move {
             install_appimage_binaries(&ctx)
                 .await

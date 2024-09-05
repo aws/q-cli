@@ -8,6 +8,7 @@ from const import CLI_BINARY_NAME, CLI_PACKAGE_NAME, PTY_BINARY_NAME
 from doc import run_doc
 from rust import cargo_cmd_name, rust_env
 from test import all_tests
+from util import Variant, get_variants
 
 
 class StoreIfNotEmptyAction(argparse.Action):
@@ -58,6 +59,16 @@ build_subparser.add_argument(
     action="store_true",
     help="Build a non-release version",
 )
+build_subparser.add_argument(
+    "--skip-tests",
+    action="store_true",
+    help="Skip running npm and rust tests",
+)
+build_subparser.add_argument(
+    "--skip-lints",
+    action="store_true",
+    help="Skip running lints",
+)
 
 test_subparser = subparsers.add_parser(name="test")
 test_subparser.add_argument(
@@ -80,6 +91,12 @@ install_cli.add_argument(
     action="store_true",
     help="Build a release version",
 )
+install_cli.add_argument(
+    "--variant",
+    action="store",
+    help="variant to build for",
+    choices=["minimal", "full"],
+)
 
 # run the docs command
 subparsers.add_parser(name="doc")
@@ -96,6 +113,8 @@ match args.subparser:
             apple_id_secret=args.apple_id_secret,
             signing_role_name=args.signing_role_name,
             stage_name=args.stage_name,
+            run_lints=not args.skip_lints,
+            run_test=not args.skip_tests,
         )
     case "test":
         all_tests(
@@ -117,7 +136,11 @@ match args.subparser:
             },
         )
     case "install-cli":
-        output = build(release=args.release, run_lints=False, run_test=False)
+        if args.variant:
+            variant = Variant[args.variant.upper()]
+        else:
+            variant = get_variants()[0]
+        output = build(release=args.release, variants=[variant], run_lints=False, run_test=False)[variant]
 
         pty_path = Path.home() / ".local" / "bin" / PTY_BINARY_NAME
         pty_path.unlink(missing_ok=True)

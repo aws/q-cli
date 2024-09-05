@@ -5,8 +5,8 @@ import json
 import datetime
 import pathlib
 import shutil
-from typing import Mapping, Sequence
-from util import Variant, get_variant, isDarwin, isLinux, run_cmd, run_cmd_output, info, version
+from typing import Dict, List, Mapping, Sequence
+from util import Variant, get_variants, isDarwin, isLinux, run_cmd, run_cmd_output, info, version, tauri_product_name
 from rust import build_hash, build_datetime, cargo_cmd_name, rust_targets, rust_env, get_target_triple
 from test import run_cargo_tests, run_clippy
 from signing import (
@@ -48,7 +48,7 @@ class MacOSBuildOutput:
     app_gztar_path: pathlib.Path
 
 
-def build_npm_packages() -> NpmBuildOutput:
+def build_npm_packages(run_test: bool = True) -> NpmBuildOutput:
     run_cmd(["pnpm", "install", "--frozen-lockfile"])
 
     # set the version of extensions/vscode
@@ -59,7 +59,8 @@ def build_npm_packages() -> NpmBuildOutput:
     package_json_path.write_text(json.dumps(package_json, indent=2))
 
     run_cmd(["pnpm", "build"])
-    run_cmd(["pnpm", "test", "--", "--run"])
+    if run_test:
+        run_cmd(["pnpm", "test", "--", "--run"])
 
     # revert the package.json
     package_json_path.write_text(package_json_text)
@@ -85,6 +86,7 @@ def build_npm_packages() -> NpmBuildOutput:
 
 
 def build_cargo_bin(
+    variant: Variant,
     release: bool,
     package: str,
     output_name: str | None = None,
@@ -106,7 +108,7 @@ def build_cargo_bin(
         args,
         env={
             **os.environ,
-            **rust_env(release=release),
+            **rust_env(release=release, variant=variant),
         },
     )
 
@@ -132,7 +134,7 @@ def build_cargo_bin(
         # linux does not cross compile arch
         target = targets[0]
         target_path = pathlib.Path("target") / target / target_subdir / package
-        out_path = BUILD_DIR / "bin" / (output_name or package)
+        out_path = BUILD_DIR / "bin" / f"{(output_name or package)}-{target}"
         out_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(target_path, out_path)
         return out_path
@@ -159,7 +161,9 @@ def build_macos_ime(
     signing_data: CdSigningData | None,
     targets: Sequence[str] = [],
 ) -> pathlib.Path:
-    fig_input_method_bin = build_cargo_bin(release=release, package="fig_input_method", targets=targets)
+    fig_input_method_bin = build_cargo_bin(
+        release=release, variant=Variant.FULL, package="fig_input_method", targets=targets
+    )
     input_method_app = pathlib.Path("build/CodeWhispererInputMethod.app")
 
     (input_method_app / "Contents/MacOS").mkdir(parents=True, exist_ok=True)
@@ -186,7 +190,7 @@ def build_macos_ime(
     return input_method_app
 
 
-def tauri_config(cli_path: pathlib.Path, pty_path: pathlib.Path, target: str) -> str:
+def macos_tauri_config(cli_path: pathlib.Path, pty_path: pathlib.Path, target: str) -> str:
     config = {
         "tauri": {
             "bundle": {
@@ -201,7 +205,7 @@ def tauri_config(cli_path: pathlib.Path, pty_path: pathlib.Path, target: str) ->
     return json.dumps(config)
 
 
-def build_desktop_app(
+def build_macos_desktop_app(
     release: bool,
     pty_path: pathlib.Path,
     cli_path: pathlib.Path,
@@ -222,7 +226,7 @@ def build_desktop_app(
 
     info("Building tauri config")
     tauri_config_path = pathlib.Path(DESKTOP_PACKAGE_NAME) / "build-config.json"
-    tauri_config_path.write_text(tauri_config(cli_path=cli_path, pty_path=pty_path, target=target))
+    tauri_config_path.write_text(macos_tauri_config(cli_path=cli_path, pty_path=pty_path, target=target))
 
     info("Building", DESKTOP_PACKAGE_NAME)
 
@@ -241,7 +245,7 @@ def build_desktop_app(
     run_cmd(
         cargo_tauri_args,
         cwd=DESKTOP_PACKAGE_NAME,
-        env={**os.environ, **rust_env(release=release), "BUILD_DIR": BUILD_DIR},
+        env={**os.environ, **rust_env(release=release, variant=Variant.FULL), "BUILD_DIR": BUILD_DIR},
     )
 
     # clean up
@@ -340,10 +344,10 @@ def build_desktop_app(
     if signing_data:
         sign_and_rebundle_macos(app_path=app_path, dmg_path=dmg_path, signing_data=signing_data, is_prod=is_prod)
 
-    app_zip_path = shutil.make_archive(str(BUILD_DIR / APP_NAME), "gztar", app_path.parent, app_path.name)
-    info(f"Created app zip at {app_zip_path}")
+    app_gztar_path = shutil.make_archive(str(BUILD_DIR / APP_NAME), "gztar", app_path.parent, app_path.name)
+    info(f"Created app tar.gz at {app_gztar_path}")
 
-    return MacOSBuildOutput(dmg_path=dmg_path, app_gztar_path=pathlib.Path(app_zip_path))
+    return MacOSBuildOutput(dmg_path=dmg_path, app_gztar_path=pathlib.Path(app_gztar_path))
 
 
 def sign_and_rebundle_macos(app_path: pathlib.Path, dmg_path: pathlib.Path, signing_data: CdSigningData, is_prod: bool):
@@ -392,6 +396,169 @@ def linux_bundle(
         shutil.copy2(desktop_app_path, bin_path)
 
 
+def build_linux_minimal(cli_path: pathlib.Path, pty_path: pathlib.Path):
+    """
+    Creates tar.gz, tar.xz, tar.zst, and zip archives under `BUILD_DIR`.
+
+    Each archive has the following structure:
+    - archive/bin/q
+    - archive/bin/qterm
+    - archive/install.sh
+    - archive/README
+    - archive/BUILD-INFO
+    """
+    archive_name = LINUX_ARCHIVE_NAME
+
+    archive_path = pathlib.Path(archive_name)
+    archive_path.mkdir(parents=True, exist_ok=True)
+
+    shutil.copy2("bundle/linux/install.sh", archive_path)
+    shutil.copy2("bundle/linux/README", archive_path)
+
+    # write the BUILD-INFO
+    build_info_path = archive_path / "BUILD-INFO"
+    build_info_path.write_text(
+        "\n".join(
+            [
+                f"BUILD_DATE={build_datetime()}",
+                f"BUILD_HASH={build_hash()}",
+                f"BUILD_TARGET_TRIPLE={get_target_triple()}",
+                f"BUILD_VERSION={version()}",
+            ]
+        )
+    )
+
+    archive_bin_path = archive_path / "bin"
+    archive_bin_path.mkdir(parents=True, exist_ok=True)
+
+    shutil.copy2(cli_path, archive_bin_path / CLI_BINARY_NAME)
+    shutil.copy2(pty_path, archive_bin_path / PTY_BINARY_NAME)
+
+    signer = load_gpg_signer()
+
+    info(f"Building {archive_name}.tar.gz")
+    tar_gz_path = BUILD_DIR / f"{archive_name}.tar.gz"
+    run_cmd(["tar", "-czf", tar_gz_path, archive_path])
+    generate_sha(tar_gz_path)
+    if signer:
+        signer.sign_file(tar_gz_path)
+
+    info(f"Building {archive_name}.tar.xz")
+    tar_xz_path = BUILD_DIR / f"{archive_name}.tar.xz"
+    run_cmd(["tar", "-cJf", tar_xz_path, archive_path])
+    generate_sha(tar_xz_path)
+    if signer:
+        signer.sign_file(tar_xz_path)
+
+    info(f"Building {archive_name}.tar.zst")
+    tar_zst_path = BUILD_DIR / f"{archive_name}.tar.zst"
+    run_cmd(["tar", "-I", "zstd", "-cf", tar_zst_path, archive_path], {"ZSTD_CLEVEL": "19"})
+    generate_sha(tar_zst_path)
+    if signer:
+        signer.sign_file(tar_zst_path)
+
+    info(f"Building {archive_name}.zip")
+    zip_path = BUILD_DIR / f"{archive_name}.zip"
+    run_cmd(["zip", "-r", zip_path, archive_path])
+    generate_sha(zip_path)
+    if signer:
+        signer.sign_file(zip_path)
+
+    # clean up
+    shutil.rmtree(archive_path)
+    if signer:
+        signer.clean()
+
+
+def linux_tauri_config(
+    cli_path: pathlib.Path,
+    pty_path: pathlib.Path,
+    dashboard_path: pathlib.Path,
+    autocomplete_path: pathlib.Path,
+    vscode_path: pathlib.Path,
+    themes_path: pathlib.Path,
+    target: str,
+) -> str:
+    config = {
+        "tauri": {
+            "bundle": {
+                "externalBin": [
+                    str(cli_path).removesuffix(f"-{target}"),
+                    str(pty_path).removesuffix(f"-{target}"),
+                ],
+                "targets": ["appimage", "deb"],
+                "icon": ["icons/128x128.png"],
+                "resources": {
+                    dashboard_path.absolute().as_posix(): "dashboard",
+                    autocomplete_path.absolute().as_posix(): "autocomplete",
+                    vscode_path.absolute().as_posix(): "vscode",
+                    themes_path.absolute().as_posix(): "themes",
+                },
+            }
+        }
+    }
+    return json.dumps(config)
+
+
+def build_linux_full(
+    release: bool,
+    cli_path: pathlib.Path,
+    pty_path: pathlib.Path,
+    npm_packages: NpmBuildOutput,
+    features: Mapping[str, Sequence[str]] | None = None,
+):
+    target = get_target_triple()
+
+    info("Grabbing themes")
+    theme_repo = BUILD_DIR / "themes"
+    shutil.rmtree(theme_repo, ignore_errors=True)
+    run_cmd(["git", "clone", "https://github.com/withfig/themes.git", theme_repo])
+    themes_path = theme_repo / "themes"
+
+    info("Building tauri config")
+    tauri_config_path = pathlib.Path(DESKTOP_PACKAGE_NAME) / "build-config.json"
+    tauri_config_path.write_text(
+        linux_tauri_config(
+            cli_path=cli_path,
+            pty_path=pty_path,
+            dashboard_path=npm_packages.dashboard_path,
+            autocomplete_path=npm_packages.autocomplete_path,
+            vscode_path=npm_packages.vscode_path,
+            themes_path=themes_path,
+            target=target,
+        )
+    )
+
+    cargo_tauri_args = [
+        "cargo-tauri",
+        "build",
+        "--config",
+        "build-config.json",
+        "--target",
+        target,
+    ]
+    if features and features.get(DESKTOP_PACKAGE_NAME):
+        cargo_tauri_args.extend(["--features", ",".join(features[DESKTOP_PACKAGE_NAME])])
+
+    info("Building", DESKTOP_PACKAGE_NAME)
+    run_cmd(
+        cargo_tauri_args,
+        cwd=DESKTOP_PACKAGE_NAME,
+        env={**os.environ, **rust_env(release=release, variant=Variant.FULL), "BUILD_DIR": BUILD_DIR},
+    )
+
+    info("Copying bundles to build directory")
+    bundle_name = f"{tauri_product_name()}_{version()}_amd64"
+    bundle_grandparent_path = f"target/{target}/release/bundle"
+    shutil.copy(
+        pathlib.Path(f"{bundle_grandparent_path}/appimage/{bundle_name}.AppImage"),
+        BUILD_DIR / f"{LINUX_ARCHIVE_NAME}.appimage",
+    )
+    shutil.copy(
+        pathlib.Path(f"{bundle_grandparent_path}/deb/{bundle_name}.deb"), BUILD_DIR / f"{LINUX_ARCHIVE_NAME}.deb"
+    )
+
+
 def generate_sha(path: pathlib.Path) -> pathlib.Path:
     if isDarwin():
         shasum_output = run_cmd_output(["shasum", "-a", "256", path])
@@ -408,13 +575,17 @@ def generate_sha(path: pathlib.Path) -> pathlib.Path:
 
 
 @dataclass
-class BuildOutput:
+class BinaryPaths:
     cli_path: pathlib.Path
     pty_path: pathlib.Path
 
 
+BuildOutput = Dict[Variant, BinaryPaths]
+
+
 def build(
     release: bool,
+    variants: List[Variant] | None = None,
     output_bucket: str | None = None,
     signing_bucket: str | None = None,
     aws_account_id: str | None = None,
@@ -423,8 +594,8 @@ def build(
     stage_name: str | None = None,
     run_lints: bool = True,
     run_test: bool = True,
-):
-    variant = get_variant()
+) -> BuildOutput:
+    variants = get_variants()
 
     if signing_bucket and aws_account_id and apple_id_secret and signing_role_name:
         signing_data = CdSigningData(
@@ -452,13 +623,14 @@ def build(
     info(f"Release: {release}")
     info(f"Cargo features: {cargo_features}")
     info(f"Signing app: {signing_data is not None}")
-    info(f"Variant: {variant.name}")
+    info(f"Variants: {[variant.name for variant in variants]}")
 
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
 
-    if variant == Variant.FULL:
+    npm_packages = None
+    if Variant.FULL in variants:
         info("Building npm packages")
-        npm_packages = build_npm_packages()
+        npm_packages = build_npm_packages(run_test=run_test)
 
     targets = rust_targets()
 
@@ -468,114 +640,74 @@ def build(
 
     if run_test:
         info("Running cargo tests")
-        run_cargo_tests(features=cargo_features, target=cargo_test_target)
+        run_cargo_tests(variants=variants, features=cargo_features, target=cargo_test_target)
 
     if run_lints:
-        run_clippy(features=cargo_features, target=cargo_test_target)
+        run_clippy(variants=variants, features=cargo_features, target=cargo_test_target)
 
-    info("Building", CLI_PACKAGE_NAME)
-    cli_path = build_cargo_bin(
-        release=release, package=CLI_PACKAGE_NAME, output_name=CLI_BINARY_NAME, features=cargo_features, targets=targets
-    )
+    build_output: BuildOutput = {}
+    for variant in variants:
+        info(f"Building variant: {variant.name}")
 
-    info("Building", PTY_PACKAGE_NAME)
-    pty_path = build_cargo_bin(
-        release=release, package=PTY_PACKAGE_NAME, output_name=PTY_BINARY_NAME, features=cargo_features, targets=targets
-    )
-
-    if isDarwin():
-        info(f"Building {DMG_NAME}.dmg")
-        build_paths = build_desktop_app(
+        info("Building", CLI_PACKAGE_NAME)
+        cli_path = build_cargo_bin(
+            variant=variant,
             release=release,
-            cli_path=cli_path,
-            pty_path=pty_path,
-            npm_packages=npm_packages,
-            signing_data=signing_data,
+            package=CLI_PACKAGE_NAME,
+            output_name=CLI_BINARY_NAME,
             features=cargo_features,
             targets=targets,
-            is_prod=stage_name == "prod" or stage_name is None,
         )
 
-        sha_path = generate_sha(build_paths.dmg_path)
+        info("Building", PTY_PACKAGE_NAME)
+        pty_path = build_cargo_bin(
+            variant=variant,
+            release=release,
+            package=PTY_PACKAGE_NAME,
+            output_name=PTY_BINARY_NAME,
+            features=cargo_features,
+            targets=targets,
+        )
 
-        if output_bucket:
-            staging_location = f"s3://{output_bucket}/staging/"
-            info(f"Build complete, sending to {staging_location}")
+        if isDarwin():
+            info(f"Building {DMG_NAME}.dmg")
+            if not npm_packages:
+                raise RuntimeError("npm packages must be built for Mac")
 
-            run_cmd(["aws", "s3", "cp", build_paths.dmg_path, staging_location])
-            run_cmd(["aws", "s3", "cp", build_paths.app_gztar_path, staging_location])
-            run_cmd(["aws", "s3", "cp", sha_path, staging_location])
-    elif isLinux():
-        # create the archive structure:
-        #   archive/bin/q
-        #   archive/bin/qterm
-        #   archive/install.sh
-        #   archive/README
-        #   archive/BUILD-INFO
-
-        archive_name = LINUX_ARCHIVE_NAME
-
-        archive_path = pathlib.Path(archive_name)
-        archive_path.mkdir(parents=True, exist_ok=True)
-
-        shutil.copy2("bundle/linux/install.sh", archive_path)
-        shutil.copy2("bundle/linux/README", archive_path)
-
-        # write the BUILD-INFO
-        build_info_path = archive_path / "BUILD-INFO"
-        build_info_path.write_text(
-            "\n".join(
-                [
-                    f"BUILD_DATE={build_datetime()}",
-                    f"BUILD_HASH={build_hash()}",
-                    f"BUILD_TARGET_TRIPLE={get_target_triple()}",
-                    f"BUILD_VERSION={version()}",
-                ]
+            build_paths = build_macos_desktop_app(
+                release=release,
+                cli_path=cli_path,
+                pty_path=pty_path,
+                npm_packages=npm_packages,
+                signing_data=signing_data,
+                features=cargo_features,
+                targets=targets,
+                is_prod=stage_name == "prod" or stage_name is None,
             )
-        )
 
-        archive_bin_path = archive_path / "bin"
-        archive_bin_path.mkdir(parents=True, exist_ok=True)
+            sha_path = generate_sha(build_paths.dmg_path)
 
-        shutil.copy2(cli_path, archive_bin_path)
-        shutil.copy2(pty_path, archive_bin_path)
+            if output_bucket:
+                staging_location = f"s3://{output_bucket}/staging/"
+                info(f"Build complete, sending to {staging_location}")
 
-        signer = load_gpg_signer()
+                run_cmd(["aws", "s3", "cp", build_paths.dmg_path, staging_location])
+                run_cmd(["aws", "s3", "cp", build_paths.app_gztar_path, staging_location])
+                run_cmd(["aws", "s3", "cp", sha_path, staging_location])
+        elif isLinux():
+            if variant == Variant.FULL:
+                if not npm_packages:
+                    raise RuntimeError(f"npm packages must be built for variant: {variant.name}")
+                build_linux_full(
+                    release=release,
+                    cli_path=cli_path,
+                    pty_path=pty_path,
+                    npm_packages=npm_packages,
+                    features=cargo_features,
+                )
+                build_output[variant] = BinaryPaths(cli_path=cli_path, pty_path=pty_path)
+            else:
+                build_linux_minimal(cli_path=cli_path, pty_path=pty_path)
+                build_output[variant] = BinaryPaths(cli_path=cli_path, pty_path=pty_path)
 
-        info(f"Building {archive_name}.tar.gz")
-        tar_gz_path = BUILD_DIR / f"{archive_name}.tar.gz"
-        run_cmd(["tar", "-czf", tar_gz_path, archive_path])
-        generate_sha(tar_gz_path)
-        if signer:
-            signer.sign_file(tar_gz_path)
-
-        info(f"Building {archive_name}.tar.xz")
-        tar_xz_path = BUILD_DIR / f"{archive_name}.tar.xz"
-        run_cmd(["tar", "-cJf", tar_xz_path, archive_path])
-        generate_sha(tar_xz_path)
-        if signer:
-            signer.sign_file(tar_xz_path)
-
-        info(f"Building {archive_name}.tar.zst")
-        tar_zst_path = BUILD_DIR / f"{archive_name}.tar.zst"
-        run_cmd(["tar", "-I", "zstd", "-cf", tar_zst_path, archive_path], {"ZSTD_CLEVEL": "19"})
-        generate_sha(tar_zst_path)
-        if signer:
-            signer.sign_file(tar_zst_path)
-
-        info(f"Building {archive_name}.zip")
-        zip_path = BUILD_DIR / f"{archive_name}.zip"
-        run_cmd(["zip", "-r", zip_path, archive_path])
-        generate_sha(zip_path)
-        if signer:
-            signer.sign_file(zip_path)
-
-        # clean up
-        shutil.rmtree(archive_path)
-        if signer:
-            signer.clean()
-
-    return BuildOutput(
-        cli_path=cli_path,
-        pty_path=pty_path,
-    )
+    return build_output

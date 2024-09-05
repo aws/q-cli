@@ -19,6 +19,7 @@ use std::time::Duration;
 use cfg_if::cfg_if;
 use fig_desktop_api::init_script::javascript_init;
 use fig_desktop_api::kv::DashKVStore;
+use fig_os_shim::Context;
 use fig_proto::fig::client_originated_message::Submessage;
 use fig_proto::fig::ClientOriginatedMessage;
 use fig_remote_ipc::figterm::FigtermState;
@@ -175,6 +176,7 @@ pub struct WebviewManager {
     platform_state: Arc<PlatformState>,
     notifications_state: Arc<WebviewNotificationsState>,
     dash_kv_store: Arc<DashKVStore>,
+    context: Arc<Context>,
 }
 
 pub static GLOBAL_PROXY: OnceLock<EventLoopProxy> = OnceLock::new();
@@ -188,7 +190,7 @@ pub static DASH_KV_STORE: OnceLock<Arc<DashKVStore>> = OnceLock::new();
 impl WebviewManager {
     #[allow(unused_variables)]
     #[allow(unused_mut)]
-    pub fn new(visible: bool) -> Self {
+    pub fn new(context: Arc<Context>, visible: bool) -> Self {
         let mut event_loop = EventLoopBuilder::with_user_event().build();
 
         #[cfg(target_os = "macos")]
@@ -235,6 +237,7 @@ impl WebviewManager {
             platform_state,
             notifications_state,
             dash_kv_store,
+            context,
         }
     }
 
@@ -262,17 +265,17 @@ impl WebviewManager {
     pub fn build_webview<T>(
         &mut self,
         window_id: WindowId,
-        builder: impl Fn(&mut WebContext, &EventLoop, T) -> anyhow::Result<(Window, WebView)>,
+        builder: impl Fn(Arc<Context>, &mut WebContext, &EventLoop, T) -> anyhow::Result<(Window, WebView)>,
         options: T,
         enabled: bool,
         url_fn: impl Fn() -> Url,
     ) -> anyhow::Result<()> {
-        let context_path = directories::fig_data_dir()?
+        let web_context_path = directories::fig_data_dir()?
             .join("webcontexts")
             .join(window_id.0.as_ref());
-        let mut context = WebContext::new(Some(context_path));
-        let (window, webview) = builder(&mut context, &self.event_loop, options)?;
-        self.insert_webview(window, window_id, webview, context, enabled, url_fn());
+        let mut web_context = WebContext::new(Some(web_context_path));
+        let (window, webview) = builder(Arc::clone(&self.context), &mut web_context, &self.event_loop, options)?;
+        self.insert_webview(window, window_id, webview, web_context, enabled, url_fn());
         Ok(())
     }
 
@@ -702,6 +705,7 @@ pub struct DashboardOptions {
 }
 
 pub fn build_dashboard(
+    ctx: Arc<Context>,
     web_context: &mut WebContext,
     event_loop: &EventLoop,
     DashboardOptions {
@@ -772,16 +776,17 @@ pub fn build_dashboard(
         })
         .with_devtools(true)
         .with_asynchronous_custom_protocol(
-            "resource".into(),
+            "qcliresource".into(),
             utils::wrap_custom_protocol(
-                "resource::Dashboard",
+                Arc::clone(&ctx),
+                "qcliresource::Dashboard",
                 DashboardId,
                 resource::handle::<resource::Dashboard>,
             ),
         )
         .with_asynchronous_custom_protocol(
             "api".into(),
-            utils::wrap_custom_protocol("api", DashboardId, api::handle),
+            utils::wrap_custom_protocol(Arc::clone(&ctx), "api", DashboardId, api::handle),
         )
         .with_navigation_handler(navigation_handler(DASHBOARD_ID, &[r"^localhost$", r"^127\.0\.0\.1$"]))
         .with_initialization_script(&javascript_init(true))
@@ -795,6 +800,7 @@ pub fn build_dashboard(
 pub struct AutocompleteOptions;
 
 pub fn build_autocomplete(
+    ctx: Arc<Context>,
     web_context: &mut WebContext,
     event_loop: &EventLoop,
     _autocomplete_options: AutocompleteOptions,
@@ -871,27 +877,28 @@ pub fn build_autocomplete(
         })
         .with_asynchronous_custom_protocol(
             "fig".into(),
-            utils::wrap_custom_protocol("fig", AutocompleteId, icons::handle),
+            utils::wrap_custom_protocol(Arc::clone(&ctx), "fig", AutocompleteId, icons::handle),
         )
         .with_asynchronous_custom_protocol(
             "icon".into(),
-            utils::wrap_custom_protocol("icon", AutocompleteId, icons::handle),
+            utils::wrap_custom_protocol(Arc::clone(&ctx), "icon", AutocompleteId, icons::handle),
         )
         .with_asynchronous_custom_protocol(
             "spec".into(),
-            utils::wrap_custom_protocol("spec", AutocompleteId, spec::handle),
+            utils::wrap_custom_protocol(Arc::clone(&ctx), "spec", AutocompleteId, spec::handle),
         )
         .with_asynchronous_custom_protocol(
-            "resource".into(),
+            "qcliresource".into(),
             utils::wrap_custom_protocol(
-                "resource::Autocomplete",
+                Arc::clone(&ctx),
+                "qcliresource::Autocomplete",
                 AutocompleteId,
                 resource::handle::<resource::Autocomplete>,
             ),
         )
         .with_asynchronous_custom_protocol(
             "api".into(),
-            utils::wrap_custom_protocol("api", AutocompleteId, api::handle),
+            utils::wrap_custom_protocol(Arc::clone(&ctx), "api", AutocompleteId, api::handle),
         )
         .with_devtools(true)
         .with_transparent(true)

@@ -15,5 +15,5 @@ pub fn url() -> Url {
         }
     };
 
-    Url::parse("resource://localhost").unwrap()
+    Url::parse("qcliresource://localhost").unwrap()
 }

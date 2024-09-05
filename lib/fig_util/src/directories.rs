@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use camino::Utf8PathBuf;
 use fig_os_shim::{
     Context,
+    Os,
     Shim,
 };
 use thiserror::Error;
@@ -15,7 +16,10 @@ use crate::system_info::{
     in_cloudshell,
     is_remote,
 };
-use crate::RUNTIME_DIR_NAME;
+use crate::{
+    RUNTIME_DIR_NAME,
+    TAURI_PRODUCT_NAME,
+};
 
 macro_rules! utf8_dir {
     ($name:ident, $($arg:ident: $type:ty),*) => {
@@ -38,6 +42,8 @@ pub enum DirectoryError {
     NoRuntimeDirectory,
     #[error("non absolute path: {0:?}")]
     NonAbsolutePath(PathBuf),
+    #[error("unsupported platform: {0:?}")]
+    UnsupportedOs(Os),
     #[error("IO Error: {0}")]
     Io(#[from] std::io::Error),
     #[error(transparent)]
@@ -239,6 +245,10 @@ pub fn themes_dir() -> Result<PathBuf> {
     Ok(resources_path()?.join("themes"))
 }
 
+pub fn themes_dir_ctx(ctx: &Context) -> Result<PathBuf> {
+    Ok(resources_path_ctx(ctx)?.join("themes"))
+}
+
 /// The autocomplete directory
 pub fn autocomplete_dir() -> Result<PathBuf> {
     Ok(fig_data_dir()?.join("autocomplete"))
@@ -344,6 +354,25 @@ pub fn resources_path() -> Result<PathBuf> {
         } else if #[cfg(target_os = "macos")] {
             Ok(crate::app_bundle_path().join(crate::macos::BUNDLE_CONTENTS_RESOURCE_PATH))
         }
+    }
+}
+
+pub fn resources_path_ctx(ctx: &Context) -> Result<PathBuf> {
+    let os = ctx.platform().os();
+    match os {
+        fig_os_shim::Os::Mac => Ok(crate::app_bundle_path().join(crate::macos::BUNDLE_CONTENTS_RESOURCE_PATH)),
+        fig_os_shim::Os::Linux => {
+            if ctx.env().in_appimage() {
+                Ok(ctx
+                    .env()
+                    .current_dir()?
+                    .join(format!("lib/{}", TAURI_PRODUCT_NAME.replace("_", "-"))))
+            } else {
+                // TODO: update for deb bundle.
+                Ok("/usr/share/fig".into())
+            }
+        },
+        _ => Err(DirectoryError::UnsupportedOs(os)),
     }
 }
 

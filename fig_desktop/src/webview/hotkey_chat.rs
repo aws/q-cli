@@ -2,7 +2,7 @@ use once_cell::sync::Lazy;
 use tracing::error;
 use url::Url;
 
-pub static RESOURCE_URL: Lazy<Url> = Lazy::new(|| Url::parse("resource://localhost").unwrap());
+pub static RESOURCE_URL: Lazy<Url> = Lazy::new(|| Url::parse("qcliresource://localhost").unwrap());
 
 pub fn url() -> Url {
     if let Ok(autocomplete_url) = std::env::var("HOTKEY_CHAT_URL") {

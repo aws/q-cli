@@ -198,13 +198,15 @@ mod tests {
             (Shell::Fish, "fish", SKIP_FISH_TESTS),
         ];
 
-        for (shell, exe_path, skip) in tests {
+        for (shell, exe_path_str, skip) in tests {
             if skip {
                 continue;
             }
 
-            let exe_path = Path::new(exe_path);
-            let version: String = shell_version(&shell, exe_path).await.unwrap();
+            let exe_path = Path::new(exe_path_str);
+            let version: String = shell_version(&shell, exe_path)
+                .await
+                .unwrap_or_else(|err| panic!("exe {} failed. Error: {:?}", exe_path_str, err));
             println!("{}: {version:?}\n", exe_path.display());
         }
     }

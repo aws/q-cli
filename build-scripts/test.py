@@ -1,20 +1,23 @@
 import itertools
 import os
-from typing import Mapping, Sequence
+from typing import List, Mapping, Sequence
 from rust import cargo_cmd_name, rust_env
-from util import isBrazil, isLinux, run_cmd
+from util import isBrazil, isLinux, run_cmd, get_variants, Variant
 from const import CLI_PACKAGE_NAME, DESKTOP_PACKAGE_NAME, PTY_PACKAGE_NAME
 
 
 def run_clippy(
-    features: Mapping[str, Sequence[str]] | None = None, target: str | None = None, fail_on_warn: bool = False
+    variants: List[Variant],
+    features: Mapping[str, Sequence[str]] | None = None,
+    target: str | None = None,
+    fail_on_warn: bool = False,
 ):
     args = [cargo_cmd_name(), "clippy", "--locked", "--workspace", "--exclude", "zbus", "--exclude", "zbus_names"]
 
     if target:
         args.extend(["--target", target])
 
-    if isLinux() or isBrazil():
+    if Variant.FULL not in variants or isBrazil():
         args.extend(["--exclude", DESKTOP_PACKAGE_NAME])
 
     if features:
@@ -37,7 +40,11 @@ def run_clippy(
     )
 
 
-def run_cargo_tests(features: Mapping[str, Sequence[str]] | None = None, target: str | None = None):
+def run_cargo_tests(
+    variants: List[Variant],
+    features: Mapping[str, Sequence[str]] | None = None,
+    target: str | None = None,
+):
     args = [cargo_cmd_name()]
 
     if isBrazil():
@@ -48,7 +55,7 @@ def run_cargo_tests(features: Mapping[str, Sequence[str]] | None = None, target:
     if target:
         args.extend(["--target", target])
 
-    if isLinux() or isBrazil():
+    if Variant.FULL not in variants or isBrazil():
         args.extend(["--exclude", DESKTOP_PACKAGE_NAME])
 
     if features:
@@ -132,6 +139,7 @@ def lint_install_sh():
 
 
 def all_tests(clippy_fail_on_warn: bool):
+    variants = get_variants()
     lint_install_sh()
-    run_cargo_tests()
-    run_clippy(fail_on_warn=clippy_fail_on_warn)
+    run_cargo_tests(variants=variants)
+    run_clippy(variants=variants, fail_on_warn=clippy_fail_on_warn)

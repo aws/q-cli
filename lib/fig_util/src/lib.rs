@@ -95,7 +95,6 @@ pub fn current_exe_origin() -> Result<PathBuf, Error> {
 }
 
 #[must_use]
-#[cfg(target_os = "macos")]
 fn app_bundle_path_opt() -> Option<PathBuf> {
     use consts::macos::BUNDLE_CONTENTS_MACOS_PATH;
 
@@ -114,7 +113,6 @@ fn app_bundle_path_opt() -> Option<PathBuf> {
 }
 
 #[must_use]
-#[cfg(target_os = "macos")]
 pub fn app_bundle_path() -> PathBuf {
     app_bundle_path_opt().unwrap_or_else(|| Path::new("/Applications").join(APP_BUNDLE_NAME))
 }

@@ -41,7 +41,10 @@ artifacts:
   discard-paths: "yes"
   base-directory: "build"
   files:
-    # Archives
+    # Bundles for desktop builds
+    - ./*.appimage
+    - ./*.deb
+    # Archives for minimal builds
     - ./*.tar.gz
     - ./*.tar.xz
     - ./*.tar.zst

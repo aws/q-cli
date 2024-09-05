@@ -2,8 +2,8 @@ from functools import cache
 from os import environ
 import platform
 import shutil
-from typing import Dict, List
-from util import info, isBrazil, isDarwin, isLinux, get_variant, isMusl, run_cmd_output, warn
+from typing import Dict, List, Optional
+from util import info, isBrazil, isDarwin, isLinux, isMusl, run_cmd_output, warn, Variant
 from datetime import datetime, timezone
 
 
@@ -44,7 +44,7 @@ def cargo_cmd_name() -> str:
         return "cargo"
 
 
-def rust_env(release: bool, linker=None) -> Dict[str, str]:
+def rust_env(release: bool, variant: Optional[Variant] = None, linker=None) -> Dict[str, str]:
     env = {
         "CARGO_NET_GIT_FETCH_WITH_CLI": "true",
     }
@@ -67,12 +67,11 @@ def rust_env(release: bool, linker=None) -> Dict[str, str]:
     if isDarwin():
         env["MACOSX_DEPLOYMENT_TARGET"] = "10.13"
 
-    # TODO(grant): move Variant to be an arg of the functions
     env["AMAZON_Q_BUILD_TARGET_TRIPLE"] = get_target_triple()
-    env["AMAZON_Q_BUILD_VARIANT"] = get_variant().name
     env["AMAZON_Q_BUILD_HASH"] = build_hash()
     env["AMAZON_Q_BUILD_DATETIME"] = build_datetime()
-    env["AMAZON_Q_PACKAGED_AS"] = "dmg" if isDarwin() else "none"
+    if variant:
+        env["AMAZON_Q_BUILD_VARIANT"] = variant.name
 
     # Test related env vars:
     env["Q_TELEMETRY_CLIENT_ID"] = "ffffffff-ffff-ffff-ffff-ffffffffffff"

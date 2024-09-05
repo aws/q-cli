@@ -1,7 +1,9 @@
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use bytes::Bytes;
 use fig_os_shim::{
+    Context as OsContext,
     Env,
     Fs,
 };
@@ -32,7 +34,11 @@ use crate::webview::{
 
 static APPLICATION_FIG_API: HeaderValue = HeaderValue::from_static("application/fig-api");
 
-pub async fn handle(request: Request<Vec<u8>>, window_id: WindowId) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
+pub async fn handle(
+    _ctx: Arc<OsContext>,
+    request: Request<Vec<u8>>,
+    window_id: WindowId,
+) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
     if request.method() != Method::POST {
         anyhow::bail!("Unsupported method: {}", request.method());
     }

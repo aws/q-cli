@@ -4,7 +4,9 @@ use std::sync::atomic::{
     AtomicU64,
     Ordering,
 };
+use std::sync::Arc;
 
+use fig_os_shim::Context;
 use once_cell::sync::Lazy;
 use serde::{
     Deserialize,
@@ -44,12 +46,13 @@ pub fn is_cargo_debug_build() -> bool {
 }
 
 pub fn wrap_custom_protocol<F, Fut, W>(
+    ctx: Arc<Context>,
     proto_name: &'static str,
     window_id: W,
     f: F,
 ) -> impl Fn(HttpRequest<Vec<u8>>, RequestAsyncResponder) + 'static
 where
-    F: Fn(HttpRequest<Vec<u8>>, WindowId) -> Fut + Send + Copy + 'static,
+    F: Fn(Arc<Context>, HttpRequest<Vec<u8>>, WindowId) -> Fut + Send + Copy + 'static,
     Fut: Future<Output = anyhow::Result<HttpResponse<Cow<'static, [u8]>>>> + Send + 'static,
     W: WindowIdProvider + Copy + Send + Sync + 'static,
 {
@@ -62,6 +65,7 @@ where
         let span = debug_span!("custom-proto", %proto, %id);
         let _enter = span.enter();
 
+        let ctx_clone = Arc::clone(&ctx);
         tokio::spawn(
             async move {
                 debug!(uri =% req.uri(), "{proto_name} proto request");
@@ -73,7 +77,7 @@ where
                     .and_then(|accept| accept.split('/').last())
                     .map_or(false, |accept| accept == "json");
 
-                let mut response = match f(req, window_id.window_id()).in_current_span().await {
+                let mut response = match f(ctx_clone, req, window_id.window_id()).in_current_span().await {
                     Ok(res) => res,
                     Err(err) => {
                         error!(%err, "Custom protocol failed");

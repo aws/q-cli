@@ -6,6 +6,9 @@ pub const APP_PROCESS_NAME: &str = "q_desktop";
 #[cfg(windows)]
 pub const APP_PROCESS_NAME: &str = "q_desktop.exe";
 
+/// The name configured under `"package.productName"` in the tauri.conf.json file.
+pub const TAURI_PRODUCT_NAME: &str = "q_desktop";
+
 pub const CLI_BINARY_NAME: &str = "q";
 pub const CLI_BINARY_NAME_MINIMAL: &str = "q-minimal";
 pub const PTY_BINARY_NAME: &str = "qterm";
@@ -44,9 +47,6 @@ pub mod build {
 
     /// The variant of the current build
     pub const VARIANT: Option<&str> = option_env!("AMAZON_Q_BUILD_VARIANT");
-
-    /// How the build was packaged
-    pub const PACKAGED_AS: Option<&str> = option_env!("AMAZON_Q_PACKAGED_AS");
 
     /// A git full sha hash of the current build
     pub const HASH: Option<&str> = option_env!("AMAZON_Q_BUILD_HASH");

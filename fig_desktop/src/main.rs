@@ -252,7 +252,7 @@ async fn main() {
     //     .ok();
     // });
 
-    let ctx = Arc::new(Context::new());
+    let ctx = Context::new();
     install::run_install(Arc::clone(&ctx), cli.ignore_immediate_update).await;
 
     #[cfg(target_os = "linux")]
@@ -279,7 +279,7 @@ async fn main() {
     let autocomplete_enabled =
         !fig_settings::settings::get_bool_or("autocomplete.disable", false) && is_logged_in && accessibility_enabled;
 
-    let mut webview_manager = WebviewManager::new(visible);
+    let mut webview_manager = WebviewManager::new(ctx, visible);
     webview_manager
         .build_webview(
             DASHBOARD_ID,

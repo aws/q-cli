@@ -1,7 +1,9 @@
 use std::borrow::Cow;
 use std::io::ErrorKind;
 use std::path::Path;
+use std::sync::Arc;
 
+use fig_os_shim::Context;
 use tracing::info;
 use wry::http::header::CONTENT_TYPE;
 use wry::http::{
@@ -40,9 +42,13 @@ impl Scope for Autocomplete {
     const PATH: &'static str = "autocomplete";
 }
 
-/// handle `resource://localhost/`
-pub async fn handle<S: Scope>(request: Request<Vec<u8>>, _: WindowId) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
-    let resources_path = fig_util::directories::resources_path()?.join(S::PATH);
+/// handle `qcliresource://localhost/`
+pub async fn handle<S: Scope>(
+    ctx: Arc<Context>,
+    request: Request<Vec<u8>>,
+    _: WindowId,
+) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
+    let resources_path = fig_util::directories::resources_path_ctx(&ctx)?.join(S::PATH);
 
     if request.uri().host() != Some("localhost") {
         return Ok(res_400());
