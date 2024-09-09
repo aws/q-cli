@@ -102,6 +102,7 @@ if [ -n "$Q_INSTALL_GLOBAL" ]; then
     install -m 755 "$SCRIPT_DIR/bin/q" /usr/local/bin/
     install -m 755 "$SCRIPT_DIR/bin/qterm" /usr/local/bin/
 
+    /usr/local/bin/q integrations install dotfiles
     /usr/local/bin/q setup --global
 else
     mkdir -p "$HOME/.local/bin"

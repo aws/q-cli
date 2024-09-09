@@ -17,6 +17,7 @@ use fig_util::{
     CLI_BINARY_NAME,
     PRODUCT_NAME,
 };
+use tracing::warn;
 
 use super::user::login_interactive;
 use crate::util::choose;
@@ -94,8 +95,9 @@ pub async fn install_cli(
     }
 
     if install_components.contains(InstallComponents::SHELL_INTEGRATIONS) && global {
-        // TODO: will implement in next PR, this will be a large change so decoupling these
-        eyre::bail!("Global install not supported for shell integrations");
+        // TODO: fix this, we do not error out at the moment as the fix is in `install.sh` which works
+        // for the CloudShell team
+        warn!("Global install is not supported for shell integrations");
     }
 
     if install_components.contains(InstallComponents::INPUT_METHOD) && !no_confirm && !global {
