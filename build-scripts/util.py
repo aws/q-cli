@@ -127,11 +127,10 @@ def get_variants() -> List[Variant]:
         case "Darwin":
             return [Variant.FULL]
         case "Linux":
-            if isMusl():
-                return [Variant.MINIMAL]
+            is_ubuntu = "ubuntu" in platform.version().lower()
+            if is_ubuntu:
+                return [Variant.MINIMAL, Variant.FULL]
             else:
-                # Full is disabled for now as it is not building
-                # return [Variant.MINIMAL, Variant.FULL]
                 return [Variant.MINIMAL]
         case other:
             raise ValueError(f"Unsupported platform {other}")
