@@ -12,6 +12,18 @@
     },
     {
       "type": "release",
+      "date": "2024-09-09",
+      "version": "1.4.1",
+      "title": "Version 1.4.1",
+      "changes": [
+        {
+          "type": "fixed",
+          "description": "Minor issues"
+        }
+      ]
+    },
+    {
+      "type": "release",
       "date": "2024-08-27",
       "version": "1.4.0",
       "title": "Version 1.4.0",
