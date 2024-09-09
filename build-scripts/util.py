@@ -130,6 +130,8 @@ def get_variants() -> List[Variant]:
             if isMusl():
                 return [Variant.MINIMAL]
             else:
-                return [Variant.MINIMAL, Variant.FULL]
+                # Full is disabled for now as it is not building
+                # return [Variant.MINIMAL, Variant.FULL]
+                return [Variant.MINIMAL]
         case other:
             raise ValueError(f"Unsupported platform {other}")
