@@ -98,7 +98,7 @@ if is_target_triple_gnu && ! check_glibc_version; then
     exit 1
 fi
 
-if [ -n "$Q_INSTALL_GLOBAL" ]; then
+if [ -n "${Q_INSTALL_GLOBAL:-}" ]; then
     install -m 755 "$SCRIPT_DIR/bin/q" /usr/local/bin/
     install -m 755 "$SCRIPT_DIR/bin/qterm" /usr/local/bin/
 

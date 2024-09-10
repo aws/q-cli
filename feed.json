@@ -12,6 +12,18 @@
     },
     {
       "type": "release",
+      "date": "2024-09-10",
+      "version": "1.4.2",
+      "title": "Version 1.4.2",
+      "changes": [
+        {
+          "type": "fixed",
+          "description": "Linux install script error"
+        }
+      ]
+    },
+    {
+      "type": "release",
       "date": "2024-09-09",
       "version": "1.4.1",
       "title": "Version 1.4.1",
