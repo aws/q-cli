@@ -39,7 +39,7 @@ phases:
       # Disable tests that need fish/shellcheck
       - export AMAZON_Q_BUILD_SKIP_FISH_TESTS=1
       - export AMAZON_Q_BUILD_SKIP_SHELLCHECK_TESTS=1
-      - python3.11 build-scripts/main.py build
+      - python3.11 build-scripts/main.py build --variant=full
 
 artifacts:
   discard-paths: "yes"

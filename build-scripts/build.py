@@ -595,7 +595,7 @@ def build(
     run_lints: bool = True,
     run_test: bool = True,
 ) -> BuildOutput:
-    variants = get_variants()
+    variants = variants or get_variants()
 
     if signing_bucket and aws_account_id and apple_id_secret and signing_role_name:
         signing_data = CdSigningData(

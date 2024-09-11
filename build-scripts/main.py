@@ -69,6 +69,11 @@ build_subparser.add_argument(
     action="store_true",
     help="Skip running lints",
 )
+build_subparser.add_argument(
+    "--variant",
+    action=StoreIfNotEmptyAction,
+    help="Variant to build for"
+)
 
 test_subparser = subparsers.add_parser(name="test")
 test_subparser.add_argument(
@@ -105,8 +110,13 @@ args = parser.parse_args()
 
 match args.subparser:
     case "build":
+        if args.variant:
+            variants = [Variant[args.variant.upper()]]
+        else:
+            variants = None
         build(
             release=not args.not_release,
+            variants=variants,
             output_bucket=args.output_bucket,
             signing_bucket=args.signing_bucket,
             aws_account_id=args.aws_account_id,
