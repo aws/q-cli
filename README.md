@@ -142,3 +142,9 @@ pnpm install --ignore-scripts && pnpm husky install
 
 Before contributing be sure to read the guidelines for the project
 [here](https://quip-amazon.com/1hQEAN4c2v96/FigIoDesktop-Code-Guidelines)
+
+## Licensing
+
+This repo is dual licensed under MIT and Apache 2.0 licenses.
+
+“Amazon Web Services” and all related marks, including logos, graphic designs, and service names, are trademarks or trade dress of AWS in the U.S. and other countries. AWS’s trademarks and trade dress may not be used in connection with any product or service that is not AWS’s, in any manner that is likely to cause confusion among customers, or in any manner that disparages or discredits AWS.
