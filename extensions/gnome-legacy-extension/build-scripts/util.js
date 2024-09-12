@@ -11,7 +11,7 @@ const run = (() => {
 })();
 
 /** @public @async @function @param {{ directory: boolean }} options @returns {Promise<string>} */
-export function mktemp(options) {
+export async function mktemp(options) {
   options = {
     directory: false,
     ...options,
@@ -24,11 +24,11 @@ export function mktemp(options) {
   }
 
   try {
-    return run(
+    return await run(
       `mktemp ${options.directory ? "--directory" : ""} '/run/user/${getuid()}/fig-gse-build-temp-XXXX'`,
     );
   } catch {
-    return run(
+    return await run(
       `mktemp ${options.directory ? "--directory" : ""} 'fig-gse-build-temp-XXXX'`,
     );
   }

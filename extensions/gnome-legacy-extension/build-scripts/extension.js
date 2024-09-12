@@ -7,6 +7,13 @@ import { promisify } from "node:util";
 import { Task, TaskSet } from "./tasks.js";
 import { File, Folder, Zip } from "./zip.js";
 
+if (process.platform !== "linux") {
+  console.log(
+    `Extension building only supported on Linux. Current platform: ${process.platform}`,
+  );
+  process.exit(0);
+}
+
 console.log("Bundling extension...");
 
 const tasks = new TaskSet();
