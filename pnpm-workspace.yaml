@@ -4,3 +4,4 @@ packages:
   - apps/*
   - packages/*
   - extensions/vscode
+  - extensions/gnome-legacy-extension
