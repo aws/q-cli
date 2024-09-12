@@ -2142,10 +2142,14 @@ checksum = "e8566979429cf69b49a5c740c60791108e86440e8be149bbea4fe54d2c32d6e2"
 name = "dbus"
 version = "1.4.2"
 dependencies = [
+ "fig_os_shim",
  "once_cell",
+ "serde",
+ "serde_json",
  "thiserror",
  "tokio",
  "tracing",
+ "tracing-subscriber",
  "zbus 4.4.0",
 ]
 

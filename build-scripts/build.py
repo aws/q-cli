@@ -25,6 +25,7 @@ from const import (
     DESKTOP_PACKAGE_NAME,
     DMG_NAME,
     LINUX_ARCHIVE_NAME,
+    LINUX_LEGACY_GNOME_EXTENSION_UUID,
     MACOS_BUNDLE_ID,
     PTY_BINARY_NAME,
     PTY_PACKAGE_NAME,
@@ -477,6 +478,7 @@ def linux_tauri_config(
     autocomplete_path: pathlib.Path,
     vscode_path: pathlib.Path,
     themes_path: pathlib.Path,
+    legacy_extension_dir_path: pathlib.Path,
     target: str,
 ) -> str:
     config = {
@@ -493,6 +495,7 @@ def linux_tauri_config(
                     autocomplete_path.absolute().as_posix(): "autocomplete",
                     vscode_path.absolute().as_posix(): "vscode",
                     themes_path.absolute().as_posix(): "themes",
+                    legacy_extension_dir_path.absolute().as_posix(): LINUX_LEGACY_GNOME_EXTENSION_UUID,
                 },
             }
         }
@@ -515,6 +518,24 @@ def build_linux_full(
     run_cmd(["git", "clone", "https://github.com/withfig/themes.git", theme_repo])
     themes_path = theme_repo / "themes"
 
+    info("Grabbing GNOME extensions")
+    # Creating a directory for each GNOME extension with the structure:
+    # - {extension_uuid}.zip         <-- extension zip installable with gnome-extensions cli
+    # - {extension_uuid}.version.txt <-- simple text file containing the extension version within the zip
+    legacy_extension_dir_path = BUILD_DIR / LINUX_LEGACY_GNOME_EXTENSION_UUID
+    shutil.rmtree(legacy_extension_dir_path, ignore_errors=True)
+    legacy_extension_dir_path.mkdir(parents=True)
+    legacy_extension_zip_path = legacy_extension_dir_path / f"{LINUX_LEGACY_GNOME_EXTENSION_UUID}.zip"
+    shutil.copy(
+        pathlib.Path(f"extensions/gnome-legacy-extension/{LINUX_LEGACY_GNOME_EXTENSION_UUID}.zip"),
+        legacy_extension_zip_path,
+    )
+    metadata = run_cmd_output(["unzip", "-p", legacy_extension_zip_path, "metadata.json"])
+    legacy_extension_version = json.loads(metadata)["version"]
+    pathlib.Path(legacy_extension_dir_path / f"{LINUX_LEGACY_GNOME_EXTENSION_UUID}.version.txt").write_text(
+        str(legacy_extension_version)
+    )
+
     info("Building tauri config")
     tauri_config_path = pathlib.Path(DESKTOP_PACKAGE_NAME) / "build-config.json"
     tauri_config_path.write_text(
@@ -525,6 +546,7 @@ def build_linux_full(
             autocomplete_path=npm_packages.autocomplete_path,
             vscode_path=npm_packages.vscode_path,
             themes_path=themes_path,
+            legacy_extension_dir_path=legacy_extension_dir_path,
             target=target,
         )
     )

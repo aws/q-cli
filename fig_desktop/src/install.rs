@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use cfg_if::cfg_if;
 #[cfg(not(target_os = "linux"))]
 use fig_install::check_for_updates;
 use fig_integrations::ssh::SshIntegration;
@@ -96,80 +95,50 @@ pub async fn run_install(ctx: Arc<Context>, ignore_immediate_update: bool) {
     }
 
     #[cfg(target_os = "linux")]
-    if ctx.env().in_appimage() {
-        tokio::spawn(async move {
-            install_appimage_binaries(&ctx)
-                .await
-                .map_err(|err| error!(?err, "Unable to install binaries under the local bin directory"))
-                .ok();
-        });
-    }
+    run_linux_install(Arc::clone(&ctx)).await;
 
     if let Err(err) = set_previous_version(current_version()) {
         error!(%err, "Failed to set previous version");
     }
 
-    cfg_if!(
-        if #[cfg(target_os = "linux")] {
-            // todo(mia): make this part of onboarding
-            tokio::spawn(async {
-                use sysinfo::{
-                    ProcessRefreshKind,
-                };
-                let mut s = sysinfo::System::new();
-                s.refresh_processes_specifics(ProcessRefreshKind::new());
-                if s.processes_by_exact_name("/usr/bin/gnome-shell").next().is_some() {
-                    drop(s);
-                    match dbus::gnome_shell::has_extension().await {
-                        Ok(true) => tracing::debug!("shell extension already installed"),
-                        Ok(false) => {
-                            if let Err(err) = dbus::gnome_shell::install_extension().await {
-                                error!(%err, "Failed to install shell extension");
-                            }
-                        },
-                        Err(err) => error!(%err, "Failed to check shell extensions"),
-                    }
-                }
-            });
+    #[cfg(not(target_os = "linux"))]
+    {
+        // Update if there's a newer version
+        if !ignore_immediate_update && !is_cargo_debug_build() {
+            use std::time::Duration;
 
-            // Has to be at the end of this function -- will block until ibus has launched.
-            launch_ibus().await;
-        } else {
-            // Update if there's a newer version
-            if !ignore_immediate_update && !is_cargo_debug_build() {
-                use std::time::Duration;
-                use tokio::time::timeout;
-                // Check for updates but timeout after 3 seconds to avoid making the user wait too long
-                // todo: don't download the index file twice
-                match timeout(Duration::from_secs(3), check_for_updates(true)).await {
-                    Ok(Ok(Some(_))) => { crate::update::check_for_update(true, true).await; },
-                    Ok(Ok(None)) => error!("No update found"),
-                    Ok(Err(err)) => error!(%err, "Failed to check for updates"),
-                    Err(err) => error!(%err, "Update check timed out"),
-                }
-
+            use tokio::time::timeout;
+            // Check for updates but timeout after 3 seconds to avoid making the user wait too long
+            // todo: don't download the index file twice
+            match timeout(Duration::from_secs(3), check_for_updates(true)).await {
+                Ok(Ok(Some(_))) => {
+                    crate::update::check_for_update(true, true).await;
+                },
+                Ok(Ok(None)) => error!("No update found"),
+                Ok(Err(err)) => error!(%err, "Failed to check for updates"),
+                Err(err) => error!(%err, "Update check timed out"),
             }
-
-            tokio::spawn(async {
-                let seconds = fig_settings::settings::get_int_or("app.autoupdate.check-period", 60 * 60 * 3);
-                if seconds < 0 {
-                    return;
-                }
-                let mut interval = tokio::time::interval(std::time::Duration::from_secs(seconds as u64));
-                interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
-                interval.tick().await;
-                loop {
-                    interval.tick().await;
-                    // TODO: we need to determine if the dashboard is open here and pass that as the second bool
-                    crate::update::check_for_update(false, false).await;
-                }
-            });
-
-            // remove the updater if it exists
-            #[cfg(target_os = "windows")]
-            std::fs::remove_file(fig_util::directories::fig_dir().unwrap().join("fig_installer.exe")).ok();
         }
-    );
+
+        tokio::spawn(async {
+            let seconds = fig_settings::settings::get_int_or("app.autoupdate.check-period", 60 * 60 * 3);
+            if seconds < 0 {
+                return;
+            }
+            let mut interval = tokio::time::interval(std::time::Duration::from_secs(seconds as u64));
+            interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+            interval.tick().await;
+            loop {
+                interval.tick().await;
+                // TODO: we need to determine if the dashboard is open here and pass that as the second bool
+                crate::update::check_for_update(false, false).await;
+            }
+        });
+
+        // remove the updater if it exists
+        #[cfg(target_os = "windows")]
+        std::fs::remove_file(fig_util::directories::fig_dir().unwrap().join("fig_installer.exe")).ok();
+    }
 
     // install vscode integration
     #[cfg(target_os = "macos")]
@@ -407,6 +376,102 @@ pub async fn initialize_fig_dir(env: &fig_os_shim::Env) -> anyhow::Result<()> {
                 error!(%err, "Failed installing shell integration {}", shell_integration.describe());
             }
         }
+    }
+
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+async fn run_linux_install(ctx: Arc<Context>) {
+    use dbus::gnome_shell::ShellExtensions;
+
+    if ctx.env().in_appimage() {
+        let ctx_clone = Arc::clone(&ctx);
+        tokio::spawn(async move {
+            install_appimage_binaries(&ctx_clone)
+                .await
+                .map_err(|err| error!(?err, "Unable to install binaries under the local bin directory"))
+                .ok();
+        });
+    }
+
+    {
+        let ctx_clone = Arc::clone(&ctx);
+        let shell_extensions = ShellExtensions::new(Arc::clone(&ctx));
+        tokio::spawn(async move {
+            install_gnome_shell_extension(&ctx_clone, &shell_extensions)
+                .await
+                .map_err(|err| error!(?err, "Unable to install the GNOME Shell extension"))
+                .ok();
+        });
+    }
+
+    // TODO: is this correct?
+    launch_ibus().await;
+}
+
+/// Installs the correct version of the Amazon Q for CLI GNOME Shell extension, if required.
+#[cfg(target_os = "linux")]
+async fn install_gnome_shell_extension(
+    ctx: &Context,
+    shell_extensions: &dbus::gnome_shell::ShellExtensions,
+) -> anyhow::Result<()> {
+    use dbus::gnome_shell::{
+        get_extension_status,
+        ExtensionInstallationStatus,
+    };
+    use fig_util::directories::resources_path_ctx;
+
+    let fs = ctx.fs();
+    let extension_uuid = shell_extensions.extension_uuid().await?;
+    let extension_dir_path = resources_path_ctx(ctx)?.join(&extension_uuid);
+    let bundled_version: u32 = fs
+        .read_to_string(extension_dir_path.join(format!("{}.version.txt", &extension_uuid)))
+        .await?
+        .parse()?;
+    let bundled_path = extension_dir_path.join(format!("{}.zip", extension_uuid));
+
+    match get_extension_status(ctx, shell_extensions, bundled_version).await? {
+        ExtensionInstallationStatus::GnomeShellNotRunning => {
+            info!("GNOME Shell is not running, not installing the extension.");
+        },
+        ExtensionInstallationStatus::NotInstalled => {
+            info!("Extension {} not installed, installing now.", extension_uuid);
+            shell_extensions.install_bundled_extension(bundled_path).await?;
+        },
+        ExtensionInstallationStatus::RequiresReboot => {
+            info!(
+                "Extension {} already installed but not loaded. User must reboot their machine.",
+                extension_uuid
+            );
+        },
+        ExtensionInstallationStatus::UnexpectedVersion { installed_version } => {
+            info!(
+                "Installed extension {} has version {} but the bundled extension has version {}. Installing now.",
+                extension_uuid, installed_version, bundled_version
+            );
+            shell_extensions.install_bundled_extension(bundled_path).await?;
+        },
+        ExtensionInstallationStatus::NotEnabled => {
+            info!(
+                "Extension {} is installed but not enabled. Enabling now.",
+                extension_uuid
+            );
+            match shell_extensions.enable_extension().await {
+                Ok(true) => {
+                    info!("Extension enabled.");
+                },
+                Ok(false) => {
+                    error!("Something went wrong trying to enable the extension.");
+                },
+                Err(err) => {
+                    error!("Error occurred enabling the extension: {:?}", err);
+                },
+            }
+        },
+        ExtensionInstallationStatus::Enabled => {
+            info!("Extension {} is already installed and enabled.", extension_uuid);
+        },
     }
 
     Ok(())
@@ -765,6 +830,58 @@ echo "{binary_name} {version}"
 
             // Then
             assert_binaries_installed(&ctx, &current_version).await;
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    mod linux_gnome_shell_extension_tests {
+        use dbus::gnome_shell::{
+            get_extension_status,
+            ExtensionInstallationStatus,
+            ShellExtensions,
+        };
+        use fig_util::directories::resources_path_ctx;
+
+        use super::*;
+
+        async fn write_extension_bundle(ctx: &Context, uuid: &str, version: u32) {
+            let dir_path = resources_path_ctx(ctx).unwrap().join(uuid);
+            ctx.fs().create_dir_all(&dir_path).await.unwrap();
+            ctx.fs()
+                .write(&dir_path.join(format!("{}.zip", uuid)), version.to_string())
+                .await
+                .unwrap();
+            ctx.fs()
+                .write(&dir_path.join(format!("{}.version.txt", uuid)), version.to_string())
+                .await
+                .unwrap();
+        }
+
+        #[tokio::test]
+        async fn test_extension_is_installed_for_new_user() {
+            let ctx = Context::builder()
+                .with_test_home()
+                .await
+                .unwrap()
+                .with_env_var("APPIMAGE", "1")
+                .build();
+            let shell_extensions = ShellExtensions::new_fake(Arc::clone(&ctx));
+            let extension_version = 1;
+            write_extension_bundle(
+                &ctx,
+                &shell_extensions.extension_uuid().await.unwrap(),
+                extension_version,
+            )
+            .await;
+
+            // When
+            install_gnome_shell_extension(&ctx, &shell_extensions).await.unwrap();
+
+            // Then
+            let status = get_extension_status(&ctx, &shell_extensions, extension_version)
+                .await
+                .unwrap();
+            assert!(matches!(status, ExtensionInstallationStatus::RequiresReboot));
         }
     }
 }

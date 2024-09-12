@@ -129,7 +129,7 @@ def get_variants() -> List[Variant]:
         case "Linux":
             is_ubuntu = "ubuntu" in platform.version().lower()
             if is_ubuntu:
-                return [Variant.MINIMAL, Variant.FULL]
+                return [Variant.FULL]
             else:
                 return [Variant.MINIMAL]
         case other:

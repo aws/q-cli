@@ -10,6 +10,7 @@ DMG_NAME = APP_NAME
 
 # Linux specific
 LINUX_ARCHIVE_NAME = "q"
+LINUX_LEGACY_GNOME_EXTENSION_UUID = "amazon-q-for-cli-legacy-gnome-integration@aws.amazon.com"
 
 # cargo packages
 CLI_PACKAGE_NAME = "q_cli"

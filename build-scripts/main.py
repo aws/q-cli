@@ -69,11 +69,7 @@ build_subparser.add_argument(
     action="store_true",
     help="Skip running lints",
 )
-build_subparser.add_argument(
-    "--variant",
-    action=StoreIfNotEmptyAction,
-    help="Variant to build for"
-)
+build_subparser.add_argument("--variant", action=StoreIfNotEmptyAction, help="Variant to build for")
 
 test_subparser = subparsers.add_parser(name="test")
 test_subparser.add_argument(

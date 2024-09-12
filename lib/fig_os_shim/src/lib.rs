@@ -3,6 +3,7 @@ mod fs;
 mod platform;
 pub mod process_info;
 mod providers;
+mod sysinfo;
 
 use std::sync::Arc;
 
@@ -18,6 +19,7 @@ pub use providers::{
     EnvProvider,
     FsProvider,
 };
+pub use sysinfo::SysInfo;
 
 pub trait Shim {
     /// Returns whether or not the shim is a real implementation.
@@ -36,6 +38,7 @@ pub struct Context {
     env: Env,
     platform: Platform,
     process_info: ProcessInfo,
+    sysinfo: SysInfo,
 }
 
 impl Context {
@@ -46,6 +49,7 @@ impl Context {
             env: Default::default(),
             platform: Default::default(),
             process_info: ProcessInfo::new(ctx.clone()),
+            sysinfo: SysInfo::default(),
         })
     }
 
@@ -55,6 +59,7 @@ impl Context {
             env: Env::new_fake(),
             platform: Platform::new_fake(Os::current()),
             process_info: ProcessInfo::new_fake(FakePid::default()),
+            sysinfo: SysInfo::new_fake(),
         })
     }
 
@@ -77,6 +82,10 @@ impl Context {
     pub fn process_info(&self) -> &ProcessInfo {
         &self.process_info
     }
+
+    pub fn sysinfo(&self) -> &SysInfo {
+        &self.sysinfo
+    }
 }
 
 #[derive(Default, Debug)]
@@ -85,6 +94,7 @@ pub struct ContextBuilder {
     env: Option<Env>,
     platform: Option<Platform>,
     process_info: Option<ProcessInfo>,
+    sysinfo: Option<SysInfo>,
 }
 
 impl ContextBuilder {
@@ -97,6 +107,7 @@ impl ContextBuilder {
         let fs = self.fs.unwrap_or_default();
         let env = self.env.unwrap_or_default();
         let platform = self.platform.unwrap_or_default();
+        let sysinfo = self.sysinfo.unwrap_or_default();
         Arc::new_cyclic(|ctx| Context {
             fs,
             env,
@@ -106,6 +117,26 @@ impl ContextBuilder {
             } else {
                 ProcessInfo::new(ctx.clone())
             },
+            sysinfo,
+        })
+    }
+
+    /// Builds an immutable [Context] using fake implementations for each field by default.
+    pub fn build_fake(self) -> Arc<Context> {
+        let fs = self.fs.unwrap_or(Fs::new_fake());
+        let env = self.env.unwrap_or(Env::new_fake());
+        let platform = self.platform.unwrap_or(Platform::new_fake(Os::Mac));
+        let sysinfo = self.sysinfo.unwrap_or(SysInfo::new_fake());
+        Arc::new_cyclic(|ctx| Context {
+            fs,
+            env,
+            platform,
+            process_info: if let Some(process_info) = self.process_info {
+                process_info
+            } else {
+                ProcessInfo::new(ctx.clone())
+            },
+            sysinfo,
         })
     }
 
@@ -151,6 +182,16 @@ impl ContextBuilder {
         };
         self
     }
+
+    pub fn with_running_processes(mut self, process_names: &[&str]) -> Self {
+        let sysinfo = match self.sysinfo {
+            Some(sysinfo) if !sysinfo.is_real() => sysinfo,
+            _ => SysInfo::new_fake(),
+        };
+        sysinfo.add_running_processes(process_names);
+        self.sysinfo = Some(sysinfo);
+        self
+    }
 }
 
 #[cfg(test)]
@@ -164,6 +205,7 @@ mod tests {
         assert!(ctx.env().is_real());
         assert!(ctx.process_info().is_real());
         assert!(ctx.platform().is_real());
+        assert!(ctx.sysinfo().is_real());
     }
 
     #[tokio::test]
