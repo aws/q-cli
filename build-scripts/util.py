@@ -3,7 +3,9 @@ from functools import cache
 import json
 import os
 import shlex
+import stat
 import subprocess
+import pathlib
 import platform
 from typing import List, Mapping, Sequence
 from const import DESKTOP_PACKAGE_NAME, TAURI_PRODUCT_NAME
@@ -114,6 +116,11 @@ def run_cmd_status(
 ) -> int:
     res = subprocess.run(args, env=env, cwd=cwd)
     return res.returncode
+
+
+def set_executable(path: pathlib.Path):
+    st = os.stat(path)
+    os.chmod(path, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
 
 class Variant(Enum):
