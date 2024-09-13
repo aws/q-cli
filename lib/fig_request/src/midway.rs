@@ -79,8 +79,6 @@ impl MidwayError {
         #[derive(Debug, serde::Deserialize)]
         #[serde(untagged)]
         enum MidwayError {
-            // https://w.amazon.com/bin/view/GoAnywhere/Development/ClientInterface/
-            // https://code.amazon.com/packages/GoAmzn-CoralMidwayClient/blobs/14e126f77150f8b4a9f0ff6e1621496a0fc3150f/--/src/golang.a2z.com/GoAmzn-CoralMidwayClient/midwayclient/handler.go#L63
             #[allow(dead_code)]
             Unauthorized {
                 status: UnauthorizedStatus,

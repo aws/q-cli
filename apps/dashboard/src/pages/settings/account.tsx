@@ -89,14 +89,8 @@ export default function Account() {
           <ol className="list-decimal pl-6">
             <li>
               <p>
-                Install and configure the{" "}
-                <ExternalLink
-                  href="https://builderhub.corp.amazon.com/docs/builder-toolbox/user-guide/getting-started.html"
-                  className="underline"
-                >
-                  Builder Toolbox
-                </ExternalLink>{" "}
-                if you have not done so already.
+                Install and configure Builder Toolbox if you have not done so
+                already.
               </p>
             </li>
             <li>

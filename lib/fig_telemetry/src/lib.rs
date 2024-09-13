@@ -118,8 +118,6 @@ pub fn init_global_telemetry_emitter() {
 }
 
 /// A IDE toolkit telemetry stage
-///
-/// Endpoints from <https://w.amazon.com/bin/view/AWS/DevEx/IDEToolkits/Telemetry/>
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct TelemetryStage {

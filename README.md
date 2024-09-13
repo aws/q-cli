@@ -3,9 +3,6 @@
 The FigIoDesktop monorepo houses most of the core code for the Amazon Q desktop
 app and CLI.
 
-If you are only interested in installing the Amazon Q app see the wiki
-[here](https://w.amazon.com/bin/view/CodeWhisperer/Fig)
-
 ## Overview
 
 Several projects live here:
@@ -137,11 +134,6 @@ mise install
 # Run `pnpm` in root directory to add pre-commit hooks
 pnpm install --ignore-scripts && pnpm husky install
 ```
-
-## Contributing
-
-Before contributing be sure to read the guidelines for the project
-[here](https://quip-amazon.com/1hQEAN4c2v96/FigIoDesktop-Code-Guidelines)
 
 ## Licensing
 

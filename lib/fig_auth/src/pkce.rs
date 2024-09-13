@@ -1,7 +1,7 @@
 //! # OAuth 2.0 Proof Key for Code Exchange
 //!
 //! This module implements the PKCE integration with AWS OIDC according to their
-//! developer guide: <https://quip-amazon.com/SlOfAat54xwt/Tinkerbell-Developer-Guide>
+//! developer guide.
 //!
 //! The benefit of PKCE over device code is to simplify the user experience by not
 //! requiring the user to validate the generated code across the browser and the
@@ -156,8 +156,6 @@ impl PkceClient for Client {
 ///    opened by the browser.
 /// 2. Call [`PkceRegistration::finish`] to host a local server to handle redirects, and trade the
 ///    authorization code for an access token.
-///
-/// Reference: https://quip-amazon.com/SlOfAat54xwt/Tinkerbell-Developer-Guide
 #[derive(Debug)]
 pub struct PkceRegistration {
     /// URL to be opened by the user's browser.
@@ -174,8 +172,6 @@ pub struct PkceRegistration {
     listener: TcpListener,
     region: Region,
     /// Interchangeable with the "start URL" concept in the device code flow.
-    ///
-    /// Reference: <https://quip-amazon.com/SlOfAat54xwt/Tinkerbell-Developer-Guide#temp:C:BKFaabeb4c898c747a08f482d209>
     issuer_url: String,
     /// Time to wait for [`Self::finish`] to complete. Default is [`DEFAULT_AUTHORIZATION_TIMEOUT`].
     timeout: Duration,
@@ -359,8 +355,6 @@ impl PkceHttpService {
         // Error handling: if something goes wrong at the authorization endpoint, the
         // client will be redirected to the redirect url with "error" and
         // "error_description" query parameters.
-        //
-        // Reference: https://quip-amazon.com/SlOfAat54xwt/Tinkerbell-Developer-Guide#temp:C:BKF146f3db11b9949a4b9511fc02
         if let Some(error) = query_params.get("error") {
             let error_description = query_params.get("error_description").unwrap_or(&"");
             let _ = code_tx

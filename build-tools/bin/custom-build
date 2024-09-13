@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# Based somewhat on https://builderhub.corp.amazon.com/docs/brazil/user-guide/cargobrazil.html#write-your-own-build-script
-
 # Make bash exit early on failure
 set -euxo pipefail
 
