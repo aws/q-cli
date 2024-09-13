@@ -412,6 +412,7 @@ impl Service<Request<Incoming>> for PkceHttpService {
                 "/index.html" => Ok(Response::builder()
                     .status(200)
                     .header("Content-Type", "text/html")
+                    .header("Connection", "close")
                     .body(include_str!("./index.html").into())
                     .expect("valid builder will not panic")),
                 _ => Ok(Response::builder()
