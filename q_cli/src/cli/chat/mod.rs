@@ -47,6 +47,7 @@ use self::parse::{
     interpret_markdown,
     ParseState,
 };
+use crate::util::region_check;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum ApiResponse {
@@ -64,6 +65,8 @@ pub async fn chat(input: String) -> Result<ExitCode> {
             format!("{CLI_BINARY_NAME} login",).bold()
         );
     }
+
+    region_check("chat")?;
 
     let mut stderr = stderr();
     let result = try_chat(&mut stderr, input).await;

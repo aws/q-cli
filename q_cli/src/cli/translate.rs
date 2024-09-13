@@ -43,6 +43,7 @@ use serde::{
     Serialize,
 };
 
+use crate::util::region_check;
 use crate::util::spinner::{
     Spinner,
     SpinnerComponent,
@@ -318,6 +319,8 @@ impl TranslateArgs {
                 format!("{CLI_BINARY_NAME} login").magenta()
             )
         }
+
+        region_check("translate")?;
 
         let interactive = std::io::stdin().is_terminal();
 
