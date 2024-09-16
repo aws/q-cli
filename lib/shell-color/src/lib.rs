@@ -406,7 +406,7 @@ fn parse_fish_color_from_string(s: &str, color_support: ColorSupport) -> Option<
     let mut first_rgb = None;
     let mut first_named = None;
 
-    for color_name in s.split(|x| x == ' ' || x == '\t') {
+    for color_name in s.split([' ', '\t']) {
         if !color_name.starts_with('-') {
             let mut color = try_parse_named(color_name);
             if color.is_none() {

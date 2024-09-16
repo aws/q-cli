@@ -289,7 +289,7 @@ impl CommandBuilder {
             // Run the shell as a login shell by prefixing the shell's
             // basename with `-` and setting that as argv0
             let basename = shell.rsplit('/').next().unwrap_or(&shell);
-            cmd.arg0(&format!("-{basename}"));
+            cmd.arg0(format!("-{basename}"));
             cmd
         } else {
             let resolved = self.search_path(&self.args[0], dir)?;

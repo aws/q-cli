@@ -33,9 +33,7 @@ use super::{
 use crate::platform::PlatformState;
 
 fn shell_args(shell_path: &str) -> &'static [&'static str] {
-    let (_, shell_name) = shell_path
-        .rsplit_once(|c| c == '/' || c == '\\')
-        .unwrap_or(("", shell_path));
+    let (_, shell_name) = shell_path.rsplit_once(['/', '\\']).unwrap_or(("", shell_path));
     match shell_name {
         "bash" | "bash.exe" => &["--norc", "--noprofile", "-c"],
         "zsh" | "zsh.exe" => &["--norcs", "-c"],

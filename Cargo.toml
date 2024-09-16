@@ -18,7 +18,7 @@ authors = ["AWS Engineers"]
 edition = "2021"
 homepage = "https://aws.amazon.com/q/"
 publish = false
-version = "1.4.3"
+version = "1.4.4"
 
 [workspace.dependencies]
 amzn-codewhisperer-client = { path = "lib/amzn-codewhisperer-client" }
@@ -169,7 +169,6 @@ match_on_vec_items = "warn"
 match_wild_err_arm = "warn"
 match_wildcard_for_single_variants = "warn"
 mem_forget = "warn"
-mismatched_target_os = "warn"
 missing_enforced_import_renames = "warn"
 mut_mut = "warn"
 mutex_integer = "warn"

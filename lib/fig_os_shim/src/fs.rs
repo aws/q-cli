@@ -334,8 +334,8 @@ fn append(a: impl AsRef<Path>, b: impl AsRef<Path>) -> PathBuf {
     while b.starts_with(a) {
         b = b.strip_prefix(a).unwrap();
     }
-    while b.starts_with(&[b'/']) {
-        b = b.strip_prefix(&[b'/']).unwrap();
+    while b.starts_with(b"/") {
+        b = b.strip_prefix(b"/").unwrap();
     }
     PathBuf::from(OsString::from_vec(a.to_vec())).join(PathBuf::from(OsString::from_vec(b.to_vec())))
 }

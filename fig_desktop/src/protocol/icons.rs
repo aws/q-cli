@@ -218,9 +218,8 @@ pub async fn handle(
             None => None,
         },
         Some("path") => {
-            let decoded_str = &*percent_decode_str(url.path()).decode_utf8().map_err(|err| {
+            let decoded_str = &*percent_decode_str(url.path()).decode_utf8().inspect_err(|err| {
                 warn!(%err, "Failed to decode fig url");
-                err
             })?;
 
             cfg_if::cfg_if! {

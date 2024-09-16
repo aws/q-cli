@@ -711,10 +711,7 @@ impl InputMethod {
 
     pub fn is_enabled(&self) -> Option<bool> {
         let key = self.input_method_is_enabled_key();
-        match state::get_bool(key) {
-            Ok(enabled) => enabled,
-            Err(_) => None,
-        }
+        state::get_bool(key).unwrap_or_default()
     }
 
     fn set_is_enabled(&self, enabled: bool) {
