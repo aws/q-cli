@@ -89,6 +89,10 @@ impl From<&UninstallArgs> for InstallComponents {
 }
 
 pub async fn restart_fig() -> Result<()> {
+    if fig_util::system_info::in_cloudshell() {
+        bail!("Restarting {PRODUCT_NAME} is not supported in CloudShell");
+    }
+
     if fig_util::system_info::is_remote() {
         bail!("Please restart {PRODUCT_NAME} from your host machine");
     }

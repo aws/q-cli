@@ -6,7 +6,10 @@ use std::time::Duration;
 use anstream::println;
 use clap::Subcommand;
 use crossterm::style::Stylize;
-use eyre::Result;
+use eyre::{
+    bail,
+    Result,
+};
 use fig_auth::builder_id::{
     poll_create_token,
     start_device_authorization,
@@ -149,7 +152,11 @@ impl UserSubcommand {
 
 pub async fn login_interactive() -> Result<()> {
     let options = [AuthMethod::BuilderId, AuthMethod::IdentityCenter];
-    let login_method = options[choose("Select login method", &options)?];
+    let i = match choose("Select login method", &options)? {
+        Some(i) => i,
+        None => bail!("No login method selected"),
+    };
+    let login_method = options[i];
     match login_method {
         AuthMethod::BuilderId | AuthMethod::IdentityCenter => {
             let (start_url, region) = match login_method {

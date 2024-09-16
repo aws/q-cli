@@ -4,7 +4,10 @@ use std::process::ExitCode;
 use anstream::println;
 use clap::Subcommand;
 use crossterm::style::Stylize;
-use eyre::Result;
+use eyre::{
+    bail,
+    Result,
+};
 use fig_api_client::{
     Client,
     Customization,
@@ -104,7 +107,10 @@ impl InlineSubcommand {
                     .chain(["None".bold().to_string()])
                     .collect::<Vec<_>>();
 
-                let select = crate::util::choose("Select a customization", &names)?;
+                let select = match crate::util::choose("Select a customization", &names)? {
+                    Some(select) => select,
+                    None => bail!("No customization selected"),
+                };
 
                 if select == customizations.len() {
                     Customization::delete_selected(state)?;

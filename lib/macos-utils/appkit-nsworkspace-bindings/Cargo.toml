@@ -1,7 +1,10 @@
 [package]
 name = "appkit-nsworkspace-bindings"
-version = "0.1.0"
-publish = false
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+publish.workspace = true
+version.workspace = true
 
 [target.'cfg(target_os = "macos")'.build-dependencies]
 bindgen = "0.69.4"

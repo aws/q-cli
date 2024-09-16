@@ -5,7 +5,10 @@ pub mod spinner;
 use std::env;
 use std::ffi::OsStr;
 use std::fmt::Display;
-use std::io::stdout;
+use std::io::{
+    stdout,
+    ErrorKind,
+};
 use std::path::{
     Path,
     PathBuf,
@@ -14,6 +17,7 @@ use std::process::{
     Command,
     ExitCode,
 };
+use std::sync::Mutex;
 use std::time::Duration;
 
 use anstream::println;
@@ -25,6 +29,7 @@ use dialoguer::theme::ColorfulTheme;
 use dialoguer::Select;
 use eyre::{
     bail,
+    Context,
     ContextCompat,
     Result,
 };
@@ -43,6 +48,8 @@ use globset::{
 use regex::Regex;
 pub use region_check::region_check;
 use tracing::warn;
+
+static SET_CTRLC_HANDLER: Mutex<bool> = Mutex::new(false);
 
 /// Glob patterns against full paths
 pub fn glob_dir(glob: &GlobSet, directory: impl AsRef<Path>) -> Result<Vec<PathBuf>> {
@@ -118,6 +125,10 @@ pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
 }
 
 pub async fn quit_fig(verbose: bool) -> Result<ExitCode> {
+    if fig_util::system_info::in_cloudshell() {
+        bail!("Restarting {PRODUCT_NAME} is not supported in CloudShell");
+    }
+
     if fig_util::system_info::is_remote() {
         bail!("Please restart {PRODUCT_NAME} from your host machine");
     }
@@ -213,29 +224,37 @@ pub fn match_regex(regex: impl AsRef<str>, input: impl AsRef<str>) -> Option<Str
     )
 }
 
-pub fn choose(prompt: impl Display, options: &[impl ToString]) -> Result<usize> {
+pub fn choose(prompt: impl Display, options: &[impl ToString]) -> Result<Option<usize>> {
     if options.is_empty() {
         bail!("no options passed to choose")
     }
 
     if !stdout().is_terminal() {
         warn!("called choose while stdout is not a terminal");
-        return Ok(0);
+        return Ok(Some(0));
     }
 
-    tokio::spawn(async {
-        tokio::signal::ctrl_c().await.unwrap();
-        crossterm::execute!(stdout(), crossterm::cursor::Show).unwrap();
-        #[allow(clippy::exit)]
-        std::process::exit(0);
-    });
+    let mut set_ctrlc_handler = SET_CTRLC_HANDLER.lock().expect("SET_CTRLC_HANDLER is poisoned");
+    if !*set_ctrlc_handler {
+        ctrlc::set_handler(move || {
+            let term = dialoguer::console::Term::stdout();
+            let _ = term.show_cursor();
+        })
+        .context("Failed to set ctrlc handler")?;
+        *set_ctrlc_handler = true;
+    }
+    drop(set_ctrlc_handler);
 
-    Select::with_theme(&dialoguer_theme())
+    match Select::with_theme(&dialoguer_theme())
         .items(options)
         .default(0)
         .with_prompt(prompt.to_string())
-        .interact_opt()?
-        .ok_or_else(|| eyre::eyre!("Cancelled"))
+        .interact_opt()
+    {
+        Ok(ok) => Ok(ok),
+        Err(dialoguer::Error::IO(io)) if io.kind() == ErrorKind::Interrupted => Ok(None),
+        Err(e) => Err(e).wrap_err("Failed to choose"),
+    }
 }
 
 pub fn input(prompt: &str, initial_text: Option<&str>) -> Result<String> {

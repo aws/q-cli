@@ -7,12 +7,16 @@ use anstream::{
     println,
 };
 use crossterm::style::Stylize;
-use eyre::Result;
+use eyre::{
+    bail,
+    Result,
+};
 use fig_install::{
     install,
     InstallComponents,
 };
 use fig_os_shim::Env;
+use fig_util::system_info::in_cloudshell;
 use fig_util::{
     CLI_BINARY_NAME,
     PRODUCT_NAME,
@@ -54,12 +58,16 @@ pub async fn install_cli(
                 eyre::bail!("You must run with --no-confirm if unattended");
             }
 
-            choose(
+            match choose(
                 format!(
                     "Do you want {CLI_BINARY_NAME} to modify your shell config (you will have to manually do this otherwise)?",
                 ),
                 &["Yes", "No"],
-            )? == 1
+            )? {
+                Some(1) => true,
+                Some(_) => false,
+                None => bail!("No option selected"),
+            }
         };
         if !manual_install {
             if let Err(err) = install(InstallComponents::SHELL_INTEGRATIONS, &env).await {
@@ -114,14 +122,18 @@ pub async fn install_cli(
                 println!("To enable the integration, select \"yes\" below and then click Ok in the popup.");
                 println!();
 
-                if choose("Do you want to enable support for input method backed terminals?", &["Yes", "No"])? == 0 {
-                    install(InstallComponents::INPUT_METHOD, &env).await?;
+                match choose("Do you want to enable support for input method backed terminals?", &["Yes", "No"])? {
+                    Some(0) => {
+                        install(InstallComponents::INPUT_METHOD, &env).await?;
+                    }
+                    Some(_) => {}
+                    None => bail!("No option selected"),
                 }
             }
         }
     }
 
-    if !fig_auth::is_logged_in().await && !global {
+    if !fig_auth::is_logged_in().await && !in_cloudshell() && !global {
         if !no_confirm {
             if !dialoguer::console::user_attended() {
                 eyre::bail!("You must run with --no-confirm if unattended");

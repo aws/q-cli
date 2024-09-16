@@ -312,7 +312,7 @@ impl Cli {
                 CliRootCommands::Doctor(args) => args.execute().await,
                 CliRootCommands::Hook(hook_subcommand) => hook_subcommand.execute().await,
                 CliRootCommands::Theme(theme_args) => theme_args.execute().await,
-                CliRootCommands::Settings(settings_args) => settings_args.execute().await,
+                CliRootCommands::Settings(settings_args) => settings_args.execute(&cli_context).await,
                 CliRootCommands::Debug(debug_subcommand) => debug_subcommand.execute().await,
                 CliRootCommands::Issue(args) => args.execute().await,
                 CliRootCommands::Completion(args) => args.execute(),

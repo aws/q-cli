@@ -15,10 +15,10 @@ objc = "0.2"
 dashmap.workspace = true
 flume = "0.11.0"
 fnv = "1.0.7"
-accessibility-sys = { path = "./accessibility-master/accessibility-sys", version = "0.1.3" }
+accessibility-sys = { path = "./accessibility-master/accessibility-sys" }
 once_cell.workspace = true
-accessibility = { path = "./accessibility-master/accessibility", version = "0.1.6" }
-appkit-nsworkspace-bindings = { path = "./appkit-nsworkspace-bindings", version = "0.1.0" }
+accessibility = { path = "./accessibility-master/accessibility" }
+appkit-nsworkspace-bindings = { path = "./appkit-nsworkspace-bindings" }
 tracing.workspace = true
 tokio.workspace = true
 nix.workspace = true

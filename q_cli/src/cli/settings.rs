@@ -8,11 +8,13 @@ use clap::{
     Subcommand,
 };
 use eyre::{
+    bail,
     Result,
     WrapErr,
 };
 use fig_auth::is_logged_in;
 use fig_ipc::local::open_ui_element;
+use fig_os_shim::Os;
 use fig_proto::local::UiElement;
 use fig_settings::JsonStore;
 use fig_util::desktop::{
@@ -30,7 +32,10 @@ use serde_json::json;
 
 use super::OutputFormat;
 use crate::cli::Cli;
-use crate::util::app_not_running_message;
+use crate::util::{
+    app_not_running_message,
+    CliContext,
+};
 
 #[derive(Debug, Subcommand, PartialEq, Eq)]
 pub enum SettingsSubcommands {
@@ -64,7 +69,7 @@ pub struct SettingsArgs {
 }
 
 impl SettingsArgs {
-    pub async fn execute(&self) -> Result<ExitCode> {
+    pub async fn execute(&self, cli_context: &CliContext) -> Result<ExitCode> {
         macro_rules! print_connection_error {
             () => {
                 println!("{}", app_not_running_message());
@@ -74,8 +79,15 @@ impl SettingsArgs {
         match self.cmd {
             Some(SettingsSubcommands::Open) => {
                 let file = directories::settings_path().context("Could not get settings path")?;
-                tokio::process::Command::new("open").arg(file).output().await?;
-                Ok(ExitCode::SUCCESS)
+                if cli_context.context().platform().os() == Os::Mac {
+                    tokio::process::Command::new("open").arg(file).output().await?;
+                    Ok(ExitCode::SUCCESS)
+                } else if let Ok(editor) = cli_context.context().env().get("EDITOR") {
+                    tokio::process::Command::new(editor).arg(file).spawn()?.wait().await?;
+                    Ok(ExitCode::SUCCESS)
+                } else {
+                    bail!("The EDITOR environment variable is not set")
+                }
             },
             Some(SettingsSubcommands::All { format }) => {
                 let settings = fig_settings::OldSettings::load()?.map().clone();
