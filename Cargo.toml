@@ -19,6 +19,7 @@ edition = "2021"
 homepage = "https://aws.amazon.com/q/"
 publish = false
 version = "1.4.4"
+license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
 amzn-codewhisperer-client = { path = "lib/amzn-codewhisperer-client" }

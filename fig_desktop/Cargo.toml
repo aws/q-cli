@@ -5,6 +5,7 @@ edition.workspace = true
 homepage = "https://aws.amazon.com/codewhisperer"
 publish.workspace = true
 version.workspace = true
+license.workspace = true
 
 [lints]
 workspace = true

@@ -5,6 +5,7 @@ edition.workspace = true
 homepage.workspace = true
 publish.workspace = true
 version.workspace = true
+license.workspace = true
 
 [dependencies]
 aws-runtime = "1.2.2"
