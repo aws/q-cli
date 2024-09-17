@@ -290,7 +290,7 @@ impl WebviewManager {
             )
             .expect("Failed to initialize platform state");
 
-        // TODO(mia): implement
+        // TODO: implement
         // tokio::spawn(figterm::clean_figterm_cache(self.figterm_state.clone()));
 
         // Start the local ipc task, listens for requests to the desktop socket.

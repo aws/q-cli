@@ -316,7 +316,7 @@ const addAutoExecuteSuggestion = (
     (searchTerm.endsWith("/") &&
       suggestions.find(
         (x) =>
-          // TODO(fedeci): use a better way to determine if x.generators. is a folders generator
+          // TODO: use a better way to determine if x.generators. is a folders generator
           isTemplateSuggestion(x) && x.context.templateType === "folders",
       ))
   ) {

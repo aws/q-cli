@@ -470,7 +470,7 @@ pub async fn process_remote_message(
                     .await;
                 },
                 Some(Request::RunProcess(request)) => {
-                    // TODO(sean) we can infer shell as above for execute if no executable is provided.
+                    // TODO: we can infer shell as above for execute if no executable is provided.
                     let mut cmd = create_command(
                         &request.executable,
                         working_directory(request.working_directory.as_deref(), term.shell_state()),
@@ -518,7 +518,7 @@ pub async fn process_remote_message(
                         .map_or_else(|| OsStr::new("/bin/bash"), |x| x.as_os_str())
                         .to_owned();
 
-                    // TODO(sean): better SHELL_ARGs handling here based on shell.
+                    // TODO: better SHELL_ARGs handling here based on shell.
                     let (executable, args) = match shell_args(&shell_path) {
                         Some(args) => (shell_path, args),
                         None => {

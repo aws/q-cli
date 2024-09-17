@@ -138,7 +138,7 @@ impl UIElement {
 
     #[allow(clippy::missing_safety_doc)]
     pub unsafe fn get_window_id(&self) -> Result<CGWindowID> {
-        // TODO(sean) cache this value on struct?
+        // TODO: cache this value on struct?
         ax_call(|window_id: *mut CGWindowID| _AXUIElementGetWindow(self.get_ref(), window_id))
     }
 

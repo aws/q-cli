@@ -145,7 +145,7 @@ export async function importSpecFromFile(
  */
 export const canLoadSpecProtocol = () => window.location.protocol !== "https:";
 
-// TODO: fedeci this is a problem for diff-versioned specs
+// TODO: this is a problem for diff-versioned specs
 export async function importFromPublicCDN<T = SpecFileImport>(
   name: string,
 ): Promise<T> {
@@ -195,7 +195,7 @@ async function jsonFromPublicCDN(path: string): Promise<unknown> {
   );
 }
 
-// TODO: fedeci this is a problem for diff-versioned specs
+// TODO: this is a problem for diff-versioned specs
 export async function importFromLocalhost<T = SpecFileImport>(
   name: string,
   port: number | string,
@@ -252,7 +252,7 @@ export async function getVersionFromFullFile(
   return undefined;
 }
 
-// TODO(fedeci): cache this request using SWR strategy
+// TODO: cache this request using SWR strategy
 let publicSpecsRequest:
   | Promise<{
       completions: Set<string>;
@@ -333,7 +333,7 @@ export function getPrivateSpec({
 export async function preloadSpecs(): Promise<SpecFileImport[]> {
   return Promise.all(
     MOST_USED_SPECS.map(async (name) => {
-      // TODO(fedeci): refactor everything to allow the correct diff-versioned specs to be loaded
+      // TODO: refactor everything to allow the correct diff-versioned specs to be loaded
       // too, now we are only loading the index
       if (await isDiffVersionedSpec(name)) {
         return importFromPublicCDN(`${name}/index`);

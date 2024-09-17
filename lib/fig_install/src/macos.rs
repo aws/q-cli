@@ -305,7 +305,7 @@ async fn remove_in_dir_with_prefix_unless(dir: &Path, prefix: &str, unless: impl
 }
 
 pub(crate) async fn uninstall_desktop() -> Result<(), Error> {
-    // TODO(sean)
+    // TODO:
     // 1. Set title of running ttys "Restart this terminal to finish uninstalling Q..."
     // 2. Delete webview cache
 

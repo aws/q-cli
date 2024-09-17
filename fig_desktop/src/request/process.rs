@@ -103,14 +103,14 @@ pub async fn execute(request: PseudoterminalExecuteRequest, figterm_state: &Figt
 
         let shell = PlatformState::shell();
 
-        // note(mia): we don't know what shell they use because we don't have any figterm sessions to check
+        // note: we don't know what shell they use because we don't have any figterm sessions to check
         let args = shell_args(&shell);
 
         let mut cmd = Command::new(&*shell);
         #[cfg(target_os = "windows")]
         cmd.creation_flags(windows::Win32::System::Threading::DETACHED_PROCESS.0);
-        // TODO(sean): better SHELL_ARGs handling here based on shell.
-        // TODO(sean): handle wsl distro from FigtermState here.
+        // TODO: better SHELL_ARGs handling here based on shell.
+        // TODO: handle wsl distro from FigtermState here.
         cmd.args(args);
         cmd.arg(&request.command);
 
@@ -193,7 +193,7 @@ pub async fn run(request: RunProcessRequest, state: &FigtermState) -> RequestRes
     } else {
         debug!("running locally");
 
-        // TODO(sean) we can infer shell as above for execute if no executable is provided.
+        // TODO: we can infer shell as above for execute if no executable is provided.
         let mut cmd = Command::new(&request.executable);
         #[cfg(target_os = "windows")]
         cmd.creation_flags(windows::Win32::System::Threading::DETACHED_PROCESS.0);

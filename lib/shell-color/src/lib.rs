@@ -162,11 +162,11 @@ pub fn parse_suggestion_color_zsh_autosuggest(suggestion_str: &str, color_suppor
         let is_bg = color_name.starts_with("bg=");
         if is_fg || is_bg {
             (_, color_name) = color_name.split_at(3);
-            // TODO(sean): currently using fish's parsing logic for named colors.
+            // TODO: currently using fish's parsing logic for named colors.
             // This can fail in two cases:
             // 1. false positives from fish colors that aren't supported in zsh (e.g. brblack)
             // 2. false negatives that aren't supported in fish (e.g. abbreviations like bl for black)
-            // note (mia): this todo was in the old c code - maybe it isn't needed anymore?
+            // note: this todo was in the old c code - maybe it isn't needed anymore?
             let mut color = try_parse_named(color_name);
             if color.is_none() && color_name.starts_with('#') {
                 color = try_parse_rgb(color_name);

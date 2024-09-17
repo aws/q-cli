@@ -2338,7 +2338,7 @@ pub async fn doctor_cli(all: bool, strict: bool) -> Result<ExitCode> {
                 &SupportedTerminalCheck,
                 // &ItermIntegrationCheck,
                 &ItermBashIntegrationCheck,
-                // TODO(sean) re-enable on macos once IME/terminal integrations are sorted
+                // TODO: re-enable on macos once IME/terminal integrations are sorted
                 #[cfg(not(target_os = "macos"))]
                 &HyperIntegrationCheck,
                 #[cfg(not(target_os = "macos"))]

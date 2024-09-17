@@ -182,7 +182,7 @@ pub struct FigtermSession {
     #[serde(skip)]
     pub writer: Option<flume::Sender<Clientbound>>,
     #[serde(skip)]
-    pub dead_since: Option<Instant>, // TODO(mia): prune old sessions
+    pub dead_since: Option<Instant>, // TODO: prune old sessions
     #[serde(skip)]
     pub edit_buffer: EditBuffer,
     #[serde(skip)]

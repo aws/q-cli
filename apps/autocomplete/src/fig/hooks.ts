@@ -16,7 +16,7 @@ import { clearSpecIndex } from "@amzn/fig-io-autocomplete-parser";
 import { updateSelectSuggestionKeybindings } from "../actions";
 import { generatorCache } from "../generators/helpers";
 
-// TODO(sean) expose Subscription type from API binding library
+// TODO: expose Subscription type from API binding library
 type Unwrap<T> = T extends Promise<infer U> ? U : T;
 type Subscription = Unwrap<
   NonNullable<ReturnType<(typeof EditBufferNotifications)["subscribe"]>>

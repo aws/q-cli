@@ -33,11 +33,11 @@ pub type AXObserverRef = *mut __AXObserver;
 pub type AXCopyMultipleAttributeOptions = u32;
 pub const kAXCopyMultipleAttributeOptionStopOnError: u32 = 0x1;
 
-// TODO(eiz): upstream these to core-foundation-rs
+// TODO: upstream these to core-foundation-rs
 pub type CGKeyCode = u16;
 pub type CGCharCode = u16;
 
-// TODO(eiz): ditto, this is from mach headers...
+// TODO: ditto, this is from mach headers...
 pub type pid_t = i32;
 
 #[link(name = "ApplicationServices", kind = "framework")]

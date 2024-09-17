@@ -33,7 +33,7 @@ vi.mock("@amzn/fig-io-api-bindings-wrappers", async () => ({
   executeCommand: vi.fn(),
 }));
 
-// TODO(fedeci): remove this statement and move fig dir to shared
+// TODO: remove this statement and move fig dir to shared
 const FIG_DIR = "~/.fig";
 
 beforeAll(() => {

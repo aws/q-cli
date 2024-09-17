@@ -36,7 +36,7 @@ export enum NodeType {
   Pipeline = "pipeline",
   List = "list",
 
-  // TODO(sean): implement <(commands)
+  // TODO: implement <(commands)
   ProcessSubstitution = "process_substitution",
 
   // Primary expressions
@@ -454,7 +454,7 @@ const parseConcatenationOrLiteralNode = (
     const c = str.charAt(i);
     const op = parseOperator(str, i);
     if (op !== null || c === terminalChar) {
-      // TODO(sean) handle terminator like ; as first token.
+      // TODO: handle terminator like ; as first token.
       break;
     }
     const childNode = childAtIndex(str, i, false, terminators);
