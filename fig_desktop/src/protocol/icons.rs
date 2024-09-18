@@ -64,7 +64,7 @@ static ASSETS: Lazy<HashMap<AssetSpecifier<'static>, Arc<Cow<'static, [u8]>>>> =
 
     load_assets! {
         "alert", "asterisk", "box", "carrot", "characters", "command", "commandkey", "cpu", "database",
-        "file", "folder", "flag", "gear", "invite", "option", "package", "statusbar", "string", "symlink", "template"
+        "file", "folder", "flag", "gear", "invite", "option", "package", "string", "symlink", "template"
     }
 
     map
