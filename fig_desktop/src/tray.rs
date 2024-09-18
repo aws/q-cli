@@ -227,7 +227,7 @@ pub fn get_icon(is_logged_in: bool) -> Icon {
         let bytes = if is_logged_in {
             include_bytes!("../icons/icon-monochrome.png").to_vec()
         } else {
-            include_bytes!("../icons/tray/not-logged-in.png").to_vec()
+            include_bytes!("../icons/not-logged-in.png").to_vec()
         };
         let image = image::load_from_memory(&bytes)
             .expect("Failed to open icon path")
@@ -407,7 +407,7 @@ fn menu(is_logged_in: bool) -> Vec<MenuElement> {
     // ]);
 
     let onboarded_completed = fig_settings::state::get_bool_or("desktop.completedOnboarding", false);
-    let yellow_circle_img = get_image_rgba(include_bytes!("../icons/tray/yellow-circle.png"));
+    let yellow_circle_img = get_image_rgba(include_bytes!("../icons/yellow-circle.png"));
     let mut menu = if !is_logged_in && !onboarded_completed {
         vec![
             MenuElement::info(
