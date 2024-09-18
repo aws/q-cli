@@ -20,19 +20,23 @@ const transformIconUri = (icon: URL): URL => {
     host = "path";
   }
 
-  if (icon.pathname === "icon") {
+  if (icon.hostname === "icon") {
     const type = icon.searchParams.get("type");
     if (type) {
-      if (icons[type]) {
-        return new URL(icons[type]);
+      if (icons.includes(type)) {
+        return new URL(
+          `https://specs.q.us-east-1.amazonaws.com/icons/${type}.png`,
+        );
       }
     }
   }
+
   if (window.fig.constants?.os === "windows") {
     return new URL(
       `https://fig.${host}${icon.pathname}${icon.search}${icon.hash}`,
     );
   }
+
   return new URL(`fig://${host}${icon.pathname}${icon.search}${icon.hash}`);
 };
 
