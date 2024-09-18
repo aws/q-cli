@@ -1,6 +1,8 @@
 {
   "name": "@amzn/fig-io-fuzzysort",
   "version": "1.1.5",
+  "license": "MIT",
+  "author": "Amazon Web Services",
   "private": true,
   "type": "module",
   "exports": "./fuzzysort.js",

@@ -14,7 +14,12 @@ members = [
 ]
 
 [workspace.package]
-authors = ["AWS Engineers"]
+authors = [
+    "Amazon Q CLI Team (q-cli@amazon.com)",
+    "Grant Gurvis (grangurv@amazon.com)",
+    "Chay Nabors (nabochay@amazon.com)",
+    "Brandon Kiser (bskiser@amazon.com)",
+]
 edition = "2021"
 homepage = "https://aws.amazon.com/q/"
 publish = false

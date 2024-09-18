@@ -1,6 +1,8 @@
 {
   "name": "@amzn/fig-io-proto",
   "version": "1.0.0",
+  "license": "MIT OR Apache-2.0",
+  "author": "Amazon Web Services",
   "type": "module",
   "exports": {
     "./*": "./dist/*.pb.js"

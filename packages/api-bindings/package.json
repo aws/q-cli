@@ -1,7 +1,8 @@
 {
   "name": "@amzn/fig-io-api-bindings",
   "version": "0.30.3",
-  "license": "MIT",
+  "license": "MIT OR Apache-2.0",
+  "author": "Amazon Web Services",
   "type": "module",
   "exports": "./dist/index.js",
   "engines": {
@@ -16,7 +17,6 @@
     "prepublishOnly": "npm run build",
     "generate-requests": "tsx codegen/generate-requests.ts && prettier -w src/requests.ts"
   },
-  "author": "The Fig Team",
   "dependencies": {
     "@amzn/fig-io-proto": "workspace:^"
   },
