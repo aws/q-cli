@@ -33,7 +33,7 @@ impl SysInfo {
         Self(inner::Inner::Fake(Arc::new(Mutex::new(inner::Fake::default()))))
     }
 
-    /// Returns whether the process with the exact name provided is running.
+    /// Returns whether the process containing `name` is running.
     pub fn is_process_running(&self, name: &str) -> bool {
         use inner::Inner;
         match &self.0 {

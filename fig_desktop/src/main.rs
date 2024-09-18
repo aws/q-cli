@@ -128,7 +128,8 @@ async fn main() {
 
     let page = cli
         .url_link
-        .and_then(|url| match Url::parse(&url) {
+        .as_ref()
+        .and_then(|url| match Url::parse(url) {
             Ok(url) => Some(url),
             Err(err) => {
                 error!(%err, %url, "Failed to parse url");
@@ -153,73 +154,7 @@ async fn main() {
     if !cli.allow_multiple {
         match get_current_pid() {
             Ok(current_pid) => {
-                let system = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
-                let processes = system.processes_by_name(APP_PROCESS_NAME);
-
-                cfg_if::cfg_if! {
-                    if #[cfg(unix)] {
-                        let current_user_id = Some(nix::unistd::getuid().as_raw());
-                    } else {
-                        let current_user_id = None;
-                    }
-                };
-
-                for process in processes {
-                    let pid = process.pid();
-                    if current_pid != pid {
-                        if cli.kill_old {
-                            process.kill();
-                            let exe = process.exe().unwrap_or(Path::new("")).display();
-                            eprintln!("Killing instance: {exe} ({pid})");
-                        } else {
-                            let page = page.clone();
-                            let on_match = async {
-                                let exe = process.exe().unwrap_or(Path::new("")).display();
-
-                                let mut extra = vec![format!("pid={pid}")];
-
-                                if let Some(user_id) = process.user_id() {
-                                    extra.push(format!("uid={}", **user_id));
-                                }
-
-                                if let Some(group_id) = process.group_id() {
-                                    extra.push(format!("gid={}", *group_id));
-                                }
-
-                                eprintln!("{PRODUCT_NAME} is already running: {exe} ({})", extra.join(" "),);
-                                match &page {
-                                    Some(page) => {
-                                        eprintln!("Opening /{page}...");
-                                        Some(page)
-                                    },
-                                    None => {
-                                        eprintln!("Opening {PRODUCT_NAME} Window...");
-                                        None
-                                    },
-                                };
-
-                                if let Err(err) =
-                                    fig_ipc::local::open_ui_element(fig_proto::local::UiElement::MissionControl, page)
-                                        .await
-                                {
-                                    eprintln!("Failed to open Fig: {err}");
-                                }
-
-                                exit(0);
-                            };
-
-                            match (process.user_id().map(|uid| uid as &u32), current_user_id.as_ref()) {
-                                (Some(uid), Some(current_uid)) if uid == current_uid => {
-                                    on_match.await;
-                                },
-                                (_, None) => {
-                                    on_match.await;
-                                },
-                                _ => {},
-                            }
-                        }
-                    }
-                }
+                allow_multiple_running_check(current_pid, cli.kill_old, page.clone()).await;
             },
             Err(err) => warn!(%err, "Failed to get pid"),
         }
@@ -314,4 +249,129 @@ async fn main() {
 
     webview_manager.run().await.unwrap();
     fig_telemetry::finish_telemetry().await;
+}
+
+#[cfg(target_os = "linux")]
+async fn allow_multiple_running_check(current_pid: sysinfo::Pid, kill_old: bool, page: Option<String>) {
+    use tracing::debug;
+
+    if kill_old {
+        eprintln!("Option kill-old is not supported on Linux.");
+        #[allow(clippy::exit)]
+        exit(0);
+    }
+
+    let system = System::new_with_specifics(
+        RefreshKind::new().with_processes(ProcessRefreshKind::new().with_user(sysinfo::UpdateKind::Always)),
+    );
+    let processes = system.processes_by_exact_name(APP_PROCESS_NAME);
+
+    let processes = processes.collect::<Vec<_>>();
+    debug!("Checking for already running desktop instance: {:?}", processes);
+
+    let current_user_id = nix::unistd::getuid().as_raw();
+    for process in processes {
+        let pid = process.pid();
+        let uid = process.user_id().map(|uid| uid as &u32);
+        match (process.parent(), uid) {
+            // The Linux desktop app returns multiple processes with the same name for some reason.
+            (Some(parent_pid), Some(uid))
+                if pid != current_pid && parent_pid != current_pid && *uid == current_user_id =>
+            {
+                let exe = process.exe().unwrap_or(Path::new("")).display();
+                eprintln!("{PRODUCT_NAME} is already running: {exe} (pid={pid}, uid={uid})");
+
+                match &page {
+                    Some(page) => {
+                        eprintln!("Opening /{page}...");
+                        Some(page)
+                    },
+                    None => {
+                        eprintln!("Opening {PRODUCT_NAME} Window...");
+                        None
+                    },
+                };
+
+                if let Err(err) =
+                    fig_ipc::local::open_ui_element(fig_proto::local::UiElement::MissionControl, page).await
+                {
+                    eprintln!("Failed to open Fig: {err}");
+                }
+
+                #[allow(clippy::exit)]
+                exit(0);
+            },
+            _ => (),
+        }
+    }
+}
+
+#[cfg(target_os = "macos")]
+async fn allow_multiple_running_check(current_pid: sysinfo::Pid, kill_old: bool, page: Option<String>) {
+    let system = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
+    let processes = system.processes_by_name(APP_PROCESS_NAME);
+
+    cfg_if::cfg_if! {
+        if #[cfg(unix)] {
+            let current_user_id = Some(nix::unistd::getuid().as_raw());
+        } else {
+            let current_user_id = None;
+        }
+    };
+
+    for process in processes {
+        let pid = process.pid();
+        if current_pid != pid {
+            if kill_old {
+                process.kill();
+                let exe = process.exe().unwrap_or(Path::new("")).display();
+                eprintln!("Killing instance: {exe} ({pid})");
+            } else {
+                let page = page.clone();
+                let on_match = async {
+                    let exe = process.exe().unwrap_or(Path::new("")).display();
+
+                    let mut extra = vec![format!("pid={pid}")];
+
+                    if let Some(user_id) = process.user_id() {
+                        extra.push(format!("uid={}", **user_id));
+                    }
+
+                    if let Some(group_id) = process.group_id() {
+                        extra.push(format!("gid={}", *group_id));
+                    }
+
+                    eprintln!("{PRODUCT_NAME} is already running: {exe} ({})", extra.join(" "),);
+                    match &page {
+                        Some(page) => {
+                            eprintln!("Opening /{page}...");
+                            Some(page)
+                        },
+                        None => {
+                            eprintln!("Opening {PRODUCT_NAME} Window...");
+                            None
+                        },
+                    };
+
+                    if let Err(err) =
+                        fig_ipc::local::open_ui_element(fig_proto::local::UiElement::MissionControl, page).await
+                    {
+                        eprintln!("Failed to open Fig: {err}");
+                    }
+
+                    exit(0);
+                };
+
+                match (process.user_id().map(|uid| uid as &u32), current_user_id.as_ref()) {
+                    (Some(uid), Some(current_uid)) if uid == current_uid => {
+                        on_match.await;
+                    },
+                    (_, None) => {
+                        on_match.await;
+                    },
+                    _ => {},
+                }
+            }
+        }
+    }
 }

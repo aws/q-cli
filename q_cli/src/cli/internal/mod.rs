@@ -60,10 +60,6 @@ use fig_proto::hooks::{
 use fig_proto::local::EnvironmentVariable;
 use fig_proto::util::get_shell;
 use fig_proto::ReflectMessage;
-use fig_util::desktop::{
-    launch_fig_desktop,
-    LaunchArgs,
-};
 use fig_util::directories::{
     figterm_socket_path,
     logs_dir,
@@ -96,6 +92,10 @@ use self::inline_shell_completion::{
     inline_shell_completion_accept,
 };
 use crate::cli::installation::install_cli;
+use crate::util::desktop::{
+    launch_fig_desktop,
+    LaunchArgs,
+};
 
 #[derive(Debug, Args, PartialEq, Eq)]
 #[command(group(

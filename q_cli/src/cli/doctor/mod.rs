@@ -64,10 +64,6 @@ use fig_ipc::{
 use fig_os_shim::Env;
 use fig_proto::local::DiagnosticsResponse;
 use fig_settings::JsonStore;
-use fig_util::desktop::{
-    launch_fig_desktop,
-    LaunchArgs,
-};
 use fig_util::directories::{
     remote_socket_path,
     settings_path,
@@ -82,7 +78,6 @@ use fig_util::env_var::{
 use fig_util::macos::BUNDLE_CONTENTS_INFO_PLIST_PATH;
 use fig_util::system_info::SupportLevel;
 use fig_util::{
-    desktop_app_running,
     directories,
     Shell,
     Terminal,
@@ -106,6 +101,11 @@ use tokio::io::AsyncBufReadExt;
 
 use super::app::restart_fig;
 use super::diagnostics::verify_integration;
+use crate::util::desktop::{
+    desktop_app_running,
+    launch_fig_desktop,
+    LaunchArgs,
+};
 use crate::util::{
     app_path_from_bundle_id,
     glob,

@@ -28,7 +28,7 @@ impl IssueArgs {
     #[allow(unreachable_code)]
     pub async fn execute(&self) -> Result<ExitCode> {
         // Check if fig is running
-        if !(self.force || is_remote() || fig_util::desktop_app_running()) {
+        if !(self.force || is_remote() || crate::util::desktop::desktop_app_running()) {
             println!(
                 "\n→ {PRODUCT_NAME} is not running.\n  Please launch {PRODUCT_NAME} with {} or run {} to create the issue anyways",
                 format!("{CLI_BINARY_NAME} launch").magenta(),

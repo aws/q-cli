@@ -51,10 +51,6 @@ use fig_log::{
     LogArgs,
 };
 use fig_proto::local::UiElement;
-use fig_util::desktop::{
-    launch_fig_desktop,
-    LaunchArgs,
-};
 use fig_util::{
     directories,
     manifest,
@@ -71,6 +67,10 @@ use tracing::{
 
 use self::integrations::IntegrationsSubcommands;
 use self::user::RootUserSubcommand;
+use crate::util::desktop::{
+    launch_fig_desktop,
+    LaunchArgs,
+};
 use crate::util::CliContext;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, ValueEnum)]

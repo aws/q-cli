@@ -242,7 +242,7 @@ impl Fs {
 
     /// Creates a new symbolic link on the filesystem.
     ///
-    /// The `dst` path will be a symbolic link pointing to the `src` path.
+    /// The `link` path will be a symbolic link pointing to the `original` path.
     ///
     /// This is a proxy to [`tokio::fs::symlink`].
     #[cfg(unix)]
@@ -251,6 +251,33 @@ impl Fs {
         match &self.0 {
             Inner::Real => fs::symlink(original, link).await,
             Inner::Chroot(root) => fs::symlink(append(root.path(), original), append(root.path(), link)).await,
+            Inner::Fake(_) => panic!("unimplemented"),
+        }
+    }
+
+    /// Creates a new symbolic link on the filesystem.
+    ///
+    /// The `link` path will be a symbolic link pointing to the `original` path.
+    ///
+    /// This is a proxy to [`std::os::unix::fs::symlink`].
+    #[cfg(unix)]
+    pub fn symlink_sync(&self, original: impl AsRef<Path>, link: impl AsRef<Path>) -> io::Result<()> {
+        use inner::Inner;
+        match &self.0 {
+            Inner::Real => std::os::unix::fs::symlink(original, link),
+            Inner::Chroot(root) => std::os::unix::fs::symlink(append(root.path(), original), append(root.path(), link)),
+            Inner::Fake(_) => panic!("unimplemented"),
+        }
+    }
+
+    /// Reads a symbolic link, returning the file that the link points to.
+    ///
+    /// This is a proxy to [`tokio::fs::read_link`].
+    pub async fn read_link(&self, path: impl AsRef<Path>) -> io::Result<PathBuf> {
+        use inner::Inner;
+        match &self.0 {
+            Inner::Real => fs::read_link(path).await,
+            Inner::Chroot(root) => Ok(append(root.path(), fs::read_link(append(root.path(), path)).await?)),
             Inner::Fake(_) => panic!("unimplemented"),
         }
     }
@@ -465,7 +492,15 @@ mod tests {
         assert!(!fs.try_exists("/fake_copy").await.unwrap());
 
         fs.symlink("/fake", "/fake_symlink").await.unwrap();
+        fs.symlink_sync("/fake", "/fake_symlink_sync").unwrap();
         assert_eq!(fs.read_to_string("/fake_symlink").await.unwrap(), "contents");
+        assert_eq!(
+            fs.read_to_string(fs.read_link("/fake_symlink").await.unwrap())
+                .await
+                .unwrap(),
+            "contents"
+        );
+        assert_eq!(fs.read_to_string("/fake_symlink_sync").await.unwrap(), "contents");
         assert_eq!(fs.read_to_string_sync("/fake_symlink").unwrap(), "contents");
     }
 

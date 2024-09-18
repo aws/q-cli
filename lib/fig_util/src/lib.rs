@@ -1,4 +1,6 @@
 pub mod directories;
+#[cfg(target_os = "linux")]
+pub mod linux;
 pub mod manifest;
 mod open;
 pub mod process_info;
@@ -7,7 +9,6 @@ pub mod system_info;
 pub mod terminal;
 
 pub mod consts;
-pub mod desktop;
 #[cfg(target_os = "macos")]
 pub mod launchd_plist;
 
@@ -27,8 +28,6 @@ use rand::Rng;
 pub use shell::Shell;
 pub use terminal::Terminal;
 use thiserror::Error;
-
-pub use crate::desktop::desktop_app_running;
 
 #[derive(Debug, Error)]
 pub enum Error {

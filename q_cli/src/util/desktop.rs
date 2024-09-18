@@ -1,10 +1,13 @@
 use std::process::Command;
 
-use crate::{
+use eyre::{
+    eyre,
+    Result,
+};
+use fig_util::{
     directories,
     manifest,
     system_info,
-    Error,
     PRODUCT_NAME,
 };
 
@@ -19,17 +22,6 @@ pub struct LaunchArgs {
     pub immediate_update: bool,
     /// Print output to user
     pub verbose: bool,
-}
-
-impl Default for LaunchArgs {
-    fn default() -> Self {
-        Self {
-            wait_for_socket: false,
-            open_dashboard: false,
-            immediate_update: true,
-            verbose: false,
-        }
-    }
 }
 
 pub fn desktop_app_running() -> bool {
@@ -95,44 +87,26 @@ pub fn desktop_app_running() -> bool {
                 System,
             };
 
-            use crate::consts::APP_PROCESS_NAME;
-
-            let process_name = match crate::system_info::in_wsl() {
-                true => {
-                    let output = match std::process::Command::new("tasklist.exe")
-                        .args(["/NH", "/FI", "IMAGENAME eq fig_desktop.exe"])
-                        .output()
-                    {
-                        Ok(output) => output,
-                        Err(_) => return false,
-                    };
-
-                    return match std::str::from_utf8(&output.stdout) {
-                        Ok(result) => result.contains(APP_PROCESS_NAME),
-                        Err(_) => false,
-                    };
-                },
-                false => "fig_desktop",
-            };
+            use fig_util::consts::APP_PROCESS_NAME;
 
             let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
-            let mut processes = s.processes_by_exact_name(process_name);
+            let mut processes = s.processes_by_exact_name(APP_PROCESS_NAME);
             processes.next().is_some()
         }
     }
 }
 
-pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
+pub fn launch_fig_desktop(args: LaunchArgs) -> Result<()> {
     if manifest::is_minimal() {
-        return Err(Error::LaunchError(format!(
+        return Err(eyre!(
             "launching {PRODUCT_NAME} from minimal installs is not yet supported"
-        )));
+        ));
     }
 
     if system_info::is_remote() {
-        return Err(Error::LaunchError(format!(
+        return Err(eyre!(
             "launching {PRODUCT_NAME} from remote installs is not yet supported"
-        )));
+        ));
     }
 
     match desktop_app_running() {
@@ -172,22 +146,9 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
                 .creation_flags(DETACHED_PROCESS.0)
                 .spawn()?;
         } else {
-            if system_info::in_wsl() {
-                let output = Command::new(crate::consts::APP_PROCESS_NAME)
-                    .output()?;
-
-                if !output.status.success() {
-                    return Err(Error::LaunchError(String::from_utf8_lossy(&output.stderr).to_string()))
-                }
-            } else {
-                let output = Command::new("systemctl")
-                    .args(["--user", "start", "codewhisperer"])
-                    .output()?;
-
-                if !output.status.success() {
-                    return Err(Error::LaunchError(String::from_utf8_lossy(&output.stderr).to_string()))
-                }
-            }
+            let settings = fig_settings::Settings::new();
+            let ctx = fig_os_shim::Context::new();
+            launch_linux_desktop(ctx, &settings)?;
         }
     }
 
@@ -196,9 +157,7 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
     }
 
     if !desktop_app_running() {
-        return Err(Error::LaunchError(format!(
-            "{PRODUCT_NAME} was unable launch successfully"
-        )));
+        return Err(eyre!("{PRODUCT_NAME} was unable launch successfully"));
     }
 
     // Wait for socket to exist
@@ -232,5 +191,35 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
         }
     }
 
-    Err(Error::LaunchError("failed to connect to socket".to_owned()))
+    Err(eyre!("failed to connect to socket".to_owned()))
+}
+
+#[cfg(target_os = "linux")]
+fn launch_linux_desktop(
+    ctx: std::sync::Arc<fig_os_shim::Context>,
+    settings: &fig_settings::Settings,
+) -> eyre::Result<()> {
+    use std::sync::Arc;
+
+    use fig_util::linux::desktop::DesktopEntry;
+    use fig_util::APP_PROCESS_NAME;
+    use tracing::error;
+
+    if settings.get_bool_or("appimage.manageDesktopEntry", false) {
+        if let Some(exec) = DesktopEntry::new_existing(Arc::clone(&ctx))?.get_field("Exec") {
+            match Command::new(exec).spawn() {
+                Ok(_) => return Ok(()),
+                Err(err) => {
+                    error!(
+                        ?err,
+                        "Unable to launch desktop app according to the local desktop entry."
+                    );
+                },
+            }
+        }
+        // Fall back to calling q-desktop if on the user's path
+    }
+
+    Command::new(APP_PROCESS_NAME).spawn()?;
+    Ok(())
 }

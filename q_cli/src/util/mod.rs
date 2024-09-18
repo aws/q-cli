@@ -1,4 +1,5 @@
 mod cli_context;
+pub mod desktop;
 mod region_check;
 pub mod spinner;
 
@@ -25,6 +26,7 @@ use anstream::stream::IsTerminal;
 use cfg_if::cfg_if;
 pub use cli_context::CliContext;
 use crossterm::style::Stylize;
+use desktop::desktop_app_running;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Select;
 use eyre::{
@@ -36,7 +38,6 @@ use eyre::{
 use fig_ipc::local::quit_command;
 use fig_util::consts::APP_BUNDLE_ID;
 use fig_util::{
-    desktop_app_running,
     CLI_BINARY_NAME,
     PRODUCT_NAME,
 };

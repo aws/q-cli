@@ -95,7 +95,7 @@ pub async fn run_install(ctx: Arc<Context>, ignore_immediate_update: bool) {
     }
 
     #[cfg(target_os = "linux")]
-    run_linux_install(Arc::clone(&ctx)).await;
+    run_linux_install(Arc::clone(&ctx), Arc::new(fig_settings::Settings::new())).await;
 
     if let Err(err) = set_previous_version(current_version()) {
         error!(%err, "Failed to set previous version");
@@ -382,9 +382,10 @@ pub async fn initialize_fig_dir(env: &fig_os_shim::Env) -> anyhow::Result<()> {
 }
 
 #[cfg(target_os = "linux")]
-async fn run_linux_install(ctx: Arc<Context>) {
+async fn run_linux_install(ctx: Arc<Context>, settings: Arc<fig_settings::Settings>) {
     use dbus::gnome_shell::ShellExtensions;
 
+    // install binaries under home local bin
     if ctx.env().in_appimage() {
         let ctx_clone = Arc::clone(&ctx);
         tokio::spawn(async move {
@@ -395,6 +396,7 @@ async fn run_linux_install(ctx: Arc<Context>) {
         });
     }
 
+    // GNOME Shell Extension
     {
         let ctx_clone = Arc::clone(&ctx);
         let shell_extensions = ShellExtensions::new(Arc::clone(&ctx));
@@ -402,6 +404,18 @@ async fn run_linux_install(ctx: Arc<Context>) {
             install_gnome_shell_extension(&ctx_clone, &shell_extensions)
                 .await
                 .map_err(|err| error!(?err, "Unable to install the GNOME Shell extension"))
+                .ok();
+        });
+    }
+
+    // Desktop entry
+    {
+        let ctx_clone = Arc::clone(&ctx);
+        let settings_clone = Arc::clone(&settings);
+        tokio::spawn(async move {
+            install_desktop_entries(ctx_clone, &settings_clone)
+                .await
+                .map_err(|err| error!(?err, "Unable to install desktop entries"))
                 .ok();
         });
     }
@@ -473,6 +487,31 @@ async fn install_gnome_shell_extension(
             info!("Extension {} is already installed and enabled.", extension_uuid);
         },
     }
+
+    Ok(())
+}
+
+/// Installs the desktop entries
+#[cfg(target_os = "linux")]
+async fn install_desktop_entries(ctx: Arc<Context>, settings: &fig_settings::Settings) -> anyhow::Result<()> {
+    use fig_util::linux::desktop::DesktopEntry;
+    use tracing::warn;
+
+    if !ctx.env().in_appimage() {
+        warn!("Installing desktop entries is only supported for AppImage releases, exiting.");
+        return Ok(());
+    }
+
+    settings.set_value("appimage.manageDesktopEntry", true)?;
+
+    let entry_path = ctx.env().current_dir()?.join("share/applications/q-desktop.desktop");
+    let icon_path = ctx
+        .env()
+        .current_dir()?
+        .join("share/icons/hicolor/128x128/apps/q-desktop.png");
+    let mut desktop_entry = DesktopEntry::new(Arc::clone(&ctx), &entry_path, &icon_path).await?;
+    desktop_entry.set_field("Exec", &ctx.env().get("APPIMAGE")?).await?;
+    desktop_entry.enable_autostart().await?;
 
     Ok(())
 }
@@ -882,6 +921,58 @@ echo "{binary_name} {version}"
                 .await
                 .unwrap();
             assert!(matches!(status, ExtensionInstallationStatus::RequiresReboot));
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    mod linux_desktop_entry_tests {
+        use fig_settings::Settings;
+        use fig_util::linux::desktop::{
+            local_autostart_path,
+            local_entry_path,
+            local_icon_path,
+        };
+
+        use super::*;
+
+        #[tokio::test]
+        async fn test_desktop_entry_is_installed() {
+            let ctx = Context::builder()
+                .with_test_home()
+                .await
+                .unwrap()
+                .with_env_var("APPIMAGE", "/test.appimage")
+                .build();
+            let settings = Settings::new_fake();
+            let fs = ctx.fs();
+            fs.create_dir_all("/share/applications").await.unwrap();
+            fs.write(
+                "/share/applications/q-desktop.desktop",
+                "[Desktop Entry]\nExec=q-desktop",
+            )
+            .await
+            .unwrap();
+            fs.create_dir_all("/share/icons/hicolor/128x128/apps").await.unwrap();
+            fs.write("/share/icons/hicolor/128x128/apps/q-desktop.png", "image")
+                .await
+                .unwrap();
+
+            // When
+            install_desktop_entries(Arc::clone(&ctx), &settings).await.unwrap();
+
+            // Then
+            assert_eq!(settings.get_bool("appimage.manageDesktopEntry").unwrap(), Some(true));
+            assert!(fs.exists(local_entry_path(ctx.env()).unwrap()));
+            assert_eq!(
+                fs.read_to_string(local_entry_path(ctx.env()).unwrap()).await.unwrap(),
+                fs.read_to_string(local_autostart_path(ctx.env()).unwrap())
+                    .await
+                    .unwrap(),
+            );
+            assert_eq!(
+                fs.read_to_string(local_icon_path(&ctx).unwrap()).await.unwrap(),
+                "image"
+            );
         }
     }
 }

@@ -1,8 +1,11 @@
 pub const APP_BUNDLE_ID: &str = "com.amazon.codewhisperer";
 pub const APP_BUNDLE_NAME: &str = "Amazon Q.app";
 
-#[cfg(unix)]
+#[cfg(target_os = "macos")]
 pub const APP_PROCESS_NAME: &str = "q_desktop";
+#[cfg(target_os = "linux")]
+pub const APP_PROCESS_NAME: &str = "q-desktop";
+
 #[cfg(windows)]
 pub const APP_PROCESS_NAME: &str = "q_desktop.exe";
 
@@ -67,6 +70,10 @@ pub mod macos {
     pub const BUNDLE_CONTENTS_RESOURCE_PATH: &str = "Contents/Resources";
     pub const BUNDLE_CONTENTS_HELPERS_PATH: &str = "Contents/Helpers";
     pub const BUNDLE_CONTENTS_INFO_PLIST_PATH: &str = "Contents/Info.plist";
+}
+
+pub mod linux {
+    pub const DESKTOP_ENTRY_NAME: &str = "amazon-q.desktop";
 }
 
 pub mod env_var {

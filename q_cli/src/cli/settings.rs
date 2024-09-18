@@ -17,10 +17,6 @@ use fig_ipc::local::open_ui_element;
 use fig_os_shim::Os;
 use fig_proto::local::UiElement;
 use fig_settings::JsonStore;
-use fig_util::desktop::{
-    launch_fig_desktop,
-    LaunchArgs,
-};
 use fig_util::{
     directories,
     manifest,
@@ -32,6 +28,10 @@ use serde_json::json;
 
 use super::OutputFormat;
 use crate::cli::Cli;
+use crate::util::desktop::{
+    launch_fig_desktop,
+    LaunchArgs,
+};
 use crate::util::{
     app_not_running_message,
     CliContext,

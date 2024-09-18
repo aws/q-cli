@@ -40,7 +40,6 @@ use fig_ipc::local::{
 };
 use fig_os_shim::Env;
 use fig_util::consts::APP_BUNDLE_ID;
-use fig_util::desktop::LaunchArgs;
 use fig_util::env_var::Q_DEBUG_SHELL;
 use fig_util::macos::BUNDLE_CONTENTS_MACOS_PATH;
 use fig_util::manifest::FileType;
@@ -60,6 +59,7 @@ use tempfile::{
 use tracing::error;
 
 use crate::cli::launch_fig_desktop;
+use crate::util::desktop::LaunchArgs;
 use crate::util::{
     get_app_info,
     glob,

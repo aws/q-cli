@@ -148,6 +148,10 @@ pub fn fig_data_dir() -> Result<PathBuf> {
     }
 }
 
+pub fn fig_data_dir_ctx(ctx: &Context) -> Result<PathBuf> {
+    Ok(ctx.fs().chroot_path(fig_data_dir()?))
+}
+
 /// The q cache directory
 ///
 /// - Linux: `$XDG_CACHE_HOME/amazon-q` or `$HOME/.cache/amazon-q`

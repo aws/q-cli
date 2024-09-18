@@ -572,6 +572,8 @@ def build_linux_full(
     ]
     if features and features.get(DESKTOP_PACKAGE_NAME):
         cargo_tauri_args.extend(["--features", ",".join(features[DESKTOP_PACKAGE_NAME])])
+    if not release:
+        cargo_tauri_args.extend(["--debug"])
 
     build_env_vars = {**os.environ, **rust_env(release=release, variant=Variant.FULL), "BUILD_DIR": BUILD_DIR}
 
@@ -595,15 +597,15 @@ def build_linux_full(
 
     info("Copying bundles to build directory")
     bundle_name = f"{tauri_product_name()}_{version()}_amd64"
-    bundle_grandparent_path = f"target/{target}/release/bundle"
+    target_subdir = "release" if release else "debug"
+    bundle_grandparent_path = f"target/{target}/{target_subdir}/bundle"
     appimage_path = BUILD_DIR / f"{LINUX_ARCHIVE_NAME}.appimage"
+    deb_path = BUILD_DIR / f"{LINUX_ARCHIVE_NAME}.deb"
     shutil.copy(
         pathlib.Path(f"{bundle_grandparent_path}/appimage/{bundle_name}.AppImage"),
         appimage_path,
     )
-    shutil.copy(
-        pathlib.Path(f"{bundle_grandparent_path}/deb/{bundle_name}.deb"), BUILD_DIR / f"{LINUX_ARCHIVE_NAME}.deb"
-    )
+    shutil.copy(pathlib.Path(f"{bundle_grandparent_path}/deb/{bundle_name}.deb"), deb_path)
 
     if signer:
         info("Downloading validate binary to verify the AppImage signature")

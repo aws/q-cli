@@ -18,12 +18,7 @@ use fig_settings::{
     settings,
     state,
 };
-use fig_util::desktop::{
-    launch_fig_desktop,
-    LaunchArgs,
-};
 use fig_util::{
-    desktop_app_running,
     manifest,
     CLI_BINARY_NAME,
     PRODUCT_NAME,
@@ -31,6 +26,12 @@ use fig_util::{
 use tracing::{
     info,
     trace,
+};
+
+use crate::util::desktop::{
+    desktop_app_running,
+    launch_fig_desktop,
+    LaunchArgs,
 };
 
 #[derive(Debug, Args, PartialEq, Eq)]
