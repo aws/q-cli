@@ -44,7 +44,7 @@ pub fn desktop_app_running() -> bool {
                 System,
             };
 
-            use crate::consts::{
+            use fig_util::consts::{
                 APP_PROCESS_NAME,
                 APP_BUNDLE_ID
             };
@@ -131,12 +131,12 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<()> {
     cfg_if::cfg_if! {
         if #[cfg(target_os = "macos")] {
             let output = Command::new("open")
-                .args(["-g", "-b", crate::consts::APP_BUNDLE_ID, "--args"])
+                .args(["-g", "-b", fig_util::consts::APP_BUNDLE_ID, "--args"])
                 .args(common_args)
                 .output()?;
 
             if !output.status.success() {
-                return Err(Error::LaunchError(String::from_utf8_lossy(&output.stderr).to_string()))
+                eyre::bail!("failed to launch: {}", String::from_utf8_lossy(&output.stderr));
             }
         } else if #[cfg(windows)] {
             use std::os::windows::process::CommandExt;

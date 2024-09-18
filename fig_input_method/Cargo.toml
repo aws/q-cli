@@ -24,7 +24,7 @@ toml.workspace = true
 apple-bundle = "0.1.4"
 
 [target.'cfg(target_os = "macos")'.dependencies]
-objc = "0.2.7"
+objc.workspace = true
 cocoa = "0.25.0"
 libc.workspace = true
 rand.workspace = true

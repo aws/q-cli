@@ -359,6 +359,7 @@ async fn allow_multiple_running_check(current_pid: sysinfo::Pid, kill_old: bool,
                         eprintln!("Failed to open Fig: {err}");
                     }
 
+                    #[allow(clippy::exit)]
                     exit(0);
                 };
 

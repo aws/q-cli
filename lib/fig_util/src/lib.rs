@@ -51,8 +51,6 @@ pub enum Error {
     UnknownDisplayServer(String),
     #[error("unknown desktop `{0}`")]
     UnknownDesktop(String),
-    #[error("failed to launch: `{0}`")]
-    LaunchError(String),
     #[error(transparent)]
     StrUtf8Error(#[from] std::str::Utf8Error),
     #[error("Failed to parse shell {0} version")]

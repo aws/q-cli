@@ -18,6 +18,7 @@ gamma = ["fig_install/gamma"]
 amzn-codewhisperer-client.workspace = true
 amzn-codewhisperer-streaming-client.workspace = true
 anstream.workspace = true
+appkit-nsworkspace-bindings.workspace = true
 arboard = { version = "3.1.1", default-features = false, features = [
     "wayland-data-control",
 ] }
@@ -58,6 +59,7 @@ globset = "0.4.10"
 indicatif = "0.17.3"
 indoc.workspace = true
 mimalloc.workspace = true
+objc.workspace = true
 once_cell.workspace = true
 owo-colors = "4.0.0"
 parking_lot = "0.12.1"

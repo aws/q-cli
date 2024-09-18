@@ -137,7 +137,7 @@ core-foundation = "0.9"
 core-graphics = "0.23.0"
 libc.workspace = true
 macos-utils = { path = "../lib/macos-utils" }
-objc = "0.2.7"
+objc.workspace = true
 system-configuration = "0.6.0"
 screencapturekit-sys = "0.2.8"
 screencapturekit = "0.2.8"

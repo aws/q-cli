@@ -37,10 +37,10 @@ tracing.workspace = true
 whoami.workspace = true
 
 [target.'cfg(target_os = "macos")'.dependencies]
-appkit-nsworkspace-bindings = { path = "../macos-utils/appkit-nsworkspace-bindings" }
+appkit-nsworkspace-bindings.workspace = true
 core-foundation = "0.9.3"
 macos-utils = { path = "../macos-utils" }
-objc = "0.2.7"
+objc.workspace = true
 
 [target.'cfg(target_os = "linux")'.dependencies]
 bstr.workspace = true
