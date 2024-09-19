@@ -17,15 +17,12 @@ use fig_remote_ipc::figterm::{
     FigtermCommand,
     FigtermState,
 };
-use muda::Submenu;
 use parking_lot::Mutex;
 use tao::dpi::{
     LogicalPosition,
     LogicalSize,
     Position,
 };
-#[cfg(target_os = "macos")]
-use tao::platform::macos::WindowExtMacOS;
 use tao::window::Window;
 use tokio::sync::mpsc::UnboundedSender;
 use tracing::{
@@ -58,7 +55,6 @@ use crate::{
     EventLoopWindowTarget,
     AUTOCOMPLETE_ID,
     DASHBOARD_ID,
-    HOTKEY_CHAT_ID,
 };
 
 pub struct WindowGeometryState {
@@ -123,14 +119,6 @@ impl WindowState {
         platform_state: &PlatformState,
         dry_run: bool,
     ) -> (bool, bool) {
-        if self.window_id == HOTKEY_CHAT_ID {
-            if let Some(size) = size {
-                self.window.set_inner_size(size);
-            }
-
-            return (true, false);
-        }
-
         // Lock our atomic state
         let mut state = self.window_geometry_state.lock();
 
@@ -327,7 +315,6 @@ impl WindowState {
         notifications_state: &WebviewNotificationsState,
         window_target: &EventLoopWindowTarget,
         api_tx: &UnboundedSender<(WindowId, String)>,
-        context_menu: Option<&Submenu>,
     ) {
         match event {
             WindowEvent::UpdateWindowGeometry {
@@ -530,16 +517,6 @@ impl WindowState {
                     error!(%err, "Failed to drag window");
                 }
             },
-            #[allow(unused_variables)]
-            WindowEvent::OpenContextMenu { x, y, windows } => {
-                cfg_if::cfg_if! {
-                    if #[cfg(target_os = "macos")] {
-                        self.open_context_menu(x, y, windows, context_menu);
-                    } else {
-                        error!("unsupported event: OpenContextMenu");
-                    }
-                }
-            },
             WindowEvent::Batch(events) => {
                 for event in events {
                     self.handle(
@@ -549,7 +526,6 @@ impl WindowState {
                         notifications_state,
                         window_target,
                         api_tx,
-                        None,
                     );
                 }
             },
@@ -610,58 +586,5 @@ impl WindowState {
     #[allow(clippy::unused_self)]
     pub fn set_theme(&self, _theme: Option<Theme>) {
         // TODO: blocked on https://github.com/tauri-apps/tao/issues/582
-    }
-
-    #[cfg(target_os = "macos")]
-    fn open_context_menu(&self, x: f32, y: f32, windows: Vec<(String, String)>, context_menu: Option<&Submenu>) {
-        use std::io::Cursor;
-        use std::path::Path;
-
-        use image::ImageFormat;
-        use muda::{
-            ContextMenu,
-            IconMenuItemBuilder,
-        };
-
-        let Some(current_context_menu) = context_menu else {
-            return;
-        };
-
-        let mut num_items = current_context_menu.items().len();
-
-        while num_items > 12 {
-            current_context_menu.remove_at(0);
-            num_items -= 1;
-        }
-
-        for (window, app) in windows {
-            let path_str = format!("/Applications/{}.app", app);
-            let path = Path::new(&path_str);
-            let Some(bytes) = (unsafe { macos_utils::image::png_for_path(path) }) else {
-                continue;
-            };
-            let cursor = Cursor::new(bytes);
-            let img = match image::load(cursor, ImageFormat::Png) {
-                Ok(img) => img.into_rgba8(),
-                Err(err) => panic!("Failed to load PNG: {}", err),
-            };
-            let (width, height) = img.dimensions();
-            let raw_pixels = img.into_raw();
-            let icon = muda::Icon::from_rgba(raw_pixels, width, height).expect("Failed to open icon");
-
-            current_context_menu
-                .prepend(
-                    &IconMenuItemBuilder::new()
-                        .icon(Some(icon))
-                        .text(window.clone())
-                        .id(window.into())
-                        .enabled(true)
-                        .build(),
-                )
-                .unwrap();
-        }
-
-        current_context_menu
-            .show_context_menu_for_nsview(self.window.ns_view().cast(), Some(Position::Logical((x, y).into())));
     }
 }

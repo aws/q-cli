@@ -52,8 +52,6 @@ message ClientOriginatedMessage {
     PingRequest ping_request = 144;
     CodewhispererListCustomizationRequest codewhisperer_list_customization_request = 145;
     DragWindowRequest drag_window_request = 146;
-    GetScreenshotRequest get_screenshot_request = 147;
-    OpenContextMenuRequest open_context_menu_request = 148;
     AuthStartPkceAuthorizationRequest auth_start_pkce_authorization_request = 149;
     AuthFinishPkceAuthorizationRequest auth_finish_pkce_authorization_request = 150;
   }
@@ -89,7 +87,6 @@ message ServerOriginatedMessage {
     AuthBuilderIdPollCreateTokenResponse auth_builder_id_poll_create_token_response = 118;
     PingResponse ping_response = 119;
     CodewhispererListCustomizationResponse codewhisperer_list_customization_response = 120;
-    GetScreenshotResponse get_screenshot_response = 121;
     AuthStartPkceAuthorizationResponse auth_start_pkce_authorization_response = 122;
     AuthFinishPkceAuthorizationResponse auth_finish_pkce_authorization_response = 123;
 
@@ -706,18 +703,6 @@ message CodewhispererListCustomizationResponse {
 }
 
 message DragWindowRequest {}
-
-message GetScreenshotRequest {
-    string target = 1;
-}
-
-message GetScreenshotResponse {
-    repeated bytes images = 1;
-}
-
-message OpenContextMenuRequest {
-    Point position = 1;
-}
 
 /// Notifications
 

@@ -12,11 +12,9 @@ use fig_proto::fig::{
     ClientOriginatedMessage,
     DebuggerUpdateRequest,
     DragWindowRequest,
-    GetScreenshotRequest,
     InsertTextRequest,
     NotificationRequest,
     OnboardingRequest,
-    OpenContextMenuRequest,
     PositionWindowRequest,
     PseudoterminalExecuteRequest,
     PseudoterminalWriteRequest,
@@ -108,14 +106,6 @@ pub trait EventHandler {
     async fn drag_window(&self, request: Wrapped<Self::Ctx, DragWindowRequest>) -> RequestResult {
         RequestResult::unimplemented(request.request)
     }
-
-    async fn get_screenshot(&self, request: Wrapped<Self::Ctx, GetScreenshotRequest>) -> RequestResult {
-        RequestResult::unimplemented(request.request)
-    }
-
-    async fn open_context_menu(&self, request: Wrapped<Self::Ctx, OpenContextMenuRequest>) -> RequestResult {
-        RequestResult::unimplemented(request.request)
-    }
 }
 
 pub fn request_from_b64(request_b64: &str) -> Result<ClientOriginatedMessage> {
@@ -194,7 +184,6 @@ async fn handle_request<Ctx: KVStore + EnvProvider + FsProvider, E: EventHandler
                 GetConfigPropertyRequest,
                 GetDefaultsPropertyRequest,
                 GetLocalStateRequest,
-                GetScreenshotRequest,
                 GetSettingsPropertyRequest,
                 HistoryQueryRequest,
                 InsertTextRequest,
@@ -202,7 +191,6 @@ async fn handle_request<Ctx: KVStore + EnvProvider + FsProvider, E: EventHandler
                 MacosInputMethodRequest,
                 NotificationRequest,
                 OnboardingRequest,
-                OpenContextMenuRequest,
                 OpenInExternalApplicationRequest,
                 PingRequest,
                 PositionWindowRequest,
@@ -270,9 +258,6 @@ async fn handle_request<Ctx: KVStore + EnvProvider + FsProvider, E: EventHandler
                 PositionWindowRequest(request) => event_handler.position_window(request!(request)).await,
                 WindowFocusRequest(request) => event_handler.window_focus(request!(request)).await,
                 DragWindowRequest(request) => event_handler.drag_window(request!(request)).await,
-                // screen
-                GetScreenshotRequest(request) => event_handler.get_screenshot(request!(request)).await,
-                OpenContextMenuRequest(request) => event_handler.open_context_menu(request!(request)).await,
                 // onboarding
                 OnboardingRequest(request) => event_handler.onboarding(request!(request)).await,
                 // install

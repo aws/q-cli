@@ -210,7 +210,6 @@ mod tests {
     use std::fs::read_to_string;
     use std::time::Duration;
 
-    use tempfile::TempPath;
     use tracing::{
         debug,
         error,
@@ -223,13 +222,14 @@ mod tests {
     #[test]
     fn test_logging() {
         // Create a temp path for where we write logs to.
-        let tmp = TempPath::from_path("fig.log");
+        let tempdir = tempfile::TempDir::new().unwrap();
+        let log_path = tempdir.path().join("test.log");
 
         // Assert that initialize logging simply doesn't panic.
         let _guard = initialize_logging(LogArgs {
             log_level: Some("trace".to_owned()),
             log_to_stdout: true,
-            log_file_path: Some(&tmp),
+            log_file_path: Some(&log_path),
             delete_old_log_file: true,
         })
         .unwrap();
@@ -250,8 +250,8 @@ mod tests {
         assert_eq!(get_log_level(), DEFAULT_FILTER.to_string());
 
         // Sleep in order to ensure logs get written to file, then assert on the contents
-        std::thread::sleep(Duration::from_secs(1));
-        let logs = read_to_string(&tmp).unwrap();
+        std::thread::sleep(Duration::from_millis(100));
+        let logs = read_to_string(&log_path).unwrap();
         for i in [
             "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "abc", "def", "ghi", "jkl", "mno",
         ] {

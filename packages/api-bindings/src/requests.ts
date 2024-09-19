@@ -36,8 +36,6 @@ import {
   GetDefaultsPropertyResponse,
   GetLocalStateRequest,
   GetLocalStateResponse,
-  GetScreenshotRequest,
-  GetScreenshotResponse,
   GetSettingsPropertyRequest,
   GetSettingsPropertyResponse,
   HistoryQueryRequest,
@@ -48,7 +46,6 @@ import {
   MacosInputMethodRequest,
   MacosInputMethodResponse,
   OnboardingRequest,
-  OpenContextMenuRequest,
   OpenInExternalApplicationRequest,
   PingRequest,
   PingResponse,
@@ -642,32 +639,6 @@ export async function sendCodewhispererListCustomizationRequest(
             reject(
               Error(
                 `Invalid response '${response?.$case}' for 'CodewhispererListCustomizationRequest'`,
-              ),
-            );
-        }
-      },
-    );
-  });
-}
-
-export async function sendGetScreenshotRequest(
-  request: GetScreenshotRequest,
-): Promise<GetScreenshotResponse> {
-  return new Promise((resolve, reject) => {
-    sendMessage(
-      { $case: "getScreenshotRequest", getScreenshotRequest: request },
-      (response) => {
-        switch (response?.$case) {
-          case "getScreenshotResponse":
-            resolve(response.getScreenshotResponse);
-            break;
-          case "error":
-            reject(Error(response.error));
-            break;
-          default:
-            reject(
-              Error(
-                `Invalid response '${response?.$case}' for 'GetScreenshotRequest'`,
               ),
             );
         }
@@ -1322,32 +1293,6 @@ export async function sendDragWindowRequest(
             reject(
               Error(
                 `Invalid response '${response?.$case}' for 'DragWindowRequest'`,
-              ),
-            );
-        }
-      },
-    );
-  });
-}
-
-export async function sendOpenContextMenuRequest(
-  request: OpenContextMenuRequest,
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    sendMessage(
-      { $case: "openContextMenuRequest", openContextMenuRequest: request },
-      (response) => {
-        switch (response?.$case) {
-          case "success":
-            resolve();
-            break;
-          case "error":
-            reject(Error(response.error));
-            break;
-          default:
-            reject(
-              Error(
-                `Invalid response '${response?.$case}' for 'OpenContextMenuRequest'`,
               ),
             );
         }

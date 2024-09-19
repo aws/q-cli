@@ -129,11 +129,6 @@ pub enum WindowEvent {
     },
 
     Drag,
-    OpenContextMenu {
-        x: f32,
-        y: f32,
-        windows: Vec<(String, String)>,
-    },
     Batch(Vec<WindowEvent>),
 }
 

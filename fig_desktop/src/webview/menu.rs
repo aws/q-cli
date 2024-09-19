@@ -14,16 +14,12 @@ use crate::event::{
 use crate::{
     EventLoopProxy,
     DASHBOARD_ID,
-    HOTKEY_CHAT_ID,
 };
 
 const DASHBOARD_QUIT: &str = "dashboard-quit";
 const DASHBOARD_RELOAD: &str = "dashboard-reload";
 const DASHBOARD_BACK: &str = "dashboard-back";
 const DASHBOARD_FORWARD: &str = "dashboard-forward";
-
-const HOTKEY_DEVTOOLS: &str = "hotkey-devtools";
-const HOTKEY_ENTIRE_SCREEN: &str = "hotkey-entire-screen";
 
 #[cfg(target_os = "macos")]
 pub fn menu_bar() -> Menu {
@@ -105,46 +101,6 @@ pub fn menu_bar() -> Menu {
     menu_bar
 }
 
-#[allow(dead_code)]
-#[cfg(target_os = "macos")]
-pub fn context_menu() -> (Menu, Submenu) {
-    use muda::{
-        MenuItemBuilder,
-        PredefinedMenuItem,
-    };
-
-    let menu_bar = Menu::new();
-    let context_menu = Submenu::new("Context Menu", true);
-    menu_bar.append(&context_menu).unwrap();
-
-    context_menu
-        .append_items(&[
-            &PredefinedMenuItem::separator(),
-            &MenuItemBuilder::new()
-                .text("Entire Screen")
-                .id(HOTKEY_ENTIRE_SCREEN.into())
-                .enabled(true)
-                .build(),
-            &PredefinedMenuItem::separator(),
-            &MenuItemBuilder::new()
-                .text("Inspect Element")
-                .id(HOTKEY_DEVTOOLS.into())
-                .enabled(true)
-                .build(),
-            &PredefinedMenuItem::separator(),
-            &PredefinedMenuItem::undo(None),
-            &PredefinedMenuItem::redo(None),
-            &PredefinedMenuItem::separator(),
-            &PredefinedMenuItem::copy(None),
-            &PredefinedMenuItem::paste(None),
-            &PredefinedMenuItem::cut(None),
-            &PredefinedMenuItem::select_all(None),
-        ])
-        .unwrap();
-
-    (menu_bar, context_menu)
-}
-
 // TODO(chay): add whatever is ergonomic for Windows
 #[cfg(target_os = "windows")]
 pub fn menu_bar() -> MenuBar {
@@ -207,29 +163,6 @@ pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
                 window_event: WindowEvent::NavigateForward,
             })
             .unwrap(),
-        menu_id if menu_id == HOTKEY_DEVTOOLS => proxy
-            .send_event(Event::WindowEvent {
-                window_id: HOTKEY_CHAT_ID,
-                window_event: WindowEvent::Devtools,
-            })
-            .unwrap(),
-        menu_id if menu_id == HOTKEY_ENTIRE_SCREEN => proxy
-            .send_event(Event::WindowEvent {
-                window_id: HOTKEY_CHAT_ID,
-                window_event: WindowEvent::Event {
-                    event_name: "screenshot".into(),
-                    payload: None,
-                },
-            })
-            .unwrap(),
-        menu_id => proxy
-            .send_event(Event::WindowEvent {
-                window_id: HOTKEY_CHAT_ID,
-                window_event: WindowEvent::Event {
-                    event_name: "screenshot".into(),
-                    payload: Some(serde_json::json!(menu_id).to_string().into()),
-                },
-            })
-            .unwrap(),
+        _ => (),
     }
 }
