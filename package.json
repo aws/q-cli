@@ -1,9 +1,8 @@
 {
   "name": "root",
   "private": true,
-  "repository": "git@github.com:withfig/macos",
   "author": "Fig Team",
-  "license": "MIT",
+  "license": "MIT OR Apache-2.0",
   "packageManager": "pnpm@9.1.4",
   "scripts": {
     "build": "turbo build",

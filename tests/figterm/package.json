@@ -1,6 +1,8 @@
 {
   "name": "dotenv",
   "version": "1.0.0",
+  "license": "MIT OR Apache-2.0",
+  "author": "Amazon Web Services",
   "description": "Testing for shell integration and qterm",
   "main": "test.js",
   "scripts": {
@@ -10,22 +12,12 @@
     "precommit": "lint-staged",
     "lint:fix": "npm run lint -- --fix"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/withfig/dotenv.git"
-  },
   "prettier": {
     "printWidth": 80,
     "semi": true,
     "singleQuote": true,
     "trailingComma": "es5"
   },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/withfig/dotenv/issues"
-  },
-  "homepage": "https://github.com/withfig/dotenv#readme",
   "dependencies": {
     "@jest/console": "^29.0.2",
     "@jest/globals": "^29.0.2",

@@ -38,16 +38,15 @@ use super::ApiResponse;
 // Max constants for length of strings and lists, use these to truncate elements
 // to ensure the API request is valid
 
-// https://code.amazon.com/packages/AWSVectorConsolasPlatformModel/blobs/heads/mainline/--/model/types/env_types.smithy
+// These limits are the internal undocumented values from the service for each item
+
 const MAX_ENV_VAR_LIST_LEN: usize = 100;
 const MAX_ENV_VAR_KEY_LEN: usize = 256;
 const MAX_ENV_VAR_VALUE_LEN: usize = 1024;
 const MAX_CURRENT_WORKING_DIRECTORY_LEN: usize = 256;
 
-// https://code.amazon.com/packages/AWSVectorConsolasPlatformModel/blobs/mainline/--/model/types/git_types.smithy
 const MAX_GIT_STATUS_LEN: usize = 4096;
 
-// https://code.amazon.com/packages/AWSVectorConsolasPlatformModel/blobs/mainline/--/model/types/shell_types.smithy
 const MAX_SHELL_HISTORY_LIST_LEN: usize = 20;
 const MAX_SHELL_HISTORY_COMMAND_LEN: usize = 1024;
 const MAX_SHELL_HISTORY_DIRECTORY_LEN: usize = 256;

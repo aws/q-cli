@@ -7,9 +7,6 @@ pub const PROD_CODEWHISPERER_ENDPOINT_REGION: Region = Region::from_static("us-e
 pub const PROD_Q_ENDPOINT_URL: &str = "https://q.us-east-1.amazonaws.com";
 pub const PROD_Q_ENDPOINT_REGION: Region = Region::from_static("us-east-1");
 
-// const ALPHA_ENDPOINT_URL: &str = "https://rts.alpha-us-west-2.codewhisperer.ai.aws.dev";
-// const ALPHA_ENDPOINT_REGION: Region = Region::from_static("us-west-2");
-
 // Opt out constants
 pub const SHARE_CODEWHISPERER_CONTENT_SETTINGS_KEY: &str = "codeWhisperer.shareCodeWhispererContentWithAWS";
 pub const X_AMZN_CODEWHISPERER_OPT_OUT_HEADER: &str = "x-amzn-codewhisperer-optout";
