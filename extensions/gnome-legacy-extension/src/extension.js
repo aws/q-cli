@@ -27,7 +27,9 @@ function log_msg(...messages) {
  * @returns {void}
  */
 function debug(...messages) {
-  return console.debug(LOG_PREFIX, ...messages);
+  if (DEBUG) {
+    return console.log(LOG_PREFIX, ...messages);
+  }
 }
 
 const RESOURCES_PREFIX =
@@ -303,6 +305,8 @@ class Extension extends GObject.Object {
    * @public @method @returns {void}
    */
   enable() {
+    debug("Enabling the extension");
+
     // Load and register resource files.
     this.#resources = Gio.Resource.load(
       `${Me.path}/resources/amazon-q-for-cli-legacy-gnome-integration.gresource`,
@@ -368,6 +372,8 @@ class Extension extends GObject.Object {
    * @public @method @returns {void}
    */
   disable() {
+    debug("Disabling the extension");
+
     // Unregister the resource files.
     Gio.resources_unregister(this.#resources);
     this.#resources = null;
@@ -454,13 +460,17 @@ class Extension extends GObject.Object {
 
     this.#window = global.display.focus_window;
 
-    this.#connect_to_object(this.#window, "size-changed", () =>
-      this.#send_window_data(),
-    );
+    this.#connect_to_object(this.#window, "size-changed", () => {
+      debug("mutter: size-changed");
+      return this.#send_window_data();
+    });
 
     // Subscribe to receive updates when the global `MetaDisplay` "focus-window"
     // property changes.
     this.#connect_to_object(global.display, "notify::focus-window", () => {
+      debug(
+        `mutter: notify::focus-window on ${global.display.focus_window.get_wm_class()}`,
+      );
       if (this.#window !== global.display.focus_window) {
         this.#disconnect_from_object(this.#window);
 
@@ -476,6 +486,7 @@ class Extension extends GObject.Object {
 
     // Subscribe to receive updates when the overlay key is pressed
     this.#connect_to_object(global.display, "overlay-key", () => {
+      debug("mutter: overlay-key");
       this.#send_window_data(true);
     });
 
@@ -715,12 +726,10 @@ class Extension extends GObject.Object {
     const outer_rect = this.#window.get_buffer_rect();
     const scale = global.display.get_monitor_scale(this.#window.get_monitor());
 
-    if (DEBUG) {
-      log_msg(
-        `Sending data for rect inner ${inner_rect.x},${inner_rect.y},${inner_rect.width},${inner_rect.height}` +
-          ` outer ${outer_rect.x},${outer_rect.y},${outer_rect.width},${outer_rect.height} with scale ${scale}`,
-      );
-    }
+    debug(
+      `Sending data for rect inner ${inner_rect.x},${inner_rect.y},${inner_rect.width},${inner_rect.height}` +
+        ` outer ${outer_rect.x},${outer_rect.y},${outer_rect.width},${outer_rect.height} with scale ${scale}`,
+    );
 
     try {
       this.#socket.send(

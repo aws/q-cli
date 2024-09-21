@@ -1,6 +1,9 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{
+    Path,
+    PathBuf,
+};
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -17,7 +20,7 @@ use zbus::zvariant::OwnedValue;
 use super::session_bus;
 use crate::CrateError;
 
-const GNOME_SHELL_PROCESS_NAME: &str = "gnome-shell";
+pub const GNOME_SHELL_PROCESS_NAME: &str = "gnome-shell";
 
 /// Extension uuid for GNOME Shell v44 and prior.
 const LEGACY_EXTENSION_UUID: &str = "amazon-q-for-cli-legacy-gnome-integration@aws.amazon.com";
@@ -55,32 +58,41 @@ async fn new_proxy() -> Result<ShellExtensionsProxy<'static>, CrateError> {
     Ok(ShellExtensionsProxy::new(session_bus().await?).await?)
 }
 
+/// Path to the directory containing GNOME Shell extensions installed for the current user.
+pub fn local_extensions_directory(ctx: &Context) -> Result<PathBuf, ExtensionsError> {
+    Ok(ctx
+        .env()
+        .home()
+        .ok_or(ExtensionsError::Other("no home directory".into()))?
+        .join(".local/share/gnome-shell/extensions"))
+}
+
+/// Path to the directory containing the extension by the given `uuid`.
+pub fn local_extension_directory(ctx: &Context, uuid: &str) -> Result<PathBuf, ExtensionsError> {
+    Ok(local_extensions_directory(ctx)?.join(uuid))
+}
+
 /// Gets the installation status for the Amazon Q CLI GNOME Shell extension.
+///
+/// If `expected_version` is [Option::Some], then an additional version check is applied, in which
+/// case [ExtensionInstallationStatus::UnexpectedVersion] may be returned.
 pub async fn get_extension_status(
     ctx: &Context,
     shell_extensions: &ShellExtensions,
-    expected_version: u32,
+    expected_version: Option<u32>,
 ) -> Result<ExtensionInstallationStatus, ExtensionsError> {
     if !shell_extensions.is_gnome_shell_running().await? {
         return Ok(ExtensionInstallationStatus::GnomeShellNotRunning);
     }
 
-    let mut info = shell_extensions.get_extension_info().await?;
-    debug!("Found extension info: {:?}", info);
-    let info_key_count = info.keys().count();
     // This could mean the extension is *technically* installed but just not loaded into
     // gnome shell's js jit, or the extension literally is not installed.
     //
     // As a check, see if the user's local directory contains the extension UUID.
     // If so, they need to reboot.
-    if info_key_count == 0 {
+    if !shell_extensions.is_extension_loaded().await? {
         let uuid = shell_extensions.extension_uuid().await?;
-        let local_extension_path = ctx
-            .env()
-            .home()
-            .ok_or(ExtensionsError::Other("no home directory".into()))?
-            .join(".local/share/gnome-shell/extensions")
-            .join(uuid);
+        let local_extension_path = local_extension_directory(ctx, &uuid)?;
         if ctx.fs().exists(&local_extension_path) {
             // The user could still have an old extension installed, so parse the metadata.json to
             // check the version, returning "NotInstalled" if we run into any errors.
@@ -92,10 +104,12 @@ pub async fn get_extension_status(
                         Ok(metadata) => metadata,
                         Err(_) => return Ok(ExtensionInstallationStatus::NotInstalled),
                     };
-                    if metadata.version != expected_version {
-                        return Ok(ExtensionInstallationStatus::UnexpectedVersion {
-                            installed_version: metadata.version,
-                        });
+                    if let Some(expected_version) = expected_version {
+                        if metadata.version != expected_version {
+                            return Ok(ExtensionInstallationStatus::UnexpectedVersion {
+                                installed_version: metadata.version,
+                            });
+                        }
                     }
                 },
                 Err(_) => return Ok(ExtensionInstallationStatus::NotInstalled),
@@ -108,21 +122,19 @@ pub async fn get_extension_status(
         return Ok(ExtensionInstallationStatus::NotInstalled);
     }
 
-    let installed_version = f64::try_from(
-        info.remove("version")
-            .ok_or(ExtensionsError::Other("missing extension version".into()))?,
-    )? as u32;
-    if installed_version != expected_version {
-        return Ok(ExtensionInstallationStatus::UnexpectedVersion { installed_version });
+    let mut info = shell_extensions.get_extension_info().await?;
+    debug!("Found extension info: {:?}", info);
+    if let Some(expected_version) = expected_version {
+        let installed_version = f64::try_from(
+            info.remove("version")
+                .ok_or(ExtensionsError::Other("missing extension version".into()))?,
+        )? as u32;
+        if installed_version != expected_version {
+            return Ok(ExtensionInstallationStatus::UnexpectedVersion { installed_version });
+        }
     }
 
-    // Extension is enabled if "state" equals 1. If "state" equals 2, then it's
-    // disabled.
-    let state = f64::try_from(
-        info.remove("state")
-            .ok_or(ExtensionsError::Other("missing extension state".into()))?,
-    )? as u32;
-    if state == 2 {
+    if !shell_extensions.is_extension_enabled().await? {
         return Ok(ExtensionInstallationStatus::NotEnabled);
     }
 
@@ -130,7 +142,7 @@ pub async fn get_extension_status(
 }
 
 /// Provides an accessible interface to retrieving info about the Amazon Q GNOME Shell Extension.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ShellExtensions(inner::Inner);
 
 mod inner {
@@ -146,13 +158,17 @@ mod inner {
         Fake(Arc<Mutex<Fake>>),
     }
 
+    impl Default for Inner {
+        fn default() -> Self {
+            Inner::Real(Context::new())
+        }
+    }
+
     #[derive(Debug)]
     pub struct Fake {
         pub(super) ctx: Arc<Context>,
         pub version: GnomeShellVersion,
-        pub installed_version: Option<u32>,
         pub extension_info: HashMap<String, OwnedValue>,
-        pub extension_enabled: bool,
     }
 
     impl Default for Fake {
@@ -164,8 +180,6 @@ mod inner {
                     minor: "0".to_string(),
                 },
                 extension_info: HashMap::new(),
-                installed_version: None,
-                extension_enabled: false,
             }
         }
     }
@@ -240,9 +254,14 @@ impl ShellExtensions {
 
                 Ok(r)
             },
-            Inner::Fake(fake) => match fake.lock().await.installed_version {
-                Some(_) => Ok(true),
-                None => Ok(false),
+            Inner::Fake(fake) => {
+                let mut fake = fake.lock().await;
+                if fake.extension_info.keys().count() > 0 {
+                    fake.extension_info.clear();
+                    Ok(true)
+                } else {
+                    Ok(false)
+                }
             },
         }
     }
@@ -277,26 +296,17 @@ impl ShellExtensions {
             },
             Inner::Fake(fake) => {
                 if fake.lock().await.ctx.fs().exists(&path) {
-                    let uuid = self.extension_uuid().await.unwrap();
-                    let mut fake = fake.lock().await;
-                    let extension_dir_path = fake
-                        .ctx
-                        .env()
-                        .home()
-                        .unwrap()
-                        .join(".local/share/gnome-shell/extensions")
-                        .join(uuid);
-                    fake.ctx.fs().create_dir_all(&extension_dir_path).await.ok();
-                    let version: u32 = fake.ctx.fs().read_to_string(&path).await.unwrap().parse().unwrap();
-                    fake.installed_version = Some(version);
-                    fake.ctx
-                        .fs()
-                        .write(
-                            extension_dir_path.join("metadata.json"),
-                            json!({ "version": version }).to_string(),
-                        )
+                    let version: u32 = fake
+                        .lock()
                         .await
+                        .ctx
+                        .fs()
+                        .read_to_string(&path)
+                        .await
+                        .unwrap()
+                        .parse()
                         .unwrap();
+                    self.write_fake_extension_to_fs(version).await?;
                     Ok(())
                 } else {
                     Err(ExtensionsError::Other(
@@ -320,6 +330,30 @@ impl ShellExtensions {
         }
     }
 
+    /// Whether or not the extension is loaded into GNOME Shell.
+    ///
+    /// Note that this is not an indicator of whether or not the extension is installed! The
+    /// extension may be installed but not loaded into GNOME Shell, in which case GNOME Shell
+    /// must be restarted.
+    async fn is_extension_loaded(&self) -> Result<bool, ExtensionsError> {
+        let info = self.get_extension_info().await?;
+        if info.keys().count() == 0 { Ok(false) } else { Ok(true) }
+    }
+
+    /// Whether or not the extension is enabled.
+    ///
+    /// A prerequisite of being enabled is being installed *and* loaded into GNOME Shell.
+    async fn is_extension_enabled(&self) -> Result<bool, ExtensionsError> {
+        let mut info = self.get_extension_info().await?;
+        let state = f64::try_from(
+            info.remove("state")
+                .ok_or(ExtensionsError::Other("missing extension state".into()))?,
+        )? as u32;
+        // Extension is enabled if "state" equals 1. If "state" equals 2, then it's
+        // disabled.
+        if state == 2 { Ok(false) } else { Ok(true) }
+    }
+
     /// Returns a bool indicating whether or not the Amazon Q extension was successfully enabled.
     ///
     /// Return value behavior:
@@ -334,15 +368,59 @@ impl ShellExtensions {
                 .await?
                 .enable_extension(&self.extension_uuid().await?)
                 .await?),
-            Inner::Fake(fake) => Ok(fake.lock().await.extension_enabled),
+            Inner::Fake(fake) => {
+                if self.is_extension_loaded().await? {
+                    fake.lock()
+                        .await
+                        .extension_info
+                        .insert("state".to_string(), OwnedValue::from(1f64));
+                    Ok(true)
+                } else {
+                    Ok(false)
+                }
+            },
         }
     }
 
+    /// Test helper for the fake impl that installs an extension locally, optionally loading it if
+    /// `requires_reboot` is false.
+    ///
+    /// It is not enabled.
     #[allow(dead_code)]
-    async fn set_fake_extension_info(&self, extension_info: HashMap<String, OwnedValue>) {
+    pub async fn install_for_fake(&self, requires_reboot: bool, version: u32) -> Result<(), ExtensionsError> {
         if let inner::Inner::Fake(fake) = &self.0 {
-            fake.lock().await.extension_info = extension_info;
+            self.write_fake_extension_to_fs(version).await?;
+            if !requires_reboot {
+                fake.lock().await.extension_info = [
+                    ("version".to_string(), OwnedValue::from(version as f64)),
+                    ("state".to_string(), OwnedValue::from(2f64)),
+                ]
+                .into_iter()
+                .collect();
+            }
         }
+        Ok(())
+    }
+
+    /// Test helper that creates the extension directory locally under [local_extension_directory],
+    /// writing the metadata.json with the provided `version`.
+    #[allow(dead_code)]
+    async fn write_fake_extension_to_fs(&self, version: u32) -> Result<(), ExtensionsError> {
+        if let inner::Inner::Fake(fake) = &self.0 {
+            let uuid = self.extension_uuid().await?;
+            let fake = fake.lock().await;
+            let extension_dir_path = local_extension_directory(&fake.ctx, &uuid)?;
+            fake.ctx.fs().create_dir_all(&extension_dir_path).await.ok();
+            fake.ctx
+                .fs()
+                .write(
+                    extension_dir_path.join("metadata.json"),
+                    json!({ "version": version }).to_string(),
+                )
+                .await
+                .unwrap();
+        }
+        Ok(())
     }
 }
 
@@ -428,7 +506,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_fake_impl_behavior_on_install() {
+    async fn test_fake_impl_behavior_on_install_bundled_extension() {
         let ctx = Context::builder()
             .with_test_home()
             .await
@@ -438,7 +516,7 @@ mod tests {
         let shell_extensions = ShellExtensions::new_fake(Arc::clone(&ctx));
 
         // Default status is not installed
-        let status = get_extension_status(&ctx, &shell_extensions, 1).await.unwrap();
+        let status = get_extension_status(&ctx, &shell_extensions, Some(1)).await.unwrap();
         assert_eq!(status, ExtensionInstallationStatus::NotInstalled);
 
         // Installing will require a reboot
@@ -452,7 +530,7 @@ mod tests {
             .install_bundled_extension(&extension_bundle_path)
             .await
             .unwrap();
-        let status = get_extension_status(&ctx, &shell_extensions, extension_version)
+        let status = get_extension_status(&ctx, &shell_extensions, Some(extension_version))
             .await
             .unwrap();
         assert_eq!(status, ExtensionInstallationStatus::RequiresReboot);
@@ -493,7 +571,7 @@ mod tests {
             let shell_extensions = ShellExtensions::new_fake(Arc::clone(&ctx));
 
             // When
-            let status = get_extension_status(&ctx, &shell_extensions, 1).await.unwrap();
+            let status = get_extension_status(&ctx, &shell_extensions, Some(1)).await.unwrap();
 
             // Then
             assert_eq!(status, ExtensionInstallationStatus::GnomeShellNotRunning);
@@ -505,7 +583,7 @@ mod tests {
             let shell_extensions = ShellExtensions::new_fake(Arc::clone(&ctx));
 
             // When
-            let status = get_extension_status(&ctx, &shell_extensions, 1).await.unwrap();
+            let status = get_extension_status(&ctx, &shell_extensions, Some(1)).await.unwrap();
 
             // Then
             assert_eq!(status, ExtensionInstallationStatus::NotInstalled);
@@ -517,24 +595,11 @@ mod tests {
 
             let ctx = make_ctx().await;
             let shell_extensions = ShellExtensions::new_fake(Arc::clone(&ctx));
-            let extension_dir_path = ctx
-                .env()
-                .home()
-                .unwrap()
-                .join(".local/share/gnome-shell/extensions")
-                .join(shell_extensions.extension_uuid().await.unwrap());
-            ctx.fs().create_dir_all(&extension_dir_path).await.unwrap();
-            let expected_version: u32 = 1;
-            ctx.fs()
-                .write(
-                    extension_dir_path.join("metadata.json"),
-                    json!({ "version": expected_version }).to_string(),
-                )
-                .await
-                .unwrap();
+            let expected_version = 1;
+            shell_extensions.install_for_fake(true, expected_version).await.unwrap();
 
             // When
-            let status = get_extension_status(&ctx, &shell_extensions, expected_version)
+            let status = get_extension_status(&ctx, &shell_extensions, Some(expected_version))
                 .await
                 .unwrap();
 
@@ -565,7 +630,7 @@ mod tests {
                 .unwrap();
 
             // When
-            let status = get_extension_status(&ctx, &shell_extensions, expected_version)
+            let status = get_extension_status(&ctx, &shell_extensions, Some(expected_version))
                 .await
                 .unwrap();
 
@@ -584,15 +649,12 @@ mod tests {
             let expected_version = 2;
             let installed_version = 1;
             shell_extensions
-                .set_fake_extension_info(
-                    [("version".to_string(), OwnedValue::from(installed_version as f64))]
-                        .into_iter()
-                        .collect(),
-                )
-                .await;
+                .install_for_fake(false, installed_version)
+                .await
+                .unwrap();
 
             // When
-            let status = get_extension_status(&ctx, &shell_extensions, expected_version)
+            let status = get_extension_status(&ctx, &shell_extensions, Some(expected_version))
                 .await
                 .unwrap();
 
@@ -610,18 +672,12 @@ mod tests {
             let shell_extensions = ShellExtensions::new_fake(Arc::clone(&ctx));
             let expected_version = 2;
             shell_extensions
-                .set_fake_extension_info(
-                    [
-                        ("version".to_string(), OwnedValue::from(expected_version as f64)),
-                        ("state".to_string(), OwnedValue::from(2_f64)),
-                    ]
-                    .into_iter()
-                    .collect(),
-                )
-                .await;
+                .install_for_fake(false, expected_version)
+                .await
+                .unwrap();
 
             // When
-            let status = get_extension_status(&ctx, &shell_extensions, expected_version)
+            let status = get_extension_status(&ctx, &shell_extensions, Some(expected_version))
                 .await
                 .unwrap();
 
@@ -637,18 +693,13 @@ mod tests {
             let shell_extensions = ShellExtensions::new_fake(Arc::clone(&ctx));
             let expected_version = 2;
             shell_extensions
-                .set_fake_extension_info(
-                    [
-                        ("version".to_string(), OwnedValue::from(expected_version as f64)),
-                        ("state".to_string(), OwnedValue::from(1_f64)),
-                    ]
-                    .into_iter()
-                    .collect(),
-                )
-                .await;
+                .install_for_fake(false, expected_version)
+                .await
+                .unwrap();
+            shell_extensions.enable_extension().await.unwrap();
 
             // When
-            let status = get_extension_status(&ctx, &shell_extensions, expected_version)
+            let status = get_extension_status(&ctx, &shell_extensions, Some(expected_version))
                 .await
                 .unwrap();
 
@@ -677,7 +728,6 @@ mod tests {
         async fn test_get_extension_info() {
             let uuid = ShellExtensions::new(Context::new()).extension_uuid().await.unwrap();
             let info = new_proxy().await.unwrap().get_extension_info(&uuid).await.unwrap();
-            // let info = new_proxy().await.unwrap().get_extension_info("jdsifosdjif").await.unwrap();
             println!("{:?}", info);
         }
 
@@ -686,7 +736,7 @@ mod tests {
         async fn test_get_installed_extension_status() {
             let ctx = Context::new();
             let shell_extensions = ShellExtensions::new(Arc::clone(&ctx));
-            let status = get_extension_status(&ctx, &shell_extensions, 1).await.unwrap();
+            let status = get_extension_status(&ctx, &shell_extensions, Some(1)).await.unwrap();
             println!("{:?}", status);
         }
 

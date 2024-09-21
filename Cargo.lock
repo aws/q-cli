@@ -6366,6 +6366,7 @@ dependencies = [
  "criterion",
  "crossterm",
  "ctrlc",
+ "dbus",
  "dialoguer",
  "eyre",
  "fig_api_client",

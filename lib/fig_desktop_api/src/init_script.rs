@@ -116,8 +116,8 @@ impl Constants {
             macos_version: macos_utils::os::NSOperatingSystemVersion::get().to_string(),
             #[cfg(target_os = "linux")]
             linux: LinuxConstants {
-                display_server: get_display_server().ok(),
-                desktop_environment: get_desktop_environment().ok(),
+                display_server: get_display_server(&fig_os_shim::Context::new()).ok(),
+                desktop_environment: get_desktop_environment(&fig_os_shim::Context::new()).ok(),
                 os_release: get_os_release(),
             },
         }

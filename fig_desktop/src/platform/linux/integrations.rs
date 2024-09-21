@@ -53,6 +53,7 @@ fn from_source(from: &str) -> Option<&HashMap<&'static str, Terminal>> {
 }
 
 pub fn from_hook(hook: FocusedWindowDataHook, platform_state: &PlatformState, proxy: &EventLoopProxy) -> Result<()> {
+    debug!("Received FocusedWindowDataHook: {:?}", hook);
     WM_REVICED_DATA.store(true, Ordering::Relaxed);
 
     if hook.hide() {

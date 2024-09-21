@@ -1,5 +1,7 @@
 mod bash_version;
 mod fish_version;
+#[cfg(target_os = "linux")]
+pub mod linux;
 mod midway;
 mod sshd_config;
 

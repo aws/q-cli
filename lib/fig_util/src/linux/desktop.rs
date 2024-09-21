@@ -43,7 +43,7 @@ pub fn local_autostart_path(env: &Env) -> Result<PathBuf, DesktopError> {
     Ok(env
         .home()
         .ok_or(DesktopError::MissingHome)?
-        .join(".config/autostart/{DESKTOP_ENTRY_NAME}"))
+        .join(format!(".config/autostart/{DESKTOP_ENTRY_NAME}")))
 }
 
 /// Path to the icon referenced by the desktop entry.
@@ -128,6 +128,9 @@ impl DesktopEntry {
     }
 
     pub async fn enable_autostart(&self) -> Result<(), DesktopError> {
+        if self.autostart_enabled().await? {
+            return Ok(());
+        }
         create_parent(&self.ctx, &self.autostart_path).await?;
         self.ctx.fs().symlink(&self.entry_path, &self.autostart_path).await?;
         Ok(())
@@ -296,6 +299,7 @@ Type=Application"#;
             fs.chroot_path(local_entry_path(ctx.env()).unwrap())
         );
         assert!(desktop_entry.autostart_enabled().await.unwrap());
+        desktop_entry.enable_autostart().await.unwrap(); // enabling twice should not return error
 
         // Disabling
         desktop_entry.disable_autostart().await.unwrap();

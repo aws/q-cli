@@ -208,12 +208,14 @@ macro_rules! doctor_warning {
         DoctorError::warning(format!($($arg)*))
     }}
 }
+pub(crate) use doctor_warning;
 
 macro_rules! doctor_error {
     ($($arg:tt)*) => {{
         DoctorError::error(format!($($arg)*))
     }}
 }
+pub(crate) use doctor_error;
 
 #[allow(unused_macros)]
 macro_rules! doctor_fix {
@@ -226,6 +228,7 @@ macro_rules! doctor_fix {
         }
     };
 }
+pub(crate) use doctor_fix;
 
 macro_rules! doctor_fix_async {
     ({ reason: $reason:expr,fix: $fix:expr }) => {
@@ -1726,94 +1729,6 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
     }
 }
 
-#[cfg(target_os = "linux")]
-struct IBusEnvCheck;
-
-#[cfg(target_os = "linux")]
-#[async_trait]
-impl DoctorCheck for IBusEnvCheck {
-    fn name(&self) -> Cow<'static, str> {
-        "IBus Env Check".into()
-    }
-
-    async fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
-        DoctorCheckType::NormalCheck
-    }
-
-    async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let err = |var: &str, val: Option<&str>, expect: &str| {
-            Err(DoctorError::Error {
-                reason: "IBus environment variable is not set".into(),
-                info: vec![
-                    "Please restart your DE/WM session, for more details see https://fig.io/user-manual/other/linux"
-                        .into(),
-                    match val {
-                        Some(val) => format!("{var} is '{val}', expected '{expect}'").into(),
-                        None => format!("{var} is not set, expected '{expect}'").into(),
-                    },
-                ],
-                fix: None,
-                error: None,
-            })
-        };
-
-        let check_env = |var: &str, expect: &str| {
-            let regex = Regex::new(expect).unwrap();
-            match std::env::var(var) {
-                Ok(val) if regex.is_match(&val) => Ok(()),
-                Ok(val) => err(var, Some(&val), expect),
-                Err(_) => err(var, None, expect),
-            }
-        };
-
-        check_env("GTK_IM_MODULE", "ibus(:xim)?")?;
-        check_env("QT_IM_MODULE", "ibus")?;
-        check_env("XMODIFIERS", "@im=ibus")?;
-        // TODO(grant): Add kitty env when fully supported
-        Ok(())
-    }
-}
-
-#[cfg(target_os = "linux")]
-struct IBusCheck;
-
-#[cfg(target_os = "linux")]
-#[async_trait]
-impl DoctorCheck for IBusCheck {
-    fn name(&self) -> Cow<'static, str> {
-        "IBus Check".into()
-    }
-
-    async fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
-        DoctorCheckType::NormalCheck
-    }
-
-    async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        use sysinfo::{
-            ProcessRefreshKind,
-            RefreshKind,
-        };
-
-        let system = sysinfo::System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
-
-        if system.processes_by_exact_name("ibus-daemon").next().is_none() {
-            return Err(doctor_fix!({
-                reason: "ibus-daemon is not running",
-                fix: || {
-                    let output = Command::new("ibus-daemon").arg("-drxR").output()?;
-                    if !output.status.success() {
-                        let stdout = String::from_utf8_lossy(&output.stdout);
-                        let stderr = String::from_utf8_lossy(&output.stderr);
-                        eyre::bail!("ibus-daemon launch failed:\nstdout: {stdout}\nstderr: {stderr}\n");
-                    }
-                    Ok(())
-            }}));
-        }
-
-        Ok(())
-    }
-}
-
 struct DesktopCompatibilityCheck;
 
 #[async_trait]
@@ -1828,6 +1743,7 @@ impl DoctorCheck for DesktopCompatibilityCheck {
 
     #[cfg(target_os = "linux")]
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        use fig_os_shim::Context;
         use fig_util::system_info::linux::{
             get_desktop_environment,
             get_display_server,
@@ -1835,7 +1751,8 @@ impl DoctorCheck for DesktopCompatibilityCheck {
             DisplayServer,
         };
 
-        let (display_server, desktop_environment) = (get_display_server()?, get_desktop_environment()?);
+        let ctx = Context::new();
+        let (display_server, desktop_environment) = (get_display_server(&ctx)?, get_desktop_environment(&ctx)?);
 
         match (display_server, desktop_environment) {
             (DisplayServer::X11, DesktopEnvironment::Gnome | DesktopEnvironment::Plasma | DesktopEnvironment::I3) => {
@@ -1976,36 +1893,6 @@ impl DoctorCheck for AutocompleteHostCheck {
                 }
             },
             None => Ok(()),
-        }
-    }
-}
-
-#[cfg(target_os = "linux")]
-struct SandboxCheck;
-
-#[async_trait]
-#[cfg(target_os = "linux")]
-impl DoctorCheck for SandboxCheck {
-    fn name(&self) -> Cow<'static, str> {
-        "App is not running in a sandbox".into()
-    }
-
-    async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        use fig_util::system_info::linux::SandboxKind;
-
-        let kind = fig_util::system_info::linux::detect_sandbox();
-
-        match kind {
-            SandboxKind::None => Ok(()),
-            SandboxKind::Flatpak => Err(doctor_error!("Running under Flatpak is not supported.")),
-            SandboxKind::Snap => Err(doctor_error!("Running under Snap is not supported.")),
-            SandboxKind::Docker => Err(doctor_warning!(
-                "Support for Docker is in development. It may not work properly on your system."
-            )),
-            SandboxKind::Container(Some(engine)) => {
-                Err(doctor_error!("Running under `{engine}` containers is not supported."))
-            },
-            SandboxKind::Container(None) => Err(doctor_error!("Running under non-docker containers is not supported.")),
         }
     }
 }
@@ -2354,16 +2241,25 @@ pub async fn doctor_cli(all: bool, strict: bool) -> Result<ExitCode> {
 
         #[cfg(target_os = "linux")]
         {
+            use checks::linux::{
+                get_linux_context,
+                GnomeExtensionCheck,
+                IBusCheck,
+                IBusEnvCheck,
+                SandboxCheck,
+            };
             // Linux desktop checks
             if fig_util::manifest::is_full() && !fig_util::system_info::is_remote() {
-                run_checks(
-                    "Let's check Linux integrations".into(),
+                run_checks_with_context(
+                    "Let's check Linux integrations",
                     vec![
                         &IBusEnvCheck,
+                        &GnomeExtensionCheck,
                         &IBusCheck,
                         // &DesktopCompatibilityCheck, // we need a better way of getting the data
                         &SandboxCheck,
                     ],
+                    get_linux_context,
                     config,
                     &mut spinner,
                 )

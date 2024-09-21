@@ -445,7 +445,7 @@ async fn install_gnome_shell_extension(
         .parse()?;
     let bundled_path = extension_dir_path.join(format!("{}.zip", extension_uuid));
 
-    match get_extension_status(ctx, shell_extensions, bundled_version).await? {
+    match get_extension_status(ctx, shell_extensions, Some(bundled_version)).await? {
         ExtensionInstallationStatus::GnomeShellNotRunning => {
             info!("GNOME Shell is not running, not installing the extension.");
         },
@@ -878,6 +878,7 @@ echo "{binary_name} {version}"
             get_extension_status,
             ExtensionInstallationStatus,
             ShellExtensions,
+            GNOME_SHELL_PROCESS_NAME,
         };
         use fig_util::directories::resources_path_ctx;
 
@@ -903,7 +904,8 @@ echo "{binary_name} {version}"
                 .await
                 .unwrap()
                 .with_env_var("APPIMAGE", "1")
-                .build();
+                .with_running_processes(&[GNOME_SHELL_PROCESS_NAME])
+                .build_fake();
             let shell_extensions = ShellExtensions::new_fake(Arc::clone(&ctx));
             let extension_version = 1;
             write_extension_bundle(
@@ -917,7 +919,7 @@ echo "{binary_name} {version}"
             install_gnome_shell_extension(&ctx, &shell_extensions).await.unwrap();
 
             // Then
-            let status = get_extension_status(&ctx, &shell_extensions, extension_version)
+            let status = get_extension_status(&ctx, &shell_extensions, Some(extension_version))
                 .await
                 .unwrap();
             assert!(matches!(status, ExtensionInstallationStatus::RequiresReboot));

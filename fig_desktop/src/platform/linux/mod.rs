@@ -11,6 +11,7 @@ use std::sync::atomic::{
 };
 use std::sync::Arc;
 
+use fig_os_shim::Context;
 use fig_util::system_info::linux::{
     get_desktop_environment,
     get_display_server,
@@ -84,6 +85,8 @@ pub struct PlatformWindowImpl;
 pub(super) struct PlatformStateImpl {
     #[serde(skip)]
     pub(super) proxy: EventLoopProxy,
+
+    /// Dimensions of the window currently in focus.
     pub(super) active_window_data: Mutex<Option<ActiveWindowData>>,
 
     /// State associated with the detected display server.
@@ -116,7 +119,7 @@ impl PlatformStateImpl {
                 let platform_state = self.clone();
                 tokio::runtime::Handle::current().spawn(async move {
                     let proxy_ = platform_state.proxy.clone();
-                    match get_display_server() {
+                    match get_display_server(&Context::new()) {
                         Ok(DisplayServer::X11) => {
                             info!("Detected X11 server");
 
@@ -130,7 +133,7 @@ impl PlatformStateImpl {
                         Ok(DisplayServer::Wayland) => {
                             info!("Detected Wayland server");
 
-                            match get_desktop_environment() {
+                            match get_desktop_environment(&Context::new()) {
                                 Ok(env @ (DesktopEnvironment::Gnome | DesktopEnvironment::Plasma)) => {
                                     info!("Detected {env:?}");
                                 },

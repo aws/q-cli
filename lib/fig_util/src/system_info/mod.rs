@@ -65,22 +65,13 @@ impl OSVersion {
                     SupportLevel::Unsupported
                 }
             },
-            OSVersion::Linux { .. } => {
-                if is_remote() {
-                    SupportLevel::Supported
-                } else if is_minimal() {
-                    SupportLevel::SupportedWithCaveat {
-                        info: "Autocomplete is not yet available on Linux, but other products should work as expected."
-                            .into(),
-                    }
-                } else {
-                    SupportLevel::InDevelopment {
-                        info: Some(
-                            "Autocomplete is currently in alpha for Linux, other products should work as expected."
-                                .into(),
-                        ),
-                    }
-                }
+            OSVersion::Linux { .. } => match (is_remote(), is_minimal()) {
+                (true, true) => SupportLevel::Supported,
+                (false, true) => SupportLevel::SupportedWithCaveat {
+                    info: "Autocomplete is not yet available on Linux, but other products should work as expected."
+                        .into(),
+                },
+                (_, _) => SupportLevel::Supported,
             },
             OSVersion::Windows { build, .. } => match build {
                 // Only Windows 11 is fully supported at the moment

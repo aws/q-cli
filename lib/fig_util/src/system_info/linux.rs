@@ -2,6 +2,7 @@ use std::io;
 use std::path::Path;
 use std::sync::OnceLock;
 
+use fig_os_shim::Context;
 use regex::Regex;
 use serde::{
     Deserialize,
@@ -10,13 +11,13 @@ use serde::{
 
 use crate::Error;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DisplayServer {
     X11,
     Wayland,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DesktopEnvironment {
     Gnome,
     Plasma,
@@ -24,8 +25,8 @@ pub enum DesktopEnvironment {
     Sway,
 }
 
-pub fn get_display_server() -> Result<DisplayServer, Error> {
-    match std::env::var("XDG_SESSION_TYPE") {
+pub fn get_display_server(ctx: &Context) -> Result<DisplayServer, Error> {
+    match ctx.env().get("XDG_SESSION_TYPE") {
         Ok(session) => match session.as_str() {
             "x11" => Ok(DisplayServer::X11),
             "wayland" => Ok(DisplayServer::Wayland),
@@ -36,8 +37,8 @@ pub fn get_display_server() -> Result<DisplayServer, Error> {
     }
 }
 
-pub fn get_desktop_environment() -> Result<DesktopEnvironment, Error> {
-    match std::env::var("XDG_CURRENT_DESKTOP") {
+pub fn get_desktop_environment(ctx: &Context) -> Result<DesktopEnvironment, Error> {
+    match ctx.env().get("XDG_CURRENT_DESKTOP") {
         Ok(current) => {
             let current = current.to_lowercase();
             let (_, desktop) = current.split_once(':').unwrap_or(("", current.as_str()));
