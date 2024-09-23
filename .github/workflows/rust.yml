@@ -14,10 +14,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Fmt
-      run: cargo +nightly fmt --check -- --color always
     - name: Clippy
       run: cargo clippy --locked --color always -- -D warnings
+    - name: Fmt
+      run: 
+        rustup toolchain install nightly
+        cargo +nightly fmt --check -- --color always
     - name: Build
       run: cargo build --verbose
     - name: Test
