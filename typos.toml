@@ -11,8 +11,8 @@ extend-exclude = [
 
 [default]
 extend-ignore-re = [
-    # Ignore lines with trailing `spellchecker:disable-line`
-    "(?Rm)^.*(#|//)\\s*spellchecker:disable-line$"
+  # Ignore lines with trailing `spellchecker:disable-line`
+  "(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",
 ]
 
 [default.extend-words]
