@@ -135,6 +135,10 @@ mise install
 pnpm install --ignore-scripts && pnpm husky install
 ```
 
+## Security
+
+See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+
 ## Licensing
 
 This repo is dual licensed under MIT and Apache 2.0 licenses.
