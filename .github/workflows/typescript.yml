@@ -17,10 +17,19 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y -qq protobuf-compiler
       - name: Cache .turbo folder
         uses: actions/cache@v4
-        with: 
-            path: .turbo
-            key: ${{ runner.os }}-turbo-${{ github.sha }}
-            restore-keys: ${{ runner.os }}-turbo-
-      - uses: pnpm/action-setup@v4
-      - run: pnpm install --frozen-lockfile
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-turbo-
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: "pnpm"
+      - name: Install npm dependencies
+        run: pnpm install --frozen-lockfile
       - run: pnpm run build
