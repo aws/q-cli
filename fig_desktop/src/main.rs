@@ -22,8 +22,8 @@ use std::sync::Arc;
 use clap::Parser;
 use event::Event;
 use fig_log::{
-    initialize_logging,
     LogArgs,
+    initialize_logging,
 };
 use fig_os_shim::Context;
 use fig_util::consts::{
@@ -31,16 +31,16 @@ use fig_util::consts::{
     PRODUCT_NAME,
 };
 use fig_util::{
-    directories,
     URL_SCHEMA,
+    directories,
 };
 use parking_lot::RwLock;
 use platform::PlatformState;
 use sysinfo::{
-    get_current_pid,
     ProcessRefreshKind,
     RefreshKind,
     System,
+    get_current_pid,
 };
 use tao::event_loop::{
     EventLoop as WryEventLoop,
@@ -53,19 +53,19 @@ use tracing::{
 };
 use url::Url;
 use webview::notification::WebviewNotificationsState;
-use webview::{
-    autocomplete,
-    build_autocomplete,
-    build_dashboard,
-    dashboard,
-    AutocompleteOptions,
-    DashboardOptions,
-    WebviewManager,
-};
 pub use webview::{
     AUTOCOMPLETE_ID,
     AUTOCOMPLETE_WINDOW_TITLE,
     DASHBOARD_ID,
+};
+use webview::{
+    AutocompleteOptions,
+    DashboardOptions,
+    WebviewManager,
+    autocomplete,
+    build_autocomplete,
+    build_dashboard,
+    dashboard,
 };
 
 // #[global_allocator]

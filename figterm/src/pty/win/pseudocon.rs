@@ -13,9 +13,9 @@ use std::{
 };
 
 use anyhow::{
+    Error,
     bail,
     ensure,
-    Error,
 };
 use filedescriptor::{
     FileDescriptor,
@@ -40,8 +40,8 @@ use winapi::um::winbase::{
 use winapi::um::wincon::COORD;
 use winapi::um::winnt::HANDLE;
 
-use super::procthreadattr::ProcThreadAttributeList;
 use super::WinChild;
+use super::procthreadattr::ProcThreadAttributeList;
 use crate::pty::CommandBuilder;
 
 #[allow(clippy::upper_case_acronyms)]

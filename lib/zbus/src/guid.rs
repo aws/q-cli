@@ -17,9 +17,9 @@ use std::time::{
 };
 
 use serde::{
-    de,
     Deserialize,
     Serialize,
+    de,
 };
 use static_assertions::assert_impl_all;
 use zvariant::{

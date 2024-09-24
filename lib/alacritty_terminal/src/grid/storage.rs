@@ -1,6 +1,6 @@
 use std::cmp::{
-    max,
     PartialEq,
+    max,
 };
 use std::mem;
 use std::ops::{
@@ -286,12 +286,12 @@ impl<T> IndexMut<Line> for Storage<T> {
 
 #[cfg(test)]
 mod tests {
+    use crate::grid::GridCell;
     use crate::grid::row::Row;
     use crate::grid::storage::{
-        Storage,
         MAX_CACHE_SIZE,
+        Storage,
     };
-    use crate::grid::GridCell;
     use crate::index::{
         Column,
         Line,

@@ -1,7 +1,7 @@
 use accessibility_sys::AXIsProcessTrusted;
 
-use crate::util::IdRef;
 use crate::NSURL;
+use crate::util::IdRef;
 
 static ACCESSIBILITY_SETTINGS_URL: &str =
     "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility";

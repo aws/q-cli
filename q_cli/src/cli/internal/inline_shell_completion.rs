@@ -1,6 +1,6 @@
 use std::io::{
-    stdout,
     Write,
+    stdout,
 };
 use std::process::ExitCode;
 use std::time::Duration;

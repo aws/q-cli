@@ -4,16 +4,16 @@ use std::collections::BTreeMap;
 use fig_telemetry::InstallMethod;
 use fig_util::consts::build::HASH;
 use fig_util::system_info::{
-    os_version,
     OSVersion,
+    os_version,
 };
 use fig_util::{
     Shell,
     Terminal,
 };
 use serde::Serialize;
-use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
+use time::format_description::well_known::Rfc3339;
 
 fn serialize_display<D, S>(display: D, serializer: S) -> Result<S::Ok, S::Error>
 where

@@ -2,24 +2,24 @@ use std::borrow::Cow;
 use std::ffi::CString;
 use std::path::Path;
 use std::slice;
+use std::sync::Arc;
 use std::sync::atomic::{
     AtomicBool,
     Ordering,
 };
-use std::sync::Arc;
 
 use accessibility_sys::{
-    pid_t,
     AXError,
     AXIsProcessTrusted,
     AXUIElementCreateSystemWide,
     AXUIElementSetMessagingTimeout,
+    pid_t,
 };
 use anyhow::Context;
 use cocoa::base::{
-    id,
     NO,
     YES,
+    id,
 };
 use core_graphics::display::CGRect;
 use core_graphics::window::CGWindowID;
@@ -33,8 +33,8 @@ use fig_proto::local::caret_position_hook::Origin;
 use fig_util::Terminal;
 use macos_utils::accessibility::accessibility_is_enabled;
 use macos_utils::caret_position::{
-    get_caret_position,
     CaretPosition,
+    get_caret_position,
 };
 use macos_utils::window_server::{
     CGWindowLevelForKey,
@@ -48,20 +48,20 @@ use macos_utils::{
 };
 use objc::declare::MethodImplementation;
 use objc::runtime::{
-    class_addMethod,
-    objc_getClass,
+    BOOL,
     Class,
     Object,
     Sel,
-    BOOL,
+    class_addMethod,
+    objc_getClass,
 };
 use objc::{
-    msg_send,
-    sel,
-    sel_impl,
     Encode,
     EncodeArguments,
     Encoding,
+    msg_send,
+    sel,
+    sel_impl,
 };
 use once_cell::sync::Lazy;
 use parking_lot::{
@@ -104,15 +104,15 @@ use crate::utils::Rect;
 use crate::webview::notification::WebviewNotificationsState;
 use crate::webview::{
     FigIdMap,
-    WindowId,
     GLOBAL_PROXY,
+    WindowId,
 };
 use crate::{
-    EventLoopProxy,
-    EventLoopWindowTarget,
     AUTOCOMPLETE_ID,
     AUTOCOMPLETE_WINDOW_TITLE,
     DASHBOARD_ID,
+    EventLoopProxy,
+    EventLoopWindowTarget,
 };
 
 pub const DEFAULT_CARET_WIDTH: f64 = 10.0;

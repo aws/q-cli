@@ -7,13 +7,13 @@ use std::os::unix::fs::DirBuilderExt;
 use std::path::PathBuf;
 
 use async_trait::async_trait;
+use fig_util::PRODUCT_NAME;
 use fig_util::consts::CLI_BINARY_NAME;
 use fig_util::directories::{
     self,
     fig_data_dir_utf8,
     home_dir,
 };
-use fig_util::PRODUCT_NAME;
 use regex::Regex;
 
 use crate::error::{
@@ -21,9 +21,9 @@ use crate::error::{
     Result,
 };
 use crate::{
-    backup_file,
     FileIntegration,
     Integration,
+    backup_file,
 };
 
 const SSH_CONFIG_PATH: &[&str] = &[".ssh", "config"];

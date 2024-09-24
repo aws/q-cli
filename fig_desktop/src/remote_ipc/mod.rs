@@ -2,8 +2,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{
-    anyhow,
     Result,
+    anyhow,
 };
 use base64::prelude::*;
 use bytes::BytesMut;
@@ -48,8 +48,8 @@ use crate::event::{
 use crate::platform::PlatformBoundEvent;
 use crate::webview::notification::WebviewNotificationsState;
 use crate::{
-    EventLoopProxy,
     AUTOCOMPLETE_ID,
+    EventLoopProxy,
 };
 
 #[derive(Debug, Clone)]

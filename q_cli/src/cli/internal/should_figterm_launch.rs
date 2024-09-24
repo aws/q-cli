@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 use std::io::{
-    stdout,
     Write,
+    stdout,
 };
 use std::process::ExitCode;
 

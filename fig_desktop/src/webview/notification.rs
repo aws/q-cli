@@ -12,13 +12,13 @@ use fig_proto::prost::Message;
 use fnv::FnvBuildHasher;
 use tracing::debug;
 
+use crate::EventLoopProxy;
 use crate::event::{
     EmitEventName,
     Event,
     WindowEvent,
 };
 use crate::webview::WindowId;
-use crate::EventLoopProxy;
 
 #[derive(Debug, Default)]
 pub struct WebviewNotificationWindowState(pub DashMap<NotificationType, i64, FnvBuildHasher>);

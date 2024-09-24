@@ -164,7 +164,6 @@ async fn handle_request<Ctx: KVStore + EnvProvider + FsProvider, E: EventHandler
 
     match message.submessage {
         Some(submessage) => {
-            use requests::*;
             use ClientOriginatedSubMessage::{
                 AggregateSessionMetricActionRequest,
                 AppendToFileRequest,
@@ -213,6 +212,7 @@ async fn handle_request<Ctx: KVStore + EnvProvider + FsProvider, E: EventHandler
                 WindowFocusRequest,
                 WriteFileRequest,
             };
+            use requests::*;
 
             match submessage {
                 // debug

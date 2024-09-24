@@ -1,10 +1,10 @@
 use std::borrow::Cow;
 use std::future::Future;
+use std::sync::Arc;
 use std::sync::atomic::{
     AtomicU64,
     Ordering,
 };
-use std::sync::Arc;
 
 use fig_os_shim::Context;
 use once_cell::sync::Lazy;
@@ -19,11 +19,12 @@ use tao::dpi::{
 };
 use tao::window::Icon;
 use tracing::{
+    Instrument,
     debug,
     debug_span,
     error,
-    Instrument,
 };
+use wry::RequestAsyncResponder;
 use wry::http::header::{
     ACCESS_CONTROL_ALLOW_ORIGIN,
     CONTENT_TYPE,
@@ -34,10 +35,9 @@ use wry::http::{
     Request as HttpRequest,
     Response as HttpResponse,
 };
-use wry::RequestAsyncResponder;
 
-use crate::webview::window_id::WindowIdProvider;
 use crate::webview::WindowId;
+use crate::webview::window_id::WindowIdProvider;
 
 /// Determines if the build is ran in debug mode
 #[allow(dead_code)]

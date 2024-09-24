@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 use std::fmt::Display;
 use std::io::{
-    stdout,
     Write,
+    stdout,
 };
 use std::path::Path;
 use std::process::ExitCode;
@@ -18,11 +18,11 @@ use fig_integrations::shell::{
 use fig_os_shim::Context;
 use fig_util::env_var::Q_SHELL;
 use fig_util::{
-    get_parent_process_exe,
-    Shell,
-    Terminal,
     CLI_BINARY_NAME,
     PRODUCT_NAME,
+    Shell,
+    Terminal,
+    get_parent_process_exe,
 };
 use indoc::formatdoc;
 use once_cell::sync::Lazy;

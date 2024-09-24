@@ -1,13 +1,13 @@
 use std::io;
 
 use async_broadcast::{
-    broadcast,
     Receiver,
     Sender,
+    broadcast,
 };
 
-use crate::fdo::ConnectionCredentials;
 use crate::Message;
+use crate::fdo::ConnectionCredentials;
 
 /// An in-process channel-based socket.
 ///

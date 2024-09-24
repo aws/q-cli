@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use std::io::{
-    stdout,
     IsTerminal,
+    stdout,
 };
 use std::process::ExitCode;
 use std::time::Instant;
@@ -16,23 +16,23 @@ use color_eyre::owo_colors::OwoColorize;
 use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;
 use eyre::{
-    bail,
     Result,
+    bail,
 };
+use fig_api_client::Client;
 use fig_api_client::model::{
     FileContext,
     LanguageName,
     ProgrammingLanguage,
     RecommendationsInput,
 };
-use fig_api_client::Client;
 use fig_ipc::{
     BufferedUnixStream,
     SendMessage,
 };
 use fig_telemetry::SuggestionState;
-use fig_util::env_var::QTERM_SESSION_ID;
 use fig_util::CLI_BINARY_NAME;
+use fig_util::env_var::QTERM_SESSION_ID;
 use once_cell::sync::Lazy;
 use regex::{
     Captures,

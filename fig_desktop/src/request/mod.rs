@@ -57,8 +57,8 @@ use crate::event::{
     Event,
     WindowEvent,
 };
-use crate::webview::notification::WebviewNotificationsState;
 use crate::webview::WindowId;
+use crate::webview::notification::WebviewNotificationsState;
 use crate::{
     DebugState,
     EventLoopProxy,

@@ -67,6 +67,9 @@ pub use message::Flags as MessageFlags;
 #[doc(hidden)]
 pub use message::Header as MessageHeader;
 pub use message::Message;
+#[deprecated(since = "4.0.0", note = "Use `message::NATIVE_ENDIAN_SIG` instead")]
+#[doc(hidden)]
+pub use message::NATIVE_ENDIAN_SIG;
 #[deprecated(since = "4.0.0", note = "Use `message::PrimaryHeader` instead")]
 #[doc(hidden)]
 pub use message::PrimaryHeader as MessagePrimaryHeader;
@@ -76,18 +79,15 @@ pub use message::Sequence as MessageSequence;
 #[deprecated(since = "4.0.0", note = "Use `message::Type` instead")]
 #[doc(hidden)]
 pub use message::Type as MessageType;
-#[deprecated(since = "4.0.0", note = "Use `message::NATIVE_ENDIAN_SIG` instead")]
-#[doc(hidden)]
-pub use message::NATIVE_ENDIAN_SIG;
 
 pub mod connection;
 /// Alias for `connection` module, for convenience.
 pub use connection as conn;
-pub use connection::handshake::AuthMechanism;
 #[deprecated(since = "4.0.0", note = "Use `connection::Builder` instead")]
 #[doc(hidden)]
 pub use connection::Builder as ConnectionBuilder;
 pub use connection::Connection;
+pub use connection::handshake::AuthMechanism;
 
 mod message_stream;
 pub use message_stream::*;
@@ -168,11 +168,11 @@ pub mod blocking;
 
 // Old names used for backwards compatibility
 pub use zbus_macros::{
+    DBusError,
     dbus_interface,
     dbus_proxy,
     interface,
     proxy,
-    DBusError,
 };
 
 // Required for the macros to function within this crate.
@@ -964,8 +964,8 @@ mod tests {
         use futures_util::try_join;
         use tokio::net::UnixStream;
 
-        use crate::connection::Builder;
         use crate::MessageStream;
+        use crate::connection::Builder;
 
         let guid = crate::Guid::generate();
         let (p0, p1) = UnixStream::pair().unwrap();

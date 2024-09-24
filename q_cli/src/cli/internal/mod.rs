@@ -5,9 +5,9 @@ mod multiplexer;
 pub mod should_figterm_launch;
 
 use std::io::{
-    stdout,
     Read,
     Write,
+    stdout,
 };
 use std::path::PathBuf;
 use std::process::{
@@ -29,10 +29,10 @@ use clap::{
 };
 use crossterm::style::Stylize;
 use eyre::{
-    bail,
     Context,
     ContextCompat,
     Result,
+    bail,
 };
 use fig_install::InstallComponents;
 #[cfg(target_os = "macos")]
@@ -47,6 +47,7 @@ use fig_os_shim::{
     Context as OsContext,
     Env,
 };
+use fig_proto::ReflectMessage;
 use fig_proto::figterm::figterm_request_message::Request as FigtermRequest;
 use fig_proto::figterm::{
     FigtermRequestMessage,
@@ -59,15 +60,14 @@ use fig_proto::hooks::{
 };
 use fig_proto::local::EnvironmentVariable;
 use fig_proto::util::get_shell;
-use fig_proto::ReflectMessage;
 use fig_util::directories::{
     figterm_socket_path,
     logs_dir,
 };
 use fig_util::env_var::QTERM_SESSION_ID;
 use fig_util::{
-    directories,
     CLI_BINARY_NAME,
+    directories,
 };
 use rand::distributions::{
     Alphanumeric,
@@ -93,8 +93,8 @@ use self::inline_shell_completion::{
 };
 use crate::cli::installation::install_cli;
 use crate::util::desktop::{
-    launch_fig_desktop,
     LaunchArgs,
+    launch_fig_desktop,
 };
 
 #[derive(Debug, Args, PartialEq, Eq)]

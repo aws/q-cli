@@ -2,10 +2,10 @@
 
 /// Indexing types and implementations for Grid and Line.
 use std::cmp::{
-    max,
-    min,
     Ord,
     Ordering,
+    max,
+    min,
 };
 use std::fmt;
 use std::ops::{

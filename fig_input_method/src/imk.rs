@@ -1,10 +1,10 @@
 use std::ffi::CStr;
 
 use cocoa::base::{
-    id,
     BOOL,
     NO,
     YES,
+    id,
 };
 use cocoa::foundation::{
     NSPoint,
@@ -23,10 +23,10 @@ use macos_utils::{
 };
 use objc::declare::ClassDecl;
 use objc::runtime::{
-    sel_getName,
     Class,
     Object,
     Sel,
+    sel_getName,
 };
 use tracing::{
     debug,

@@ -8,12 +8,12 @@ use anstream::{
 };
 use crossterm::style::Stylize;
 use eyre::{
-    bail,
     Result,
+    bail,
 };
 use fig_install::{
-    install,
     InstallComponents,
+    install,
 };
 use fig_os_shim::Env;
 use fig_util::system_info::in_cloudshell;

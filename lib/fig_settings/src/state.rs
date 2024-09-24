@@ -4,11 +4,11 @@ use serde_json::{
     Value,
 };
 
-use crate::sqlite::{
-    database,
-    Db,
-};
 use crate::Result;
+use crate::sqlite::{
+    Db,
+    database,
+};
 
 #[derive(Debug, Clone, Default)]
 pub struct State(inner::Inner);

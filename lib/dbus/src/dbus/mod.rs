@@ -7,8 +7,8 @@ use zbus::{
 };
 
 use self::ibus::{
-    ibus_address,
     AddressError,
+    ibus_address,
 };
 
 pub mod gnome_shell;

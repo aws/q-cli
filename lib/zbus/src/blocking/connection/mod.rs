@@ -293,9 +293,9 @@ mod tests {
     #[cfg(all(windows, not(feature = "tokio")))]
     use uds_windows::UnixStream;
 
-    use crate::blocking::connection::Builder;
-    use crate::blocking::MessageIterator;
     use crate::Guid;
+    use crate::blocking::MessageIterator;
+    use crate::blocking::connection::Builder;
 
     #[test]
     #[timeout(15000)]

@@ -3,6 +3,14 @@ use std::fmt;
 
 use accessibility::util::ax_call;
 use accessibility_sys::{
+    _AXUIElementGetWindow,
+    AXError,
+    AXUIElement,
+    AXUIElementCopyAttributeNames,
+    AXUIElementCopyAttributeValue,
+    AXUIElementRef,
+    AXUIElementSetAttributeValue,
+    AXValue,
     kAXApplicationRole,
     kAXBrowserRole,
     kAXChildrenAttribute,
@@ -21,15 +29,8 @@ use accessibility_sys::{
     kAXSubroleAttribute,
     kAXTextFieldRole,
     kAXWebAreaRole,
-    AXError,
-    AXUIElement,
-    AXUIElementCopyAttributeNames,
-    AXUIElementCopyAttributeValue,
-    AXUIElementRef,
-    AXUIElementSetAttributeValue,
-    AXValue,
-    _AXUIElementGetWindow,
 };
+use core_foundation::ConcreteCFType;
 use core_foundation::array::{
     CFArray,
     CFArrayRef,
@@ -41,8 +42,8 @@ use core_foundation::base::{
     TCFTypeRef,
 };
 use core_foundation::boolean::{
-    kCFBooleanTrue,
     CFBoolean,
+    kCFBooleanTrue,
 };
 use core_foundation::dictionary::CFDictionary;
 use core_foundation::number::CFNumber;
@@ -50,17 +51,16 @@ use core_foundation::string::{
     CFString,
     CFStringRef,
 };
-use core_foundation::ConcreteCFType;
 use core_graphics::display::{
     self,
     CGRect,
 };
 use core_graphics::window::{
+    CGWindowID,
     kCGWindowBounds,
     kCGWindowLayer,
     kCGWindowNumber,
     kCGWindowOwnerPID,
-    CGWindowID,
 };
 use tracing::warn;
 

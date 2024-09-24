@@ -10,9 +10,9 @@ use aws_smithy_types::config_bag::{
     StoreReplace,
 };
 use http::header::{
-    HeaderName,
     CONTENT_LENGTH,
     CONTENT_TYPE,
+    HeaderName,
 };
 
 /// Configuration for how default protocol headers are serialized

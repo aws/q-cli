@@ -7,8 +7,8 @@ use std::env;
 use std::ffi::OsStr;
 use std::fmt::Display;
 use std::io::{
-    stdout,
     ErrorKind,
+    stdout,
 };
 use std::path::{
     Path,
@@ -27,13 +27,13 @@ use cfg_if::cfg_if;
 pub use cli_context::CliContext;
 use crossterm::style::Stylize;
 use desktop::desktop_app_running;
-use dialoguer::theme::ColorfulTheme;
 use dialoguer::Select;
+use dialoguer::theme::ColorfulTheme;
 use eyre::{
-    bail,
     Context,
     ContextCompat,
     Result,
+    bail,
 };
 use fig_ipc::local::quit_command;
 use fig_util::consts::APP_BUNDLE_ID;

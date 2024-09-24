@@ -6,6 +6,7 @@ use std::time::{
 };
 
 pub use amzn_toolkit_telemetry::types::MetricDatum;
+use aws_toolkit_telemetry_definitions::IntoMetricDatum;
 use aws_toolkit_telemetry_definitions::metrics::{
     AmazonqEndChat,
     AmazonqStartChat,
@@ -22,7 +23,6 @@ use aws_toolkit_telemetry_definitions::metrics::{
     CodewhispererterminalUserLoggedIn,
 };
 use aws_toolkit_telemetry_definitions::types::CodewhispererterminalInCloudshell;
-use aws_toolkit_telemetry_definitions::IntoMetricDatum;
 use strum::{
     Display,
     EnumString,

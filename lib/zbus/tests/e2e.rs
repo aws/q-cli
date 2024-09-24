@@ -17,8 +17,8 @@ use test_log::test;
 #[cfg(all(unix, feature = "tokio", feature = "p2p"))]
 use tokio::net::UnixStream;
 use tokio::sync::mpsc::{
-    channel,
     Sender,
+    channel,
 };
 use tracing::{
     debug,
@@ -36,16 +36,16 @@ use zbus::object_server::{
 };
 use zbus::proxy::CacheProperties;
 use zbus::{
-    block_on,
-    connection,
-    interface,
-    message,
     Connection,
     DBusError,
     Error,
     Message,
     MessageStream,
     ObjectServer,
+    block_on,
+    connection,
+    interface,
+    message,
 };
 use zvariant::{
     DeserializeDict,

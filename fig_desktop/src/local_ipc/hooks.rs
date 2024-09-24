@@ -18,9 +18,9 @@ use crate::event::{
 use crate::platform::PlatformState;
 use crate::webview::WindowId;
 use crate::{
+    AUTOCOMPLETE_ID,
     Event,
     EventLoopProxy,
-    AUTOCOMPLETE_ID,
 };
 
 pub async fn caret_position(

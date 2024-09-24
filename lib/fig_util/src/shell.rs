@@ -18,8 +18,8 @@ use crate::consts::build::SKIP_FISH_TESTS;
 use crate::env_var::Q_ZDOTDIR;
 use crate::process_info::get_parent_process_exe;
 use crate::{
-    directories,
     Error,
+    directories,
 };
 
 /// All supported shells

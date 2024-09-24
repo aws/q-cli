@@ -27,12 +27,12 @@ use async_io::Async;
 use nix::{
     cmsg_space,
     sys::socket::{
-        recvmsg,
-        sendmsg,
         ControlMessage,
         ControlMessageOwned,
         MsgFlags,
         UnixAddr,
+        recvmsg,
+        sendmsg,
     },
 };
 #[cfg(all(windows, not(feature = "tokio")))]
@@ -232,8 +232,8 @@ impl super::ReadHalf for Arc<Async<UnixStream>> {
         crate::Task::spawn_blocking(
             move || {
                 use crate::win32::{
-                    unix_stream_get_peer_pid,
                     ProcessToken,
+                    unix_stream_get_peer_pid,
                 };
 
                 let pid = unix_stream_get_peer_pid(stream.get_ref())? as _;

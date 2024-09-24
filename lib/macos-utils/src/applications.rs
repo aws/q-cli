@@ -1,11 +1,11 @@
 use appkit_nsworkspace_bindings::{
     INSRunningApplication,
+    INSURL,
     INSWorkspace,
     NSRunningApplication,
+    NSURL,
     NSWorkspace,
     NSWorkspace_NSWorkspaceRunningApplications,
-    INSURL,
-    NSURL,
 };
 
 use crate::{

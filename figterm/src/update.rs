@@ -5,8 +5,8 @@ use fig_os_shim::{
 };
 use fig_settings::settings::get_bool_or;
 use fig_telemetry::{
-    get_install_method,
     InstallMethod,
+    get_install_method,
 };
 use fig_util::CLI_BINARY_NAME;
 use semver::Version;

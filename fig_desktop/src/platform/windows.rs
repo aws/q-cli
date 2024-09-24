@@ -11,15 +11,14 @@ use tracing::{
     debug,
     trace,
 };
-use windows::core::implement;
 use windows::Win32::Foundation::{
     HWND,
     RECT,
 };
 use windows::Win32::System::Com::{
+    CLSCTX_INPROC_SERVER,
     CoCreateInstance,
     CoInitialize,
-    CLSCTX_INPROC_SERVER,
     VARIANT,
     VARIANT_0,
     VARIANT_0_0,
@@ -34,6 +33,7 @@ use windows::Win32::System::Threading::{
 use windows::Win32::UI::Accessibility::{
     AccessibleObjectFromEvent,
     CUIAutomation,
+    HWINEVENTHOOK,
     IUIAutomation,
     IUIAutomationFocusChangedEventHandler,
     IUIAutomationFocusChangedEventHandler_Impl,
@@ -45,20 +45,20 @@ use windows::Win32::UI::Accessibility::{
     UIA_IsTextPatternAvailablePropertyId,
     UIA_TextPatternId,
     UnhookWinEvent,
-    HWINEVENTHOOK,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
-    GetForegroundWindow,
-    GetWindowThreadProcessId,
     CHILDID_SELF,
     EVENT_OBJECT_LOCATIONCHANGE,
     EVENT_SYSTEM_FOREGROUND,
+    GetForegroundWindow,
+    GetWindowThreadProcessId,
     OBJECT_IDENTIFIER,
     OBJID_CARET,
     OBJID_WINDOW,
     WINEVENT_OUTOFCONTEXT,
     WINEVENT_SKIPOWNPROCESS,
 };
+use windows::core::implement;
 
 use crate::event::{
     Event,
@@ -79,9 +79,9 @@ use crate::webview::{
     WindowId,
 };
 use crate::{
+    AUTOCOMPLETE_ID,
     EventLoopProxy,
     EventLoopWindowTarget,
-    AUTOCOMPLETE_ID,
 };
 
 const VT_TRUE: VARIANT = VARIANT {

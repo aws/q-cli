@@ -15,8 +15,8 @@ use super::{
     RequestResult,
     RequestResultImpl,
 };
-use crate::event::Event;
 use crate::EventLoopProxy;
+use crate::event::Event;
 
 pub async fn post_login() {
     fig_settings::state::set_value("desktop.completedOnboarding", true).ok();
@@ -48,8 +48,8 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy, env:
         },
         OnboardingAction::Uninstall => {
             use fig_install::{
-                uninstall,
                 InstallComponents,
+                uninstall,
             };
 
             fig_util::open_url(fig_install::UNINSTALL_URL).ok();
@@ -102,8 +102,8 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy, env:
         },
         OnboardingAction::PromptForAccessibilityPermission => {
             use crate::local_ipc::{
-                commands,
                 LocalResponse,
+                commands,
             };
             let res = commands::prompt_for_accessibility_permission(env)
                 .await

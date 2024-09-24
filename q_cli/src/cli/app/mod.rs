@@ -3,14 +3,14 @@ use std::time::Duration;
 
 use anstream::println;
 use clap::{
-    arg,
     Args,
     Subcommand,
+    arg,
 };
 use crossterm::style::Stylize;
 use eyre::{
-    bail,
     Result,
+    bail,
 };
 use fig_install::InstallComponents;
 use fig_ipc::local::update_command;
@@ -19,9 +19,9 @@ use fig_settings::{
     state,
 };
 use fig_util::{
-    manifest,
     CLI_BINARY_NAME,
     PRODUCT_NAME,
+    manifest,
 };
 use tracing::{
     info,
@@ -29,9 +29,9 @@ use tracing::{
 };
 
 use crate::util::desktop::{
+    LaunchArgs,
     desktop_app_running,
     launch_fig_desktop,
-    LaunchArgs,
 };
 
 #[derive(Debug, Args, PartialEq, Eq)]

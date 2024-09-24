@@ -18,13 +18,13 @@ use zvariant::{
     Type,
 };
 
+use crate::Result;
 use crate::message::{
     Field,
     FieldCode,
     Header,
     Message,
 };
-use crate::Result;
 
 // It's actually 10 (and even not that) but let's round it to next 8-byte alignment
 const MAX_FIELDS_IN_MESSAGE: usize = 16;

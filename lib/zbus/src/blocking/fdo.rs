@@ -31,8 +31,8 @@ use crate::fdo::{
     Result,
 };
 use crate::{
-    proxy,
     OwnedGuid,
+    proxy,
 };
 
 gen_introspectable_proxy!(false, true);

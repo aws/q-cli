@@ -4,9 +4,9 @@ use fig_proto::fig::{
     HistoryQueryRequest,
     HistoryQueryResponse,
 };
+use fig_settings::history::History;
 use fig_settings::history::rusqlite::params_from_iter;
 use fig_settings::history::rusqlite::types::Value;
-use fig_settings::history::History;
 
 use super::RequestResult;
 

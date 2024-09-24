@@ -3,9 +3,9 @@ mod parse;
 mod prompt;
 
 use std::io::{
-    stderr,
     Stderr,
     Write,
+    stderr,
 };
 use std::process::ExitCode;
 use std::time::Duration;
@@ -17,35 +17,35 @@ use crossterm::style::{
     Print,
 };
 use crossterm::{
+    ExecutableCommand,
+    QueueableCommand,
     cursor,
     style,
     terminal,
-    ExecutableCommand,
-    QueueableCommand,
 };
 use eyre::{
+    Result,
     bail,
     eyre,
-    Result,
 };
 use fig_api_client::StreamingClient;
 use fig_util::CLI_BINARY_NAME;
 use prompt::{
-    rl,
     PROMPT,
+    rl,
 };
 use rustyline::error::ReadlineError;
 use spinners::{
     Spinner,
     Spinners,
 };
-use winnow::stream::Offset;
 use winnow::Partial;
+use winnow::stream::Offset;
 
 use self::api::send_message;
 use self::parse::{
-    interpret_markdown,
     ParseState,
+    interpret_markdown,
 };
 use crate::util::region_check;
 

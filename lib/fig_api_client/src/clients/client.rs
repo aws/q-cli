@@ -3,6 +3,7 @@ use std::sync::{
     Mutex,
 };
 
+use amzn_codewhisperer_client::Client as CodewhispererClient;
 use amzn_codewhisperer_client::operation::generate_completions::GenerateCompletionsError;
 use amzn_codewhisperer_client::types::error::AccessDeniedError;
 use amzn_codewhisperer_client::types::{
@@ -11,17 +12,16 @@ use amzn_codewhisperer_client::types::{
     TelemetryEvent,
     UserContext,
 };
-use amzn_codewhisperer_client::Client as CodewhispererClient;
+use amzn_consolas_client::Client as ConsolasClient;
 use amzn_consolas_client::error::DisplayErrorContext;
 use amzn_consolas_client::operation::generate_recommendations::GenerateRecommendationsError;
-use amzn_consolas_client::Client as ConsolasClient;
 use aws_smithy_runtime_api::client::orchestrator::HttpResponse;
 use aws_smithy_runtime_api::client::result::SdkError;
 use aws_types::request_id::RequestId;
 use fig_auth::builder_id::BearerResolver;
 use fig_aws_common::{
-    app_name,
     UserAgentOverrideInterceptor,
+    app_name,
 };
 use fig_settings::State;
 use tracing::error;

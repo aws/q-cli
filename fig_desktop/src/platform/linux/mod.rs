@@ -5,20 +5,20 @@ mod sway;
 mod x11;
 
 use std::borrow::Cow;
+use std::sync::Arc;
 use std::sync::atomic::{
     AtomicBool,
     Ordering,
 };
-use std::sync::Arc;
 
 use fig_os_shim::Context;
+use fig_util::Terminal;
 use fig_util::system_info::linux::{
-    get_desktop_environment,
-    get_display_server,
     DesktopEnvironment,
     DisplayServer,
+    get_desktop_environment,
+    get_display_server,
 };
-use fig_util::Terminal;
 use parking_lot::Mutex;
 use serde::Serialize;
 use tao::dpi::{
@@ -303,8 +303,8 @@ pub mod gtk {
     /// instead of the program name.
     pub fn init() -> Result<(), gtk::glib::BoolError> {
         use gtk::glib::translate::{
-            from_glib,
             ToGlibPtr,
+            from_glib,
         };
         use gtk::{
             ffi,

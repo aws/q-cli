@@ -3,8 +3,8 @@
 use std::fmt::Write;
 
 use anyhow::{
-    bail,
     Result,
+    bail,
 };
 use bitflags::bitflags;
 use bytes::{

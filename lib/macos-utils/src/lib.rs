@@ -14,13 +14,13 @@ mod util;
 pub mod window_server;
 
 pub use util::{
-    get_user_info_from_notification,
     NSArray,
     NSArrayRef,
     NSString,
     NSStringRef,
-    NotificationCenter,
     NSURL,
+    NotificationCenter,
+    get_user_info_from_notification,
 };
 pub use window_server::{
     WindowServer,

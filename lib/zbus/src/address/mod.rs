@@ -181,12 +181,13 @@ mod tests {
 
     use test_log::test;
 
+    use super::Address;
     use super::transport::{
         Tcp,
         TcpTransportFamily,
         Transport,
     };
-    use super::Address;
+    use crate::Error;
     #[cfg(target_os = "macos")]
     use crate::address::transport::Launchd;
     #[cfg(windows)]
@@ -198,7 +199,6 @@ mod tests {
         Unix,
         UnixSocket,
     };
-    use crate::Error;
 
     #[test]
     fn parse_dbus_addresses() {

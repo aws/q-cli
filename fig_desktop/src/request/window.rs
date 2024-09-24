@@ -20,8 +20,8 @@ use crate::event::{
 };
 use crate::webview::WindowId;
 use crate::{
-    EventLoopProxy,
     AUTOCOMPLETE_ID,
+    EventLoopProxy,
 };
 
 pub async fn position_window(

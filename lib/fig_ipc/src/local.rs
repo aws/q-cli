@@ -3,10 +3,6 @@ use std::time::Duration;
 use async_trait::async_trait;
 use fig_proto::local::{
     self,
-    command,
-    command_response,
-    devtools_command,
-    dump_state_command,
     CommandResponse,
     DebugModeCommand,
     DevtoolsCommand,
@@ -25,6 +21,10 @@ use fig_proto::local::{
     RestartSettingsListenerCommand,
     UiElement,
     UpdateCommand,
+    command,
+    command_response,
+    devtools_command,
+    dump_state_command,
 };
 use fig_util::directories;
 

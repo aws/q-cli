@@ -52,9 +52,9 @@ use crate::platform::{
 use crate::utils::Rect;
 #[allow(unused_imports)]
 use crate::{
-    EventLoopWindowTarget,
     AUTOCOMPLETE_ID,
     DASHBOARD_ID,
+    EventLoopWindowTarget,
 };
 
 pub struct WindowGeometryState {

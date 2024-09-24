@@ -18,13 +18,13 @@ use cfg_if::cfg_if;
 use fig_desktop_api::init_script::javascript_init;
 use fig_desktop_api::kv::DashKVStore;
 use fig_os_shim::Context;
-use fig_proto::fig::client_originated_message::Submessage;
 use fig_proto::fig::ClientOriginatedMessage;
+use fig_proto::fig::client_originated_message::Submessage;
 use fig_remote_ipc::figterm::FigtermState;
 use fig_util::consts::PRODUCT_NAME;
 use fig_util::{
-    directories,
     URL_SCHEMA,
+    directories,
 };
 use fnv::FnvBuildHasher;
 use muda::MenuEvent;
@@ -95,19 +95,19 @@ use crate::tray::{
 };
 use crate::webview::window_id::AutocompleteId;
 pub use crate::webview::window_id::{
-    WindowId,
     AUTOCOMPLETE_ID,
     DASHBOARD_ID,
+    WindowId,
 };
 use crate::{
-    auth_watcher,
-    file_watcher,
-    local_ipc,
-    utils,
     DebugState,
     EventLoop,
     EventLoopProxy,
     InterceptState,
+    auth_watcher,
+    file_watcher,
+    local_ipc,
+    utils,
 };
 
 pub const DASHBOARD_SIZE: LogicalSize<f64> = LogicalSize::new(960.0, 720.0);

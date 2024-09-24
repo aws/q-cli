@@ -12,8 +12,8 @@ use tokio::io::{
     AsyncReadExt,
 };
 
-use crate::error::RecvError;
 use crate::BufferedReader;
+use crate::error::RecvError;
 
 #[async_trait]
 pub trait RecvMessage {

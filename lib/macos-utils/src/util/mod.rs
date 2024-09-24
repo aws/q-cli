@@ -7,8 +7,8 @@ use std::ops::Deref;
 
 use cocoa::base::nil;
 pub use notification_center::{
-    get_user_info_from_notification,
     NotificationCenter,
+    get_user_info_from_notification,
 };
 pub use nsarray::{
     NSArray,

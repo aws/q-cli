@@ -20,8 +20,8 @@ use std::task::{
 };
 
 use enumflags2::{
-    bitflags,
     BitFlags,
+    bitflags,
 };
 use event_listener::{
     Event,
@@ -34,19 +34,19 @@ use futures_core::{
 use futures_util::future::Either;
 use futures_util::stream::Map;
 use ordered_stream::{
-    join as join_streams,
     FromFuture,
     Join,
     OrderedStream,
     PollResult,
+    join as join_streams,
 };
 use static_assertions::assert_impl_all;
 use tracing::{
+    Instrument,
     debug,
     info_span,
     instrument,
     trace,
-    Instrument,
 };
 use zbus_names::{
     BusName,

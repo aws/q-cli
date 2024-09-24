@@ -25,6 +25,7 @@ use std::time::{
     SystemTime,
 };
 
+use alacritty_terminal::Term;
 use alacritty_terminal::ansi::Processor;
 use alacritty_terminal::event::EventListener;
 use alacritty_terminal::grid::Dimensions;
@@ -33,19 +34,18 @@ use alacritty_terminal::term::{
     SizeInfo,
     TextBuffer,
 };
-use alacritty_terminal::Term;
 use anyhow::{
-    anyhow,
     Context as _,
     Result,
+    anyhow,
 };
 use bytes::BytesMut;
 use cfg_if::cfg_if;
 use clap::Parser;
 use cli::Cli;
 use fig_log::{
-    initialize_logging,
     LogArgs,
+    initialize_logging,
 };
 use fig_os_shim::Context;
 use fig_proto::local::{
@@ -61,21 +61,21 @@ use fig_proto::remote_hooks::{
 use fig_settings::state;
 use fig_util::consts::CLI_BINARY_NAME;
 use fig_util::env_var::{
-    QTERM_SESSION_ID,
     Q_LOG_LEVEL,
     Q_PARENT,
     Q_SHELL,
     Q_TERM,
+    QTERM_SESSION_ID,
 };
 use fig_util::process_info::{
     Pid,
     PidExt,
 };
 use fig_util::{
-    directories,
-    Terminal as FigTerminal,
     PRODUCT_NAME,
     PTY_BINARY_NAME,
+    Terminal as FigTerminal,
+    directories,
 };
 use flume::{
     Receiver,

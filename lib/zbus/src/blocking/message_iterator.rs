@@ -45,12 +45,12 @@ impl MessageIterator {
     /// # Example
     ///
     /// ```no_run
+    /// use zbus::MatchRule;
     /// use zbus::blocking::{
     ///     Connection,
     ///     MessageIterator,
     /// };
     /// use zbus::fdo::NameOwnerChanged;
-    /// use zbus::MatchRule;
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let conn = Connection::session()?;

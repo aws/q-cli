@@ -12,8 +12,8 @@ use crate::event::{
     WindowEvent,
 };
 use crate::{
-    EventLoopProxy,
     DASHBOARD_ID,
+    EventLoopProxy,
 };
 
 const DASHBOARD_QUIT: &str = "dashboard-quit";

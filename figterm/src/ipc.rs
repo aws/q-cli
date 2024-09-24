@@ -14,27 +14,27 @@ use fig_ipc::{
     RecvMessage,
     SendMessage,
 };
+use fig_proto::FigProtobufEncodable;
 use fig_proto::figterm::{
     FigtermRequestMessage,
     FigtermResponseMessage,
 };
 use fig_proto::remote::hostbound::Handshake;
 use fig_proto::remote::{
-    clientbound,
-    hostbound,
     Clientbound,
     Hostbound,
+    clientbound,
+    hostbound,
 };
-use fig_proto::FigProtobufEncodable;
 use fig_util::{
+    PTY_BINARY_NAME,
     directories,
     gen_hex_string,
-    PTY_BINARY_NAME,
 };
 use flume::{
-    unbounded,
     Receiver,
     Sender,
+    unbounded,
 };
 use pin_project::pin_project;
 use tokio::io::{
@@ -51,8 +51,8 @@ use tokio::process::{
 use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
 use tokio::time::{
-    interval,
     MissedTickBehavior,
+    interval,
 };
 use tracing::{
     debug,

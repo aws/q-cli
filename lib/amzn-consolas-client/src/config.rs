@@ -406,8 +406,8 @@ impl Builder {
     ///
     /// # Examples
     /// ```no_run
-    /// use amzn_consolas_client::config::retry::RetryConfig;
     /// use amzn_consolas_client::config::Config;
+    /// use amzn_consolas_client::config::retry::RetryConfig;
     ///
     /// let retry_config = RetryConfig::standard().with_max_attempts(5);
     /// let config = Config::builder().retry_config(retry_config).build();
@@ -517,8 +517,8 @@ impl Builder {
     ///
     /// ```no_run
     /// # use std::time::Duration;
-    /// use amzn_consolas_client::config::timeout::TimeoutConfig;
     /// use amzn_consolas_client::config::Config;
+    /// use amzn_consolas_client::config::timeout::TimeoutConfig;
     ///
     /// let timeout_config = TimeoutConfig::builder()
     ///     .operation_attempt_timeout(Duration::from_secs(1))

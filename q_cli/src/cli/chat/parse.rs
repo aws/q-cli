@@ -6,13 +6,14 @@ use crossterm::style::{
     Stylize,
 };
 use crossterm::{
-    style,
     Command,
+    style,
 };
 use unicode_width::{
     UnicodeWidthChar,
     UnicodeWidthStr,
 };
+use winnow::Partial;
 use winnow::ascii::{
     self,
     digit1,
@@ -43,7 +44,6 @@ use winnow::token::{
     take_until,
     take_while,
 };
-use winnow::Partial;
 
 const CODE_COLOR: Color = Color::Green;
 const HEADING_COLOR: Color = Color::Magenta;

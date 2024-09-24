@@ -11,8 +11,8 @@ use crate::event::{
 };
 use crate::webview::LOGIN_PATH;
 use crate::{
-    EventLoopProxy,
     DASHBOARD_ID,
+    EventLoopProxy,
 };
 
 pub async fn logout(_request: UserLogoutRequest, proxy: &EventLoopProxy) -> RequestResult {

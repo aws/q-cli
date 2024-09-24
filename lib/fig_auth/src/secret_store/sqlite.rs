@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use fig_settings::sqlite::{
-    database,
     Db,
+    database,
 };
 
 use super::Secret;

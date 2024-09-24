@@ -45,11 +45,11 @@ impl Intercept for SessionIdInterceptor {
 
 #[cfg(test)]
 mod tests {
+    use amzn_consolas_client::config::RuntimeComponentsBuilder;
     use amzn_consolas_client::config::interceptors::{
         AfterDeserializationInterceptorContextRef,
         InterceptorContext,
     };
-    use amzn_consolas_client::config::RuntimeComponentsBuilder;
     use aws_smithy_runtime_api::client::interceptors::context::Input;
     use aws_smithy_runtime_api::http::StatusCode;
     use aws_smithy_types::body::SdkBody;

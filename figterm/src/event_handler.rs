@@ -24,9 +24,9 @@ use crate::history::{
 };
 use crate::inline::on_prompt;
 use crate::{
-    shell_state_to_context,
-    MainLoopEvent,
     INSERT_ON_NEW_CMD,
+    MainLoopEvent,
+    shell_state_to_context,
 };
 
 pub struct EventHandler {

@@ -149,8 +149,8 @@ pub(crate) async fn update(
 
 #[cfg(test)]
 mod tests {
-    use fig_util::directories::home_dir;
     use fig_util::CLI_BINARY_NAME;
+    use fig_util::directories::home_dir;
 
     use super::*;
 

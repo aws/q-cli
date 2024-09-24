@@ -4,9 +4,9 @@ use std::path::{
 };
 
 use appkit_nsworkspace_bindings::{
+    INSURL,
     INSWorkspace,
     NSWorkspace,
-    INSURL,
 };
 
 use crate::{

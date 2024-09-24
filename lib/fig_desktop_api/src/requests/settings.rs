@@ -5,9 +5,9 @@ use fig_proto::fig::{
     UpdateSettingsPropertyRequest,
 };
 use fig_settings::{
-    settings,
     JsonStore,
     OldSettings,
+    settings,
 };
 
 use super::{

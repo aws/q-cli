@@ -13,8 +13,6 @@ use tracing::{
 };
 
 use super::{
-    random_ascii,
-    sasl_auth_id,
     AuthMechanism,
     Authenticated,
     BoxedSplit,
@@ -26,12 +24,14 @@ use super::{
     OwnedGuid,
     Result,
     Str,
+    random_ascii,
+    sasl_auth_id,
 };
 use crate::conn::socket::ReadHalf;
 use crate::names::OwnedUniqueName;
 use crate::{
-    is_flatpak,
     Message,
+    is_flatpak,
 };
 
 /// A representation of an in-progress handshake, client-side

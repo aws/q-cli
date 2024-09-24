@@ -14,9 +14,9 @@ use sha2::{
     Sha256,
 };
 
+use crate::Error;
 use crate::env_var::Q_PARENT;
 use crate::manifest::is_minimal;
-use crate::Error;
 
 /// The support level for different platforms
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -327,8 +327,8 @@ fn raw_system_id() -> Result<String, Error> {
 
 #[cfg(target_os = "windows")]
 fn raw_system_id() -> Result<String, Error> {
-    use winreg::enums::HKEY_LOCAL_MACHINE;
     use winreg::RegKey;
+    use winreg::enums::HKEY_LOCAL_MACHINE;
 
     let rkey = RegKey::predef(HKEY_LOCAL_MACHINE).open_subkey(r"SOFTWARE\Microsoft\Cryptography")?;
     let id: String = rkey.get_value("MachineGuid")?;

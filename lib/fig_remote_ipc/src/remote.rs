@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::sync::atomic::{
     AtomicU64,
     Ordering,
 };
-use std::sync::Arc;
 
 use anyhow::{
     Context,
@@ -16,10 +16,10 @@ use fig_ipc::{
     SendMessage,
 };
 use fig_proto::figterm::{
-    intercept_request,
     InsertTextRequest,
     InterceptRequest,
     SetBufferRequest,
+    intercept_request,
 };
 use fig_proto::local::ShellContext;
 use fig_proto::remote::clientbound::request::Request;
@@ -30,9 +30,9 @@ use fig_proto::remote::clientbound::{
     RunProcessRequest,
 };
 use fig_proto::remote::{
-    hostbound,
     Clientbound,
     Hostbound,
+    hostbound,
 };
 use fig_util::PTY_BINARY_NAME;
 use time::OffsetDateTime;
@@ -55,6 +55,7 @@ use tracing::{
     warn,
 };
 
+use crate::RemoteHookHandler;
 use crate::figterm::{
     EditBuffer,
     FigtermCommand,
@@ -63,7 +64,6 @@ use crate::figterm::{
     FigtermState,
     InterceptMode,
 };
-use crate::RemoteHookHandler;
 
 pub async fn start_remote_ipc(
     socket_path: PathBuf,

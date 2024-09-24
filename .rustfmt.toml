@@ -46,6 +46,7 @@ space_before_colon = false
 spaces_around_ranges = false
 struct_field_align_threshold = 0
 struct_lit_single_line = true
+style_edition = "2024"
 tab_spaces = 4
 trailing_comma = "Vertical"
 trailing_semicolon = true
@@ -53,7 +54,6 @@ type_punctuation_density = "Wide"
 unstable_features = false
 use_field_init_shorthand = true
 use_try_shorthand = true
-version = "Two"
 where_single_line = false
 wrap_comments = true
 

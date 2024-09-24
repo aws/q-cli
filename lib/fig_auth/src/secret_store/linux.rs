@@ -1,5 +1,5 @@
-use super::sqlite::SqliteSecretStore;
 use super::Secret;
+use super::sqlite::SqliteSecretStore;
 use crate::Result;
 
 pub struct SecretStoreImpl {

@@ -11,8 +11,8 @@ use tracing::{
 };
 
 use crate::protocol::icons::{
-    process_asset,
     ProcessedAsset,
+    process_asset,
 };
 
 static SELECTED_THEME: Mutex<Cow<'_, str>> = parking_lot::const_mutex(Cow::Borrowed("hicolor"));

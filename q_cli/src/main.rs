@@ -4,11 +4,11 @@ pub mod util;
 use std::process::ExitCode;
 
 use anstream::eprintln;
+use clap::Parser;
 use clap::error::{
     ContextKind,
     ErrorKind,
 };
-use clap::Parser;
 use crossterm::style::Stylize;
 use eyre::Result;
 use fig_log::get_log_level_max;

@@ -3,8 +3,8 @@ use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::{
-    anyhow,
     Error,
+    anyhow,
 };
 use bytes::{
     Buf,
@@ -17,8 +17,8 @@ use flume::Receiver;
 use parking_lot::Mutex;
 use serde::Serialize;
 use serde_json::{
-    json,
     Value,
+    json,
 };
 use tao::dpi::{
     LogicalPosition,
@@ -34,8 +34,8 @@ use tracing::{
 };
 
 use super::integrations::GSE_ALLOWLIST;
-use crate::utils::Rect;
 use crate::EventLoopProxy;
+use crate::utils::Rect;
 
 #[derive(Debug, Serialize)]
 pub struct SwayState {

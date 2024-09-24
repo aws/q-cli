@@ -1,8 +1,8 @@
 mod session_id;
 
 use std::collections::HashMap;
-use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
+use std::sync::atomic::AtomicU64;
 
 use fig_proto::fig::EnvironmentVariable;
 use fig_proto::local::{
@@ -10,8 +10,8 @@ use fig_proto::local::{
     TerminalCursorCoordinates,
 };
 use fig_proto::remote::{
-    hostbound,
     Clientbound,
+    hostbound,
 };
 use parking_lot::lock_api::MutexGuard;
 use parking_lot::{

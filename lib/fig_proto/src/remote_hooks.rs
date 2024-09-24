@@ -8,8 +8,8 @@ use crate::proto::local::{
     TerminalCursorCoordinates,
 };
 use crate::proto::remote::{
-    hostbound,
     Hostbound,
+    hostbound,
 };
 
 fn hook_enum_to_hook(request: hostbound::request::Request) -> hostbound::Request {

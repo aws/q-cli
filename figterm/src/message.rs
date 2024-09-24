@@ -6,8 +6,8 @@ use std::path::{
 };
 use std::time::SystemTime;
 
-use alacritty_terminal::term::ShellState;
 use alacritty_terminal::Term;
+use alacritty_terminal::term::ShellState;
 use anyhow::Result;
 use fig_proto::fig::{
     EnvironmentVariable,
@@ -28,10 +28,10 @@ use fig_proto::figterm::{
     TelemetryRequest,
 };
 use fig_proto::remote::{
-    clientbound,
-    hostbound,
     Clientbound,
     Hostbound,
+    clientbound,
+    hostbound,
 };
 use fig_util::env_var::PROCESS_LAUNCHED_BY_Q;
 use flume::Sender;
@@ -48,14 +48,14 @@ use crate::history::HistorySender;
 use crate::interceptor::KeyInterceptor;
 use crate::pty::AsyncMasterPty;
 use crate::{
-    inline,
-    shell_state_to_context,
-    MainLoopEvent,
     EXPECTED_BUFFER,
-    INSERTION_LOCKED_AT,
     INSERT_ON_NEW_CMD,
+    INSERTION_LOCKED_AT,
+    MainLoopEvent,
     SHELL_ALIAS,
     SHELL_ENVIRONMENT_VARIABLES,
+    inline,
+    shell_state_to_context,
 };
 
 fn shell_args(shell_path: impl AsRef<Path>) -> Option<&'static [&'static str]> {

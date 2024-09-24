@@ -1,7 +1,7 @@
 //! The object server API.
 
-use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 use std::fmt::Write;
 use std::marker::PhantomData;
 use std::ops::{
@@ -20,11 +20,11 @@ use serde::{
 };
 use static_assertions::assert_impl_all;
 use tracing::{
+    Instrument,
     debug,
     instrument,
     trace,
     trace_span,
-    Instrument,
 };
 use zbus_names::InterfaceName;
 use zvariant::{
@@ -54,10 +54,10 @@ use crate::message::{
     Message,
 };
 use crate::{
-    fdo,
     Connection,
     Error,
     Result,
+    fdo,
 };
 
 mod interface;
@@ -442,8 +442,8 @@ impl Node {
 /// # use std::error::Error;
 /// use event_listener::Event;
 /// use zbus::{
-///     interface,
 ///     Connection,
+///     interface,
 /// };
 /// # use async_io::block_on;
 ///

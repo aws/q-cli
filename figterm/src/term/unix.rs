@@ -1,10 +1,10 @@
 use std::fs::OpenOptions;
 use std::io::{
-    stdin,
-    stdout,
     Error as IoError,
     ErrorKind,
     Write,
+    stdin,
+    stdout,
 };
 use std::mem;
 use std::os::fd::BorrowedFd;
@@ -16,29 +16,29 @@ use std::sync::atomic::{
 use std::time::Duration;
 
 use anyhow::{
-    bail,
     Context,
     Result,
+    bail,
 };
 use bytes::BytesMut;
 use filedescriptor::FileDescriptor;
 use flume::{
-    bounded,
     Receiver,
+    bounded,
 };
 use nix::libc::{
     self,
     winsize,
 };
 use nix::sys::termios::{
+    FlushArg,
+    SetArg,
+    Termios,
     cfmakeraw,
     tcdrain,
     tcflush,
     tcgetattr,
     tcsetattr,
-    FlushArg,
-    SetArg,
-    Termios,
 };
 use tokio::io::{
     self,
@@ -60,9 +60,9 @@ use crate::input::{
 };
 use crate::term::istty::IsTty;
 use crate::term::{
-    cast,
     ScreenSize,
     Terminal,
+    cast,
 };
 
 const BUF_SIZE: usize = 4096;

@@ -4,12 +4,12 @@ use std::cmp::{
 };
 use std::fs::OpenOptions;
 use std::io::{
-    stdin,
-    stdout,
     Error as IoError,
     Read,
     Result as IoResult,
     Write,
+    stdin,
+    stdout,
 };
 use std::mem;
 use std::os::windows::io::AsRawHandle;
@@ -17,8 +17,8 @@ use std::os::windows::io::AsRawHandle;
 use anyhow::Result;
 use filedescriptor::FileDescriptor;
 use flume::{
-    bounded,
     Receiver,
+    bounded,
 };
 use tracing::{
     error,
@@ -33,19 +33,6 @@ use winapi::um::winbase::{
     WAIT_OBJECT_0,
 };
 use winapi::um::wincon::{
-    FillConsoleOutputAttribute,
-    FillConsoleOutputCharacterW,
-    GetConsoleScreenBufferInfo,
-    GetCurrentConsoleFont,
-    ReadConsoleOutputW,
-    ScrollConsoleScreenBufferW,
-    SetConsoleCP,
-    SetConsoleCursorPosition,
-    SetConsoleOutputCP,
-    SetConsoleScreenBufferSize,
-    SetConsoleTextAttribute,
-    SetConsoleWindowInfo,
-    WriteConsoleOutputW,
     CHAR_INFO,
     CONSOLE_FONT_INFO,
     CONSOLE_SCREEN_BUFFER_INFO,
@@ -57,8 +44,21 @@ use winapi::um::wincon::{
     ENABLE_PROCESSED_INPUT,
     ENABLE_VIRTUAL_TERMINAL_PROCESSING,
     ENABLE_WINDOW_INPUT,
+    FillConsoleOutputAttribute,
+    FillConsoleOutputCharacterW,
+    GetConsoleScreenBufferInfo,
+    GetCurrentConsoleFont,
     INPUT_RECORD,
+    ReadConsoleOutputW,
     SMALL_RECT,
+    ScrollConsoleScreenBufferW,
+    SetConsoleCP,
+    SetConsoleCursorPosition,
+    SetConsoleOutputCP,
+    SetConsoleScreenBufferSize,
+    SetConsoleTextAttribute,
+    SetConsoleWindowInfo,
+    WriteConsoleOutputW,
 };
 use winapi::um::winnls::CP_UTF8;
 
@@ -66,10 +66,10 @@ use super::InputEventResult;
 use crate::input::InputParser;
 use crate::term::istty::IsTty;
 use crate::term::{
-    cast,
     CellCoordinate,
     ScreenSize,
     Terminal,
+    cast,
 };
 
 const BUF_SIZE: usize = 128;

@@ -69,14 +69,14 @@ impl MessageStream {
     ///
     /// ```no_run
     /// use async_io::Timer;
-    /// use futures_util::future::select;
     /// use futures_util::future::Either::{
     ///     Left,
     ///     Right,
     /// };
+    /// use futures_util::future::select;
     /// use futures_util::{
-    ///     pin_mut,
     ///     TryStreamExt,
+    ///     pin_mut,
     /// };
     /// use zbus::fdo::NameOwnerChanged;
     /// use zbus::{

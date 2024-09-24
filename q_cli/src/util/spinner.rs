@@ -1,11 +1,11 @@
 use std::io::{
-    stdout,
     Write,
+    stdout,
 };
 use std::sync::mpsc::{
-    channel,
     Sender,
     TryRecvError,
+    channel,
 };
 use std::thread;
 use std::thread::JoinHandle;

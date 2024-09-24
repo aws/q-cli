@@ -10,10 +10,10 @@ use cfg_if::cfg_if;
 use clap::ValueEnum;
 use fig_os_shim::Env;
 use fig_util::{
-    directories,
-    Shell,
     CLI_BINARY_NAME,
     PRODUCT_NAME,
+    Shell,
+    directories,
 };
 use regex::{
     Regex,
@@ -29,10 +29,10 @@ use crate::error::{
     Result,
 };
 use crate::{
-    backup_file,
     Error,
     FileIntegration,
     Integration,
+    backup_file,
 };
 
 pub mod inline_shell_completion_plugin {

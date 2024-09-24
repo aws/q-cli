@@ -11,11 +11,11 @@ use fig_os_shim::{
 };
 use thiserror::Error;
 
-use crate::consts::linux::DESKTOP_ENTRY_NAME;
 use crate::consts::APP_PROCESS_NAME;
+use crate::consts::linux::DESKTOP_ENTRY_NAME;
 use crate::{
-    directories,
     PRODUCT_NAME,
+    directories,
 };
 
 #[derive(Debug, Error)]

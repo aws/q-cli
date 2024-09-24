@@ -114,8 +114,8 @@ fn random_ascii(len: usize) -> String {
 
     use rand::distributions::Alphanumeric;
     use rand::{
-        thread_rng,
         Rng,
+        thread_rng,
     };
 
     let mut rng = thread_rng();

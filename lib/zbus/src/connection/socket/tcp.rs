@@ -43,8 +43,8 @@ impl ReadHalf for Arc<Async<TcpStream>> {
         crate::Task::spawn_blocking(
             move || {
                 use crate::win32::{
-                    tcp_stream_get_peer_pid,
                     ProcessToken,
+                    tcp_stream_get_peer_pid,
                 };
 
                 let pid = tcp_stream_get_peer_pid(stream.get_ref())? as _;
@@ -161,8 +161,8 @@ impl WriteHalf for tokio::net::tcp::OwnedWriteHalf {
 #[cfg(windows)]
 fn win32_credentials_from_addr(addr: &std::net::SocketAddr) -> io::Result<crate::fdo::ConnectionCredentials> {
     use crate::win32::{
-        socket_addr_get_pid,
         ProcessToken,
+        socket_addr_get_pid,
     };
 
     let pid = socket_addr_get_pid(addr)? as _;

@@ -6,12 +6,12 @@ use aws_config::meta::credentials::CredentialsProviderChain;
 use aws_config::profile::ProfileFileCredentialsProvider;
 use aws_config::provider_config::ProviderConfig;
 use aws_config::web_identity_token::WebIdentityTokenCredentialsProvider;
+use aws_credential_types::Credentials;
 use aws_credential_types::provider::{
     self,
-    future,
     ProvideCredentials,
+    future,
 };
-use aws_credential_types::Credentials;
 use tracing::Instrument;
 
 #[cfg(feature = "ada")]

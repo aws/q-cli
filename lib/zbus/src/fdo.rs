@@ -6,8 +6,8 @@
 use std::collections::HashMap;
 
 use enumflags2::{
-    bitflags,
     BitFlags,
+    bitflags,
 };
 use serde::{
     Deserialize,
@@ -41,11 +41,11 @@ use zvariant::{
 use crate::message::Header;
 use crate::object_server::SignalContext;
 use crate::{
-    interface,
-    proxy,
     DBusError,
     ObjectServer,
     OwnedGuid,
+    interface,
+    proxy,
 };
 
 #[rustfmt::skip]
@@ -1008,9 +1008,9 @@ mod tests {
 
     use crate::message::Message;
     use crate::{
-        fdo,
         DBusError,
         Error,
+        fdo,
     };
 
     #[test]

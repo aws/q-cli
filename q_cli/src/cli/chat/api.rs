@@ -4,9 +4,10 @@ use std::path::Path;
 use amzn_codewhisperer_streaming_client::operation::RequestId;
 use aws_smithy_types::error::display::DisplayErrorContext;
 use eyre::{
-    bail,
     Result,
+    bail,
 };
+use fig_api_client::StreamingClient;
 use fig_api_client::model::{
     ChatResponseStream,
     ConversationState,
@@ -19,7 +20,6 @@ use fig_api_client::model::{
     UserInputMessageContext,
     UserIntent,
 };
-use fig_api_client::StreamingClient;
 use fig_settings::history::{
     History,
     OrderBy,

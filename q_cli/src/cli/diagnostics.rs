@@ -1,6 +1,6 @@
 use std::io::{
-    stdout,
     IsTerminal,
+    stdout,
 };
 use std::process::ExitCode;
 

@@ -9,13 +9,13 @@ use accessibility::{
     AXUIElement,
 };
 use accessibility_sys::{
-    kAXBoundsForRangeParameterizedAttribute,
-    kAXValueTypeCFRange,
-    kAXValueTypeCGRect,
     AXUIElementCopyParameterizedAttributeValue,
     AXValueCreate,
     AXValueGetValue,
     AXValueRef,
+    kAXBoundsForRangeParameterizedAttribute,
+    kAXValueTypeCFRange,
+    kAXValueTypeCGRect,
 };
 use core_foundation::base::{
     CFRange,

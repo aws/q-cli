@@ -3,16 +3,17 @@ use std::time::Duration;
 
 use bytes::Bytes;
 use eyre::{
-    anyhow,
-    bail,
     Context,
     ContextCompat,
     Result,
+    anyhow,
+    bail,
 };
 use fig_ipc::{
     BufferedReader,
     RecvMessage,
 };
+use fig_proto::FigProtobufEncodable;
 use fig_proto::figterm::intercept_request::{
     InterceptCommand,
     SetFigjsIntercepts,
@@ -37,11 +38,10 @@ use fig_proto::remote::clientbound::{
     RunProcessRequest,
 };
 use fig_proto::remote::{
+    Clientbound,
     clientbound,
     hostbound,
-    Clientbound,
 };
-use fig_proto::FigProtobufEncodable;
 use fig_remote_ipc::figterm::{
     FigtermCommand,
     FigtermSessionId,
@@ -49,8 +49,8 @@ use fig_remote_ipc::figterm::{
 };
 use fig_remote_ipc::remote::handle_remote_ipc;
 use fig_util::{
-    directories,
     PTY_BINARY_NAME,
+    directories,
 };
 use tokio::io::AsyncWriteExt;
 use tokio::net::UnixListener;

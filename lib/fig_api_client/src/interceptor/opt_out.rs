@@ -1,6 +1,6 @@
 use aws_smithy_runtime_api::box_error::BoxError;
-use aws_smithy_runtime_api::client::interceptors::context::BeforeTransmitInterceptorContextMut;
 use aws_smithy_runtime_api::client::interceptors::Intercept;
+use aws_smithy_runtime_api::client::interceptors::context::BeforeTransmitInterceptorContextMut;
 use aws_smithy_runtime_api::client::runtime_components::RuntimeComponents;
 use aws_smithy_types::config_bag::ConfigBag;
 
@@ -50,8 +50,8 @@ impl Intercept for OptOutInterceptor {
 
 #[cfg(test)]
 mod tests {
-    use amzn_consolas_client::config::interceptors::InterceptorContext;
     use amzn_consolas_client::config::RuntimeComponentsBuilder;
+    use amzn_consolas_client::config::interceptors::InterceptorContext;
     use aws_smithy_runtime_api::client::interceptors::context::Input;
 
     use super::*;

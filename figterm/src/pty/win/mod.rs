@@ -28,9 +28,9 @@ use filedescriptor::{
     Pipe,
 };
 use flume::{
-    unbounded,
     Receiver,
     Sender,
+    unbounded,
 };
 use portable_pty::{
     Child,

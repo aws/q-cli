@@ -5,7 +5,6 @@ use std::time::{
 };
 
 use accessibility_sys::{
-    pid_t,
     AXUIElementCopyActionNames,
     AXUIElementCopyAttributeNames,
     AXUIElementCopyAttributeValue,
@@ -15,6 +14,7 @@ use accessibility_sys::{
     AXUIElementPerformAction,
     AXUIElementRef,
     AXUIElementSetAttributeValue,
+    pid_t,
 };
 use cocoa::base::{
     id,

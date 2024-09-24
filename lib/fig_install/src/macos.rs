@@ -19,8 +19,8 @@ use fig_util::consts::{
 };
 use fig_util::macos::BUNDLE_CONTENTS_MACOS_PATH;
 use fig_util::{
-    directories,
     APP_BUNDLE_NAME,
+    directories,
 };
 use regex::Regex;
 use security_framework::authorization::{

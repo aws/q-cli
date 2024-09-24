@@ -12,9 +12,9 @@ pub enum Error {
 fn open_macos(url_str: impl AsRef<str>) -> Result<(), Error> {
     use macos_utils::NSURL;
     use objc::runtime::{
-        Object,
         BOOL,
         NO,
+        Object,
     };
     use objc::{
         class,

@@ -1,12 +1,11 @@
 use std::ffi::CStr;
 use std::mem::{
-    size_of,
     MaybeUninit,
+    size_of,
 };
 use std::ops::Deref;
 use std::path::PathBuf;
 
-use windows::core::PSTR;
 use windows::Win32::Foundation::{
     CloseHandle,
     HANDLE,
@@ -16,14 +15,15 @@ use windows::Win32::System::Threading::{
     GetCurrentProcessId,
     NtQueryInformationProcess,
     OpenProcess,
-    ProcessBasicInformation,
-    QueryFullProcessImageNameA,
     PROCESS_BASIC_INFORMATION,
     PROCESS_NAME_FORMAT,
     PROCESS_QUERY_INFORMATION,
     PROCESS_QUERY_LIMITED_INFORMATION,
     PROCESS_VM_READ,
+    ProcessBasicInformation,
+    QueryFullProcessImageNameA,
 };
+use windows::core::PSTR;
 
 use super::{
     Pid,

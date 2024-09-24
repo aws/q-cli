@@ -6,8 +6,8 @@ use core_foundation::bundle::{
     CFBundleGetMainBundle,
 };
 use core_foundation::url::{
-    CFURLRef,
     CFURL,
+    CFURLRef,
 };
 
 pub fn get_bundle_path() -> Option<PathBuf> {

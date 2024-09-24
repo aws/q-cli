@@ -3,8 +3,8 @@ use std::str::FromStr;
 use fig_os_shim::Env;
 use fig_settings::Settings;
 use uuid::{
-    uuid,
     Uuid,
+    uuid,
 };
 
 pub(crate) fn telemetry_is_disabled() -> bool {

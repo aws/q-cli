@@ -10,8 +10,8 @@ use zbus_names::{
     MemberName,
 };
 use zvariant::{
-    serialized,
     Endian,
+    serialized,
 };
 
 use crate::utils::padding_for_8_bytes;
@@ -43,9 +43,9 @@ pub use header::{
     EndianSig,
     Flags,
     Header,
+    NATIVE_ENDIAN_SIG,
     PrimaryHeader,
     Type,
-    NATIVE_ENDIAN_SIG,
 };
 
 /// A position in the stream of [`Message`] objects received by a single [`zbus::Connection`].

@@ -1,12 +1,12 @@
 //! A module for making working with the app easier by grabbing credentials via ada for sigv4
 
+use aws_credential_types::Credentials;
 use aws_credential_types::provider::error::CredentialsError;
 use aws_credential_types::provider::{
-    future,
     ProvideCredentials,
     Result as CredsResult,
+    future,
 };
-use aws_credential_types::Credentials;
 use fig_util::directories::home_dir;
 use tokio::process::Command;
 use tracing::debug;

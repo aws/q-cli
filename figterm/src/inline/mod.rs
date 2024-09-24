@@ -8,13 +8,13 @@ use std::time::{
     SystemTime,
 };
 
+use fig_api_client::Client;
 use fig_api_client::model::{
     FileContext,
     LanguageName,
     ProgrammingLanguage,
     RecommendationsInput,
 };
-use fig_api_client::Client;
 use fig_proto::figterm::figterm_response_message::Response as FigtermResponse;
 use fig_proto::figterm::{
     FigtermResponseMessage,
@@ -28,11 +28,11 @@ use fig_telemetry::{
     AppTelemetryEvent,
     SuggestionState,
 };
+use fig_util::Shell;
 use fig_util::terminal::{
     current_terminal,
     current_terminal_version,
 };
-use fig_util::Shell;
 use flume::Sender;
 use once_cell::sync::Lazy;
 use tokio::sync::Mutex;

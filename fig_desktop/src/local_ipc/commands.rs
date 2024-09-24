@@ -28,13 +28,13 @@ use crate::event::{
     WindowEvent,
 };
 use crate::platform::PlatformState;
-use crate::webview::notification::WebviewNotificationsState;
 use crate::webview::DASHBOARD_SIZE;
+use crate::webview::notification::WebviewNotificationsState;
 use crate::{
-    platform,
-    EventLoopProxy,
     AUTOCOMPLETE_ID,
     DASHBOARD_ID,
+    EventLoopProxy,
+    platform,
 };
 
 pub async fn debug(command: DebugModeCommand, proxy: &EventLoopProxy) -> LocalResult {

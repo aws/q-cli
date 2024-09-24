@@ -5,8 +5,8 @@ use super::{
     Unix,
     UnixSocket,
 };
-use crate::process::run;
 use crate::Result;
+use crate::process::run;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]

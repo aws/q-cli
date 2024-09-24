@@ -5,8 +5,8 @@ use std::{
 };
 
 use anyhow::{
-    ensure,
     Error,
+    ensure,
 };
 use winapi::shared::minwindef::DWORD;
 use winapi::um::processthreadsapi::*;

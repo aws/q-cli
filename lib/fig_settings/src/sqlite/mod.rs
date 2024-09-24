@@ -10,10 +10,10 @@ use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::types::FromSql;
 use rusqlite::{
-    params,
     Connection,
     Error,
     ToSql,
+    params,
 };
 use serde_json::Map;
 use tracing::{
@@ -21,8 +21,8 @@ use tracing::{
     info,
 };
 
-use crate::error::DbOpenError;
 use crate::Result;
+use crate::error::DbOpenError;
 
 const STATE_TABLE_NAME: &str = "state";
 const AUTH_TABLE_NAME: &str = "auth_kv";

@@ -23,13 +23,13 @@ use crate::request::{
     EventHandler,
 };
 use crate::webview::{
-    WindowId,
     DASH_KV_STORE,
     DEBUG_STATE,
     FIGTERM_STATE,
     GLOBAL_PROXY,
     INTERCEPT_STATE,
     NOTIFICATIONS_STATE,
+    WindowId,
 };
 
 static APPLICATION_FIG_API: HeaderValue = HeaderValue::from_static("application/fig-api");

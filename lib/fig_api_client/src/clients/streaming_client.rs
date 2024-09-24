@@ -7,8 +7,8 @@ use aws_types::request_id::RequestId;
 use aws_types::sdk_config::StalledStreamProtectionConfig;
 use fig_auth::builder_id::BearerResolver;
 use fig_aws_common::{
-    app_name,
     UserAgentOverrideInterceptor,
+    app_name,
 };
 
 use super::shared::{

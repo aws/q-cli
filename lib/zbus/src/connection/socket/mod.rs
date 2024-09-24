@@ -29,21 +29,21 @@ use std::{
 #[cfg(not(feature = "tokio"))]
 use async_io::Async;
 use tracing::trace;
+use zvariant::Endian;
 use zvariant::serialized::{
     self,
     Context,
 };
-use zvariant::Endian;
 
 use crate::fdo::ConnectionCredentials;
+use crate::message::PrimaryHeader;
 use crate::message::header::{
     MAX_MESSAGE_SIZE,
     MIN_MESSAGE_SIZE,
 };
-use crate::message::PrimaryHeader;
 use crate::{
-    padding_for_8_bytes,
     Message,
+    padding_for_8_bytes,
 };
 
 #[cfg(unix)]
@@ -192,8 +192,8 @@ pub trait ReadHalf: std::fmt::Debug + Send + Sync + 'static {
 
         #[cfg(unix)]
         if !already_received_fds.is_empty() {
-            use crate::message::header::PRIMARY_HEADER_SIZE;
             use crate::message::Field;
+            use crate::message::header::PRIMARY_HEADER_SIZE;
 
             let ctxt = Context::new_dbus(endian, PRIMARY_HEADER_SIZE);
             let encoded_fields = serialized::Data::new(&bytes[PRIMARY_HEADER_SIZE..header_len], ctxt);

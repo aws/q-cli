@@ -11,8 +11,8 @@ use zbus::zvariant::{
 };
 
 use super::{
-    ibus_bus,
     CrateError,
+    ibus_bus,
 };
 
 #[derive(Debug, Error)]

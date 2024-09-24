@@ -1,6 +1,6 @@
 use std::io::{
-    stdout,
     Write,
+    stdout,
 };
 use std::os::unix::fs::PermissionsExt as _;
 use std::sync::Arc;
@@ -19,18 +19,18 @@ use fig_proto::local::{
     ShellContext,
 };
 use fig_proto::remote::clientbound;
+use fig_remote_ipc::RemoteHookHandler;
 use fig_remote_ipc::figterm::{
     FigtermSessionId,
     FigtermState,
 };
-use fig_remote_ipc::RemoteHookHandler;
 use fig_util::RUNTIME_DIR_NAME;
 use portable_pty::{
-    native_pty_system,
     Child,
     CommandBuilder,
     PtyPair,
     PtySize,
+    native_pty_system,
 };
 use tempfile::TempDir;
 use tokio::net::UnixListener;

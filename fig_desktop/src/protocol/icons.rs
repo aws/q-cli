@@ -1,6 +1,6 @@
 use std::borrow::Cow;
-use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
+use std::collections::hash_map::RandomState;
 use std::ffi::OsStr;
 use std::hash::Hash;
 use std::io::Cursor;

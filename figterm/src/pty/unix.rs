@@ -18,29 +18,29 @@ use anyhow::{
 use async_trait::async_trait;
 use filedescriptor::FileDescriptor;
 use nix::fcntl::{
-    fcntl,
-    open,
     FcntlArg,
     FdFlag,
     OFlag,
+    fcntl,
+    open,
 };
 use nix::libc;
 use nix::pty::{
+    PtyMaster,
+    Winsize,
     grantpt,
     posix_openpt,
     ptsname,
     unlockpt,
-    PtyMaster,
-    Winsize,
 };
 use nix::sys::signal::{
-    signal,
     SigHandler,
     Signal,
+    signal,
 };
 use nix::sys::stat::{
-    umask,
     Mode,
+    umask,
 };
 use portable_pty::unix::close_random_fds;
 use portable_pty::{

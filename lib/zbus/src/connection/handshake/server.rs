@@ -11,8 +11,6 @@ use tracing::{
 };
 
 use super::{
-    random_ascii,
-    sasl_auth_id,
     AuthMechanism,
     Authenticated,
     BoxedSplit,
@@ -24,6 +22,8 @@ use super::{
     Handshake,
     OwnedGuid,
     Result,
+    random_ascii,
+    sasl_auth_id,
 };
 use crate::names::OwnedUniqueName;
 

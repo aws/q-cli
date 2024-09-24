@@ -32,8 +32,8 @@ use crate::event::{
 };
 use crate::platform::ActiveWindowData;
 use crate::{
-    EventLoopProxy,
     AUTOCOMPLETE_ID,
+    EventLoopProxy,
 };
 
 pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStateImpl>) -> Result<()> {

@@ -5,9 +5,9 @@ use clap::Args;
 use crossterm::style::Stylize;
 use eyre::Result;
 use fig_util::{
-    directories,
     CLI_BINARY_NAME,
     PRODUCT_NAME,
+    directories,
 };
 use indoc::formatdoc;
 use uuid::Uuid;

@@ -26,9 +26,9 @@ use crate::proxy::{
 };
 use crate::utils::block_on;
 use crate::{
-    fdo,
     Error,
     Result,
+    fdo,
 };
 
 mod builder;

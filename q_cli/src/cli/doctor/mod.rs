@@ -31,10 +31,10 @@ use checks::{
 use clap::Args;
 use crossterm::style::Stylize;
 use crossterm::terminal::{
-    disable_raw_mode,
-    enable_raw_mode,
     Clear,
     ClearType,
+    disable_raw_mode,
+    enable_raw_mode,
 };
 use crossterm::{
     cursor,
@@ -70,26 +70,26 @@ use fig_util::directories::{
 };
 use fig_util::env_var::{
     PROCESS_LAUNCHED_BY_Q,
-    QTERM_SESSION_ID,
     Q_PARENT,
     Q_TERM,
     Q_USING_ZSH_AUTOSUGGESTIONS,
+    QTERM_SESSION_ID,
 };
 use fig_util::macos::BUNDLE_CONTENTS_INFO_PLIST_PATH;
 use fig_util::system_info::SupportLevel;
 use fig_util::{
-    directories,
-    Shell,
-    Terminal,
     APP_BUNDLE_NAME,
     CLI_BINARY_NAME,
     CLI_CRATE_NAME,
     OLD_CLI_BINARY_NAMES,
     PRODUCT_NAME,
     PTY_BINARY_NAME,
+    Shell,
+    Terminal,
+    directories,
 };
-use futures::future::BoxFuture;
 use futures::FutureExt;
+use futures::future::BoxFuture;
 use owo_colors::OwoColorize;
 use regex::Regex;
 use semver::Version;
@@ -102,9 +102,9 @@ use tokio::io::AsyncBufReadExt;
 use super::app::restart_fig;
 use super::diagnostics::verify_integration;
 use crate::util::desktop::{
+    LaunchArgs,
     desktop_app_running,
     launch_fig_desktop,
-    LaunchArgs,
 };
 use crate::util::{
     app_path_from_bundle_id,
@@ -1650,8 +1650,8 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
     }
 
     async fn check(&self, current_terminal: &Option<Terminal>) -> Result<(), DoctorError> {
-        use fig_integrations::input_method::InputMethod;
         use fig_integrations::Integration;
+        use fig_integrations::input_method::InputMethod;
         use macos_utils::applications::running_applications;
 
         let input_method = InputMethod::default();
@@ -1745,10 +1745,10 @@ impl DoctorCheck for DesktopCompatibilityCheck {
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         use fig_os_shim::Context;
         use fig_util::system_info::linux::{
-            get_desktop_environment,
-            get_display_server,
             DesktopEnvironment,
             DisplayServer,
+            get_desktop_environment,
+            get_display_server,
         };
 
         let ctx = Context::new();
@@ -2242,11 +2242,11 @@ pub async fn doctor_cli(all: bool, strict: bool) -> Result<ExitCode> {
         #[cfg(target_os = "linux")]
         {
             use checks::linux::{
-                get_linux_context,
                 GnomeExtensionCheck,
                 IBusCheck,
                 IBusEnvCheck,
                 SandboxCheck,
+                get_linux_context,
             };
             // Linux desktop checks
             if fig_util::manifest::is_full() && !fig_util::system_info::is_remote() {

@@ -13,17 +13,17 @@ async fn main() {
         NSApplication,
     };
     use cocoa::base::{
+        BOOL,
         id,
         nil,
-        BOOL,
     };
     use cocoa::foundation::{
         NSAutoreleasePool,
         NSString,
     };
     use fig_log::{
-        initialize_logging,
         LogArgs,
+        initialize_logging,
     };
     use fig_util::directories;
     use tracing::info;

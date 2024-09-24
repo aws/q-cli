@@ -18,10 +18,10 @@ use std::task::{
 };
 
 use async_broadcast::{
-    broadcast,
     InactiveReceiver,
     Receiver,
     Sender as Broadcaster,
+    broadcast,
 };
 use enumflags2::BitFlags;
 use event_listener::{
@@ -37,13 +37,13 @@ use ordered_stream::{
 };
 use static_assertions::assert_impl_all;
 use tracing::{
+    Instrument,
     debug,
     info_span,
     instrument,
     trace,
     trace_span,
     warn,
-    Instrument,
 };
 use zbus_names::{
     BusName,
@@ -73,8 +73,6 @@ use crate::message::{
 };
 use crate::proxy::CacheProperties;
 use crate::{
-    blocking,
-    is_flatpak,
     DBusError,
     Error,
     Executor,
@@ -85,6 +83,8 @@ use crate::{
     OwnedMatchRule,
     Result,
     Task,
+    blocking,
+    is_flatpak,
 };
 
 mod builder;
@@ -602,12 +602,12 @@ impl Connection {
     /// # zbus::block_on(async {
     /// use enumflags2::BitFlags;
     /// use futures_util::stream::StreamExt;
+    /// use zbus::Connection;
     /// use zbus::fdo::{
     ///     DBusProxy,
     ///     RequestNameFlags,
     ///     RequestNameReply,
     /// };
-    /// use zbus::Connection;
     ///
     /// let name = "org.freedesktop.zbus.QueuedNameTest";
     /// let conn1 = Connection::session().await?;
@@ -1817,8 +1817,8 @@ mod p2p_tests {
         #[cfg(unix)]
         use std::{
             fs::{
-                set_permissions,
                 Permissions,
+                set_permissions,
             },
             os::unix::fs::PermissionsExt,
         };

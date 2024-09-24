@@ -13,8 +13,8 @@ use std::str::FromStr;
 use std::time::SystemTimeError;
 
 use fig_util::manifest::{
-    manifest,
     Channel,
+    manifest,
 };
 #[cfg(target_os = "freebsd")]
 use freebsd as os;
@@ -36,9 +36,9 @@ use windows as os;
 
 mod common;
 pub use common::{
+    InstallComponents,
     install,
     uninstall,
-    InstallComponents,
 };
 
 pub const UNINSTALL_URL: &str = "https://pulse.aws/survey/QYFVDA5H";

@@ -23,9 +23,9 @@ use tracing::{
     trace,
 };
 
+use crate::EventLoopProxy;
 use crate::notification_bus::NOTIFICATION_BUS;
 use crate::webview::notification::WebviewNotificationsState;
-use crate::EventLoopProxy;
 
 pub async fn setup_listeners(notifications_state: Arc<WebviewNotificationsState>, proxy: EventLoopProxy) {
     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();

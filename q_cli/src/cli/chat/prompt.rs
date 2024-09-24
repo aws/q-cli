@@ -3,8 +3,8 @@ use std::borrow::Cow;
 use crossterm::style::Stylize;
 use eyre::Result;
 use rustyline::completion::{
-    extract_word,
     Completer,
+    extract_word,
 };
 use rustyline::error::ReadlineError;
 use rustyline::highlight::Highlighter;

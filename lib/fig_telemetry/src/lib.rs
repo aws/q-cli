@@ -39,9 +39,9 @@ use aws_smithy_types::DateTime;
 use cognito::CognitoProvider;
 use dispatch::dispatch;
 pub use dispatch::{
+    DispatchMode,
     dispatch_mode,
     set_dispatch_mode,
-    DispatchMode,
 };
 use endpoint::StaticEndpoint;
 pub use event::{
@@ -55,15 +55,15 @@ pub use fig_telemetry_core::{
     EventType,
     SuggestionState,
 };
+use fig_util::Shell;
 use fig_util::system_info::os_version;
 use fig_util::terminal::{
     current_terminal,
     current_terminal_version,
 };
-use fig_util::Shell;
 pub use install_method::{
-    get_install_method,
     InstallMethod,
+    get_install_method,
 };
 use once_cell::sync::Lazy;
 use tokio::sync::{

@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::sync::atomic::Ordering;
 
 use anyhow::{
-    anyhow,
     Result,
+    anyhow,
 };
 use fig_proto::local::FocusedWindowDataHook;
 use fig_util::Terminal;
@@ -20,8 +20,8 @@ use crate::platform::{
     PlatformState,
 };
 use crate::{
-    EventLoopProxy,
     AUTOCOMPLETE_ID,
+    EventLoopProxy,
 };
 
 pub static WM_CLASS_ALLOWLIST: Lazy<HashMap<&'static str, Terminal>> = Lazy::new(|| {

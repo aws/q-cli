@@ -7,8 +7,8 @@ use std::borrow::Cow;
 use aws_smithy_json::deserialize::error::DeserializeError;
 use aws_smithy_json::deserialize::token::skip_value;
 use aws_smithy_json::deserialize::{
-    json_token_iter,
     Token,
+    json_token_iter,
 };
 use aws_smithy_runtime_api::http::Headers;
 use aws_smithy_types::error::metadata::{

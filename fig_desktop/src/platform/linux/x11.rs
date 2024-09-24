@@ -1,5 +1,5 @@
-use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 
 use dashmap::DashMap;
 use parking_lot::Mutex;
@@ -15,14 +15,8 @@ use tracing::{
 };
 use x11rb::connection::Connection;
 use x11rb::properties::WmClass;
+use x11rb::protocol::Event as X11Event;
 use x11rb::protocol::xproto::{
-    change_window_attributes,
-    get_atom_name,
-    get_geometry,
-    get_input_focus,
-    get_property,
-    intern_atom,
-    query_tree,
     Atom,
     AtomEnum,
     ChangeWindowAttributesAux,
@@ -31,8 +25,14 @@ use x11rb::protocol::xproto::{
     Property,
     PropertyNotifyEvent,
     Window,
+    change_window_attributes,
+    get_atom_name,
+    get_geometry,
+    get_input_focus,
+    get_property,
+    intern_atom,
+    query_tree,
 };
-use x11rb::protocol::Event as X11Event;
 use x11rb::rust_connection::RustConnection;
 
 use super::integrations::WM_CLASS_ALLOWLIST;
@@ -44,9 +44,9 @@ use crate::event::WindowEvent;
 use crate::platform::linux::FIG_WM_CLASS;
 use crate::utils::Rect;
 use crate::{
+    AUTOCOMPLETE_ID,
     Event,
     EventLoopProxy,
-    AUTOCOMPLETE_ID,
 };
 
 const WM_WINDOW_ROLE: &[u8] = b"WM_WINDOW_ROLE";

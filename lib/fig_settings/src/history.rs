@@ -16,11 +16,11 @@ use rusqlite::types::ValueRef;
 use serde_json::Value;
 use tracing::trace;
 
-use crate::sqlite::{
-    database,
-    Db,
-};
 use crate::Result;
+use crate::sqlite::{
+    Db,
+    database,
+};
 
 const ALL_COLUMNS: &str = "id, command, shell, pid, session_id, cwd, start_time, duration, hostname, exit_code";
 

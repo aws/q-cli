@@ -10,9 +10,9 @@ use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::filter::Directive;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::{
-    fmt,
     EnvFilter,
     Registry,
+    fmt,
 };
 
 const MAX_FILE_SIZE: u64 = 10 * 1024 * 1024;

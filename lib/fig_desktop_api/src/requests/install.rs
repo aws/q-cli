@@ -1,9 +1,9 @@
 use std::fmt::Display;
 
 use anstream::adapter::strip_str;
+use fig_integrations::Integration;
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
-use fig_integrations::Integration;
 use fig_os_shim::Env;
 use fig_proto::fig::install_response::{
     InstallationStatus,

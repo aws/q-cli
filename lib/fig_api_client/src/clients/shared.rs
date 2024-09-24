@@ -1,6 +1,6 @@
 use aws_config::Region;
-use aws_credential_types::provider::ProvideCredentials;
 use aws_credential_types::Credentials;
+use aws_credential_types::provider::ProvideCredentials;
 use aws_types::SdkConfig;
 use fig_aws_common::behavior_version;
 

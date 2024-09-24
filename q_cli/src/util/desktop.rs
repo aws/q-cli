@@ -1,14 +1,14 @@
 use std::process::Command;
 
 use eyre::{
-    eyre,
     Result,
+    eyre,
 };
 use fig_util::{
+    PRODUCT_NAME,
     directories,
     manifest,
     system_info,
-    PRODUCT_NAME,
 };
 
 pub struct LaunchArgs {
@@ -201,8 +201,8 @@ fn launch_linux_desktop(
 ) -> eyre::Result<()> {
     use std::sync::Arc;
 
-    use fig_util::linux::desktop::DesktopEntry;
     use fig_util::APP_PROCESS_NAME;
+    use fig_util::linux::desktop::DesktopEntry;
     use tracing::error;
 
     if settings.get_bool_or("appimage.manageDesktopEntry", false) {

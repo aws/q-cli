@@ -9,12 +9,12 @@ use tokio::fs::{
 use tokio::io::AsyncWriteExt;
 use tracing::debug;
 
+use crate::Integration;
 use crate::error::{
     Error,
     ErrorExt,
     Result,
 };
-use crate::Integration;
 
 #[derive(Debug, Clone)]
 pub struct FileIntegration {
@@ -35,8 +35,8 @@ impl Integration for FileIntegration {
         #[cfg(unix)]
         {
             use nix::unistd::{
-                access,
                 AccessFlags,
+                access,
             };
 
             let mut path = self.path.as_path();

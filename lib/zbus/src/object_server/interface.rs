@@ -28,10 +28,10 @@ use crate::async_lock::RwLock;
 use crate::message::Message;
 use crate::object_server::SignalContext;
 use crate::{
-    fdo,
     Connection,
     ObjectServer,
     Result,
+    fdo,
 };
 
 /// A helper type returned by [`Interface`] callbacks.

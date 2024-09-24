@@ -4,7 +4,6 @@ use std::pin::Pin;
 
 use accessibility::util::ax_call;
 use accessibility_sys::{
-    pid_t,
     AXError,
     AXObserverAddNotification,
     AXObserverCallback,
@@ -12,13 +11,14 @@ use accessibility_sys::{
     AXObserverGetRunLoopSource,
     AXObserverRef,
     AXUIElementRef,
+    pid_t,
 };
 use core_foundation::base::TCFType;
 use core_foundation::runloop::{
-    kCFRunLoopDefaultMode,
     CFRunLoopAddSource,
     CFRunLoopGetCurrent,
     CFRunLoopRemoveSource,
+    kCFRunLoopDefaultMode,
 };
 use core_foundation::string::{
     CFString,

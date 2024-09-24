@@ -27,8 +27,8 @@ pub use aws_sdk_ssooidc::client::Client;
 pub use aws_sdk_ssooidc::operation::create_token::CreateTokenOutput;
 pub use aws_sdk_ssooidc::operation::register_client::RegisterClientOutput;
 pub use aws_types::region::Region;
-use base64::engine::general_purpose::URL_SAFE;
 use base64::Engine;
+use base64::engine::general_purpose::URL_SAFE;
 use bytes::Bytes;
 use http_body_util::Full;
 use hyper::body::Incoming;
@@ -40,8 +40,8 @@ use hyper::{
 };
 use hyper_util::rt::TokioIo;
 use percent_encoding::{
-    utf8_percent_encode,
     NON_ALPHANUMERIC,
+    utf8_percent_encode,
 };
 use rand::Rng;
 use tokio::net::TcpListener;

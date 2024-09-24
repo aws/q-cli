@@ -4,9 +4,9 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use dbus::gnome_shell::{
-    get_extension_status,
     ExtensionInstallationStatus,
     ShellExtensions,
+    get_extension_status,
 };
 use fig_os_shim::Context;
 use fig_util::consts::{
@@ -14,23 +14,23 @@ use fig_util::consts::{
     PRODUCT_NAME,
 };
 use fig_util::system_info::linux::{
-    get_desktop_environment,
-    get_display_server,
     DesktopEnvironment,
     DisplayServer,
+    get_desktop_environment,
+    get_display_server,
 };
 use futures::FutureExt;
 use owo_colors::OwoColorize;
 
 use crate::cli::doctor::{
-    doctor_error,
-    doctor_fix,
-    doctor_warning,
     DoctorCheck,
     DoctorCheckType,
     DoctorError,
     DoctorFix,
     Platform,
+    doctor_error,
+    doctor_fix,
+    doctor_warning,
 };
 
 #[derive(Debug)]

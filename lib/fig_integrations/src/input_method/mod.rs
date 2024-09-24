@@ -36,18 +36,18 @@ use core_foundation::string::{
     CFStringRef,
 };
 use core_foundation::url::{
-    CFURLRef,
     CFURL,
+    CFURLRef,
 };
 use core_foundation::{
     declare_TCFType,
     impl_TCFType,
 };
 use fig_settings::state;
+use fig_util::Terminal;
 use fig_util::consts::CLI_BINARY_NAME;
 use fig_util::directories::home_dir;
 use fig_util::macos::BUNDLE_CONTENTS_HELPERS_PATH;
-use fig_util::Terminal;
 use macos_utils::applications;
 use objc::runtime::Object;
 use objc::{
@@ -67,11 +67,11 @@ use tracing::{
     trace,
 };
 
+use crate::Integration;
 use crate::error::{
     ErrorExt,
     Result,
 };
-use crate::Integration;
 
 pub enum __TISInputSource {}
 pub type TISInputSourceRef = *const __TISInputSource;

@@ -6,8 +6,8 @@ use clap::{
 };
 use crossterm::style::Stylize;
 use eyre::{
-    eyre,
     Result,
+    eyre,
 };
 use fig_ipc::local::restart_settings_listener;
 use fig_util::PRODUCT_NAME;

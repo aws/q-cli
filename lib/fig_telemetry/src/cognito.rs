@@ -1,8 +1,8 @@
 use amzn_toolkit_telemetry::config::BehaviorVersion;
 use aws_credential_types::provider::error::CredentialsError;
 use aws_credential_types::{
-    provider,
     Credentials,
+    provider,
 };
 use aws_sdk_cognitoidentity::primitives::{
     DateTime,

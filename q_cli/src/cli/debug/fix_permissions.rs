@@ -9,17 +9,17 @@ use std::path::Path;
 use anstream::println;
 use color_eyre::owo_colors::OwoColorize;
 use eyre::{
-    bail,
     Context,
     ContextCompat,
     Result,
+    bail,
 };
 use fig_integrations::shell::ShellExt as _;
 use fig_os_shim::Env;
 use fig_util::directories::home_dir;
 use fig_util::{
-    Shell,
     CLI_BINARY_NAME,
+    Shell,
 };
 use nix::libc::uid_t;
 use nix::unistd::{

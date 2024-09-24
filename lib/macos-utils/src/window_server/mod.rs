@@ -8,6 +8,11 @@ use std::hash::Hash;
 use std::pin::Pin;
 
 use accessibility_sys::{
+    AXError,
+    AXIsProcessTrusted,
+    AXObserverRef,
+    AXUIElementCreateApplication,
+    AXUIElementRef,
     kAXApplicationActivatedNotification,
     kAXApplicationShownNotification,
     kAXFocusedWindowChangedNotification,
@@ -17,11 +22,6 @@ use accessibility_sys::{
     kAXWindowMovedNotification,
     kAXWindowResizedNotification,
     pid_t,
-    AXError,
-    AXIsProcessTrusted,
-    AXObserverRef,
-    AXUIElementCreateApplication,
-    AXUIElementRef,
 };
 use appkit_nsworkspace_bindings::{
     INSNotification,
@@ -31,11 +31,11 @@ use appkit_nsworkspace_bindings::{
     NSNotification,
     NSRunningApplication,
     NSWorkspace,
+    NSWorkspace_NSWorkspaceRunningApplications,
     NSWorkspaceActiveSpaceDidChangeNotification,
     NSWorkspaceDidActivateApplicationNotification,
     NSWorkspaceDidLaunchApplicationNotification,
     NSWorkspaceDidTerminateApplicationNotification,
-    NSWorkspace_NSWorkspaceRunningApplications,
 };
 use ax_observer::AXObserver;
 use cocoa::base::{
@@ -51,10 +51,10 @@ use dashmap::DashMap;
 use flume::Sender;
 use objc::declare::ClassDecl;
 use objc::runtime::{
-    objc_getClass,
     Class,
     Object,
     Sel,
+    objc_getClass,
 };
 use tracing::{
     debug,
@@ -73,8 +73,8 @@ use super::util::{
     NSArrayRef,
     NotificationCenter,
 };
-use crate::util::Id;
 use crate::NSStringRef;
+use crate::util::Id;
 
 const BLOCKED_BUNDLE_IDS: &[&str] = &[
     "com.apple.ViewBridgeAuxiliary",

@@ -1,8 +1,8 @@
 use std::mem::MaybeUninit;
 
 use accessibility_sys::{
-    kAXErrorSuccess,
     AXError,
+    kAXErrorSuccess,
 };
 
 #[allow(clippy::missing_safety_doc)]

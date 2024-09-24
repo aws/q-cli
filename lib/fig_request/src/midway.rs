@@ -17,8 +17,8 @@ use reqwest::{
     StatusCode,
 };
 use tracing::{
-    event,
     Level,
+    event,
 };
 use url::Url;
 

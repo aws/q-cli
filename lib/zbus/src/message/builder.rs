@@ -15,8 +15,8 @@ use zbus_names::{
 #[cfg(unix)]
 use zvariant::OwnedFd;
 use zvariant::{
-    serialized,
     Endian,
+    serialized,
 };
 
 use crate::message::fields::QuickFields;

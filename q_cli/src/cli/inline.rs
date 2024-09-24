@@ -5,8 +5,8 @@ use anstream::println;
 use clap::Subcommand;
 use crossterm::style::Stylize;
 use eyre::{
-    bail,
     Result,
+    bail,
 };
 use fig_api_client::{
     Client,

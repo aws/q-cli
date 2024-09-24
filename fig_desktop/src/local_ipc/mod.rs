@@ -36,9 +36,9 @@ use crate::event::Event;
 use crate::platform::PlatformState;
 use crate::webview::notification::WebviewNotificationsState;
 use crate::{
-    EventLoopProxy,
     AUTOCOMPLETE_ID,
     DASHBOARD_ID,
+    EventLoopProxy,
 };
 
 pub enum LocalResponse {
@@ -222,6 +222,7 @@ async fn handle_local_ipc(
                 }
             },
             Some(LocalMessageType::Hook(hook)) => {
+                use fig_proto::ReflectMessage;
                 use fig_proto::local::hook::Hook::{
                     Callback,
                     CaretPosition,
@@ -242,7 +243,6 @@ async fn handle_local_ipc(
                     Prompt,
                     TmuxPaneChanged,
                 };
-                use fig_proto::ReflectMessage;
 
                 if let Err(err) = match hook.hook {
                     Some(CaretPosition(request)) => hooks::caret_position(request, &proxy).await,

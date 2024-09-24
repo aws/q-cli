@@ -22,8 +22,8 @@ mod update;
 mod user;
 
 use std::io::{
-    stdout,
     Write as _,
+    stdout,
 };
 use std::process::ExitCode;
 
@@ -40,38 +40,38 @@ use clap::{
 };
 use crossterm::style::Stylize;
 use eyre::{
-    bail,
     Result,
     WrapErr,
+    bail,
 };
 use fig_auth::is_logged_in;
 use fig_ipc::local::open_ui_element;
 use fig_log::{
-    initialize_logging,
     LogArgs,
+    initialize_logging,
 };
 use fig_proto::local::UiElement;
 use fig_util::{
+    CLI_BINARY_NAME,
+    PRODUCT_NAME,
     directories,
     manifest,
     system_info,
-    CLI_BINARY_NAME,
-    PRODUCT_NAME,
 };
 use internal::InternalSubcommand;
 use serde::Serialize;
 use tracing::{
-    debug,
     Level,
+    debug,
 };
 
 use self::integrations::IntegrationsSubcommands;
 use self::user::RootUserSubcommand;
-use crate::util::desktop::{
-    launch_fig_desktop,
-    LaunchArgs,
-};
 use crate::util::CliContext;
+use crate::util::desktop::{
+    LaunchArgs,
+    launch_fig_desktop,
+};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, ValueEnum)]
 pub enum OutputFormat {

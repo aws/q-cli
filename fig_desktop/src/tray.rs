@@ -34,11 +34,11 @@ use crate::event::{
 };
 use crate::webview::LOGIN_PATH;
 use crate::{
+    AUTOCOMPLETE_ID,
+    DASHBOARD_ID,
     DebugState,
     EventLoopProxy,
     EventLoopWindowTarget,
-    AUTOCOMPLETE_ID,
-    DASHBOARD_ID,
 };
 
 // macro_rules! icon {

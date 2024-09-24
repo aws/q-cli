@@ -7,14 +7,14 @@ use anstream::println;
 use clap::Subcommand;
 use crossterm::style::Stylize;
 use eyre::{
-    bail,
     Result,
+    bail,
 };
 use fig_auth::builder_id::{
-    poll_create_token,
-    start_device_authorization,
     PollCreateToken,
     TokenType,
+    poll_create_token,
+    start_device_authorization,
 };
 use fig_auth::pkce::start_pkce_authorization;
 use fig_auth::secret_store::SecretStore;

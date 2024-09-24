@@ -1,9 +1,9 @@
 //! Grid resize and reflow.
 
 use std::cmp::{
+    Ordering,
     max,
     min,
-    Ordering,
 };
 use std::mem;
 

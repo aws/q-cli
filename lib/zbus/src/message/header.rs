@@ -3,8 +3,8 @@ use std::sync::atomic::AtomicU32;
 use std::sync::atomic::Ordering::SeqCst;
 
 use enumflags2::{
-    bitflags,
     BitFlags,
+    bitflags,
 };
 use serde::{
     Deserialize,
@@ -33,12 +33,12 @@ use zvariant::{
     Type as VariantType,
 };
 
+use crate::Error;
 use crate::message::{
     Field,
     FieldCode,
     Fields,
 };
-use crate::Error;
 
 pub(crate) const PRIMARY_HEADER_SIZE: usize = 12;
 pub(crate) const MIN_MESSAGE_SIZE: usize = PRIMARY_HEADER_SIZE + 4;

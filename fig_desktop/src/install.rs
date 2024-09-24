@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 #[cfg(not(target_os = "linux"))]
 use fig_install::check_for_updates;
-use fig_integrations::ssh::SshIntegration;
 use fig_integrations::Integration;
+use fig_integrations::ssh::SshIntegration;
 use fig_os_shim::Context;
 #[cfg(target_os = "macos")]
 use fig_util::directories::fig_data_dir;
@@ -46,8 +46,8 @@ pub async fn migrate_data_dir() {
 fn run_input_method_migration() {
     use fig_integrations::input_method::InputMethod;
     use tokio::time::{
-        sleep,
         Duration,
+        sleep,
     };
     use tracing::warn;
 
@@ -226,13 +226,13 @@ pub async fn initialize_fig_dir(env: &fig_os_shim::Env) -> anyhow::Result<()> {
     };
     use fig_util::directories::home_dir;
     use fig_util::launchd_plist::{
-        create_launch_agent,
         LaunchdPlist,
+        create_launch_agent,
     };
     use fig_util::{
-        Shell,
         OLD_CLI_BINARY_NAMES,
         OLD_PTY_BINARY_NAMES,
+        Shell,
     };
     use macos_utils::bundle::get_bundle_path;
     use tracing::warn;
@@ -431,8 +431,8 @@ async fn install_gnome_shell_extension(
     shell_extensions: &dbus::gnome_shell::ShellExtensions,
 ) -> anyhow::Result<()> {
     use dbus::gnome_shell::{
-        get_extension_status,
         ExtensionInstallationStatus,
+        get_extension_status,
     };
     use fig_util::directories::resources_path_ctx;
 
@@ -875,10 +875,10 @@ echo "{binary_name} {version}"
     #[cfg(target_os = "linux")]
     mod linux_gnome_shell_extension_tests {
         use dbus::gnome_shell::{
-            get_extension_status,
             ExtensionInstallationStatus,
-            ShellExtensions,
             GNOME_SHELL_PROCESS_NAME,
+            ShellExtensions,
+            get_extension_status,
         };
         use fig_util::directories::resources_path_ctx;
 

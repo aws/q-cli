@@ -20,17 +20,17 @@ use clap::{
     Subcommand,
     ValueEnum,
 };
+use crossterm::ExecutableCommand;
 use crossterm::style::Stylize;
 use crossterm::terminal::{
     disable_raw_mode,
     enable_raw_mode,
 };
-use crossterm::ExecutableCommand;
 use eyre::{
-    bail,
     Context,
     ContextCompat,
     Result,
+    bail,
 };
 use fig_ipc::local::{
     devtools_command,
@@ -44,12 +44,12 @@ use fig_util::env_var::Q_DEBUG_SHELL;
 use fig_util::macos::BUNDLE_CONTENTS_MACOS_PATH;
 use fig_util::manifest::FileType;
 use fig_util::{
-    directories,
-    Shell,
     APP_BUNDLE_NAME,
     CLI_BINARY_NAME,
     PRODUCT_NAME,
     PTY_BINARY_NAME,
+    Shell,
+    directories,
 };
 use owo_colors::OwoColorize;
 use tempfile::{
@@ -118,8 +118,8 @@ pub enum AccessibilityAction {
 
 #[cfg(target_os = "macos")]
 use fig_integrations::{
-    input_method::InputMethod,
     Integration,
+    input_method::InputMethod,
 };
 
 #[cfg(target_os = "macos")]

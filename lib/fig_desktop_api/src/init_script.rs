@@ -8,16 +8,16 @@ use camino::Utf8PathBuf;
 use fig_util::directories::midway_cookie_path;
 #[cfg(target_os = "linux")]
 use fig_util::system_info::linux::{
-    get_desktop_environment,
-    get_display_server,
-    get_os_release,
     DesktopEnvironment,
     DisplayServer,
     OsRelease,
+    get_desktop_environment,
+    get_display_server,
+    get_os_release,
 };
 use fig_util::{
-    directories,
     CLI_BINARY_NAME,
+    directories,
 };
 use serde::Serialize;
 use serde_json::json;

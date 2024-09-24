@@ -15,14 +15,14 @@ use zvariant::{
     Str,
 };
 
+#[cfg(feature = "p2p")]
+use crate::Guid;
 use crate::address::Address;
 use crate::blocking::Connection;
 use crate::connection::socket::BoxedSplit;
 use crate::names::WellKnownName;
 use crate::object_server::Interface;
 use crate::utils::block_on;
-#[cfg(feature = "p2p")]
-use crate::Guid;
 use crate::{
     AuthMechanism,
     Error,

@@ -8,8 +8,8 @@ use aws_runtime::user_agent::{
     AwsUserAgent,
 };
 use aws_smithy_runtime_api::box_error::BoxError;
-use aws_smithy_runtime_api::client::interceptors::context::BeforeTransmitInterceptorContextMut;
 use aws_smithy_runtime_api::client::interceptors::Intercept;
+use aws_smithy_runtime_api::client::interceptors::context::BeforeTransmitInterceptorContextMut;
 use aws_smithy_runtime_api::client::runtime_components::RuntimeComponents;
 use aws_smithy_types::config_bag::ConfigBag;
 use aws_types::app_name::AppName;
@@ -143,8 +143,8 @@ mod tests {
 
     use super::*;
     use crate::{
-        app_name,
         APP_NAME_STR,
+        app_name,
     };
 
     #[test]

@@ -27,12 +27,12 @@ use fig_proto::fig::{
     AuthStatusResponse,
 };
 use once_cell::sync::Lazy;
+use tokio::sync::Mutex;
 use tokio::sync::mpsc::{
-    channel,
     Receiver,
     Sender,
+    channel,
 };
-use tokio::sync::Mutex;
 use tracing::error;
 
 use super::RequestResult;
@@ -314,8 +314,8 @@ pub async fn builder_id_poll_create_token(
 
 #[cfg(test)]
 mod tests {
-    use fig_auth::pkce::*;
     use fig_auth::AMZN_START_URL;
+    use fig_auth::pkce::*;
 
     use super::*;
 
