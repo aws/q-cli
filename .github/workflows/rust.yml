@@ -22,7 +22,7 @@ jobs:
         with:
           components: clippy
       - run: cargo clippy --locked --workspace --color always -- -D warnings
-  
+
   cargo-test:
     runs-on: ubuntu-latest
     steps:
