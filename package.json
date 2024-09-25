@@ -11,6 +11,7 @@
     "build": "turbo build",
     "b": "turbo build",
     "test": "vitest",
+    "test:ci": "vitest run --run",
     "test:ui": "vitest --ui",
     "coverage": "vitest run --coverage",
     "lint": "turbo lint --parallel",
