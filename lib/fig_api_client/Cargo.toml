@@ -9,8 +9,6 @@ license.workspace = true
 
 [features]
 default = []
-dev = ["ada"]
-ada = []
 
 [lints]
 workspace = true

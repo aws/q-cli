@@ -2,8 +2,8 @@ import itertools
 import os
 from typing import List, Mapping, Sequence
 from rust import cargo_cmd_name, rust_env
-from util import isBrazil, isLinux, run_cmd, get_variants, Variant
-from const import CLI_PACKAGE_NAME, DESKTOP_PACKAGE_NAME, PTY_PACKAGE_NAME
+from util import isLinux, run_cmd, get_variants, Variant
+from const import DESKTOP_PACKAGE_NAME
 
 
 def run_clippy(
@@ -17,7 +17,7 @@ def run_clippy(
     if target:
         args.extend(["--target", target])
 
-    if Variant.FULL not in variants or isBrazil():
+    if Variant.FULL not in variants:
         args.extend(["--exclude", DESKTOP_PACKAGE_NAME])
 
     if features:
@@ -47,16 +47,10 @@ def run_cargo_tests(
 ):
     args = [cargo_cmd_name()]
 
-    if isBrazil():
-        args.extend(["brazil", "with-coverage"])
-
     args.extend(["build", "--tests", "--locked", "--workspace"])
 
     if target:
         args.extend(["--target", target])
-
-    if Variant.FULL not in variants or isBrazil():
-        args.extend(["--exclude", DESKTOP_PACKAGE_NAME])
 
     if features:
         args.extend(
@@ -76,16 +70,13 @@ def run_cargo_tests(
 
     args = [cargo_cmd_name()]
 
-    if isBrazil():
-        args.extend(["brazil", "with-coverage"])
-
     args.extend(["test", "--locked", "--workspace"])
 
     if target:
         args.extend(["--target", target])
 
     # disable desktop tests for now
-    if isLinux() or isBrazil():
+    if isLinux():
         args.extend(["--exclude", DESKTOP_PACKAGE_NAME])
 
     if features:
@@ -103,35 +94,6 @@ def run_cargo_tests(
             **rust_env(release=False),
         },
     )
-
-    if isBrazil():
-        run_cmd(
-            [
-                "cargo",
-                "brazil",
-                "with-coverage",
-                "report",
-                "--",
-                "--branch",
-                "--ignore-not-existing",
-                "--excl-start",
-                r"// GRCOV_STOP_COVERAGE",
-                "--excl-stop",
-                r"// GRCOV_BEGIN_COVERAGE",
-                "--excl-line",
-                r"// GRCOV_IGNORE_LINE",
-                "--keep-only",
-                f"{CLI_PACKAGE_NAME}/**/*.rs",
-                "--keep-only",
-                f"{PTY_PACKAGE_NAME}/**/*.rs",
-                "--keep-only",
-                f"{DESKTOP_PACKAGE_NAME}/**/*.rs",
-                "--keep-only",
-                "lib/**/*.rs",
-                "--ignore",
-                "lib/amzn-*/**/*.rs",
-            ]
-        )
 
 
 def lint_install_sh():

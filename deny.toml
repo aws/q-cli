@@ -7,8 +7,9 @@ yanked = "deny"
 [licenses]
 version = 2
 private = { ignore = true }
-# licenses are managed by cargo brazil which will not allow
-# bad licenses in the project, these should all be compliant
+# licenses should only be approved licences by Amazon, if you
+# are unsure please contact a maintainer otherwise other licences
+# will be denied
 allow = [
   "Apache-2.0",
   "Apache-2.0 WITH LLVM-exception",

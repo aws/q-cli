@@ -1,4 +1,4 @@
-name: Rust CI
+name: Rust
 
 on:
   workflow_dispatch:
@@ -14,6 +14,7 @@ env:
 
 jobs:
   cargo-clippy:
+    name: Clippy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -33,6 +34,7 @@ jobs:
       - run: cargo clippy --locked --workspace --color always -- -D warnings
 
   cargo-test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -51,6 +53,7 @@ jobs:
       - run: cargo test --locked --workspace
 
   cargo-fmt:
+    name: Fmt
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
