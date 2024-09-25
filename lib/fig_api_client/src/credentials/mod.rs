@@ -14,9 +14,6 @@ use aws_credential_types::provider::{
 };
 use tracing::Instrument;
 
-#[cfg(feature = "ada")]
-mod ada;
-
 #[derive(Debug)]
 pub struct CredentialsChain {
     provider_chain: CredentialsProviderChain,
@@ -30,8 +27,6 @@ impl CredentialsChain {
         let config = ProviderConfig::default().with_region(region.clone());
 
         let env_provider = EnvironmentVariableCredentialsProvider::new();
-        #[cfg(feature = "ada")]
-        let ada_provider = ada::AdaCredentialsProvider::builder().build();
         let profile_provider = ProfileFileCredentialsProvider::builder().configure(&config).build();
         let web_identity_token_provider = WebIdentityTokenCredentialsProvider::builder()
             .configure(&config)
@@ -40,11 +35,6 @@ impl CredentialsChain {
         let ecs_provider = EcsCredentialsProvider::builder().configure(&config).build();
 
         let mut provider_chain = CredentialsProviderChain::first_try("Environment", env_provider);
-
-        #[cfg(feature = "ada")]
-        {
-            provider_chain = provider_chain.or_else("Ada", ada_provider);
-        }
 
         provider_chain = provider_chain
             .or_else("Profile", profile_provider)

@@ -19,7 +19,7 @@ exclude = [
     "/Config",
     "/build-tools/",
 ]
-publish = ["brazil"]
+publish = false
 description = "Rust client bindings for the toolkit-telemetry service"
 
 [package.metadata.docs.rs]
