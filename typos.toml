@@ -4,7 +4,10 @@ extend-exclude = [
   "lib/amzn-codewhisperer-client",
   "lib/amzn-codewhisperer-streaming-client",
   "lib/amzn-consolas-client",
+  "lib/amzn-qdeveloper-streaming-client",
   "lib/aws-toolkit-telemetry-definitions/def.json",
+  "lib/zbus",
+  "lib/zbus_names",
   "packages/fuzzysort",
   "apps/dashboard/public/license/NOTICE.txt",
 ]
