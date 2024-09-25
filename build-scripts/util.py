@@ -23,11 +23,6 @@ def isCi() -> bool:
 
 
 @cache
-def isBrazil() -> bool:
-    return os.environ.get("BRAZIL_BUILD_HOME") is not None
-
-
-@cache
 def isDarwin() -> bool:
     return platform.system() == "Darwin"
 

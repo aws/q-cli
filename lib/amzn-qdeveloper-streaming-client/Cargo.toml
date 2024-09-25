@@ -19,7 +19,7 @@ exclude = [
     "/Config",
     "/build-tools/",
 ]
-publish = ["brazil"]
+publish = false
 description = "Rust streaming client bindings for the Amazon CodeWhisperer Service (qdeveloper_streaming.smithy)"
 
 [package.metadata.docs.rs]

@@ -138,10 +138,6 @@ mod test {
 
     #[tokio::test]
     async fn pools() {
-        if std::env::var("BRAZIL_BUILD_HOME").is_ok() {
-            return;
-        }
-
         for telemetry_stage in [TelemetryStage::BETA, TelemetryStage::EXTERNAL_PROD] {
             get_cognito_credentials_send(&telemetry_stage).await.unwrap();
         }

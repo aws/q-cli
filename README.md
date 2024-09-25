@@ -50,11 +50,7 @@ their IPC:
 ### 1. Clone repo
 
 ```bash
-brazil ws create --name fig-io \
-  --root "$HOME/workplace/fig-io" \
-  --versionset fig-io/development
-cd "$HOME/workplace/fig-io"
-brazil ws use -p FigIoDesktop
+git clone https://github.com/aws/amazon-q-for-command-line.git
 ```
 
 ### 2. Install platform dependencies
