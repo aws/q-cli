@@ -100,6 +100,12 @@ impl State {
     pub fn get_int_or(&self, key: impl AsRef<str>, default: i64) -> i64 {
         self.get_int(key).ok().flatten().unwrap_or(default)
     }
+
+    // Atomic style operations
+
+    pub fn atomic_bool_or(&self, key: impl AsRef<str>, or: bool) -> Result<bool> {
+        self.database()?.atomic_bool_or(key, or)
+    }
 }
 
 pub fn all() -> Result<Map<String, Value>> {

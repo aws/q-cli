@@ -18,6 +18,7 @@ use aws_toolkit_telemetry_definitions::metrics::{
     CodewhispererterminalFigUserMigrated,
     CodewhispererterminalInlineShellActioned,
     CodewhispererterminalMenuBarActioned,
+    CodewhispererterminalMigrateOldClientId,
     CodewhispererterminalRefreshCredentials,
     CodewhispererterminalTranslationActioned,
     CodewhispererterminalUserLoggedIn,
@@ -284,6 +285,15 @@ impl Event {
                 }
                 .into_metric_datum(),
             ),
+            EventType::MigrateClientId { old_client_id } => Some(
+                CodewhispererterminalMigrateOldClientId {
+                    create_time: self.created_time,
+                    value: None,
+                    credential_start_url: self.credential_start_url.map(Into::into),
+                    codewhispererterminal_old_client_id: Some(old_client_id.into()),
+                }
+                .into_metric_datum(),
+            ),
         }
     }
 }
@@ -354,6 +364,9 @@ pub enum EventType {
     ChatAddedMessage {
         conversation_id: String,
         message_id: String,
+    },
+    MigrateClientId {
+        old_client_id: String,
     },
 }
 

@@ -181,6 +181,13 @@ pub(crate) mod tests {
         .await
     }
 
+    async fn migrate_client_id_message() -> AppTelemetryEvent {
+        AppTelemetryEvent::new(EventType::MigrateClientId {
+            old_client_id: "XXX".into(),
+        })
+        .await
+    }
+
     pub(crate) async fn all_events() -> Vec<AppTelemetryEvent> {
         vec![
             user_logged_in().await,
@@ -196,6 +203,7 @@ pub(crate) mod tests {
             chat_start().await,
             chat_end().await,
             chat_added_message().await,
+            migrate_client_id_message().await,
         ]
     }
 

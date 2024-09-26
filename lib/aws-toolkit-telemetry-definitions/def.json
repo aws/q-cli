@@ -86,6 +86,11 @@
       "description": "The user shell version"
     },
     {
+      "name": "codewhispererterminal_oldClientId",
+      "type": "string",
+      "description": "The old client id that was generated incorrectly and is used to correlate old events"
+    },
+    {
       "name": "credentialStartUrl",
       "type": "string",
       "description": "The start URL of current SSO connection"
@@ -261,6 +266,15 @@
       "description": "Emitted when a user migrates from fig",
       "passive": false,
       "metadata": [{ "type": "credentialStartUrl" }]
+    },
+    {
+      "name": "codewhispererterminal_migrateOldClientId",
+      "description": "Emitted once for users who generated an invalid client id",
+      "passive": false,
+      "metadata": [
+        { "type": "credentialStartUrl" },
+        { "type": "codewhispererterminal_oldClientId" }
+      ]
     }
   ]
 }

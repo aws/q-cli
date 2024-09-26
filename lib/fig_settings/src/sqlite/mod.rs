@@ -235,6 +235,58 @@ impl Db {
     pub fn all_state_values(&self) -> Result<Map<String, serde_json::Value>> {
         self.all_values(STATE_TABLE_NAME)
     }
+
+    // atomic style operations
+
+    fn atomic_op<T: FromSql + ToSql>(
+        &self,
+        key: impl AsRef<str>,
+        op: impl FnOnce(&Option<T>) -> Option<T>,
+    ) -> Result<Option<T>> {
+        let mut conn = self.pool.get()?;
+        let tx = conn.transaction()?;
+
+        let value = tx.query_row::<Option<T>, _, _>(
+            &format!("SELECT value FROM {STATE_TABLE_NAME} WHERE key = ?1"),
+            [key.as_ref()],
+            |row| row.get(0),
+        );
+
+        let value_0: Option<T> = match value {
+            Ok(value) => value,
+            Err(Error::QueryReturnedNoRows) => None,
+            Err(err) => return Err(err.into()),
+        };
+
+        let value_1 = op(&value_0);
+
+        if let Some(value) = value_1 {
+            tx.execute(
+                &format!("INSERT OR REPLACE INTO {STATE_TABLE_NAME} (key, value) VALUES (?1, ?2)"),
+                params![key.as_ref(), value],
+            )?;
+        } else {
+            tx.execute(
+                &format!("DELETE FROM {STATE_TABLE_NAME} WHERE key = ?1"),
+                [key.as_ref()],
+            )?;
+        }
+
+        tx.commit()?;
+
+        Ok(value_0)
+    }
+
+    /// Atomically get the value of a key, then perform an or operation on it
+    /// and set the new value. If the key does not exist, set it to the or value.
+    pub fn atomic_bool_or(&self, key: impl AsRef<str>, or: bool) -> Result<bool> {
+        self.atomic_op::<serde_json::Value>(key, |val| match val {
+            // Some(val) => Some(serde_json::Value::Bool( || or)),
+            Some(serde_json::Value::Bool(b)) => Some(serde_json::Value::Bool(*b || or)),
+            Some(_) | None => Some(serde_json::Value::Bool(or)),
+        })
+        .map(|val| val.and_then(|val| val.as_bool()).unwrap_or(false))
+    }
 }
 
 fn max_migration<C: Deref<Target = Connection>>(conn: &C) -> Option<i64> {
@@ -359,5 +411,27 @@ mod tests {
         }
         let elapsed = instant.elapsed() / test_count;
         println!("time: {:?}", elapsed);
+    }
+
+    #[test]
+    fn test_atomic_bool() {
+        let key = "test";
+        let db = mock();
+
+        let cases = [
+            (None, false, false, false),
+            (None, true, false, true),
+            (Some(false), false, false, false),
+            (Some(false), true, false, true),
+            (Some(true), false, true, true),
+            (Some(true), true, true, true),
+        ];
+
+        for (a, b, c, d) in cases {
+            db.set_state_value(key, a).unwrap();
+            assert_eq!(db.atomic_bool_or(key, b).unwrap(), c);
+            assert_eq!(db.get_state_value(key).unwrap().unwrap(), d);
+            db.unset_state_value(key).unwrap();
+        }
     }
 }

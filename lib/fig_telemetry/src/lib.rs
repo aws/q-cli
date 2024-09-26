@@ -50,7 +50,11 @@ pub use event::{
 };
 use fig_api_client::Client as CodewhispererClient;
 use fig_aws_common::app_name;
-use fig_telemetry_core::TelemetryEmitter;
+use fig_settings::State;
+use fig_telemetry_core::{
+    Event,
+    TelemetryEmitter,
+};
 pub use fig_telemetry_core::{
     EventType,
     SuggestionState,
@@ -75,7 +79,10 @@ use tracing::{
     debug,
     error,
 };
-use util::telemetry_is_disabled;
+use util::{
+    old_client_id,
+    telemetry_is_disabled,
+};
 use uuid::Uuid;
 
 #[derive(thiserror::Error, Debug)]
@@ -190,6 +197,7 @@ pub struct Client {
     client_id: Uuid,
     toolkit_telemetry_client: Option<ToolkitTelemetryClient>,
     codewhisperer_client: Option<CodewhispererClient>,
+    state: State,
 }
 
 impl Client {
@@ -204,13 +212,14 @@ impl Client {
                 .credentials_provider(SharedCredentialsProvider::new(CognitoProvider::new(telemetry_stage)))
                 .build(),
         ));
-
         let codewhisperer_client = CodewhispererClient::new().await.ok();
+        let state = State::new();
 
         Self {
             client_id,
             toolkit_telemetry_client,
             codewhisperer_client,
+            state,
         }
     }
 
@@ -218,17 +227,40 @@ impl Client {
         let client_id = util::get_client_id();
         let toolkit_telemetry_client = None;
         let codewhisperer_client = Some(CodewhispererClient::mock());
+        let state = State::new_fake();
 
         Self {
             client_id,
             toolkit_telemetry_client,
             codewhisperer_client,
+            state,
         }
     }
 
     async fn send_event(&self, event: AppTelemetryEvent) {
+        self.send_migrate().await;
         self.send_cw_telemetry_event(&event).await;
         self.send_telemetry_toolkit_metric(event).await;
+    }
+
+    async fn send_migrate(&self) {
+        // If we have not sent the migrate event, send this event
+        match self.state.atomic_bool_or("telemetry.sentMigrateClientIdEvent", true) {
+            Ok(true) => {},
+            Ok(false) => {
+                if let Some(old_client_id) = old_client_id() {
+                    let event = AppTelemetryEvent::from_event(Event::new(EventType::MigrateClientId {
+                        old_client_id: old_client_id.into(),
+                    }))
+                    .await;
+                    self.send_telemetry_toolkit_metric(event).await;
+                }
+            },
+            Err(err) => error!(
+                %err,
+                "Failed to atomic_bool_or telemetry.sentMigrateClientIdEvent, skipping migrate event"
+            ),
+        }
     }
 
     async fn send_telemetry_toolkit_metric(&self, event: AppTelemetryEvent) {
