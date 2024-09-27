@@ -4,7 +4,9 @@ import {
   State as ApiState,
   Auth,
   Install,
+  Platform,
 } from "@amzn/fig-io-api-bindings";
+import { PlatformInfo } from "@/types/preferences";
 
 type KV = Record<string, unknown>;
 
@@ -13,10 +15,13 @@ export interface Data {
   state: KV | undefined;
   auth: Awaited<ReturnType<typeof Auth.status>> | undefined;
   authRequestId: string | undefined;
+  platformInfo: PlatformInfo | undefined;
 
   accessibilityIsInstalled: boolean | undefined;
   dotfilesIsInstalled: boolean | undefined;
   inputMethodIsInstalled: boolean | undefined;
+  desktopEntryIsInstalled: boolean | undefined;
+  gnomeExtensionIsInstalled: boolean | undefined;
 }
 
 export interface Actions {
@@ -29,6 +34,8 @@ export interface Actions {
   refreshAccessibilityIsInstalled: () => Promise<void>;
   refreshDotfilesIsInstalled: () => Promise<void>;
   refreshInputMethodIsInstalled: () => Promise<void>;
+  refreshDesktopEntryIsInstalled: () => Promise<void>;
+  refreshGnomeExtensionIsInstalled: () => Promise<void>;
 
   isLoading: () => boolean;
 }
@@ -45,7 +52,10 @@ export const createStore = () => {
     accessibilityIsInstalled: undefined,
     dotfilesIsInstalled: undefined,
     inputMethodIsInstalled: undefined,
+    desktopEntryIsInstalled: undefined,
+    gnomeExtensionIsInstalled: undefined,
     authRequestId: undefined,
+    platformInfo: undefined,
     currAuthRequestId: () => {
       return get().authRequestId;
     },
@@ -73,6 +83,15 @@ export const createStore = () => {
       const inputMethodIsInstalled = await Install.isInstalled("inputMethod");
       set(() => ({ inputMethodIsInstalled }));
     },
+    refreshDesktopEntryIsInstalled: async () => {
+      const desktopEntryIsInstalled = await Install.isInstalled("desktopEntry");
+      set(() => ({ desktopEntryIsInstalled }));
+    },
+    refreshGnomeExtensionIsInstalled: async () => {
+      const gnomeExtensionIsInstalled =
+        await Install.isInstalled("gnomeExtension");
+      set(() => ({ gnomeExtensionIsInstalled }));
+    },
     refreshAuth: async () => {
       const auth = await Auth.status();
       set(() => ({ auth }));
@@ -82,10 +101,13 @@ export const createStore = () => {
       set(() => ({ state }));
     },
     isLoading: () => {
-      const { state, settings, auth } = get();
+      const { state, settings, auth, platformInfo } = get();
       // return true if any of the values are undefined
       return (
-        state === undefined || settings === undefined || auth === undefined
+        state === undefined ||
+        settings === undefined ||
+        auth === undefined ||
+        platformInfo === undefined
       );
     },
   }));
@@ -122,6 +144,15 @@ export const createStore = () => {
           startUrl: undefined,
         },
       });
+    });
+
+  Platform.getPlatformInfo()
+    .then((platformInfo) => {
+      store.setState({ platformInfo });
+    })
+    .catch((err) => {
+      console.error(err);
+      store.setState({ platformInfo: undefined });
     });
 
   ApiSettings.didChange.subscribe((notification) => {

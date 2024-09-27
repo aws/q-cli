@@ -17,6 +17,8 @@ export type Component =
   | "ibus"
   | "inputMethod"
   | "accessibility"
+  | "desktopEntry"
+  | "gnomeExtension"
   | "ssh";
 
 function componentToProto(component: Component) {
@@ -31,6 +33,10 @@ function componentToProto(component: Component) {
       return InstallComponent.INPUT_METHOD;
     case "ssh":
       return InstallComponent.SSH;
+    case "desktopEntry":
+      return InstallComponent.DESKTOP_ENTRY;
+    case "gnomeExtension":
+      return InstallComponent.GNOME_EXTENSION;
     default:
       throw Error("Invalid component");
   }

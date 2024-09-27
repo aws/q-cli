@@ -11,6 +11,7 @@ workspace = true
 
 [target.'cfg(target_os = "linux")'.dependencies]
 fig_os_shim.workspace = true
+fig_util.workspace = true
 once_cell.workspace = true
 serde.workspace = true
 serde_json.workspace = true

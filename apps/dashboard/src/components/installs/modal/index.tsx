@@ -1,5 +1,5 @@
 import { InstallCheck } from "@/types/preferences";
-import { Fig, Internal } from "@amzn/fig-io-api-bindings";
+import { Fig, Internal, Platform } from "@amzn/fig-io-api-bindings";
 import { useEffect, useState } from "react";
 import { Button } from "../../ui/button";
 import Lockup from "../../svg/logo";
@@ -9,6 +9,8 @@ import LoginModal from "./login";
 import InstallModal from "./install";
 import { useLocalState, useRefreshLocalState } from "@/hooks/store/useState";
 import migrate_dark from "@assets/images/fig-migration/dark.png?url";
+import { usePlatformInfo } from "@/hooks/store/usePlatformInfo";
+import { isInstallCheckForPlatform } from "@/lib/install";
 
 export default function OnboardingModal() {
   const [step, setStep] = useState(0);
@@ -20,7 +22,12 @@ export default function OnboardingModal() {
   const [dotfilesCheck, refreshDotfiles] = useStatusCheck("dotfiles");
   const [accessibilityCheck, refreshAccessibility] =
     useStatusCheck("accessibility");
+  const [_desktopEntryCheck, refreshDesktopEntry] =
+    useStatusCheck("desktopEntry");
+  const [_gnomeExtensionCheck, refreshGnomeExtension] =
+    useStatusCheck("gnomeExtension");
   const refreshLocalState = useRefreshLocalState();
+  const platformInfo = usePlatformInfo();
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_dotfiles, setDotfiles] = useState(dotfilesCheck);
@@ -33,7 +40,14 @@ export default function OnboardingModal() {
   useEffect(() => {
     refreshAccessibility();
     refreshDotfiles();
-  }, [refreshAccessibility, refreshDotfiles]);
+    refreshDesktopEntry();
+    refreshGnomeExtension();
+  }, [
+    refreshAccessibility,
+    refreshDotfiles,
+    refreshDesktopEntry,
+    refreshGnomeExtension,
+  ]);
 
   function nextStep() {
     if (migrationStarted && !migrationEnded) {
@@ -67,6 +81,14 @@ export default function OnboardingModal() {
       setAccessibility(true);
       setStep(step + 1);
     }
+
+    if (check.id === "desktopEntry" || check.id === "gnomeExtension") {
+      setStep(step + 1);
+    }
+  }
+
+  if (platformInfo && !isInstallCheckForPlatform(check, platformInfo)) {
+    setStep(step + 1);
   }
 
   if (check.id === "welcome" && isMigrating) {
@@ -77,7 +99,11 @@ export default function OnboardingModal() {
     return <WelcomeModal next={nextStep} />;
   }
 
-  if (check.id === "dotfiles" || check.id === "accessibility") {
+  if (
+    ["dotfiles", "accessibility", "gnomeExtension", "desktopEntry"].includes(
+      check.id,
+    )
+  ) {
     return <InstallModal check={check} skip={skipInstall} next={nextStep} />;
   }
 

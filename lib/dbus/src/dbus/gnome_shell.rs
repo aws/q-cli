@@ -5,9 +5,20 @@ use std::path::{
     PathBuf,
 };
 use std::str::FromStr;
-use std::sync::Arc;
+use std::sync::{
+    Arc,
+    Weak,
+};
 
-use fig_os_shim::Context;
+use fig_os_shim::{
+    EnvProvider,
+    FsProvider,
+    SysInfoProvider,
+};
+use fig_util::directories::{
+    home_dir_ctx,
+    DirectoryError,
+};
 use serde::Deserialize;
 use serde_json::json;
 use thiserror::Error;
@@ -58,29 +69,29 @@ async fn new_proxy() -> Result<ShellExtensionsProxy<'static>, CrateError> {
     Ok(ShellExtensionsProxy::new(session_bus().await?).await?)
 }
 
-/// Path to the directory containing GNOME Shell extensions installed for the current user.
-pub fn local_extensions_directory(ctx: &Context) -> Result<PathBuf, ExtensionsError> {
-    Ok(ctx
-        .env()
-        .home()
-        .ok_or(ExtensionsError::Other("no home directory".into()))?
-        .join(".local/share/gnome-shell/extensions"))
-}
-
 /// Path to the directory containing the extension by the given `uuid`.
-pub fn local_extension_directory(ctx: &Context, uuid: &str) -> Result<PathBuf, ExtensionsError> {
-    Ok(local_extensions_directory(ctx)?.join(uuid))
+pub fn local_extension_directory<Ctx: FsProvider + EnvProvider>(
+    ctx: &Ctx,
+    uuid: &str,
+) -> Result<PathBuf, ExtensionsError> {
+    Ok(home_dir_ctx(ctx)?
+        .join(".local/share/gnome-shell/extensions")
+        .join(uuid))
 }
 
 /// Gets the installation status for the Amazon Q CLI GNOME Shell extension.
 ///
 /// If `expected_version` is [Option::Some], then an additional version check is applied, in which
 /// case [ExtensionInstallationStatus::UnexpectedVersion] may be returned.
-pub async fn get_extension_status(
-    ctx: &Context,
-    shell_extensions: &ShellExtensions,
+pub async fn get_extension_status<Ctx, ExtensionsCtx>(
+    ctx: &Ctx,
+    shell_extensions: &ShellExtensions<ExtensionsCtx>,
     expected_version: Option<u32>,
-) -> Result<ExtensionInstallationStatus, ExtensionsError> {
+) -> Result<ExtensionInstallationStatus, ExtensionsError>
+where
+    Ctx: FsProvider + EnvProvider + SysInfoProvider,
+    ExtensionsCtx: FsProvider + EnvProvider + SysInfoProvider,
+{
     if !shell_extensions.is_gnome_shell_running().await? {
         return Ok(ExtensionInstallationStatus::GnomeShellNotRunning);
     }
@@ -142,49 +153,35 @@ pub async fn get_extension_status(
 }
 
 /// Provides an accessible interface to retrieving info about the Amazon Q GNOME Shell Extension.
-#[derive(Debug, Default)]
-pub struct ShellExtensions(inner::Inner);
+#[derive(Debug)]
+pub struct ShellExtensions<Ctx> {
+    inner: inner::Inner<Ctx>,
+}
 
 mod inner {
-    use std::sync::Arc;
+    use std::sync::{
+        Arc,
+        Weak,
+    };
 
     use tokio::sync::Mutex;
 
     use super::*;
 
     #[derive(Debug)]
-    pub enum Inner {
-        Real(Arc<Context>),
-        Fake(Arc<Mutex<Fake>>),
-    }
-
-    impl Default for Inner {
-        fn default() -> Self {
-            Inner::Real(Context::new())
-        }
+    pub enum Inner<Ctx> {
+        Real(Weak<Ctx>),
+        Fake(Arc<Mutex<Fake<Ctx>>>),
     }
 
     #[derive(Debug)]
-    pub struct Fake {
-        pub(super) ctx: Arc<Context>,
+    pub struct Fake<Ctx> {
+        pub(super) ctx: Weak<Ctx>,
         pub version: GnomeShellVersion,
         pub extension_info: HashMap<String, OwnedValue>,
     }
 
-    impl Default for Fake {
-        fn default() -> Self {
-            Self {
-                ctx: Context::new_fake(),
-                version: GnomeShellVersion {
-                    major: 45,
-                    minor: "0".to_string(),
-                },
-                extension_info: HashMap::new(),
-            }
-        }
-    }
-
-    impl Fake {
+    impl<Ctx> Fake<Ctx> {
         pub fn extension_info(&self) -> HashMap<String, OwnedValue> {
             self.extension_info
                 .iter()
@@ -194,24 +191,39 @@ mod inner {
     }
 }
 
-impl ShellExtensions {
-    pub fn new(ctx: Arc<Context>) -> Self {
-        Self(inner::Inner::Real(ctx))
+impl<Ctx> ShellExtensions<Ctx>
+where
+    Ctx: FsProvider + EnvProvider + SysInfoProvider,
+{
+    /// Creates a new real GNOME Shell extension client.
+    ///
+    /// Takes a [`Weak`] pointer since this enables [`ShellExtensions`] to be embedded with a
+    /// [`fig_os_shim::Context`].
+    pub fn new(ctx: Weak<Ctx>) -> Self {
+        Self {
+            inner: inner::Inner::Real(ctx),
+        }
     }
 
     /// Creates a new fake shell extension client, returning GNOME Shell v45 and the extension as
     /// not installed.
-    pub fn new_fake(ctx: Arc<Context>) -> Self {
-        Self(inner::Inner::Fake(Arc::new(Mutex::new(inner::Fake {
-            ctx,
-            ..Default::default()
-        }))))
+    pub fn new_fake(ctx: Weak<Ctx>) -> Self {
+        Self {
+            inner: inner::Inner::Fake(Arc::new(Mutex::new(inner::Fake {
+                ctx,
+                version: GnomeShellVersion {
+                    major: 45,
+                    minor: "0".to_string(),
+                },
+                extension_info: HashMap::new(),
+            }))),
+        }
     }
 
     /// Returns the version of the system's GNOME Shell.
     pub async fn gnome_shell_version(&self) -> Result<GnomeShellVersion, ExtensionsError> {
         use inner::Inner;
-        match &self.0 {
+        match &self.inner {
             Inner::Real(_) => new_proxy().await?.shell_version().await?.parse(),
             Inner::Fake(fake) => Ok(fake.lock().await.version.clone()),
         }
@@ -219,7 +231,7 @@ impl ShellExtensions {
 
     pub async fn get_extension_info(&self) -> Result<HashMap<String, OwnedValue>, ExtensionsError> {
         use inner::Inner;
-        match &self.0 {
+        match &self.inner {
             Inner::Real(_) => Ok(new_proxy()
                 .await?
                 .get_extension_info(&self.extension_uuid().await?)
@@ -245,7 +257,7 @@ impl ShellExtensions {
     /// not installed.
     pub async fn uninstall_extension(&self) -> Result<bool, ExtensionsError> {
         use inner::Inner;
-        match &self.0 {
+        match &self.inner {
             Inner::Real(_) => {
                 let r = new_proxy()
                     .await?
@@ -255,6 +267,18 @@ impl ShellExtensions {
                 Ok(r)
             },
             Inner::Fake(fake) => {
+                // Attempt to mimic what the real implementation does:
+                // Clear local extension directory if it exists.
+                {
+                    let ctx = self.ctx().await?;
+                    let uuid = self.extension_uuid().await?;
+                    let extension_path = local_extension_directory(ctx.as_ref(), &uuid)?;
+                    if ctx.fs().exists(&extension_path) {
+                        ctx.fs().remove_dir_all(&extension_path).await?;
+                    }
+                }
+                // If keys were still present, then it means we hadn't uninstalled yet, in which
+                // case return `Ok(true)`.
                 let mut fake = fake.lock().await;
                 if fake.extension_info.keys().count() > 0 {
                     fake.extension_info.clear();
@@ -273,7 +297,7 @@ impl ShellExtensions {
     #[allow(clippy::await_holding_lock)]
     pub async fn install_bundled_extension(&self, path: impl AsRef<Path>) -> Result<(), ExtensionsError> {
         use inner::Inner;
-        match &self.0 {
+        match &self.inner {
             Inner::Real(_) => {
                 let output = Command::new("gnome-extensions")
                     .arg("install")
@@ -294,12 +318,11 @@ impl ShellExtensions {
                     ))
                 }
             },
-            Inner::Fake(fake) => {
-                if fake.lock().await.ctx.fs().exists(&path) {
-                    let version: u32 = fake
-                        .lock()
-                        .await
-                        .ctx
+            Inner::Fake(_) => {
+                if self.ctx().await?.fs().exists(&path) {
+                    let version: u32 = self
+                        .ctx()
+                        .await?
                         .fs()
                         .read_to_string(&path)
                         .await
@@ -318,16 +341,7 @@ impl ShellExtensions {
     }
 
     async fn is_gnome_shell_running(&self) -> Result<bool, ExtensionsError> {
-        use inner::Inner;
-        match &self.0 {
-            Inner::Real(ctx) => Ok(ctx.sysinfo().is_process_running(GNOME_SHELL_PROCESS_NAME)),
-            Inner::Fake(fake) => Ok(fake
-                .lock()
-                .await
-                .ctx
-                .sysinfo()
-                .is_process_running(GNOME_SHELL_PROCESS_NAME)),
-        }
+        Ok(self.ctx().await?.sysinfo().is_process_running(GNOME_SHELL_PROCESS_NAME))
     }
 
     /// Whether or not the extension is loaded into GNOME Shell.
@@ -337,7 +351,11 @@ impl ShellExtensions {
     /// must be restarted.
     async fn is_extension_loaded(&self) -> Result<bool, ExtensionsError> {
         let info = self.get_extension_info().await?;
-        if info.keys().count() == 0 { Ok(false) } else { Ok(true) }
+        if info.keys().count() == 0 {
+            Ok(false)
+        } else {
+            Ok(true)
+        }
     }
 
     /// Whether or not the extension is enabled.
@@ -351,7 +369,11 @@ impl ShellExtensions {
         )? as u32;
         // Extension is enabled if "state" equals 1. If "state" equals 2, then it's
         // disabled.
-        if state == 2 { Ok(false) } else { Ok(true) }
+        if state == 2 {
+            Ok(false)
+        } else {
+            Ok(true)
+        }
     }
 
     /// Returns a bool indicating whether or not the Amazon Q extension was successfully enabled.
@@ -363,7 +385,7 @@ impl ShellExtensions {
     /// - Otherwise, `Ok(true)`
     pub async fn enable_extension(&self) -> Result<bool, ExtensionsError> {
         use inner::Inner;
-        match &self.0 {
+        match &self.inner {
             Inner::Real(_) => Ok(new_proxy()
                 .await?
                 .enable_extension(&self.extension_uuid().await?)
@@ -382,13 +404,21 @@ impl ShellExtensions {
         }
     }
 
+    async fn ctx(&self) -> Result<Arc<Ctx>, ExtensionsError> {
+        use inner::Inner;
+        match &self.inner {
+            Inner::Real(ctx) => Ok(ctx.upgrade().ok_or(ExtensionsError::InvalidContext)?),
+            Inner::Fake(fake) => Ok(fake.lock().await.ctx.upgrade().ok_or(ExtensionsError::InvalidContext)?),
+        }
+    }
+
     /// Test helper for the fake impl that installs an extension locally, optionally loading it if
     /// `requires_reboot` is false.
     ///
     /// It is not enabled.
     #[allow(dead_code)]
     pub async fn install_for_fake(&self, requires_reboot: bool, version: u32) -> Result<(), ExtensionsError> {
-        if let inner::Inner::Fake(fake) = &self.0 {
+        if let inner::Inner::Fake(fake) = &self.inner {
             self.write_fake_extension_to_fs(version).await?;
             if !requires_reboot {
                 fake.lock().await.extension_info = [
@@ -406,13 +436,12 @@ impl ShellExtensions {
     /// writing the metadata.json with the provided `version`.
     #[allow(dead_code)]
     async fn write_fake_extension_to_fs(&self, version: u32) -> Result<(), ExtensionsError> {
-        if let inner::Inner::Fake(fake) = &self.0 {
+        if let inner::Inner::Fake(_) = &self.inner {
             let uuid = self.extension_uuid().await?;
-            let fake = fake.lock().await;
-            let extension_dir_path = local_extension_directory(&fake.ctx, &uuid)?;
-            fake.ctx.fs().create_dir_all(&extension_dir_path).await.ok();
-            fake.ctx
-                .fs()
+            let ctx = self.ctx().await?;
+            let extension_dir_path = local_extension_directory(ctx.as_ref(), &uuid)?;
+            ctx.fs().create_dir_all(&extension_dir_path).await.ok();
+            ctx.fs()
                 .write(
                     extension_dir_path.join("metadata.json"),
                     json!({ "version": version }).to_string(),
@@ -436,6 +465,10 @@ pub enum ExtensionsError {
     ZVariant(#[from] zbus::zvariant::Error),
     #[error("Invalid major version: {0:?}")]
     InvalidMajorVersion(#[from] std::num::ParseIntError),
+    #[error(transparent)]
+    DirectoryError(#[from] DirectoryError),
+    #[error("Invalid Context reference")]
+    InvalidContext,
     #[error("Error: {0:?}")]
     Other(Cow<'static, str>),
 }
@@ -501,6 +534,7 @@ struct ExtensionMetadata {
 mod tests {
     use std::path::PathBuf;
 
+    use fig_os_shim::Context;
     use serde_json::json;
 
     use super::*;
@@ -513,7 +547,7 @@ mod tests {
             .unwrap()
             .with_running_processes(&[GNOME_SHELL_PROCESS_NAME])
             .build_fake();
-        let shell_extensions = ShellExtensions::new_fake(Arc::clone(&ctx));
+        let shell_extensions = ShellExtensions::new_fake(Arc::downgrade(&ctx));
 
         // Default status is not installed
         let status = get_extension_status(&ctx, &shell_extensions, Some(1)).await.unwrap();
@@ -568,7 +602,7 @@ mod tests {
         #[tokio::test]
         async fn test_extension_status_when_gnome_shell_not_running() {
             let ctx = Context::builder().with_test_home().await.unwrap().build_fake();
-            let shell_extensions = ShellExtensions::new_fake(Arc::clone(&ctx));
+            let shell_extensions = ShellExtensions::new_fake(Arc::downgrade(&ctx));
 
             // When
             let status = get_extension_status(&ctx, &shell_extensions, Some(1)).await.unwrap();
@@ -580,7 +614,7 @@ mod tests {
         #[tokio::test]
         async fn test_extension_status_when_empty_info() {
             let ctx = make_ctx().await;
-            let shell_extensions = ShellExtensions::new_fake(Arc::clone(&ctx));
+            let shell_extensions = ShellExtensions::new_fake(Arc::downgrade(&ctx));
 
             // When
             let status = get_extension_status(&ctx, &shell_extensions, Some(1)).await.unwrap();
@@ -594,7 +628,7 @@ mod tests {
             tracing_subscriber::fmt::try_init().ok();
 
             let ctx = make_ctx().await;
-            let shell_extensions = ShellExtensions::new_fake(Arc::clone(&ctx));
+            let shell_extensions = ShellExtensions::new_fake(Arc::downgrade(&ctx));
             let expected_version = 1;
             shell_extensions.install_for_fake(true, expected_version).await.unwrap();
 
@@ -612,7 +646,7 @@ mod tests {
             tracing_subscriber::fmt::try_init().ok();
 
             let ctx = make_ctx().await;
-            let shell_extensions = ShellExtensions::new_fake(Arc::clone(&ctx));
+            let shell_extensions = ShellExtensions::new_fake(Arc::downgrade(&ctx));
             let extension_dir_path = ctx
                 .env()
                 .home()
@@ -645,7 +679,7 @@ mod tests {
             tracing_subscriber::fmt::try_init().ok();
 
             let ctx = make_ctx().await;
-            let shell_extensions = ShellExtensions::new_fake(Arc::clone(&ctx));
+            let shell_extensions = ShellExtensions::new_fake(Arc::downgrade(&ctx));
             let expected_version = 2;
             let installed_version = 1;
             shell_extensions
@@ -669,7 +703,7 @@ mod tests {
             tracing_subscriber::fmt::try_init().ok();
 
             let ctx = make_ctx().await;
-            let shell_extensions = ShellExtensions::new_fake(Arc::clone(&ctx));
+            let shell_extensions = ShellExtensions::new_fake(Arc::downgrade(&ctx));
             let expected_version = 2;
             shell_extensions
                 .install_for_fake(false, expected_version)
@@ -690,7 +724,7 @@ mod tests {
             tracing_subscriber::fmt::try_init().ok();
 
             let ctx = make_ctx().await;
-            let shell_extensions = ShellExtensions::new_fake(Arc::clone(&ctx));
+            let shell_extensions = ShellExtensions::new_fake(Arc::downgrade(&ctx));
             let expected_version = 2;
             shell_extensions
                 .install_for_fake(false, expected_version)
@@ -714,9 +748,10 @@ mod tests {
         #[tokio::test]
         #[ignore = "not in ci"]
         async fn test_gnome_shell_version() {
+            let ctx = Context::new();
             println!(
                 "{:?}",
-                ShellExtensions::new(Context::new())
+                ShellExtensions::new(Arc::downgrade(&ctx))
                     .gnome_shell_version()
                     .await
                     .unwrap()
@@ -726,7 +761,11 @@ mod tests {
         #[tokio::test]
         #[ignore = "not in ci"]
         async fn test_get_extension_info() {
-            let uuid = ShellExtensions::new(Context::new()).extension_uuid().await.unwrap();
+            let ctx = Context::new();
+            let uuid = ShellExtensions::new(Arc::downgrade(&ctx))
+                .extension_uuid()
+                .await
+                .unwrap();
             let info = new_proxy().await.unwrap().get_extension_info(&uuid).await.unwrap();
             println!("{:?}", info);
         }
@@ -735,7 +774,7 @@ mod tests {
         #[ignore = "not in ci"]
         async fn test_get_installed_extension_status() {
             let ctx = Context::new();
-            let shell_extensions = ShellExtensions::new(Arc::clone(&ctx));
+            let shell_extensions = ShellExtensions::new(Arc::downgrade(&ctx));
             let status = get_extension_status(&ctx, &shell_extensions, Some(1)).await.unwrap();
             println!("{:?}", status);
         }
@@ -743,7 +782,8 @@ mod tests {
         #[tokio::test]
         #[ignore = "not in ci"]
         async fn test_uninstall_extension() {
-            let res = ShellExtensions::new(Context::new())
+            let ctx = Context::new();
+            let res = ShellExtensions::new(Arc::downgrade(&ctx))
                 .uninstall_extension()
                 .await
                 .unwrap();
@@ -753,8 +793,9 @@ mod tests {
         #[tokio::test]
         #[ignore = "not in ci"]
         async fn test_install_bundled_extension() {
+            let ctx = Context::new();
             let path = PathBuf::from("");
-            let res = ShellExtensions::new(Context::new())
+            let res = ShellExtensions::new(Arc::downgrade(&ctx))
                 .install_bundled_extension(path)
                 .await;
             println!("{:?}", res);
@@ -763,7 +804,8 @@ mod tests {
         #[tokio::test]
         #[ignore = "not in ci"]
         async fn test_enable_extension() {
-            let res = ShellExtensions::new(Context::new()).enable_extension().await;
+            let ctx = Context::new();
+            let res = ShellExtensions::new(Arc::downgrade(&ctx)).enable_extension().await;
             println!("{:?}", res);
         }
     }

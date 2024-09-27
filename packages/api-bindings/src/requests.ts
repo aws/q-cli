@@ -36,6 +36,8 @@ import {
   GetDefaultsPropertyResponse,
   GetLocalStateRequest,
   GetLocalStateResponse,
+  GetPlatformInfoRequest,
+  GetPlatformInfoResponse,
   GetSettingsPropertyRequest,
   GetSettingsPropertyResponse,
   HistoryQueryRequest,
@@ -697,6 +699,32 @@ export async function sendAuthFinishPkceAuthorizationRequest(
             reject(
               Error(
                 `Invalid response '${response?.$case}' for 'AuthFinishPkceAuthorizationRequest'`,
+              ),
+            );
+        }
+      },
+    );
+  });
+}
+
+export async function sendGetPlatformInfoRequest(
+  request: GetPlatformInfoRequest,
+): Promise<GetPlatformInfoResponse> {
+  return new Promise((resolve, reject) => {
+    sendMessage(
+      { $case: "getPlatformInfoRequest", getPlatformInfoRequest: request },
+      (response) => {
+        switch (response?.$case) {
+          case "getPlatformInfoResponse":
+            resolve(response.getPlatformInfoResponse);
+            break;
+          case "error":
+            reject(Error(response.error));
+            break;
+          default:
+            reject(
+              Error(
+                `Invalid response '${response?.$case}' for 'GetPlatformInfoRequest'`,
               ),
             );
         }

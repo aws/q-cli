@@ -5,7 +5,10 @@ use std::path::PathBuf;
 use camino::Utf8PathBuf;
 use fig_os_shim::{
     Context,
+    EnvProvider,
+    FsProvider,
     Os,
+    PlatformProvider,
     Shim,
 };
 use thiserror::Error;
@@ -58,6 +61,8 @@ pub enum DirectoryError {
     IntoString(#[from] std::ffi::IntoStringError),
     #[error("{Q_PARENT} env variable not set")]
     QParentNotSet,
+    #[error("must be ran from an appimage executable")]
+    NotAppImage,
 }
 
 type Result<T, E = DirectoryError> = std::result::Result<T, E>;
@@ -71,7 +76,7 @@ pub fn home_dir() -> Result<PathBuf> {
     dirs::home_dir().ok_or(DirectoryError::NoHomeDirectory)
 }
 
-pub fn home_dir_ctx(ctx: &Context) -> Result<PathBuf> {
+pub fn home_dir_ctx<Ctx: FsProvider + EnvProvider>(ctx: &Ctx) -> Result<PathBuf> {
     if ctx.env().is_real() {
         home_dir()
     } else {
@@ -86,7 +91,7 @@ pub fn home_dir_ctx(ctx: &Context) -> Result<PathBuf> {
                 }
             })
             .map(PathBuf::from)
-        // .map(|p| ctx.fs().chroot_path(p))
+            .map(|p| ctx.fs().chroot_path(p))
     }
 }
 
@@ -148,8 +153,8 @@ pub fn fig_data_dir() -> Result<PathBuf> {
     }
 }
 
-pub fn fig_data_dir_ctx(ctx: &Context) -> Result<PathBuf> {
-    Ok(ctx.fs().chroot_path(fig_data_dir()?))
+pub fn fig_data_dir_ctx(fs: &impl FsProvider) -> Result<PathBuf> {
+    Ok(fs.fs().chroot_path(fig_data_dir()?))
 }
 
 /// The q cache directory
@@ -361,7 +366,7 @@ pub fn resources_path() -> Result<PathBuf> {
     }
 }
 
-pub fn resources_path_ctx(ctx: &Context) -> Result<PathBuf> {
+pub fn resources_path_ctx<Ctx: EnvProvider + PlatformProvider>(ctx: &Ctx) -> Result<PathBuf> {
     let os = ctx.platform().os();
     match os {
         fig_os_shim::Os::Mac => Ok(crate::app_bundle_path().join(crate::macos::BUNDLE_CONTENTS_RESOURCE_PATH)),
@@ -409,6 +414,59 @@ pub fn update_lock_path() -> Result<PathBuf> {
 /// Path: `$HOME/.midway/cookie`
 pub fn midway_cookie_path() -> Result<PathBuf> {
     Ok(home_dir()?.join(".midway").join("cookie"))
+}
+
+/// The path to the .zip bundle containing the GNOME Shell Extension identified by
+/// `extension_uuid`.
+pub fn bundled_gnome_extension_zip_path<Ctx: EnvProvider + PlatformProvider>(
+    ctx: &Ctx,
+    extension_uuid: &str,
+) -> Result<PathBuf> {
+    let os = ctx.platform().os();
+    if os != Os::Linux {
+        return Err(DirectoryError::UnsupportedOs(os));
+    }
+    Ok(resources_path_ctx(ctx)?
+        .join(extension_uuid)
+        .join(format!("{}.zip", extension_uuid)))
+}
+
+/// The path to the text file containing the version of the bundled GNOME Shell Extension.
+/// identified by `extension_uuid`.
+pub fn bundled_gnome_extension_version_path<Ctx: EnvProvider + PlatformProvider>(
+    ctx: &Ctx,
+    extension_uuid: &str,
+) -> Result<PathBuf> {
+    let os = ctx.platform().os();
+    if os != Os::Linux {
+        return Err(DirectoryError::UnsupportedOs(os));
+    }
+    Ok(resources_path_ctx(ctx)?
+        .join(extension_uuid)
+        .join(format!("{}.version.txt", extension_uuid)))
+}
+
+/// The path to the desktop entry bundled with the AppImage.
+///
+/// Only applicable to the desktop app binary when ran as an AppImage.
+pub fn appimage_desktop_entry_path<Ctx: EnvProvider>(ctx: &Ctx) -> Result<PathBuf> {
+    if !ctx.env().in_appimage() {
+        return Err(DirectoryError::NotAppImage);
+    }
+    Ok(ctx.env().current_dir()?.join("share/applications/q-desktop.desktop"))
+}
+
+/// The path to the icon bundled with the AppImage to be used for the desktop entry file.
+///
+/// Only applicable to the desktop app binary when ran as an AppImage.
+pub fn appimage_desktop_entry_icon_path<Ctx: EnvProvider>(ctx: &Ctx) -> Result<PathBuf> {
+    if !ctx.env().in_appimage() {
+        return Err(DirectoryError::NotAppImage);
+    }
+    Ok(ctx
+        .env()
+        .current_dir()?
+        .join("share/icons/hicolor/128x128/apps/q-desktop.png"))
 }
 
 utf8_dir!(home_dir);

@@ -36,37 +36,26 @@ use crate::cli::doctor::{
 #[derive(Debug)]
 pub struct LinuxContext {
     ctx: Arc<Context>,
-    shell_extensions: Arc<ShellExtensions>,
+    shell_extensions: Arc<ShellExtensions<Context>>,
 }
 
 impl LinuxContext {
-    fn new(ctx: Arc<Context>, shell_extensions: Arc<ShellExtensions>) -> Self {
+    fn new(ctx: Arc<Context>, shell_extensions: Arc<ShellExtensions<Context>>) -> Self {
         Self { ctx, shell_extensions }
-    }
-}
-
-impl Default for LinuxContext {
-    fn default() -> Self {
-        Self {
-            ctx: Context::new(),
-            shell_extensions: Default::default(),
-        }
     }
 }
 
 impl From<Arc<Context>> for LinuxContext {
     fn from(ctx: Arc<Context>) -> Self {
-        Self {
-            ctx,
-            ..Default::default()
-        }
+        let shell_extensions = Arc::new(ShellExtensions::new(Arc::downgrade(&ctx)));
+        Self { ctx, shell_extensions }
     }
 }
 
 pub async fn get_linux_context() -> eyre::Result<LinuxContext> {
     let ctx = Context::new();
-    let ctx_clone = Arc::clone(&ctx);
-    Ok(LinuxContext::new(ctx, ShellExtensions::new(ctx_clone).into()))
+    let shell_extensions = Arc::new(ShellExtensions::new(Arc::downgrade(&ctx)));
+    Ok(LinuxContext::new(ctx, shell_extensions))
 }
 
 pub struct IBusEnvCheck;
@@ -162,7 +151,7 @@ pub struct GnomeExtensionCheck;
 #[async_trait]
 impl DoctorCheck<LinuxContext> for GnomeExtensionCheck {
     fn name(&self) -> Cow<'static, str> {
-        "GNOME Extension Check".into()
+        "GNOME Shell Extension Check".into()
     }
 
     async fn get_type(&self, _: &LinuxContext, _: Platform) -> DoctorCheckType {
@@ -395,7 +384,7 @@ mod tests {
             ]))
             .with_running_processes(&[GNOME_SHELL_PROCESS_NAME])
             .build_fake();
-        let shell_extensions = ShellExtensions::new_fake(Arc::clone(&ctx));
+        let shell_extensions = ShellExtensions::new_fake(Arc::downgrade(&ctx));
         let check = GnomeExtensionCheck
             .check(&LinuxContext::new(ctx, shell_extensions.into()))
             .await;
@@ -409,7 +398,7 @@ mod tests {
             .with_env_var("XDG_CURRENT_DESKTOP", "ubuntu:GNOME")
             .with_running_processes(&[GNOME_SHELL_PROCESS_NAME])
             .build_fake();
-        let shell_extensions = ShellExtensions::new_fake(Arc::clone(&ctx));
+        let shell_extensions = ShellExtensions::new_fake(Arc::downgrade(&ctx));
         shell_extensions.install_for_fake(false, 1).await.unwrap();
         shell_extensions.enable_extension().await.unwrap();
         let check = GnomeExtensionCheck
@@ -420,5 +409,16 @@ mod tests {
             "extension installed, loaded, and enabled should not error. Error: {:?}",
             check
         );
+    }
+
+    mod e2e {
+        use super::*;
+
+        #[tokio::test]
+        #[ignore = "not in ci"]
+        async fn test_gnome_extension_check() {
+            let ctx = get_linux_context().await.unwrap();
+            GnomeExtensionCheck {}.check(&ctx).await.unwrap();
+        }
     }
 }

@@ -20,6 +20,7 @@ import * as User from "./user.js";
 import * as History from "./history.js";
 import * as Auth from "./auth.js";
 import * as Codewhisperer from "./codewhisperer.js";
+import * as Platform from "./platform.js";
 
 import * as Internal from "./requests.js";
 
@@ -46,6 +47,7 @@ const lib = {
   History,
   Auth,
   Codewhisperer,
+  Platform,
 };
 
 export {
@@ -72,6 +74,7 @@ export {
   WindowPosition,
   Auth,
   Codewhisperer,
+  Platform,
 };
 
 declare global {

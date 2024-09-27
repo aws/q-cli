@@ -48,13 +48,18 @@ export default function InstallModal({
       return;
     }
 
+    setChecking(true);
+
     Install.install(key)
       .then(() => {
-        if (key === "dotfiles") {
-          next();
-        } else {
-          setChecking(true);
+        if (key === "accessibility") {
+          // The accessibility request is asynchronous - this only opens the accessibility
+          // panel. We get notified when accessibility has been enabled in a separate subscription,
+          // so we should return early here.
+          return;
         }
+        setChecking(false);
+        next();
       })
       .catch((e) => {
         setError(e.message);
@@ -89,7 +94,7 @@ export default function InstallModal({
           onClick={() => handleInstall(check.installKey)}
           className="dark:bg-dusk-600"
         >
-          {checking ? "Waiting for permission..." : check.action}
+          {checking ? check.actionWaitingText || "Waiting..." : check.action}
         </Button>
         {timeElapsed && (
           <button

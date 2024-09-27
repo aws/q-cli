@@ -430,7 +430,10 @@ class Extension extends GObject.Object {
   }
 
   #connect() {
-    if (this.#connecting) return;
+    if (this.#connecting) {
+      debug("#connect: Ignoring connect call since already connecting.");
+      return;
+    }
 
     this.#connecting = true;
     this.#disconnecting = false;
@@ -440,7 +443,7 @@ class Extension extends GObject.Object {
         this.#sleep(100)
           .then(() => this.#connect_to_socket())
           .then(() => this.#connect_to_mutter())
-          .then(() => {
+          .finally(() => {
             this.#connecting = false;
           }),
       ),
@@ -631,7 +634,9 @@ class Extension extends GObject.Object {
 
   #disconnect() {
     if (this.#disconnecting) {
-      log_msg("Ignoring disconnect call since already disconnecting");
+      debug(
+        "#disconnect: Ignoring disconnect call since already disconnecting",
+      );
       return;
     }
 
@@ -643,7 +648,7 @@ class Extension extends GObject.Object {
         this.#sleep(100)
           .then(() => this.#disconnect_from_objects())
           .then(() => this.#disconnect_from_socket())
-          .then(() => {
+          .finally(() => {
             this.#disconnecting = false;
           }),
       ),
@@ -963,8 +968,6 @@ class Queue {
  */
 // eslint-disable-next-line no-unused-vars
 function init() {
-  // For debugging:
-  // GLib.log_set_debug_enabled(true);
   debug("Initializing Amazon Q for CLI Extension");
   var ExtensionClass = GObject.registerClass(
     {

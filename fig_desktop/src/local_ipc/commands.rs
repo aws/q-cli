@@ -1,4 +1,7 @@
-use fig_os_shim::Env;
+use fig_os_shim::{
+    ContextArcProvider,
+    ContextProvider,
+};
 use fig_proto::local::command_response::Response as CommandResponseTypes;
 use fig_proto::local::dump_state_command::Type as DumpStateType;
 use fig_proto::local::{
@@ -15,6 +18,7 @@ use fig_proto::local::{
     UiElement,
 };
 use fig_remote_ipc::figterm::FigtermState;
+use fig_settings::settings::SettingsProvider;
 use parking_lot::Mutex;
 use tao::event_loop::ControlFlow;
 use tracing::error;
@@ -28,13 +32,13 @@ use crate::event::{
     WindowEvent,
 };
 use crate::platform::PlatformState;
-use crate::webview::DASHBOARD_SIZE;
 use crate::webview::notification::WebviewNotificationsState;
+use crate::webview::DASHBOARD_SIZE;
 use crate::{
+    platform,
+    EventLoopProxy,
     AUTOCOMPLETE_ID,
     DASHBOARD_ID,
-    EventLoopProxy,
-    platform,
 };
 
 pub async fn debug(command: DebugModeCommand, proxy: &EventLoopProxy) -> LocalResult {
@@ -160,7 +164,10 @@ pub async fn open_browser(command: OpenBrowserCommand) -> LocalResult {
 }
 
 #[allow(unused_variables)]
-pub async fn prompt_for_accessibility_permission(env: &Env) -> LocalResult {
+pub async fn prompt_for_accessibility_permission<Ctx>(ctx: &Ctx) -> LocalResult
+where
+    Ctx: SettingsProvider + ContextProvider + ContextArcProvider + Send + Sync,
+{
     cfg_if::cfg_if! {
         if #[cfg(target_os = "macos")] {
             use fig_desktop_api::requests::install::install;
@@ -171,7 +178,7 @@ pub async fn prompt_for_accessibility_permission(env: &Env) -> LocalResult {
                     component: InstallComponent::Accessibility.into(),
                     action: InstallAction::Install.into()
                 },
-                env
+                ctx
             ).await.ok();
             Ok(LocalResponse::Success(None))
         } else {

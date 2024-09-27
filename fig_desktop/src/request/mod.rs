@@ -9,6 +9,7 @@ mod user;
 mod window;
 
 use std::marker::PhantomData;
+use std::sync::Arc;
 
 use fig_desktop_api::handler::Wrapped;
 use fig_desktop_api::kv::{
@@ -22,10 +23,8 @@ pub use fig_desktop_api::requests::{
     RequestResultImpl,
 };
 use fig_os_shim::{
-    Env,
-    EnvProvider,
-    Fs,
-    FsProvider,
+    ContextArcProvider,
+    ContextProvider,
 };
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
@@ -46,6 +45,8 @@ use fig_proto::fig::{
     WindowFocusRequest,
 };
 use fig_remote_ipc::figterm::FigtermState;
+use fig_settings::settings::SettingsProvider;
+use fig_settings::Settings;
 use tracing::{
     error,
     trace,
@@ -57,8 +58,8 @@ use crate::event::{
     Event,
     WindowEvent,
 };
-use crate::webview::WindowId;
 use crate::webview::notification::WebviewNotificationsState;
+use crate::webview::WindowId;
 use crate::{
     DebugState,
     EventLoopProxy,
@@ -73,8 +74,8 @@ pub struct Context<'a> {
     pub proxy: &'a EventLoopProxy,
     pub window_id: &'a WindowId,
     pub dash_kv_store: &'a DashKVStore,
-    pub env: &'a Env,
-    pub fs: &'a Fs,
+    pub settings: &'a Settings,
+    pub ctx: Arc<fig_os_shim::Context>,
 }
 
 impl KVStore for Context<'_> {
@@ -87,15 +88,21 @@ impl KVStore for Context<'_> {
     }
 }
 
-impl EnvProvider for Context<'_> {
-    fn env(&self) -> &Env {
-        self.env
+impl SettingsProvider for Context<'_> {
+    fn settings(&self) -> &Settings {
+        self.settings
     }
 }
 
-impl FsProvider for Context<'_> {
-    fn fs(&self) -> &Fs {
-        self.fs
+impl ContextProvider for Context<'_> {
+    fn context(&self) -> &fig_os_shim::Context {
+        &self.ctx
+    }
+}
+
+impl ContextArcProvider for Context<'_> {
+    fn context_arc(&self) -> Arc<fig_os_shim::Context> {
+        Arc::clone(&self.ctx)
     }
 }
 
@@ -162,7 +169,7 @@ impl<'a> fig_desktop_api::handler::EventHandler for EventHandler<'a> {
     }
 
     async fn onboarding(&self, request: Wrapped<Self::Ctx, OnboardingRequest>) -> RequestResult {
-        onboarding::onboarding(request.request, request.context.proxy, request.context.env).await
+        onboarding::onboarding(request.request, request.context.proxy, &request.context).await
     }
 
     async fn run_process(&self, request: Wrapped<Self::Ctx, RunProcessRequest>) -> RequestResult {
@@ -226,8 +233,8 @@ pub async fn api_request(
                     proxy,
                     window_id: &window_id,
                     dash_kv_store,
-                    env: &Env::new(),
-                    fs: &Fs::new(),
+                    settings: &Settings::new(),
+                    ctx: fig_os_shim::Context::new(),
                 },
                 request,
             )

@@ -2142,6 +2142,7 @@ name = "dbus"
 version = "1.4.5"
 dependencies = [
  "fig_os_shim",
+ "fig_util",
  "once_cell",
  "serde",
  "serde_json",
@@ -2578,6 +2579,7 @@ dependencies = [
  "fig_desktop_api",
  "fig_os_shim",
  "fig_proto",
+ "fig_settings",
  "tokio",
 ]
 
@@ -2758,6 +2760,7 @@ dependencies = [
  "camino",
  "cfg-if",
  "dashmap",
+ "dbus",
  "fig_api_client",
  "fig_auth",
  "fig_install",
@@ -2868,6 +2871,7 @@ dependencies = [
  "cfg-if",
  "clap",
  "core-foundation",
+ "dbus",
  "dirs",
  "dispatch",
  "fig_os_shim",

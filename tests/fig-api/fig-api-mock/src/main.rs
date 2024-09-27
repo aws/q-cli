@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use clap::Parser;
 use fig_desktop_api::handler::{
     EventHandler,
@@ -12,12 +14,12 @@ use fig_desktop_api::requests::{
     RequestResultImpl,
 };
 use fig_os_shim::{
-    Env,
-    EnvProvider,
-    Fs,
-    FsProvider,
+    ContextArcProvider,
+    ContextProvider,
 };
 use fig_proto::fig::NotificationRequest;
+use fig_settings::settings::SettingsProvider;
+use fig_settings::Settings;
 
 #[derive(Parser)]
 enum Cli {
@@ -33,8 +35,8 @@ struct MockHandler;
 
 struct Context {
     kv: DashKVStore,
-    env: Env,
-    fs: Fs,
+    settings: Settings,
+    ctx: Arc<fig_os_shim::Context>,
 }
 
 impl KVStore for Context {
@@ -47,15 +49,21 @@ impl KVStore for Context {
     }
 }
 
-impl EnvProvider for Context {
-    fn env(&self) -> &Env {
-        &self.env
+impl SettingsProvider for Context {
+    fn settings(&self) -> &Settings {
+        &self.settings
     }
 }
 
-impl FsProvider for Context {
-    fn fs(&self) -> &Fs {
-        &self.fs
+impl ContextProvider for Context {
+    fn context(&self) -> &fig_os_shim::Context {
+        &self.ctx
+    }
+}
+
+impl ContextArcProvider for Context {
+    fn context_arc(&self) -> Arc<fig_os_shim::Context> {
+        Arc::clone(&self.ctx)
     }
 }
 
@@ -81,8 +89,8 @@ async fn main() {
                 MockHandler,
                 Context {
                     kv: DashKVStore::new(),
-                    env: Env::new(),
-                    fs: Fs::new(),
+                    settings: Settings::new(),
+                    ctx: fig_os_shim::Context::new(),
                 },
                 request,
             )

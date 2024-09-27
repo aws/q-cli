@@ -194,7 +194,7 @@ fn ensure_correct_unique_name(name: &str) -> Result<()> {
     let mut prev = match chars.next().expect("no first char") {
         first @ ':' => first,
         _ => {
-            println!("WARNING: Invalid unique name detected: {}", name);
+            // println!("WARNING: Invalid unique name detected: {}", name);
             return Err(Error::InvalidUniqueName(format!("must start with a `:` | {name}",)));
         },
     };

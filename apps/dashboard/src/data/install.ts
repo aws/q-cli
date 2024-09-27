@@ -1,6 +1,7 @@
 import { InstallCheckWithInstallKey } from "@/types/preferences";
 import accessibility_fig from "@assets/images/accessibility_fig.png?url";
 import { PRODUCT_NAME } from "@/lib/constants";
+import { Platform } from "@amzn/fig-io-api-bindings";
 
 const getBackupsDir = (): string => {
   const backupsDir = window?.fig?.constants?.backupsDir;
@@ -72,6 +73,9 @@ const installChecks: InstallCheckWithInstallKey[] = [
   {
     id: "accessibility",
     installKey: "accessibility",
+    platformRestrictions: {
+      os: Platform.Os.MACOS,
+    },
     title: "Enable accessibility",
     description: [
       `Grant accessibility permissions so ${PRODUCT_NAME} can position the completion window and insert text on your behalf.`,
@@ -79,6 +83,36 @@ const installChecks: InstallCheckWithInstallKey[] = [
     ],
     image: accessibility_fig,
     action: "Enable",
+    actionWaitingText: "Waiting for permission...",
+  },
+  {
+    id: "gnomeExtension",
+    installKey: "gnomeExtension",
+    platformRestrictions: {
+      os: Platform.Os.LINUX,
+      desktopEnvironment: Platform.DesktopEnvironment.GNOME,
+      displayServerProtocol: Platform.DisplayServerProtocol.WAYLAND,
+    },
+    title: "Install the GNOME Shell Extension",
+    description: [
+      `In order for ${PRODUCT_NAME} to understand window geometry on GNOME under Wayland, we need to install the ${PRODUCT_NAME} GNOME Shell Extension.`,
+      `New GNOME extension installations will require you to restart your current session by logging out.`,
+    ],
+    action: "Install",
+  },
+  {
+    id: "desktopEntry",
+    installKey: "desktopEntry",
+    platformRestrictions: {
+      os: Platform.Os.LINUX,
+      appBundleType: Platform.AppBundleType.APPIMAGE,
+    },
+    title: "Install Desktop Entry",
+    description: [
+      `The AppImage bundle includes a desktop entry file that we can install locally for you automatically.`,
+      `This will be installed locally under \`~/.local/share/applications\``,
+    ],
+    action: "Install",
   },
   // {
   //   id: "inputMethod",

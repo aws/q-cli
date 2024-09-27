@@ -2,6 +2,8 @@ use std::time::Duration;
 
 use base64::prelude::*;
 use fig_os_shim::{
+    ContextArcProvider,
+    ContextProvider,
     EnvProvider,
     FsProvider,
 };
@@ -25,6 +27,7 @@ use fig_proto::fig::{
     WindowFocusRequest,
 };
 use fig_proto::prost::Message;
+use fig_settings::settings::SettingsProvider;
 use tracing::warn;
 
 use crate::error::Result;
@@ -117,11 +120,15 @@ pub fn response_to_b64(response_message: ServerOriginatedMessage) -> String {
     BASE64_STANDARD.encode(response_message.encode_to_vec())
 }
 
-pub async fn api_request<Ctx: KVStore + EnvProvider + FsProvider, E: EventHandler<Ctx = Ctx> + Sync>(
+pub async fn api_request<Ctx, E>(
     event_handler: E,
     ctx: Ctx,
     request: ClientOriginatedMessage,
-) -> Result<ServerOriginatedMessage> {
+) -> Result<ServerOriginatedMessage>
+where
+    Ctx: KVStore + SettingsProvider + ContextProvider + ContextArcProvider + Send + Sync,
+    E: EventHandler<Ctx = Ctx> + Sync,
+{
     let request_id = match request.id {
         Some(request_id) => request_id,
         None => return Err(crate::error::Error::NoMessageId),
@@ -146,12 +153,16 @@ pub async fn api_request<Ctx: KVStore + EnvProvider + FsProvider, E: EventHandle
     })
 }
 
-async fn handle_request<Ctx: KVStore + EnvProvider + FsProvider, E: EventHandler<Ctx = Ctx> + Sync>(
+async fn handle_request<Ctx, E>(
     event_handler: E,
     ctx: Ctx,
     message_id: i64,
     message: ClientOriginatedMessage,
-) -> RequestResult {
+) -> RequestResult
+where
+    Ctx: KVStore + SettingsProvider + ContextProvider + ContextArcProvider + Send + Sync,
+    E: EventHandler<Ctx = Ctx> + Sync,
+{
     macro_rules! request {
         ($request:expr) => {
             Wrapped {
@@ -183,6 +194,7 @@ async fn handle_request<Ctx: KVStore + EnvProvider + FsProvider, E: EventHandler
                 GetConfigPropertyRequest,
                 GetDefaultsPropertyRequest,
                 GetLocalStateRequest,
+                GetPlatformInfoRequest,
                 GetSettingsPropertyRequest,
                 HistoryQueryRequest,
                 InsertTextRequest,
@@ -261,7 +273,7 @@ async fn handle_request<Ctx: KVStore + EnvProvider + FsProvider, E: EventHandler
                 // onboarding
                 OnboardingRequest(request) => event_handler.onboarding(request!(request)).await,
                 // install
-                InstallRequest(request) => install::install(request, ctx.env()).await,
+                InstallRequest(request) => install::install(request, &ctx).await,
                 // history
                 HistoryQueryRequest(request) => history::query(request).await,
                 // auth
@@ -291,6 +303,7 @@ async fn handle_request<Ctx: KVStore + EnvProvider + FsProvider, E: EventHandler
                 UserLogoutRequest(request) => event_handler.user_logout(request!(request)).await,
                 UpdateApplicationRequest(request) => update::update_application(request).await,
                 CheckForUpdatesRequest(request) => update::check_for_updates(request).await,
+                GetPlatformInfoRequest(request) => platform::get_platform_info(request, &ctx).await,
             }
         },
         None => {

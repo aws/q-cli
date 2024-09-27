@@ -50,6 +50,9 @@ pub enum Error {
     PermissionDenied { path: PathBuf, inner: io::Error },
     #[error("nix: {}", .0)]
     Nix(#[from] nix::Error),
+    #[cfg(target_os = "linux")]
+    #[error(transparent)]
+    ExtensionsError(#[from] dbus::gnome_shell::ExtensionsError),
 
     #[error("{context}: {error}")]
     Context {

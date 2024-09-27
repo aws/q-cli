@@ -1,14 +1,14 @@
 use std::process::Command;
 
 use eyre::{
-    Result,
     eyre,
+    Result,
 };
 use fig_util::{
-    PRODUCT_NAME,
     directories,
     manifest,
     system_info,
+    PRODUCT_NAME,
 };
 
 pub struct LaunchArgs {
@@ -199,14 +199,17 @@ fn launch_linux_desktop(
     ctx: std::sync::Arc<fig_os_shim::Context>,
     settings: &fig_settings::Settings,
 ) -> eyre::Result<()> {
-    use std::sync::Arc;
+    use std::process::Stdio;
 
+    use fig_integrations::desktop_entry::{
+        local_entry_path,
+        EntryContents,
+    };
     use fig_util::APP_PROCESS_NAME;
-    use fig_util::linux::desktop::DesktopEntry;
     use tracing::error;
 
     if settings.get_bool_or("appimage.manageDesktopEntry", false) {
-        if let Some(exec) = DesktopEntry::new_existing(Arc::clone(&ctx))?.get_field("Exec") {
+        if let Some(exec) = EntryContents::from_path_sync(&ctx, local_entry_path(&ctx)?)?.get_field("Exec") {
             match Command::new(exec).spawn() {
                 Ok(_) => return Ok(()),
                 Err(err) => {
@@ -220,6 +223,10 @@ fn launch_linux_desktop(
         // Fall back to calling q-desktop if on the user's path
     }
 
-    Command::new(APP_PROCESS_NAME).spawn()?;
+    Command::new(APP_PROCESS_NAME)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()?;
     Ok(())
 }

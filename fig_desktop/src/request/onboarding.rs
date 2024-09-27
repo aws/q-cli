@@ -1,9 +1,14 @@
 use fig_integrations::shell::ShellExt;
-use fig_os_shim::Env;
+use fig_os_shim::{
+    ContextArcProvider,
+    ContextProvider,
+    EnvProvider,
+};
 use fig_proto::fig::{
     OnboardingAction,
     OnboardingRequest,
 };
+use fig_settings::settings::SettingsProvider;
 use fig_util::Shell;
 use tao::event_loop::ControlFlow;
 #[cfg(target_os = "macos")]
@@ -15,19 +20,22 @@ use super::{
     RequestResult,
     RequestResultImpl,
 };
-use crate::EventLoopProxy;
 use crate::event::Event;
+use crate::EventLoopProxy;
 
 pub async fn post_login() {
     fig_settings::state::set_value("desktop.completedOnboarding", true).ok();
 }
 
-pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy, env: &Env) -> RequestResult {
+pub async fn onboarding<Ctx>(request: OnboardingRequest, proxy: &EventLoopProxy, ctx: &Ctx) -> RequestResult
+where
+    Ctx: SettingsProvider + ContextProvider + ContextArcProvider + Send + Sync,
+{
     match request.action() {
         OnboardingAction::InstallationScript => {
             let mut errs: Vec<String> = vec![];
             for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
-                match shell.get_shell_integrations(env) {
+                match shell.get_shell_integrations(ctx.env()) {
                     Ok(integrations) => {
                         for integration in integrations {
                             if let Err(err) = integration.install().await {
@@ -48,13 +56,13 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy, env:
         },
         OnboardingAction::Uninstall => {
             use fig_install::{
-                InstallComponents,
                 uninstall,
+                InstallComponents,
             };
 
             fig_util::open_url(fig_install::UNINSTALL_URL).ok();
 
-            let result = match uninstall(InstallComponents::all(), env).await {
+            let result = match uninstall(InstallComponents::all(), ctx.env()).await {
                 Ok(_) => RequestResult::success(),
                 Err(err) => RequestResult::error(err.to_string()),
             };
@@ -102,10 +110,10 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy, env:
         },
         OnboardingAction::PromptForAccessibilityPermission => {
             use crate::local_ipc::{
-                LocalResponse,
                 commands,
+                LocalResponse,
             };
-            let res = commands::prompt_for_accessibility_permission(env)
+            let res = commands::prompt_for_accessibility_permission(ctx)
                 .await
                 .unwrap_or_else(|e| e);
             match res {

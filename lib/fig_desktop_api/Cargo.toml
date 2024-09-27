@@ -44,3 +44,6 @@ reqwest.workspace = true
 
 [target.'cfg(target_os="macos")'.dependencies]
 macos-utils = { path = "../macos-utils" }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+dbus = { path = "../dbus" }

@@ -1,6 +1,4 @@
 pub mod directories;
-#[cfg(target_os = "linux")]
-pub mod linux;
 pub mod manifest;
 mod open;
 pub mod process_info;

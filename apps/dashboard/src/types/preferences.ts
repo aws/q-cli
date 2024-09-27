@@ -1,3 +1,9 @@
+import { Platform } from "@amzn/fig-io-api-bindings";
+
+export type PlatformInfo = Awaited<ReturnType<typeof Platform.getPlatformInfo>>;
+
+export type PlatformRestrictions = Partial<PlatformInfo>;
+
 export type PrefDefault = unknown;
 
 export type Pref = {
@@ -33,13 +39,22 @@ export type RichText = {
   tag: string;
 };
 
+export type InstallKey =
+  | "dotfiles"
+  | "accessibility"
+  | "inputMethod"
+  | "desktopEntry"
+  | "gnomeExtension";
+
 export type InstallCheck = {
   id: string;
-  installKey?: "dotfiles" | "accessibility" | "inputMethod";
+  installKey?: InstallKey;
+  platformRestrictions?: PlatformRestrictions;
   title: string;
   description: string[];
   image?: string;
   action: string;
+  actionWaitingText?: string;
   explainer?: {
     title: string;
     steps: RichText[][];
@@ -47,5 +62,5 @@ export type InstallCheck = {
 };
 
 export type InstallCheckWithInstallKey = InstallCheck & {
-  installKey: "dotfiles" | "accessibility" | "inputMethod";
+  installKey: InstallKey;
 };

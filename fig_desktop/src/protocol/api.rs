@@ -2,13 +2,10 @@ use std::borrow::Cow;
 use std::sync::Arc;
 
 use bytes::Bytes;
-use fig_os_shim::{
-    Context as OsContext,
-    Env,
-    Fs,
-};
+use fig_os_shim::Context as OsContext;
 use fig_proto::fig::ClientOriginatedMessage;
 use fig_proto::prost::Message;
+use fig_settings::Settings;
 use wry::http::header::CONTENT_TYPE;
 use wry::http::{
     HeaderValue,
@@ -60,8 +57,8 @@ pub async fn handle(
             notifications_state: NOTIFICATIONS_STATE.get().unwrap().as_ref(),
             proxy: GLOBAL_PROXY.get().unwrap(),
             dash_kv_store: DASH_KV_STORE.get().unwrap().as_ref(),
-            env: &Env::new(),
-            fs: &Fs::new(),
+            settings: &Settings::new(),
+            ctx: fig_os_shim::Context::new(),
         },
         client_message,
     )

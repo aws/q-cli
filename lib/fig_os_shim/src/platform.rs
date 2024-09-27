@@ -57,6 +57,11 @@ mod inner {
 }
 
 impl Platform {
+    /// Returns a real implementation of [Platform].
+    pub fn new() -> Self {
+        Self(inner::Inner::Real)
+    }
+
     /// Returns a new fake [Platform].
     pub fn new_fake(os: Os) -> Self {
         Self(inner::Inner::Fake(os))

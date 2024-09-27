@@ -384,6 +384,7 @@ pub async fn initialize_fig_dir(env: &fig_os_shim::Env) -> anyhow::Result<()> {
 #[cfg(target_os = "linux")]
 async fn run_linux_install(ctx: Arc<Context>, settings: Arc<fig_settings::Settings>) {
     use dbus::gnome_shell::ShellExtensions;
+    use fig_settings::State;
 
     // install binaries under home local bin
     if ctx.env().in_appimage() {
@@ -399,9 +400,11 @@ async fn run_linux_install(ctx: Arc<Context>, settings: Arc<fig_settings::Settin
     // GNOME Shell Extension
     {
         let ctx_clone = Arc::clone(&ctx);
-        let shell_extensions = ShellExtensions::new(Arc::clone(&ctx));
         tokio::spawn(async move {
-            install_gnome_shell_extension(&ctx_clone, &shell_extensions)
+            let ctx = ctx_clone;
+            let shell_extensions = ShellExtensions::new(Arc::downgrade(&ctx));
+            let state = State::new();
+            install_gnome_shell_extension(&ctx, &shell_extensions, &state)
                 .await
                 .map_err(|err| error!(?err, "Unable to install the GNOME Shell extension"))
                 .ok();
@@ -413,9 +416,13 @@ async fn run_linux_install(ctx: Arc<Context>, settings: Arc<fig_settings::Settin
         let ctx_clone = Arc::clone(&ctx);
         let settings_clone = Arc::clone(&settings);
         tokio::spawn(async move {
-            install_desktop_entries(ctx_clone, &settings_clone)
+            install_desktop_entry(&ctx_clone, &settings_clone)
                 .await
-                .map_err(|err| error!(?err, "Unable to install desktop entries"))
+                .map_err(|err| error!(?err, "Unable to install desktop entry"))
+                .ok();
+            install_autostart_entry(&ctx_clone, &settings_clone)
+                .await
+                .map_err(|err| error!(?err, "Unable to install autostart entry"))
                 .ok();
         });
     }
@@ -426,24 +433,38 @@ async fn run_linux_install(ctx: Arc<Context>, settings: Arc<fig_settings::Settin
 
 /// Installs the correct version of the Amazon Q for CLI GNOME Shell extension, if required.
 #[cfg(target_os = "linux")]
-async fn install_gnome_shell_extension(
-    ctx: &Context,
-    shell_extensions: &dbus::gnome_shell::ShellExtensions,
-) -> anyhow::Result<()> {
+async fn install_gnome_shell_extension<Ctx, ExtensionsCtx>(
+    ctx: &Ctx,
+    shell_extensions: &dbus::gnome_shell::ShellExtensions<ExtensionsCtx>,
+    state: &fig_settings::State,
+) -> anyhow::Result<()>
+where
+    Ctx: fig_os_shim::ContextProvider,
+    ExtensionsCtx: fig_os_shim::ContextProvider,
+{
     use dbus::gnome_shell::{
         ExtensionInstallationStatus,
         get_extension_status,
     };
-    use fig_util::directories::resources_path_ctx;
+    use fig_os_shim::FsProvider;
+    use fig_util::directories::{
+        bundled_gnome_extension_version_path,
+        bundled_gnome_extension_zip_path,
+    };
+    use tracing::debug;
+
+    if !state.get_bool_or("desktop.gnomeExtensionInstallationPermissionGranted", false) {
+        debug!("Permission is not granted to install GNOME extension, doing nothing.");
+        return Ok(());
+    }
 
     let fs = ctx.fs();
     let extension_uuid = shell_extensions.extension_uuid().await?;
-    let extension_dir_path = resources_path_ctx(ctx)?.join(&extension_uuid);
     let bundled_version: u32 = fs
-        .read_to_string(extension_dir_path.join(format!("{}.version.txt", &extension_uuid)))
+        .read_to_string(bundled_gnome_extension_version_path(ctx, &extension_uuid)?)
         .await?
         .parse()?;
-    let bundled_path = extension_dir_path.join(format!("{}.zip", extension_uuid));
+    let bundled_path = bundled_gnome_extension_zip_path(ctx, &extension_uuid)?;
 
     match get_extension_status(ctx, shell_extensions, Some(bundled_version)).await? {
         ExtensionInstallationStatus::GnomeShellNotRunning => {
@@ -491,28 +512,40 @@ async fn install_gnome_shell_extension(
     Ok(())
 }
 
-/// Installs the desktop entries
+/// Installs the desktop entry if required.
 #[cfg(target_os = "linux")]
-async fn install_desktop_entries(ctx: Arc<Context>, settings: &fig_settings::Settings) -> anyhow::Result<()> {
-    use fig_util::linux::desktop::DesktopEntry;
-    use tracing::warn;
+async fn install_desktop_entry(ctx: &Context, settings: &fig_settings::Settings) -> anyhow::Result<()> {
+    use fig_integrations::desktop_entry::DesktopEntryIntegration;
+    use fig_util::directories::{
+        appimage_desktop_entry_icon_path,
+        appimage_desktop_entry_path,
+    };
 
-    if !ctx.env().in_appimage() {
-        warn!("Installing desktop entries is only supported for AppImage releases, exiting.");
+    if !settings.get_bool_or("appimage.manageDesktopEntry", false) {
         return Ok(());
     }
 
-    settings.set_value("appimage.manageDesktopEntry", true)?;
+    let exec_path = ctx.env().get("APPIMAGE")?;
+    let entry_path = appimage_desktop_entry_path(ctx)?;
+    let icon_path = appimage_desktop_entry_icon_path(ctx)?;
+    DesktopEntryIntegration::new(ctx, entry_path, icon_path, exec_path.into())
+        .install()
+        .await?;
+    Ok(())
+}
 
-    let entry_path = ctx.env().current_dir()?.join("share/applications/q-desktop.desktop");
-    let icon_path = ctx
-        .env()
-        .current_dir()?
-        .join("share/icons/hicolor/128x128/apps/q-desktop.png");
-    let mut desktop_entry = DesktopEntry::new(Arc::clone(&ctx), &entry_path, &icon_path).await?;
-    desktop_entry.set_field("Exec", &ctx.env().get("APPIMAGE")?).await?;
-    desktop_entry.enable_autostart().await?;
+/// Installs the autostart entry if required.
+#[cfg(target_os = "linux")]
+async fn install_autostart_entry(ctx: &Context, settings: &fig_settings::Settings) -> anyhow::Result<()> {
+    use fig_integrations::desktop_entry::AutostartIntegration;
 
+    if !settings.get_bool_or("appimage.manageDesktopEntry", false)
+        || !settings.get_bool_or("app.launchOnStartup", false)
+    {
+        return Ok(());
+    }
+
+    AutostartIntegration::new(ctx).install().await?;
     Ok(())
 }
 
@@ -880,21 +913,23 @@ echo "{binary_name} {version}"
             ShellExtensions,
             get_extension_status,
         };
-        use fig_util::directories::resources_path_ctx;
+        use fig_os_shim::Os;
+        use fig_settings::State;
+        use fig_util::directories::{
+            bundled_gnome_extension_version_path,
+            bundled_gnome_extension_zip_path,
+        };
 
         use super::*;
 
+        /// Helper function that writes test files to [bundled_gnome_extension_zip_path] and
+        /// [bundled_extension_version_path].
         async fn write_extension_bundle(ctx: &Context, uuid: &str, version: u32) {
-            let dir_path = resources_path_ctx(ctx).unwrap().join(uuid);
-            ctx.fs().create_dir_all(&dir_path).await.unwrap();
-            ctx.fs()
-                .write(&dir_path.join(format!("{}.zip", uuid)), version.to_string())
-                .await
-                .unwrap();
-            ctx.fs()
-                .write(&dir_path.join(format!("{}.version.txt", uuid)), version.to_string())
-                .await
-                .unwrap();
+            let zip_path = bundled_gnome_extension_zip_path(ctx, uuid).unwrap();
+            let version_path = bundled_gnome_extension_version_path(ctx, uuid).unwrap();
+            ctx.fs().create_dir_all(zip_path.parent().unwrap()).await.unwrap();
+            ctx.fs().write(&zip_path, version.to_string()).await.unwrap();
+            ctx.fs().write(&version_path, version.to_string()).await.unwrap();
         }
 
         #[tokio::test]
@@ -904,9 +939,10 @@ echo "{binary_name} {version}"
                 .await
                 .unwrap()
                 .with_env_var("APPIMAGE", "1")
+                .with_os(Os::Linux)
                 .with_running_processes(&[GNOME_SHELL_PROCESS_NAME])
                 .build_fake();
-            let shell_extensions = ShellExtensions::new_fake(Arc::clone(&ctx));
+            let shell_extensions = ShellExtensions::new_fake(Arc::downgrade(&ctx));
             let extension_version = 1;
             write_extension_bundle(
                 &ctx,
@@ -914,9 +950,12 @@ echo "{binary_name} {version}"
                 extension_version,
             )
             .await;
+            let state = State::from_slice(&[("desktop.gnomeExtensionInstallationPermissionGranted", true.into())]);
 
             // When
-            install_gnome_shell_extension(&ctx, &shell_extensions).await.unwrap();
+            install_gnome_shell_extension(&ctx, &shell_extensions, &state)
+                .await
+                .unwrap();
 
             // Then
             let status = get_extension_status(&ctx, &shell_extensions, Some(extension_version))
@@ -924,15 +963,50 @@ echo "{binary_name} {version}"
                 .unwrap();
             assert!(matches!(status, ExtensionInstallationStatus::RequiresReboot));
         }
+
+        #[tokio::test]
+        async fn test_extension_not_installed_if_permission_not_granted() {
+            let ctx = Context::builder()
+                .with_test_home()
+                .await
+                .unwrap()
+                .with_env_var("APPIMAGE", "1")
+                .with_os(Os::Linux)
+                .with_running_processes(&[GNOME_SHELL_PROCESS_NAME])
+                .build_fake();
+            let shell_extensions = ShellExtensions::new_fake(Arc::downgrade(&ctx));
+            let extension_version = 1;
+            write_extension_bundle(
+                &ctx,
+                &shell_extensions.extension_uuid().await.unwrap(),
+                extension_version,
+            )
+            .await;
+            let state = State::new_fake();
+
+            // When
+            install_gnome_shell_extension(&ctx, &shell_extensions, &state)
+                .await
+                .unwrap();
+
+            // Then
+            let status = get_extension_status(&ctx, &shell_extensions, Some(extension_version))
+                .await
+                .unwrap();
+            assert!(matches!(status, ExtensionInstallationStatus::NotInstalled));
+        }
     }
 
     #[cfg(target_os = "linux")]
     mod linux_desktop_entry_tests {
-        use fig_settings::Settings;
-        use fig_util::linux::desktop::{
-            local_autostart_path,
+        use fig_integrations::desktop_entry::{
             local_entry_path,
             local_icon_path,
+        };
+        use fig_settings::Settings;
+        use fig_util::directories::{
+            appimage_desktop_entry_icon_path,
+            appimage_desktop_entry_path,
         };
 
         use super::*;
@@ -944,37 +1018,47 @@ echo "{binary_name} {version}"
                 .await
                 .unwrap()
                 .with_env_var("APPIMAGE", "/test.appimage")
-                .build();
-            let settings = Settings::new_fake();
+                .build_fake();
             let fs = ctx.fs();
-            fs.create_dir_all("/share/applications").await.unwrap();
-            fs.write(
-                "/share/applications/q-desktop.desktop",
-                "[Desktop Entry]\nExec=q-desktop",
-            )
-            .await
-            .unwrap();
-            fs.create_dir_all("/share/icons/hicolor/128x128/apps").await.unwrap();
-            fs.write("/share/icons/hicolor/128x128/apps/q-desktop.png", "image")
-                .await
-                .unwrap();
+            let entry_path = appimage_desktop_entry_path(&ctx).unwrap();
+            let icon_path = appimage_desktop_entry_icon_path(&ctx).unwrap();
+            fs.create_dir_all(&entry_path.parent().unwrap()).await.unwrap();
+            fs.write(&entry_path, "[Desktop Entry]\nExec=q-desktop").await.unwrap();
+            fs.create_dir_all(icon_path.parent().unwrap()).await.unwrap();
+            fs.write(&icon_path, "image").await.unwrap();
+            let settings = Settings::from_slice(&[("appimage.manageDesktopEntry", true.into())]);
 
             // When
-            install_desktop_entries(Arc::clone(&ctx), &settings).await.unwrap();
+            install_desktop_entry(&ctx, &settings).await.unwrap();
 
             // Then
-            assert_eq!(settings.get_bool("appimage.manageDesktopEntry").unwrap(), Some(true));
-            assert!(fs.exists(local_entry_path(ctx.env()).unwrap()));
-            assert_eq!(
-                fs.read_to_string(local_entry_path(ctx.env()).unwrap()).await.unwrap(),
-                fs.read_to_string(local_autostart_path(ctx.env()).unwrap())
-                    .await
-                    .unwrap(),
-            );
-            assert_eq!(
-                fs.read_to_string(local_icon_path(&ctx).unwrap()).await.unwrap(),
-                "image"
-            );
+            assert!(fs.exists(local_entry_path(&ctx).unwrap()));
+            assert!(fs.exists(local_icon_path(&ctx).unwrap()));
+        }
+
+        #[tokio::test]
+        async fn test_desktop_entry_not_installed_if_not_managed() {
+            let ctx = Context::builder()
+                .with_test_home()
+                .await
+                .unwrap()
+                .with_env_var("APPIMAGE", "/test.appimage")
+                .build_fake();
+            let fs = ctx.fs();
+            let entry_path = appimage_desktop_entry_path(&ctx).unwrap();
+            let icon_path = appimage_desktop_entry_icon_path(&ctx).unwrap();
+            fs.create_dir_all(&entry_path.parent().unwrap()).await.unwrap();
+            fs.write(&entry_path, "[Desktop Entry]\nExec=q-desktop").await.unwrap();
+            fs.create_dir_all(icon_path.parent().unwrap()).await.unwrap();
+            fs.write(&icon_path, "image").await.unwrap();
+            let settings = Settings::new_fake();
+
+            // When
+            install_desktop_entry(&ctx, &settings).await.unwrap();
+
+            // Then
+            assert!(!fs.exists(local_entry_path(&ctx).unwrap()));
+            assert!(!fs.exists(local_icon_path(&ctx).unwrap()));
         }
     }
 }

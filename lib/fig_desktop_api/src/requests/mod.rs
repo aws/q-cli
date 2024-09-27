@@ -9,6 +9,7 @@ pub mod fs;
 pub mod history;
 pub mod install;
 pub mod other;
+pub mod platform;
 pub mod settings;
 pub mod state;
 pub mod telemetry;

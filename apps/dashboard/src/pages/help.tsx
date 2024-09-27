@@ -3,16 +3,22 @@ import { Code } from "@/components/text/code";
 import { Link } from "@/components/ui/link";
 import support from "@/data/help";
 import installChecks from "@/data/install";
+import { usePlatformInfo } from "@/hooks/store/usePlatformInfo";
+import { isInstallCheckForPlatform } from "@/lib/install";
 
 export default function Page() {
+  const platformInfo = usePlatformInfo();
   return (
     <div className="flex flex-col items-start gap-8 pb-4">
       <div className="flex flex-col justify-between gap-2 self-stretch">
         <h1 className="text-xl font-bold select-none">Automated checks</h1>
         <div className="flex flex-col">
-          {installChecks.map((check) => {
-            return <StatusCheck check={check} key={check.id} />;
-          })}
+          {platformInfo &&
+            installChecks
+              .filter((check) => isInstallCheckForPlatform(check, platformInfo))
+              .map((check) => {
+                return <StatusCheck check={check} key={check.id} />;
+              })}
         </div>
       </div>
       <div className="flex flex-col justify-between gap-4 self-stretch">

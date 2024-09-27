@@ -151,6 +151,16 @@ impl Settings {
     }
 }
 
+pub trait SettingsProvider {
+    fn settings(&self) -> &Settings;
+}
+
+impl SettingsProvider for Settings {
+    fn settings(&self) -> &Settings {
+        self
+    }
+}
+
 pub fn init_global() -> Result<()> {
     OldSettings::load_into_global()
 }

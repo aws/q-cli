@@ -1,10 +1,15 @@
 use std::fmt::Display;
 
 use anstream::adapter::strip_str;
-use fig_integrations::Integration;
+use fig_integrations::desktop_entry::DesktopEntryIntegration;
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
-use fig_os_shim::Env;
+use fig_integrations::Integration;
+use fig_os_shim::{
+    ContextArcProvider,
+    ContextProvider,
+    EnvProvider,
+};
 use fig_proto::fig::install_response::{
     InstallationStatus,
     Response,
@@ -18,7 +23,9 @@ use fig_proto::fig::{
     InstallResponse,
     Result as ProtoResult,
 };
+use fig_settings::settings::SettingsProvider;
 use fig_util::Shell;
+use tracing::error;
 
 use super::RequestResult;
 
@@ -54,12 +61,15 @@ fn integration_result(result: Result<(), impl Display>) -> ServerOriginatedSubMe
     })
 }
 
-pub async fn install(request: InstallRequest, env: &Env) -> RequestResult {
+pub async fn install<Ctx>(request: InstallRequest, ctx: &Ctx) -> RequestResult
+where
+    Ctx: SettingsProvider + ContextProvider + ContextArcProvider + Send + Sync,
+{
     let response = match (request.component(), request.action()) {
         (InstallComponent::Dotfiles, action) => {
             let mut errs: Vec<String> = vec![];
             for shell in Shell::all() {
-                match shell.get_shell_integrations(env) {
+                match shell.get_shell_integrations(ctx.env()) {
                     Ok(integrations) => {
                         for integration in integrations {
                             let res = match action {
@@ -203,7 +213,275 @@ pub async fn install(request: InstallRequest, env: &Env) -> RequestResult {
                 }
             }
         },
+        (InstallComponent::DesktopEntry, action) => {
+            if !ctx.env().in_appimage() {
+                integration_result(Err(
+                    "Desktop entry installation is only supported for AppImage bundles.",
+                ))
+            } else {
+                let exec_path = ctx.env().get("APPIMAGE").map_err(super::Error::from_std)?;
+                let entry_path = ctx
+                    .env()
+                    .current_dir()
+                    .map_err(super::Error::from_std)?
+                    .join("share/applications/q-desktop.desktop");
+                let icon_path = ctx
+                    .env()
+                    .current_dir()
+                    .map_err(super::Error::from_std)?
+                    .join("share/icons/hicolor/128x128/apps/q-desktop.png");
+                let integration = DesktopEntryIntegration::new(ctx, entry_path, icon_path, exec_path.into());
+                match action {
+                    InstallAction::Install => {
+                        ctx.settings()
+                            .set_value("appimage.manageDesktopEntry", true)
+                            .map_err(|err| error!(?err, "unable to set `appimage.manageDesktopEntry`"))
+                            .ok();
+                        integration_result(integration.install().await)
+                    },
+                    InstallAction::Uninstall => {
+                        ctx.settings()
+                            .set_value("appimage.manageDesktopEntry", false)
+                            .map_err(|err| error!(?err, "unable to set `appimage.manageDesktopEntry`"))
+                            .ok();
+                        integration_result(integration.uninstall().await)
+                    },
+                    InstallAction::Status => integration_status(integration).await,
+                }
+            }
+        },
+        #[allow(unused_variables)]
+        (InstallComponent::GnomeExtension, action) => {
+            cfg_if::cfg_if! {
+                if #[cfg(target_os = "linux")] {
+                    use std::sync::Arc;
+                    let shell_extensions = dbus::gnome_shell::ShellExtensions::new(Arc::downgrade(&ctx.context_arc()));
+                    install_gnome_extension(action, ctx, &shell_extensions).await.map_err(super::Error::Std)?
+                }
+                else {
+                    integration_result(Err("Not supported on platforms other than Linux."))
+                }
+            }
+        },
     };
 
     RequestResult::Ok(Box::new(response))
+}
+
+#[cfg(target_os = "linux")]
+async fn install_gnome_extension<'a, Ctx, ExtensionsCtx>(
+    action: InstallAction,
+    ctx: &'a Ctx,
+    shell_extensions: &'a dbus::gnome_shell::ShellExtensions<ExtensionsCtx>,
+) -> Result<super::ServerOriginatedSubMessage, Box<dyn std::error::Error + Send + Sync>>
+where
+    Ctx: SettingsProvider + ContextProvider + Sync,
+    ExtensionsCtx: ContextProvider + Send + Sync,
+{
+    use fig_integrations::gnome_extension::GnomeExtensionIntegration;
+    use fig_util::directories::{
+        bundled_gnome_extension_version_path,
+        bundled_gnome_extension_zip_path,
+    };
+
+    let extension_uuid = shell_extensions.extension_uuid().await?;
+    let bundled_version: u32 = ctx
+        .context()
+        .fs()
+        .read_to_string(bundled_gnome_extension_version_path(ctx, &extension_uuid)?)
+        .await?
+        .parse()?;
+    let bundle_path = bundled_gnome_extension_zip_path(ctx, &extension_uuid)?;
+    let gnome_integration = GnomeExtensionIntegration::new(ctx, shell_extensions, bundle_path, bundled_version);
+    // TODO: set "desktop.gnomeExtensionInstallationPermissionGranted" to true in state on install.
+    match action {
+        InstallAction::Install => Ok(integration_result(gnome_integration.install().await)),
+        InstallAction::Uninstall => Ok(integration_result(gnome_integration.uninstall().await)),
+        InstallAction::Status => Ok(integration_status(gnome_integration).await),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use fig_os_shim::{
+        Context,
+        ContextProvider,
+    };
+    use fig_proto::fig::server_originated_message::Submessage;
+    use fig_settings::Settings;
+    use fig_util::directories::{
+        appimage_desktop_entry_icon_path,
+        appimage_desktop_entry_path,
+    };
+
+    use super::*;
+
+    #[derive(Debug, Clone)]
+    struct TestContext {
+        ctx: Arc<Context>,
+        settings: Settings,
+    }
+
+    impl SettingsProvider for TestContext {
+        fn settings(&self) -> &Settings {
+            &self.settings
+        }
+    }
+
+    impl ContextProvider for TestContext {
+        fn context(&self) -> &Context {
+            &self.ctx
+        }
+    }
+
+    impl ContextArcProvider for TestContext {
+        fn context_arc(&self) -> Arc<Context> {
+            Arc::clone(&self.ctx)
+        }
+    }
+
+    async fn assert_status(ctx: &TestContext, component: InstallComponent, expected_status: InstallationStatus) {
+        let request = InstallRequest {
+            component: component.into(),
+            action: InstallAction::Status.into(),
+        };
+        let response = install(request, ctx).await.unwrap();
+        assert_submessage_status(*response, expected_status, "");
+    }
+
+    fn assert_submessage_status(submessage: Submessage, expected_status: InstallationStatus, message: &str) {
+        if let Submessage::InstallResponse(InstallResponse {
+            response: Some(Response::InstallationStatus(actual_status)),
+        }) = submessage
+        {
+            let expected_status: i32 = expected_status.into();
+            assert_eq!(actual_status, expected_status, "{}", message);
+        } else {
+            panic!("unexpected response: {:?}", submessage);
+        }
+    }
+
+    #[tokio::test]
+    async fn test_desktop_entry_installation_and_uninstallation() {
+        let ctx = Context::builder()
+            .with_test_home()
+            .await
+            .unwrap()
+            .with_env_var("APPIMAGE", "/test.appimage")
+            .build();
+        let fs = ctx.fs();
+        let entry_path = appimage_desktop_entry_path(&ctx).unwrap();
+        let icon_path = appimage_desktop_entry_icon_path(&ctx).unwrap();
+        fs.create_dir_all(entry_path.parent().unwrap()).await.unwrap();
+        fs.write(&entry_path, "[Desktop Entry]\nExec=q-desktop").await.unwrap();
+        fs.create_dir_all(icon_path.parent().unwrap()).await.unwrap();
+        fs.write(&icon_path, "image").await.unwrap();
+        let settings = Settings::new_fake();
+        let ctx = TestContext { ctx, settings };
+
+        // Test installation
+        assert_status(&ctx, InstallComponent::DesktopEntry, InstallationStatus::NotInstalled).await;
+        let request = InstallRequest {
+            component: InstallComponent::DesktopEntry.into(),
+            action: InstallAction::Install.into(),
+        };
+        install(request, &ctx).await.unwrap();
+        assert_eq!(
+            ctx.settings.get_bool("appimage.manageDesktopEntry").unwrap(),
+            Some(true)
+        );
+        assert_status(&ctx, InstallComponent::DesktopEntry, InstallationStatus::Installed).await;
+
+        // Test uninstallation
+        let request = InstallRequest {
+            component: InstallComponent::DesktopEntry.into(),
+            action: InstallAction::Uninstall.into(),
+        };
+        install(request, &ctx).await.unwrap();
+        assert_eq!(
+            ctx.settings.get_bool("appimage.manageDesktopEntry").unwrap(),
+            Some(false)
+        );
+        assert_status(&ctx, InstallComponent::DesktopEntry, InstallationStatus::NotInstalled).await;
+    }
+
+    /// Helper function that writes test files to [bundled_extension_zip_path] and
+    /// [bundled_extension_version_path].
+    #[cfg(target_os = "linux")]
+    async fn write_extension_bundle(ctx: &Context, uuid: &str, version: u32) {
+        use fig_util::directories::{
+            bundled_gnome_extension_version_path,
+            bundled_gnome_extension_zip_path,
+        };
+
+        let zip_path = bundled_gnome_extension_zip_path(ctx, uuid).unwrap();
+        let version_path = bundled_gnome_extension_version_path(ctx, uuid).unwrap();
+        ctx.fs().create_dir_all(zip_path.parent().unwrap()).await.unwrap();
+        ctx.fs().write(&zip_path, version.to_string()).await.unwrap();
+        ctx.fs().write(&version_path, version.to_string()).await.unwrap();
+    }
+
+    #[cfg(target_os = "linux")]
+    #[tokio::test]
+    async fn test_gnome_extension_installation_and_uninstallation() {
+        use dbus::gnome_shell::{
+            ShellExtensions,
+            GNOME_SHELL_PROCESS_NAME,
+        };
+        use fig_os_shim::Os;
+
+        let ctx = Context::builder()
+            .with_test_home()
+            .await
+            .unwrap()
+            .with_env_var("APPIMAGE", "/test.appimage")
+            .with_os(Os::Linux)
+            .with_running_processes(&[GNOME_SHELL_PROCESS_NAME])
+            .build_fake();
+        let settings = Settings::new_fake();
+        let test_ctx = TestContext {
+            ctx: Arc::clone(&ctx),
+            settings,
+        };
+        let shell_extensions = ShellExtensions::new_fake(Arc::downgrade(&ctx));
+        write_extension_bundle(&ctx, &shell_extensions.extension_uuid().await.unwrap(), 1).await;
+
+        // Not installed by default
+        let response = install_gnome_extension(InstallAction::Status, &test_ctx, &shell_extensions)
+            .await
+            .unwrap();
+        assert_submessage_status(
+            response,
+            InstallationStatus::NotInstalled,
+            "Should not be installed by default",
+        );
+
+        // Test installation
+        install_gnome_extension(InstallAction::Install, &test_ctx, &shell_extensions)
+            .await
+            .unwrap();
+        let response = install_gnome_extension(InstallAction::Status, &test_ctx, &shell_extensions)
+            .await
+            .unwrap();
+        assert_submessage_status(
+            response,
+            InstallationStatus::Installed,
+            "Should be installed after install action",
+        );
+
+        // Test uninstallation
+        install_gnome_extension(InstallAction::Uninstall, &test_ctx, &shell_extensions)
+            .await
+            .unwrap();
+        let response = install_gnome_extension(InstallAction::Status, &test_ctx, &shell_extensions)
+            .await
+            .unwrap();
+        assert_submessage_status(
+            response,
+            InstallationStatus::NotInstalled,
+            "Should be uninstalled after uninstall action",
+        );
+    }
 }

@@ -2207,6 +2207,34 @@ pub async fn doctor_cli(all: bool, strict: bool) -> Result<ExitCode> {
 
         #[cfg(target_os = "linux")]
         {
+            use checks::linux::{
+                GnomeExtensionCheck,
+                IBusCheck,
+                IBusEnvCheck,
+                SandboxCheck,
+                get_linux_context,
+            };
+            // Linux desktop checks
+            if fig_util::manifest::is_full() && !fig_util::system_info::is_remote() {
+                run_checks_with_context(
+                    "Let's check Linux integrations",
+                    vec![
+                        &IBusEnvCheck,
+                        &GnomeExtensionCheck,
+                        &IBusCheck,
+                        // &DesktopCompatibilityCheck, // we need a better way of getting the data
+                        &SandboxCheck,
+                    ],
+                    get_linux_context,
+                    config,
+                    &mut spinner,
+                )
+                .await?;
+            }
+        }
+
+        #[cfg(target_os = "linux")]
+        {
             if fig_util::manifest::is_full() && !fig_util::system_info::is_remote() {
                 run_checks_with_context(
                     format!("Let's check {}...", format!("{CLI_BINARY_NAME} diagnostic").bold()),
@@ -2238,34 +2266,6 @@ pub async fn doctor_cli(all: bool, strict: bool) -> Result<ExitCode> {
             &mut spinner,
         )
         .await?;
-
-        #[cfg(target_os = "linux")]
-        {
-            use checks::linux::{
-                GnomeExtensionCheck,
-                IBusCheck,
-                IBusEnvCheck,
-                SandboxCheck,
-                get_linux_context,
-            };
-            // Linux desktop checks
-            if fig_util::manifest::is_full() && !fig_util::system_info::is_remote() {
-                run_checks_with_context(
-                    "Let's check Linux integrations",
-                    vec![
-                        &IBusEnvCheck,
-                        &GnomeExtensionCheck,
-                        &IBusCheck,
-                        // &DesktopCompatibilityCheck, // we need a better way of getting the data
-                        &SandboxCheck,
-                    ],
-                    get_linux_context,
-                    config,
-                    &mut spinner,
-                )
-                .await?;
-            }
-        }
 
         Ok(())
     }

@@ -16,8 +16,12 @@ pub use platform::{
 use process_info::FakePid;
 pub use process_info::ProcessInfo;
 pub use providers::{
+    ContextArcProvider,
+    ContextProvider,
     EnvProvider,
     FsProvider,
+    PlatformProvider,
+    SysInfoProvider,
 };
 pub use sysinfo::SysInfo;
 
@@ -180,6 +184,11 @@ impl ContextBuilder {
             },
             _ => Some(Env::from_slice(&[(key, value)])),
         };
+        self
+    }
+
+    pub fn with_os(mut self, os: Os) -> Self {
+        self.platform = Some(Platform::new_fake(os));
         self
     }
 

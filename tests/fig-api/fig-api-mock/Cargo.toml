@@ -13,4 +13,5 @@ clap.workspace = true
 fig_desktop_api.workspace = true
 fig_os_shim.workspace = true
 fig_proto.workspace = true
+fig_settings.workspace = true
 tokio.workspace = true
