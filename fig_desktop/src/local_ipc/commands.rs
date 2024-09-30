@@ -18,6 +18,7 @@ use fig_proto::local::{
     UiElement,
 };
 use fig_remote_ipc::figterm::FigtermState;
+use fig_settings::StateProvider;
 use fig_settings::settings::SettingsProvider;
 use parking_lot::Mutex;
 use tao::event_loop::ControlFlow;
@@ -32,13 +33,13 @@ use crate::event::{
     WindowEvent,
 };
 use crate::platform::PlatformState;
-use crate::webview::notification::WebviewNotificationsState;
 use crate::webview::DASHBOARD_SIZE;
+use crate::webview::notification::WebviewNotificationsState;
 use crate::{
-    platform,
-    EventLoopProxy,
     AUTOCOMPLETE_ID,
     DASHBOARD_ID,
+    EventLoopProxy,
+    platform,
 };
 
 pub async fn debug(command: DebugModeCommand, proxy: &EventLoopProxy) -> LocalResult {
@@ -166,7 +167,7 @@ pub async fn open_browser(command: OpenBrowserCommand) -> LocalResult {
 #[allow(unused_variables)]
 pub async fn prompt_for_accessibility_permission<Ctx>(ctx: &Ctx) -> LocalResult
 where
-    Ctx: SettingsProvider + ContextProvider + ContextArcProvider + Send + Sync,
+    Ctx: SettingsProvider + StateProvider + ContextProvider + ContextArcProvider + Send + Sync,
 {
     cfg_if::cfg_if! {
         if #[cfg(target_os = "macos")] {

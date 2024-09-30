@@ -28,6 +28,7 @@ use fig_proto::fig::{
 };
 use fig_proto::prost::Message;
 use fig_settings::settings::SettingsProvider;
+use fig_settings::state::StateProvider;
 use tracing::warn;
 
 use crate::error::Result;
@@ -126,7 +127,7 @@ pub async fn api_request<Ctx, E>(
     request: ClientOriginatedMessage,
 ) -> Result<ServerOriginatedMessage>
 where
-    Ctx: KVStore + SettingsProvider + ContextProvider + ContextArcProvider + Send + Sync,
+    Ctx: KVStore + SettingsProvider + StateProvider + ContextProvider + ContextArcProvider + Send + Sync,
     E: EventHandler<Ctx = Ctx> + Sync,
 {
     let request_id = match request.id {
@@ -160,7 +161,7 @@ async fn handle_request<Ctx, E>(
     message: ClientOriginatedMessage,
 ) -> RequestResult
 where
-    Ctx: KVStore + SettingsProvider + ContextProvider + ContextArcProvider + Send + Sync,
+    Ctx: KVStore + SettingsProvider + StateProvider + ContextProvider + ContextArcProvider + Send + Sync,
     E: EventHandler<Ctx = Ctx> + Sync,
 {
     macro_rules! request {

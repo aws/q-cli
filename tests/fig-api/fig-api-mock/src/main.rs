@@ -18,8 +18,12 @@ use fig_os_shim::{
     ContextProvider,
 };
 use fig_proto::fig::NotificationRequest;
-use fig_settings::settings::SettingsProvider;
-use fig_settings::Settings;
+use fig_settings::{
+    Settings,
+    SettingsProvider,
+    State,
+    StateProvider,
+};
 
 #[derive(Parser)]
 enum Cli {
@@ -36,6 +40,7 @@ struct MockHandler;
 struct Context {
     kv: DashKVStore,
     settings: Settings,
+    state: State,
     ctx: Arc<fig_os_shim::Context>,
 }
 
@@ -52,6 +57,12 @@ impl KVStore for Context {
 impl SettingsProvider for Context {
     fn settings(&self) -> &Settings {
         &self.settings
+    }
+}
+
+impl StateProvider for Context {
+    fn state(&self) -> &State {
+        &self.state
     }
 }
 
@@ -90,6 +101,7 @@ async fn main() {
                 Context {
                     kv: DashKVStore::new(),
                     settings: Settings::new(),
+                    state: State::new(),
                     ctx: fig_os_shim::Context::new(),
                 },
                 request,

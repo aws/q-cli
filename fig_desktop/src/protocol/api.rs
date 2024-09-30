@@ -5,7 +5,10 @@ use bytes::Bytes;
 use fig_os_shim::Context as OsContext;
 use fig_proto::fig::ClientOriginatedMessage;
 use fig_proto::prost::Message;
-use fig_settings::Settings;
+use fig_settings::{
+    Settings,
+    State,
+};
 use wry::http::header::CONTENT_TYPE;
 use wry::http::{
     HeaderValue,
@@ -58,6 +61,7 @@ pub async fn handle(
             proxy: GLOBAL_PROXY.get().unwrap(),
             dash_kv_store: DASH_KV_STORE.get().unwrap().as_ref(),
             settings: &Settings::new(),
+            state: &State::new(),
             ctx: fig_os_shim::Context::new(),
         },
         client_message,

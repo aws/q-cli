@@ -31,8 +31,14 @@ use parking_lot::{
     RwLockWriteGuard,
 };
 use serde_json::Value;
-pub use settings::Settings;
-pub use state::State;
+pub use settings::{
+    Settings,
+    SettingsProvider,
+};
+pub use state::{
+    State,
+    StateProvider,
+};
 use thiserror::Error;
 use tracing::error;
 

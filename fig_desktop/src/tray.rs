@@ -1,10 +1,11 @@
 use std::borrow::Cow;
 
+use cfg_if::cfg_if;
 use fig_install::{
     InstallComponents,
     UpdateOptions,
 };
-use fig_os_shim::Env;
+use fig_os_shim::Context;
 use fig_remote_ipc::figterm::FigtermState;
 use fig_util::consts::PRODUCT_NAME;
 use fig_util::url::USER_MANUAL;
@@ -182,7 +183,9 @@ pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
         },
         "uninstall" => {
             tokio::runtime::Handle::current().spawn(async {
-                fig_install::uninstall(InstallComponents::all(), &Env::new()).await.ok();
+                fig_install::uninstall(InstallComponents::all(), Context::new())
+                    .await
+                    .ok();
                 #[allow(clippy::exit)]
                 std::process::exit(0);
             });
@@ -225,9 +228,21 @@ pub async fn build_tray(
 pub fn get_icon(is_logged_in: bool) -> Icon {
     let (icon_rgba, icon_width, icon_height) = {
         let bytes = if is_logged_in {
-            include_bytes!("../icons/icon-monochrome.png").to_vec()
+            cfg_if! {
+                if #[cfg(target_os = "linux")] {
+                    include_bytes!("../icons/icon-monochrome-light.png").to_vec()
+                } else {
+                    include_bytes!("../icons/icon-monochrome.png").to_vec()
+                }
+            }
         } else {
-            include_bytes!("../icons/not-logged-in.png").to_vec()
+            cfg_if! {
+                if #[cfg(target_os = "linux")] {
+                    include_bytes!("../icons/not-logged-in-light.png").to_vec()
+                } else {
+                    include_bytes!("../icons/not-logged-in.png").to_vec()
+                }
+            }
         };
         let image = image::load_from_memory(&bytes)
             .expect("Failed to open icon path")

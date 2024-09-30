@@ -11,10 +11,10 @@ use fig_proto::fig::{
     Os,
 };
 use fig_util::system_info::linux::{
-    get_desktop_environment,
-    get_display_server,
     DesktopEnvironment as FigDesktopEnvironment,
     DisplayServer,
+    get_desktop_environment,
+    get_display_server,
 };
 
 use super::{

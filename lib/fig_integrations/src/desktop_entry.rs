@@ -12,17 +12,17 @@ use fig_os_shim::{
     Fs,
     FsProvider,
 };
-use fig_util::consts::linux::DESKTOP_ENTRY_NAME;
-use fig_util::consts::APP_PROCESS_NAME;
-use fig_util::directories::home_dir_ctx;
 use fig_util::PRODUCT_NAME;
+use fig_util::consts::APP_PROCESS_NAME;
+use fig_util::consts::linux::DESKTOP_ENTRY_NAME;
+use fig_util::directories::home_dir_ctx;
 
+use crate::Integration;
 use crate::error::{
     Error,
     ErrorExt,
     Result,
 };
-use crate::Integration;
 
 /// Path to the local [PRODUCT_NAME] desktop entry.
 pub fn local_entry_path<Ctx: FsProvider + EnvProvider>(ctx: &Ctx) -> Result<PathBuf> {
@@ -53,14 +53,17 @@ async fn create_parent(fs: &Fs, path: impl AsRef<Path>) -> Result<()> {
 pub struct DesktopEntryIntegration<'a, Ctx> {
     ctx: &'a Ctx,
 
-    /// Path to the desktop entry file to be installed.
-    entry_path: PathBuf,
+    /// Path to the desktop entry file to be installed. Required to be [Option::Some] for
+    /// installing.
+    entry_path: Option<PathBuf>,
 
-    /// Path to the desktop entry icon image to be installed.
-    icon_path: PathBuf,
+    /// Path to the desktop entry icon image to be installed. Required to be [Option::Some] for
+    /// installing.
+    icon_path: Option<PathBuf>,
 
-    /// Path to the executable to be set for the "Exec" field.
-    exec_path: PathBuf,
+    /// Path to the executable to be set for the "Exec" field. Required to be [Option::Some] for
+    /// installing, and validating the Exec field for [Self::is_installed].
+    exec_path: Option<PathBuf>,
 }
 
 impl<'a, Ctx> DesktopEntryIntegration<'a, Ctx>
@@ -68,15 +71,15 @@ where
     Ctx: FsProvider + EnvProvider,
 {
     /// Creates a new [`DesktopEntryIntegration`].
-    pub fn new<P>(ctx: &'a Ctx, entry_path: P, icon_path: P, exec_path: P) -> Self
+    pub fn new<P>(ctx: &'a Ctx, entry_path: Option<P>, icon_path: Option<P>, exec_path: Option<P>) -> Self
     where
         P: AsRef<Path>,
     {
         Self {
             ctx,
-            entry_path: entry_path.as_ref().into(),
-            icon_path: icon_path.as_ref().into(),
-            exec_path: exec_path.as_ref().into(),
+            entry_path: entry_path.map(|p| p.as_ref().into()),
+            icon_path: icon_path.map(|p| p.as_ref().into()),
+            exec_path: exec_path.map(|p| p.as_ref().into()),
         }
     }
 
@@ -120,6 +123,14 @@ where
         if self.is_installed().await.is_ok() {
             return Ok(());
         }
+        let (entry_path, icon_path, exec_path) = match (&self.entry_path, &self.icon_path, &self.exec_path) {
+            (Some(entry), Some(icon), Some(exec)) => (entry, icon, exec),
+            _ => {
+                return Err(Error::Custom(
+                    "entry, icon, and exec paths are required for installation".into(),
+                ));
+            },
+        };
 
         let fs = self.ctx.fs();
 
@@ -130,16 +141,19 @@ where
         create_parent(fs, &to_entry_path).await?;
         create_parent(fs, &to_icon_path).await?;
 
-        // Install to the user local paths.
-        let mut entry_contents = EntryContents::from_path(fs, &self.entry_path).await?;
-        entry_contents.set_field("Exec", &self.exec_path.to_string_lossy());
+        // Install to the user local paths. Load the current entry if it exists, in case the user
+        // adds any additional fields themself.
+        let mut entry_contents = if fs.exists(&to_entry_path) {
+            EntryContents::from_path(fs, &to_entry_path).await?
+        } else {
+            EntryContents::from_path(fs, entry_path).await?
+        };
+        entry_contents.set_field("Exec", &exec_path.to_string_lossy());
         entry_contents.set_field("Name", PRODUCT_NAME);
         entry_contents.set_field("Icon", &to_icon_path.to_string_lossy());
-        if !fs.exists(&to_entry_path) {
-            fs.write(&to_entry_path, entry_contents.to_string()).await?;
-        }
+        fs.write(&to_entry_path, entry_contents.to_string()).await?;
         if !fs.exists(&to_icon_path) {
-            fs.copy(&self.icon_path, &to_icon_path).await?;
+            fs.copy(icon_path, &to_icon_path).await?;
         }
 
         Ok(())
@@ -177,7 +191,9 @@ where
             return Err(Error::FileDoesNotExist(to_icon_path.clone().into()));
         }
 
-        Self::validate_field_path(&entry_contents, "Exec", &self.exec_path)?;
+        if let Some(exec_path) = &self.exec_path {
+            Self::validate_field_path(&entry_contents, "Exec", exec_path)?;
+        }
         Self::validate_field_path(&entry_contents, "Icon", &to_icon_path)?;
 
         Ok(())
@@ -350,7 +366,7 @@ Type=Application"#;
         let fs = ctx.fs();
         fs.write("/app.desktop", TEST_DESKTOP_ENTRY).await.unwrap();
         fs.write("/app.png", "image").await.unwrap();
-        DesktopEntryIntegration::new(ctx, "/app.desktop", "/app.png", TEST_EXEC_VALUE)
+        DesktopEntryIntegration::new(ctx, Some("/app.desktop"), Some("/app.png"), Some(TEST_EXEC_VALUE))
     }
 
     #[tokio::test]
@@ -397,6 +413,10 @@ Type=Application"#;
             !fs.exists(installed_icon_path),
             "installed icon should have been deleted"
         );
+        assert!(
+            integration.uninstall().await.is_ok(),
+            "should be able to uninstall repeatedly without erroring"
+        );
     }
 
     #[tokio::test]
@@ -421,5 +441,9 @@ Type=Application"#;
         autostart.uninstall().await.unwrap();
         assert!(autostart.is_installed().await.is_err());
         assert!(!ctx.fs().exists(&installed_autostart_path));
+        assert!(
+            autostart.uninstall().await.is_ok(),
+            "should be able to uninstall repeatedly without erroring"
+        );
     }
 }

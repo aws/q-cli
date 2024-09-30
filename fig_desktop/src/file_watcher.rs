@@ -88,6 +88,34 @@ pub async fn setup_listeners(notifications_state: Arc<WebviewNotificationsState>
 
     tokio::spawn(async move {
         let _watcher = watcher;
+
+        let mut prev_settings = match fig_settings::OldSettings::load_from_file() {
+            Ok(map) => map,
+            Err(err) => {
+                error!(?err, "failed to initialize settings");
+                Map::new()
+            },
+        };
+
+        #[cfg(target_os = "linux")]
+        {
+            use crate::Event;
+            use crate::event::WindowEvent;
+            use crate::webview::AUTOCOMPLETE_ID;
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: AUTOCOMPLETE_ID,
+                    window_event: WindowEvent::SetEnabled(
+                        !prev_settings
+                            .get("autocomplete.disable")
+                            .and_then(|v| v.as_bool())
+                            .unwrap_or(false),
+                    ),
+                })
+                .map_err(|err| error!(?err, "failed initializing autocomplete.disable state"))
+                .ok();
+        }
+
         while let Some(event) = rx.recv().await {
             trace!(?event, "Settings event");
 
@@ -113,10 +141,8 @@ pub async fn setup_listeners(notifications_state: Arc<WebviewNotificationsState>
                                     .await
                                     .unwrap();
 
-                                let mut mem_settings = fig_settings::OldSettings::load().expect("Failed to load state");
-
                                 json_map_diff(
-                                    &mem_settings.map(),
+                                    &prev_settings,
                                     &settings,
                                     |key, value| {
                                         debug!(%key, %value, "Setting added");
@@ -132,7 +158,7 @@ pub async fn setup_listeners(notifications_state: Arc<WebviewNotificationsState>
                                     },
                                 );
 
-                                *mem_settings.map_mut() = settings;
+                                prev_settings = settings;
                             },
                             Err(err) => error!(%err, "Failed to get settings"),
                         }

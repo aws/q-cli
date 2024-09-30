@@ -3,6 +3,7 @@ use std::process::ExitCode;
 use anstream::println;
 use crossterm::style::Stylize;
 use eyre::Result;
+use fig_os_shim::Context;
 use fig_util::{
     CLI_BINARY_NAME,
     PRODUCT_NAME,
@@ -30,15 +31,27 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<ExitCode> {
         }
     };
 
-    uninstall().await?;
+    let ctx = Context::new();
+    cfg_if::cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            uninstall(ctx).await?;
+        } else if #[cfg(target_os = "linux")] {
+            use fig_util::manifest::is_minimal;
+            if is_minimal() {
+                uninstall_linux_minimal(ctx).await?;
+            } else {
+                uninstall_linux_full(ctx).await?;
+            }
+
+        }
+    }
 
     Ok(ExitCode::SUCCESS)
 }
 
 #[cfg(target_os = "macos")]
-async fn uninstall() -> Result<()> {
+async fn uninstall(ctx: std::sync::Arc<fig_os_shim::Context>) -> Result<()> {
     use fig_install::UNINSTALL_URL;
-    use fig_os_shim::Env;
     use tracing::error;
 
     if let Err(err) = fig_util::open_url_async(UNINSTALL_URL).await {
@@ -46,17 +59,17 @@ async fn uninstall() -> Result<()> {
     }
 
     fig_auth::logout().await.ok();
-    fig_install::uninstall(fig_install::InstallComponents::all(), &Env::new()).await?;
+    fig_install::uninstall(fig_install::InstallComponents::all(), ctx).await?;
 
     Ok(())
 }
 
 #[cfg(target_os = "linux")]
-async fn uninstall() -> Result<()> {
+async fn uninstall_linux_minimal(ctx: std::sync::Arc<fig_os_shim::Context>) -> Result<()> {
     use eyre::bail;
     use tracing::error;
 
-    let exe_path = std::env::current_exe()?.canonicalize()?;
+    let exe_path = ctx.fs().canonicalize(ctx.env().current_exe()?.canonicalize()?).await?;
     let Some(exe_name) = exe_path.file_name().and_then(|s| s.to_str()) else {
         bail!("Failed to get name of current executable: {exe_path:?}")
     };
@@ -64,7 +77,7 @@ async fn uninstall() -> Result<()> {
         bail!("Failed to get parent of current executable: {exe_path:?}")
     };
     // canonicalize to handle if the home dir is a symlink (like on Dev Desktops)
-    let local_bin = fig_util::directories::home_local_bin()?.canonicalize()?;
+    let local_bin = fig_util::directories::home_local_bin_ctx(&ctx)?.canonicalize()?;
 
     if exe_parent != local_bin {
         bail!(
@@ -79,7 +92,27 @@ async fn uninstall() -> Result<()> {
     if let Err(err) = fig_auth::logout().await {
         error!(%err, "Failed to logout");
     }
-    fig_install::uninstall(fig_install::InstallComponents::all_linux(), &fig_os_shim::Env::new()).await?;
+    fig_install::uninstall(fig_install::InstallComponents::all_linux_minimal(), ctx).await?;
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+async fn uninstall_linux_full(ctx: std::sync::Arc<fig_os_shim::Context>) -> Result<()> {
+    use fig_install::{
+        InstallComponents,
+        UNINSTALL_URL,
+        uninstall,
+    };
+    use tracing::error;
+
+    if let Err(err) = fig_util::open_url_async(UNINSTALL_URL).await {
+        error!(%err, %UNINSTALL_URL, "Failed to open uninstall url");
+    }
+
+    if let Err(err) = fig_auth::logout().await {
+        error!(%err, "Failed to logout");
+    }
+    uninstall(InstallComponents::all(), ctx).await?;
     Ok(())
 }
 

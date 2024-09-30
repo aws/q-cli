@@ -1,5 +1,13 @@
 use std::path::Path;
 
+use dbus::gnome_shell::ShellExtensions;
+use fig_integrations::Integration;
+use fig_integrations::desktop_entry::{
+    AutostartIntegration,
+    DesktopEntryIntegration,
+};
+use fig_integrations::gnome_extension::GnomeExtensionIntegration;
+use fig_os_shim::Context;
 use fig_util::CLI_BINARY_NAME;
 use tokio::sync::mpsc::Sender;
 use url::Url;
@@ -144,6 +152,31 @@ pub(crate) async fn update(
     let bin_dir = tempdir.path().join(archive.name).join("bin");
     replace_bins(&bin_dir).await?;
 
+    Ok(())
+}
+
+pub async fn uninstall_gnome_extension(
+    ctx: &Context,
+    shell_extensions: &ShellExtensions<Context>,
+) -> Result<(), Error> {
+    Ok(
+        GnomeExtensionIntegration::new(ctx, shell_extensions, None::<&str>, None)
+            .uninstall()
+            .await?,
+    )
+}
+
+pub async fn uninstall_desktop_entries(ctx: &Context) -> Result<(), Error> {
+    DesktopEntryIntegration::new(ctx, None::<&str>, None, None)
+        .uninstall()
+        .await?;
+    Ok(AutostartIntegration::new(ctx).uninstall().await?)
+}
+
+/// No-op.
+///
+/// TODO: delete data dir
+pub async fn uninstall_desktop() -> Result<(), Error> {
     Ok(())
 }
 

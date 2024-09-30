@@ -8,7 +8,10 @@ use fig_proto::fig::{
     OnboardingAction,
     OnboardingRequest,
 };
-use fig_settings::settings::SettingsProvider;
+use fig_settings::{
+    SettingsProvider,
+    StateProvider,
+};
 use fig_util::Shell;
 use tao::event_loop::ControlFlow;
 #[cfg(target_os = "macos")]
@@ -20,8 +23,8 @@ use super::{
     RequestResult,
     RequestResultImpl,
 };
-use crate::event::Event;
 use crate::EventLoopProxy;
+use crate::event::Event;
 
 pub async fn post_login() {
     fig_settings::state::set_value("desktop.completedOnboarding", true).ok();
@@ -29,7 +32,7 @@ pub async fn post_login() {
 
 pub async fn onboarding<Ctx>(request: OnboardingRequest, proxy: &EventLoopProxy, ctx: &Ctx) -> RequestResult
 where
-    Ctx: SettingsProvider + ContextProvider + ContextArcProvider + Send + Sync,
+    Ctx: SettingsProvider + StateProvider + ContextProvider + ContextArcProvider + Send + Sync,
 {
     match request.action() {
         OnboardingAction::InstallationScript => {
@@ -56,13 +59,13 @@ where
         },
         OnboardingAction::Uninstall => {
             use fig_install::{
-                uninstall,
                 InstallComponents,
+                uninstall,
             };
 
             fig_util::open_url(fig_install::UNINSTALL_URL).ok();
 
-            let result = match uninstall(InstallComponents::all(), ctx.env()).await {
+            let result = match uninstall(InstallComponents::all(), ctx.context_arc()).await {
                 Ok(_) => RequestResult::success(),
                 Err(err) => RequestResult::error(err.to_string()),
             };
@@ -110,8 +113,8 @@ where
         },
         OnboardingAction::PromptForAccessibilityPermission => {
             use crate::local_ipc::{
-                commands,
                 LocalResponse,
+                commands,
             };
             let res = commands::prompt_for_accessibility_permission(ctx)
                 .await

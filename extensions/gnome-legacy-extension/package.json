@@ -3,7 +3,7 @@
   "author": "Amazon Q Developer",
   "version": "1.0.0",
   "description": "Adds support for Amazon Q for CLI completions with GNOME shell",
-  "repository": "git@github.com/withfig/gnome-shell-extenstion",
+  "repository": "git@github.com/aws/amazon-q-for-command-line",
   "private": true,
   "type": "module",
   "devDependencies": {

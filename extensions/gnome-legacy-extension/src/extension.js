@@ -798,8 +798,8 @@ class PanelIcon extends PanelMenu.Button {
     this.#connected = connected;
 
     const [icon_connected, icon_disconnected] = resource(
-      "icons/scalable/actions/fig-connected-symbolic.svg",
-      "icons/scalable/actions/fig-disconnected-symbolic.svg",
+      "icons/scalable/actions/q-connected.svg",
+      "icons/scalable/actions/q-disconnected.svg",
     );
 
     this.#icon_connected = Gio.Icon.new_for_string(icon_connected);

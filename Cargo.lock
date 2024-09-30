@@ -2835,6 +2835,7 @@ dependencies = [
  "camino",
  "cfg-if",
  "cookie",
+ "dbus",
  "fig_integrations",
  "fig_ipc",
  "fig_os_shim",

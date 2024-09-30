@@ -16,8 +16,8 @@ use fig_os_shim::{
     SysInfoProvider,
 };
 use fig_util::directories::{
-    home_dir_ctx,
     DirectoryError,
+    home_dir_ctx,
 };
 use serde::Deserialize;
 use serde_json::json;
@@ -351,11 +351,7 @@ where
     /// must be restarted.
     async fn is_extension_loaded(&self) -> Result<bool, ExtensionsError> {
         let info = self.get_extension_info().await?;
-        if info.keys().count() == 0 {
-            Ok(false)
-        } else {
-            Ok(true)
-        }
+        if info.keys().count() == 0 { Ok(false) } else { Ok(true) }
     }
 
     /// Whether or not the extension is enabled.
@@ -369,11 +365,7 @@ where
         )? as u32;
         // Extension is enabled if "state" equals 1. If "state" equals 2, then it's
         // disabled.
-        if state == 2 {
-            Ok(false)
-        } else {
-            Ok(true)
-        }
+        if state == 2 { Ok(false) } else { Ok(true) }
     }
 
     /// Returns a bool indicating whether or not the Amazon Q extension was successfully enabled.

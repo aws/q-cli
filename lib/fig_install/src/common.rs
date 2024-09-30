@@ -1,9 +1,13 @@
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use fig_integrations::Integration;
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
-use fig_os_shim::Env;
+use fig_os_shim::{
+    Context,
+    Env,
+};
 use fig_util::{
     CLI_BINARY_NAME,
     OLD_CLI_BINARY_NAMES,
@@ -20,24 +24,26 @@ bitflags::bitflags! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct InstallComponents: u64 {
         /// Removal of the integrations from user's dotfiles
-        const SHELL_INTEGRATIONS = 0b00000001;
+        const SHELL_INTEGRATIONS    = 0b00000001;
         /// This handles the removal of the CLI and pty binaries as well as legacy copies
-        const BINARY             = 0b00000010;
+        const BINARY                = 0b00000010;
         /// Removal of the ssh integration from the ~/.ssh/config file
-        const SSH                = 0b00000100;
-        const DESKTOP_APP        = 0b00001000;
-        const INPUT_METHOD       = 0b00010000;
+        const SSH                   = 0b00000100;
+        const DESKTOP_APP           = 0b00001000;
+        const INPUT_METHOD          = 0b00010000;
+        const DESKTOP_ENTRY         = 0b00100000;
+        const GNOME_SHELL_EXTENSION = 0b01000000;
     }
 }
 
 #[cfg(target_os = "linux")]
 impl InstallComponents {
-    pub fn all_linux() -> Self {
+    pub fn all_linux_minimal() -> Self {
         Self::SHELL_INTEGRATIONS | Self::BINARY | Self::SSH
     }
 }
 
-pub async fn uninstall(components: InstallComponents, env: &Env) -> Result<(), Error> {
+pub async fn uninstall(components: InstallComponents, ctx: Arc<Context>) -> Result<(), Error> {
     let ssh_result = if components.contains(InstallComponents::SSH) {
         SshIntegration::new()?.uninstall().await
     } else {
@@ -46,7 +52,7 @@ pub async fn uninstall(components: InstallComponents, env: &Env) -> Result<(), E
 
     let shell_integration_result = {
         for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
-            for integration in shell.get_shell_integrations(env)? {
+            for integration in shell.get_shell_integrations(ctx.env())? {
                 integration.uninstall().await?;
             }
         }
@@ -87,6 +93,17 @@ pub async fn uninstall(components: InstallComponents, env: &Env) -> Result<(), E
         }
     }
 
+    #[cfg(target_os = "linux")]
+    if components.contains(InstallComponents::GNOME_SHELL_EXTENSION) {
+        let shell_extensions = dbus::gnome_shell::ShellExtensions::new(Arc::downgrade(&ctx));
+        super::os::uninstall_gnome_extension(&ctx, &shell_extensions).await?;
+    }
+
+    #[cfg(target_os = "linux")]
+    if components.contains(InstallComponents::DESKTOP_ENTRY) {
+        super::os::uninstall_desktop_entries(&ctx).await?;
+    }
+
     let daemon_result = Ok(());
 
     #[cfg(target_os = "macos")]
@@ -103,7 +120,6 @@ pub async fn uninstall(components: InstallComponents, env: &Env) -> Result<(), E
         }
     }
 
-    #[cfg(target_os = "macos")]
     if components.contains(InstallComponents::DESKTOP_APP) {
         super::os::uninstall_desktop().await?;
         // Must be last -- this will kill the running desktop process if this is

@@ -528,7 +528,7 @@ async fn install_desktop_entry(ctx: &Context, settings: &fig_settings::Settings)
     let exec_path = ctx.env().get("APPIMAGE")?;
     let entry_path = appimage_desktop_entry_path(ctx)?;
     let icon_path = appimage_desktop_entry_icon_path(ctx)?;
-    DesktopEntryIntegration::new(ctx, entry_path, icon_path, exec_path.into())
+    DesktopEntryIntegration::new(ctx, Some(entry_path), Some(icon_path), Some(exec_path.into()))
         .install()
         .await?;
     Ok(())
@@ -539,8 +539,8 @@ async fn install_desktop_entry(ctx: &Context, settings: &fig_settings::Settings)
 async fn install_autostart_entry(ctx: &Context, settings: &fig_settings::Settings) -> anyhow::Result<()> {
     use fig_integrations::desktop_entry::AutostartIntegration;
 
-    if !settings.get_bool_or("appimage.manageDesktopEntry", false)
-        || !settings.get_bool_or("app.launchOnStartup", false)
+    // default for startup should be true
+    if !settings.get_bool_or("appimage.manageDesktopEntry", false) || !settings.get_bool_or("app.launchOnStartup", true)
     {
         return Ok(());
     }

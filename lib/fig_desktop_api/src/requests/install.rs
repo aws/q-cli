@@ -1,10 +1,10 @@
 use std::fmt::Display;
 
 use anstream::adapter::strip_str;
+use fig_integrations::Integration;
 use fig_integrations::desktop_entry::DesktopEntryIntegration;
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
-use fig_integrations::Integration;
 use fig_os_shim::{
     ContextArcProvider,
     ContextProvider,
@@ -24,6 +24,7 @@ use fig_proto::fig::{
     Result as ProtoResult,
 };
 use fig_settings::settings::SettingsProvider;
+use fig_settings::state::StateProvider;
 use fig_util::Shell;
 use tracing::error;
 
@@ -63,7 +64,7 @@ fn integration_result(result: Result<(), impl Display>) -> ServerOriginatedSubMe
 
 pub async fn install<Ctx>(request: InstallRequest, ctx: &Ctx) -> RequestResult
 where
-    Ctx: SettingsProvider + ContextProvider + ContextArcProvider + Send + Sync,
+    Ctx: SettingsProvider + StateProvider + ContextProvider + ContextArcProvider + Send + Sync,
 {
     let response = match (request.component(), request.action()) {
         (InstallComponent::Dotfiles, action) => {
@@ -230,7 +231,8 @@ where
                     .current_dir()
                     .map_err(super::Error::from_std)?
                     .join("share/icons/hicolor/128x128/apps/q-desktop.png");
-                let integration = DesktopEntryIntegration::new(ctx, entry_path, icon_path, exec_path.into());
+                let integration =
+                    DesktopEntryIntegration::new(ctx, Some(entry_path), Some(icon_path), Some(exec_path.into()));
                 match action {
                     InstallAction::Install => {
                         ctx.settings()
@@ -275,7 +277,7 @@ async fn install_gnome_extension<'a, Ctx, ExtensionsCtx>(
     shell_extensions: &'a dbus::gnome_shell::ShellExtensions<ExtensionsCtx>,
 ) -> Result<super::ServerOriginatedSubMessage, Box<dyn std::error::Error + Send + Sync>>
 where
-    Ctx: SettingsProvider + ContextProvider + Sync,
+    Ctx: SettingsProvider + StateProvider + ContextProvider + Sync,
     ExtensionsCtx: ContextProvider + Send + Sync,
 {
     use fig_integrations::gnome_extension::GnomeExtensionIntegration;
@@ -292,8 +294,17 @@ where
         .await?
         .parse()?;
     let bundle_path = bundled_gnome_extension_zip_path(ctx, &extension_uuid)?;
-    let gnome_integration = GnomeExtensionIntegration::new(ctx, shell_extensions, bundle_path, bundled_version);
-    // TODO: set "desktop.gnomeExtensionInstallationPermissionGranted" to true in state on install.
+    let gnome_integration =
+        GnomeExtensionIntegration::new(ctx, shell_extensions, Some(bundle_path), Some(bundled_version));
+    ctx.state()
+        .set_value("desktop.gnomeExtensionInstallationPermissionGranted", true)
+        .map_err(|err| {
+            error!(
+                ?err,
+                "unable to set `desktop.gnomeExtensionInstallationPermissionGranted`"
+            );
+        })
+        .ok();
     match action {
         InstallAction::Install => Ok(integration_result(gnome_integration.install().await)),
         InstallAction::Uninstall => Ok(integration_result(gnome_integration.uninstall().await)),
@@ -310,7 +321,10 @@ mod tests {
         ContextProvider,
     };
     use fig_proto::fig::server_originated_message::Submessage;
-    use fig_settings::Settings;
+    use fig_settings::{
+        Settings,
+        State,
+    };
     use fig_util::directories::{
         appimage_desktop_entry_icon_path,
         appimage_desktop_entry_path,
@@ -322,11 +336,18 @@ mod tests {
     struct TestContext {
         ctx: Arc<Context>,
         settings: Settings,
+        state: State,
     }
 
     impl SettingsProvider for TestContext {
         fn settings(&self) -> &Settings {
             &self.settings
+        }
+    }
+
+    impl StateProvider for TestContext {
+        fn state(&self) -> &fig_settings::State {
+            &self.state
         }
     }
 
@@ -379,7 +400,11 @@ mod tests {
         fs.create_dir_all(icon_path.parent().unwrap()).await.unwrap();
         fs.write(&icon_path, "image").await.unwrap();
         let settings = Settings::new_fake();
-        let ctx = TestContext { ctx, settings };
+        let ctx = TestContext {
+            ctx,
+            settings,
+            state: State::new_fake(),
+        };
 
         // Test installation
         assert_status(&ctx, InstallComponent::DesktopEntry, InstallationStatus::NotInstalled).await;
@@ -427,8 +452,8 @@ mod tests {
     #[tokio::test]
     async fn test_gnome_extension_installation_and_uninstallation() {
         use dbus::gnome_shell::{
-            ShellExtensions,
             GNOME_SHELL_PROCESS_NAME,
+            ShellExtensions,
         };
         use fig_os_shim::Os;
 
@@ -444,6 +469,7 @@ mod tests {
         let test_ctx = TestContext {
             ctx: Arc::clone(&ctx),
             settings,
+            state: State::new_fake(),
         };
         let shell_extensions = ShellExtensions::new_fake(Arc::downgrade(&ctx));
         write_extension_bundle(&ctx, &shell_extensions.extension_uuid().await.unwrap(), 1).await;
@@ -470,6 +496,13 @@ mod tests {
             InstallationStatus::Installed,
             "Should be installed after install action",
         );
+        assert_eq!(
+            test_ctx
+                .state
+                .get_bool("desktop.gnomeExtensionInstallationPermissionGranted")
+                .unwrap(),
+            Some(true)
+        );
 
         // Test uninstallation
         install_gnome_extension(InstallAction::Uninstall, &test_ctx, &shell_extensions)
@@ -482,6 +515,14 @@ mod tests {
             response,
             InstallationStatus::NotInstalled,
             "Should be uninstalled after uninstall action",
+        );
+        assert_eq!(
+            test_ctx
+                .state
+                .get_bool("desktop.gnomeExtensionInstallationPermissionGranted")
+                .unwrap(),
+            Some(true),
+            "Should not be unset on uninstall"
         );
     }
 }

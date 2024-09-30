@@ -4,7 +4,7 @@
     <file preprocess="xml-stripblanks">ui/adw/Preferences.ui</file>
     <file preprocess="xml-stripblanks">ui/gtk3/Preferences.ui</file>
     <!-- <file preprocess="xml-stripblanks">ui/gtk4/Preferences.ui</file> -->
-    <file preprocess="xml-stripblanks">icons/scalable/actions/fig-connected-symbolic.svg</file>
-    <file preprocess="xml-stripblanks">icons/scalable/actions/fig-disconnected-symbolic.svg</file>
+    <file preprocess="xml-stripblanks">icons/scalable/actions/q-connected.svg</file>
+    <file preprocess="xml-stripblanks">icons/scalable/actions/q-disconnected.svg</file>
   </gresource>
 </gresources>

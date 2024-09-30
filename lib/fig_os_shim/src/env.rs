@@ -37,6 +37,7 @@ mod inner {
     pub(super) struct Fake {
         pub vars: HashMap<String, String>,
         pub cwd: PathBuf,
+        pub current_exe: PathBuf,
     }
 
     impl Default for Fake {
@@ -44,6 +45,7 @@ mod inner {
             Self {
                 vars: HashMap::default(),
                 cwd: PathBuf::from("/"),
+                current_exe: PathBuf::from("/current_exe"),
             }
         }
     }
@@ -127,6 +129,14 @@ impl Env {
         match &self.0 {
             Inner::Real => std::env::current_dir(),
             Inner::Fake(fake) => Ok(fake.lock().unwrap().cwd.clone()),
+        }
+    }
+
+    pub fn current_exe(&self) -> Result<PathBuf, io::Error> {
+        use inner::Inner;
+        match &self.0 {
+            Inner::Real => std::env::current_exe(),
+            Inner::Fake(fake) => Ok(fake.lock().unwrap().current_exe.clone()),
         }
     }
 

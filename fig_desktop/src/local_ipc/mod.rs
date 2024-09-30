@@ -28,7 +28,11 @@ use fig_proto::local::{
 };
 use fig_remote_ipc::figterm::FigtermState;
 use fig_settings::settings::SettingsProvider;
-use fig_settings::Settings;
+use fig_settings::{
+    Settings,
+    State,
+    StateProvider,
+};
 use fig_util::directories;
 use tokio::net::UnixListener;
 use tracing::{
@@ -42,9 +46,9 @@ use crate::event::Event;
 use crate::platform::PlatformState;
 use crate::webview::notification::WebviewNotificationsState;
 use crate::{
-    EventLoopProxy,
     AUTOCOMPLETE_ID,
     DASHBOARD_ID,
+    EventLoopProxy,
 };
 
 pub enum LocalResponse {
@@ -58,6 +62,7 @@ pub type LocalResult = Result<LocalResponse, LocalResponse>;
 #[derive(Debug)]
 struct LocalIpcContext {
     settings: Settings,
+    state: State,
     context: Arc<FigContext>,
 }
 
@@ -65,6 +70,7 @@ impl LocalIpcContext {
     fn new() -> Self {
         Self {
             settings: Settings::new(),
+            state: State::new(),
             context: FigContext::new(),
         }
     }
@@ -73,6 +79,12 @@ impl LocalIpcContext {
 impl SettingsProvider for LocalIpcContext {
     fn settings(&self) -> &Settings {
         &self.settings
+    }
+}
+
+impl StateProvider for LocalIpcContext {
+    fn state(&self) -> &State {
+        &self.state
     }
 }
 
@@ -134,7 +146,7 @@ async fn handle_local_ipc<Ctx>(
     proxy: EventLoopProxy,
     ctx: Ctx,
 ) where
-    Ctx: SettingsProvider + ContextProvider + ContextArcProvider + Send + Sync,
+    Ctx: SettingsProvider + StateProvider + ContextProvider + ContextArcProvider + Send + Sync,
 {
     while let Some(message) = stream.recv_message::<LocalMessage>().await.unwrap_or_else(|err| {
         if !err.is_disconnect() {
@@ -263,6 +275,7 @@ async fn handle_local_ipc<Ctx>(
                 }
             },
             Some(LocalMessageType::Hook(hook)) => {
+                use fig_proto::ReflectMessage;
                 use fig_proto::local::hook::Hook::{
                     Callback,
                     CaretPosition,
@@ -283,7 +296,6 @@ async fn handle_local_ipc<Ctx>(
                     Prompt,
                     TmuxPaneChanged,
                 };
-                use fig_proto::ReflectMessage;
 
                 if let Err(err) = match hook.hook {
                     Some(CaretPosition(request)) => hooks::caret_position(request, &proxy).await,

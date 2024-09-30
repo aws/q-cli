@@ -45,8 +45,12 @@ use fig_proto::fig::{
     WindowFocusRequest,
 };
 use fig_remote_ipc::figterm::FigtermState;
-use fig_settings::settings::SettingsProvider;
-use fig_settings::Settings;
+use fig_settings::{
+    Settings,
+    SettingsProvider,
+    State,
+    StateProvider,
+};
 use tracing::{
     error,
     trace,
@@ -58,8 +62,8 @@ use crate::event::{
     Event,
     WindowEvent,
 };
-use crate::webview::notification::WebviewNotificationsState;
 use crate::webview::WindowId;
+use crate::webview::notification::WebviewNotificationsState;
 use crate::{
     DebugState,
     EventLoopProxy,
@@ -75,6 +79,7 @@ pub struct Context<'a> {
     pub window_id: &'a WindowId,
     pub dash_kv_store: &'a DashKVStore,
     pub settings: &'a Settings,
+    pub state: &'a State,
     pub ctx: Arc<fig_os_shim::Context>,
 }
 
@@ -91,6 +96,12 @@ impl KVStore for Context<'_> {
 impl SettingsProvider for Context<'_> {
     fn settings(&self) -> &Settings {
         self.settings
+    }
+}
+
+impl StateProvider for Context<'_> {
+    fn state(&self) -> &State {
+        self.state
     }
 }
 
@@ -234,6 +245,7 @@ pub async fn api_request(
                     window_id: &window_id,
                     dash_kv_store,
                     settings: &Settings::new(),
+                    state: &State::new(),
                     ctx: fig_os_shim::Context::new(),
                 },
                 request,
