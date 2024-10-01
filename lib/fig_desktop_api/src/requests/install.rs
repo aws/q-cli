@@ -2,7 +2,11 @@ use std::fmt::Display;
 
 use anstream::adapter::strip_str;
 use fig_integrations::Integration;
-use fig_integrations::desktop_entry::DesktopEntryIntegration;
+use fig_integrations::desktop_entry::{
+    AutostartIntegration,
+    DesktopEntryIntegration,
+    should_install_autostart_entry,
+};
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
 use fig_os_shim::{
@@ -231,24 +235,39 @@ where
                     .current_dir()
                     .map_err(super::Error::from_std)?
                     .join("share/icons/hicolor/128x128/apps/q-desktop.png");
-                let integration =
+                let desktop_integration =
                     DesktopEntryIntegration::new(ctx, Some(entry_path), Some(icon_path), Some(exec_path.into()));
+                let autostart_integration = AutostartIntegration::new(ctx);
                 match action {
                     InstallAction::Install => {
-                        ctx.settings()
+                        ctx.state()
                             .set_value("appimage.manageDesktopEntry", true)
                             .map_err(|err| error!(?err, "unable to set `appimage.manageDesktopEntry`"))
                             .ok();
-                        integration_result(integration.install().await)
+                        let result = integration_result(desktop_integration.install().await);
+                        if should_install_autostart_entry(ctx.settings(), ctx.state()) {
+                            autostart_integration
+                                .install()
+                                .await
+                                .map_err(|err| error!(?err, "unable to install the autostart integration"))
+                                .ok();
+                        }
+                        result
                     },
                     InstallAction::Uninstall => {
-                        ctx.settings()
+                        ctx.state()
                             .set_value("appimage.manageDesktopEntry", false)
                             .map_err(|err| error!(?err, "unable to set `appimage.manageDesktopEntry`"))
                             .ok();
-                        integration_result(integration.uninstall().await)
+                        let result = integration_result(desktop_integration.uninstall().await);
+                        autostart_integration
+                            .uninstall()
+                            .await
+                            .map_err(|err| error!(?err, "unable to install the autostart integration"))
+                            .ok();
+                        result
                     },
-                    InstallAction::Status => integration_status(integration).await,
+                    InstallAction::Status => integration_status(desktop_integration).await,
                 }
             }
         },
@@ -399,10 +418,9 @@ mod tests {
         fs.write(&entry_path, "[Desktop Entry]\nExec=q-desktop").await.unwrap();
         fs.create_dir_all(icon_path.parent().unwrap()).await.unwrap();
         fs.write(&icon_path, "image").await.unwrap();
-        let settings = Settings::new_fake();
         let ctx = TestContext {
             ctx,
-            settings,
+            settings: Settings::new_fake(),
             state: State::new_fake(),
         };
 
@@ -413,11 +431,12 @@ mod tests {
             action: InstallAction::Install.into(),
         };
         install(request, &ctx).await.unwrap();
-        assert_eq!(
-            ctx.settings.get_bool("appimage.manageDesktopEntry").unwrap(),
-            Some(true)
-        );
+        assert_eq!(ctx.state.get_bool("appimage.manageDesktopEntry").unwrap(), Some(true));
         assert_status(&ctx, InstallComponent::DesktopEntry, InstallationStatus::Installed).await;
+        assert!(
+            AutostartIntegration::new(&ctx).is_installed().await.is_ok(),
+            "Autostart entry should have been installed."
+        );
 
         // Test uninstallation
         let request = InstallRequest {
@@ -425,11 +444,12 @@ mod tests {
             action: InstallAction::Uninstall.into(),
         };
         install(request, &ctx).await.unwrap();
-        assert_eq!(
-            ctx.settings.get_bool("appimage.manageDesktopEntry").unwrap(),
-            Some(false)
-        );
+        assert_eq!(ctx.state.get_bool("appimage.manageDesktopEntry").unwrap(), Some(false));
         assert_status(&ctx, InstallComponent::DesktopEntry, InstallationStatus::NotInstalled).await;
+        assert!(
+            AutostartIntegration::new(&ctx).is_installed().await.is_err(),
+            "Autostart entry should have been uninstalled."
+        );
     }
 
     /// Helper function that writes test files to [bundled_extension_zip_path] and

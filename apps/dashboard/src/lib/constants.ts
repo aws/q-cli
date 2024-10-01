@@ -2,6 +2,8 @@
 export const PRODUCT_NAME = "Amazon Q";
 export const CLI_BINARY_NAME = "q";
 
+export const DESKTOP_ENTRY_NAME = "amazon-q.desktop";
+
 export const USER_MANUAL_URL =
   "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line.html";
 export const AUTOCOMPLETE_WIKI_URL =

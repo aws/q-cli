@@ -231,6 +231,19 @@ impl Fs {
         }
     }
 
+    /// Returns `true` if the path points at an existing entity without following symlinks.
+    ///
+    /// This does *not* guarantee that the path doesn't point to a symlink. For example, `false`
+    /// will be returned if the user doesn't have permission to perform a metadata operation on
+    /// `path`.
+    pub async fn symlink_exists(&self, path: impl AsRef<Path>) -> bool {
+        match self.symlink_metadata(path).await {
+            Ok(_) => true,
+            Err(err) if err.kind() != std::io::ErrorKind::NotFound => true,
+            Err(_) => false,
+        }
+    }
+
     pub async fn create_tempdir(&self) -> io::Result<TempDir> {
         use inner::Inner;
         match &self.0 {
@@ -266,6 +279,27 @@ impl Fs {
         match &self.0 {
             Inner::Real => std::os::unix::fs::symlink(original, link),
             Inner::Chroot(root) => std::os::unix::fs::symlink(append(root.path(), original), append(root.path(), link)),
+            Inner::Fake(_) => panic!("unimplemented"),
+        }
+    }
+
+    /// Query the metadata about a file without following symlinks.
+    ///
+    /// This is a proxy to [`tokio::fs::symlink_metadata`]
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error in the following situations, but is not
+    /// limited to just these cases:
+    ///
+    /// * The user lacks permissions to perform `metadata` call on `path`.
+    /// * `path` does not exist.
+    #[cfg(unix)]
+    pub async fn symlink_metadata(&self, path: impl AsRef<Path>) -> io::Result<std::fs::Metadata> {
+        use inner::Inner;
+        match &self.0 {
+            Inner::Real => fs::symlink_metadata(path).await,
+            Inner::Chroot(root) => fs::symlink_metadata(append(root.path(), path)).await,
             Inner::Fake(_) => panic!("unimplemented"),
         }
     }
@@ -502,6 +536,13 @@ mod tests {
         );
         assert_eq!(fs.read_to_string("/fake_symlink_sync").await.unwrap(), "contents");
         assert_eq!(fs.read_to_string_sync("/fake_symlink").unwrap(), "contents");
+
+        // Checking symlink exist
+        assert!(fs.symlink_exists("/fake_symlink").await);
+        assert!(fs.exists("/fake_symlink"));
+        fs.remove_file("/fake").await.unwrap();
+        assert!(fs.symlink_exists("/fake_symlink").await);
+        assert!(!fs.exists("/fake_symlink"));
     }
 
     #[tokio::test]

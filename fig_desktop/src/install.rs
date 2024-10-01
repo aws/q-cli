@@ -95,7 +95,12 @@ pub async fn run_install(ctx: Arc<Context>, ignore_immediate_update: bool) {
     }
 
     #[cfg(target_os = "linux")]
-    run_linux_install(Arc::clone(&ctx), Arc::new(fig_settings::Settings::new())).await;
+    run_linux_install(
+        Arc::clone(&ctx),
+        Arc::new(fig_settings::Settings::new()),
+        Arc::new(fig_settings::State::new()),
+    )
+    .await;
 
     if let Err(err) = set_previous_version(current_version()) {
         error!(%err, "Failed to set previous version");
@@ -382,7 +387,7 @@ pub async fn initialize_fig_dir(env: &fig_os_shim::Env) -> anyhow::Result<()> {
 }
 
 #[cfg(target_os = "linux")]
-async fn run_linux_install(ctx: Arc<Context>, settings: Arc<fig_settings::Settings>) {
+async fn run_linux_install(ctx: Arc<Context>, settings: Arc<fig_settings::Settings>, state: Arc<fig_settings::State>) {
     use dbus::gnome_shell::ShellExtensions;
     use fig_settings::State;
 
@@ -415,12 +420,13 @@ async fn run_linux_install(ctx: Arc<Context>, settings: Arc<fig_settings::Settin
     {
         let ctx_clone = Arc::clone(&ctx);
         let settings_clone = Arc::clone(&settings);
+        let state_clone = Arc::clone(&state);
         tokio::spawn(async move {
-            install_desktop_entry(&ctx_clone, &settings_clone)
+            install_desktop_entry(&ctx_clone, &state_clone)
                 .await
                 .map_err(|err| error!(?err, "Unable to install desktop entry"))
                 .ok();
-            install_autostart_entry(&ctx_clone, &settings_clone)
+            install_autostart_entry(&ctx_clone, &settings_clone, &state_clone)
                 .await
                 .map_err(|err| error!(?err, "Unable to install autostart entry"))
                 .ok();
@@ -514,14 +520,14 @@ where
 
 /// Installs the desktop entry if required.
 #[cfg(target_os = "linux")]
-async fn install_desktop_entry(ctx: &Context, settings: &fig_settings::Settings) -> anyhow::Result<()> {
+async fn install_desktop_entry(ctx: &Context, state: &fig_settings::State) -> anyhow::Result<()> {
     use fig_integrations::desktop_entry::DesktopEntryIntegration;
     use fig_util::directories::{
         appimage_desktop_entry_icon_path,
         appimage_desktop_entry_path,
     };
 
-    if !settings.get_bool_or("appimage.manageDesktopEntry", false) {
+    if !state.get_bool_or("appimage.manageDesktopEntry", false) {
         return Ok(());
     }
 
@@ -536,12 +542,18 @@ async fn install_desktop_entry(ctx: &Context, settings: &fig_settings::Settings)
 
 /// Installs the autostart entry if required.
 #[cfg(target_os = "linux")]
-async fn install_autostart_entry(ctx: &Context, settings: &fig_settings::Settings) -> anyhow::Result<()> {
-    use fig_integrations::desktop_entry::AutostartIntegration;
+async fn install_autostart_entry(
+    ctx: &Context,
+    settings: &fig_settings::Settings,
+    state: &fig_settings::State,
+) -> anyhow::Result<()> {
+    use fig_integrations::desktop_entry::{
+        AutostartIntegration,
+        should_install_autostart_entry,
+    };
 
     // default for startup should be true
-    if !settings.get_bool_or("appimage.manageDesktopEntry", false) || !settings.get_bool_or("app.launchOnStartup", true)
-    {
+    if !should_install_autostart_entry(settings, state) {
         return Ok(());
     }
 
@@ -1003,7 +1015,7 @@ echo "{binary_name} {version}"
             local_entry_path,
             local_icon_path,
         };
-        use fig_settings::Settings;
+        use fig_settings::State;
         use fig_util::directories::{
             appimage_desktop_entry_icon_path,
             appimage_desktop_entry_path,
@@ -1026,10 +1038,10 @@ echo "{binary_name} {version}"
             fs.write(&entry_path, "[Desktop Entry]\nExec=q-desktop").await.unwrap();
             fs.create_dir_all(icon_path.parent().unwrap()).await.unwrap();
             fs.write(&icon_path, "image").await.unwrap();
-            let settings = Settings::from_slice(&[("appimage.manageDesktopEntry", true.into())]);
+            let state = State::from_slice(&[("appimage.manageDesktopEntry", true.into())]);
 
             // When
-            install_desktop_entry(&ctx, &settings).await.unwrap();
+            install_desktop_entry(&ctx, &state).await.unwrap();
 
             // Then
             assert!(fs.exists(local_entry_path(&ctx).unwrap()));
@@ -1051,10 +1063,10 @@ echo "{binary_name} {version}"
             fs.write(&entry_path, "[Desktop Entry]\nExec=q-desktop").await.unwrap();
             fs.create_dir_all(icon_path.parent().unwrap()).await.unwrap();
             fs.write(&icon_path, "image").await.unwrap();
-            let settings = Settings::new_fake();
+            let state = State::new_fake();
 
             // When
-            install_desktop_entry(&ctx, &settings).await.unwrap();
+            install_desktop_entry(&ctx, &state).await.unwrap();
 
             // Then
             assert!(!fs.exists(local_entry_path(&ctx).unwrap()));

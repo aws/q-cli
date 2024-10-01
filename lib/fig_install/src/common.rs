@@ -121,7 +121,7 @@ pub async fn uninstall(components: InstallComponents, ctx: Arc<Context>) -> Resu
     }
 
     if components.contains(InstallComponents::DESKTOP_APP) {
-        super::os::uninstall_desktop().await?;
+        super::os::uninstall_desktop(&ctx).await?;
         // Must be last -- this will kill the running desktop process if this is
         // called from the desktop app.
         let quit_res = tokio::process::Command::new("killall")

@@ -810,14 +810,19 @@ class PanelIcon extends PanelMenu.Button {
       style_class: "system-status-icon",
       reactive: true,
       track_hover: true,
+      visible: !connected,
     });
 
     this.add_child(this.#icon);
 
     this.#connection = this.connect("notify::connected", () => {
-      this.#icon.gicon = this.#connected
-        ? this.#icon_connected
-        : this.#icon_disconnected;
+      if (this.#connected) {
+        this.#icon.gicon = this.#icon_connected;
+        this.#icon.visible = false;
+      } else {
+        this.#icon.gicon = this.#icon_disconnected;
+        this.#icon.visible = true;
+      }
     });
   }
 

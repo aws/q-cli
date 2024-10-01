@@ -33,12 +33,21 @@ export default function InstallModal({
 
     const timer = setTimeout(() => setTimeElapsed(true), 10000);
     return () => clearTimeout(timer);
-  }, [timeElapsed]);
+  }, [check, timeElapsed]);
 
+  // Skip already installed checks.
   useEffect(() => {
     if (!isInstalled) return;
     next();
   }, [isInstalled, next]);
+
+  // Reset local state on new check.
+  useEffect(() => {
+    setExplainerOpen(false);
+    setTimeElapsed(false);
+    setChecking(false);
+    setError(null);
+  }, [check, setExplainerOpen, setTimeElapsed, setChecking, setError]);
 
   function handleInstall(key: InstallCheck["installKey"]) {
     if (!key) return;
@@ -63,6 +72,7 @@ export default function InstallModal({
       })
       .catch((e) => {
         setError(e.message);
+        setTimeElapsed(true);
         console.error(e);
       });
   }
@@ -81,7 +91,7 @@ export default function InstallModal({
         {check.image && (
           <img
             src={check.image}
-            className="h-auto w-full min-h-40 rounded-sm bg-zinc-200 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700"
+            className="h-auto w-full min-h-20 rounded-sm bg-zinc-200 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700"
           />
         )}
       </div>
@@ -96,7 +106,7 @@ export default function InstallModal({
         >
           {checking ? check.actionWaitingText || "Waiting..." : check.action}
         </Button>
-        {timeElapsed && (
+        {(timeElapsed || check.skippable) && (
           <button
             className={"text-xs text-zinc-400 dark:text-zinc-400 self-center"}
             onClick={skip}

@@ -1,6 +1,8 @@
 import { InstallCheckWithInstallKey } from "@/types/preferences";
 import accessibility_fig from "@assets/images/accessibility_fig.png?url";
-import { PRODUCT_NAME } from "@/lib/constants";
+import desktop_entry from "@assets/images/desktop_entry.png?url";
+import gnome_shell_extension from "@assets/images/gnome_shell_extension.png?url";
+import { DESKTOP_ENTRY_NAME, PRODUCT_NAME } from "@/lib/constants";
 import { Platform } from "@amzn/fig-io-api-bindings";
 
 const getBackupsDir = (): string => {
@@ -95,9 +97,10 @@ const installChecks: InstallCheckWithInstallKey[] = [
     },
     title: "Install the GNOME Shell Extension",
     description: [
-      `In order for ${PRODUCT_NAME} to understand window geometry on GNOME under Wayland, we need to install the ${PRODUCT_NAME} GNOME Shell Extension.`,
-      `New GNOME extension installations will require you to restart your current session by logging out.`,
+      `In order for ${PRODUCT_NAME} to function properly under Wayland, we need to install the ${PRODUCT_NAME} GNOME Shell Extension.`,
+      `New GNOME Shell extensions will require you to restart your current session by logging out.`,
     ],
+    image: gnome_shell_extension,
     action: "Install",
   },
   {
@@ -110,8 +113,40 @@ const installChecks: InstallCheckWithInstallKey[] = [
     title: "Install Desktop Entry",
     description: [
       `The AppImage bundle includes a desktop entry file that we can install locally for you automatically.`,
-      `This will be installed locally under \`~/.local/share/applications\``,
     ],
+    explainer: {
+      title: "What's happening under the hood?",
+      steps: [
+        [
+          {
+            content: "A desktop entry file will be installed under",
+            tag: "span",
+          },
+          {
+            content: `~/.local/share/applications/${DESKTOP_ENTRY_NAME}`,
+            tag: "code",
+          },
+        ],
+        [
+          {
+            content: "An autostart entry file will be installed under",
+            tag: "span",
+          },
+          {
+            content: `~/.config/autostart/${DESKTOP_ENTRY_NAME}`,
+            tag: "code",
+          },
+        ],
+        [
+          {
+            content: `Uninstalling ${PRODUCT_NAME} will remove these files.`,
+            tag: "span",
+          },
+        ],
+      ],
+    },
+    image: desktop_entry,
+    skippable: true,
     action: "Install",
   },
   // {

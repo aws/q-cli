@@ -12,6 +12,10 @@ use fig_os_shim::{
     Fs,
     FsProvider,
 };
+use fig_settings::{
+    Settings,
+    State,
+};
 use fig_util::PRODUCT_NAME;
 use fig_util::consts::APP_PROCESS_NAME;
 use fig_util::consts::linux::DESKTOP_ENTRY_NAME;
@@ -306,7 +310,7 @@ where
     async fn uninstall(&self) -> Result<()> {
         let fs = self.ctx.fs();
         let to_autostart_path = local_autostart_path(self.ctx)?;
-        if fs.exists(&to_autostart_path) {
+        if fs.symlink_exists(&to_autostart_path).await {
             fs.remove_file(&to_autostart_path).await?;
         }
         Ok(())
@@ -328,6 +332,12 @@ where
             Ok(())
         }
     }
+}
+
+/// Whether or not the [`AutostartIntegration`] should be installed according to the user's
+/// settings and state.
+pub fn should_install_autostart_entry(settings: &Settings, state: &State) -> bool {
+    state.get_bool_or("appimage.manageDesktopEntry", true) && settings.get_bool_or("app.launchOnStartup", true)
 }
 
 #[cfg(test)]
@@ -440,10 +450,35 @@ Type=Application"#;
         // Test uninstall.
         autostart.uninstall().await.unwrap();
         assert!(autostart.is_installed().await.is_err());
-        assert!(!ctx.fs().exists(&installed_autostart_path));
+        assert!(!ctx.fs().symlink_exists(&installed_autostart_path).await);
         assert!(
             autostart.uninstall().await.is_ok(),
             "should be able to uninstall repeatedly without erroring"
         );
+    }
+
+    #[test]
+    fn test_should_install_autostart_entry() {
+        // Test structure: (settings, state, expected_result)
+        let testcases = &[
+            (vec![], vec![("appimage.manageDesktopEntry", true.into())], true),
+            (
+                vec![("app.launchOnStartup", true.into())],
+                vec![("appimage.manageDesktopEntry", true.into())],
+                true,
+            ),
+            (vec![], vec![("appimage.manageDesktopEntry", false.into())], false),
+            (
+                vec![("app.launchOnStartup", false.into())],
+                vec![("appimage.manageDesktopEntry", false.into())],
+                false,
+            ),
+        ];
+        for test in testcases {
+            let (settings, state, expected) = test;
+            let settings = Settings::from_slice(settings);
+            let state = State::from_slice(state);
+            assert_eq!(should_install_autostart_entry(&settings, &state), *expected);
+        }
     }
 }

@@ -879,6 +879,16 @@ async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
 
     #[cfg(target_os = "linux")]
     {
+        use fig_integrations::Integration;
+        use fig_integrations::desktop_entry::{
+            AutostartIntegration,
+            should_install_autostart_entry,
+        };
+        use fig_settings::{
+            Settings,
+            State,
+        };
+
         use crate::notification_bus::JsonNotification;
         watcher!(
             settings,
@@ -892,6 +902,33 @@ async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
                         window_event: WindowEvent::SetEnabled(enabled),
                     })
                     .unwrap();
+            }
+        );
+        watcher!(
+            settings,
+            "app.launchOnStartup",
+            |notification: JsonNotification, _proxy: &EventLoopProxy| {
+                let enabled = !notification.as_bool().unwrap_or(true);
+                debug!(%enabled, "app.launchOnStartup");
+                tokio::spawn(async move {
+                    let ctx = Context::new();
+                    let settings = Settings::new();
+                    let state = State::new();
+                    let autostart = AutostartIntegration::new(&ctx);
+                    if should_install_autostart_entry(&settings, &state) {
+                        autostart
+                            .install()
+                            .await
+                            .map_err(|err| warn!(?err, "unable to install autostart integration"))
+                            .ok();
+                    } else {
+                        autostart
+                            .uninstall()
+                            .await
+                            .map_err(|err| warn!(?err, "unable to uninstall autostart integration"))
+                            .ok();
+                    }
+                });
             }
         );
     }

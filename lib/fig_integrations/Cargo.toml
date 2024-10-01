@@ -19,6 +19,7 @@ cfg-if.workspace = true
 clap.workspace = true
 dirs.workspace = true
 fig_os_shim.workspace = true
+fig_settings.workspace = true
 fig_util.workspace = true
 indoc.workspace = true
 insta.workspace = true
@@ -45,7 +46,6 @@ accessibility-sys = { path = "../macos-utils/accessibility-master/accessibility-
 core-foundation = "0.9.3"
 plist = "1.4.0"
 objc.workspace = true
-fig_settings.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true

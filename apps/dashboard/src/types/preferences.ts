@@ -55,6 +55,7 @@ export type InstallCheck = {
   image?: string;
   action: string;
   actionWaitingText?: string;
+  skippable?: boolean;
   explainer?: {
     title: string;
     steps: RichText[][];

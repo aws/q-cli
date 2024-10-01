@@ -9,7 +9,9 @@ use fig_integrations::desktop_entry::{
 use fig_integrations::gnome_extension::GnomeExtensionIntegration;
 use fig_os_shim::Context;
 use fig_util::CLI_BINARY_NAME;
+use fig_util::directories::fig_data_dir_ctx;
 use tokio::sync::mpsc::Sender;
+use tracing::warn;
 use url::Url;
 
 use crate::download::download_file;
@@ -155,7 +157,7 @@ pub(crate) async fn update(
     Ok(())
 }
 
-pub async fn uninstall_gnome_extension(
+pub(crate) async fn uninstall_gnome_extension(
     ctx: &Context,
     shell_extensions: &ShellExtensions<Context>,
 ) -> Result<(), Error> {
@@ -166,17 +168,22 @@ pub async fn uninstall_gnome_extension(
     )
 }
 
-pub async fn uninstall_desktop_entries(ctx: &Context) -> Result<(), Error> {
+pub(crate) async fn uninstall_desktop_entries(ctx: &Context) -> Result<(), Error> {
     DesktopEntryIntegration::new(ctx, None::<&str>, None, None)
         .uninstall()
         .await?;
     Ok(AutostartIntegration::new(ctx).uninstall().await?)
 }
 
-/// No-op.
-///
-/// TODO: delete data dir
-pub async fn uninstall_desktop() -> Result<(), Error> {
+pub(crate) async fn uninstall_desktop(ctx: &Context) -> Result<(), Error> {
+    let fs = ctx.fs();
+    let data_dir_path = fig_data_dir_ctx(fs)?;
+    if fs.exists(&data_dir_path) {
+        fs.remove_dir_all(&data_dir_path)
+            .await
+            .map_err(|err| warn!(?err, "Failed to remove data dir"))
+            .ok();
+    }
     Ok(())
 }
 
@@ -197,7 +204,7 @@ mod tests {
             name: "q",
             arch: Some("x86_64"),
             os: Some("linux"),
-        })
+        });
     }
 
     fn print_tree(p: &Path) {
@@ -220,10 +227,22 @@ mod tests {
         let tempdir = tempfile::tempdir().unwrap();
         let tempdir_path = tempdir.path();
 
-        extract_archive(&archive_path, &tempdir.path()).unwrap();
+        extract_archive(&archive_path, tempdir.path()).unwrap();
         print_tree(tempdir_path);
 
         let bin_dir = tempdir.path().join(CLI_BINARY_NAME).join("bin");
         replace_bins(&bin_dir).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_uninstall_desktop_removes_data_dir() {
+        let ctx = Context::builder().with_test_home().await.unwrap().build_fake();
+        let fs = ctx.fs();
+        let data_dir_path = fig_data_dir_ctx(fs).unwrap();
+        fs.create_dir_all(&data_dir_path).await.unwrap();
+
+        uninstall_desktop(&ctx).await.unwrap();
+
+        assert!(!fs.exists(&data_dir_path));
     }
 }
