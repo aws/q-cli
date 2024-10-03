@@ -4,6 +4,7 @@ pub async fn check_for_update(show_webview: bool, relaunch_dashboard: bool) -> b
         UpdateOptions,
         UpdateStatus,
     };
+    use fig_os_shim::Context;
     use fig_util::consts::PRODUCT_NAME;
     use tao::dpi::LogicalSize;
     use tao::event_loop::EventLoopBuilder;
@@ -96,7 +97,7 @@ pub async fn check_for_update(show_webview: bool, relaunch_dashboard: bool) -> b
 
     // If not debug or override, check for update
     if !is_cargo_debug_build() && !fig_settings::settings::get_bool_or("app.disableAutoupdates", false) {
-        match fig_install::update(updating_cb, UpdateOptions {
+        match fig_install::update(Context::new(), updating_cb, UpdateOptions {
             ignore_rollout: false,
             interactive: show_webview,
             relaunch_dashboard,

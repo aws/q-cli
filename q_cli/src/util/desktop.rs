@@ -146,9 +146,9 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<()> {
                 .creation_flags(DETACHED_PROCESS.0)
                 .spawn()?;
         } else {
-            let settings = fig_settings::Settings::new();
+            let state = fig_settings::State::new();
             let ctx = fig_os_shim::Context::new();
-            launch_linux_desktop(ctx, &settings)?;
+            launch_linux_desktop(ctx, &state)?;
         }
     }
 
@@ -195,12 +195,10 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<()> {
 }
 
 #[cfg(target_os = "linux")]
-fn launch_linux_desktop(
-    ctx: std::sync::Arc<fig_os_shim::Context>,
-    settings: &fig_settings::Settings,
-) -> eyre::Result<()> {
+fn launch_linux_desktop(ctx: std::sync::Arc<fig_os_shim::Context>, state: &fig_settings::State) -> eyre::Result<()> {
     use std::process::Stdio;
 
+    use eyre::Context;
     use fig_integrations::desktop_entry::{
         EntryContents,
         local_entry_path,
@@ -208,7 +206,7 @@ fn launch_linux_desktop(
     use fig_util::APP_PROCESS_NAME;
     use tracing::error;
 
-    if settings.get_bool_or("appimage.manageDesktopEntry", false) {
+    if state.get_bool_or("appimage.manageDesktopEntry", false) {
         if let Some(exec) = EntryContents::from_path_sync(&ctx, local_entry_path(&ctx)?)?.get_field("Exec") {
             match Command::new(exec)
                 .stdin(Stdio::null())
@@ -232,6 +230,22 @@ fn launch_linux_desktop(
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
-        .spawn()?;
+        .spawn()
+        .context(format!("Executable '{}' not in the user's path", APP_PROCESS_NAME))?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[ignore = "not in ci"]
+    #[cfg(target_os = "linux")]
+    fn test_e2e_launch_linux_desktop() {
+        use fig_os_shim::Context;
+        use fig_settings::State;
+
+        launch_linux_desktop(Context::new(), &State::new()).unwrap();
+    }
 }

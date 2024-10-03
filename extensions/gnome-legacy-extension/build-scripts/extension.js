@@ -77,7 +77,7 @@ for await (const entry of await fs.opendir("./src")) {
 
     tasks.add(
       new Task(async () => {
-        switch (env.RELEASE) {
+        switch (env.GNOME_SHELL_BUILD_RELEASE) {
           case "0":
           case "false":
           case undefined:

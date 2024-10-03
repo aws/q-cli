@@ -4,7 +4,7 @@ import { Link } from "@/components/ui/link";
 import support from "@/data/help";
 import installChecks from "@/data/install";
 import { usePlatformInfo } from "@/hooks/store/usePlatformInfo";
-import { isInstallCheckForPlatform } from "@/lib/install";
+import { matchesPlatformRestrictions } from "@/lib/platform";
 
 export default function Page() {
   const platformInfo = usePlatformInfo();
@@ -15,7 +15,12 @@ export default function Page() {
         <div className="flex flex-col">
           {platformInfo &&
             installChecks
-              .filter((check) => isInstallCheckForPlatform(check, platformInfo))
+              .filter((check) =>
+                matchesPlatformRestrictions(
+                  platformInfo,
+                  check.platformRestrictions,
+                ),
+              )
               .map((check) => {
                 return <StatusCheck check={check} key={check.id} />;
               })}

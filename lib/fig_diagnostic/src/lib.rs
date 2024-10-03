@@ -1,6 +1,7 @@
 #![allow(clippy::ref_option_ref)]
 use std::collections::BTreeMap;
 
+use fig_os_shim::Context;
 use fig_telemetry::InstallMethod;
 use fig_util::consts::build::HASH;
 use fig_util::system_info::{
@@ -199,7 +200,7 @@ impl CurrentEnvironment {
             .ok()
             .map(|path| path.to_string_lossy().replace(&username, "/USER"));
 
-        let terminal = Terminal::parent_terminal();
+        let terminal = Terminal::parent_terminal(&Context::new());
         let install_method = fig_telemetry::get_install_method();
 
         let in_cloudshell = fig_util::system_info::in_cloudshell();

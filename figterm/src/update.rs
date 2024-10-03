@@ -9,22 +9,48 @@ use fig_telemetry::{
     get_install_method,
 };
 use fig_util::CLI_BINARY_NAME;
+use fig_util::manifest::{
+    Variant,
+    manifest,
+};
 use semver::Version;
 use tracing::warn;
 
 const UPDATE_AVAILABLE_KEY: &str = "update.new-version-available";
+const UPDATE_DOWNLOAD_URL: &str = "update.new-version-download-url";
 
 fn current_version() -> Version {
     Version::parse(env!("CARGO_PKG_VERSION")).unwrap()
 }
 
-fn print_update_message(version: &Version) {
-    println!(
-        "\nA new version of {} is available: {}\nRun {} to update to the new version\n",
-        CLI_BINARY_NAME.bold(),
-        version.to_string().bold(),
-        format!("{CLI_BINARY_NAME} update").magenta().bold()
-    );
+fn print_update_message(context: &Context, version: &Version, url: Option<&str>) {
+    let os = context.platform().os();
+    let variant = &manifest().variant;
+    match (os, variant, url) {
+        (Os::Linux, Variant::Full, Some(url)) => {
+            println!(
+                "\nA new version of {} is available: {}\nDownload the new release at: {}\n",
+                CLI_BINARY_NAME.bold(),
+                version.to_string().bold(),
+                url.magenta().bold()
+            );
+        },
+        (Os::Linux, Variant::Full, None) => {
+            println!(
+                "\nA new version of {} is available: {}\n",
+                CLI_BINARY_NAME.bold(),
+                version.to_string().bold(),
+            );
+        },
+        _ => {
+            println!(
+                "\nA new version of {} is available: {}\nRun {} to update to the new version\n",
+                CLI_BINARY_NAME.bold(),
+                version.to_string().bold(),
+                format!("{CLI_BINARY_NAME} update").magenta().bold()
+            );
+        },
+    };
 }
 
 pub fn check_for_update(context: &Context) {
@@ -44,6 +70,9 @@ pub fn check_for_update(context: &Context) {
                 if let Err(err) = fig_settings::state::set_value(UPDATE_AVAILABLE_KEY, pkg.version.to_string()) {
                     warn!(?err, "Error setting {UPDATE_AVAILABLE_KEY}: {err}");
                 }
+                if let Err(err) = fig_settings::state::set_value(UPDATE_DOWNLOAD_URL, pkg.download_url.to_string()) {
+                    warn!(?err, "Error setting {UPDATE_DOWNLOAD_URL}: {err}");
+                }
             },
             Ok(None) => {},
             Err(err) => {
@@ -57,7 +86,13 @@ pub fn check_for_update(context: &Context) {
             Ok(version) => {
                 let current_version = current_version();
                 if version > current_version {
-                    print_update_message(&version);
+                    let download_url = fig_settings::state::get_string(UPDATE_DOWNLOAD_URL)
+                        .map_err(|err| {
+                            warn!(?err, "Error getting {UPDATE_DOWNLOAD_URL}: {err}");
+                            let _ = fig_settings::state::remove_value(UPDATE_DOWNLOAD_URL);
+                        })
+                        .unwrap_or(None);
+                    print_update_message(context, &version, download_url.as_deref());
                 }
             },
             Err(err) => {
@@ -87,7 +122,19 @@ mod tests {
     fn test_print_update_message() {
         let version = Version::parse("1.2.3").unwrap();
         println!("===");
-        print_update_message(&version);
+        print_update_message(&Context::new(), &version, None);
+        println!("===");
+
+        println!("===");
+        print_update_message(
+            &Context::builder().with_os(Os::Linux).build(),
+            &version,
+            Some("https://www.amazon.com/amazon-q/latest/amazon-q.appimage"),
+        );
+        println!("===");
+
+        println!("===");
+        print_update_message(&Context::builder().with_os(Os::Linux).build(), &version, None);
         println!("===");
     }
 }

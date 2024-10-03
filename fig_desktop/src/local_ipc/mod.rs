@@ -203,6 +203,7 @@ async fn handle_local_ipc<Ctx>(
                                 &platform_state,
                             ),
                             Update(_) => fig_install::update(
+                                ctx.context_arc(),
                                 Some(Box::new(move |_| {
                                     debug!("Updating from proto");
                                 })),

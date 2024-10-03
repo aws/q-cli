@@ -10,7 +10,7 @@ import InstallModal from "./install";
 import { useLocalState, useRefreshLocalState } from "@/hooks/store/useState";
 import migrate_dark from "@assets/images/fig-migration/dark.png?url";
 import { usePlatformInfo } from "@/hooks/store/usePlatformInfo";
-import { isInstallCheckForPlatform } from "@/lib/install";
+import { matchesPlatformRestrictions } from "@/lib/platform";
 
 export default function OnboardingModal() {
   const [step, setStep] = useState(0);
@@ -87,7 +87,10 @@ export default function OnboardingModal() {
     }
   }
 
-  if (platformInfo && !isInstallCheckForPlatform(check, platformInfo)) {
+  if (
+    platformInfo &&
+    !matchesPlatformRestrictions(platformInfo, check.platformRestrictions)
+  ) {
     setStep(step + 1);
   }
 

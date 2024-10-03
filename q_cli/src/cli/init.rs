@@ -257,7 +257,7 @@ async fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Resu
             .is_enabled()
             .unwrap_or(false)
     {
-        if let Some(terminal) = Terminal::parent_terminal() {
+        if let Some(terminal) = Terminal::parent_terminal(&Context::new()) {
             let prompt_state_key = format!("prompt.input-method.{}.count", terminal.internal_id());
             let prompt_count = fig_settings::state::get_int_or(&prompt_state_key, 0);
             if terminal.supports_macos_input_method() && prompt_count < 2 {

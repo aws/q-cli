@@ -8,6 +8,7 @@ use fig_install::{
     UpdateOptions,
     UpdateStatus,
 };
+use fig_os_shim::Context;
 use fig_util::CLI_BINARY_NAME;
 
 #[derive(Debug, PartialEq, Args)]
@@ -32,6 +33,7 @@ impl UpdateArgs {
         } = &self;
 
         let res = fig_install::update(
+            Context::new(),
             Some(Box::new(|mut recv| {
                 tokio::runtime::Handle::current().spawn(async move {
                     let progress_bar = indicatif::ProgressBar::new(100);

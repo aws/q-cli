@@ -15,6 +15,7 @@ use std::process::{
     Command,
     ExitCode,
 };
+use std::sync::Arc;
 use std::time::Duration;
 
 use anstream::{
@@ -61,7 +62,11 @@ use fig_ipc::{
     SendMessage,
     SendRecvMessage,
 };
-use fig_os_shim::Env;
+use fig_os_shim::{
+    Context,
+    Env,
+    Os,
+};
 use fig_proto::local::DiagnosticsResponse;
 use fig_settings::JsonStore;
 use fig_util::directories::{
@@ -77,6 +82,7 @@ use fig_util::env_var::{
 };
 use fig_util::macos::BUNDLE_CONTENTS_INFO_PLIST_PATH;
 use fig_util::system_info::SupportLevel;
+use fig_util::terminal::in_special_terminal;
 use fig_util::{
     APP_BUNDLE_NAME,
     CLI_BINARY_NAME,
@@ -1360,15 +1366,21 @@ impl DoctorCheck<DiagnosticsResponse> for AutocompleteActiveCheck {
     }
 }
 
+struct SupportedTerminalCheckContext {
+    ctx: Arc<Context>,
+    terminal: Option<Terminal>,
+    in_special_terminal: Option<Terminal>,
+}
+
 struct SupportedTerminalCheck;
 
 #[async_trait]
-impl DoctorCheck<Option<Terminal>> for SupportedTerminalCheck {
+impl DoctorCheck<SupportedTerminalCheckContext> for SupportedTerminalCheck {
     fn name(&self) -> Cow<'static, str> {
         "Terminal support".into()
     }
 
-    async fn get_type(&self, _: &Option<Terminal>, platform: Platform) -> DoctorCheckType {
+    async fn get_type(&self, _: &SupportedTerminalCheckContext, platform: Platform) -> DoctorCheckType {
         if fig_util::system_info::is_remote() {
             DoctorCheckType::NoCheck
         } else {
@@ -1381,24 +1393,34 @@ impl DoctorCheck<Option<Terminal>> for SupportedTerminalCheck {
         }
     }
 
-    async fn check(&self, terminal: &Option<Terminal>) -> Result<(), DoctorError> {
-        if terminal.is_none() {
-            Err(DoctorError::Error {
-                reason: format!(
-                    "Unsupported terminal, if you believe this is a mistake or would like to see support for your terminal, run {}", 
-                    format!("{CLI_BINARY_NAME} issue").magenta()
-                ).into(),
-                info: vec![
-                    #[cfg(target_os = "macos")]
+    async fn check(&self, context: &SupportedTerminalCheckContext) -> Result<(), DoctorError> {
+        if context.terminal.is_none() {
+            if let (Os::Linux, Some(pty)) = (context.ctx.platform().os(), &context.in_special_terminal) {
+                Err(DoctorError::Warning(
                     format!(
-                        "__CFBundleIdentifier: {}",
-                        std::env::var("__CFBundleIdentifier").unwrap_or_else(|_| "<not-set>".into())
-                    )
-                    .into(),
-                ],
-                fix: None,
-                error: None,
-            })
+                        "Unable to determine the current terminal. Try running {} outside of {} for a more accurate check.",
+                        format!("{CLI_BINARY_NAME} doctor").magenta(),
+                        pty,
+                    ).into(),
+                ))
+            } else {
+                Err(DoctorError::Error {
+                    reason: format!(
+                        "Unsupported terminal, if you believe this is a mistake or would like to see support for your terminal, run {}", 
+                        format!("{CLI_BINARY_NAME} issue").magenta()
+                    ).into(),
+                    info: vec![
+                        #[cfg(target_os = "macos")]
+                        format!(
+                            "__CFBundleIdentifier: {}",
+                            std::env::var("__CFBundleIdentifier").unwrap_or_else(|_| "<not-set>".into())
+                        )
+                            .into(),
+                    ],
+                    fix: None,
+                    error: None,
+                })
+            }
         } else {
             Ok(())
         }
@@ -1442,12 +1464,12 @@ impl DoctorCheck<Option<Terminal>> for ItermIntegrationCheck {
 struct ItermBashIntegrationCheck;
 
 #[async_trait]
-impl DoctorCheck<Option<Terminal>> for ItermBashIntegrationCheck {
+impl DoctorCheck<SupportedTerminalCheckContext> for ItermBashIntegrationCheck {
     fn name(&self) -> Cow<'static, str> {
         "iTerm bash integration configured".into()
     }
 
-    async fn get_type(&self, current_terminal: &Option<Terminal>, platform: Platform) -> DoctorCheckType {
+    async fn get_type(&self, context: &SupportedTerminalCheckContext, platform: Platform) -> DoctorCheckType {
         if platform == Platform::MacOs {
             if Shell::current_shell() != Some(Shell::Bash) {
                 return DoctorCheckType::NoCheck;
@@ -1457,7 +1479,7 @@ impl DoctorCheck<Option<Terminal>> for ItermBashIntegrationCheck {
                 Ok(home) => {
                     if !home.join(".iterm2_shell_integration.bash").exists() {
                         DoctorCheckType::NoCheck
-                    } else if matches!(current_terminal.to_owned(), Some(Terminal::Iterm)) {
+                    } else if matches!(context.terminal, Some(Terminal::Iterm)) {
                         DoctorCheckType::NormalCheck
                     } else {
                         DoctorCheckType::SoftCheck
@@ -1470,7 +1492,7 @@ impl DoctorCheck<Option<Terminal>> for ItermBashIntegrationCheck {
         }
     }
 
-    async fn check(&self, _: &Option<Terminal>) -> Result<(), DoctorError> {
+    async fn check(&self, _: &SupportedTerminalCheckContext) -> Result<(), DoctorError> {
         let integration_file = directories::home_dir().unwrap().join(".iterm2_shell_integration.bash");
         let integration = read_to_string(integration_file).context("Could not read .iterm2_shell_integration.bash")?;
 
@@ -1637,19 +1659,19 @@ struct ImeStatusCheck;
 
 #[cfg(target_os = "macos")]
 #[async_trait]
-impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
+impl DoctorCheck<SupportedTerminalCheckContext> for ImeStatusCheck {
     fn name(&self) -> Cow<'static, str> {
         "Input Method".into()
     }
 
-    async fn get_type(&self, current_terminal: &Option<Terminal>, _platform: Platform) -> DoctorCheckType {
-        match current_terminal {
+    async fn get_type(&self, context: &SupportedTerminalCheckContext, _platform: Platform) -> DoctorCheckType {
+        match &context.terminal {
             Some(current_terminal) if current_terminal.supports_macos_input_method() => DoctorCheckType::NormalCheck,
             _ => DoctorCheckType::NoCheck,
         }
     }
 
-    async fn check(&self, current_terminal: &Option<Terminal>) -> Result<(), DoctorError> {
+    async fn check(&self, context: &SupportedTerminalCheckContext) -> Result<(), DoctorError> {
         use fig_integrations::Integration;
         use fig_integrations::input_method::InputMethod;
         use macos_utils::applications::running_applications;
@@ -1699,7 +1721,7 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
             }
         }
 
-        match current_terminal {
+        match &context.terminal {
             Some(terminal) if terminal.supports_macos_input_method() => {
                 let app = running_applications()
                     .into_iter()
@@ -2012,8 +2034,15 @@ async fn get_shell_context() -> Result<Option<Shell>> {
     Ok(Shell::current_shell())
 }
 
-async fn get_terminal_context() -> Result<Option<Terminal>> {
-    Ok(Terminal::parent_terminal())
+async fn get_terminal_context() -> Result<SupportedTerminalCheckContext> {
+    let ctx = Context::new();
+    let terminal = Terminal::parent_terminal(&Context::new());
+    let in_special_terminal = in_special_terminal(&ctx);
+    Ok(SupportedTerminalCheckContext {
+        ctx,
+        terminal,
+        in_special_terminal,
+    })
 }
 
 async fn get_null_context() -> Result<()> {
@@ -2254,10 +2283,10 @@ pub async fn doctor_cli(all: bool, strict: bool) -> Result<ExitCode> {
                 // &ItermIntegrationCheck,
                 &ItermBashIntegrationCheck,
                 // TODO: re-enable on macos once IME/terminal integrations are sorted
-                #[cfg(not(target_os = "macos"))]
-                &HyperIntegrationCheck,
-                #[cfg(not(target_os = "macos"))]
-                &VSCodeIntegrationCheck,
+                // #[cfg(not(target_os = "macos"))]
+                // &HyperIntegrationCheck,
+                // #[cfg(not(target_os = "macos"))]
+                // &VSCodeIntegrationCheck,
                 #[cfg(target_os = "macos")]
                 &ImeStatusCheck,
             ],

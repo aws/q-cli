@@ -258,13 +258,24 @@ where
     pub async fn uninstall_extension(&self) -> Result<bool, ExtensionsError> {
         use inner::Inner;
         match &self.inner {
-            Inner::Real(_) => {
-                let r = new_proxy()
+            Inner::Real(ctx) => {
+                let uuid = self.extension_uuid().await?;
+                let mut was_uninstalled = new_proxy()
                     .await?
                     .uninstall_extension(&self.extension_uuid().await?)
                     .await?;
 
-                Ok(r)
+                // There might be an edgecase with the GNOME Shell dbus api where uninstalling an extension that's
+                // not already loaded in GNOME Shell's js engine causes the extension to not
+                // actually be uninstalled, so remove the extension directory if it still exists.
+                let ctx = ctx.upgrade().ok_or(ExtensionsError::InvalidContext)?;
+                let extension_path = local_extension_directory(ctx.as_ref(), &uuid)?;
+                if ctx.fs().exists(&extension_path) {
+                    ctx.fs().remove_dir_all(&extension_path).await?;
+                    was_uninstalled = true;
+                }
+
+                Ok(was_uninstalled)
             },
             Inner::Fake(fake) => {
                 // Attempt to mimic what the real implementation does:

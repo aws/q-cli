@@ -21,7 +21,11 @@ import { StoreContext } from "./context/zustand";
 import { createStore } from "./lib/store";
 import ListenerContext from "./context/input";
 import { useLocation } from "react-router-dom";
-import { useAccessibilityCheck, useDotfilesCheck } from "./hooks/store";
+import {
+  useAccessibilityCheck,
+  useDotfilesCheck,
+  useGnomeExtensionCheck,
+} from "./hooks/store";
 import { useLocalStateZodDefault } from "./hooks/store/useState";
 import { z } from "zod";
 import { useAuth } from "./hooks/store/useAuth";
@@ -29,6 +33,9 @@ import { NOTIFICATIONS_SEEN_STATE_KEY } from "./lib/constants";
 import WhatsNew from "./pages/whats-new";
 import notificationFeedItems from "../../../feed.json";
 import { useState } from "react";
+import { usePlatformInfo } from "./hooks/store/usePlatformInfo";
+import { Platform } from "@amzn/fig-io-api-bindings";
+import { matchesPlatformRestrictions } from "./lib/platform";
 
 function App() {
   const store = useRef(createStore()).current;
@@ -85,6 +92,7 @@ function ActiveModal() {
 function Router() {
   const navigate = useNavigate();
   const location = useLocation();
+  const platformInfo = usePlatformInfo();
 
   useEffect(() => {
     try {
@@ -133,7 +141,9 @@ function Router() {
           <Route path="inline" element={<Inline />} />
           <Route path="account" element={<Account />} />
           <Route path="keybindings" element={<Keybindings />} />
-          <Route path="integrations" element={<Integrations />} />
+          {platformInfo && platformInfo.os === Platform.Os.MACOS && (
+            <Route path="integrations" element={<Integrations />} />
+          )}
           <Route path="preferences" element={<Preferences />} />
           <Route path="licenses" element={<Licenses />} />
         </Route>
@@ -145,76 +155,88 @@ function Router() {
   );
 }
 
-const useNavData = () => [
-  {
-    type: "link",
-    name: "Getting started",
-    link: "/",
-  },
-  // {
-  //   type: "link",
-  //   name: "Getting started",
-  //   link: "/onboarding",
-  // },
-  {
-    type: "link",
-    name: "What's new?",
-    link: "/whats-new",
-  },
-  {
-    type: "link",
-    name: "Help & support",
-    link: "/help",
-  },
-  {
-    type: "header",
-    name: "Features",
-  },
-  {
-    type: "link",
-    name: "CLI Completions",
-    link: "/autocomplete",
-  },
-  {
-    type: "link",
-    name: "Chat",
-    link: "/chat",
-  },
-  {
-    type: "link",
-    name: "Inline",
-    link: "/inline",
-  },
-  {
-    type: "link",
-    name: "Translate",
-    link: "/translate",
-  },
-  {
-    type: "header",
-    name: "Settings",
-  },
-  // {
-  //   type: "link",
-  //   name: "Account",
-  //   link: "/account",
-  // },
-  {
-    type: "link",
-    name: "Keybindings",
-    link: "/keybindings",
-  },
-  {
-    type: "link",
-    name: "Integrations",
-    link: "/integrations",
-  },
-  {
-    type: "link",
-    name: "Preferences",
-    link: "/preferences",
-  },
-];
+const useNavData = () => {
+  const platformInfo = usePlatformInfo();
+  if (!platformInfo) {
+    return [];
+  }
+
+  return [
+    {
+      type: "link",
+      name: "Getting started",
+      link: "/",
+    },
+    // {
+    //   type: "link",
+    //   name: "Getting started",
+    //   link: "/onboarding",
+    // },
+    {
+      type: "link",
+      name: "What's new?",
+      link: "/whats-new",
+    },
+    {
+      type: "link",
+      name: "Help & support",
+      link: "/help",
+    },
+    {
+      type: "header",
+      name: "Features",
+    },
+    {
+      type: "link",
+      name: "CLI Completions",
+      link: "/autocomplete",
+    },
+    {
+      type: "link",
+      name: "Chat",
+      link: "/chat",
+    },
+    {
+      type: "link",
+      name: "Inline",
+      link: "/inline",
+    },
+    {
+      type: "link",
+      name: "Translate",
+      link: "/translate",
+    },
+    {
+      type: "header",
+      name: "Settings",
+    },
+    // {
+    //   type: "link",
+    //   name: "Account",
+    //   link: "/account",
+    // },
+    {
+      type: "link",
+      name: "Keybindings",
+      link: "/keybindings",
+    },
+    {
+      type: "link",
+      name: "Integrations",
+      link: "/integrations",
+      platformRestrictions: {
+        os: Platform.Os.MACOS,
+      },
+    },
+    {
+      type: "link",
+      name: "Preferences",
+      link: "/preferences",
+    },
+  ].filter((data) =>
+    matchesPlatformRestrictions(platformInfo, data.platformRestrictions),
+  );
+};
 
 function Layout() {
   const [accessibilityCheck] = useAccessibilityCheck();

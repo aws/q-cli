@@ -1,4 +1,5 @@
 use fig_install::UpdateOptions;
+use fig_os_shim::Context;
 use fig_proto::fig::{
     CheckForUpdatesRequest,
     CheckForUpdatesResponse,
@@ -12,11 +13,15 @@ use super::{
 };
 
 pub async fn update_application(request: UpdateApplicationRequest) -> RequestResult {
-    tokio::spawn(fig_install::update(Some(Box::new(|_| {})), UpdateOptions {
-        ignore_rollout: request.ignore_rollout.unwrap_or(true),
-        interactive: request.interactive.unwrap_or(true),
-        relaunch_dashboard: request.relaunch_dashboard.unwrap_or(true),
-    }));
+    tokio::spawn(fig_install::update(
+        Context::new(),
+        Some(Box::new(|_| {})),
+        UpdateOptions {
+            ignore_rollout: request.ignore_rollout.unwrap_or(true),
+            interactive: request.interactive.unwrap_or(true),
+            relaunch_dashboard: request.relaunch_dashboard.unwrap_or(true),
+        },
+    ));
     RequestResult::success()
 }
 

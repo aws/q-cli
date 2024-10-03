@@ -70,7 +70,10 @@ use crate::event::{
     Event,
     WindowEvent,
 };
-use crate::notification_bus::NOTIFICATION_BUS;
+use crate::notification_bus::{
+    JsonNotification,
+    NOTIFICATION_BUS,
+};
 use crate::platform::{
     PlatformBoundEvent,
     PlatformState,
@@ -933,91 +936,91 @@ async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
         );
     }
 
-    // TODO: test settings watchers on macOS
-    // watcher!(
-    //     settings,
-    //     "app.theme",
-    //     |notification: JsonNotification, proxy: &EventLoopProxy| {
-    //         let theme = notification.as_string().as_deref().and_then(map_theme);
-    //         debug!(?theme, "Theme changed");
-    //         proxy
-    //             .send_event(Event::WindowEventAll {
-    //                 window_event: WindowEvent::SetTheme(theme),
-    //             })
-    //             .unwrap();
-    //     }
-    // );
-    //
-    // watcher!(
-    //     settings,
-    //     "app.hideMenubarIcon",
-    //     |notification: JsonNotification, proxy: &EventLoopProxy| {
-    //         let enabled = !notification.as_bool().unwrap_or(false);
-    //         debug!(%enabled, "Tray icon");
-    //         proxy.send_event(Event::SetTrayVisible(enabled)).unwrap();
-    //     }
-    // );
-    //
-    // watcher!(
-    //     settings,
-    //     "developer.dashboard.host",
-    //     |_notification: JsonNotification, proxy: &EventLoopProxy| {
-    //         let url = dashboard::url();
-    //         debug!(%url, "Dashboard host");
-    //         proxy
-    //             .send_event(Event::WindowEvent {
-    //                 window_id: DASHBOARD_ID,
-    //                 window_event: WindowEvent::NavigateAbsolute { url },
-    //             })
-    //             .unwrap();
-    //     }
-    // );
-    //
-    // watcher!(
-    //     settings,
-    //     "developer.dashboard.build",
-    //     |_notification: JsonNotification, proxy: &EventLoopProxy| {
-    //         let url = dashboard::url();
-    //         debug!(%url, "Dashboard host");
-    //         proxy
-    //             .send_event(Event::WindowEvent {
-    //                 window_id: DASHBOARD_ID,
-    //                 window_event: WindowEvent::NavigateAbsolute { url },
-    //             })
-    //             .unwrap();
-    //     }
-    // );
-    //
-    // watcher!(
-    //     settings,
-    //     "developer.autocomplete.host",
-    //     |_notification: JsonNotification, proxy: &EventLoopProxy| {
-    //         let url = autocomplete::url();
-    //         debug!(%url, "Autocomplete host");
-    //         proxy
-    //             .send_event(Event::WindowEvent {
-    //                 window_id: AUTOCOMPLETE_ID,
-    //                 window_event: WindowEvent::NavigateAbsolute { url },
-    //             })
-    //             .unwrap();
-    //     }
-    // );
-    //
-    // watcher!(
-    //     settings,
-    //     "developer.autocomplete.build",
-    //     |_notification: JsonNotification, proxy: &EventLoopProxy| {
-    //         let url = autocomplete::url();
-    //         debug!(%url, "Autocomplete host");
-    //         proxy
-    //             .send_event(Event::WindowEvent {
-    //                 window_id: AUTOCOMPLETE_ID,
-    //                 window_event: WindowEvent::NavigateAbsolute { url },
-    //             })
-    //             .unwrap();
-    //     }
-    // );
-    //
+    watcher!(
+        settings,
+        "app.theme",
+        |notification: JsonNotification, proxy: &EventLoopProxy| {
+            let theme = notification.as_string().as_deref().and_then(map_theme);
+            debug!(?theme, "Theme changed");
+            proxy
+                .send_event(Event::WindowEventAll {
+                    window_event: WindowEvent::SetTheme(theme),
+                })
+                .unwrap();
+        }
+    );
+
+    watcher!(
+        settings,
+        "app.hideMenubarIcon",
+        |notification: JsonNotification, proxy: &EventLoopProxy| {
+            let enabled = !notification.as_bool().unwrap_or(false);
+            debug!(%enabled, "Tray icon");
+            proxy.send_event(Event::SetTrayVisible(enabled)).unwrap();
+        }
+    );
+
+    watcher!(
+        settings,
+        "developer.dashboard.host",
+        |_notification: JsonNotification, proxy: &EventLoopProxy| {
+            let url = dashboard::url();
+            debug!(%url, "Dashboard host");
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: DASHBOARD_ID,
+                    window_event: WindowEvent::NavigateAbsolute { url },
+                })
+                .unwrap();
+        }
+    );
+
+    watcher!(
+        settings,
+        "developer.dashboard.build",
+        |_notification: JsonNotification, proxy: &EventLoopProxy| {
+            let url = dashboard::url();
+            debug!(%url, "Dashboard host");
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: DASHBOARD_ID,
+                    window_event: WindowEvent::NavigateAbsolute { url },
+                })
+                .unwrap();
+        }
+    );
+
+    watcher!(
+        settings,
+        "developer.autocomplete.host",
+        |_notification: JsonNotification, proxy: &EventLoopProxy| {
+            let url = autocomplete::url();
+            debug!(%url, "Autocomplete host");
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: AUTOCOMPLETE_ID,
+                    window_event: WindowEvent::NavigateAbsolute { url },
+                })
+                .unwrap();
+        }
+    );
+
+    watcher!(
+        settings,
+        "developer.autocomplete.build",
+        |_notification: JsonNotification, proxy: &EventLoopProxy| {
+            let url = autocomplete::url();
+            debug!(%url, "Autocomplete host");
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: AUTOCOMPLETE_ID,
+                    window_event: WindowEvent::NavigateAbsolute { url },
+                })
+                .unwrap();
+        }
+    );
+
+    // I don't think this is meant to be here anymore
     // watcher!(settings, "app.beta", |_: JsonNotification, proxy: &EventLoopProxy| {
     //     let proxy = proxy.clone();
     //     tokio::spawn(fig_install::update(

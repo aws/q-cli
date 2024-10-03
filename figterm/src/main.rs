@@ -175,7 +175,7 @@ pub enum MainLoopEvent {
 }
 
 fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
-    let terminal = FigTerminal::parent_terminal().map(|s| s.to_string());
+    let terminal = FigTerminal::parent_terminal(&Context::new()).map(|s| s.to_string());
 
     local::ShellContext {
         pid: shell_state.local_context.pid,

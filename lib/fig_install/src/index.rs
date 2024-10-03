@@ -10,6 +10,7 @@ use std::time::{
 };
 
 use cfg_if::cfg_if;
+use fig_os_shim::Context;
 use fig_util::manifest::{
     Channel,
     FileType,
@@ -354,17 +355,32 @@ pub async fn check_for_updates(
     ignore_rollout: bool,
 ) -> Result<Option<UpdatePackage>, Error> {
     const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
-    const FILE_TYPE: FileType = FileType::from_system();
+    let file_type: FileType = get_file_type(&Context::new(), variant)?;
     let index = pull(&channel).await?;
 
     index.find_next_version(
         target_triple,
         variant,
-        &FILE_TYPE,
+        &file_type,
         CURRENT_VERSION,
         ignore_rollout,
         None,
     )
+}
+
+fn get_file_type(ctx: &Context, variant: &Variant) -> Result<FileType, Error> {
+    match ctx.platform().os() {
+        fig_os_shim::Os::Mac => Ok(FileType::Dmg),
+        fig_os_shim::Os::Linux => {
+            match variant {
+                // TODO: Figure out how to determine for .deb bundles.
+                Variant::Full => Ok(FileType::AppImage),
+                Variant::Minimal => Ok(FileType::TarGz),
+                Variant::Other(_) => Err(Error::UnsupportedPlatform),
+            }
+        },
+        _ => Err(Error::UnsupportedPlatform),
+    }
 }
 
 #[cfg(test)]

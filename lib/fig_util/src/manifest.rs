@@ -132,20 +132,6 @@ pub enum FileType {
     Other(String),
 }
 
-impl FileType {
-    pub const fn from_system() -> Self {
-        cfg_if! {
-            if #[cfg(target_os = "macos")] {
-                FileType::Dmg
-            } else if #[cfg(target_os = "linux")] {
-                FileType::TarZst
-            } else {
-                compile_error!("unknown architecture")
-            }
-        }
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, EnumString, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 #[strum(serialize_all = "camelCase")]

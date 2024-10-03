@@ -10,10 +10,17 @@ pub mod macos;
 mod windows;
 
 use std::str::FromStr;
+use std::sync::Arc;
 use std::time::SystemTimeError;
 
+use fig_os_shim::{
+    Context,
+    Os,
+    PlatformProvider,
+};
 use fig_util::manifest::{
     Channel,
+    Variant,
     manifest,
 };
 #[cfg(target_os = "freebsd")]
@@ -160,6 +167,7 @@ pub struct UpdateOptions {
 
 /// Attempt to update if there is a newer version of Fig
 pub async fn update(
+    ctx: Arc<Context>,
     on_update: Option<Box<dyn FnOnce(Receiver<UpdateStatus>) + Send>>,
     UpdateOptions {
         ignore_rollout,
@@ -167,6 +175,12 @@ pub async fn update(
         relaunch_dashboard,
     }: UpdateOptions,
 ) -> Result<bool, Error> {
+    if ctx.platform().os() == Os::Linux && manifest().variant == Variant::Full {
+        return Err(Error::UpdateFailed(
+            "Managed updates are currently unsupported for Linux".to_string(),
+        ));
+    }
+
     info!("Checking for updates...");
     if let Some(update) = check_for_updates(ignore_rollout).await? {
         info!("Found update: {}", update.version);

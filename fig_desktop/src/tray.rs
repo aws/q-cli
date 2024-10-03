@@ -67,6 +67,7 @@ fn tray_update(proxy: &EventLoopProxy) {
     let proxy_b = proxy.clone();
     tokio::runtime::Handle::current().spawn(async move {
         let res = fig_install::update(
+            Context::new(),
             Some(Box::new(move |_| {
                 proxy_a
                     .send_event(Event::ShowMessageNotification {

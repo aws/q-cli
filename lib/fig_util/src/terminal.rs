@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::fmt;
 use std::sync::OnceLock;
 
+use fig_os_shim::Context;
 use serde::{
     Deserialize,
     Serialize,
@@ -53,12 +54,20 @@ pub const SPECIAL_TERMINALS: &[Terminal] = &[
 
 pub fn current_terminal() -> Option<&'static Terminal> {
     static CURRENT_TERMINAL: OnceLock<Option<Terminal>> = OnceLock::new();
-    CURRENT_TERMINAL.get_or_init(Terminal::parent_terminal).as_ref()
+    CURRENT_TERMINAL
+        .get_or_init(|| Terminal::parent_terminal(&Context::new()))
+        .as_ref()
 }
 
 pub fn current_terminal_version() -> Option<&'static str> {
     static CURRENT_TERMINAL_VERSION: OnceLock<Option<String>> = OnceLock::new();
     CURRENT_TERMINAL_VERSION.get_or_init(Terminal::version).as_deref()
+}
+
+/// Checks if the current process is inside of one of the pseudoterminals listed under
+/// [`SPECIAL_TERMINALS`], returning the terminal if true.
+pub fn in_special_terminal(ctx: &Context) -> Option<Terminal> {
+    Terminal::from_process_info(ctx, SPECIAL_TERMINALS)
 }
 
 /// All supported terminals
@@ -162,30 +171,66 @@ impl fmt::Display for Terminal {
 }
 
 impl Terminal {
-    pub fn parent_terminal() -> Option<Self> {
+    /// Attempts to return the suspected terminal emulator for the current process.
+    ///
+    /// Note that "special" pseudoterminals like tmux or ssh will not be returned.
+    pub fn parent_terminal(ctx: &Context) -> Option<Self> {
+        let env = ctx.env();
+
         #[cfg(target_os = "macos")]
         {
-            if let Ok(bundle_id) = std::env::var("__CFBundleIdentifier") {
+            if let Ok(bundle_id) = env.get("__CFBundleIdentifier") {
                 if let Some(term) = Self::from_bundle_id(bundle_id) {
                     return Some(term);
                 }
             }
         }
 
-        match std::env::var("TERM_PROGRAM").ok().as_deref() {
-            Some("iTerm.app") => Some(Terminal::Iterm),
-            Some("Apple_Terminal") => Some(Terminal::TerminalApp),
-            Some("Hyper") => Some(Terminal::Hyper),
+        match env.get("TERM_PROGRAM").ok().as_deref() {
+            Some("iTerm.app") => return Some(Terminal::Iterm),
+            Some("Apple_Terminal") => return Some(Terminal::TerminalApp),
+            Some("Hyper") => return Some(Terminal::Hyper),
             Some("vscode") => match std::env::var("TERM_PROGRAM_VERSION").ok().as_deref() {
-                Some(v) if v.contains("insiders") => Some(Terminal::VSCodeInsiders),
-                _ => Some(Terminal::VSCode),
+                Some(v) if v.contains("insiders") => return Some(Terminal::VSCodeInsiders),
+                _ => return Some(Terminal::VSCode),
             },
-            Some("Tabby") => Some(Terminal::Tabby),
-            Some("Nova") => Some(Terminal::Nova),
-            Some("WezTerm") => Some(Terminal::WezTerm),
-            _ => None,
+            Some("Tabby") => return Some(Terminal::Tabby),
+            Some("Nova") => return Some(Terminal::Nova),
+            Some("WezTerm") => return Some(Terminal::WezTerm),
+            _ => (),
+        };
+
+        let terminals = match ctx.platform().os() {
+            fig_os_shim::Os::Mac => MACOS_TERMINALS,
+            fig_os_shim::Os::Linux => LINUX_TERMINALS,
+            _ => return None,
+        };
+        Self::from_process_info(ctx, terminals)
+    }
+
+    /// Attempts to return the suspected terminal emulator for the current process according to the
+    /// process hierarchy. Only the list provided in `terminals` will be searched for.
+    pub fn from_process_info(ctx: &Context, terminals: &[Terminal]) -> Option<Self> {
+        let mut option_pid = Some(Box::new(ctx.process_info().current_pid()));
+        let (mut curr_depth, max_depth) = (0, 5);
+        while curr_depth < max_depth {
+            if let Some(pid) = option_pid {
+                if let Some(exe) = pid.exe() {
+                    if let Some(name) = exe.file_name().and_then(|s| s.to_str()) {
+                        for terminal in terminals {
+                            if terminal.executable_names().contains(&name) {
+                                return Some(terminal.clone());
+                            }
+                        }
+                    }
+                }
+                option_pid = pid.parent();
+                curr_depth += 1;
+            } else {
+                break;
+            }
         }
-        // TODO(grant): Improve this for Linux, it currently is not very accurate
+        None
     }
 
     pub fn version() -> Option<String> {
@@ -605,5 +650,80 @@ impl IntelliJVariant {
             "PC" => IntelliJVariant::PyCharmCE,
             _ => return None,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use fig_os_shim::process_info::{
+        FakePid,
+        Pid,
+    };
+    use fig_os_shim::{
+        Os,
+        ProcessInfo,
+    };
+
+    use super::*;
+
+    fn fake_pid(exe: &str, parent: Option<Box<Pid>>) -> Box<Pid> {
+        Box::new(Pid::new_fake(FakePid {
+            parent,
+            exe: Some(exe.into()),
+            cmdline: None,
+        }))
+    }
+
+    fn parents(mut exes: Vec<&str>) -> Box<Pid> {
+        exes.reverse();
+        let mut prev = fake_pid(exes.first().unwrap(), None);
+        for exe in exes.iter().skip(1) {
+            let curr = Box::new(Pid::new_fake(FakePid {
+                exe: Some(exe.into()),
+                parent: Some(prev),
+                ..Default::default()
+            }));
+            prev = curr;
+        }
+        prev
+    }
+
+    fn make_context(os: Os, processes: Vec<&str>) -> Arc<Context> {
+        let exe = Some(processes.first().unwrap().into());
+        Context::builder()
+            .with_os(os)
+            .with_process_info(ProcessInfo::new_fake(FakePid {
+                parent: Some(parents(processes.into_iter().skip(1).collect())),
+                exe,
+                cmdline: None,
+            }))
+            .build()
+    }
+
+    #[test]
+    fn test_from_process_info() {
+        Terminal::from_process_info(&Context::new(), MACOS_TERMINALS);
+
+        let ctx = make_context(Os::Linux, vec!["q", "fish", "wezterm"]);
+        assert_eq!(
+            Terminal::from_process_info(&ctx, LINUX_TERMINALS),
+            Some(Terminal::WezTerm)
+        );
+
+        let ctx = make_context(Os::Linux, vec!["q", "bash", "tmux"]);
+        assert_eq!(
+            Terminal::from_process_info(&ctx, LINUX_TERMINALS),
+            None,
+            "Special terminals should return None"
+        );
+
+        let ctx = make_context(Os::Linux, vec!["cargo", "cargo", "q", "bash", "tmux", "wezterm"]);
+        assert_eq!(
+            Terminal::from_process_info(&ctx, LINUX_TERMINALS),
+            None,
+            "Max search depth reached should return None"
+        );
     }
 }
