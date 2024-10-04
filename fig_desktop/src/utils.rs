@@ -160,9 +160,8 @@ mod tests {
     }
 }
 
+/// A logical rect, where the origin point is the top left corner.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
-// todo: rename to LogicalFrame
-// A logical rect, where the origin point is the top left corner.
 pub struct Rect {
     pub position: Position,
     pub size: Size,

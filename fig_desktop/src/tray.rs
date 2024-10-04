@@ -239,7 +239,9 @@ pub fn get_icon(is_logged_in: bool) -> Icon {
         } else {
             cfg_if! {
                 if #[cfg(target_os = "linux")] {
-                    include_bytes!("../icons/not-logged-in-light.png").to_vec()
+                    // This is intentionally the same as when logged in since Linux tray icons
+                    // don't really seem to work that well when multiple choices are available.
+                    include_bytes!("../icons/icon-monochrome-light.png").to_vec()
                 } else {
                     include_bytes!("../icons/not-logged-in.png").to_vec()
                 }

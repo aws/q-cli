@@ -727,7 +727,9 @@ class Extension extends GObject.Object {
    */
   #send_window_data(overlay_pressed) {
     const wm_class = this.#window.get_wm_class();
+    // https://mutter.gnome.org/meta/method.Window.get_frame_rect.html
     const inner_rect = this.#window.get_frame_rect();
+    // https://mutter.gnome.org/meta/method.Window.get_buffer_rect.html
     const outer_rect = this.#window.get_buffer_rect();
     const scale = global.display.get_monitor_scale(this.#window.get_monitor());
 

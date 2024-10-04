@@ -149,6 +149,9 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<()> {
             let state = fig_settings::State::new();
             let ctx = fig_os_shim::Context::new();
             launch_linux_desktop(ctx, &state)?;
+            // Need to wait some time for the app to launch and appear in the process list.
+            // 1 second to be safe.
+            std::thread::sleep(std::time::Duration::from_millis(1000));
         }
     }
 
@@ -238,6 +241,24 @@ fn launch_linux_desktop(ctx: std::sync::Arc<fig_os_shim::Context>, state: &fig_s
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    #[ignore = "not in ci"]
+    fn test_e2e_desktop_app_running() {
+        println!("{}", desktop_app_running());
+    }
+
+    #[test]
+    #[ignore = "not in ci"]
+    fn test_e2e_launch_fig_desktop() {
+        launch_fig_desktop(LaunchArgs {
+            wait_for_socket: true,
+            open_dashboard: true,
+            immediate_update: false,
+            verbose: true,
+        })
+        .unwrap();
+    }
 
     #[test]
     #[ignore = "not in ci"]

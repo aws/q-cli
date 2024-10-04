@@ -24,6 +24,7 @@ use serde::Serialize;
 use tao::dpi::{
     LogicalPosition,
     PhysicalPosition,
+    PhysicalSize,
     Position,
 };
 use tracing::{
@@ -40,6 +41,7 @@ use crate::protocol::icons::{
     AssetSpecifier,
     ProcessedAsset,
 };
+use crate::utils::Rect;
 use crate::webview::notification::WebviewNotificationsState;
 use crate::webview::{
     FigIdMap,
@@ -61,19 +63,36 @@ static WM_REVICED_DATA: AtomicBool = AtomicBool::new(false);
 
 const FIG_WM_CLASS: &str = "Amazon-q";
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Copy, Clone, Serialize)]
 #[allow(dead_code)] // we will definitely need inner_x and inner_y at some point
 pub(super) struct ActiveWindowData {
+    // Inner params correspond to https://mutter.gnome.org/meta/method.Window.get_frame_rect.html
     inner_x: i32,
     inner_y: i32,
+    inner_width: i32,
+    inner_height: i32,
+    // Outer params correspond to https://mutter.gnome.org/meta/method.Window.get_buffer_rect.html
     outer_x: i32,
     outer_y: i32,
+    outer_width: i32,
+    outer_height: i32,
     scale: f32,
+}
+
+impl From<ActiveWindowData> for Rect {
+    fn from(value: ActiveWindowData) -> Rect {
+        Rect {
+            position: PhysicalPosition::new(value.outer_x, value.outer_y).into(),
+            size: PhysicalSize::new(value.outer_width, value.outer_height).into(),
+        }
+    }
 }
 
 #[derive(Debug, Serialize)]
 pub(super) enum DisplayServerState {
     X11(Arc<x11::X11State>),
+    /// Used in GNOME.
+    Mutter,
     /// Not supported
     Sway(Arc<sway::SwayState>),
 }
@@ -134,7 +153,11 @@ impl PlatformStateImpl {
                             info!("Detected Wayland server");
 
                             match get_desktop_environment(&Context::new()) {
-                                Ok(env @ (DesktopEnvironment::Gnome | DesktopEnvironment::Plasma)) => {
+                                Ok(env @ DesktopEnvironment::Gnome) => {
+                                    info!("Detected {env:?}");
+                                    *platform_state.display_server_state.lock() = Some(DisplayServerState::Mutter);
+                                },
+                                Ok(env @ DesktopEnvironment::Plasma) => {
                                     info!("Detected {env:?}");
                                 },
                                 Ok(DesktopEnvironment::Sway) => {
@@ -240,6 +263,10 @@ impl PlatformStateImpl {
                     rect,
                     inner: PlatformWindowImpl,
                 })
+            }),
+            Some(DisplayServerState::Mutter) => self.active_window_data.lock().map(|window| super::PlatformWindow {
+                rect: window.into(),
+                inner: PlatformWindowImpl,
             }),
             _ => None,
         }

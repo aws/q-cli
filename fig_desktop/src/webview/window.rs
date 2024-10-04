@@ -29,6 +29,7 @@ use tracing::{
     debug,
     error,
     info,
+    instrument,
     warn,
 };
 use url::Url;
@@ -111,6 +112,7 @@ impl WindowState {
         }
     }
 
+    #[instrument(skip(self))]
     fn update_window_geometry(
         &self,
         position: Option<WindowPosition>,
@@ -285,7 +287,7 @@ impl WindowState {
         if !dry_run {
             match platform_state.position_window(&self.window, &self.window_id, position) {
                 Ok(_) => {
-                    tracing::trace!(window_id =% self.window_id, ?position, ?size, ?anchor, "updated window geometry");
+                    tracing::trace!(window_id =% self.window_id, ?position, ?is_above, ?is_clipped, "updated window geometry: first set");
                 },
                 Err(err) => tracing::error!(%err, window_id =% self.window_id, "failed to position window"),
             }
@@ -295,7 +297,7 @@ impl WindowState {
 
             match platform_state.position_window(&self.window, &self.window_id, position) {
                 Ok(_) => {
-                    tracing::trace!(window_id =% self.window_id, ?position, ?size, ?anchor, "updated window geometry");
+                    tracing::trace!(window_id =% self.window_id,"updated window geometry: second set");
                 },
                 Err(err) => tracing::error!(%err, window_id =% self.window_id, "failed to position window"),
             }

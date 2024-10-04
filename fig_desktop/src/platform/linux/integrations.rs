@@ -75,8 +75,12 @@ pub fn from_hook(hook: FocusedWindowDataHook, platform_state: &PlatformState, pr
         *handle = Some(ActiveWindowData {
             inner_x: inner.x,
             inner_y: inner.y,
+            inner_width: inner.width,
+            inner_height: inner.height,
             outer_x: outer.x,
             outer_y: outer.y,
+            outer_width: outer.width,
+            outer_height: outer.height,
             scale: hook.scale,
         });
     } else {
