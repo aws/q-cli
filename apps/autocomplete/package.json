@@ -46,7 +46,7 @@
     "tailwind-merge": "^2.3.0",
     "use-resize-observer": "^9.1.0",
     "util": "^0.12.5",
-    "vite": "^5.2.12",
+    "vite": "^5.2.14",
     "zustand": "^4.5.2"
   },
   "devDependencies": {
