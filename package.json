@@ -30,7 +30,7 @@
     "@vitest/ui": "^1.6.0",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.5",
-    "micromatch": "^4.0.7",
+    "micromatch": "^4.0.8",
     "prettier": "^3.2.5",
     "tsx": "^4.11.0",
     "turbo": "^2.0.1",
