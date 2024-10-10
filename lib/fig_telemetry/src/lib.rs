@@ -545,7 +545,7 @@ impl Client {
         let suggestion_state = if accepted {
             SuggestionState::Accept
         } else {
-            SuggestionState::Discard
+            SuggestionState::Reject
         };
 
         let user_trigger_decision_event = match UserTriggerDecisionEvent::builder()
