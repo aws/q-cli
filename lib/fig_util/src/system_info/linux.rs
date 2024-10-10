@@ -9,7 +9,10 @@ use serde::{
     Serialize,
 };
 
-use crate::Error;
+use crate::{
+    Error,
+    UnknownDesktopErrContext,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DisplayServer {
@@ -38,20 +41,48 @@ pub fn get_display_server(env: &impl EnvProvider) -> Result<DisplayServer, Error
 }
 
 pub fn get_desktop_environment(env: &impl EnvProvider) -> Result<DesktopEnvironment, Error> {
-    match env.env().get("XDG_CURRENT_DESKTOP") {
+    let env = env.env();
+
+    // Prioritize XDG_CURRENT_DESKTOP and check other common env vars as fallback.
+    // https://superuser.com/a/1643180
+    let xdg_current_desktop = match env.get("XDG_CURRENT_DESKTOP") {
         Ok(current) => {
-            let current = current.to_lowercase();
-            let (_, desktop) = current.split_once(':').unwrap_or(("", current.as_str()));
+            let current_lower = current.to_lowercase();
+            let (_, desktop) = current_lower.split_once(':').unwrap_or(("", current_lower.as_str()));
             match desktop.to_lowercase().as_str() {
-                "gnome" | "gnome-xorg" | "ubuntu" | "pop" => Ok(DesktopEnvironment::Gnome),
-                "kde" | "plasma" => Ok(DesktopEnvironment::Plasma),
-                "i3" => Ok(DesktopEnvironment::I3),
-                "sway" => Ok(DesktopEnvironment::Sway),
-                _ => Err(Error::UnknownDesktop(current)),
+                "gnome" | "gnome-xorg" | "ubuntu" | "pop" => return Ok(DesktopEnvironment::Gnome),
+                "kde" | "plasma" => return Ok(DesktopEnvironment::Plasma),
+                "i3" => return Ok(DesktopEnvironment::I3),
+                "sway" => return Ok(DesktopEnvironment::Sway),
+                _ => current,
             }
         },
-        _ => Err(Error::MissingEnv("XDG_CURRENT_DESKTOP")),
-    }
+        _ => "".into(),
+    };
+
+    let xdg_session_desktop = match env.get("XDG_SESSION_DESKTOP") {
+        Ok(session) => {
+            let session_lower = session.to_lowercase();
+            match session_lower.as_str() {
+                "gnome" | "ubuntu" => return Ok(DesktopEnvironment::Gnome),
+                "kde" => return Ok(DesktopEnvironment::Plasma),
+                _ => session,
+            }
+        },
+        _ => "".into(),
+    };
+
+    let gdm_session = match env.get("GDMSESSION") {
+        Ok(session) if session.to_lowercase().starts_with("ubuntu") => return Ok(DesktopEnvironment::Gnome),
+        Ok(session) => session,
+        _ => "".into(),
+    };
+
+    Err(Error::UnknownDesktop(UnknownDesktopErrContext {
+        xdg_current_desktop,
+        xdg_session_desktop,
+        gdm_session,
+    }))
 }
 
 pub fn get_os_release() -> Option<&'static OsRelease> {
@@ -167,6 +198,8 @@ impl SandboxKind {
 
 #[cfg(test)]
 mod test {
+    use fig_os_shim::Env;
+
     use super::*;
 
     #[cfg(target_os = "linux")]
@@ -214,5 +247,40 @@ mod test {
 
         assert_eq!(os_release.variant_id, None);
         assert_eq!(os_release.variant, None);
+    }
+
+    #[test]
+    fn test_get_desktop_environment() {
+        let tests = [
+            (vec![("XDG_CURRENT_DESKTOP", "UBUNTU:gnome")], DesktopEnvironment::Gnome),
+            (
+                vec![("XDG_CURRENT_DESKTOP", "Unity"), ("XDG_SESSION_DESKTOP", "ubuntu")],
+                DesktopEnvironment::Gnome,
+            ),
+            (
+                vec![("XDG_CURRENT_DESKTOP", "Unity"), ("XDG_SESSION_DESKTOP", "GNOME")],
+                DesktopEnvironment::Gnome,
+            ),
+            (vec![("GDMSESSION", "ubuntu")], DesktopEnvironment::Gnome),
+        ];
+
+        for (env, expected_desktop_env) in tests {
+            let env = Env::from_slice(&env);
+            assert_eq!(
+                get_desktop_environment(&env).unwrap(),
+                expected_desktop_env,
+                "expected: {:?} from env: {:?}",
+                expected_desktop_env,
+                env
+            );
+        }
+    }
+
+    #[test]
+    fn test_get_desktop_environment_err() {
+        let env = Env::from_slice(&[("XDG_CURRENT_DESKTOP", "Unity"), ("XDG_SESSION_DESKTOP", "")]);
+        let res = get_desktop_environment(&env);
+        println!("{}", res.as_ref().unwrap_err());
+        assert!(matches!(res, Err(Error::UnknownDesktop(_))));
     }
 }

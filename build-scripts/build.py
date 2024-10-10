@@ -494,6 +494,7 @@ def linux_tauri_config(
 ) -> str:
     config = {
         "tauri": {
+            "systemTray": {"iconPath": "icons/32x32.png"},
             "bundle": {
                 "externalBin": [
                     str(cli_path).removesuffix(f"-{target}"),
@@ -508,7 +509,7 @@ def linux_tauri_config(
                     themes_path.absolute().as_posix(): "themes",
                     legacy_extension_dir_path.absolute().as_posix(): LINUX_LEGACY_GNOME_EXTENSION_UUID,
                 },
-            }
+            },
         }
     }
     return json.dumps(config)

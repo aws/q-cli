@@ -9,6 +9,7 @@ use dbus::gnome_shell::{
     get_extension_status,
 };
 use fig_os_shim::Context;
+use fig_util::Terminal;
 use fig_util::consts::{
     CLI_BINARY_NAME,
     PRODUCT_NAME,
@@ -82,23 +83,46 @@ impl DoctorCheck<LinuxContext> for IBusEnvCheck {
 
         let env = ctx.env();
         let mut checks = vec![("QT_IM_MODULE", "ibus"), ("XMODIFIERS", "@im=ibus")];
+        let mut warnings: Vec<String> = vec![];
         let mut errors: Vec<EnvErr> = vec![];
+
+        // GNOME's default input method is ibus, so GTK_IM_MODULE is not required (and
+        // may not set by default on Ubuntu).
+        // Only error if it's set to something other than ibus, otherwise warn.
         match get_desktop_environment(ctx)? {
-            DesktopEnvironment::Gnome => {
-                // GNOME's default input method is ibus, so GTK_IM_MODULE is not required (and
-                // may not set by default on Ubuntu).
-                // Only error if it's set to something other than ibus.
-                match env.get("GTK_IM_MODULE") {
-                    Ok(actual) if actual != "ibus" => errors.push(EnvErr {
-                        var: "ibus".into(),
-                        actual: actual.into(),
-                        expected: "ibus".into(),
-                    }),
-                    _ => (),
-                }
+            DesktopEnvironment::Gnome => match env.get("GTK_IM_MODULE") {
+                Ok(actual) if actual != "ibus" => errors.push(EnvErr {
+                    var: "GTK_IM_MODULE".into(),
+                    actual: actual.into(),
+                    expected: "ibus".into(),
+                }),
+                Ok(_) => (),
+                Err(_) => warnings.push(
+                    "GTK_IM_MODULE is not set to `ibus`. This may cause autocomplete to break in some terminals."
+                        .to_string(),
+                ),
             },
             _ => checks.push(("GTK_IM_MODULE", "ibus")),
         };
+
+        // IME is disabled in Kitty by default.
+        // https://github.com/kovidgoyal/kitty/issues/469#issuecomment-419406438
+        if let Some(Terminal::Kitty) = Terminal::parent_terminal(ctx) {
+            match env.get("GLFW_IM_MODULE") {
+                Ok(actual) if actual == "ibus" => (),
+                Ok(actual) => errors.push(EnvErr {
+                    var: "GLFW_IM_MODULE".into(),
+                    actual: Some(actual),
+                    expected: "ibus".into(),
+                }),
+                _ => errors.push(EnvErr {
+                    var: "GLFW_IM_MODULE".into(),
+                    actual: None,
+                    expected: "ibus".into(),
+                }),
+            }
+        }
+
         errors.append(
             &mut checks
                 .iter()
@@ -140,6 +164,8 @@ impl DoctorCheck<LinuxContext> for IBusEnvCheck {
                 fix: None,
                 error: None,
             })
+        } else if !warnings.is_empty() {
+            Err(DoctorError::Warning(warnings.join(", ").into()))
         } else {
             Ok(())
         }
@@ -286,7 +312,10 @@ impl DoctorCheck<LinuxContext> for SandboxCheck {
 #[cfg(test)]
 mod tests {
     use dbus::gnome_shell::GNOME_SHELL_PROCESS_NAME;
-    use fig_os_shim::Env;
+    use fig_os_shim::{
+        Env,
+        ProcessInfo,
+    };
 
     use super::*;
 
@@ -313,8 +342,22 @@ mod tests {
             ]))
             .build_fake();
         assert!(
-            IBusEnvCheck.check(&ctx.into()).await.is_ok(),
-            "should succeed without GTK_IM_MODULE"
+            matches!(IBusEnvCheck.check(&ctx.into()).await, Err(DoctorError::Warning(_))),
+            "warn when GTK_IM_MODULE is unset on GNOME"
+        );
+
+        let ctx = Context::builder()
+            .with_process_info(ProcessInfo::from_exes(vec!["q", "bash", "kitty"]))
+            .with_env(Env::from_slice(&[
+                ("XDG_CURRENT_DESKTOP", "ubuntu:GNOME"),
+                ("GTK_IM_MODULE", "ibus"),
+                ("QT_IM_MODULE", "ibus"),
+                ("XMODIFIERS", "@im=ibus"),
+            ]))
+            .build_fake();
+        assert!(
+            IBusEnvCheck.check(&ctx.into()).await.is_err(),
+            "error on kitty when IME is not enabled"
         );
 
         let ctx = Context::builder()

@@ -47,12 +47,27 @@ pub enum Error {
     MissingEnv(&'static str),
     #[error("unknown display server `{0}`")]
     UnknownDisplayServer(String),
-    #[error("unknown desktop `{0}`")]
-    UnknownDesktop(String),
+    #[error("unknown desktop, checked environment variables: {0}")]
+    UnknownDesktop(UnknownDesktopErrContext),
     #[error(transparent)]
     StrUtf8Error(#[from] std::str::Utf8Error),
     #[error("Failed to parse shell {0} version")]
     ShellVersion(Shell),
+}
+
+#[derive(Debug, Clone)]
+pub struct UnknownDesktopErrContext {
+    xdg_current_desktop: String,
+    xdg_session_desktop: String,
+    gdm_session: String,
+}
+
+impl std::fmt::Display for UnknownDesktopErrContext {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "XDG_CURRENT_DESKTOP: `{}`, ", self.xdg_current_desktop)?;
+        write!(f, "XDG_SESSION_DESKTOP: `{}`, ", self.xdg_session_desktop)?;
+        write!(f, "GDMSESSION: `{}`", self.gdm_session)
+    }
 }
 
 /// Returns a random 64 character hex string

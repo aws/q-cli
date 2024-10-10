@@ -55,6 +55,26 @@ impl ProcessInfo {
         Self(inner::Inner::Fake(Pid::Fake(pid)))
     }
 
+    /// Creates a new fake implementation by creating a process hierarchy according to `exes`.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use fig_os_shim::ProcessInfo;
+    ///
+    /// // Creates a slice with the following process hierarchy:
+    /// // q <- bash <- wezterm
+    /// let process_info = ProcessInfo::from_exes(vec!["q", "bash", "wezterm"]);
+    /// ```
+    pub fn from_exes(exes: Vec<&str>) -> Self {
+        let exe = Some(exes.first().expect("exes cannot be empty").into());
+        Self::new_fake(FakePid {
+            parent: Some(parents(exes.into_iter().skip(1).collect())),
+            exe,
+            cmdline: None,
+        })
+    }
+
     /// Returns a [Pid] representing the currently running process.
     pub fn current_pid(&self) -> Pid {
         use inner::Inner;
@@ -85,13 +105,49 @@ pub fn get_parent_process_exe(ctx: &Arc<Context>) -> Option<PathBuf> {
     }
 }
 
+fn parents(mut exes: Vec<&str>) -> Box<Pid> {
+    exes.reverse();
+    let mut prev = fake_pid(exes.first().unwrap(), None);
+    for exe in exes.iter().skip(1) {
+        let curr = Box::new(Pid::new_fake(FakePid {
+            exe: Some(exe.into()),
+            parent: Some(prev),
+            ..Default::default()
+        }));
+        prev = curr;
+    }
+    prev
+}
+
+fn fake_pid(exe: &str, parent: Option<Box<Pid>>) -> Box<Pid> {
+    Box::new(Pid::new_fake(FakePid {
+        parent,
+        exe: Some(exe.into()),
+        cmdline: None,
+    }))
+}
+
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use super::*;
 
     #[test]
     fn test_get_parent_process_exe() {
         let ctx = Context::new();
         get_parent_process_exe(&ctx);
+    }
+
+    #[test]
+    fn test_from_exe_slice() {
+        let info = ProcessInfo::from_exes(vec!["q", "bash", "wezterm"]);
+        let current = info.current_pid();
+        assert_eq!(current.exe().unwrap(), PathBuf::from_str("q").unwrap());
+        let parent = current.parent().unwrap();
+        assert_eq!(parent.exe().unwrap(), PathBuf::from_str("bash").unwrap());
+        let grandparent = parent.parent().unwrap();
+        assert_eq!(grandparent.exe().unwrap(), PathBuf::from_str("wezterm").unwrap());
+        assert!(grandparent.parent().is_none());
     }
 }

@@ -657,10 +657,6 @@ impl IntelliJVariant {
 mod tests {
     use std::sync::Arc;
 
-    use fig_os_shim::process_info::{
-        FakePid,
-        Pid,
-    };
     use fig_os_shim::{
         Os,
         ProcessInfo,
@@ -668,37 +664,10 @@ mod tests {
 
     use super::*;
 
-    fn fake_pid(exe: &str, parent: Option<Box<Pid>>) -> Box<Pid> {
-        Box::new(Pid::new_fake(FakePid {
-            parent,
-            exe: Some(exe.into()),
-            cmdline: None,
-        }))
-    }
-
-    fn parents(mut exes: Vec<&str>) -> Box<Pid> {
-        exes.reverse();
-        let mut prev = fake_pid(exes.first().unwrap(), None);
-        for exe in exes.iter().skip(1) {
-            let curr = Box::new(Pid::new_fake(FakePid {
-                exe: Some(exe.into()),
-                parent: Some(prev),
-                ..Default::default()
-            }));
-            prev = curr;
-        }
-        prev
-    }
-
     fn make_context(os: Os, processes: Vec<&str>) -> Arc<Context> {
-        let exe = Some(processes.first().unwrap().into());
         Context::builder()
             .with_os(os)
-            .with_process_info(ProcessInfo::new_fake(FakePid {
-                parent: Some(parents(processes.into_iter().skip(1).collect())),
-                exe,
-                cmdline: None,
-            }))
+            .with_process_info(ProcessInfo::from_exes(processes))
             .build()
     }
 
