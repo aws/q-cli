@@ -66,12 +66,13 @@ impl ProcessInfo {
     /// // q <- bash <- wezterm
     /// let process_info = ProcessInfo::from_exes(vec!["q", "bash", "wezterm"]);
     /// ```
-    pub fn from_exes(exes: Vec<&str>) -> Self {
-        let exe = Some(exes.first().expect("exes cannot be empty").into());
+    pub fn from_exes<T: Into<TestExe>>(exes: Vec<T>) -> Self {
+        let exes = exes.into_iter().map(|v| v.into()).collect::<Vec<TestExe>>();
+        let test_exe = exes.first().expect("exes cannot be empty").clone();
         Self::new_fake(FakePid {
             parent: Some(parents(exes.into_iter().skip(1).collect())),
-            exe,
-            cmdline: None,
+            exe: test_exe.exe,
+            cmdline: test_exe.cmdline,
         })
     }
 
@@ -91,6 +92,32 @@ impl Shim for ProcessInfo {
     }
 }
 
+/// Test helper type for creating a fake [ProcessInfo] through [ProcessInfo::from_exes].
+#[derive(Debug, Clone, Default)]
+#[allow(dead_code)]
+pub struct TestExe {
+    exe: Option<PathBuf>,
+    cmdline: Option<String>,
+}
+
+impl From<&str> for TestExe {
+    fn from(value: &str) -> Self {
+        Self {
+            exe: Some(value.into()),
+            ..Default::default()
+        }
+    }
+}
+
+impl From<(Option<&str>, Option<&str>)> for TestExe {
+    fn from(value: (Option<&str>, Option<&str>)) -> Self {
+        Self {
+            exe: value.0.map(|s| s.into()),
+            cmdline: value.1.map(|v| v.to_string()),
+        }
+    }
+}
+
 /// Returns the [MyPid::exe] of the current process's parent, with extra logic to account for
 /// `toolbox-exec`.
 pub fn get_parent_process_exe(ctx: &Arc<Context>) -> Option<PathBuf> {
@@ -105,25 +132,21 @@ pub fn get_parent_process_exe(ctx: &Arc<Context>) -> Option<PathBuf> {
     }
 }
 
-fn parents(mut exes: Vec<&str>) -> Box<Pid> {
+fn parents(mut exes: Vec<TestExe>) -> Box<Pid> {
     exes.reverse();
-    let mut prev = fake_pid(exes.first().unwrap(), None);
-    for exe in exes.iter().skip(1) {
-        let curr = Box::new(Pid::new_fake(FakePid {
-            exe: Some(exe.into()),
-            parent: Some(prev),
-            ..Default::default()
-        }));
+    let mut prev = fake_pid(exes.first().unwrap().clone(), None);
+    for exe in exes.into_iter().skip(1) {
+        let curr = fake_pid(exe, Some(prev));
         prev = curr;
     }
     prev
 }
 
-fn fake_pid(exe: &str, parent: Option<Box<Pid>>) -> Box<Pid> {
+fn fake_pid(exe: TestExe, parent: Option<Box<Pid>>) -> Box<Pid> {
     Box::new(Pid::new_fake(FakePid {
         parent,
-        exe: Some(exe.into()),
-        cmdline: None,
+        exe: exe.exe,
+        cmdline: exe.cmdline,
     }))
 }
 
@@ -148,6 +171,25 @@ mod tests {
         assert_eq!(parent.exe().unwrap(), PathBuf::from_str("bash").unwrap());
         let grandparent = parent.parent().unwrap();
         assert_eq!(grandparent.exe().unwrap(), PathBuf::from_str("wezterm").unwrap());
+        assert!(grandparent.parent().is_none());
+    }
+
+    #[test]
+    fn test_from_exe_slice_with_cmdline() {
+        let info = ProcessInfo::from_exes(vec![
+            (Some("q"), None),
+            (Some("bash"), None),
+            (Some("python"), Some("terminator")),
+        ]);
+        let current = info.current_pid();
+        assert_eq!(current.exe().unwrap(), PathBuf::from_str("q").unwrap());
+        assert_eq!(current.cmdline(), None);
+        let parent = current.parent().unwrap();
+        assert_eq!(parent.exe().unwrap(), PathBuf::from_str("bash").unwrap());
+        assert_eq!(parent.cmdline(), None);
+        let grandparent = parent.parent().unwrap();
+        assert_eq!(grandparent.exe().unwrap(), PathBuf::from_str("python").unwrap());
+        assert_eq!(grandparent.cmdline().unwrap(), "terminator");
         assert!(grandparent.parent().is_none());
     }
 }

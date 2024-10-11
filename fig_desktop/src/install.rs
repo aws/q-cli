@@ -161,7 +161,7 @@ pub async fn run_install(ctx: Arc<Context>, ignore_immediate_update: bool) {
     }
 
     // install intellij integration
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[cfg(target_os = "macos")]
     match fig_integrations::intellij::variants_installed().await {
         Ok(variants) => {
             for integration in variants {
@@ -434,7 +434,7 @@ async fn run_linux_install(ctx: Arc<Context>, settings: Arc<fig_settings::Settin
     }
 
     // TODO: is this correct?
-    launch_ibus().await;
+    // launch_ibus().await;
 }
 
 /// Installs the correct version of the Amazon Q for CLI GNOME Shell extension, if required.
@@ -692,7 +692,8 @@ async fn launch_systemd_user_service(service: SystemdUserService) -> anyhow::Res
 }
 
 #[cfg(target_os = "linux")]
-async fn launch_ibus() {
+#[allow(dead_code)]
+async fn launch_ibus(ctx: &Context) {
     use sysinfo::{
         ProcessRefreshKind,
         RefreshKind,
@@ -731,7 +732,7 @@ async fn launch_ibus() {
 
     // Wait up to 2 sec for ibus activation
     for _ in 0..10 {
-        if dbus::ibus::ibus_address().await.is_ok() {
+        if dbus::ibus::connect_to_ibus_daemon(ctx).await.is_ok() {
             return;
         }
         tokio::time::sleep(std::time::Duration::from_millis(200)).await;

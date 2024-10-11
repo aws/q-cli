@@ -67,7 +67,7 @@ pub fn current_terminal_version() -> Option<&'static str> {
 /// Checks if the current process is inside of one of the pseudoterminals listed under
 /// [`SPECIAL_TERMINALS`], returning the terminal if true.
 pub fn in_special_terminal(ctx: &Context) -> Option<Terminal> {
-    Terminal::from_process_info(ctx, SPECIAL_TERMINALS)
+    Terminal::from_process_info(ctx, &SPECIAL_TERMINALS.to_vec())
 }
 
 /// All supported terminals
@@ -205,12 +205,12 @@ impl Terminal {
             fig_os_shim::Os::Linux => LINUX_TERMINALS,
             _ => return None,
         };
-        Self::from_process_info(ctx, terminals)
+        Self::from_process_info(ctx, &terminals.to_vec())
     }
 
     /// Attempts to return the suspected terminal emulator for the current process according to the
     /// process hierarchy. Only the list provided in `terminals` will be searched for.
-    pub fn from_process_info(ctx: &Context, terminals: &[Terminal]) -> Option<Self> {
+    pub fn from_process_info(ctx: &Context, terminals: &Vec<Terminal>) -> Option<Self> {
         let mut option_pid = Some(Box::new(ctx.process_info().current_pid()));
         let (mut curr_depth, max_depth) = (0, 5);
         while curr_depth < max_depth {
@@ -224,12 +224,55 @@ impl Terminal {
                         }
                     }
                 }
+                if let Some(cmdline) = pid.cmdline() {
+                    if let Some(terminal) = Self::try_from_cmdline(&cmdline, terminals) {
+                        return Some(terminal.clone());
+                    }
+                }
                 option_pid = pid.parent();
                 curr_depth += 1;
             } else {
                 break;
             }
         }
+        None
+    }
+
+    /// Attempts to find the suspected terminal according to the provided `cmdline` - ie,
+    /// the value from /proc/pid/cmdline except with null bytes replaced with space.
+    ///
+    /// Only the list provided in `terminals` will be searched for.
+    pub fn try_from_cmdline(cmdline: &str, terminals: &Vec<Terminal>) -> Option<Self> {
+        // Special case for terminator
+        if terminals.contains(&Terminal::Terminator) {
+            let second_arg_name = cmdline
+                .split(' ')
+                .skip(1)
+                .take(1)
+                .next()
+                .and_then(|cmd| cmd.split('/').last());
+            if let Some(second_arg_name) = second_arg_name {
+                if Terminal::Terminator.executable_names().contains(&second_arg_name) {
+                    return Some(Terminal::Terminator);
+                }
+            }
+        }
+
+        // Default logic that checks the final path element of the first argument.
+        let first_arg_name = cmdline
+            .split(' ')
+            .take(1)
+            .next()
+            .and_then(|cmd| cmd.split('/').last())
+            .map(str::to_string);
+        if let Some(first_arg_name) = first_arg_name {
+            for terminal in terminals {
+                if terminal.executable_names().contains(&first_arg_name.as_str()) {
+                    return Some(terminal.clone());
+                }
+            }
+        }
+
         None
     }
 
@@ -657,6 +700,7 @@ impl IntelliJVariant {
 mod tests {
     use std::sync::Arc;
 
+    use fig_os_shim::process_info::TestExe;
     use fig_os_shim::{
         Os,
         ProcessInfo,
@@ -664,7 +708,7 @@ mod tests {
 
     use super::*;
 
-    fn make_context(os: Os, processes: Vec<&str>) -> Arc<Context> {
+    fn make_context<T: Into<TestExe>>(os: Os, processes: Vec<T>) -> Arc<Context> {
         Context::builder()
             .with_os(os)
             .with_process_info(ProcessInfo::from_exes(processes))
@@ -673,26 +717,36 @@ mod tests {
 
     #[test]
     fn test_from_process_info() {
-        Terminal::from_process_info(&Context::new(), MACOS_TERMINALS);
+        Terminal::from_process_info(&Context::new(), &MACOS_TERMINALS.to_vec());
 
         let ctx = make_context(Os::Linux, vec!["q", "fish", "wezterm"]);
         assert_eq!(
-            Terminal::from_process_info(&ctx, LINUX_TERMINALS),
+            Terminal::from_process_info(&ctx, &LINUX_TERMINALS.to_vec()),
             Some(Terminal::WezTerm)
         );
 
         let ctx = make_context(Os::Linux, vec!["q", "bash", "tmux"]);
         assert_eq!(
-            Terminal::from_process_info(&ctx, LINUX_TERMINALS),
+            Terminal::from_process_info(&ctx, &LINUX_TERMINALS.to_vec()),
             None,
             "Special terminals should return None"
         );
 
         let ctx = make_context(Os::Linux, vec!["cargo", "cargo", "q", "bash", "tmux", "wezterm"]);
         assert_eq!(
-            Terminal::from_process_info(&ctx, LINUX_TERMINALS),
+            Terminal::from_process_info(&ctx, &LINUX_TERMINALS.to_vec()),
             None,
             "Max search depth reached should return None"
+        );
+
+        let ctx = make_context(Os::Linux, vec![
+            (Some("q"), None),
+            (Some("python3"), Some("/usr/bin/python3 /usr/bin/terminator")),
+        ]);
+        assert_eq!(
+            Terminal::from_process_info(&ctx, &LINUX_TERMINALS.to_vec()),
+            Some(Terminal::Terminator),
+            "should return terminator"
         );
     }
 }

@@ -318,7 +318,7 @@ impl Fs {
 
     /// Returns a stream over the entries within a directory.
     ///
-    /// This is a proxy to [`std::fs::read_dir`].
+    /// This is a proxy to [`tokio::fs::read_dir`].
     pub async fn read_dir(&self, path: impl AsRef<Path>) -> Result<fs::ReadDir, io::Error> {
         use inner::Inner;
         match &self.0 {

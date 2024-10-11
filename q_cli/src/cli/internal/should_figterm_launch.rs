@@ -7,6 +7,7 @@ use std::io::{
 use std::process::ExitCode;
 
 use fig_os_shim::Context;
+use fig_util::Terminal;
 
 const Q_FORCE_FIGTERM_LAUNCH: &str = "Q_FORCE_FIGTERM_LAUNCH";
 const INSIDE_EMACS: &str = "INSIDE_EMACS";
@@ -126,22 +127,26 @@ fn grandparent_status(ctx: &Context, parent_pid: fig_os_shim::process_info::Pid)
     };
 
     // The terminals the platform supports
-    let mut terminals = match current_os {
+    let terminals = match current_os {
         fig_os_shim::Os::Mac => fig_util::terminal::MACOS_TERMINALS,
         fig_os_shim::Os::Linux => fig_util::terminal::LINUX_TERMINALS,
         _ => panic!("unsupported os"),
     }
     .iter()
-    .chain(fig_util::terminal::SPECIAL_TERMINALS);
+    .chain(fig_util::terminal::SPECIAL_TERMINALS)
+    .cloned()
+    .collect::<Vec<_>>();
 
     // Try to find if any of the supported terminals matches the current grandparent process
     let valid_grandparent = match current_os {
-        fig_os_shim::Os::Mac => terminals.find(|terminal| terminal.executable_names().contains(&grandparent_name)),
-        fig_os_shim::Os::Linux => terminals.find(|terminal| {
+        fig_os_shim::Os::Mac => terminals
+            .iter()
+            .find(|terminal| terminal.executable_names().contains(&grandparent_name)),
+        fig_os_shim::Os::Linux => terminals.iter().find(|terminal| {
             terminal.executable_names().contains(&grandparent_name)
-                || grandparent_cmdline_name
-                    .as_ref()
-                    .is_some_and(|name| terminal.executable_names().contains(&name.as_str()))
+                || grandparent_pid
+                    .cmdline()
+                    .is_some_and(|cmdline| Terminal::try_from_cmdline(&cmdline, &terminals).is_some())
         }),
         _ => panic!("unsupported os"),
     };

@@ -1,14 +1,12 @@
+use fig_os_shim::Context;
 use once_cell::sync::OnceCell;
 use thiserror::Error;
 use tokio::sync::Mutex;
-use zbus::{
-    Connection,
-    ConnectionBuilder,
-};
+use zbus::Connection;
 
-use self::ibus::{
+pub use self::ibus::{
     AddressError,
-    ibus_address,
+    connect_to_ibus_daemon,
 };
 
 pub mod gnome_shell;
@@ -52,11 +50,7 @@ async fn session_bus() -> Result<&'static Connection, CrateError> {
 static IBUS_BUS: OnceCell<Connection> = OnceCell::new();
 static IBUS_BUS_INIT: Mutex<()> = Mutex::const_new(());
 
-pub async fn ibus_bus_new() -> Result<Connection, CrateError> {
-    Ok(ConnectionBuilder::address(&*ibus_address().await?)?.build().await?)
-}
-
-pub async fn ibus_bus() -> Result<&'static Connection, CrateError> {
+pub async fn ibus_bus(ctx: &Context) -> Result<&'static Connection, CrateError> {
     if let Some(connection) = IBUS_BUS.get() {
         return Ok(connection);
     }
@@ -67,7 +61,7 @@ pub async fn ibus_bus() -> Result<&'static Connection, CrateError> {
         return Ok(connection);
     }
 
-    let connection = ibus_bus_new().await?;
+    let connection = connect_to_ibus_daemon(ctx).await?;
 
     let _ = IBUS_BUS.set(connection);
 

@@ -516,7 +516,6 @@ impl WebviewManager {
                             *control_flow = new_control_flow;
                         },
                         Event::ReloadTray { is_logged_in } => {
-                            error!("ReloadTray event: {}", is_logged_in);
                             tray.set_icon(Some(get_icon(is_logged_in)))
                                 .map_err(|err| error!(?err))
                                 .ok();

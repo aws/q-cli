@@ -2,7 +2,8 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use anyhow::Result;
-use dbus::ibus_bus_new;
+use dbus::connect_to_ibus_daemon;
+use fig_os_shim::Context;
 use fig_proto::local::caret_position_hook::Origin;
 use fig_util::terminal::PositioningKind;
 use tao::dpi::{
@@ -37,7 +38,7 @@ use crate::{
 };
 
 pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStateImpl>) -> Result<()> {
-    let ibus_connection = ibus_bus_new().await?;
+    let ibus_connection = connect_to_ibus_daemon(&Context::new()).await?;
     debug!("Connected to ibus: {:?}", ibus_connection);
     DBusProxy::new(&ibus_connection)
         .await?
