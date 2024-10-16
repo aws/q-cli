@@ -28,15 +28,18 @@ pub fn init() -> Result<()> {
 
     if use_local {
         // attempt to get icon theme from gsettings
-        if let Ok(output) = Command::new("gsettings")
+        match Command::new("gsettings")
             .arg("get")
             .arg("org.gnome.desktop.interface")
             .arg("icon-theme")
             .output()
         {
-            if let Ok(output) = String::from_utf8(output.stdout) {
-                let _ = set_theme(output.split_at(1).1.split_at(output.len() - 3).0.to_string());
-            }
+            Ok(output) => {
+                if let Ok(output) = String::from_utf8(output.stdout) {
+                    let _ = set_theme(output.split_at(1).1.split_at(output.len() - 3).0.to_string());
+                }
+            },
+            Err(err) => error!(?err, "unable to get icon theme from gsettings"),
         }
     }
 

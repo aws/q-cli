@@ -98,12 +98,31 @@ async fn uninstall_linux_minimal(ctx: std::sync::Arc<fig_os_shim::Context>) -> R
 
 #[cfg(target_os = "linux")]
 async fn uninstall_linux_full(ctx: std::sync::Arc<fig_os_shim::Context>) -> Result<()> {
+    use eyre::bail;
     use fig_install::{
         InstallComponents,
         UNINSTALL_URL,
         uninstall,
     };
     use tracing::error;
+
+    // TODO: Add a better way to distinguish binaries distributed between AppImage and package
+    // managers.
+    // We want to support q uninstall for AppImage, but not for package managers.
+    match ctx.process_info().current_pid().exe() {
+        Some(exe) => {
+            let Some(exe_parent) = exe.parent() else {
+                bail!("Failed to get parent of current executable: {exe:?}")
+            };
+            let local_bin = fig_util::directories::home_local_bin_ctx(&ctx)?.canonicalize()?;
+            if exe_parent != local_bin {
+                bail!(
+                    "Uninstall is only supported for binaries installed in {local_bin:?}, the current executable is in {exe_parent:?}"
+                );
+            }
+        },
+        None => bail!("Unable to determine the current process executable."),
+    }
 
     if let Err(err) = fig_util::open_url_async(UNINSTALL_URL).await {
         error!(%err, %UNINSTALL_URL, "Failed to open uninstall url");

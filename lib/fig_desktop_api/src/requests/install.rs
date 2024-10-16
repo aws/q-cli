@@ -5,7 +5,6 @@ use fig_integrations::Integration;
 use fig_integrations::desktop_entry::{
     AutostartIntegration,
     DesktopEntryIntegration,
-    should_install_autostart_entry,
 };
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
@@ -237,38 +236,32 @@ where
                     .join("share/icons/hicolor/128x128/apps/q-desktop.png");
                 let desktop_integration =
                     DesktopEntryIntegration::new(ctx, Some(entry_path), Some(icon_path), Some(exec_path.into()));
-                let autostart_integration = AutostartIntegration::new(ctx);
                 match action {
                     InstallAction::Install => {
                         ctx.state()
                             .set_value("appimage.manageDesktopEntry", true)
                             .map_err(|err| error!(?err, "unable to set `appimage.manageDesktopEntry`"))
                             .ok();
-                        let result = integration_result(desktop_integration.install().await);
-                        if should_install_autostart_entry(ctx.settings(), ctx.state()) {
-                            autostart_integration
-                                .install()
-                                .await
-                                .map_err(|err| error!(?err, "unable to install the autostart integration"))
-                                .ok();
-                        }
-                        result
+                        integration_result(desktop_integration.install().await)
                     },
                     InstallAction::Uninstall => {
                         ctx.state()
                             .set_value("appimage.manageDesktopEntry", false)
                             .map_err(|err| error!(?err, "unable to set `appimage.manageDesktopEntry`"))
                             .ok();
-                        let result = integration_result(desktop_integration.uninstall().await);
-                        autostart_integration
-                            .uninstall()
-                            .await
-                            .map_err(|err| error!(?err, "unable to install the autostart integration"))
-                            .ok();
-                        result
+                        integration_result(desktop_integration.uninstall().await)
                     },
                     InstallAction::Status => integration_status(desktop_integration).await,
                 }
+            }
+        },
+        (InstallComponent::AutostartEntry, action) => {
+            let ctx = ctx.context();
+            let integration = AutostartIntegration::new(&ctx).map_err(super::Error::from_std)?;
+            match action {
+                InstallAction::Install => integration_result(integration.install().await),
+                InstallAction::Uninstall => integration_result(integration.uninstall().await),
+                InstallAction::Status => integration_status(integration).await,
             }
         },
         #[allow(unused_variables)]
@@ -335,6 +328,7 @@ where
 mod tests {
     use std::sync::Arc;
 
+    use fig_integrations::desktop_entry::global_entry_path;
     use fig_os_shim::{
         Context,
         ContextProvider,
@@ -433,10 +427,6 @@ mod tests {
         install(request, &ctx).await.unwrap();
         assert_eq!(ctx.state.get_bool("appimage.manageDesktopEntry").unwrap(), Some(true));
         assert_status(&ctx, InstallComponent::DesktopEntry, InstallationStatus::Installed).await;
-        assert!(
-            AutostartIntegration::new(&ctx).is_installed().await.is_ok(),
-            "Autostart entry should have been installed."
-        );
 
         // Test uninstallation
         let request = InstallRequest {
@@ -446,8 +436,45 @@ mod tests {
         install(request, &ctx).await.unwrap();
         assert_eq!(ctx.state.get_bool("appimage.manageDesktopEntry").unwrap(), Some(false));
         assert_status(&ctx, InstallComponent::DesktopEntry, InstallationStatus::NotInstalled).await;
+    }
+
+    #[tokio::test]
+    async fn test_autostart_entry_installation_and_uninstallation() {
+        let ctx = Context::builder().with_test_home().await.unwrap().build_fake();
+        // Create global desktop entry
+        {
+            let global_path = global_entry_path(&ctx);
+            ctx.fs().create_dir_all(global_path.parent().unwrap()).await.unwrap();
+            ctx.fs().write(global_path, "[Desktop Entry]").await.unwrap();
+        }
+        let ctx = TestContext {
+            ctx,
+            settings: Settings::new_fake(),
+            state: State::new_fake(),
+        };
+
+        // Test installation
+        assert_status(&ctx, InstallComponent::AutostartEntry, InstallationStatus::NotInstalled).await;
+        let request = InstallRequest {
+            component: InstallComponent::AutostartEntry.into(),
+            action: InstallAction::Install.into(),
+        };
+        install(request, &ctx).await.unwrap();
+        assert_status(&ctx, InstallComponent::AutostartEntry, InstallationStatus::Installed).await;
         assert!(
-            AutostartIntegration::new(&ctx).is_installed().await.is_err(),
+            AutostartIntegration::to_global(&ctx).is_installed().await.is_ok(),
+            "Autostart entry should have been installed."
+        );
+
+        // Test uninstallation
+        let request = InstallRequest {
+            component: InstallComponent::AutostartEntry.into(),
+            action: InstallAction::Uninstall.into(),
+        };
+        install(request, &ctx).await.unwrap();
+        assert_status(&ctx, InstallComponent::AutostartEntry, InstallationStatus::NotInstalled).await;
+        assert!(
+            AutostartIntegration::to_global(&ctx).is_installed().await.is_err(),
             "Autostart entry should have been uninstalled."
         );
     }

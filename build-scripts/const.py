@@ -1,8 +1,10 @@
 APP_NAME = "Amazon Q"
 CLI_BINARY_NAME = "q"
 PTY_BINARY_NAME = "qterm"
+DESKTOP_BINARY_NAME = "q-desktop"
 URL_SCHEMA = "q"
 TAURI_PRODUCT_NAME = "q_desktop"
+LINUX_PACKAGE_NAME = "amazon-q"
 
 # macos specific
 MACOS_BUNDLE_ID = "com.amazon.codewhisperer"

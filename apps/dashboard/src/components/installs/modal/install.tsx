@@ -67,6 +67,11 @@ export default function InstallModal({
           // so we should return early here.
           return;
         }
+        if (key === "desktopEntry") {
+          Install.install("autostartEntry").catch((e) => {
+            console.error(e);
+          });
+        }
         setChecking(false);
         next();
       })

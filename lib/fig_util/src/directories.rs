@@ -15,6 +15,7 @@ use thiserror::Error;
 use time::OffsetDateTime;
 
 use crate::env_var::Q_PARENT;
+use crate::linux::PACKAGE_NAME;
 use crate::system_info::{
     in_cloudshell,
     is_remote,
@@ -377,8 +378,7 @@ pub fn resources_path_ctx<Ctx: EnvProvider + PlatformProvider>(ctx: &Ctx) -> Res
                     .current_dir()?
                     .join(format!("lib/{}", TAURI_PRODUCT_NAME.replace("_", "-"))))
             } else {
-                // TODO: update for deb bundle.
-                Ok("/usr/share/fig".into())
+                Ok(format!("/usr/share/{}", PACKAGE_NAME).into())
             }
         },
         _ => Err(DirectoryError::UnsupportedOs(os)),

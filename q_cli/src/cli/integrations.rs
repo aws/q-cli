@@ -116,6 +116,7 @@ impl IntegrationsSubcommands {
 #[allow(unused_mut)]
 async fn install(integration: Integration, silent: bool) -> Result<()> {
     let mut installed = false;
+    let mut errored = false;
     let mut status: Option<&str> = None;
 
     let result = match integration {
@@ -178,6 +179,7 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
                     status = Some("You must restart your terminal to finish installing the input method.");
                     Ok(())
                 } else {
+                    errored = true;
                     Err(eyre::eyre!("Input method integration is only supported on macOS"))
                 }
             }
@@ -192,13 +194,14 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
                     }
                     Ok(())
                 } else {
+                    errored = true;
                     Err(eyre::eyre!("VSCode integration is only supported on macOS"))
                 }
             }
         },
         Integration::IntellijPlugin => {
             cfg_if::cfg_if! {
-                if #[cfg(any(target_os = "macos", target_os = "linux"))] {
+                if #[cfg(target_os = "macos")] {
                     let variants = fig_integrations::intellij::variants_installed().await?;
                     installed = !variants.is_empty();
                     for variant in variants {
@@ -206,7 +209,8 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
                     }
                     Ok(())
                 } else {
-                    Err(eyre::eyre!("IntelliJ integration is only supported on macOS and Linux"))
+                    errored = true;
+                    Err(eyre::eyre!("IntelliJ integration is only supported on macOS"))
                 }
             }
         },
@@ -220,7 +224,7 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
         }
     }
 
-    if !installed && !silent {
+    if !errored && !installed && !silent {
         println!("Already installed");
     }
 

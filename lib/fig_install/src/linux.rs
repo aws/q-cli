@@ -172,7 +172,7 @@ pub(crate) async fn uninstall_desktop_entries(ctx: &Context) -> Result<(), Error
     DesktopEntryIntegration::new(ctx, None::<&str>, None, None)
         .uninstall()
         .await?;
-    Ok(AutostartIntegration::new(ctx).uninstall().await?)
+    Ok(AutostartIntegration::uninstall(ctx).await?)
 }
 
 pub(crate) async fn uninstall_desktop(ctx: &Context) -> Result<(), Error> {

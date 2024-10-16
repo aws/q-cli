@@ -4,6 +4,7 @@ pub mod local_state;
 mod multiplexer;
 pub mod should_figterm_launch;
 
+use std::collections::HashSet;
 use std::io::{
     Read,
     Write,
@@ -222,7 +223,6 @@ pub enum InternalSubcommand {
         #[arg(long)]
         recv: bool,
     },
-    /// Linux only
     UninstallForAllUsers,
     Uuidgen,
     #[cfg(target_os = "linux")]
@@ -460,8 +460,8 @@ impl InternalSubcommand {
                 Ok(ExitCode::SUCCESS)
             },
             InternalSubcommand::UninstallForAllUsers => {
-                if !cfg!(target_os = "macos") {
-                    bail!("uninstall-for-all-users is only supported on macOS");
+                if !cfg!(target_os = "linux") {
+                    bail!("uninstall-for-all-users is only supported on Linux");
                 }
 
                 println!("Uninstalling additional components...");
@@ -479,11 +479,13 @@ impl InternalSubcommand {
                 //     std::iter::empty::<(&str, &str)>(),
                 // )));
 
-                for user in users
-                    .split('\n')
+                let users = users
+                    .split(' ')
                     .map(|line| line.trim())
                     .filter(|line| !line.is_empty())
-                {
+                    .collect::<HashSet<_>>();
+
+                for user in users {
                     if let Ok(exit_status) = tokio::process::Command::new("runuser")
                         .args(["-u", user, "--", CLI_BINARY_NAME, "_", "open-uninstall-page"])
                         .status()
@@ -516,11 +518,11 @@ impl InternalSubcommand {
                 // emit.await.ok();
 
                 if !uninstall_success {
-                    bail!("Failed to uninstall properly");
+                    bail!("Failed to uninstall completely");
                 }
 
                 if !open_page_success {
-                    bail!("Failed to uninstall completely");
+                    bail!("Unable to open {}", fig_install::UNINSTALL_URL);
                 }
 
                 Ok(ExitCode::SUCCESS)

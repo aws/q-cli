@@ -28,9 +28,16 @@ use crate::error::{
     Result,
 };
 
-/// Path to the local [PRODUCT_NAME] desktop entry.
+/// Path to the local [PRODUCT_NAME] desktop entry installed under `~/.local/share/applications`
 pub fn local_entry_path<Ctx: FsProvider + EnvProvider>(ctx: &Ctx) -> Result<PathBuf> {
     Ok(home_dir_ctx(ctx)?.join(format!(".local/share/applications/{}", DESKTOP_ENTRY_NAME)))
+}
+
+/// Path to the global [PRODUCT_NAME] desktop entry installed under `/usr/share/applications`
+pub fn global_entry_path<Ctx: FsProvider>(ctx: &Ctx) -> PathBuf {
+    // Using chroot_path for test code.
+    ctx.fs()
+        .chroot_path(format!("/usr/share/applications/{}", DESKTOP_ENTRY_NAME))
 }
 
 /// Path to the local autostart symlink.
@@ -271,17 +278,47 @@ impl EntryContents {
     }
 }
 
+/// Represents an XDG Autostart entry that symlinks to a desktop entry.
 #[derive(Debug, Clone)]
 pub struct AutostartIntegration<'a, Ctx> {
     ctx: &'a Ctx,
+    /// Path to the desktop entry to symlink to.
+    target: PathBuf,
 }
 
 impl<'a, Ctx> AutostartIntegration<'a, Ctx>
 where
-    Ctx: FsProvider + EnvProvider,
+    Ctx: FsProvider + EnvProvider + Sync,
 {
-    pub fn new(ctx: &'a Ctx) -> Self {
-        Self { ctx }
+    /// Creates a new [AutostartIntegration] that links to a local desktop entry if in an AppImage,
+    /// and a global desktop entry otherwise.
+    pub fn new(ctx: &'a Ctx) -> Result<Self> {
+        if ctx.env().in_appimage() {
+            Self::to_local(ctx)
+        } else {
+            Ok(Self::to_global(ctx))
+        }
+    }
+
+    /// Creates a new [AutostartIntegration] that symlinks to a desktop entry installed locally
+    /// (see [local_entry_path]).
+    pub fn to_local(ctx: &'a Ctx) -> Result<Self> {
+        let target = local_entry_path(ctx)?;
+        Ok(Self { ctx, target })
+    }
+
+    /// Creates a new [AutostartIntegration] that symlinks to a desktop entry installed globally
+    /// (see [global_entry_path]).
+    pub fn to_global(ctx: &'a Ctx) -> Self {
+        let target = global_entry_path(ctx);
+        Self { ctx, target }
+    }
+
+    /// Helper to uninstall the autostart integration without constructing a local or global
+    /// variant.
+    pub async fn uninstall(ctx: &'a Ctx) -> Result<()> {
+        // local/global doesn't matter
+        Self::to_global(ctx).uninstall().await
     }
 }
 
@@ -300,10 +337,12 @@ where
         }
 
         let fs = self.ctx.fs();
-        let to_entry_path = local_entry_path(self.ctx)?;
         let to_autostart_path = local_autostart_path(self.ctx)?;
         create_parent(fs, &to_autostart_path).await?;
-        fs.symlink(&to_entry_path, &to_autostart_path).await?;
+        if fs.exists(&to_autostart_path) {
+            fs.remove_file(&to_autostart_path).await?;
+        }
+        fs.symlink(&self.target, &to_autostart_path).await?;
         Ok(())
     }
 
@@ -318,13 +357,12 @@ where
 
     async fn is_installed(&self) -> Result<()> {
         let fs = self.ctx.fs();
-        let to_entry_path = local_entry_path(self.ctx)?;
         let to_autostart_path = local_autostart_path(self.ctx)?;
         if !fs.exists(&to_autostart_path) {
             return Err(Error::FileDoesNotExist(to_autostart_path.clone().into()));
         }
         let read_path = fs.read_link(&to_autostart_path).await?;
-        if read_path != to_entry_path {
+        if read_path != self.target {
             Err(Error::ImproperInstallation(
                 format!("Unexpected link path: {}", read_path.to_string_lossy()).into(),
             ))
@@ -335,9 +373,12 @@ where
 }
 
 /// Whether or not the [`AutostartIntegration`] should be installed according to the user's
-/// settings and state.
-pub fn should_install_autostart_entry(settings: &Settings, state: &State) -> bool {
-    state.get_bool_or("appimage.manageDesktopEntry", true) && settings.get_bool_or("app.launchOnStartup", true)
+/// environment and settings.
+pub fn should_install_autostart_entry<Ctx: EnvProvider>(env: &Ctx, settings: &Settings, state: &State) -> bool {
+    if env.env().in_appimage() && !state.get_bool_or("appimage.manageDesktopEntry", false) {
+        return false;
+    }
+    settings.get_bool_or("app.launchOnStartup", true)
 }
 
 #[cfg(test)]
@@ -345,6 +386,7 @@ mod tests {
     use fig_os_shim::{
         Context,
         ContextBuilder,
+        Env,
     };
 
     use super::*;
@@ -372,7 +414,7 @@ Type=Application"#;
         );
     }
 
-    async fn make_test_desktop_entry(ctx: &Context) -> DesktopEntryIntegration<'_, Context> {
+    async fn make_test_local_desktop_entry(ctx: &Context) -> DesktopEntryIntegration<'_, Context> {
         let fs = ctx.fs();
         fs.write("/app.desktop", TEST_DESKTOP_ENTRY).await.unwrap();
         fs.write("/app.png", "image").await.unwrap();
@@ -383,7 +425,7 @@ Type=Application"#;
     async fn test_desktop_entry_integration_install_and_uninstall() {
         let ctx = ContextBuilder::new().with_test_home().await.unwrap().build();
         let fs = ctx.fs();
-        let integration = make_test_desktop_entry(&ctx).await;
+        let integration = make_test_local_desktop_entry(&ctx).await;
         assert!(integration.is_installed().await.is_err());
 
         // Test install.
@@ -430,55 +472,124 @@ Type=Application"#;
     }
 
     #[tokio::test]
+    async fn test_new_autostart_integration() {
+        let ctx = Context::builder()
+            .with_test_home()
+            .await
+            .unwrap()
+            .with_env_var("APPIMAGE", "/app.appimage")
+            .build_fake();
+        let integration = AutostartIntegration::new(&ctx).unwrap();
+        assert_eq!(integration.target, local_entry_path(&ctx).unwrap());
+
+        let ctx = Context::builder().with_test_home().await.unwrap().build_fake();
+        let integration = AutostartIntegration::new(&ctx).unwrap();
+        assert_eq!(integration.target, global_entry_path(&ctx));
+    }
+
+    #[tokio::test]
     async fn test_autostart_integration_install_and_uninstall() {
-        let ctx = ContextBuilder::new().with_test_home().await.unwrap().build();
-        make_test_desktop_entry(&ctx).await.install().await.unwrap();
-        let autostart = AutostartIntegration::new(&ctx);
-        assert!(autostart.is_installed().await.is_err());
+        let ctx = ContextBuilder::new().with_test_home().await.unwrap().build_fake();
+
+        // Create desktop entries both locally and globally
+        {
+            let local_path = local_entry_path(&ctx).unwrap();
+            let global_path = global_entry_path(&ctx);
+            ctx.fs().create_dir_all(local_path.parent().unwrap()).await.unwrap();
+            ctx.fs().write(local_path, "[Desktop Entry]").await.unwrap();
+            ctx.fs().create_dir_all(global_path.parent().unwrap()).await.unwrap();
+            ctx.fs().write(global_path, "[Desktop Entry]").await.unwrap();
+        }
+
+        let local_autostart = AutostartIntegration::to_local(&ctx).unwrap();
+        let global_autostart = AutostartIntegration::to_global(&ctx);
+
+        // Not installed by default.
+        assert!(local_autostart.is_installed().await.is_err());
+        assert!(global_autostart.is_installed().await.is_err());
 
         // Test install.
-        autostart.install().await.unwrap();
-        autostart.is_installed().await.unwrap();
-        assert!(autostart.is_installed().await.is_ok());
-        let installed_entry_path = local_entry_path(&ctx).unwrap();
+        local_autostart.install().await.unwrap();
+        local_autostart.is_installed().await.unwrap();
+        assert!(local_autostart.is_installed().await.is_ok());
+        let local_desktop_entry = local_entry_path(&ctx).unwrap();
         let installed_autostart_path = local_autostart_path(&ctx).unwrap();
         assert_eq!(
             ctx.fs().read_link(&installed_autostart_path).await.unwrap(),
-            installed_entry_path
+            local_desktop_entry
         );
 
+        // Test installing globally will overwrite the local install.
+        global_autostart.install().await.unwrap();
+        assert_eq!(
+            ctx.fs().read_link(&installed_autostart_path).await.unwrap(),
+            global_entry_path(&ctx)
+        );
+        assert!(global_autostart.is_installed().await.is_ok());
+        assert!(local_autostart.is_installed().await.is_err());
+
         // Test uninstall.
-        autostart.uninstall().await.unwrap();
-        assert!(autostart.is_installed().await.is_err());
+        global_autostart.uninstall().await.unwrap();
+        assert!(global_autostart.is_installed().await.is_err());
         assert!(!ctx.fs().symlink_exists(&installed_autostart_path).await);
         assert!(
-            autostart.uninstall().await.is_ok(),
+            global_autostart.uninstall().await.is_ok(),
             "should be able to uninstall repeatedly without erroring"
         );
     }
 
     #[test]
     fn test_should_install_autostart_entry() {
-        // Test structure: (settings, state, expected_result)
+        // Test structure: (env, settings, state, expected_result, test_name)
         let testcases = &[
-            (vec![], vec![("appimage.manageDesktopEntry", true.into())], true),
+            (vec![], vec![], vec![], true, "Default should install"),
             (
+                vec![],
                 vec![("app.launchOnStartup", true.into())],
+                vec![],
+                true,
+                "Install if launchOnStartup is true",
+            ),
+            (
+                vec![],
+                vec![("app.launchOnStartup", false.into())],
+                vec![],
+                false,
+                "Don't install if launchOnStartup is false",
+            ),
+            (
+                vec![("APPIMAGE", "/app.appimage")],
+                vec![],
+                vec![],
+                false,
+                "AppImage should not install without user permission",
+            ),
+            (
+                vec![("APPIMAGE", "/app.appimage")],
+                vec![],
                 vec![("appimage.manageDesktopEntry", true.into())],
                 true,
+                "AppImage should install by default if user has granted permission",
             ),
-            (vec![], vec![("appimage.manageDesktopEntry", false.into())], false),
             (
-                vec![("app.launchOnStartup", false.into())],
+                vec![("APPIMAGE", "/app.appimage")],
+                vec![("app.launchOnStartup", true.into())],
                 vec![("appimage.manageDesktopEntry", false.into())],
                 false,
+                "AppImage should not install if user has removed permission",
             ),
         ];
         for test in testcases {
-            let (settings, state, expected) = test;
+            let (env, settings, state, expected, message) = test;
+            let env = Env::from_slice(env);
             let settings = Settings::from_slice(settings);
             let state = State::from_slice(state);
-            assert_eq!(should_install_autostart_entry(&settings, &state), *expected);
+            assert_eq!(
+                should_install_autostart_entry(&env, &settings, &state),
+                *expected,
+                "{}",
+                message
+            );
         }
     }
 }

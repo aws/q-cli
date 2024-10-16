@@ -1,3 +1,3 @@
 #!/bin/bash
 
-killall fig_desktop || true
+killall q-desktop || true

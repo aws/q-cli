@@ -33,10 +33,12 @@ from const import (
     APP_NAME,
     CLI_BINARY_NAME,
     CLI_PACKAGE_NAME,
+    DESKTOP_BINARY_NAME,
     DESKTOP_PACKAGE_NAME,
     DMG_NAME,
     LINUX_ARCHIVE_NAME,
     LINUX_LEGACY_GNOME_EXTENSION_UUID,
+    LINUX_PACKAGE_NAME,
     MACOS_BUNDLE_ID,
     PTY_BINARY_NAME,
     PTY_PACKAGE_NAME,
@@ -500,7 +502,7 @@ def linux_tauri_config(
                     str(cli_path).removesuffix(f"-{target}"),
                     str(pty_path).removesuffix(f"-{target}"),
                 ],
-                "targets": ["appimage", "deb"],
+                "targets": ["appimage"],
                 "icon": ["icons/128x128.png"],
                 "resources": {
                     dashboard_path.absolute().as_posix(): "dashboard",
@@ -513,6 +515,78 @@ def linux_tauri_config(
         }
     }
     return json.dumps(config)
+
+
+def linux_desktop_entry() -> str:
+    return (
+        "[Desktop Entry]\n"
+        "Categories=Development;\n"
+        f"Exec={DESKTOP_BINARY_NAME}\n"
+        f"Icon={LINUX_PACKAGE_NAME}\n"
+        f"Name={APP_NAME}\n"
+        "Terminal=false\n"
+        "Type=Application"
+    )
+
+
+def build_linux_deb(
+    cli_path: pathlib.Path,
+    pty_path: pathlib.Path,
+    desktop_path: pathlib.Path,
+    themes_path: pathlib.Path,
+    legacy_extension_dir_path: pathlib.Path,
+    npm_packages: NpmBuildOutput,
+):
+    info("Packaging deb bundle")
+
+    bundles_path = BUILD_DIR / "linux-bundles"
+    shutil.rmtree(bundles_path, ignore_errors=True)
+    bundles_path.mkdir(parents=True)
+
+    info("Copying binaries")
+    bin_path = bundles_path / "usr/bin"
+    bin_path.mkdir(parents=True)
+    shutil.copy(cli_path, bin_path / CLI_BINARY_NAME)
+    shutil.copy(pty_path, bin_path / PTY_BINARY_NAME)
+    shutil.copy(desktop_path, bin_path / DESKTOP_BINARY_NAME)
+
+    info("Copying /usr/share resources")
+    desktop_entry_path = bundles_path / f"usr/share/applications/{LINUX_PACKAGE_NAME}.desktop"
+    desktop_entry_path.parent.mkdir(parents=True)
+    desktop_entry_path.write_text(linux_desktop_entry())
+    desktop_icon_path = bundles_path / f"usr/share/icons/hicolor/128x128/apps/{LINUX_PACKAGE_NAME}.png"
+    desktop_icon_path.parent.mkdir(parents=True)
+    share_path = bundles_path / f"usr/share/{LINUX_PACKAGE_NAME}"
+    share_path.mkdir(parents=True)
+    shutil.copy(pathlib.Path(f"{DESKTOP_PACKAGE_NAME}/icons/128x128.png"), desktop_icon_path)
+    shutil.copytree(legacy_extension_dir_path, share_path / LINUX_LEGACY_GNOME_EXTENSION_UUID)
+    shutil.copytree(npm_packages.autocomplete_path, share_path / "autocomplete")
+    shutil.copytree(npm_packages.dashboard_path, share_path / "dashboard")
+    shutil.copytree(themes_path, share_path / "themes")
+    # TODO: Support vscode
+    # vscode_path = share_path / 'vscode/vscode-plugin.vsix'
+    # vscode_path.parent.mkdir(parents=True)
+    # shutil.copy(npm_packages.vscode_path, vscode_path)
+
+    def replace_text(file: pathlib.Path, old: str, new: str):
+        file.write_text(file.read_text().replace(old, new))
+
+    debian_path = bundles_path / "DEBIAN"
+    debian_path.mkdir(parents=True)
+    shutil.copytree("bundle/deb", debian_path, dirs_exist_ok=True)
+    replace_text(bundles_path / "DEBIAN/control", "$VERSION", version())
+    replace_text(bundles_path / "DEBIAN/control", "$APT_ARCH", "amd64")
+    replace_text(bundles_path / "DEBIAN/control_minimal", "$VERSION", version())
+    replace_text(bundles_path / "DEBIAN/control_minimal", "$APT_ARCH", "amd64")
+    set_executable(bundles_path / "DEBIAN/postrm")
+
+    info("Running dpkg-deb build")
+    run_cmd(["dpkg-deb", "--build", "--root-owner-group", "linux-bundles"], cwd=BUILD_DIR)
+
+    info("Moving built deb to build directory")
+    linux_package_path = BUILD_DIR / f"{LINUX_PACKAGE_NAME}.deb"
+    (BUILD_DIR / "linux-bundles.deb").rename(linux_package_path)
+    run_cmd(["dpkg-deb", "--info", linux_package_path])
 
 
 def build_linux_full(
@@ -595,18 +669,26 @@ def build_linux_full(
         cwd=DESKTOP_PACKAGE_NAME,
         env=build_env_vars,
     )
+    desktop_path = pathlib.Path(f'target/{target}/{"release" if release else "debug"}/{DESKTOP_BINARY_NAME}')
+
+    build_linux_deb(
+        cli_path=cli_path,
+        pty_path=pty_path,
+        desktop_path=desktop_path,
+        themes_path=themes_path,
+        legacy_extension_dir_path=legacy_extension_dir_path,
+        npm_packages=npm_packages,
+    )
 
     info("Copying bundles to build directory")
     bundle_name = f"{tauri_product_name()}_{version()}_amd64"
     target_subdir = "release" if release else "debug"
     bundle_grandparent_path = f"target/{target}/{target_subdir}/bundle"
     appimage_path = BUILD_DIR / f"{LINUX_ARCHIVE_NAME}.appimage"
-    deb_path = BUILD_DIR / f"{LINUX_ARCHIVE_NAME}.deb"
     shutil.copy(
         pathlib.Path(f"{bundle_grandparent_path}/appimage/{bundle_name}.AppImage"),
         appimage_path,
     )
-    shutil.copy(pathlib.Path(f"{bundle_grandparent_path}/deb/{bundle_name}.deb"), deb_path)
 
     if signer:
         info("Downloading validate binary to verify the AppImage signature")

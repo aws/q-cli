@@ -917,8 +917,17 @@ async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
                     let ctx = Context::new();
                     let settings = Settings::new();
                     let state = State::new();
-                    let autostart = AutostartIntegration::new(&ctx);
-                    if should_install_autostart_entry(&settings, &state) {
+                    let autostart = match AutostartIntegration::new(&ctx) {
+                        Ok(autostart) => autostart,
+                        Err(err) => {
+                            error!(
+                                ?err,
+                                "failed to update the autostart integration installed status to {}", enabled
+                            );
+                            return;
+                        },
+                    };
+                    if should_install_autostart_entry(&ctx, &settings, &state) {
                         autostart
                             .install()
                             .await

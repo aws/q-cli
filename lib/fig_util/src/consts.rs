@@ -74,6 +74,9 @@ pub mod macos {
 
 pub mod linux {
     pub const DESKTOP_ENTRY_NAME: &str = "amazon-q.desktop";
+
+    /// Name of the deb package.
+    pub const PACKAGE_NAME: &str = "amazon-q";
 }
 
 pub mod env_var {

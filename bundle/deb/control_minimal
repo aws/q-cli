@@ -1,8 +1,7 @@
-Package: amazon-q
+Package: amazon-q-minimal
 Description: Amazon Q CLI for Linux
 Maintainer: Grant Gurvis <grangurv@amazon.com>
 Homepage: https://github.com/aws/q-cli
 Version: $VERSION
 Architecture: $APT_ARCH
-Conflicts: amazon-q-minimal
-Depends: libayatana-appindicator3-1, libwebkit2gtk-4.0-37, libgtk-3-0, util-linux
+Conflicts: amazon-q

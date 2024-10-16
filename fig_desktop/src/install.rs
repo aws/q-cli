@@ -552,12 +552,12 @@ async fn install_autostart_entry(
         should_install_autostart_entry,
     };
 
-    // default for startup should be true
-    if !should_install_autostart_entry(settings, state) {
+    if !should_install_autostart_entry(ctx, settings, state) {
         return Ok(());
     }
 
-    AutostartIntegration::new(ctx).install().await?;
+    AutostartIntegration::new(ctx)?.install().await?;
+
     Ok(())
 }
 
@@ -1013,10 +1013,15 @@ echo "{binary_name} {version}"
     #[cfg(target_os = "linux")]
     mod linux_desktop_entry_tests {
         use fig_integrations::desktop_entry::{
+            AutostartIntegration,
+            global_entry_path,
             local_entry_path,
             local_icon_path,
         };
-        use fig_settings::State;
+        use fig_settings::{
+            Settings,
+            State,
+        };
         use fig_util::directories::{
             appimage_desktop_entry_icon_path,
             appimage_desktop_entry_path,
@@ -1072,6 +1077,41 @@ echo "{binary_name} {version}"
             // Then
             assert!(!fs.exists(local_entry_path(&ctx).unwrap()));
             assert!(!fs.exists(local_icon_path(&ctx).unwrap()));
+        }
+
+        #[tokio::test]
+        async fn test_autostart_entry_installed_locally_for_appimage() {
+            let ctx = Context::builder()
+                .with_test_home()
+                .await
+                .unwrap()
+                .with_env_var("APPIMAGE", "/test.appimage")
+                .build_fake();
+            let fs = ctx.fs();
+            fs.create_dir_all(local_entry_path(&ctx).unwrap().parent().unwrap())
+                .await
+                .unwrap();
+            fs.write(local_entry_path(&ctx).unwrap(), "[Desktop Entry]")
+                .await
+                .unwrap();
+
+            // When
+            install_autostart_entry(
+                &ctx,
+                &Settings::new_fake(),
+                &State::from_slice(&[("appimage.manageDesktopEntry", true.into())]),
+            )
+            .await
+            .unwrap();
+
+            // Then
+            assert!(
+                AutostartIntegration::to_local(&ctx)
+                    .unwrap()
+                    .is_installed()
+                    .await
+                    .is_ok()
+            );
         }
     }
 }
