@@ -37,6 +37,7 @@ pub struct GnomeExtensionIntegration<'a, Ctx, ExtensionsCtx> {
 impl<'a, Ctx, ExtensionsCtx> GnomeExtensionIntegration<'a, Ctx, ExtensionsCtx>
 where
     Ctx: FsProvider + EnvProvider,
+    ExtensionsCtx: FsProvider + EnvProvider + SysInfoProvider + Send + Sync,
 {
     pub fn new(
         ctx: &'a Ctx,
@@ -49,6 +50,19 @@ where
             shell_extensions,
             bundle_path: bundle_path.map(|p| PathBuf::from(p.as_ref())),
             version,
+        }
+    }
+
+    /// Uninstalls the extension without using the D-Bus API, but by directly removing the
+    /// directory containing the extension.
+    ///
+    /// Returns a bool indicating whether or not the extension was uninstalled.
+    pub async fn uninstall_manually(&self) -> Result<bool> {
+        let extension_path = self.shell_extensions.local_extension_directory().await?;
+        match self.ctx.fs().remove_dir_all(&extension_path).await {
+            Ok(_) => Ok(true),
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => Ok(false),
+            Err(err) => Err(err.into()),
         }
     }
 }

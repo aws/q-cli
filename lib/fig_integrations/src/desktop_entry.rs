@@ -339,7 +339,7 @@ where
         let fs = self.ctx.fs();
         let to_autostart_path = local_autostart_path(self.ctx)?;
         create_parent(fs, &to_autostart_path).await?;
-        if fs.exists(&to_autostart_path) {
+        if fs.symlink_exists(&to_autostart_path).await {
             fs.remove_file(&to_autostart_path).await?;
         }
         fs.symlink(&self.target, &to_autostart_path).await?;

@@ -1,3 +1,5 @@
 #!/bin/bash
 
-q _ uninstall-for-all-users || true
+if [ "$1" = "remove" ]; then
+    q _ uninstall-for-all-users || true
+fi

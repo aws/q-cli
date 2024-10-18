@@ -128,6 +128,7 @@ pub enum FileType {
     TarZst,
     Zip,
     AppImage,
+    Deb,
     #[strum(default)]
     Other(String),
 }
@@ -309,6 +310,7 @@ mod tests {
         test_ser_deser!(FileType, FileType::TarZst, "tarZst");
         test_ser_deser!(FileType, FileType::Zip, "zip");
         test_ser_deser!(FileType, FileType::AppImage, "appImage");
+        test_ser_deser!(FileType, FileType::Deb, "deb");
     }
 
     #[test]

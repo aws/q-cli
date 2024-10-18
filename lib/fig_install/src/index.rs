@@ -98,11 +98,15 @@ impl Index {
     }
 
     /// Determines the next package in the index to update to, given the provided parameters.
+    ///
+    /// If `file_type` is [Option::None], then the returned package *may have a different file type
+    /// than the currently installed version*. This is useful to check if an update exists for the
+    /// given target and variant without filtering on file type, e.g. in the case of Linux desktop.
     pub fn find_next_version(
         &self,
         target_triple: &TargetTriple,
         variant: &Variant,
-        file_type: &FileType,
+        file_type: Option<&FileType>,
         current_version: &str,
         ignore_rollout: bool,
         threshold_override: Option<u8>,
@@ -110,9 +114,10 @@ impl Index {
         if !self.supported.iter().any(|support| {
             support.target_triple.as_ref() == Some(target_triple)
                 && support.variant == *variant
-                && support.file_type.as_ref() == Some(file_type)
+                && (file_type.is_none()
+                    || file_type.is_some_and(|file_type| support.file_type.as_ref() == Some(file_type)))
         }) {
-            error!("No support found for: {} {} {}", target_triple, variant, file_type);
+            error!("No support found for: {} {} {:?}", target_triple, variant, file_type);
             return Err(Error::SystemNotOnChannel);
         }
 
@@ -125,7 +130,8 @@ impl Index {
                 version.packages.iter().any(|package| {
                     package.target_triple.as_ref() == Some(target_triple)
                         && package.variant == *variant
-                        && package.file_type.as_ref() == Some(file_type)
+                        && (file_type.is_none()
+                            || file_type.is_some_and(|file_type| package.file_type.as_ref() == Some(file_type)))
                 })
             })
             .filter(|version| match &version.rollout {
@@ -206,7 +212,8 @@ impl Index {
             .find(|package| {
                 package.target_triple.as_ref() == Some(target_triple)
                     && package.variant == *variant
-                    && package.file_type.as_ref() == Some(file_type)
+                    && (file_type.is_none()
+                        || file_type.is_some_and(|file_type| package.file_type.as_ref() == Some(file_type)))
             })
             .unwrap();
 
@@ -355,13 +362,17 @@ pub async fn check_for_updates(
     ignore_rollout: bool,
 ) -> Result<Option<UpdatePackage>, Error> {
     const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
-    let file_type: FileType = get_file_type(&Context::new(), variant)?;
+    let ctx = Context::new();
+    let file_type = match (variant, ctx.platform().os()) {
+        (Variant::Full, fig_os_shim::Os::Linux) => None,
+        _ => Some(get_file_type(&Context::new(), variant)?),
+    };
     let index = pull(&channel).await?;
 
     index.find_next_version(
         target_triple,
         variant,
-        &file_type,
+        file_type.as_ref(),
         CURRENT_VERSION,
         ignore_rollout,
         None,
@@ -373,8 +384,8 @@ fn get_file_type(ctx: &Context, variant: &Variant) -> Result<FileType, Error> {
         fig_os_shim::Os::Mac => Ok(FileType::Dmg),
         fig_os_shim::Os::Linux => {
             match variant {
-                // TODO: Figure out how to determine for .deb bundles.
-                Variant::Full => Ok(FileType::AppImage),
+                // Linux desktop currently cannot distinguish between AppImage and packages.
+                Variant::Full => Err(Error::FileTypeNotFound),
                 Variant::Minimal => Ok(FileType::TarGz),
                 Variant::Other(_) => Err(Error::UnsupportedPlatform),
             }
@@ -601,7 +612,7 @@ mod tests {
             .find_next_version(
                 &TargetTriple::AArch64UnknownLinuxMusl,
                 &Variant::Minimal,
-                &FileType::TarZst,
+                Some(&FileType::TarZst),
                 "1.2.1",
                 true,
                 None,
@@ -616,7 +627,7 @@ mod tests {
             .find_next_version(
                 &TargetTriple::AArch64UnknownLinuxMusl,
                 &Variant::Minimal,
-                &FileType::TarZst,
+                Some(&FileType::TarZst),
                 "1.2.0",
                 true,
                 None,
@@ -632,11 +643,27 @@ mod tests {
         let next = load_test_index().find_next_version(
             &TargetTriple::AArch64UnknownLinuxMusl,
             &Variant::Full,
-            &FileType::TarZst,
+            Some(&FileType::TarZst),
             "1.2.1",
             true,
             None,
         );
         assert!(next.is_err());
+    }
+
+    #[test]
+    fn index_with_optional_filetype_returns_highest_version() {
+        let next = load_test_index()
+            .find_next_version(
+                &TargetTriple::X86_64UnknownLinuxGnu,
+                &Variant::Full,
+                None,
+                "1.0.5",
+                true,
+                None,
+            )
+            .unwrap()
+            .expect("should have update package");
+        assert_eq!(next.version.to_string().as_str(), "1.2.1");
     }
 }

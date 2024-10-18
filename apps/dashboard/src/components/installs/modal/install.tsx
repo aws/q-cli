@@ -68,12 +68,22 @@ export default function InstallModal({
           return;
         }
         if (key === "desktopEntry") {
-          Install.install("autostartEntry").catch((e) => {
-            console.error(e);
-          });
+          Install.install("autostartEntry")
+            .then(() => {
+              setChecking(false);
+              next();
+            })
+            .catch((e) => {
+              setError(
+                `Failed to install the local autostart entry: ${e.message}`,
+              );
+              setTimeElapsed(true);
+              console.error(e);
+            });
+        } else {
+          setChecking(false);
+          next();
         }
-        setChecking(false);
-        next();
       })
       .catch((e) => {
         setError(e.message);

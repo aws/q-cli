@@ -762,7 +762,7 @@ impl DebugSubcommand {
                     .find_next_version(
                         &TargetTriple::from_str(target_triple)?,
                         &Variant::from_str(variant)?,
-                        &FileType::from_str(file_type)?,
+                        Some(&FileType::from_str(file_type)?),
                         current_version,
                         !enable_rollout,
                         *override_threshold,

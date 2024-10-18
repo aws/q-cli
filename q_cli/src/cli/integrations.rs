@@ -63,6 +63,8 @@ pub enum Integration {
     VSCode,
     #[command(alias = "jetbrains-plugin")]
     IntellijPlugin,
+    AutostartEntry,
+    GnomeShellExtension,
     #[doc(hidden)]
     All,
 }
@@ -87,6 +89,10 @@ impl IntegrationsSubcommands {
                     uninstall(Integration::Ssh, silent).await?;
                     #[cfg(target_os = "macos")]
                     uninstall(Integration::InputMethod, silent).await?;
+                    #[cfg(target_os = "linux")]
+                    uninstall(Integration::AutostartEntry, silent).await?;
+                    #[cfg(target_os = "linux")]
+                    uninstall(Integration::GnomeShellExtension, silent).await?;
                 } else {
                     uninstall(integration, silent).await?;
                 }
@@ -214,6 +220,18 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
                 }
             }
         },
+        Integration::AutostartEntry => {
+            errored = true;
+            Err(eyre::eyre!(
+                "Installing the autostart entry from the CLI is not supported"
+            ))
+        },
+        Integration::GnomeShellExtension => {
+            errored = true;
+            Err(eyre::eyre!(
+                "Installing the GNOME Shell extension from the CLI is not supported"
+            ))
+        },
     };
 
     if installed && result.is_ok() && !silent {
@@ -326,6 +344,35 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
                     Ok(())
                 } else {
                     Err(eyre::eyre!("IntelliJ integration is only supported on macOS and Linux"))
+                }
+            }
+        },
+        Integration::AutostartEntry => {
+            cfg_if::cfg_if! {
+                if #[cfg(target_os = "linux")] {
+                    use fig_integrations::desktop_entry::AutostartIntegration;
+                    use fig_os_shim::Context;
+                    AutostartIntegration::uninstall(&Context::new()).await?;
+                    uninstalled = true;
+                    Ok(())
+                } else {
+                    Err(eyre::eyre!("The autostart integration is only supported on Linux"))
+                }
+            }
+        },
+        Integration::GnomeShellExtension => {
+            cfg_if::cfg_if! {
+                if #[cfg(target_os = "linux")] {
+                    use std::sync::Arc;
+                    use dbus::gnome_shell::ShellExtensions;
+                    use fig_integrations::gnome_extension::GnomeExtensionIntegration;
+                    use fig_os_shim::Context;
+                    let ctx = Context::new();
+                    let shell_extensions = ShellExtensions::new(Arc::downgrade(&ctx));
+                    uninstalled = GnomeExtensionIntegration::new(&ctx, &shell_extensions, None::<&str>, None).uninstall_manually().await?;
+                    Ok(())
+                } else {
+                    Err(eyre::eyre!("The GNOME Shell extension is only supported on Linux"))
                 }
             }
         },
@@ -491,5 +538,11 @@ async fn status(integration: Integration, format: OutputFormat) -> Result<ExitCo
                 }
             }
         },
+        Integration::AutostartEntry => Err(eyre::eyre!(
+            "Checking the status of the autostart entry from the CLI is not supported"
+        )),
+        Integration::GnomeShellExtension => Err(eyre::eyre!(
+            "Checking the status of the GNOME Shell extension from the CLI is not supported"
+        )),
     }
 }

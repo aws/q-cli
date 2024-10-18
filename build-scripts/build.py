@@ -536,7 +536,8 @@ def build_linux_deb(
     themes_path: pathlib.Path,
     legacy_extension_dir_path: pathlib.Path,
     npm_packages: NpmBuildOutput,
-):
+    release: bool,
+) -> pathlib.Path:
     info("Packaging deb bundle")
 
     bundles_path = BUILD_DIR / "linux-bundles"
@@ -581,12 +582,17 @@ def build_linux_deb(
     set_executable(bundles_path / "DEBIAN/postrm")
 
     info("Running dpkg-deb build")
-    run_cmd(["dpkg-deb", "--build", "--root-owner-group", "linux-bundles"], cwd=BUILD_DIR)
+    dpkg_deb_args = ["dpkg-deb", "--build", "--root-owner-group"]
+    if not release:
+        # Remove compression to increase build time.
+        dpkg_deb_args.append("-z0")
+    run_cmd([*dpkg_deb_args, "linux-bundles"], cwd=BUILD_DIR)
 
     info("Moving built deb to build directory")
     linux_package_path = BUILD_DIR / f"{LINUX_PACKAGE_NAME}.deb"
     (BUILD_DIR / "linux-bundles.deb").rename(linux_package_path)
     run_cmd(["dpkg-deb", "--info", linux_package_path])
+    return linux_package_path
 
 
 def build_linux_full(
@@ -654,7 +660,7 @@ def build_linux_full(
 
     signer = load_gpg_signer()
     if signer:
-        info("Signing enabled for the desktop app bundle.")
+        info("Signing enabled for the AppImage.")
         build_env_vars = {
             "SIGN": "1",
             "SIGN_KEY": signer.gpg_id,
@@ -671,14 +677,20 @@ def build_linux_full(
     )
     desktop_path = pathlib.Path(f'target/{target}/{"release" if release else "debug"}/{DESKTOP_BINARY_NAME}')
 
-    build_linux_deb(
+    deb_path = build_linux_deb(
         cli_path=cli_path,
         pty_path=pty_path,
         desktop_path=desktop_path,
         themes_path=themes_path,
         legacy_extension_dir_path=legacy_extension_dir_path,
         npm_packages=npm_packages,
+        release=release,
     )
+    if signer:
+        info("Signing deb package")
+        run_cmd(["dpkg-sig", "-k", signer.gpg_id, "-s", "builder", deb_path], env=signer.gpg_env())
+        run_cmd(["dpkg-sig", "-l", deb_path], env=signer.gpg_env())
+        run_cmd(["gpg", "--verify", deb_path], env=signer.gpg_env())
 
     info("Copying bundles to build directory")
     bundle_name = f"{tauri_product_name()}_{version()}_amd64"

@@ -93,6 +93,8 @@ pub enum Error {
     Nul(#[from] std::ffi::NulError),
     #[error("failed to get system id")]
     SystemIdNotFound,
+    #[error("unable to determine the file type")]
+    FileTypeNotFound,
 }
 
 impl From<fig_util::directories::DirectoryError> for Error {
@@ -184,6 +186,12 @@ pub async fn update(
     info!("Checking for updates...");
     if let Some(update) = check_for_updates(ignore_rollout).await? {
         info!("Found update: {}", update.version);
+
+        if ctx.platform().os() == Os::Linux && manifest().variant == Variant::Full {
+            return Err(Error::UpdateFailed(
+                "Managed updates are currently unsupported for Linux".to_string(),
+            ));
+        }
 
         let (tx, rx) = tokio::sync::mpsc::channel(16);
 

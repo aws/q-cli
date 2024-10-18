@@ -143,6 +143,22 @@
       "targetTriple": "aarch64-unknown-linux-musl",
       "variant": "headless",
       "fileType": "zip"
+    },
+    {
+      "kind": "deb",
+      "os": "linux",
+      "architecture": "x86_64",
+      "targetTriple": "x86_64-unknown-linux-gnu",
+      "variant": "full",
+      "fileType": "deb"
+    },
+    {
+      "kind": "deb",
+      "os": "linux",
+      "architecture": "x86_64",
+      "targetTriple": "x86_64-unknown-linux-gnu",
+      "variant": "full",
+      "fileType": "appImage"
     }
 
   ],
@@ -443,6 +459,28 @@
           "sha256": "0fd933a3b93c4c723f85f5c437e9ed8e44e621fc6e3216bc9806d07a23e408f9",
           "size": 90955197,
           "targetTriple": "aarch64-unknown-linux-musl"
+        },
+        {
+          "kind": "deb",
+          "os": "linux",
+          "fileType": "deb",
+          "architecture": "x86_64",
+          "variant": "full",
+          "download": "1.2.0/amazon-q.deb",
+          "sha256": "0fd93",
+          "size": 90955197,
+          "targetTriple": "x86_64-unknown-linux-gnu"
+        },
+        {
+          "kind": "deb",
+          "os": "linux",
+          "fileType": "appImage",
+          "architecture": "x86_64",
+          "variant": "full",
+          "download": "1.2.0/amazon-q.appimage",
+          "sha256": "0fd94",
+          "size": 90955197,
+          "targetTriple": "x86_64-unknown-linux-gnu"
         }
       ]
     },
@@ -549,7 +587,6 @@
           "size": 90955197,
           "targetTriple": "aarch64-unknown-linux-gnu"
         },
-
         {
           "kind": "deb",
           "os": "linux",
@@ -637,7 +674,30 @@
           "sha256": "0fd93",
           "size": 90955197,
           "targetTriple": "aarch64-unknown-linux-musl"
+        },
+        {
+          "kind": "deb",
+          "os": "linux",
+          "fileType": "deb",
+          "architecture": "x86_64",
+          "variant": "full",
+          "download": "1.2.1/amazon-q.deb",
+          "sha256": "0fd93",
+          "size": 90955197,
+          "targetTriple": "x86_64-unknown-linux-gnu"
+        },
+        {
+          "kind": "deb",
+          "os": "linux",
+          "fileType": "appImage",
+          "architecture": "x86_64",
+          "variant": "full",
+          "download": "1.2.1/amazon-q.appimage",
+          "sha256": "0fd94",
+          "size": 90955197,
+          "targetTriple": "x86_64-unknown-linux-gnu"
         }
+
 
       ]
     }

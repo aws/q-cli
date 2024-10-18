@@ -153,6 +153,10 @@ where
 }
 
 /// Provides an accessible interface to retrieving info about the Amazon Q GNOME Shell Extension.
+///
+/// Note that the real implementation uses the D-Bus API for retrieving info and performing
+/// actions. Therefore, in contexts where the D-Bus session bus cannot be accessed (e.g. in Debian
+/// maintainer scripts), this struct should not be used.
 #[derive(Debug)]
 pub struct ShellExtensions<Ctx> {
     inner: inner::Inner<Ctx>,
@@ -248,6 +252,12 @@ where
         } else {
             Ok(LEGACY_EXTENSION_UUID.to_string())
         }
+    }
+
+    /// Path to the directory containing the extension intended for the current system.
+    pub async fn local_extension_directory(&self) -> Result<PathBuf, ExtensionsError> {
+        let uuid = self.extension_uuid().await?;
+        local_extension_directory(self.ctx().await?.as_ref(), &uuid)
     }
 
     /// Uninstall the currently installed Amazon Q extension. Returns a bool indicating
