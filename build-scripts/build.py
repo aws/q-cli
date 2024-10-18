@@ -656,24 +656,11 @@ def build_linux_full(
     if not release:
         cargo_tauri_args.extend(["--debug"])
 
-    build_env_vars = {**os.environ, **rust_env(release=release, variant=Variant.FULL), "BUILD_DIR": BUILD_DIR}
-
-    signer = load_gpg_signer()
-    if signer:
-        info("Signing enabled for the AppImage.")
-        build_env_vars = {
-            "SIGN": "1",
-            "SIGN_KEY": signer.gpg_id,
-            "APPIMAGETOOL_SIGN_PASSPHRASE": signer.gpg_passphrase,
-            **build_env_vars,
-            **signer.gpg_env(),
-        }
-
     info("Building", DESKTOP_PACKAGE_NAME)
     run_cmd(
         cargo_tauri_args,
         cwd=DESKTOP_PACKAGE_NAME,
-        env=build_env_vars,
+        env={**os.environ, **rust_env(release=release, variant=Variant.FULL), "BUILD_DIR": BUILD_DIR},
     )
     desktop_path = pathlib.Path(f'target/{target}/{"release" if release else "debug"}/{DESKTOP_BINARY_NAME}')
 
@@ -686,41 +673,29 @@ def build_linux_full(
         npm_packages=npm_packages,
         release=release,
     )
+
+    info("Copying AppImage to build directory")
+    bundle_name = f"{tauri_product_name()}_{version()}_amd64"
+    target_subdir = "release" if release else "debug"
+    bundle_grandparent_path = f"target/{target}/{target_subdir}/bundle"
+    appimage_path = BUILD_DIR / f"{LINUX_PACKAGE_NAME}.appimage"
+    shutil.copy(
+        pathlib.Path(f"{bundle_grandparent_path}/appimage/{bundle_name}.AppImage"),
+        appimage_path,
+    )
+
+    signer = load_gpg_signer()
     if signer:
         info("Signing deb package")
         run_cmd(["dpkg-sig", "-k", signer.gpg_id, "-s", "builder", deb_path], env=signer.gpg_env())
         run_cmd(["dpkg-sig", "-l", deb_path], env=signer.gpg_env())
         run_cmd(["gpg", "--verify", deb_path], env=signer.gpg_env())
 
-    info("Copying bundles to build directory")
-    bundle_name = f"{tauri_product_name()}_{version()}_amd64"
-    target_subdir = "release" if release else "debug"
-    bundle_grandparent_path = f"target/{target}/{target_subdir}/bundle"
-    appimage_path = BUILD_DIR / f"{LINUX_ARCHIVE_NAME}.appimage"
-    shutil.copy(
-        pathlib.Path(f"{bundle_grandparent_path}/appimage/{bundle_name}.AppImage"),
-        appimage_path,
-    )
+        info("Signing AppImage")
+        signatures = signer.sign_file(appimage_path)
+        run_cmd(["gpg", "--verify", signatures[0], appimage_path], env=signer.gpg_env())
 
-    if signer:
-        info("Downloading validate binary to verify the AppImage signature")
-        validate_path = pathlib.Path.cwd() / "validate"
-        try:
-            run_cmd(
-                [
-                    "curl",
-                    "-sSL",
-                    "https://github.com/AppImageCommunity/AppImageUpdate/releases/download/continuous/validate-x86_64.AppImage",
-                    "-o",
-                    validate_path,
-                ]
-            )
-            set_executable(validate_path)
-            run_cmd([appimage_path, "--appimage-signature"])
-            run_cmd([validate_path, appimage_path], env=signer.gpg_env())
-        finally:
-            signer.clean()
-            validate_path.unlink(missing_ok=True)
+        signer.clean()
 
 
 def generate_sha(path: pathlib.Path) -> pathlib.Path:

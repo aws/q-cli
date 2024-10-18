@@ -361,6 +361,13 @@ class GpgSigner:
 
 
 def load_gpg_signer() -> Optional[GpgSigner]:
+    if gpg_id := os.getenv("TEST_PGP_ID"):
+        gpg_secret_key = os.getenv("TEST_PGP_SECRET_KEY")
+        gpg_passphrase = os.getenv("TEST_PGP_PASSPHRASE")
+        if gpg_secret_key is not None and gpg_passphrase is not None:
+            info("Using test pgp key", gpg_id)
+            return GpgSigner(gpg_id=gpg_id, gpg_secret_key=gpg_secret_key, gpg_passphrase=gpg_passphrase)
+
     pgp_secret_arn = os.getenv("FIG_IO_DESKTOP_PGP_KEY_ARN")
     info(f"FIG_IO_DESKTOP_PGP_KEY_ARN: {pgp_secret_arn}")
     if pgp_secret_arn:
