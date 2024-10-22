@@ -686,14 +686,14 @@ def build_linux_full(
 
     signer = load_gpg_signer()
     if signer:
+        info("Signing AppImage")
+        signatures = signer.sign_file(appimage_path)
+        run_cmd(["gpg", "--verify", signatures[0], appimage_path], env=signer.gpg_env())
+
         info("Signing deb package")
         run_cmd(["dpkg-sig", "-k", signer.gpg_id, "-s", "builder", deb_path], env=signer.gpg_env())
         run_cmd(["dpkg-sig", "-l", deb_path], env=signer.gpg_env())
         run_cmd(["gpg", "--verify", deb_path], env=signer.gpg_env())
-
-        info("Signing AppImage")
-        signatures = signer.sign_file(appimage_path)
-        run_cmd(["gpg", "--verify", signatures[0], appimage_path], env=signer.gpg_env())
 
         signer.clean()
 
