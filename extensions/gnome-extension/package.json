@@ -9,7 +9,6 @@
   "scripts": {
     "all": "node ./build-scripts/all.js",
     "build": "npx tsc && node ./build-scripts/extension.js",
-    "install": "gnome-extensions install amazon-q-for-cli-gnome-integration@aws.amazon.com.zip --force",
     "types": "node ./build-scripts/types.js",
     "clean": "rm ./types/.*.d.ts && rm *.zip",
     "lint": "eslint src build-scripts && prettier --check src build-scripts types",

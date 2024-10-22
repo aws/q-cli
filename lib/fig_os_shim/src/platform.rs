@@ -1,10 +1,11 @@
 use std::fmt;
 
 use cfg_if::cfg_if;
+use serde::Serialize;
 
 use crate::Shim;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[non_exhaustive]
 pub enum Os {
     Mac,

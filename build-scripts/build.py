@@ -38,6 +38,7 @@ from const import (
     DMG_NAME,
     LINUX_ARCHIVE_NAME,
     LINUX_LEGACY_GNOME_EXTENSION_UUID,
+    LINUX_MODERN_GNOME_EXTENSION_UUID,
     LINUX_PACKAGE_NAME,
     MACOS_BUNDLE_ID,
     PTY_BINARY_NAME,
@@ -492,6 +493,7 @@ def linux_tauri_config(
     vscode_path: pathlib.Path,
     themes_path: pathlib.Path,
     legacy_extension_dir_path: pathlib.Path,
+    modern_extension_dir_path: pathlib.Path,
     target: str,
 ) -> str:
     config = {
@@ -510,6 +512,7 @@ def linux_tauri_config(
                     vscode_path.absolute().as_posix(): "vscode",
                     themes_path.absolute().as_posix(): "themes",
                     legacy_extension_dir_path.absolute().as_posix(): LINUX_LEGACY_GNOME_EXTENSION_UUID,
+                    modern_extension_dir_path.absolute().as_posix(): LINUX_MODERN_GNOME_EXTENSION_UUID,
                 },
             },
         }
@@ -535,6 +538,7 @@ def build_linux_deb(
     desktop_path: pathlib.Path,
     themes_path: pathlib.Path,
     legacy_extension_dir_path: pathlib.Path,
+    modern_extension_dir_path: pathlib.Path,
     npm_packages: NpmBuildOutput,
     release: bool,
 ) -> pathlib.Path:
@@ -561,6 +565,7 @@ def build_linux_deb(
     share_path.mkdir(parents=True)
     shutil.copy(pathlib.Path(f"{DESKTOP_PACKAGE_NAME}/icons/128x128.png"), desktop_icon_path)
     shutil.copytree(legacy_extension_dir_path, share_path / LINUX_LEGACY_GNOME_EXTENSION_UUID)
+    shutil.copytree(modern_extension_dir_path, share_path / LINUX_MODERN_GNOME_EXTENSION_UUID)
     shutil.copytree(npm_packages.autocomplete_path, share_path / "autocomplete")
     shutil.copytree(npm_packages.dashboard_path, share_path / "dashboard")
     shutil.copytree(themes_path, share_path / "themes")
@@ -611,22 +616,26 @@ def build_linux_full(
     themes_path = theme_repo / "themes"
 
     info("Grabbing GNOME extensions")
+
     # Creating a directory for each GNOME extension with the structure:
     # - {extension_uuid}.zip         <-- extension zip installable with gnome-extensions cli
     # - {extension_uuid}.version.txt <-- simple text file containing the extension version within the zip
-    legacy_extension_dir_path = BUILD_DIR / LINUX_LEGACY_GNOME_EXTENSION_UUID
-    shutil.rmtree(legacy_extension_dir_path, ignore_errors=True)
-    legacy_extension_dir_path.mkdir(parents=True)
-    legacy_extension_zip_path = legacy_extension_dir_path / f"{LINUX_LEGACY_GNOME_EXTENSION_UUID}.zip"
-    shutil.copy(
-        pathlib.Path(f"extensions/gnome-legacy-extension/{LINUX_LEGACY_GNOME_EXTENSION_UUID}.zip"),
-        legacy_extension_zip_path,
-    )
-    metadata = run_cmd_output(["unzip", "-p", legacy_extension_zip_path, "metadata.json"])
-    legacy_extension_version = json.loads(metadata)["version"]
-    pathlib.Path(legacy_extension_dir_path / f"{LINUX_LEGACY_GNOME_EXTENSION_UUID}.version.txt").write_text(
-        str(legacy_extension_version)
-    )
+    def copy_extension(extension_uuid, extension_dir_name):
+        extension_dir_path = BUILD_DIR / extension_uuid
+        shutil.rmtree(extension_dir_path, ignore_errors=True)
+        extension_dir_path.mkdir(parents=True)
+        extension_zip_path = extension_dir_path / f"{extension_uuid}.zip"
+        shutil.copy(
+            pathlib.Path(f"extensions/{extension_dir_name}/{extension_uuid}.zip"),
+            extension_zip_path,
+        )
+        metadata = run_cmd_output(["unzip", "-p", extension_zip_path, "metadata.json"])
+        extension_version = json.loads(metadata)["version"]
+        pathlib.Path(extension_dir_path / f"{extension_uuid}.version.txt").write_text(str(extension_version))
+        return extension_dir_path
+
+    legacy_extension_dir_path = copy_extension(LINUX_LEGACY_GNOME_EXTENSION_UUID, "gnome-legacy-extension")
+    modern_extension_dir_path = copy_extension(LINUX_MODERN_GNOME_EXTENSION_UUID, "gnome-extension")
 
     info("Building tauri config")
     tauri_config_path = pathlib.Path(DESKTOP_PACKAGE_NAME) / "build-config.json"
@@ -639,6 +648,7 @@ def build_linux_full(
             vscode_path=npm_packages.vscode_path,
             themes_path=themes_path,
             legacy_extension_dir_path=legacy_extension_dir_path,
+            modern_extension_dir_path=modern_extension_dir_path,
             target=target,
         )
     )
@@ -670,6 +680,7 @@ def build_linux_full(
         desktop_path=desktop_path,
         themes_path=themes_path,
         legacy_extension_dir_path=legacy_extension_dir_path,
+        modern_extension_dir_path=modern_extension_dir_path,
         npm_packages=npm_packages,
         release=release,
     )

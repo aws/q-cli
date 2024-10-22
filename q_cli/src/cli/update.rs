@@ -8,8 +8,16 @@ use fig_install::{
     UpdateOptions,
     UpdateStatus,
 };
-use fig_os_shim::Context;
+use fig_os_shim::{
+    Context,
+    Os,
+    PlatformProvider,
+};
 use fig_util::CLI_BINARY_NAME;
+use fig_util::manifest::{
+    Variant,
+    manifest,
+};
 
 #[derive(Debug, PartialEq, Args)]
 pub struct UpdateArgs {
@@ -26,6 +34,29 @@ pub struct UpdateArgs {
 
 impl UpdateArgs {
     pub async fn execute(&self) -> Result<ExitCode> {
+        let ctx = Context::new();
+        if ctx.platform().os() == Os::Linux && manifest().variant == Variant::Full {
+            match fig_install::check_for_updates(true).await {
+                Ok(Some(pkg)) => {
+                    println!("A new version of {} is available: {}", CLI_BINARY_NAME, pkg.version);
+                    return Ok(ExitCode::SUCCESS);
+                },
+                Ok(None) => {
+                    println!(
+                        "No updates available, \n{} is the latest version.",
+                        env!("CARGO_PKG_VERSION").bold()
+                    );
+                    return Ok(ExitCode::SUCCESS);
+                },
+                Err(err) => {
+                    eyre::bail!(
+                        "{err}\n\nFailed checking for updates. If this is unexpected, try running {} and then try again.\n",
+                        format!("{CLI_BINARY_NAME} doctor").bold()
+                    )
+                },
+            }
+        }
+
         let UpdateArgs {
             non_interactive,
             relaunch_dashboard,

@@ -10,6 +10,7 @@ license.workspace = true
 [dependencies]
 cfg-if.workspace = true
 dirs.workspace = true
+serde.workspace = true
 tempfile.workspace = true
 tokio = { workspace = true, features = ["fs"] }
 

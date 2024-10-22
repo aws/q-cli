@@ -1,9 +1,14 @@
 #![allow(clippy::ref_option_ref)]
 use std::collections::BTreeMap;
 
-use fig_os_shim::Context;
+use fig_os_shim::{
+    Context,
+    Os,
+    PlatformProvider,
+};
 use fig_telemetry::InstallMethod;
 use fig_util::consts::build::HASH;
+use fig_util::manifest::manifest;
 use fig_util::system_info::{
     OSVersion,
     os_version,
@@ -45,6 +50,7 @@ pub struct BuildDetails {
     pub version: String,
     pub hash: Option<&'static str>,
     pub date: Option<String>,
+    pub variant: String,
 }
 
 impl BuildDetails {
@@ -61,6 +67,7 @@ impl BuildDetails {
             version: env!("CARGO_PKG_VERSION").to_owned(),
             hash: HASH,
             date,
+            variant: manifest().variant.to_string(),
         }
     }
 }
@@ -160,6 +167,7 @@ impl EnvVarDiagnostic {
 pub struct CurrentEnvironment {
     pub cwd: Option<String>,
     pub cli_path: Option<String>,
+    pub os: Os,
     pub shell_path: Option<String>,
     pub shell_version: Option<String>,
     #[serde(serialize_with = "serialize_display_option")]
@@ -184,6 +192,8 @@ impl CurrentEnvironment {
             Pid,
             PidExt,
         };
+        let ctx = Context::new();
+
         let username = format!("/{}", whoami::username());
 
         let shell_path = Pid::current()
@@ -192,15 +202,20 @@ impl CurrentEnvironment {
             .map(|p| p.to_string_lossy().replace(&username, "/USER"));
         let shell_version = Shell::current_shell_version().await.map(|(_, v)| v).ok();
 
-        let cwd = std::env::current_dir()
+        let cwd = ctx
+            .env()
+            .current_dir()
             .ok()
             .map(|path| path.to_string_lossy().replace(&username, "/USER"));
 
-        let cli_path = std::env::current_exe()
+        let cli_path = ctx
+            .env()
+            .current_dir()
             .ok()
             .map(|path| path.to_string_lossy().replace(&username, "/USER"));
 
-        let terminal = Terminal::parent_terminal(&Context::new());
+        let os = ctx.platform().os();
+        let terminal = Terminal::parent_terminal(&ctx);
         let install_method = fig_telemetry::get_install_method();
 
         let in_cloudshell = fig_util::system_info::in_cloudshell();
@@ -214,6 +229,7 @@ impl CurrentEnvironment {
             shell_version,
             cwd,
             cli_path,
+            os,
             terminal,
             install_method,
             in_cloudshell,
