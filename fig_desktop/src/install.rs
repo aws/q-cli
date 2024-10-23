@@ -1014,7 +1014,6 @@ echo "{binary_name} {version}"
     mod linux_desktop_entry_tests {
         use fig_integrations::desktop_entry::{
             AutostartIntegration,
-            global_entry_path,
             local_entry_path,
             local_icon_path,
         };
