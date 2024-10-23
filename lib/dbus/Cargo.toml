@@ -10,13 +10,16 @@ version.workspace = true
 workspace = true
 
 [target.'cfg(target_os = "linux")'.dependencies]
+async_zip = { version = "0.0.17", features = ["deflate"] }
 fig_os_shim.workspace = true
 fig_util.workspace = true
+futures-lite = "2.3.0"
 once_cell.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
+tokio-util = { version = "0.7.12", features = ["compat"] }
 tracing.workspace = true
 zbus = { path = "../zbus" }
 

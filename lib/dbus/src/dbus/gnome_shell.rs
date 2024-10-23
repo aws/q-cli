@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::io;
 use std::path::{
     Path,
     PathBuf,
@@ -22,9 +23,17 @@ use fig_util::directories::{
 use serde::Deserialize;
 use serde_json::json;
 use thiserror::Error;
-use tokio::process::Command;
+use tokio::fs::{
+    File,
+    OpenOptions,
+};
+use tokio::io::BufReader;
 use tokio::sync::Mutex;
-use tracing::debug;
+use tokio_util::compat::TokioAsyncReadCompatExt;
+use tracing::{
+    debug,
+    error,
+};
 use zbus::proxy;
 use zbus::zvariant::OwnedValue;
 
@@ -316,36 +325,23 @@ where
     /// The Fake implementation assumes that the provided path is just a text file with the
     /// extension version as its contents.
     #[allow(clippy::await_holding_lock)]
-    pub async fn install_bundled_extension(&self, path: impl AsRef<Path>) -> Result<(), ExtensionsError> {
+    pub async fn install_bundled_extension(&self, zip_path: impl AsRef<Path>) -> Result<(), ExtensionsError> {
         use inner::Inner;
         match &self.inner {
-            Inner::Real(_) => {
-                let output = Command::new("gnome-extensions")
-                    .arg("install")
-                    .arg(path.as_ref())
-                    .arg("--force")
-                    .output()
-                    .await?;
-
-                if output.status.success() {
-                    Ok(())
-                } else {
-                    Err(ExtensionsError::Other(
-                        format!(
-                            "Unable to install extension. gnome-extensions install stderr: {}",
-                            String::from_utf8_lossy(&output.stderr)
-                        )
-                        .into(),
-                    ))
-                }
+            Inner::Real(ctx) => {
+                let ctx = ctx.upgrade().ok_or(ExtensionsError::InvalidContext)?;
+                let uuid = self.extension_uuid().await?;
+                let extension_path = local_extension_directory(ctx.as_ref(), &uuid)?;
+                extract_zip(&zip_path, &extension_path).await?;
+                Ok(())
             },
             Inner::Fake(_) => {
-                if self.ctx().await?.fs().exists(&path) {
+                if self.ctx().await?.fs().exists(&zip_path) {
                     let version: u32 = self
                         .ctx()
                         .await?
                         .fs()
-                        .read_to_string(&path)
+                        .read_to_string(&zip_path)
                         .await
                         .unwrap()
                         .parse()
@@ -354,7 +350,11 @@ where
                     Ok(())
                 } else {
                     Err(ExtensionsError::Other(
-                        format!("extension path does not exist: {}", &path.as_ref().to_string_lossy()).into(),
+                        format!(
+                            "extension path does not exist: {}",
+                            &zip_path.as_ref().to_string_lossy()
+                        )
+                        .into(),
                     ))
                 }
             },
@@ -475,6 +475,8 @@ pub enum ExtensionsError {
     #[error(transparent)]
     Zbus(#[from] zbus::Error),
     #[error(transparent)]
+    Zip(#[from] async_zip::error::ZipError),
+    #[error(transparent)]
     ZVariant(#[from] zbus::zvariant::Error),
     #[error("Invalid major version: {0:?}")]
     InvalidMajorVersion(#[from] std::num::ParseIntError),
@@ -541,6 +543,50 @@ impl FromStr for GnomeShellVersion {
 #[derive(Debug, Deserialize)]
 struct ExtensionMetadata {
     version: u32,
+}
+
+/// Extracts the files contains within the zip given by `zip_path` to the directory
+/// `extract_to_dir`. The directory `extract_to_dir` is deleted before unzipping.
+async fn extract_zip(zip_path: impl AsRef<Path>, extract_to_dir: impl AsRef<Path>) -> Result<(), ExtensionsError> {
+    let extract_to_dir = extract_to_dir.as_ref();
+
+    let archive = File::open(&zip_path).await?;
+    let archive = BufReader::new(archive).compat();
+    let mut zip_reader = async_zip::base::read::seek::ZipFileReader::new(archive).await?;
+
+    // Remove the directory at extract_to_dir
+    match tokio::fs::remove_dir_all(&extract_to_dir).await {
+        Ok(_) => (),
+        Err(err) if err.kind() == io::ErrorKind::NotFound => (),
+        Err(err) => {
+            error!(?err, "Failed to remove directory at: {}", extract_to_dir.display());
+            // The path could actually be a file instead, which is an unstable error kind.
+            // Therefore, try removing it as a file as backup.
+            match tokio::fs::remove_file(&extract_to_dir).await {
+                Ok(_) => {
+                    debug!("Removed existing file at {}", extract_to_dir.display());
+                },
+                Err(err) => return Err(err.into()),
+            }
+        },
+    };
+
+    // Extract all files in the zip.
+    for index in 0..zip_reader.file().entries().len() {
+        let entry = zip_reader.file().entries().get(index).expect("is valid index in zip");
+        let fname = extract_to_dir.join(entry.filename().as_str()?);
+        let mut reader = zip_reader.reader_without_entry(index).await?;
+        match fname.parent() {
+            Some(parent) if !parent.is_dir() => {
+                tokio::fs::create_dir_all(parent).await.unwrap();
+            },
+            _ => (),
+        }
+        let writer = OpenOptions::new().write(true).create_new(true).open(&fname).await?;
+        futures_lite::io::copy(&mut reader, &mut writer.compat()).await?;
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]

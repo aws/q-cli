@@ -532,43 +532,56 @@ def linux_desktop_entry() -> str:
     )
 
 
+@dataclass
+class LinuxDebResources:
+    cli_path: pathlib.Path
+    pty_path: pathlib.Path
+    desktop_path: pathlib.Path
+    themes_path: pathlib.Path
+    legacy_extension_dir_path: pathlib.Path
+    modern_extension_dir_path: pathlib.Path
+    npm_packages: NpmBuildOutput
+
+
 def build_linux_deb(
-    cli_path: pathlib.Path,
-    pty_path: pathlib.Path,
-    desktop_path: pathlib.Path,
-    themes_path: pathlib.Path,
-    legacy_extension_dir_path: pathlib.Path,
-    modern_extension_dir_path: pathlib.Path,
-    npm_packages: NpmBuildOutput,
+    resources: LinuxDebResources,
+    control_path: pathlib.Path,
+    deb_suffix: str,
     release: bool,
 ) -> pathlib.Path:
-    info("Packaging deb bundle")
+    """
+    Builds a deb using the control file given by `control_path`. Returns the path to the built deb.
 
-    bundles_path = BUILD_DIR / "linux-bundles"
-    shutil.rmtree(bundles_path, ignore_errors=True)
-    bundles_path.mkdir(parents=True)
+    The deb will be named using the format: `f"{LINUX_PACKAGE_NAME}_{deb_suffix}.deb"`
+    """
+    info("Packaging deb bundle for control file:", control_path)
+
+    bundles_dir = BUILD_DIR / "linux-bundles"
+    bundle_dir = bundles_dir / deb_suffix
+    shutil.rmtree(bundle_dir, ignore_errors=True)
+    bundle_dir.mkdir(parents=True)
 
     info("Copying binaries")
-    bin_path = bundles_path / "usr/bin"
+    bin_path = bundle_dir / "usr/bin"
     bin_path.mkdir(parents=True)
-    shutil.copy(cli_path, bin_path / CLI_BINARY_NAME)
-    shutil.copy(pty_path, bin_path / PTY_BINARY_NAME)
-    shutil.copy(desktop_path, bin_path / DESKTOP_BINARY_NAME)
+    shutil.copy(resources.cli_path, bin_path / CLI_BINARY_NAME)
+    shutil.copy(resources.pty_path, bin_path / PTY_BINARY_NAME)
+    shutil.copy(resources.desktop_path, bin_path / DESKTOP_BINARY_NAME)
 
     info("Copying /usr/share resources")
-    desktop_entry_path = bundles_path / f"usr/share/applications/{LINUX_PACKAGE_NAME}.desktop"
+    desktop_entry_path = bundle_dir / f"usr/share/applications/{LINUX_PACKAGE_NAME}.desktop"
     desktop_entry_path.parent.mkdir(parents=True)
     desktop_entry_path.write_text(linux_desktop_entry())
-    desktop_icon_path = bundles_path / f"usr/share/icons/hicolor/128x128/apps/{LINUX_PACKAGE_NAME}.png"
+    desktop_icon_path = bundle_dir / f"usr/share/icons/hicolor/128x128/apps/{LINUX_PACKAGE_NAME}.png"
     desktop_icon_path.parent.mkdir(parents=True)
-    share_path = bundles_path / f"usr/share/{LINUX_PACKAGE_NAME}"
+    share_path = bundle_dir / f"usr/share/{LINUX_PACKAGE_NAME}"
     share_path.mkdir(parents=True)
     shutil.copy(pathlib.Path(f"{DESKTOP_PACKAGE_NAME}/icons/128x128.png"), desktop_icon_path)
-    shutil.copytree(legacy_extension_dir_path, share_path / LINUX_LEGACY_GNOME_EXTENSION_UUID)
-    shutil.copytree(modern_extension_dir_path, share_path / LINUX_MODERN_GNOME_EXTENSION_UUID)
-    shutil.copytree(npm_packages.autocomplete_path, share_path / "autocomplete")
-    shutil.copytree(npm_packages.dashboard_path, share_path / "dashboard")
-    shutil.copytree(themes_path, share_path / "themes")
+    shutil.copytree(resources.legacy_extension_dir_path, share_path / LINUX_LEGACY_GNOME_EXTENSION_UUID)
+    shutil.copytree(resources.modern_extension_dir_path, share_path / LINUX_MODERN_GNOME_EXTENSION_UUID)
+    shutil.copytree(resources.npm_packages.autocomplete_path, share_path / "autocomplete")
+    shutil.copytree(resources.npm_packages.dashboard_path, share_path / "dashboard")
+    shutil.copytree(resources.themes_path, share_path / "themes")
     # TODO: Support vscode
     # vscode_path = share_path / 'vscode/vscode-plugin.vsix'
     # vscode_path.parent.mkdir(parents=True)
@@ -577,25 +590,29 @@ def build_linux_deb(
     def replace_text(file: pathlib.Path, old: str, new: str):
         file.write_text(file.read_text().replace(old, new))
 
-    debian_path = bundles_path / "DEBIAN"
+    info("Creating DEBIAN structure")
+    debian_path = bundle_dir / "DEBIAN"
     debian_path.mkdir(parents=True)
-    shutil.copytree("bundle/deb", debian_path, dirs_exist_ok=True)
-    replace_text(bundles_path / "DEBIAN/control", "$VERSION", version())
-    replace_text(bundles_path / "DEBIAN/control", "$APT_ARCH", "amd64")
-    replace_text(bundles_path / "DEBIAN/control_minimal", "$VERSION", version())
-    replace_text(bundles_path / "DEBIAN/control_minimal", "$APT_ARCH", "amd64")
-    set_executable(bundles_path / "DEBIAN/postrm")
+    shutil.copy(control_path, bundle_dir / "DEBIAN/control")
+    shutil.copy("bundle/deb/control_minimal", bundle_dir / "DEBIAN/control_minimal")
+    shutil.copy("bundle/deb/postrm", bundle_dir / "DEBIAN/postrm")
+    shutil.copy("bundle/deb/prerm", bundle_dir / "DEBIAN/prerm")
+    replace_text(bundle_dir / "DEBIAN/control", "$VERSION", version())
+    replace_text(bundle_dir / "DEBIAN/control", "$APT_ARCH", "amd64")
+    replace_text(bundle_dir / "DEBIAN/control_minimal", "$VERSION", version())
+    replace_text(bundle_dir / "DEBIAN/control_minimal", "$APT_ARCH", "amd64")
+    set_executable(bundle_dir / "DEBIAN/postrm")
 
     info("Running dpkg-deb build")
     dpkg_deb_args = ["dpkg-deb", "--build", "--root-owner-group"]
     if not release:
         # Remove compression to increase build time.
         dpkg_deb_args.append("-z0")
-    run_cmd([*dpkg_deb_args, "linux-bundles"], cwd=BUILD_DIR)
+    run_cmd([*dpkg_deb_args, bundle_dir], cwd=bundles_dir)
 
-    info("Moving built deb to build directory")
-    linux_package_path = BUILD_DIR / f"{LINUX_PACKAGE_NAME}.deb"
-    (BUILD_DIR / "linux-bundles.deb").rename(linux_package_path)
+    linux_package_path = BUILD_DIR / f"{LINUX_PACKAGE_NAME}_{deb_suffix}.deb"
+    info("Moving built deb to", linux_package_path)
+    (bundles_dir / f"{bundle_dir}.deb").rename(linux_package_path)
     run_cmd(["dpkg-deb", "--info", linux_package_path])
     return linux_package_path
 
@@ -674,7 +691,7 @@ def build_linux_full(
     )
     desktop_path = pathlib.Path(f'target/{target}/{"release" if release else "debug"}/{DESKTOP_BINARY_NAME}')
 
-    deb_path = build_linux_deb(
+    deb_resources = LinuxDebResources(
         cli_path=cli_path,
         pty_path=pty_path,
         desktop_path=desktop_path,
@@ -682,6 +699,17 @@ def build_linux_full(
         legacy_extension_dir_path=legacy_extension_dir_path,
         modern_extension_dir_path=modern_extension_dir_path,
         npm_packages=npm_packages,
+    )
+    ubuntu22_deb_path = build_linux_deb(
+        resources=deb_resources,
+        control_path=pathlib.Path("bundle/deb/control_ubuntu22_deb10-12"),
+        deb_suffix="ubuntu22_deb10-12",
+        release=release,
+    )
+    ubuntu24_deb_path = build_linux_deb(
+        resources=deb_resources,
+        control_path=pathlib.Path("bundle/deb/control_ubuntu24_deb13"),
+        deb_suffix="ubuntu24_deb13",
         release=release,
     )
 
@@ -701,10 +729,11 @@ def build_linux_full(
         signatures = signer.sign_file(appimage_path)
         run_cmd(["gpg", "--verify", signatures[0], appimage_path], env=signer.gpg_env())
 
-        info("Signing deb package")
-        run_cmd(["dpkg-sig", "-k", signer.gpg_id, "-s", "builder", deb_path], env=signer.gpg_env())
-        run_cmd(["dpkg-sig", "-l", deb_path], env=signer.gpg_env())
-        run_cmd(["gpg", "--verify", deb_path], env=signer.gpg_env())
+        for deb_path in [ubuntu22_deb_path, ubuntu24_deb_path]:
+            info("Signing deb:", deb_path)
+            run_cmd(["dpkg-sig", "-k", signer.gpg_id, "-s", "builder", deb_path], env=signer.gpg_env())
+            run_cmd(["dpkg-sig", "-l", deb_path], env=signer.gpg_env())
+            run_cmd(["gpg", "--verify", deb_path], env=signer.gpg_env())
 
         signer.clean()
 
