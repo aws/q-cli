@@ -7,9 +7,7 @@
   "private": true,
   "type": "module",
   "devDependencies": {
-    "@gi.ts/cli": "^1.5.10",
-    "@gi.ts/lib": "^1.5.13",
-    "eslint": "^8.57.0"
+    "eslint": "^8.57.1"
   },
   "scripts": {
     "all": "node ./build-scripts/all.js",
