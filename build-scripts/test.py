@@ -52,6 +52,9 @@ def run_cargo_tests(
     if target:
         args.extend(["--target", target])
 
+    if Variant.FULL not in variants:
+        args.extend(["--exclude", DESKTOP_PACKAGE_NAME])
+
     if features:
         args.extend(
             [
