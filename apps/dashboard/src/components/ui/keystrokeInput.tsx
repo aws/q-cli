@@ -64,9 +64,7 @@ export function Input({
   cancel: () => void;
 }) {
   const joinedValue = value ? value.join("+") : null;
-  const setSetting = useSetting(
-    `autocomplete.keybindings.${joinedValue}` ?? "",
-  )[1];
+  const setSetting = useSetting(`autocomplete.keybindings.${joinedValue}`)[1];
 
   function handleNewKeystroke() {
     if (!value) {

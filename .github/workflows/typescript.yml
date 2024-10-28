@@ -36,3 +36,13 @@ jobs:
         run: pnpm install --frozen-lockfile
       - run: pnpm run build
       - run: pnpm run test:ci
+  audit:
+    name: Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false

@@ -11,7 +11,8 @@ import logger from "loglevel";
 export const cleanOutput = (output: string) =>
   output
     .replace(/\r\n/g, "\n") // Replace carriage returns with just a normal return
-    .replace(/\033\[\?25h/g, "") // removes cursor character if present
+    // eslint-disable-next-line no-control-regex
+    .replace(/\x1b\[\?25h/g, "") // removes cursor character if present
     .replace(/^\n+/, "") // strips new lines from start of output
     .replace(/\n+$/, ""); // strips new lines from end of output
 

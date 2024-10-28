@@ -28,12 +28,12 @@
   "devDependencies": {
     "@vitest/coverage-v8": "^1.6.0",
     "@vitest/ui": "^1.6.0",
-    "husky": "^9.0.11",
-    "lint-staged": "^15.2.5",
-    "micromatch": "^4.0.7",
-    "prettier": "^3.2.5",
-    "tsx": "^4.11.0",
-    "turbo": "^2.0.1",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "micromatch": "^4.0.8",
+    "prettier": "^3.3.3",
+    "tsx": "^4.19.2",
+    "turbo": "^2.2.3",
     "vitest": "^1.6.0"
   }
 }
