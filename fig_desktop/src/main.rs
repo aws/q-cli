@@ -238,6 +238,8 @@ async fn main() {
 
 #[cfg(target_os = "linux")]
 async fn allow_multiple_running_check(current_pid: sysinfo::Pid, kill_old: bool, page: Option<String>) {
+    use std::ffi::OsString;
+
     use tracing::debug;
 
     if kill_old {
@@ -249,7 +251,8 @@ async fn allow_multiple_running_check(current_pid: sysinfo::Pid, kill_old: bool,
     let system = System::new_with_specifics(
         RefreshKind::new().with_processes(ProcessRefreshKind::new().with_user(sysinfo::UpdateKind::Always)),
     );
-    let processes = system.processes_by_exact_name(APP_PROCESS_NAME);
+    let app_process_name = OsString::from(APP_PROCESS_NAME);
+    let processes = system.processes_by_exact_name(&app_process_name);
 
     let processes = processes.collect::<Vec<_>>();
     debug!("Checking for already running desktop instance: {:?}", processes);
@@ -293,8 +296,11 @@ async fn allow_multiple_running_check(current_pid: sysinfo::Pid, kill_old: bool,
 
 #[cfg(target_os = "macos")]
 async fn allow_multiple_running_check(current_pid: sysinfo::Pid, kill_old: bool, page: Option<String>) {
+    use std::ffi::OsString;
+
+    let app_process_name = OsString::from(APP_PROCESS_NAME);
     let system = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
-    let processes = system.processes_by_name(APP_PROCESS_NAME);
+    let processes = system.processes_by_name(&app_process_name);
 
     cfg_if::cfg_if! {
         if #[cfg(unix)] {

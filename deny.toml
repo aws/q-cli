@@ -4,6 +4,12 @@ db-path = "~/.cargo/advisory-db"
 db-urls = ["https://github.com/rustsec/advisory-db"]
 yanked = "deny"
 
+ignore = [
+  # proc-macro-error is a transitive dependency of a number of dependencies, 
+  # this is allowed for now til the ecosystem migrates away
+  "RUSTSEC-2024-0370",
+]
+
 [licenses]
 version = 2
 private = { ignore = true }

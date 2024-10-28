@@ -315,6 +315,8 @@ pub async fn is_brew_reinstall() -> bool {
 
 #[cfg(test)]
 mod tests {
+    use std::ffi::OsString;
+
     use fig_util::APP_PROCESS_NAME;
 
     use super::*;
@@ -356,13 +358,14 @@ mod tests {
             System,
         };
 
-        let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
+        let app_process_name = OsString::from(APP_PROCESS_NAME);
+        let system = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
         cfg_if! {
             if #[cfg(windows)] {
-                let mut processes = s.processes_by_name(APP_PROCESS_NAME);
+                let mut processes = system.processes_by_name(&app_process_name);
                 assert!(processes.next().is_some());
             } else {
-                let mut processes = s.processes_by_exact_name(APP_PROCESS_NAME);
+                let mut processes = system.processes_by_exact_name(&app_process_name);
                 assert!(processes.next().is_some());
             }
         }

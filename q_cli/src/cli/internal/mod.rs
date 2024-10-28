@@ -601,6 +601,8 @@ impl InternalSubcommand {
             },
             #[cfg(target_os = "linux")]
             InternalSubcommand::IbusBootstrap => {
+                use std::ffi::OsString;
+
                 use sysinfo::{
                     ProcessRefreshKind,
                     RefreshKind,
@@ -610,7 +612,8 @@ impl InternalSubcommand {
                 let system = tokio::task::block_in_place(|| {
                     System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()))
                 });
-                if system.processes_by_name("ibus-daemon").next().is_none() {
+                let ibus_daemon = OsString::from("ibus-daemon");
+                if system.processes_by_name(&ibus_daemon).next().is_none() {
                     info!("Launching 'ibus-daemon'");
                     match Command::new("ibus-daemon").arg("-drxR").output().await {
                         Ok(std::process::Output { status, stdout, stderr }) if !status.success() => {

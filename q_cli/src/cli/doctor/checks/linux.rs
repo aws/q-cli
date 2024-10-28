@@ -256,14 +256,17 @@ impl DoctorCheck<LinuxContext> for IBusCheck {
     }
 
     async fn check(&self, _: &LinuxContext) -> Result<(), DoctorError> {
+        use std::ffi::OsString;
+
         use sysinfo::{
             ProcessRefreshKind,
             RefreshKind,
         };
 
         let system = sysinfo::System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
+        let ibus_daemon = OsString::from("ibus-daemon");
 
-        if system.processes_by_exact_name("ibus-daemon").next().is_none() {
+        if system.processes_by_exact_name(&ibus_daemon).next().is_none() {
             return Err(doctor_fix!({
                 reason: "ibus-daemon is not running",
                 fix: || {

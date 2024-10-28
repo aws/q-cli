@@ -694,6 +694,8 @@ async fn launch_systemd_user_service(service: SystemdUserService) -> anyhow::Res
 #[cfg(target_os = "linux")]
 #[allow(dead_code)]
 async fn launch_ibus(ctx: &Context) {
+    use std::ffi::OsString;
+
     use sysinfo::{
         ProcessRefreshKind,
         RefreshKind,
@@ -704,7 +706,8 @@ async fn launch_ibus(ctx: &Context) {
     let system = tokio::task::block_in_place(|| {
         System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()))
     });
-    if system.processes_by_name("ibus-daemon").next().is_none() {
+    let ibus_daemon = OsString::from("ibus-daemon");
+    if system.processes_by_name(&ibus_daemon).next().is_none() {
         info!("Launching ibus via systemd");
 
         match Command::new("systemctl")
@@ -1014,7 +1017,6 @@ echo "{binary_name} {version}"
     mod linux_desktop_entry_tests {
         use fig_integrations::desktop_entry::{
             AutostartIntegration,
-            global_entry_path,
             local_entry_path,
             local_icon_path,
         };

@@ -1,3 +1,4 @@
+use std::ffi::OsString;
 use std::sync::{
     Arc,
     Mutex,
@@ -38,13 +39,9 @@ impl SysInfo {
         use inner::Inner;
         match &self.0 {
             Inner::Real => {
-                use sysinfo::ProcessRefreshKind;
-
-                let mut s = sysinfo::System::new();
-                s.refresh_processes_specifics(ProcessRefreshKind::new());
-
-                let x = s.processes_by_name(name).next().is_some();
-                x
+                let system = sysinfo::System::new_all();
+                let is_running = system.processes_by_name(&OsString::from(name)).next().is_some();
+                is_running
             },
             Inner::Fake(fake) => fake.lock().unwrap().process_names.contains(name),
         }

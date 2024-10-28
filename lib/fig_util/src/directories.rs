@@ -527,11 +527,10 @@ mod tests {
     }
 
     macro_rules! assert_directory {
-        ($value:expr, @ $snapshot:literal) => {
+        ($value:expr, @$snapshot:literal) => {
             insta::assert_snapshot!(
-                insta::_macro_support::ReferenceValue::Inline($snapshot),
                 sanitized_directory_path($value),
-                stringify!(sanitized_directory_path($value))
+                @$snapshot,
             )
         };
     }

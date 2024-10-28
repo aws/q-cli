@@ -18,6 +18,11 @@ use fig_util::{
     Terminal,
 };
 use serde::Serialize;
+use sysinfo::{
+    CpuRefreshKind,
+    MemoryRefreshKind,
+    RefreshKind,
+};
 use time::OffsetDateTime;
 use time::format_description::well_known::Rfc3339;
 
@@ -97,20 +102,20 @@ pub struct SystemInfo {
 
 impl SystemInfo {
     fn new() -> SystemInfo {
-        use sysinfo::System;
-
-        let mut sys = System::new();
-        sys.refresh_cpu();
-        sys.refresh_memory();
+        let system = sysinfo::System::new_with_specifics(
+            RefreshKind::new()
+                .with_cpu(CpuRefreshKind::everything())
+                .with_memory(MemoryRefreshKind::everything()),
+        );
 
         let mut hardware_info = SystemInfo {
             os: os_version(),
             chip: None,
-            total_cores: sys.physical_core_count(),
-            memory: Some(format!("{:0.2} GB", sys.total_memory() as f32 / 2.0_f32.powi(30))),
+            total_cores: system.physical_core_count(),
+            memory: Some(format!("{:0.2} GB", system.total_memory() as f32 / 2.0_f32.powi(30))),
         };
 
-        if let Some(processor) = sys.cpus().first() {
+        if let Some(processor) = system.cpus().first() {
             hardware_info.chip = Some(processor.brand().into());
         }
 

@@ -43,6 +43,7 @@ pub fn desktop_app_running() -> bool {
                 RefreshKind,
                 System,
             };
+            use std::ffi::OsString;
 
             use fig_util::consts::{
                 APP_PROCESS_NAME,
@@ -62,8 +63,9 @@ pub fn desktop_app_running() -> bool {
             }
 
             // Fallback to process name check
-            let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
-            let mut processes = s.processes_by_exact_name(APP_PROCESS_NAME);
+            let app_process_name= OsString::from(APP_PROCESS_NAME);
+            let system = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
+            let mut processes = system.processes_by_exact_name(&app_process_name);
             processes.next().is_some()
         } else if #[cfg(target_os = "windows")] {
             use crate::consts::APP_PROCESS_NAME;
@@ -86,11 +88,13 @@ pub fn desktop_app_running() -> bool {
                 RefreshKind,
                 System,
             };
+            use std::ffi::OsString;
 
             use fig_util::consts::APP_PROCESS_NAME;
 
             let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
-            let mut processes = s.processes_by_exact_name(APP_PROCESS_NAME);
+            let app_process_name = OsString::from(APP_PROCESS_NAME);
+            let mut processes = s.processes_by_exact_name(&app_process_name);
             processes.next().is_some()
         }
     }
