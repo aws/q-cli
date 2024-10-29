@@ -5,9 +5,16 @@ use fig_install::{
     InstallComponents,
     UpdateOptions,
 };
-use fig_os_shim::Context;
+use fig_os_shim::{
+    Context,
+    Os,
+};
 use fig_remote_ipc::figterm::FigtermState;
 use fig_util::consts::PRODUCT_NAME;
+use fig_util::manifest::{
+    Variant,
+    manifest,
+};
 use fig_util::url::USER_MANUAL;
 use muda::{
     IconMenuItem,
@@ -66,8 +73,47 @@ fn tray_update(proxy: &EventLoopProxy) {
     let proxy_a = proxy.clone();
     let proxy_b = proxy.clone();
     tokio::runtime::Handle::current().spawn(async move {
+        let ctx = Context::new();
+        if ctx.platform().os() == Os::Linux && manifest().variant == Variant::Full {
+            match fig_install::check_for_updates(true).await {
+                Ok(Some(pkg)) => {
+                    proxy_a
+                        .send_event(Event::ShowMessageNotification {
+                            title: format!("A new version of {} is available", PRODUCT_NAME).into(),
+                            body: format!(
+                                "New Version: {}\nCurrent Version: {}",
+                                pkg.version,
+                                env!("CARGO_PKG_VERSION")
+                            )
+                            .into(),
+                            parent: None,
+                        })
+                        .unwrap();
+                },
+                Ok(None) => {
+                    proxy_a
+                        .send_event(Event::ShowMessageNotification {
+                            title: format!("{PRODUCT_NAME} is already up to date").into(),
+                            body: concat!("Version ", env!("CARGO_PKG_VERSION")).into(),
+                            parent: None,
+                        })
+                        .unwrap();
+                },
+                Err(err) => {
+                    proxy_a
+                        .send_event(Event::ShowMessageNotification {
+                            title: "An error occurred while checking for updates".into(),
+                            body: err.to_string().into(),
+                            parent: None,
+                        })
+                        .unwrap();
+                },
+            }
+            return;
+        }
+
         let res = fig_install::update(
-            Context::new(),
+            ctx,
             Some(Box::new(move |_| {
                 proxy_a
                     .send_event(Event::ShowMessageNotification {

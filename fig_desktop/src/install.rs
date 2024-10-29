@@ -480,6 +480,12 @@ where
             info!("Extension {} not installed, installing now.", extension_uuid);
             shell_extensions.install_bundled_extension(bundled_path).await?;
         },
+        ExtensionInstallationStatus::Errored => {
+            error!(
+                "Extension {} is in an errored state. It must be manually uninstalled, and the current desktop session must be restarted.",
+                extension_uuid
+            );
+        },
         ExtensionInstallationStatus::RequiresReboot => {
             info!(
                 "Extension {} already installed but not loaded. User must reboot their machine.",

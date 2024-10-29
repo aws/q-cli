@@ -158,6 +158,24 @@ pub fn fig_data_dir_ctx(fs: &impl FsProvider) -> Result<PathBuf> {
     Ok(fs.fs().chroot_path(fig_data_dir()?))
 }
 
+/// The user's local data directory.
+///
+/// - Linux: `$XDG_DATA_HOME` or `$HOME/.local/share`
+/// - MacOS: `$HOME/Library/Application Support`
+pub fn local_data_dir<Ctx: FsProvider + EnvProvider + PlatformProvider>(ctx: &Ctx) -> Result<PathBuf> {
+    let env = ctx.env();
+    match ctx.platform().os() {
+        Os::Linux => {
+            if let Some(path) = env.get_os("XDG_DATA_HOME") {
+                return Ok(path.into());
+            }
+            Ok(home_dir_ctx(ctx)?.join(".local/share"))
+        },
+        Os::Mac => Ok(home_dir_ctx(ctx)?.join("Library/Application Support")),
+        os => Err(DirectoryError::UnsupportedOs(os)),
+    }
+}
+
 /// The q cache directory
 ///
 /// - Linux: `$XDG_CACHE_HOME/amazon-q` or `$HOME/.cache/amazon-q`
@@ -467,6 +485,15 @@ pub fn appimage_desktop_entry_icon_path<Ctx: EnvProvider>(ctx: &Ctx) -> Result<P
         .env()
         .current_dir()?
         .join("share/icons/hicolor/128x128/apps/q-desktop.png"))
+}
+
+/// The path to the data directory auto-created by the Linux windowing application.
+pub fn local_webview_data_dir<Ctx: FsProvider + EnvProvider + PlatformProvider>(ctx: &Ctx) -> Result<PathBuf> {
+    let os = ctx.platform().os();
+    if os != Os::Linux {
+        return Err(DirectoryError::UnsupportedOs(os));
+    }
+    Ok(local_data_dir(ctx)?.join(crate::consts::linux::DESKTOP_APP_WM_CLASS))
 }
 
 utf8_dir!(home_dir);

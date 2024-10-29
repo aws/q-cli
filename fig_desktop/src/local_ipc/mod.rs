@@ -164,6 +164,7 @@ async fn handle_local_ipc<Ctx>(
                     },
                     Some(command) => {
                         use fig_proto::local::command::Command::{
+                            ConnectToIbus,
                             DebugMode,
                             Devtools,
                             Diagnostics,
@@ -202,6 +203,7 @@ async fn handle_local_ipc<Ctx>(
                                 &webview_notifications_state,
                                 &platform_state,
                             ),
+                            ConnectToIbus(_) => commands::connect_to_ibus(proxy.clone(), &platform_state).await,
                             Update(_) => fig_install::update(
                                 ctx.context_arc(),
                                 Some(Box::new(move |_| {

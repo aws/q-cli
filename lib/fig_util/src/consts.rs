@@ -77,6 +77,9 @@ pub mod linux {
 
     /// Name of the deb package.
     pub const PACKAGE_NAME: &str = "amazon-q";
+
+    /// The wm_class used for the application windows.
+    pub const DESKTOP_APP_WM_CLASS: &str = "Amazon-q";
 }
 
 pub mod env_var {

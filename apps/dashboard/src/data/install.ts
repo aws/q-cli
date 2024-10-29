@@ -15,6 +15,23 @@ const getBackupsDir = (): string => {
   }
 };
 
+export const gnomeExtensionInstallCheck = {
+  id: "gnomeExtension",
+  installKey: "gnomeExtension",
+  platformRestrictions: {
+    os: Platform.Os.LINUX,
+    desktopEnvironment: Platform.DesktopEnvironment.GNOME,
+    displayServerProtocol: Platform.DisplayServerProtocol.WAYLAND,
+  },
+  title: "Install the GNOME Shell Extension",
+  description: [
+    `In order for ${PRODUCT_NAME} to function properly under Wayland, we need to install the ${PRODUCT_NAME} GNOME Shell Extension.`,
+    `New GNOME Shell extensions will require you to restart your current session by logging out.`,
+  ],
+  image: gnome_shell_extension,
+  action: "Install",
+};
+
 const installChecks: InstallCheckWithInstallKey[] = [
   {
     id: "dotfiles",

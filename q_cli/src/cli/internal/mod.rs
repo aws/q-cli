@@ -469,14 +469,11 @@ impl InternalSubcommand {
                     bail!("uninstall-for-all-users is only supported on Linux");
                 }
 
-                println!("Uninstalling additional components...");
-
                 let out = Command::new("users").output().await?;
                 let users = String::from_utf8_lossy(&out.stdout);
 
                 let mut integrations_uninstalled = false;
                 let mut data_dir_removed = false;
-                let mut open_page_success = false;
 
                 // let emit = tokio::spawn(fig_telemetry::emit_track(TrackEvent::new(
                 //     TrackEventType::UninstalledApp,
@@ -492,16 +489,29 @@ impl InternalSubcommand {
                     .collect::<HashSet<_>>();
 
                 for user in users {
-                    if let Ok(exit_status) = Command::new("runuser")
-                        .args(["-u", user, "--", CLI_BINARY_NAME, "_", "open-uninstall-page"])
-                        .status()
-                        .await
-                    {
-                        if exit_status.success() {
-                            open_page_success = true;
+                    println!("Uninstalling additional components for user: {}", user);
+
+                    debug!(user, "Opening uninstall page");
+                    let user_clone = user.to_string();
+                    // Spawning a separate task since this will block unless and until the user
+                    // answers the survey or closes their browser.
+                    tokio::spawn(async move {
+                        let user = user_clone;
+                        match Command::new("runuser")
+                            .args(["-u", &user, "--", CLI_BINARY_NAME, "_", "open-uninstall-page"])
+                            .output()
+                            .await
+                        {
+                            Ok(output) if output.status.success() => {
+                                debug!(user, "Opened uninstall page");
+                            },
+                            Ok(output) => error!(user, ?output, "Failed to open uninstall page"),
+                            Err(err) => error!(user, ?err, "Failed to open uninstall page"),
                         }
-                    }
-                    if let Ok(exit_status) = Command::new("runuser")
+                    });
+
+                    debug!(user, "Uninstalling integrations");
+                    match Command::new("runuser")
                         .args([
                             "-u",
                             user,
@@ -512,21 +522,29 @@ impl InternalSubcommand {
                             "--silent",
                             "all",
                         ])
-                        .status()
+                        .output()
                         .await
                     {
-                        if exit_status.success() {
+                        Ok(output) if output.status.success() => {
+                            debug!(user, "Uninstalled integrations");
                             integrations_uninstalled = true;
-                        }
+                        },
+                        Ok(output) => error!(user, ?output, "Failed to uninstall integrations"),
+                        Err(err) => error!(user, ?err, "Failed to uninstall integrations"),
                     }
-                    if let Ok(exit_status) = Command::new("runuser")
+
+                    debug!(user, "Removing data dir");
+                    match Command::new("runuser")
                         .args(["-u", user, "--", CLI_BINARY_NAME, "_", "remove-data-dir", "--force"])
-                        .status()
+                        .output()
                         .await
                     {
-                        if exit_status.success() {
+                        Ok(output) if output.status.success() => {
+                            debug!(user, "Removed data dir");
                             data_dir_removed = true;
-                        }
+                        },
+                        Ok(output) => error!(user, ?output, "Failed to remove data dir"),
+                        Err(err) => error!(user, ?err, "Failed to remove data dir"),
                     }
                 }
 
@@ -538,10 +556,6 @@ impl InternalSubcommand {
 
                 if !data_dir_removed {
                     bail!("Failed to uninstall completely: data directory was not removed");
-                }
-
-                if !open_page_success {
-                    bail!("Unable to open {}", fig_install::UNINSTALL_URL);
                 }
 
                 Ok(ExitCode::SUCCESS)
@@ -905,6 +919,13 @@ async fn remove_data_dir(ctx: Arc<OsContext>, force: bool) -> Result<ExitCode> {
 
     let data_dir = directories::fig_data_dir_ctx(&ctx)?;
     match ctx.fs().remove_dir_all(&data_dir).await {
+        Ok(_) => (),
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => (),
+        Err(err) => bail!("Failed to remove data dir: {:?}", err),
+    }
+
+    let webview_dir = directories::local_webview_data_dir(&ctx)?;
+    match ctx.fs().remove_dir_all(&webview_dir).await {
         Ok(_) => (),
         Err(err) if err.kind() == std::io::ErrorKind::NotFound => (),
         Err(err) => bail!("Failed to remove data dir: {:?}", err),

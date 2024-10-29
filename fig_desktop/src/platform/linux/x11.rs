@@ -2,6 +2,7 @@ use std::sync::Arc;
 use std::sync::atomic::Ordering;
 
 use dashmap::DashMap;
+use fig_util::linux::DESKTOP_APP_WM_CLASS;
 use parking_lot::Mutex;
 use serde::Serialize;
 use tao::dpi::{
@@ -41,7 +42,6 @@ use super::{
     WM_REVICED_DATA,
 };
 use crate::event::WindowEvent;
-use crate::platform::linux::FIG_WM_CLASS;
 use crate::utils::Rect;
 use crate::{
     AUTOCOMPLETE_ID,
@@ -211,7 +211,7 @@ fn process_window(
         }),
     });
 
-    if wm_class == FIG_WM_CLASS {
+    if wm_class == DESKTOP_APP_WM_CLASS {
         // get wm_role
         let reply = get_property(
             conn,

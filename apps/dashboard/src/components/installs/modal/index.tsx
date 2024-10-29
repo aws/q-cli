@@ -60,6 +60,8 @@ export default function OnboardingModal() {
   function finish() {
     refreshAccessibility();
     refreshDotfiles();
+    refreshDesktopEntry();
+    refreshGnomeExtension();
     Internal.sendOnboardingRequest({
       action: Fig.OnboardingAction.FINISH_ONBOARDING,
     })

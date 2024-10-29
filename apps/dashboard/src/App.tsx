@@ -36,6 +36,7 @@ import { useState } from "react";
 import { usePlatformInfo } from "./hooks/store/usePlatformInfo";
 import { Platform } from "@amzn/fig-io-api-bindings";
 import { matchesPlatformRestrictions } from "./lib/platform";
+import { gnomeExtensionInstallCheck } from "./data/install";
 
 function App() {
   const store = useRef(createStore()).current;
@@ -239,10 +240,20 @@ const useNavData = () => {
 };
 
 function Layout() {
+  const platformInfo = usePlatformInfo();
   const [accessibilityCheck] = useAccessibilityCheck();
   const [dotfilesCheck] = useDotfilesCheck();
+  const [gnomeExtensionCheck] = useGnomeExtensionCheck();
   const navData = useNavData();
-  const error = accessibilityCheck === false || dotfilesCheck === false;
+  const error =
+    accessibilityCheck === false ||
+    dotfilesCheck === false ||
+    (platformInfo &&
+      matchesPlatformRestrictions(
+        platformInfo,
+        gnomeExtensionInstallCheck.platformRestrictions,
+      ) &&
+      gnomeExtensionCheck === false);
 
   // eslint-disable-next-line
   const [notifCount, _] = useLocalStateZodDefault(

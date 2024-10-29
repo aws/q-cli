@@ -38,6 +38,7 @@ message Command {
     DumpStateCommand dump_state = 119;
     DevtoolsCommand devtools = 120;
     LoginCommand login = 121;
+    ConnectToIBusCommand connect_to_ibus = 122;
   }
 
   reserved 116;
@@ -170,6 +171,8 @@ message DevtoolsCommand {
 
   Window window = 1;
 }
+
+message ConnectToIBusCommand {}
 
 // == Hooks ==
 

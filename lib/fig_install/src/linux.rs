@@ -9,7 +9,10 @@ use fig_integrations::desktop_entry::{
 use fig_integrations::gnome_extension::GnomeExtensionIntegration;
 use fig_os_shim::Context;
 use fig_util::CLI_BINARY_NAME;
-use fig_util::directories::fig_data_dir_ctx;
+use fig_util::directories::{
+    fig_data_dir_ctx,
+    local_webview_data_dir,
+};
 use tokio::sync::mpsc::Sender;
 use tracing::warn;
 use url::Url;
@@ -182,6 +185,13 @@ pub(crate) async fn uninstall_desktop(ctx: &Context) -> Result<(), Error> {
         fs.remove_dir_all(&data_dir_path)
             .await
             .map_err(|err| warn!(?err, "Failed to remove data dir"))
+            .ok();
+    }
+    let webview_dir_path = local_webview_data_dir(ctx)?;
+    if fs.exists(&webview_dir_path) {
+        fs.remove_dir_all(&webview_dir_path)
+            .await
+            .map_err(|err| warn!(?err, "Failed to remove webview data dir"))
             .ok();
     }
     Ok(())

@@ -8,7 +8,14 @@ use dbus::gnome_shell::{
     ShellExtensions,
     get_extension_status,
 };
+use fig_ipc::local::send_recv_command_to_socket;
 use fig_os_shim::Context;
+use fig_proto::local::command::Command as IpcCommand;
+use fig_proto::local::command_response::Response;
+use fig_proto::local::{
+    CommandResponse,
+    ConnectToIBusCommand,
+};
 use fig_util::Terminal;
 use fig_util::consts::{
     CLI_BINARY_NAME,
@@ -211,6 +218,14 @@ impl DoctorCheck<LinuxContext> for GnomeExtensionCheck {
                     fix: None,
                     error: None,
                 }),
+                ExtensionInstallationStatus::Errored => Err(DoctorError::Error {
+                    reason: format!(
+                        "The {PRODUCT_NAME} GNOME extension is in an errored state. Please uninstall it and restart your current session."
+                    ).into(),
+                    info: vec![],
+                    fix: None,
+                    error: None,
+                }),
                 ExtensionInstallationStatus::RequiresReboot => Err(DoctorError::Error {
                     reason: format!(
                         "The {PRODUCT_NAME} GNOME extension is installed but not loaded. Please restart your login session and try again."
@@ -243,10 +258,10 @@ impl DoctorCheck<LinuxContext> for GnomeExtensionCheck {
     }
 }
 
-pub struct IBusCheck;
+pub struct IBusRunningCheck;
 
 #[async_trait]
-impl DoctorCheck<LinuxContext> for IBusCheck {
+impl DoctorCheck<LinuxContext> for IBusRunningCheck {
     fn name(&self) -> Cow<'static, str> {
         "IBus Check".into()
     }
@@ -270,17 +285,54 @@ impl DoctorCheck<LinuxContext> for IBusCheck {
             return Err(doctor_fix!({
                 reason: "ibus-daemon is not running",
                 fix: || {
+                    // Launches a new ibus-daemon process.
+                    // -d - run in the background (daemonize)
+                    // -r - replace current ibus-daemon, if running
+                    // -x - execute XIM server
+                    // -R - restarts other ibus subprocesses if they end
                     let output = Command::new("ibus-daemon").arg("-drxR").output()?;
                     if !output.status.success() {
                         let stdout = String::from_utf8_lossy(&output.stdout);
                         let stderr = String::from_utf8_lossy(&output.stderr);
                         eyre::bail!("ibus-daemon launch failed:\nstdout: {stdout}\nstderr: {stderr}\n");
                     }
+                    // Wait some time for ibus-daemon to launch.
+                    std::thread::sleep(std::time::Duration::from_secs(1));
                     Ok(())
             }}));
         }
 
         Ok(())
+    }
+}
+
+pub struct IBusConnectionCheck;
+
+#[async_trait]
+impl DoctorCheck<LinuxContext> for IBusConnectionCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "IBus Connection Check".into()
+    }
+
+    async fn get_type(&self, _: &LinuxContext, _: Platform) -> DoctorCheckType {
+        DoctorCheckType::NormalCheck
+    }
+
+    async fn check(&self, _: &LinuxContext) -> Result<(), DoctorError> {
+        match send_recv_command_to_socket(IpcCommand::ConnectToIbus(ConnectToIBusCommand {})).await {
+            Ok(Some(CommandResponse {
+                response: Some(Response::Success(_)),
+                ..
+            })) => Ok(()),
+            Ok(Some(CommandResponse { response, .. })) => {
+                Err(doctor_error!("Desktop app failed to connect to ibus: {:?}", response))
+            },
+            Ok(None) => Err(doctor_error!("Desktop app failed to connect to ibus")),
+            Err(err) => Err(doctor_error!(
+                "Failed to send the ibus connection command to the desktop: {}",
+                err
+            )),
+        }
     }
 }
 
@@ -314,7 +366,10 @@ impl DoctorCheck<LinuxContext> for SandboxCheck {
 
 #[cfg(test)]
 mod tests {
-    use dbus::gnome_shell::GNOME_SHELL_PROCESS_NAME;
+    use dbus::gnome_shell::{
+        ExtensionState,
+        GNOME_SHELL_PROCESS_NAME,
+    };
     use fig_os_shim::{
         Env,
         ProcessInfo,
@@ -445,7 +500,10 @@ mod tests {
             .with_running_processes(&[GNOME_SHELL_PROCESS_NAME])
             .build_fake();
         let shell_extensions = ShellExtensions::new_fake(Arc::downgrade(&ctx));
-        shell_extensions.install_for_fake(false, 1).await.unwrap();
+        shell_extensions
+            .install_for_fake(false, 1, Some(ExtensionState::Disabled))
+            .await
+            .unwrap();
         shell_extensions.enable_extension().await.unwrap();
         let check = GnomeExtensionCheck
             .check(&LinuxContext::new(ctx, shell_extensions.into()))
@@ -465,6 +523,20 @@ mod tests {
         async fn test_gnome_extension_check() {
             let ctx = get_linux_context().await.unwrap();
             GnomeExtensionCheck {}.check(&ctx).await.unwrap();
+        }
+
+        #[tokio::test]
+        #[ignore = "not in ci"]
+        async fn test_ibus_check() {
+            let ctx = get_linux_context().await.unwrap();
+            IBusRunningCheck {}.check(&ctx).await.unwrap();
+        }
+
+        #[tokio::test]
+        #[ignore = "not in ci"]
+        async fn test_ibus_connection_check() {
+            let ctx = get_linux_context().await.unwrap();
+            IBusConnectionCheck {}.check(&ctx).await.unwrap();
         }
     }
 }

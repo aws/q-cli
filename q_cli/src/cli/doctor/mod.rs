@@ -2238,8 +2238,9 @@ pub async fn doctor_cli(all: bool, strict: bool) -> Result<ExitCode> {
         {
             use checks::linux::{
                 GnomeExtensionCheck,
-                IBusCheck,
+                IBusConnectionCheck,
                 IBusEnvCheck,
+                IBusRunningCheck,
                 SandboxCheck,
                 get_linux_context,
             };
@@ -2250,7 +2251,8 @@ pub async fn doctor_cli(all: bool, strict: bool) -> Result<ExitCode> {
                     vec![
                         &IBusEnvCheck,
                         &GnomeExtensionCheck,
-                        &IBusCheck,
+                        &IBusRunningCheck,
+                        &IBusConnectionCheck,
                         // &DesktopCompatibilityCheck, // we need a better way of getting the data
                         &SandboxCheck,
                     ],

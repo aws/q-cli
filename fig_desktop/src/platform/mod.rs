@@ -102,6 +102,11 @@ impl PlatformState {
     pub fn accessibility_is_enabled() -> Option<bool> {
         PlatformStateImpl::accessibility_is_enabled()
     }
+
+    /// Returns the platform specific implementation.
+    pub fn inner(&self) -> Arc<PlatformStateImpl> {
+        Arc::clone(&self.0)
+    }
 }
 
 #[derive(Debug)]

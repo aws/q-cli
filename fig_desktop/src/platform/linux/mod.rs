@@ -1,4 +1,4 @@
-mod ibus;
+pub mod ibus;
 pub mod icons;
 pub mod integrations;
 mod sway;
@@ -13,6 +13,7 @@ use std::sync::atomic::{
 
 use fig_os_shim::Context;
 use fig_util::Terminal;
+use fig_util::consts::linux::DESKTOP_APP_WM_CLASS;
 use fig_util::system_info::linux::{
     DesktopEnvironment,
     DisplayServer,
@@ -61,8 +62,6 @@ use crate::{
 /// - Wayland (GNOME): from the GNOME shell extension
 static WM_REVICED_DATA: AtomicBool = AtomicBool::new(false);
 
-const FIG_WM_CLASS: &str = "Amazon-q";
-
 #[derive(Debug, Copy, Clone, Serialize)]
 #[allow(dead_code)] // we will definitely need inner_x and inner_y at some point
 pub(super) struct ActiveWindowData {
@@ -101,7 +100,7 @@ pub(super) enum DisplayServerState {
 pub struct PlatformWindowImpl;
 
 #[derive(Debug, Serialize)]
-pub(super) struct PlatformStateImpl {
+pub struct PlatformStateImpl {
     #[serde(skip)]
     pub(super) proxy: EventLoopProxy,
 
@@ -114,6 +113,8 @@ pub(super) struct PlatformStateImpl {
     /// The terminal emulator currently in focus. Note that this does
     /// not include "special" terminals like tmux.
     pub(super) active_terminal: Mutex<Option<Terminal>>,
+
+    pub(super) ibus_connected: AtomicBool,
 }
 
 impl PlatformStateImpl {
@@ -123,6 +124,7 @@ impl PlatformStateImpl {
             active_window_data: Mutex::new(None),
             display_server_state: Mutex::new(None),
             active_terminal: Mutex::new(None),
+            ibus_connected: AtomicBool::new(false),
         }
     }
 
@@ -187,7 +189,9 @@ impl PlatformStateImpl {
                         error!(%err, "Unable to initialize icons");
                     }
 
-                    if let Err(err) = ibus::init(platform_state.proxy.clone(), platform_state.clone()).await {
+                    if let Err(err) =
+                        ibus::launch_ibus_connection(platform_state.proxy.clone(), platform_state.clone()).await
+                    {
                         error!(%err, "Unable to initialize ibus");
                     }
                 });
@@ -320,7 +324,7 @@ pub fn autocomplete_active() -> bool {
 }
 
 pub mod gtk {
-    use super::FIG_WM_CLASS;
+    use super::DESKTOP_APP_WM_CLASS;
 
     /// Initializes gtk, setting the X11 WM_CLASS to [FIG_WM_CLASS]. This should be called before
     /// creating any windows or webviews.
@@ -346,7 +350,7 @@ pub mod gtk {
             panic!("Attempted to initialize GTK from two different threads.");
         }
         unsafe {
-            let name = [FIG_WM_CLASS];
+            let name = [DESKTOP_APP_WM_CLASS];
             if from_glib(ffi::gtk_init_check(&mut 1, &mut name.to_glib_none().0)) {
                 let result: bool = from_glib(glib::ffi::g_main_context_acquire(
                     gtk::glib::ffi::g_main_context_default(),

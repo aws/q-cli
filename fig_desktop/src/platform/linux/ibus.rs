@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 
 use anyhow::Result;
 use dbus::connect_to_ibus_daemon;
@@ -37,13 +38,19 @@ use crate::{
     EventLoopProxy,
 };
 
-pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStateImpl>) -> Result<()> {
+/// Connects to the `ibus-daemon` D-Bus service if not already connected, launching a task to
+/// continually listen on InputContext signals.
+pub async fn launch_ibus_connection(proxy: EventLoopProxy, platform_state: Arc<PlatformStateImpl>) -> Result<()> {
+    if platform_state.ibus_connected.load(Ordering::SeqCst) {
+        return Ok(());
+    }
+
     let ibus_connection = connect_to_ibus_daemon(&Context::new()).await?;
     debug!("Connected to ibus: {:?}", ibus_connection);
+    platform_state.ibus_connected.store(true, Ordering::SeqCst);
     DBusProxy::new(&ibus_connection)
         .await?
         .add_match_rule(
-            // TODO: verify no eavesdrop works as expected
             MatchRule::builder()
                 .interface("org.freedesktop.IBus.InputContext")?
                 .build(),
@@ -196,10 +203,12 @@ pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStat
                 },
                 Ok(None) => {
                     debug!("Received end from ibus");
+                    platform_state.ibus_connected.store(false, Ordering::SeqCst);
                     break;
                 },
                 Err(err) => {
                     error!(%err, "Failed receiving message from stream");
+                    platform_state.ibus_connected.store(false, Ordering::SeqCst);
                     break;
                 },
             }

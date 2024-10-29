@@ -68,6 +68,7 @@ export default function InstallModal({
           return;
         }
         if (key === "desktopEntry") {
+          // The app should autostart by default, thus immediately install the autostart entry.
           Install.install("autostartEntry")
             .then(() => {
               setChecking(false);

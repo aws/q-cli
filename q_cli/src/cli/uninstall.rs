@@ -117,7 +117,8 @@ async fn uninstall_linux_full(ctx: std::sync::Arc<fig_os_shim::Context>) -> Resu
             let local_bin = fig_util::directories::home_local_bin_ctx(&ctx)?.canonicalize()?;
             if exe_parent != local_bin {
                 bail!(
-                    "Uninstall is only supported for binaries installed in {local_bin:?}, the current executable is in {exe_parent:?}"
+                    "Managed uninstalls are not supported. Please use your package manager to uninstall {}",
+                    PRODUCT_NAME
                 );
             }
         },

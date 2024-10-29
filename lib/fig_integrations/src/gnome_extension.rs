@@ -107,6 +107,10 @@ where
             ExtensionInstallationStatus::NotInstalled | ExtensionInstallationStatus::UnexpectedVersion { .. } => {
                 Err(Error::NotInstalled(self.describe().into()))
             },
+            ExtensionInstallationStatus::Errored => Err(Error::ImproperInstallation(
+                "The extension is in an errored state, please manually remove it and restart your current session."
+                    .into(),
+            )),
             ExtensionInstallationStatus::NotEnabled
             | ExtensionInstallationStatus::RequiresReboot
             | ExtensionInstallationStatus::Enabled => Ok(()),

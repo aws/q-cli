@@ -60,6 +60,10 @@ pub enum ExtensionInstallationStatus {
     /// The extension is not installed.
     NotInstalled,
 
+    /// The extension is in an error state that requires manual intervention. The user will need to
+    /// remove the extension and reboot their machine.
+    Errored,
+
     /// The extension is installed, but not loaded into GNOME Shell's memory. The user must reboot
     /// their machine.
     RequiresReboot,
@@ -72,6 +76,44 @@ pub enum ExtensionInstallationStatus {
 
     /// The extension is installed and enabled.
     Enabled,
+}
+
+/// Represents the result of getting the "state" parameter from the D-Bus `get_extension_info` API.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ExtensionState {
+    /// The extension is not loaded.
+    NotLoaded,
+
+    /// The extension is loaded and enabled.
+    Enabled,
+
+    /// The extension is loaded and disabled.
+    Disabled,
+
+    /// The extension is loaded and in an error state.
+    Errored,
+}
+
+impl ExtensionState {
+    fn from_u32(state: u32) -> Result<Self, ExtensionsError> {
+        // This mapping is done just from observation, not sure if this is entirely correct in
+        // practice.
+        match state {
+            1 => Ok(ExtensionState::Enabled),
+            2 => Ok(ExtensionState::Disabled),
+            3 => Ok(ExtensionState::Errored),
+            _ => Err(ExtensionsError::UnknownState(state)),
+        }
+    }
+
+    fn as_u32(&self) -> Option<u32> {
+        match self {
+            ExtensionState::NotLoaded => None,
+            ExtensionState::Enabled => Some(1),
+            ExtensionState::Disabled => Some(2),
+            ExtensionState::Errored => Some(3),
+        }
+    }
 }
 
 async fn new_proxy() -> Result<ShellExtensionsProxy<'static>, CrateError> {
@@ -105,60 +147,59 @@ where
         return Ok(ExtensionInstallationStatus::GnomeShellNotRunning);
     }
 
-    // This could mean the extension is *technically* installed but just not loaded into
-    // gnome shell's js jit, or the extension literally is not installed.
-    //
-    // As a check, see if the user's local directory contains the extension UUID.
-    // If so, they need to reboot.
-    if !shell_extensions.is_extension_loaded().await? {
-        let uuid = shell_extensions.extension_uuid().await?;
-        let local_extension_path = local_extension_directory(ctx, &uuid)?;
-        if ctx.fs().exists(&local_extension_path) {
-            // The user could still have an old extension installed, so parse the metadata.json to
-            // check the version, returning "NotInstalled" if we run into any errors.
-            let metadata_path = local_extension_path.join("metadata.json");
-            debug!("checking: {}", &metadata_path.to_string_lossy());
-            match ctx.fs().read_to_string(metadata_path).await {
-                Ok(metadata) => {
-                    let metadata: ExtensionMetadata = match serde_json::from_str(&metadata) {
-                        Ok(metadata) => metadata,
-                        Err(_) => return Ok(ExtensionInstallationStatus::NotInstalled),
-                    };
-                    if let Some(expected_version) = expected_version {
-                        if metadata.version != expected_version {
-                            return Ok(ExtensionInstallationStatus::UnexpectedVersion {
-                                installed_version: metadata.version,
-                            });
-                        }
-                    }
-                },
-                Err(_) => return Ok(ExtensionInstallationStatus::NotInstalled),
+    match shell_extensions.get_extension_state().await? {
+        state @ (ExtensionState::Enabled | ExtensionState::Disabled) => {
+            if let Some(expected_version) = expected_version {
+                let installed_version = shell_extensions.get_extension_version().await?;
+                if installed_version != expected_version {
+                    return Ok(ExtensionInstallationStatus::UnexpectedVersion { installed_version });
+                }
             }
 
-            // All other cases means the extension is installed and we just have to reboot.
-            return Ok(ExtensionInstallationStatus::RequiresReboot);
-        }
+            if state == ExtensionState::Disabled {
+                Ok(ExtensionInstallationStatus::NotEnabled)
+            } else {
+                Ok(ExtensionInstallationStatus::Enabled)
+            }
+        },
+        ExtensionState::Errored => Ok(ExtensionInstallationStatus::Errored),
+        ExtensionState::NotLoaded => {
+            // This could mean the extension is *technically* installed but just not loaded into
+            // gnome shell's js jit, or the extension literally is not installed.
+            //
+            // As a check, see if the user's local directory contains the extension UUID.
+            // If so, they need to reboot.
+            let uuid = shell_extensions.extension_uuid().await?;
+            let local_extension_path = local_extension_directory(ctx, &uuid)?;
+            if ctx.fs().exists(&local_extension_path) {
+                // The user could still have an old extension installed, so parse the metadata.json to
+                // check the version, returning "NotInstalled" if we run into any errors.
+                let metadata_path = local_extension_path.join("metadata.json");
+                debug!("checking: {}", &metadata_path.to_string_lossy());
+                match ctx.fs().read_to_string(metadata_path).await {
+                    Ok(metadata) => {
+                        let metadata: ExtensionMetadata = match serde_json::from_str(&metadata) {
+                            Ok(metadata) => metadata,
+                            Err(_) => return Ok(ExtensionInstallationStatus::NotInstalled),
+                        };
+                        if let Some(expected_version) = expected_version {
+                            if metadata.version != expected_version {
+                                return Ok(ExtensionInstallationStatus::UnexpectedVersion {
+                                    installed_version: metadata.version,
+                                });
+                            }
+                        }
+                    },
+                    Err(_) => return Ok(ExtensionInstallationStatus::NotInstalled),
+                }
 
-        return Ok(ExtensionInstallationStatus::NotInstalled);
+                // All other cases means the extension is installed and we just have to reboot.
+                return Ok(ExtensionInstallationStatus::RequiresReboot);
+            }
+
+            Ok(ExtensionInstallationStatus::NotInstalled)
+        },
     }
-
-    let mut info = shell_extensions.get_extension_info().await?;
-    debug!("Found extension info: {:?}", info);
-    if let Some(expected_version) = expected_version {
-        let installed_version = f64::try_from(
-            info.remove("version")
-                .ok_or(ExtensionsError::Other("missing extension version".into()))?,
-        )? as u32;
-        if installed_version != expected_version {
-            return Ok(ExtensionInstallationStatus::UnexpectedVersion { installed_version });
-        }
-    }
-
-    if !shell_extensions.is_extension_enabled().await? {
-        return Ok(ExtensionInstallationStatus::NotEnabled);
-    }
-
-    Ok(ExtensionInstallationStatus::Enabled)
 }
 
 /// Provides an accessible interface to retrieving info about the Amazon Q GNOME Shell Extension.
@@ -365,28 +406,28 @@ where
         Ok(self.ctx().await?.sysinfo().is_process_running(GNOME_SHELL_PROCESS_NAME))
     }
 
-    /// Whether or not the extension is loaded into GNOME Shell.
-    ///
-    /// Note that this is not an indicator of whether or not the extension is installed! The
-    /// extension may be installed but not loaded into GNOME Shell, in which case GNOME Shell
-    /// must be restarted.
-    async fn is_extension_loaded(&self) -> Result<bool, ExtensionsError> {
-        let info = self.get_extension_info().await?;
-        if info.keys().count() == 0 { Ok(false) } else { Ok(true) }
-    }
-
-    /// Whether or not the extension is enabled.
-    ///
-    /// A prerequisite of being enabled is being installed *and* loaded into GNOME Shell.
-    async fn is_extension_enabled(&self) -> Result<bool, ExtensionsError> {
+    /// Gets the [ExtensionState] of the extension according to what we can determine from the
+    /// D-Bus `get_extension_info` API.
+    async fn get_extension_state(&self) -> Result<ExtensionState, ExtensionsError> {
         let mut info = self.get_extension_info().await?;
+        if info.keys().count() == 0 {
+            return Ok(ExtensionState::NotLoaded);
+        }
         let state = f64::try_from(
             info.remove("state")
                 .ok_or(ExtensionsError::Other("missing extension state".into()))?,
         )? as u32;
-        // Extension is enabled if "state" equals 1. If "state" equals 2, then it's
-        // disabled.
-        if state == 2 { Ok(false) } else { Ok(true) }
+        ExtensionState::from_u32(state)
+    }
+
+    /// Gets the version of the installed extension according to the D-Bus `get_extension_info`
+    /// API.
+    async fn get_extension_version(&self) -> Result<u32, ExtensionsError> {
+        let mut info = self.get_extension_info().await?;
+        Ok(f64::try_from(
+            info.remove("version")
+                .ok_or(ExtensionsError::Other("missing extension version".into()))?,
+        )? as u32)
     }
 
     /// Returns a bool indicating whether or not the Amazon Q extension was successfully enabled.
@@ -403,16 +444,15 @@ where
                 .await?
                 .enable_extension(&self.extension_uuid().await?)
                 .await?),
-            Inner::Fake(fake) => {
-                if self.is_extension_loaded().await? {
+            Inner::Fake(fake) => match self.get_extension_state().await? {
+                ExtensionState::Disabled => {
                     fake.lock()
                         .await
                         .extension_info
                         .insert("state".to_string(), OwnedValue::from(1f64));
                     Ok(true)
-                } else {
-                    Ok(false)
-                }
+                },
+                _ => Ok(false),
             },
         }
     }
@@ -430,13 +470,19 @@ where
     ///
     /// It is not enabled.
     #[allow(dead_code)]
-    pub async fn install_for_fake(&self, requires_reboot: bool, version: u32) -> Result<(), ExtensionsError> {
+    pub async fn install_for_fake(
+        &self,
+        requires_reboot: bool,
+        version: u32,
+        state: Option<ExtensionState>,
+    ) -> Result<(), ExtensionsError> {
         if let inner::Inner::Fake(fake) = &self.inner {
             self.write_fake_extension_to_fs(version).await?;
             if !requires_reboot {
+                let state = state.unwrap().as_u32().unwrap() as f64;
                 fake.lock().await.extension_info = [
                     ("version".to_string(), OwnedValue::from(version as f64)),
-                    ("state".to_string(), OwnedValue::from(2f64)),
+                    ("state".to_string(), OwnedValue::from(state)),
                 ]
                 .into_iter()
                 .collect();
@@ -484,6 +530,8 @@ pub enum ExtensionsError {
     DirectoryError(#[from] DirectoryError),
     #[error("Invalid Context reference")]
     InvalidContext,
+    #[error("Unknown state: {0}")]
+    UnknownState(u32),
     #[error("Error: {0:?}")]
     Other(Cow<'static, str>),
 }
@@ -689,7 +737,10 @@ mod tests {
             let ctx = make_ctx().await;
             let shell_extensions = ShellExtensions::new_fake(Arc::downgrade(&ctx));
             let expected_version = 1;
-            shell_extensions.install_for_fake(true, expected_version).await.unwrap();
+            shell_extensions
+                .install_for_fake(true, expected_version, None)
+                .await
+                .unwrap();
 
             // When
             let status = get_extension_status(&ctx, &shell_extensions, Some(expected_version))
@@ -742,7 +793,7 @@ mod tests {
             let expected_version = 2;
             let installed_version = 1;
             shell_extensions
-                .install_for_fake(false, installed_version)
+                .install_for_fake(false, installed_version, Some(ExtensionState::Disabled))
                 .await
                 .unwrap();
 
@@ -765,7 +816,7 @@ mod tests {
             let shell_extensions = ShellExtensions::new_fake(Arc::downgrade(&ctx));
             let expected_version = 2;
             shell_extensions
-                .install_for_fake(false, expected_version)
+                .install_for_fake(false, expected_version, Some(ExtensionState::Disabled))
                 .await
                 .unwrap();
 
@@ -786,7 +837,7 @@ mod tests {
             let shell_extensions = ShellExtensions::new_fake(Arc::downgrade(&ctx));
             let expected_version = 2;
             shell_extensions
-                .install_for_fake(false, expected_version)
+                .install_for_fake(false, expected_version, Some(ExtensionState::Disabled))
                 .await
                 .unwrap();
             shell_extensions.enable_extension().await.unwrap();
@@ -798,6 +849,25 @@ mod tests {
 
             // Then
             assert_eq!(status, ExtensionInstallationStatus::Enabled);
+        }
+
+        #[tokio::test]
+        async fn test_extension_is_errored() {
+            let ctx = make_ctx().await;
+            let shell_extensions = ShellExtensions::new_fake(Arc::downgrade(&ctx));
+            let expected_version = 1;
+            shell_extensions
+                .install_for_fake(false, expected_version, Some(ExtensionState::Errored))
+                .await
+                .unwrap();
+
+            // When
+            let status = get_extension_status(&ctx, &shell_extensions, Some(expected_version))
+                .await
+                .unwrap();
+
+            // Then
+            assert_eq!(status, ExtensionInstallationStatus::Errored);
         }
     }
 

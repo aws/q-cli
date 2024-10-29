@@ -183,6 +183,14 @@ export const createStore = () => {
     store.setState({ inputMethodIsInstalled: isInstalled });
   });
 
+  Install.isInstalled("desktopEntry").then((isInstalled) => {
+    store.setState({ desktopEntryIsInstalled: isInstalled });
+  });
+
+  Install.isInstalled("gnomeExtension").then((isInstalled) => {
+    store.setState({ gnomeExtensionIsInstalled: isInstalled });
+  });
+
   Install.installStatus.subscribe("accessibility", (isInstalled) => {
     store.setState({ accessibilityIsInstalled: isInstalled });
     return { unsubscribe: false };
