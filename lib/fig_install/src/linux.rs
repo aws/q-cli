@@ -199,6 +199,7 @@ pub(crate) async fn uninstall_desktop(ctx: &Context) -> Result<(), Error> {
 
 #[cfg(test)]
 mod tests {
+    use fig_os_shim::Os;
     use fig_util::CLI_BINARY_NAME;
     use fig_util::directories::home_dir;
 
@@ -246,7 +247,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_uninstall_desktop_removes_data_dir() {
-        let ctx = Context::builder().with_test_home().await.unwrap().build_fake();
+        let ctx = Context::builder()
+            .with_test_home()
+            .await
+            .unwrap()
+            .with_os(Os::Linux)
+            .build_fake();
         let fs = ctx.fs();
         let data_dir_path = fig_data_dir_ctx(fs).unwrap();
         fs.create_dir_all(&data_dir_path).await.unwrap();
