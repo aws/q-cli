@@ -1,10 +1,6 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/q_cli",
-    "crates/fig_desktop",
-    "crates/fig_input_method",
-    "crates/figterm",
     "crates/*",
     "crates/macos-utils/accessibility-master/accessibility",
     "crates/macos-utils/accessibility-master/accessibility-sys",
