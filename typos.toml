@@ -1,21 +1,21 @@
 [files]
 extend-exclude = [
   "tests",
-  "lib/amzn-codewhisperer-client",
-  "lib/amzn-codewhisperer-streaming-client",
-  "lib/amzn-consolas-client",
-  "lib/amzn-qdeveloper-streaming-client",
-  "lib/aws-toolkit-telemetry-definitions/def.json",
-  "lib/zbus",
-  "lib/zbus_names",
+  "crates/amzn-codewhisperer-client",
+  "crates/amzn-codewhisperer-streaming-client",
+  "crates/amzn-consolas-client",
+  "crates/amzn-qdeveloper-streaming-client",
+  "crates/aws-toolkit-telemetry-definitions/def.json",
+  "crates/zbus",
+  "crates/zbus_names",
   "packages/fuzzysort",
   "apps/dashboard/public/license/NOTICE.txt",
 ]
 
 [default]
 extend-ignore-re = [
-    # Ignore lines with trailing `spellchecker:disable-line`
-    "(?Rm)^.*(#|//)\\s*spellchecker:disable-line$"
+  # Ignore lines with trailing `spellchecker:disable-line`
+  "(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",
 ]
 
 [default.extend-words]

@@ -122,19 +122,19 @@ features = [
 nix.workspace = true
 
 [target.'cfg(target_os = "linux")'.dependencies]
-dbus = { path = "../lib/dbus" }
+dbus = { path = "../dbus" }
 freedesktop-icons = "0.2.2"
 gtk = "0.18"
 x11rb = "0.13.0"
-zbus = { path = "../lib/zbus" }
+zbus = { path = "../zbus" }
 
 [target.'cfg(target_os="macos")'.dependencies]
-accessibility-sys = { path = "../lib/macos-utils/accessibility-master/accessibility-sys", version = "0.1.3" }
+accessibility-sys = { path = "../macos-utils/accessibility-master/accessibility-sys", version = "0.1.3" }
 cocoa = "0.25.0"
 core-foundation = "0.9"
 core-graphics = "0.23.0"
 libc.workspace = true
-macos-utils = { path = "../lib/macos-utils" }
+macos-utils = { path = "../macos-utils" }
 objc.workspace = true
 system-configuration = "0.6.0"
 objc-foundation = "0.1.1"

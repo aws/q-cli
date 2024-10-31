@@ -1,14 +1,14 @@
 [workspace]
 resolver = "2"
 members = [
-    "q_cli",
-    "fig_desktop",
-    "fig_input_method",
-    "figterm",
-    "lib/*",
-    "lib/macos-utils/accessibility-master/accessibility",
-    "lib/macos-utils/accessibility-master/accessibility-sys",
-    "lib/macos-utils/appkit-nsworkspace-bindings",
+    "crates/q_cli",
+    "crates/fig_desktop",
+    "crates/fig_input_method",
+    "crates/figterm",
+    "crates/*",
+    "crates/macos-utils/accessibility-master/accessibility",
+    "crates/macos-utils/accessibility-master/accessibility-sys",
+    "crates/macos-utils/appkit-nsworkspace-bindings",
     "tests/fig-api/fig-api-mock",
     "tests/figterm2",
 ]
@@ -27,14 +27,14 @@ version = "1.4.5"
 license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
-amzn-codewhisperer-client = { path = "lib/amzn-codewhisperer-client" }
-amzn-codewhisperer-streaming-client = { path = "lib/amzn-codewhisperer-streaming-client" }
-amzn-consolas-client = { path = "lib/amzn-consolas-client" }
-amzn-qdeveloper-client = { path = "lib/amzn-qdeveloper-client" }
-amzn-qdeveloper-streaming-client = { path = "lib/amzn-qdeveloper-streaming-client" }
+amzn-codewhisperer-client = { path = "crates/amzn-codewhisperer-client" }
+amzn-codewhisperer-streaming-client = { path = "crates/amzn-codewhisperer-streaming-client" }
+amzn-consolas-client = { path = "crates/amzn-consolas-client" }
+amzn-qdeveloper-client = { path = "crates/amzn-qdeveloper-client" }
+amzn-qdeveloper-streaming-client = { path = "crates/amzn-qdeveloper-streaming-client" }
 anstream = "0.6.13"
 anyhow = "1.0.75"
-appkit-nsworkspace-bindings = { path = "lib/macos-utils/appkit-nsworkspace-bindings" }
+appkit-nsworkspace-bindings = { path = "crates/macos-utils/appkit-nsworkspace-bindings" }
 async-trait = "0.1.74"
 aws-types = "1.2.0"
 base64 = "0.22.1"
@@ -53,23 +53,23 @@ clap = { version = "4.4.0", features = [
 crossterm = "0.28.1"
 dashmap = "6.0.1"
 dirs = "5.0.0"
-fig_api_client = { path = "lib/fig_api_client" }
-fig_auth = { path = "lib/fig_auth" }
-fig_aws_common = { path = "lib/fig_aws_common" }
-fig_desktop_api = { path = "lib/fig_desktop_api" }
-fig_diagnostic = { path = "lib/fig_diagnostic" }
-fig_install = { path = "lib/fig_install" }
-fig_integrations = { path = "lib/fig_integrations" }
-fig_ipc = { path = "lib/fig_ipc" }
-fig_log = { path = "lib/fig_log" }
-fig_os_shim = { path = "lib/fig_os_shim" }
-fig_proto = { path = "lib/fig_proto" }
-fig_remote_ipc = { path = "lib/fig_remote_ipc" }
-fig_request = { path = "lib/fig_request" }
-fig_settings = { path = "lib/fig_settings" }
-fig_telemetry = { path = "lib/fig_telemetry" }
-fig_telemetry_core = { path = "lib/fig_telemetry_core" }
-fig_util = { path = "lib/fig_util" }
+fig_api_client = { path = "crates/fig_api_client" }
+fig_auth = { path = "crates/fig_auth" }
+fig_aws_common = { path = "crates/fig_aws_common" }
+fig_desktop_api = { path = "crates/fig_desktop_api" }
+fig_diagnostic = { path = "crates/fig_diagnostic" }
+fig_install = { path = "crates/fig_install" }
+fig_integrations = { path = "crates/fig_integrations" }
+fig_ipc = { path = "crates/fig_ipc" }
+fig_log = { path = "crates/fig_log" }
+fig_os_shim = { path = "crates/fig_os_shim" }
+fig_proto = { path = "crates/fig_proto" }
+fig_remote_ipc = { path = "crates/fig_remote_ipc" }
+fig_request = { path = "crates/fig_request" }
+fig_settings = { path = "crates/fig_settings" }
+fig_telemetry = { path = "crates/fig_telemetry" }
+fig_telemetry_core = { path = "crates/fig_telemetry_core" }
+fig_util = { path = "crates/fig_util" }
 hex = "0.4.3"
 indoc = "2.0.5"
 insta = "1.38.0"
@@ -103,7 +103,7 @@ reqwest = { version = "0.12.5", default-features = false, features = [
     "socks",
     "cookies",
 ] }
-shell-color = { path = "lib/shell-color" }
+shell-color = { path = "crates/shell-color" }
 semver = { version = "1.0.16", features = ["serde"] }
 serde = { version = "1.0.197", features = ["derive", "rc"] }
 serde_json = "1.0.115"

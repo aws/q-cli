@@ -32,6 +32,6 @@ fig_ipc.workspace = true
 fig_log.workspace = true
 fig_proto.workspace = true
 fig_util.workspace = true
-macos-utils = { path = "../lib/macos-utils" }
+macos-utils = { path = "../macos-utils" }
 tokio.workspace = true
 tracing.workspace = true

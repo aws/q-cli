@@ -16,7 +16,7 @@ desktop-tests = []
 profiling_early_exit = []
 
 [dependencies]
-alacritty_terminal = { path = "../lib/alacritty_terminal" }
+alacritty_terminal = { path = "../alacritty_terminal" }
 anyhow.workspace = true
 async-trait.workspace = true
 aws-types.workspace = true
