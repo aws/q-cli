@@ -27,7 +27,7 @@ Other folder to be aware of
 
 - [`build-scripts/`](build-scripts/) - Contains all python scripts to build,
   sign, and test the project on macOS and Linux
-- [`lib/`](lib/) - Contains all internal rust crates
+- [`crates/`](crates/) - Contains all internal rust crates
 - [`packages/`](packages/) - Contains all internal npm packages
 - [`proto/`](proto/) -
   [protocol buffer](https://developers.google.com/protocol-buffers/) message

@@ -1,5 +1,5 @@
 ---
-source: lib/fig_integrations/src/shell/mod.rs
+source: crates/fig_integrations/src/shell/mod.rs
 expression: integration.get_contents()
 ---
 _Q_LOCAL_BIN="$HOME/.local/bin"

@@ -34,9 +34,9 @@ You can verify figterm is running by:
 ## How does it work?
 
 When you spin up a terminal emulator like iTerm, it launches a shell. If our
-[shell integrations](../lib/fig_integrations/src/shell/) are properly installed
+[shell integrations](../fig_integrations/src/shell/) are properly installed
 into a user's dotfiles (.zshrc, .bashrc, etc.) then the shell will source the
-`pre` integration to [exec](../lib/fig_integrations/src/shell/scripts/pre.sh)
+`pre` integration to [exec](../fig_integrations/src/shell/scripts/pre.sh)
 the figterm binary.
 
 Figterm launches a PTY, or pseudoterminal, (see
@@ -75,9 +75,9 @@ Figterm replicates the processing of these sequences from the shell to create
 it's own internal screen representation. We do this with a fork of
 [Alacritty](https://github.com/alacritty/alacritty)’s
 [alacritty_terminal crate](https://docs.rs/alacritty_terminal/latest/alacritty_terminal/index.html).
-This lives in [`lib/alacritty_terminal/`](../lib/alacritty_terminal/).
+This lives in [`crates/alacritty_terminal/`](../alacritty_terminal/).
 
-Our `post` [shell integrations](../lib/fig_integrations/src/shell/scripts/) add
+Our `post` [shell integrations](../fig_integrations/src/shell/scripts/) add
 hooks that print custom OSC ANSI escape codes that `figterm` also parses. This
 is our mechanism for sending information from the shell to `figterm`. We send
 these codes to `figterm` to:

@@ -94,7 +94,7 @@ def build_npm_packages(run_test: bool = True) -> NpmBuildOutput:
     shutil.copy2(f"extensions/vscode/codewhisperer-for-command-line-companion-{version()}.vsix", vscode_path)
     shutil.copy2(
         f"extensions/vscode/codewhisperer-for-command-line-companion-{version()}.vsix",
-        "lib/fig_integrations/src/vscode/vscode-plugin.vsix",
+        "crates/fig_integrations/src/vscode/vscode-plugin.vsix",
     )
 
     return NpmBuildOutput(dashboard_path=dashboard_path, autocomplete_path=autocomplete_path, vscode_path=vscode_path)
