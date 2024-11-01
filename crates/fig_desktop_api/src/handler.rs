@@ -182,6 +182,7 @@ where
                 ApplicationUpdateStatusRequest,
                 AuthBuilderIdPollCreateTokenRequest,
                 AuthBuilderIdStartDeviceAuthorizationRequest,
+                AuthCancelPkceAuthorizationRequest,
                 AuthFinishPkceAuthorizationRequest,
                 AuthStartPkceAuthorizationRequest,
                 AuthStatusRequest,
@@ -285,6 +286,7 @@ where
                     event_handler.user_logged_in_callback(ctx).await;
                     result
                 },
+                AuthCancelPkceAuthorizationRequest(request) => auth::cancel_pkce_authorization(request).await,
                 AuthBuilderIdStartDeviceAuthorizationRequest(request) => {
                     auth::builder_id_start_device_authorization(request, &ctx).await
                 },

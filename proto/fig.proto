@@ -54,7 +54,8 @@ message ClientOriginatedMessage {
     DragWindowRequest drag_window_request = 146;
     AuthStartPkceAuthorizationRequest auth_start_pkce_authorization_request = 149;
     AuthFinishPkceAuthorizationRequest auth_finish_pkce_authorization_request = 150;
-    GetPlatformInfoRequest get_platform_info_request = 151;
+    AuthCancelPkceAuthorizationRequest auth_cancel_pkce_authorization_request = 151;
+    GetPlatformInfoRequest get_platform_info_request = 152;
   }
 
   reserved 115;
@@ -90,7 +91,8 @@ message ServerOriginatedMessage {
     CodewhispererListCustomizationResponse codewhisperer_list_customization_response = 120;
     AuthStartPkceAuthorizationResponse auth_start_pkce_authorization_response = 122;
     AuthFinishPkceAuthorizationResponse auth_finish_pkce_authorization_response = 123;
-    GetPlatformInfoResponse get_platform_info_response = 124;
+    AuthCancelPkceAuthorizationResponse auth_cancel_pkce_authorization_response = 124;
+    GetPlatformInfoResponse get_platform_info_response = 125;
 
     Notification notification = 1000;
   }
@@ -674,6 +676,10 @@ message AuthFinishPkceAuthorizationRequest {
 }
 
 message AuthFinishPkceAuthorizationResponse {}
+
+message AuthCancelPkceAuthorizationRequest {}
+
+message AuthCancelPkceAuthorizationResponse {}
 
 message AuthBuilderIdStartDeviceAuthorizationRequest {
   // Start URL for IAM Identity Center

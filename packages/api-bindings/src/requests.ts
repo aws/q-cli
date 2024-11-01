@@ -13,6 +13,8 @@ import {
   AuthBuilderIdPollCreateTokenResponse,
   AuthBuilderIdStartDeviceAuthorizationRequest,
   AuthBuilderIdStartDeviceAuthorizationResponse,
+  AuthCancelPkceAuthorizationRequest,
+  AuthCancelPkceAuthorizationResponse,
   AuthFinishPkceAuthorizationRequest,
   AuthFinishPkceAuthorizationResponse,
   AuthStartPkceAuthorizationRequest,
@@ -699,6 +701,35 @@ export async function sendAuthFinishPkceAuthorizationRequest(
             reject(
               Error(
                 `Invalid response '${response?.$case}' for 'AuthFinishPkceAuthorizationRequest'`,
+              ),
+            );
+        }
+      },
+    );
+  });
+}
+
+export async function sendAuthCancelPkceAuthorizationRequest(
+  request: AuthCancelPkceAuthorizationRequest,
+): Promise<AuthCancelPkceAuthorizationResponse> {
+  return new Promise((resolve, reject) => {
+    sendMessage(
+      {
+        $case: "authCancelPkceAuthorizationRequest",
+        authCancelPkceAuthorizationRequest: request,
+      },
+      (response) => {
+        switch (response?.$case) {
+          case "authCancelPkceAuthorizationResponse":
+            resolve(response.authCancelPkceAuthorizationResponse);
+            break;
+          case "error":
+            reject(Error(response.error));
+            break;
+          default:
+            reject(
+              Error(
+                `Invalid response '${response?.$case}' for 'AuthCancelPkceAuthorizationRequest'`,
               ),
             );
         }

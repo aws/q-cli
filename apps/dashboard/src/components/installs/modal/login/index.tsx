@@ -20,9 +20,20 @@ export default function LoginModal({ next }: { next: () => void }) {
     z.enum(["builderId", "iam"]),
     midway ? "iam" : "builderId",
   );
+
+  // Since PKCE requires the ability to open a browser, we also support falling
+  // back to device code in case of an error.
+  const [loginMethod, setLoginMethod] = useState<"pkce" | "deviceCode">("pkce");
+
+  // used for pkce
   const [currAuthRequestId, setAuthRequestId] = useAuthRequest();
 
-  // console.log(tab);
+  // used for device code
+  const [loginCode, setLoginCode] = useState<string | null>(null);
+  const [loginUrl, setLoginUrl] = useState<string | null>(null);
+  const [copyToClipboardText, setCopyToClipboardText] = useState<
+    "Copy to clipboard" | "Copied!"
+  >("Copy to clipboard");
 
   const [error, setError] = useState<string | null>(null);
   const [completedOnboarding] = useLocalStateZodDefault(
@@ -33,7 +44,15 @@ export default function LoginModal({ next }: { next: () => void }) {
   const auth = useAuth();
   const refreshAuth = useRefreshAuth();
 
-  async function handleLogin(issuerUrl?: string, region?: string) {
+  async function handleLogin(startUrl?: string, region?: string) {
+    if (loginMethod === "pkce") {
+      handlePkceAuth(startUrl, region);
+    } else {
+      handleDeviceCodeAuth(startUrl, region);
+    }
+  }
+
+  async function handlePkceAuth(issuerUrl?: string, region?: string) {
     setLoginState("loading");
     setError(null);
     // We need to reset the auth request state before attempting, otherwise
@@ -53,7 +72,13 @@ export default function LoginModal({ next }: { next: () => void }) {
     setAuthRequestId(init.authRequestId);
 
     Native.open(init.url).catch((err) => {
+      // Reset the auth request id so that we don't present the "OAuth cancelled" error
+      // to the user.
+      setAuthRequestId("");
       console.error(err);
+      setError(
+        "Failed to open the browser. As an alternative, try logging in with device code.",
+      );
     });
 
     await Auth.finishPkceAuthorization(init)
@@ -71,6 +96,43 @@ export default function LoginModal({ next }: { next: () => void }) {
           setError(err.message);
           console.error(err);
         }
+      });
+  }
+
+  async function handleDeviceCodeAuth(startUrl?: string, region?: string) {
+    setLoginState("loading");
+    setError(null);
+    setLoginUrl(null);
+    await Auth.cancelPkceAuthorization().catch((err) => {
+      console.error(err);
+    });
+    const init = await Auth.builderIdStartDeviceAuthorization({
+      startUrl,
+      region,
+    }).catch((err) => {
+      setLoginState("not started");
+      setLoginCode(null);
+      setError(err.message);
+      console.error(err);
+    });
+
+    if (!init) return;
+
+    setLoginCode(init.code);
+    setLoginUrl(init.url);
+
+    await Auth.builderIdPollCreateToken(init)
+      .then(() => {
+        setLoginState("logged in");
+        Internal.sendWindowFocusRequest({});
+        refreshAuth();
+        next();
+      })
+      .catch((err) => {
+        setLoginState("not started");
+        setLoginCode(null);
+        setError(err.message);
+        console.error(err);
       });
   }
 
@@ -103,16 +165,31 @@ export default function LoginModal({ next }: { next: () => void }) {
           </div>
         )}
       </div>
+
       {error && (
-        <div className="w-full bg-red-200 border border-red-600 rounded py-1 px-1">
+        <div className="flex flex-col items-center gap-2 w-full bg-red-200 border border-red-600 rounded py-2 px-2">
           <p className="text-black dark:text-white font-semibold text-center">
             Failed to login
           </p>
           <p className="text-black dark:text-white text-center">{error}</p>
+          {loginMethod === "pkce" && loginState === "loading" && (
+            <Button
+              variant="ghost"
+              className="self-center mx-auto text-black hover:bg-white/40"
+              onClick={() => {
+                setLoginMethod("deviceCode");
+                setLoginState("not started");
+                setError(null);
+              }}
+            >
+              Login with Device Code
+            </Button>
+          )}
         </div>
       )}
-      <div className="flex flex-col gap-4 text-white text-sm">
-        {loginState === "loading" ? (
+
+      <div className="flex flex-col items-center gap-4 text-white text-sm">
+        {loginState === "loading" && loginMethod === "pkce" ? (
           <>
             <p className="text-center w-80">
               Waiting for authentication in the browser to complete...
@@ -122,6 +199,37 @@ export default function LoginModal({ next }: { next: () => void }) {
               className="self-center w-32"
               onClick={() => {
                 setLoginState("not started");
+              }}
+            >
+              Back
+            </Button>
+          </>
+        ) : loginState === "loading" &&
+          loginMethod === "deviceCode" &&
+          loginCode &&
+          loginUrl ? (
+          <>
+            <p className="text-center w-80">
+              Confirm code <span className="font-bold">{loginCode}</span> in the
+              login page at the following link:
+            </p>
+            <p className="text-center">{loginUrl}</p>
+            <Button
+              variant="ghost"
+              className="h-auto p-1 px-2 hover:bg-white/20 hover:text-white"
+              onClick={() => {
+                navigator.clipboard.writeText(loginUrl);
+                setCopyToClipboardText("Copied!");
+              }}
+            >
+              {copyToClipboardText}
+            </Button>
+            <Button
+              variant="glass"
+              className="self-center w-32"
+              onClick={() => {
+                setLoginState("not started");
+                setLoginCode(null);
               }}
             >
               Back

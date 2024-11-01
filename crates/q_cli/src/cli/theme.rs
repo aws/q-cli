@@ -12,6 +12,7 @@ use eyre::{
     Result,
     WrapErr,
 };
+use fig_os_shim::Context;
 use fig_util::directories;
 use serde::{
     Deserialize,
@@ -48,7 +49,7 @@ pub struct ThemeArgs {
 
 impl ThemeArgs {
     pub async fn execute(&self) -> Result<ExitCode> {
-        let theme_dir = directories::themes_dir().context("Could not get theme directory")?;
+        let theme_dir = directories::themes_dir(&Context::new()).context("Could not get theme directory")?;
 
         if self.folder {
             println!("{}", theme_dir.display());

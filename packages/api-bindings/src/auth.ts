@@ -1,5 +1,6 @@
 import {
   AuthBuilderIdStartDeviceAuthorizationResponse,
+  AuthCancelPkceAuthorizationResponse,
   AuthStartPkceAuthorizationResponse,
   // eslint-disable-next-line camelcase
   AuthStatusResponse_AuthKind,
@@ -11,6 +12,7 @@ import {
   sendAuthFinishPkceAuthorizationRequest,
   sendAuthStatusRequest,
   sendAuthStartPkceAuthorizationRequest,
+  sendAuthCancelPkceAuthorizationRequest,
 } from "./requests.js";
 import { AuthFinishPkceAuthorizationResponse } from "@amzn/fig-io-proto/fig";
 import { AuthFinishPkceAuthorizationRequest } from "@amzn/fig-io-proto/fig";
@@ -57,6 +59,10 @@ export function finishPkceAuthorization({
   authRequestId,
 }: AuthFinishPkceAuthorizationRequest): Promise<AuthFinishPkceAuthorizationResponse> {
   return sendAuthFinishPkceAuthorizationRequest({ authRequestId });
+}
+
+export function cancelPkceAuthorization(): Promise<AuthCancelPkceAuthorizationResponse> {
+  return sendAuthCancelPkceAuthorizationRequest({});
 }
 
 export function builderIdStartDeviceAuthorization({

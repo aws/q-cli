@@ -269,11 +269,7 @@ pub fn host_sockets_dir() -> Result<PathBuf> {
 }
 
 /// The path to all of the themes
-pub fn themes_dir() -> Result<PathBuf> {
-    Ok(resources_path()?.join("themes"))
-}
-
-pub fn themes_dir_ctx(ctx: &Context) -> Result<PathBuf> {
+pub fn themes_dir(ctx: &Context) -> Result<PathBuf> {
     Ok(resources_path_ctx(ctx)?.join("themes"))
 }
 

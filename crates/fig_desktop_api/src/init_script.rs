@@ -5,6 +5,7 @@ use std::env::{
 };
 
 use camino::Utf8PathBuf;
+use fig_os_shim::Context;
 use fig_util::directories::midway_cookie_path;
 #[cfg(target_os = "linux")]
 use fig_util::system_info::linux::{
@@ -66,7 +67,8 @@ pub struct Constants {
 
 impl Constants {
     fn new(support_api_proto: bool) -> Self {
-        let themes_folder = directories::themes_dir()
+        let ctx = Context::new();
+        let themes_folder = directories::themes_dir(&ctx)
             .ok()
             .and_then(|dir| Utf8PathBuf::try_from(dir).ok());
 

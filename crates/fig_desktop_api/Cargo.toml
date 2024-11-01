@@ -41,6 +41,7 @@ whoami.workspace = true
 
 [dev-dependencies]
 reqwest.workspace = true
+tracing-subscriber.workspace = true
 
 [target.'cfg(target_os="macos")'.dependencies]
 macos-utils = { path = "../macos-utils" }

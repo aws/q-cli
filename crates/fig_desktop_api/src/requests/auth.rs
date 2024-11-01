@@ -19,6 +19,8 @@ use fig_proto::fig::{
     AuthBuilderIdPollCreateTokenResponse,
     AuthBuilderIdStartDeviceAuthorizationRequest,
     AuthBuilderIdStartDeviceAuthorizationResponse,
+    AuthCancelPkceAuthorizationRequest,
+    AuthCancelPkceAuthorizationResponse,
     AuthFinishPkceAuthorizationRequest,
     AuthFinishPkceAuthorizationResponse,
     AuthStartPkceAuthorizationRequest,
@@ -33,7 +35,10 @@ use tokio::sync::mpsc::{
     Sender,
     channel,
 };
-use tracing::error;
+use tracing::{
+    debug,
+    error,
+};
 
 use super::RequestResult;
 use crate::kv::KVStore;
@@ -89,6 +94,9 @@ struct PkceState<T> {
 
     /// [Receiver] for completed PKCE authorizations. Created per authorization attempt.
     finished_rx: Mutex<Receiver<(String, Result<(), fig_auth::Error>)>>,
+
+    /// [Sender] for cancelling any potentially ongoing PKCE authorizations.
+    cancel_tx: Mutex<Sender<()>>,
 }
 
 impl<T: PkceClient + Send + Sync + 'static> PkceState<T> {
@@ -97,6 +105,7 @@ impl<T: PkceClient + Send + Sync + 'static> PkceState<T> {
     fn new() -> Arc<Self> {
         let (new_tx, mut new_rx) = channel::<(String, PkceRegistration, T, Option<SecretStore>)>(1);
         let (finished_tx, finished_rx) = channel(1);
+        let (cancel_tx, mut cancel_rx) = channel(1);
 
         let new_tx_clone = new_tx.clone();
         let pkce_state = Arc::new(PkceState {
@@ -104,19 +113,29 @@ impl<T: PkceClient + Send + Sync + 'static> PkceState<T> {
             new_tx,
             finished_tx: Mutex::new(finished_tx),
             finished_rx: Mutex::new(finished_rx),
+            cancel_tx: Mutex::new(cancel_tx),
         });
         let pkce_state_clone = Arc::clone(&pkce_state);
         tokio::spawn(async move {
             let registration_tx = new_tx_clone;
             let pkce_state = pkce_state_clone;
             while let Some((auth_request_id, registration, client, secret_store)) = new_rx.recv().await {
+                while cancel_rx.try_recv().is_ok() {
+                    debug!("Ignoring buffered PKCE cancellation attempt");
+                }
+
                 tokio::select! {
                     // We received a new registration while waiting for the current one to complete,
                     // so resend it back around the loop.
                     Some(new_registration) = new_rx.recv() => {
-                         if let Err(err) = registration_tx.send(new_registration).await {
-                             error!(?err, "Error attempting to reprocess registration");
-                         }
+                        debug!(
+                            "Received a new registration for request_id: {} while already processing: {}",
+                            new_registration.0,
+                            auth_request_id
+                        );
+                        if let Err(err) = registration_tx.send(new_registration).await {
+                            error!(?err, "Error attempting to reprocess registration");
+                        }
                     }
                     // Registration successfully finished, send back the result.
                     result = registration.finish(&client, secret_store.as_ref()) => {
@@ -128,6 +147,18 @@ impl<T: PkceClient + Send + Sync + 'static> PkceState<T> {
                             .await
                         {
                             error!(?err, "unknown error occurred finishing PKCE registration");
+                        }
+                    }
+                    _ = cancel_rx.recv() => {
+                        debug!("Cancelling current registration for request_id: {}", auth_request_id);
+                        if let Err(err) = pkce_state
+                            .finished_tx
+                            .lock()
+                            .await
+                            .send((auth_request_id, Err(fig_auth::Error::OAuthCustomError("cancelled".into()))))
+                            .await
+                        {
+                            error!(?err, "unknown error occurred cancelling PKCE registration");
                         }
                     }
                 }
@@ -175,6 +206,11 @@ impl<T: PkceClient + Send + Sync + 'static> PkceState<T> {
             // Sender was dropped.
             None => Err(PkceError::RegistrationCancelled),
         }
+    }
+
+    /// Cancel an ongoing PKCE registration, if one is present.
+    async fn cancel_registration(&self) {
+        self.cancel_tx.lock().await.try_send(()).ok();
     }
 }
 
@@ -234,6 +270,11 @@ pub async fn finish_pkce_authorization(
 
     fig_telemetry::send_user_logged_in().await;
     Ok(ServerOriginatedSubMessage::AuthFinishPkceAuthorizationResponse(AuthFinishPkceAuthorizationResponse {}).into())
+}
+
+pub async fn cancel_pkce_authorization(_: AuthCancelPkceAuthorizationRequest) -> RequestResult {
+    PKCE_REGISTRATION.cancel_registration().await;
+    Ok(ServerOriginatedSubMessage::AuthCancelPkceAuthorizationResponse(AuthCancelPkceAuthorizationResponse {}).into())
 }
 
 pub async fn builder_id_start_device_authorization(
@@ -432,5 +473,41 @@ mod tests {
         });
         let result_one = pkce_state.finish_registration(&id_one).await;
         assert!(matches!(result_one, Err(PkceError::RegistrationCancelled)));
+    }
+
+    #[tokio::test]
+    async fn test_pkce_state_is_cancellable() {
+        tracing_subscriber::fmt::init();
+
+        let pkce_state = PkceState::new();
+
+        // Cancelling before we can finish the registration.
+        {
+            pkce_state.cancel_registration().await;
+            pkce_state.cancel_registration().await; // works multiple times
+
+            let client = TestPkceClient {};
+            let registration = PkceRegistration::register(&client, test_region(), test_issuer_url(), None)
+                .await
+                .unwrap();
+            let (uri, state) = (registration.redirect_uri.clone(), registration.state.clone());
+            let request_id = pkce_state.start_registration(registration, client, None).await;
+            send_test_auth_code(uri, state).await.unwrap();
+            assert!(pkce_state.finish_registration(&request_id).await.is_ok());
+        }
+
+        // Cancelling closes the server
+        {
+            let client = TestPkceClient {};
+            let registration = PkceRegistration::register(&client, test_region(), test_issuer_url(), None)
+                .await
+                .unwrap();
+            let (uri, state) = (registration.redirect_uri.clone(), registration.state.clone());
+            let _ = pkce_state.start_registration(registration, client, None).await;
+            // Give time for the HTTP server to be hosted
+            tokio::time::sleep(std::time::Duration::from_millis(5)).await;
+            pkce_state.cancel_registration().await;
+            assert!(send_test_auth_code(uri, state).await.is_err());
+        }
     }
 }
