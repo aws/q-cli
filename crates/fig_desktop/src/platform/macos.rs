@@ -147,7 +147,7 @@ struct Unmanaged {
 }
 
 #[derive(Debug, Serialize)]
-pub(super) struct PlatformStateImpl {
+pub struct PlatformStateImpl {
     #[serde(skip)]
     proxy: EventLoopProxy,
     #[serde(skip)]

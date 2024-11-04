@@ -272,6 +272,7 @@ pub fn dump_state(
     ))))
 }
 
+#[allow(unused_variables)]
 pub async fn connect_to_ibus(proxy: EventLoopProxy, platform_state: &PlatformState) -> LocalResult {
     cfg_if::cfg_if! {
         if #[cfg(target_os = "linux")] {

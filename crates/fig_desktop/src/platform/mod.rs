@@ -104,6 +104,7 @@ impl PlatformState {
     }
 
     /// Returns the platform specific implementation.
+    #[allow(dead_code)]
     pub fn inner(&self) -> Arc<PlatformStateImpl> {
         Arc::clone(&self.0)
     }
