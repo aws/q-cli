@@ -1,3 +1,6 @@
+import pathlib
+
+
 APP_NAME = "Amazon Q"
 CLI_BINARY_NAME = "q"
 PTY_BINARY_NAME = "qterm"
@@ -19,6 +22,8 @@ LINUX_MODERN_GNOME_EXTENSION_UUID = "amazon-q-for-cli-gnome-integration@aws.amaz
 CLI_PACKAGE_NAME = "q_cli"
 PTY_PACKAGE_NAME = "figterm"
 DESKTOP_PACKAGE_NAME = "fig_desktop"
+
+DESKTOP_PACKAGE_PATH = pathlib.Path("crates", "fig_desktop")
 
 # AMZN Mobile LLC
 APPLE_TEAM_ID = "94KV3E626L"

@@ -35,6 +35,7 @@ from const import (
     CLI_PACKAGE_NAME,
     DESKTOP_BINARY_NAME,
     DESKTOP_PACKAGE_NAME,
+    DESKTOP_PACKAGE_PATH,
     DMG_NAME,
     LINUX_ARCHIVE_NAME,
     LINUX_LEGACY_GNOME_EXTENSION_UUID,
@@ -259,7 +260,7 @@ def build_macos_desktop_app(
 
     run_cmd(
         cargo_tauri_args,
-        cwd=DESKTOP_PACKAGE_NAME,
+        cwd=DESKTOP_PACKAGE_PATH,
         env={**os.environ, **rust_env(release=release, variant=Variant.FULL), "BUILD_DIR": BUILD_DIR},
     )
 
@@ -385,30 +386,6 @@ def sign_and_rebundle_macos(app_path: pathlib.Path, dmg_path: pathlib.Path, sign
     apple_notarize_file(dmg_path, signing_data)
 
     info("Done signing!!")
-
-
-def linux_bundle(
-    pty_path: pathlib.Path,
-    cli_path: pathlib.Path,
-    desktop_app_path: pathlib.Path,
-    is_minimal: bool,
-):
-    if not is_minimal:
-        for res in [16, 22, 24, 32, 48, 64, 128, 256, 512]:
-            shutil.copy2(
-                f"{DESKTOP_PACKAGE_NAME}/icons/{res}x{res}.png",
-                f"build/usr/share/icons/hicolor/{res}x{res}/apps/fig.png",
-            )
-
-    info("Copying bundle files")
-    bin_path = pathlib.Path("build/usr/bin")
-    bin_path.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(cli_path, bin_path)
-    shutil.copy2(pty_path, bin_path)
-    shutil.copytree("bundle/linux/minimal", BUILD_DIR, dirs_exist_ok=True)
-    if not is_minimal:
-        shutil.copytree("bundle/linux/desktop", BUILD_DIR, dirs_exist_ok=True)
-        shutil.copy2(desktop_app_path, bin_path)
 
 
 def build_linux_minimal(cli_path: pathlib.Path, pty_path: pathlib.Path):
@@ -576,7 +553,7 @@ def build_linux_deb(
     desktop_icon_path.parent.mkdir(parents=True)
     share_path = bundle_dir / f"usr/share/{LINUX_PACKAGE_NAME}"
     share_path.mkdir(parents=True)
-    shutil.copy(pathlib.Path(f"{DESKTOP_PACKAGE_NAME}/icons/128x128.png"), desktop_icon_path)
+    shutil.copy(DESKTOP_PACKAGE_PATH / "icons" / "128x128.png", desktop_icon_path)
     shutil.copytree(resources.legacy_extension_dir_path, share_path / LINUX_LEGACY_GNOME_EXTENSION_UUID)
     shutil.copytree(resources.modern_extension_dir_path, share_path / LINUX_MODERN_GNOME_EXTENSION_UUID)
     shutil.copytree(resources.npm_packages.autocomplete_path, share_path / "autocomplete")
@@ -655,7 +632,7 @@ def build_linux_full(
     modern_extension_dir_path = copy_extension(LINUX_MODERN_GNOME_EXTENSION_UUID, "gnome-extension")
 
     info("Building tauri config")
-    tauri_config_path = pathlib.Path(DESKTOP_PACKAGE_NAME) / "build-config.json"
+    tauri_config_path = DESKTOP_PACKAGE_PATH / "build-config.json"
     tauri_config_path.write_text(
         linux_tauri_config(
             cli_path=cli_path,
@@ -686,7 +663,7 @@ def build_linux_full(
     info("Building", DESKTOP_PACKAGE_NAME)
     run_cmd(
         cargo_tauri_args,
-        cwd=DESKTOP_PACKAGE_NAME,
+        cwd=DESKTOP_PACKAGE_PATH,
         env={**os.environ, **rust_env(release=release, variant=Variant.FULL), "BUILD_DIR": BUILD_DIR},
     )
     desktop_path = pathlib.Path(f'target/{target}/{"release" if release else "debug"}/{DESKTOP_BINARY_NAME}')
