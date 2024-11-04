@@ -103,6 +103,7 @@ export default function LoginModal({ next }: { next: () => void }) {
     setLoginState("loading");
     setError(null);
     setLoginUrl(null);
+    setCopyToClipboardText("Copy to clipboard");
     await Auth.cancelPkceAuthorization().catch((err) => {
       console.error(err);
     });
