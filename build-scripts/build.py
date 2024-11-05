@@ -189,11 +189,11 @@ def build_macos_ime(
         input_method_app / "Contents/MacOS/fig_input_method",
     )
     shutil.copy2(
-        "fig_input_method/Info.plist",
+        "crates/fig_input_method/Info.plist",
         input_method_app / "Contents/Info.plist",
     )
     shutil.copytree(
-        "fig_input_method/resources",
+        "crates/fig_input_method/resources",
         input_method_app / "Contents/Resources",
         dirs_exist_ok=True,
     )
@@ -237,11 +237,11 @@ def build_macos_desktop_app(
     ime_app = build_macos_ime(release=release, signing_data=signing_data, targets=targets, is_prod=is_prod)
 
     info("Writing manifest")
-    manifest_path = pathlib.Path(DESKTOP_PACKAGE_NAME) / "manifest.json"
+    manifest_path = pathlib.Path(DESKTOP_PACKAGE_PATH) / "manifest.json"
     manifest_path.write_text(gen_manifest())
 
     info("Building tauri config")
-    tauri_config_path = pathlib.Path(DESKTOP_PACKAGE_NAME) / "build-config.json"
+    tauri_config_path = pathlib.Path(DESKTOP_PACKAGE_PATH) / "build-config.json"
     tauri_config_path.write_text(macos_tauri_config(cli_path=cli_path, pty_path=pty_path, target=target))
 
     info("Building", DESKTOP_PACKAGE_NAME)
