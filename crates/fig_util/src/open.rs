@@ -61,13 +61,15 @@ pub fn open_url(url: impl AsRef<str>) -> Result<(), Error> {
         if #[cfg(target_os = "macos")] {
             open_macos(url)
         } else {
-            match open_command(url)
-                .stdout(std::process::Stdio::null())
-                .stderr(std::process::Stdio::null())
-                .status()
-            {
-                Ok(status) if status.success() => Ok(()),
-                Ok(_) => Err(Error::Failed),
+            match open_command(url).output() {
+                Ok(output) => {
+                    tracing::trace!(?output, "open_url output");
+                    if output.status.success() {
+                        Ok(())
+                    } else {
+                        Err(Error::Failed)
+                    }
+                },
                 Err(err) => Err(err.into()),
             }
         }
@@ -80,14 +82,15 @@ pub async fn open_url_async(url: impl AsRef<str>) -> Result<(), Error> {
         if #[cfg(target_os = "macos")] {
             open_macos(url)
         } else {
-            match tokio::process::Command::from(open_command(url))
-                .stdout(std::process::Stdio::null())
-                .stderr(std::process::Stdio::null())
-                .status()
-                .await
-            {
-                Ok(status) if status.success() => Ok(()),
-                Ok(_) => Err(Error::Failed),
+            match tokio::process::Command::from(open_command(url)).output().await {
+                Ok(output) => {
+                    tracing::trace!(?output, "open_url_async output");
+                    if output.status.success() {
+                        Ok(())
+                    } else {
+                        Err(Error::Failed)
+                    }
+                },
                 Err(err) => Err(err.into()),
             }
         }
