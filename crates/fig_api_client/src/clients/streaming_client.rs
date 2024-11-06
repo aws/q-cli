@@ -1,10 +1,6 @@
-use std::time::Duration;
-
 use amzn_codewhisperer_streaming_client::Client as CodewhispererStreamingClient;
 use amzn_qdeveloper_streaming_client::Client as QDeveloperStreamingClient;
-use aws_config::timeout::TimeoutConfig;
 use aws_types::request_id::RequestId;
-use aws_types::sdk_config::StalledStreamProtectionConfig;
 use fig_auth::builder_id::BearerResolver;
 use fig_aws_common::{
     UserAgentOverrideInterceptor,
@@ -14,6 +10,7 @@ use fig_aws_common::{
 use super::shared::{
     bearer_sdk_config,
     sigv4_sdk_config,
+    stalled_stream_protection_config,
 };
 use crate::interceptor::opt_out::OptOutInterceptor;
 use crate::model::{
@@ -24,21 +21,6 @@ use crate::{
     Endpoint,
     Error,
 };
-
-fn stalled_stream_protection_config() -> StalledStreamProtectionConfig {
-    StalledStreamProtectionConfig::enabled()
-        .grace_period(Duration::from_secs(100))
-        .build()
-}
-
-fn timeout_config() -> TimeoutConfig {
-    TimeoutConfig::builder()
-        .read_timeout(Duration::from_secs(10))
-        .operation_timeout(Duration::from_secs(10))
-        .operation_attempt_timeout(Duration::from_secs(10))
-        .connect_timeout(Duration::from_secs(10))
-        .build()
-}
 
 mod inner {
     use amzn_codewhisperer_streaming_client::Client as CodewhispererStreamingClient;
@@ -81,7 +63,6 @@ impl StreamingClient {
             .app_name(app_name())
             .endpoint_url(endpoint.url())
             .stalled_stream_protection(stalled_stream_protection_config())
-            .timeout_config(timeout_config())
             .build();
         let client = CodewhispererStreamingClient::from_conf(conf);
         Self(inner::Inner::Codewhisperer(client))
@@ -96,7 +77,6 @@ impl StreamingClient {
             .app_name(app_name())
             .endpoint_url(endpoint.url())
             .stalled_stream_protection(stalled_stream_protection_config())
-            .timeout_config(timeout_config())
             .build();
         let client = QDeveloperStreamingClient::from_conf(conf);
         Ok(Self(inner::Inner::QDeveloper(client)))
