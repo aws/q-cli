@@ -36,7 +36,7 @@ importers:
         specifier: ^1.6.0
         version: 1.6.0(@types/node@22.8.2)(@vitest/ui@1.6.0)(jsdom@24.1.0)(terser@5.36.0)
 
-  apps/autocomplete:
+  packages/autocomplete:
     dependencies:
       '@amzn/fig-io-api-bindings':
         specifier: workspace:~
@@ -175,7 +175,7 @@ importers:
         specifier: ^1.6.0
         version: 1.6.0(@types/node@20.17.2)(@vitest/ui@1.6.0)(jsdom@24.1.0)(terser@5.36.0)
 
-  apps/dashboard:
+  packages/dashboard:
     dependencies:
       '@amzn/fig-io-api-bindings':
         specifier: workspace:^

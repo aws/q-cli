@@ -9,7 +9,7 @@ extend-exclude = [
   "crates/zbus",
   "crates/zbus_names",
   "packages/fuzzysort",
-  "apps/dashboard/public/license/NOTICE.txt",
+  "packages/dashboard/public/license/NOTICE.txt",
 ]
 
 [default]

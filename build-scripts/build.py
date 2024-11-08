@@ -84,11 +84,11 @@ def build_npm_packages(run_test: bool = True) -> NpmBuildOutput:
     # copy to output
     dashboard_path = BUILD_DIR / "dashboard"
     shutil.rmtree(dashboard_path, ignore_errors=True)
-    shutil.copytree("apps/dashboard/dist", dashboard_path)
+    shutil.copytree("packages/dashboard/dist", dashboard_path)
 
     autocomplete_path = BUILD_DIR / "autocomplete"
     shutil.rmtree(autocomplete_path, ignore_errors=True)
-    shutil.copytree("apps/autocomplete/dist", autocomplete_path)
+    shutil.copytree("packages/autocomplete/dist", autocomplete_path)
 
     vscode_path = BUILD_DIR / "vscode-plugin.vsix"
     shutil.rmtree(vscode_path, ignore_errors=True)
@@ -549,7 +549,7 @@ def build_linux_deb(
     desktop_entry_path = bundle_dir / f"usr/share/applications/{LINUX_PACKAGE_NAME}.desktop"
     desktop_entry_path.parent.mkdir(parents=True)
     desktop_entry_path.write_text(linux_desktop_entry())
-    desktop_icon_path = bundle_dir / f"usr/share/icons/hicolor/128x128/apps/{LINUX_PACKAGE_NAME}.png"
+    desktop_icon_path = bundle_dir / f"usr/share/icons/hicolor/128x128/packages/{LINUX_PACKAGE_NAME}.png"
     desktop_icon_path.parent.mkdir(parents=True)
     share_path = bundle_dir / f"usr/share/{LINUX_PACKAGE_NAME}"
     share_path.mkdir(parents=True)

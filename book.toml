@@ -1,0 +1,11 @@
+[book]
+title = "Amazon Q in the command line"
+authors = [
+    "Amazon Q CLI Team (q-cli@amazon.com)",
+    "Grant Gurvis (grangurv@amazon.com)",
+    "Chay Nabors (nabochay@amazon.com)",
+    "Brandon Kiser (bskiser@amazon.com)",
+]
+language = "en"
+multilingual = false
+src = "docs"

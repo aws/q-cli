@@ -1,7 +1,7 @@
 packages:
   - proto
   - tests/fig-api
-  - apps/*
+  - packages/*
   - packages/*
   - extensions/vscode
   - extensions/gnome-legacy-extension

@@ -7,8 +7,8 @@ app and CLI.
 
 Several projects live here:
 
-- [`apps/autocomlete`](apps/autocomplete/) - The autocomplete react app
-- [`apps/dashboard`](apps/dashboard/) - The dashboard react app
+- [`packages/autocomlete`](packages/autocomplete/) - The autocomplete react app
+- [`packages/dashboard`](packages/dashboard/) - The dashboard react app
 - [`figterm/`](figterm/) - figterm, our headless terminal/pseudoterminal that
   intercepts the user’s terminal edit buffer.
 - [`q_cli/`](q_cli/) - the `q` CLI, allows users to interface with Amazon Q from
@@ -37,7 +37,7 @@ Other folder to be aware of
 Below is a high level architecture of how the different components of the app and
 their IPC:
 
-![architecture](docs/architecture.svg)
+![architecture](docs/assets/architecture.svg)
 
 ## Setup
 

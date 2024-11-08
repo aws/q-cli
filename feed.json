@@ -1,5 +1,5 @@
 {
-  "$schema": "./docs/feed-schema.json",
+  "$schema": "./docs/assets/feed-schema.json",
   "entries": [
     {
       "$comment": "This is the next release, any changes here",

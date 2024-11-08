@@ -29,6 +29,7 @@ __pycache__
 
 target/
 build
+book/
 .vscode-test/
 
 # ide folders
@@ -48,3 +49,5 @@ build
 .env*
 
 rust-toolchain.toml
+
+run-build.sh
