@@ -2237,6 +2237,7 @@ pub async fn doctor_cli(all: bool, strict: bool) -> Result<ExitCode> {
         #[cfg(target_os = "linux")]
         {
             use checks::linux::{
+                DisplayServerCheck,
                 GnomeExtensionCheck,
                 IBusConnectionCheck,
                 IBusEnvCheck,
@@ -2249,6 +2250,7 @@ pub async fn doctor_cli(all: bool, strict: bool) -> Result<ExitCode> {
                 run_checks_with_context(
                     "Let's check Linux integrations",
                     vec![
+                        &DisplayServerCheck,
                         &IBusEnvCheck,
                         &GnomeExtensionCheck,
                         &IBusRunningCheck,

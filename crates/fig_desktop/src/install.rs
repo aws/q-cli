@@ -390,6 +390,7 @@ pub async fn initialize_fig_dir(env: &fig_os_shim::Env) -> anyhow::Result<()> {
 async fn run_linux_install(ctx: Arc<Context>, settings: Arc<fig_settings::Settings>, state: Arc<fig_settings::State>) {
     use dbus::gnome_shell::ShellExtensions;
     use fig_settings::State;
+    use fig_util::system_info::linux::get_display_server;
 
     // install binaries under home local bin
     if ctx.env().in_appimage() {
@@ -400,6 +401,24 @@ async fn run_linux_install(ctx: Arc<Context>, settings: Arc<fig_settings::Settin
                 .map_err(|err| error!(?err, "Unable to install binaries under the local bin directory"))
                 .ok();
         });
+    }
+
+    // Important we log an error if we cannot detect the display server in use.
+    // If this isn't wayland or x11, the user will probably just see a blank screen.
+    match get_display_server(&ctx) {
+        Ok(_) => (),
+        Err(fig_util::Error::UnknownDisplayServer(server)) => {
+            error!(
+                "Unknown value set for XDG_SESSION_TYPE: {}. This must be set to x11 or wayland.",
+                server
+            );
+        },
+        Err(err) => {
+            error!(
+                "Unknown error occurred when detecting the display server: {:?}. Is XDG_SESSION_TYPE set to x11 or wayland?",
+                err
+            );
+        },
     }
 
     // GNOME Shell Extension
@@ -457,7 +476,20 @@ where
         bundled_gnome_extension_version_path,
         bundled_gnome_extension_zip_path,
     };
+    use fig_util::system_info::linux::{
+        DisplayServer,
+        get_display_server,
+    };
     use tracing::debug;
+
+    let display_server = get_display_server(ctx)?;
+    if display_server != DisplayServer::Wayland {
+        debug!(
+            "Detected non-Wayland display server: `{:?}`. Not installing the extension.",
+            display_server
+        );
+        return Ok(());
+    }
 
     if !state.get_bool_or("desktop.gnomeExtensionInstallationPermissionGranted", false) {
         debug!("Permission is not granted to install GNOME extension, doing nothing.");
@@ -961,6 +993,7 @@ echo "{binary_name} {version}"
                 .await
                 .unwrap()
                 .with_env_var("APPIMAGE", "1")
+                .with_env_var("XDG_SESSION_TYPE", "wayland")
                 .with_os(Os::Linux)
                 .with_running_processes(&[GNOME_SHELL_PROCESS_NAME])
                 .build_fake();
@@ -1005,6 +1038,38 @@ echo "{binary_name} {version}"
             )
             .await;
             let state = State::new_fake();
+
+            // When
+            install_gnome_shell_extension(&ctx, &shell_extensions, &state)
+                .await
+                .unwrap();
+
+            // Then
+            let status = get_extension_status(&ctx, &shell_extensions, Some(extension_version))
+                .await
+                .unwrap();
+            assert!(matches!(status, ExtensionInstallationStatus::NotInstalled));
+        }
+
+        #[tokio::test]
+        async fn test_extension_not_installed_if_not_wayland() {
+            let ctx = Context::builder()
+                .with_test_home()
+                .await
+                .unwrap()
+                .with_env_var("APPIMAGE", "1")
+                .with_os(Os::Linux)
+                .with_running_processes(&[GNOME_SHELL_PROCESS_NAME])
+                .build_fake();
+            let shell_extensions = ShellExtensions::new_fake(Arc::downgrade(&ctx));
+            let extension_version = 1;
+            write_extension_bundle(
+                &ctx,
+                &shell_extensions.extension_uuid().await.unwrap(),
+                extension_version,
+            )
+            .await;
+            let state = State::from_slice(&[("desktop.gnomeExtensionInstallationPermissionGranted", true.into())]);
 
             // When
             install_gnome_shell_extension(&ctx, &shell_extensions, &state)

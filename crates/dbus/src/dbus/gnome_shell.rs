@@ -92,16 +92,29 @@ pub enum ExtensionState {
 
     /// The extension is loaded and in an error state.
     Errored,
+
+    // Unused
+    OutOfDate,
+    Downloading,
+    Initialized,
+    Deactivating,
+    Activating,
 }
 
 impl ExtensionState {
     fn from_u32(state: u32) -> Result<Self, ExtensionsError> {
         // This mapping is done just from observation, not sure if this is entirely correct in
         // practice.
+        // Reference: https://gitlab.gnome.org/GNOME/gnome-shell/-/blob/main/js/misc/extensionUtils.js?ref_type=heads#L15
         match state {
             1 => Ok(ExtensionState::Enabled),
             2 => Ok(ExtensionState::Disabled),
             3 => Ok(ExtensionState::Errored),
+            4 => Ok(ExtensionState::OutOfDate),
+            5 => Ok(ExtensionState::Downloading),
+            6 => Ok(ExtensionState::Initialized),
+            7 => Ok(ExtensionState::Deactivating),
+            8 => Ok(ExtensionState::Activating),
             _ => Err(ExtensionsError::UnknownState(state)),
         }
     }
@@ -112,6 +125,11 @@ impl ExtensionState {
             ExtensionState::Enabled => Some(1),
             ExtensionState::Disabled => Some(2),
             ExtensionState::Errored => Some(3),
+            ExtensionState::OutOfDate => Some(4),
+            ExtensionState::Downloading => Some(5),
+            ExtensionState::Initialized => Some(6),
+            ExtensionState::Deactivating => Some(7),
+            ExtensionState::Activating => Some(8),
         }
     }
 }
@@ -162,7 +180,6 @@ where
                 Ok(ExtensionInstallationStatus::Enabled)
             }
         },
-        ExtensionState::Errored => Ok(ExtensionInstallationStatus::Errored),
         ExtensionState::NotLoaded => {
             // This could mean the extension is *technically* installed but just not loaded into
             // gnome shell's js jit, or the extension literally is not installed.
@@ -199,6 +216,10 @@ where
 
             Ok(ExtensionInstallationStatus::NotInstalled)
         },
+        ExtensionState::Errored => Ok(ExtensionInstallationStatus::Errored),
+        // Currently not sure how to handle the other states as of yet, therefore default
+        // to assuming an error and requiring manual intervention by the user.
+        _ => Ok(ExtensionInstallationStatus::Errored),
     }
 }
 

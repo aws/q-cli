@@ -66,6 +66,33 @@ pub async fn get_linux_context() -> eyre::Result<LinuxContext> {
     Ok(LinuxContext::new(ctx, shell_extensions))
 }
 
+pub struct DisplayServerCheck;
+
+#[async_trait]
+impl DoctorCheck<LinuxContext> for DisplayServerCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Display Server Check".into()
+    }
+
+    async fn get_type(&self, _: &LinuxContext, _: Platform) -> DoctorCheckType {
+        DoctorCheckType::NormalCheck
+    }
+
+    async fn check(&self, ctx: &LinuxContext) -> Result<(), DoctorError> {
+        match get_display_server(&ctx.ctx) {
+            Ok(_) => Ok(()),
+            Err(fig_util::Error::UnknownDisplayServer(server)) => Err(doctor_error!(
+                "Unknown value set for XDG_SESSION_TYPE: {}. This must be set to x11 or wayland.",
+                server
+            )),
+            Err(err) => Err(doctor_error!(
+                "Unknown error occurred when detecting the display server: {:?}. Is XDG_SESSION_TYPE set to x11 or wayland?",
+                err
+            )),
+        }
+    }
+}
+
 pub struct IBusEnvCheck;
 
 #[async_trait]
@@ -290,11 +317,19 @@ impl DoctorCheck<LinuxContext> for IBusRunningCheck {
                     // -r - replace current ibus-daemon, if running
                     // -x - execute XIM server
                     // -R - restarts other ibus subprocesses if they end
-                    let output = Command::new("ibus-daemon").arg("-drxR").output()?;
-                    if !output.status.success() {
-                        let stdout = String::from_utf8_lossy(&output.stdout);
-                        let stderr = String::from_utf8_lossy(&output.stderr);
-                        eyre::bail!("ibus-daemon launch failed:\nstdout: {stdout}\nstderr: {stderr}\n");
+                    match Command::new("ibus-daemon").arg("-drxR").output() {
+                        Ok(output) if !output.status.success() => {
+                            let stdout = String::from_utf8_lossy(&output.stdout);
+                            let stderr = String::from_utf8_lossy(&output.stderr);
+                            eyre::bail!("ibus-daemon launch failed:\nstdout: {stdout}\nstderr: {stderr}\n");
+                        },
+                        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+                            eyre::bail!("Could not find ibus-daemon. Is ibus installed?");
+                        },
+                        Err(err) => {
+                            eyre::bail!("An unknown error occurred launching ibus-daemon: {:?}", err);
+                        }
+                        Ok(_) => ()
                     }
                     // Wait some time for ibus-daemon to launch.
                     std::thread::sleep(std::time::Duration::from_secs(1));

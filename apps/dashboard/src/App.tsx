@@ -240,20 +240,26 @@ const useNavData = () => {
 };
 
 function Layout() {
+  const [onboardingComplete] = useLocalStateZodDefault(
+    "desktop.completedOnboarding",
+    z.boolean(),
+    false,
+  );
   const platformInfo = usePlatformInfo();
   const [accessibilityCheck] = useAccessibilityCheck();
   const [dotfilesCheck] = useDotfilesCheck();
   const [gnomeExtensionCheck] = useGnomeExtensionCheck();
   const navData = useNavData();
   const error =
-    accessibilityCheck === false ||
-    dotfilesCheck === false ||
-    (platformInfo &&
-      matchesPlatformRestrictions(
-        platformInfo,
-        gnomeExtensionInstallCheck.platformRestrictions,
-      ) &&
-      gnomeExtensionCheck === false);
+    onboardingComplete &&
+    (accessibilityCheck === false ||
+      dotfilesCheck === false ||
+      (platformInfo &&
+        matchesPlatformRestrictions(
+          platformInfo,
+          gnomeExtensionInstallCheck.platformRestrictions,
+        ) &&
+        gnomeExtensionCheck === false));
 
   // eslint-disable-next-line
   const [notifCount, _] = useLocalStateZodDefault(

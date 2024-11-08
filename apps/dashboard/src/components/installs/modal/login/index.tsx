@@ -27,6 +27,14 @@ export default function LoginModal({ next }: { next: () => void }) {
 
   // used for pkce
   const [currAuthRequestId, setAuthRequestId] = useAuthRequest();
+  const [pkceTimedOut, setPkceTimedOut] = useState(false);
+  useEffect(() => {
+    if (pkceTimedOut) return;
+    if (loginMethod === "pkce" && loginState === "loading") {
+      const timer = setTimeout(() => setPkceTimedOut(true), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [loginMethod, loginState, pkceTimedOut]);
 
   // used for device code
   const [loginCode, setLoginCode] = useState<string | null>(null);
@@ -44,6 +52,12 @@ export default function LoginModal({ next }: { next: () => void }) {
   const auth = useAuth();
   const refreshAuth = useRefreshAuth();
 
+  useEffect(() => {
+    // Reset the auth request id so that we don't present the "OAuth cancelled" error
+    // to the user.
+    setAuthRequestId("");
+  }, [loginMethod]);
+
   async function handleLogin(startUrl?: string, region?: string) {
     if (loginMethod === "pkce") {
       handlePkceAuth(startUrl, region);
@@ -54,6 +68,7 @@ export default function LoginModal({ next }: { next: () => void }) {
 
   async function handlePkceAuth(issuerUrl?: string, region?: string) {
     setLoginState("loading");
+    setPkceTimedOut(false);
     setError(null);
     // We need to reset the auth request state before attempting, otherwise
     // an expected auth request cancellation will be presented to the user
@@ -72,9 +87,6 @@ export default function LoginModal({ next }: { next: () => void }) {
     setAuthRequestId(init.authRequestId);
 
     Native.open(init.url).catch((err) => {
-      // Reset the auth request id so that we don't present the "OAuth cancelled" error
-      // to the user.
-      setAuthRequestId("");
       console.error(err);
       setError(
         "Failed to open the browser. As an alternative, try logging in with device code.",
@@ -195,6 +207,21 @@ export default function LoginModal({ next }: { next: () => void }) {
             <p className="text-center w-80">
               Waiting for authentication in the browser to complete...
             </p>
+            {pkceTimedOut && (
+              <div className="text-center w-80">
+                <p>Browser not opening?</p>
+                <Button
+                  variant="ghost"
+                  className="h-auto p-1 px-2 hover:bg-white/20 hover:text-white italic"
+                  onClick={() => {
+                    setLoginMethod("deviceCode");
+                    setLoginState("not started");
+                  }}
+                >
+                  Try authenticating with device code
+                </Button>
+              </div>
+            )}
             <Button
               variant="glass"
               className="self-center w-32"
