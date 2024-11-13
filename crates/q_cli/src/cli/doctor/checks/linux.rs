@@ -141,7 +141,8 @@ impl DoctorCheck<LinuxContext> for IBusEnvCheck {
 
         // IME is disabled in Kitty by default.
         // https://github.com/kovidgoyal/kitty/issues/469#issuecomment-419406438
-        if let Some(Terminal::Kitty) = Terminal::parent_terminal(ctx) {
+        if let (Some(Terminal::Kitty), DisplayServer::X11) = (Terminal::parent_terminal(ctx), get_display_server(ctx)?)
+        {
             match env.get("GLFW_IM_MODULE") {
                 Ok(actual) if actual == "ibus" => (),
                 Ok(actual) => errors.push(EnvErr {
