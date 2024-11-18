@@ -62,12 +62,14 @@ check_glibc_version() {
         LIBC_PATH=/lib64/libc.so.6
     elif [ -f /lib/libc.so.6 ]; then
         LIBC_PATH=/lib/libc.so.6
+    elif [ -f /usr/lib/x86_64-linux-gnu/libc.so.6 ]; then
+        LIBC_PATH=/usr/lib/x86_64-linux-gnu/libc.so.6
     else
         log_error "Could not find glibc."
         return 1
     fi
 
-    glibc_version=$("$LIBC_PATH" | sed -n 's/^GNU C Library (GNU libc) stable release version \([0-9]*\)\.\([0-9]*\).*$/\1.\2/p')
+    glibc_version=$("$LIBC_PATH" | sed -n 's/^GNU C Library (.*) stable release version \([0-9]*\)\.\([0-9]*\).*$/\1.\2/p')
 
     if [ -z "$glibc_version" ]; then
         log_error "Could not determine glibc version."
