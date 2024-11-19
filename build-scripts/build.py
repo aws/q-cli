@@ -520,16 +520,23 @@ class LinuxDebResources:
     npm_packages: NpmBuildOutput
 
 
+@dataclass
+class DebBuildOutput:
+    deb_path: pathlib.Path
+    sha_path: pathlib.Path
+
+
 def build_linux_deb(
     resources: LinuxDebResources,
     control_path: pathlib.Path,
     deb_suffix: str,
     release: bool,
-) -> pathlib.Path:
+) -> DebBuildOutput:
     """
-    Builds a deb using the control file given by `control_path`. Returns the path to the built deb.
+    Builds a deb using the control file given by `control_path`.
+    The deb will be named using the format: `f"{LINUX_PACKAGE_NAME}{deb_suffix}.deb"`
 
-    The deb will be named using the format: `f"{LINUX_PACKAGE_NAME}_{deb_suffix}.deb"`
+    This is kept generic in the case that we require different control files per Debian distribution.
     """
     info("Packaging deb bundle for control file:", control_path)
 
@@ -587,11 +594,12 @@ def build_linux_deb(
         dpkg_deb_args.append("-z0")
     run_cmd([*dpkg_deb_args, bundle_dir], cwd=bundles_dir)
 
-    linux_package_path = BUILD_DIR / f"{LINUX_PACKAGE_NAME}_{deb_suffix}.deb"
-    info("Moving built deb to", linux_package_path)
-    (bundles_dir / f"{bundle_dir}.deb").rename(linux_package_path)
-    run_cmd(["dpkg-deb", "--info", linux_package_path])
-    return linux_package_path
+    deb_path = BUILD_DIR / f"{LINUX_PACKAGE_NAME}{deb_suffix}.deb"
+    info("Moving built deb to", deb_path)
+    (bundles_dir / f"{bundle_dir}.deb").rename(deb_path)
+    run_cmd(["dpkg-deb", "--info", deb_path])
+    sha_path = generate_sha(deb_path)
+    return DebBuildOutput(deb_path=deb_path, sha_path=sha_path)
 
 
 def build_linux_full(
@@ -677,16 +685,10 @@ def build_linux_full(
         modern_extension_dir_path=modern_extension_dir_path,
         npm_packages=npm_packages,
     )
-    ubuntu22_deb_path = build_linux_deb(
+    deb_output = build_linux_deb(
         resources=deb_resources,
-        control_path=pathlib.Path("bundle/deb/control_ubuntu22_deb10-12"),
-        deb_suffix="ubuntu22_deb10-12",
-        release=release,
-    )
-    ubuntu24_deb_path = build_linux_deb(
-        resources=deb_resources,
-        control_path=pathlib.Path("bundle/deb/control_ubuntu24_deb13"),
-        deb_suffix="ubuntu24_deb13",
+        control_path=pathlib.Path("bundle/deb/control"),
+        deb_suffix="",
         release=release,
     )
 
@@ -699,6 +701,7 @@ def build_linux_full(
         pathlib.Path(f"{bundle_grandparent_path}/appimage/{bundle_name}.AppImage"),
         appimage_path,
     )
+    generate_sha(appimage_path)
 
     signer = load_gpg_signer()
     if signer:
@@ -706,11 +709,10 @@ def build_linux_full(
         signatures = signer.sign_file(appimage_path)
         run_cmd(["gpg", "--verify", signatures[0], appimage_path], env=signer.gpg_env())
 
-        for deb_path in [ubuntu22_deb_path, ubuntu24_deb_path]:
-            info("Signing deb:", deb_path)
-            run_cmd(["dpkg-sig", "-k", signer.gpg_id, "-s", "builder", deb_path], env=signer.gpg_env())
-            run_cmd(["dpkg-sig", "-l", deb_path], env=signer.gpg_env())
-            run_cmd(["gpg", "--verify", deb_path], env=signer.gpg_env())
+        info("Signing deb:", deb_output.deb_path)
+        run_cmd(["dpkg-sig", "-k", signer.gpg_id, "-s", "builder", deb_output.deb_path], env=signer.gpg_env())
+        run_cmd(["dpkg-sig", "-l", deb_output.deb_path], env=signer.gpg_env())
+        run_cmd(["gpg", "--verify", deb_output.deb_path], env=signer.gpg_env())
 
         signer.clean()
 
