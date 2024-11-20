@@ -166,7 +166,7 @@ where
     }
 
     match shell_extensions.get_extension_state().await? {
-        state @ (ExtensionState::Enabled | ExtensionState::Disabled) => {
+        state @ (ExtensionState::Enabled | ExtensionState::Disabled | ExtensionState::Initialized) => {
             if let Some(expected_version) = expected_version {
                 let installed_version = shell_extensions.get_extension_version().await?;
                 if installed_version != expected_version {
@@ -174,7 +174,7 @@ where
                 }
             }
 
-            if state == ExtensionState::Disabled {
+            if state == ExtensionState::Disabled || state == ExtensionState::Initialized {
                 Ok(ExtensionInstallationStatus::NotEnabled)
             } else {
                 Ok(ExtensionInstallationStatus::Enabled)
@@ -833,21 +833,28 @@ mod tests {
         async fn test_extension_installed_but_not_enabled() {
             tracing_subscriber::fmt::try_init().ok();
 
-            let ctx = make_ctx().await;
-            let shell_extensions = ShellExtensions::new_fake(Arc::downgrade(&ctx));
-            let expected_version = 2;
-            shell_extensions
-                .install_for_fake(false, expected_version, Some(ExtensionState::Disabled))
-                .await
-                .unwrap();
+            for disabled_state in &[ExtensionState::Disabled, ExtensionState::Initialized] {
+                let ctx = make_ctx().await;
+                let shell_extensions = ShellExtensions::new_fake(Arc::downgrade(&ctx));
+                let expected_version = 2;
+                shell_extensions
+                    .install_for_fake(false, expected_version, Some(*disabled_state))
+                    .await
+                    .unwrap();
 
-            // When
-            let status = get_extension_status(&ctx, &shell_extensions, Some(expected_version))
-                .await
-                .unwrap();
+                // When
+                let status = get_extension_status(&ctx, &shell_extensions, Some(expected_version))
+                    .await
+                    .unwrap();
 
-            // Then
-            assert_eq!(status, ExtensionInstallationStatus::NotEnabled);
+                // Then
+                assert_eq!(
+                    status,
+                    ExtensionInstallationStatus::NotEnabled,
+                    "Extension with state {:?} should return NotEnabled",
+                    *disabled_state
+                );
+            }
         }
 
         #[tokio::test]
