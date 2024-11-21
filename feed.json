@@ -12,6 +12,18 @@
     },
     {
       "type": "release",
+      "date": "2024-11-21",
+      "version": "1.5.0",
+      "title": "Version 1.5.0",
+      "changes": [
+        {
+          "type": "added",
+          "description": "Support for Linux desktop. See the [AWS documentation](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line.html) for more information."
+        }
+      ]
+    },
+    {
+      "type": "release",
       "date": "2024-11-15",
       "version": "1.4.6",
       "title": "Version 1.4.6",
