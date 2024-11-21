@@ -5,7 +5,7 @@ app and CLI.
 
 ## Installation
 
-To install Amazon Q Developer for command line see the AWS public documentaion [here](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line-installing.html).
+To install Amazon Q Developer for command line see the AWS public documentation [here](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line-installing.html).
 
 ## Overview
 
