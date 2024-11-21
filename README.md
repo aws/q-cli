@@ -1,7 +1,11 @@
 # Amazon Q Developer for command line Monorepo
 
-The amazon-q-developer-cli monorepo houses most of the core code for the Amazon Q Developer desktop
+The **`amazon-q-developer-cli`** monorepo houses most of the core code for the Amazon Q Developer desktop
 app and CLI.
+
+## Installation
+
+To install Amazon Q Developer for command line see the AWS public documentaion [here](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line-installing.html).
 
 ## Overview
 
