@@ -1,26 +1,26 @@
 # Amazon Q Developer for command line Monorepo
 
-The FigIoDesktop monorepo houses most of the core code for the Amazon Q Developer desktop
+The amazon-q-developer-cli monorepo houses most of the core code for the Amazon Q Developer desktop
 app and CLI.
 
 ## Overview
 
 Several projects live here:
 
-- [`packages/autocomlete`](packages/autocomplete/) - The autocomplete react app
-- [`packages/dashboard`](packages/dashboard/) - The dashboard react app
-- [`figterm/`](figterm/) - figterm, our headless terminal/pseudoterminal that
+- [`autocomplete`](packages/autocomplete/) - The autocomplete react app
+- [`dashboard`](packages/dashboard/) - The dashboard react app
+- [`figterm`](crates/figterm/) - figterm, our headless terminal/pseudoterminal that
   intercepts the user’s terminal edit buffer.
-- [`q_cli/`](q_cli/) - the `q` CLI, allows users to interface with Amazon Q Developer from
+- [`q_cli`](crates/q_cli/) - the `q` CLI, allows users to interface with Amazon Q Developer from
   the command line
-- [`fig_desktop/`](fig_desktop/) - the Rust desktop app, uses
+- [`fig_desktop`](crates/fig_desktop/) - the Rust desktop app, uses
   [`tao`](https://docs.rs/tao/latest/tao/)/[`wry`](https://docs.rs/wry/latest/wry/)
   for windowing/webviews
-- [`fig_input_method/`](fig_input_method/) - The input method used to get cursor
+- [`fig_input_method`](crates/fig_input_method/) - The input method used to get cursor
   position on macOS
-- [`extensions/vscode`](extensions/vscode/) - Contains the VSCode plugin needed
+- [`vscode`](extensions/vscode/) - Contains the VSCode plugin needed
   for the Amazon Q Developer for command line to work in VSCode
-- [`extensions/jetbrains`](extensions/jetbrains/) - Contains the VSCode plugin
+- [`jetbrains`](extensions/jetbrains/) - Contains the VSCode plugin
   needed for the Amazon Q Developer for command line to work in Jetbrains IDEs
 
 Other folder to be aware of
