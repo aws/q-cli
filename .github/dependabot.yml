@@ -9,15 +9,18 @@ updates:
       interval: "daily"
     assignees:
       - "grant0417"
+    open-pull-requests-limit: 100
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "daily"
     assignees:
       - "grant0417"
+    open-pull-requests-limit: 100
   - package-ecosystem: "cargo"
     directory: "/"
     schedule:
       interval: "daily"
     assignees:
       - "grant0417"
+    open-pull-requests-limit: 100
