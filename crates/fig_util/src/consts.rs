@@ -29,7 +29,7 @@ pub const OLD_PRODUCT_NAME: &str = "CodeWhisperer";
 pub const OLD_CLI_BINARY_NAMES: &[&str] = &["cw"];
 pub const OLD_PTY_BINARY_NAMES: &[&str] = &["cwterm"];
 
-pub const GITHUB_DISCUSSIONS_REPO_NAME: &str = "q-command-line-discussions";
+pub const GITHUB_REPO_NAME: &str = "aws/amazon-q-developer-cli";
 
 pub mod url {
     pub const USER_MANUAL: &str = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/command-line.html";

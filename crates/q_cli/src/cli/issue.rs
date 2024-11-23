@@ -11,7 +11,7 @@ use fig_diagnostic::Diagnostics;
 use fig_util::system_info::is_remote;
 use fig_util::{
     CLI_BINARY_NAME,
-    GITHUB_DISCUSSIONS_REPO_NAME,
+    GITHUB_REPO_NAME,
     PRODUCT_NAME,
 };
 
@@ -61,15 +61,12 @@ impl IssueArgs {
             },
         };
 
-        let url = url::Url::parse_with_params(
-            &format!("https://github.com/aws/{GITHUB_DISCUSSIONS_REPO_NAME}/discussions/new"),
-            &[
-                ("category", "support-ticket"),
-                ("title", &issue_title),
-                ("os", &os),
-                ("environment", &environment),
-            ],
-        )?;
+        let url = url::Url::parse_with_params(&format!("https://github.com/{GITHUB_REPO_NAME}/issues/new"), &[
+            ("template", "1_bug_report_template.yml"),
+            ("title", &issue_title),
+            ("os", &os),
+            ("environment", &environment),
+        ])?;
 
         println!("Heading over to GitHub...");
         if is_remote() || fig_util::open_url_async(url.as_str()).await.is_err() {
