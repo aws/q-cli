@@ -101,7 +101,7 @@ wry = { version = "0.41.0", default-features = false, features = [
 tracing-subscriber.workspace = true
 
 [target.'cfg(target_os = "windows")'.dependencies.windows]
-version = "0.54.0"
+version = "0.57.0"
 features = [
     "implement",
     "Win32_Foundation",
