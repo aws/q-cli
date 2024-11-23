@@ -61,7 +61,7 @@ fnv = "1.0.7"
 futures = "0.3.30"
 http = "1.1.0"
 image = "0.25.0"
-infer = "0.15.0"
+infer = "0.16.0"
 keyboard-types = "0.7.0"
 mime = "0.3.17"
 moka = { version = "0.12.1", features = ["future"] }
