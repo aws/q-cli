@@ -23,7 +23,7 @@ serde_json.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 tracing.workspace = true
-url = "2.3.1"
+url = "2.5.4"
 uuid.workspace = true
 
 [dev-dependencies]

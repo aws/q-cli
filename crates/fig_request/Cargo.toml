@@ -29,7 +29,7 @@ serde_json.workspace = true
 thiserror.workspace = true
 time.workspace = true
 tracing.workspace = true
-url = "2.3.1"
+url = "2.5.4"
 
 # Keep these synced with reqwest
 # https://github.com/seanmonstar/reqwest/blob/v0.12.5/Cargo.toml

@@ -39,7 +39,7 @@ thiserror.workspace = true
 time.workspace = true
 tokio.workspace = true
 tracing.workspace = true
-url = "2.5.0"
+url = "2.5.4"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 fig_ipc.workspace = true
