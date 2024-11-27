@@ -728,7 +728,7 @@ pub fn build_dashboard(
             use tao::platform::unix::WindowExtUnix;
             use wry::WebViewBuilderExtUnix;
             let vbox = window.default_vbox().unwrap();
-            let webview = webview_builder.build_gtk(&vbox);
+            let webview = webview_builder.build_gtk(vbox)?;
         } else {
             let webview = webview_builder.build(&window)?;
         }
@@ -841,7 +841,7 @@ pub fn build_autocomplete(
             use tao::platform::unix::WindowExtUnix;
             use wry::WebViewBuilderExtUnix;
             let vbox = window.default_vbox().unwrap();
-            let webview = webview_builder.build_gtk(&vbox);
+            let webview = webview_builder.build_gtk(vbox)?;
         } else {
             let webview = webview_builder.build(&window)?;
         }
