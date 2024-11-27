@@ -14,12 +14,20 @@ env:
 
 jobs:
   cargo-clippy:
-    name: Clippy
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    name: Clippy (${{ matrix.os }})
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y -qq build-essential pkg-config jq dpkg curl wget zstd cmake clang libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libdbus-1-dev libwebkit2gtk-4.1-dev libjavascriptcoregtk-4.1-dev valac libibus-1.0-dev libglib2.0-dev sqlite3 libxdo-dev protobuf-compiler libfuse2 bash fish zsh shellcheck
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y -qq build-essential pkg-config jq dpkg curl wget zstd cmake clang libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libdbus-1-dev libwebkit2gtk-4.1-dev libjavascriptcoregtk-4.1-dev valac libibus-1.0-dev libglib2.0-dev sqlite3 libxdo-dev protobuf-compiler libfuse2 bash fish zsh shellcheck
+      - name: Install dependencies (macOS)
+        if: runner.os == 'Macos'
+        run: brew install protobuf fish shellcheck
       - uses: dtolnay/rust-toolchain@1.83.0
         id: toolchain
         with:
@@ -35,13 +43,20 @@ jobs:
       - run: cargo clippy --locked --workspace --color always -- -D warnings
 
   cargo-test:
-    name: Test
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    name: Test (${{ matrix.os }})
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y -qq build-essential pkg-config jq dpkg curl wget zstd cmake clang libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libdbus-1-dev libwebkit2gtk-4.1-dev libjavascriptcoregtk-4.1-dev valac libibus-1.0-dev libglib2.0-dev sqlite3 libxdo-dev protobuf-compiler libfuse2 bash fish zsh shellcheck
-      # this needs to be nightly for code coverage
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y -qq build-essential pkg-config jq dpkg curl wget zstd cmake clang libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libdbus-1-dev libwebkit2gtk-4.1-dev libjavascriptcoregtk-4.1-dev valac libibus-1.0-dev libglib2.0-dev sqlite3 libxdo-dev protobuf-compiler libfuse2 bash fish zsh shellcheck
+      - name: Install dependencies (macOS)
+        if: runner.os == 'Macos'
+        run: brew install protobuf fish shellcheck
       - uses: dtolnay/rust-toolchain@nightly
         id: toolchain
         with:
