@@ -692,19 +692,7 @@ pub fn build_dashboard(
         url.set_path(&page);
     }
 
-    cfg_if! {
-        if #[cfg(target_os = "linux")] {
-            use tao::platform::unix::WindowExtUnix;
-            use wry::WebViewBuilderExtUnix;
-            let vbox = window.default_vbox().unwrap();
-            let webview_builder = WebViewBuilder::new_gtk(vbox);
-        } else {
-            let webview_builder = WebViewBuilder::new(&window);
-        }
-    };
-
-    let webview = webview_builder
-        .with_web_context(web_context)
+    let webview_builder = WebViewBuilder::with_web_context(web_context)
         .with_url(url.as_str())
         .with_ipc_handler(move |payload| {
             proxy
@@ -733,8 +721,18 @@ pub fn build_dashboard(
         .with_navigation_handler(navigation_handler(DASHBOARD_ID, &[r"^localhost$", r"^127\.0\.0\.1$"]))
         .with_initialization_script(&javascript_init(true))
         .with_clipboard(true)
-        .with_hotkeys_zoom(true)
-        .build()?;
+        .with_hotkeys_zoom(true);
+
+    cfg_if! {
+        if #[cfg(target_os = "linux")] {
+            use tao::platform::unix::WindowExtUnix;
+            use wry::WebViewBuilderExtUnix;
+            let vbox = window.default_vbox().unwrap();
+            let webview = webview_builder.build_gtk(&vbox);
+        } else {
+            let webview = webview_builder.build(&window)?;
+        }
+    };
 
     Ok((window, webview))
 }
@@ -793,20 +791,8 @@ pub fn build_autocomplete(
 
     let proxy = event_loop.create_proxy();
 
-    cfg_if! {
-        if #[cfg(target_os = "linux")] {
-            use tao::platform::unix::WindowExtUnix;
-            use wry::WebViewBuilderExtUnix;
-            let vbox = window.default_vbox().unwrap();
-            let webview_builder = WebViewBuilder::new_gtk(vbox);
-        } else {
-            let webview_builder = WebViewBuilder::new(&window);
-        }
-    };
-
-    let webview = webview_builder
+    let webview_builder = WebViewBuilder::with_web_context(web_context)
         .with_url(autocomplete::url().as_str())
-        .with_web_context(web_context)
         .with_ipc_handler(move |payload| {
             proxy
                 .send_event(Event::WindowEvent {
@@ -848,8 +834,18 @@ pub fn build_autocomplete(
         .with_navigation_handler(navigation_handler(AUTOCOMPLETE_ID, &[r"localhost$", r"^127\.0\.0\.1$"]))
         .with_clipboard(true)
         .with_hotkeys_zoom(true)
-        .with_accept_first_mouse(true)
-        .build()?;
+        .with_accept_first_mouse(true);
+
+    cfg_if! {
+        if #[cfg(target_os = "linux")] {
+            use tao::platform::unix::WindowExtUnix;
+            use wry::WebViewBuilderExtUnix;
+            let vbox = window.default_vbox().unwrap();
+            let webview = webview_builder.build_gtk(&vbox);
+        } else {
+            let webview = webview_builder.build(&window)?;
+        }
+    };
 
     Ok((window, webview))
 }

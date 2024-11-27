@@ -41,10 +41,10 @@ pub async fn check_for_update(show_webview: bool, relaunch_dashboard: bool) -> b
                 .build(&event_loop)
                 .unwrap();
 
-            let webview = WebViewBuilder::new(&window)
+            let webview = WebViewBuilder::new()
                 .with_html(include_str!("../html/updating.html"))
                 .with_devtools(true)
-                .build()
+                .build(&window)
                 .unwrap();
 
             // Forward recv to the webview

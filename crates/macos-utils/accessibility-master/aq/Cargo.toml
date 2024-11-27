@@ -11,5 +11,5 @@ publish = false
 
 [target.'cfg(target_os = "macos")'.dependencies]
 accessibility = { path = "../accessibility", version = "0.1.6" }
-core-foundation = "0.9"
+core-foundation.workspace = true
 structopt = "0.3"

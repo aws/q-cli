@@ -9,9 +9,9 @@ license.workspace = true
 
 [target.'cfg(target_os = "macos")'.dependencies]
 block = "0.1.6"
-core-graphics = "0.23.0"
-core-foundation = "0.9"
-cocoa = "0.25.0"
+core-graphics.workspace = true
+core-foundation.workspace = true
+cocoa.workspace = true
 objc.workspace = true
 dashmap.workspace = true
 flume = "0.11.0"

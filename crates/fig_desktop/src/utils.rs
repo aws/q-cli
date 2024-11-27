@@ -24,7 +24,6 @@ use tracing::{
     debug_span,
     error,
 };
-use wry::RequestAsyncResponder;
 use wry::http::header::{
     ACCESS_CONTROL_ALLOW_ORIGIN,
     CONTENT_TYPE,
@@ -34,6 +33,10 @@ use wry::http::{
     HeaderValue,
     Request as HttpRequest,
     Response as HttpResponse,
+};
+use wry::{
+    RequestAsyncResponder,
+    WebViewId,
 };
 
 use crate::webview::WindowId;
@@ -50,13 +53,13 @@ pub fn wrap_custom_protocol<F, Fut, W>(
     proto_name: &'static str,
     window_id: W,
     f: F,
-) -> impl Fn(HttpRequest<Vec<u8>>, RequestAsyncResponder) + 'static
+) -> impl Fn(WebViewId<'_>, HttpRequest<Vec<u8>>, RequestAsyncResponder) + 'static
 where
     F: Fn(Arc<Context>, HttpRequest<Vec<u8>>, WindowId) -> Fut + Send + Copy + 'static,
     Fut: Future<Output = anyhow::Result<HttpResponse<Cow<'static, [u8]>>>> + Send + 'static,
     W: WindowIdProvider + Copy + Send + Sync + 'static,
 {
-    move |req: HttpRequest<Vec<u8>>, responder: RequestAsyncResponder| {
+    move |_web_view_id: WebViewId<'_>, req: HttpRequest<Vec<u8>>, responder: RequestAsyncResponder| {
         let proto = proto_name;
 
         static ID_CTR: AtomicU64 = AtomicU64::new(0);
