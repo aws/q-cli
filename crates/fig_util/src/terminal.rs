@@ -23,6 +23,7 @@ pub const MACOS_TERMINALS: &[Terminal] = &[
     Terminal::Cursor,
     Terminal::CursorNightly,
     Terminal::Rio,
+    Terminal::Windsurf,
 ];
 
 /// Terminals that Linux supports
@@ -132,6 +133,8 @@ pub enum Terminal {
     Nvim,
     /// Zellij
     Zellij,
+    /// Windsurf
+    Windsurf,
 }
 
 impl fmt::Display for Terminal {
@@ -166,6 +169,7 @@ impl fmt::Display for Terminal {
             Terminal::Cursor => write!(f, "Cursor"),
             Terminal::CursorNightly => write!(f, "Cursor Nightly"),
             Terminal::Rio => write!(f, "Rio"),
+            Terminal::Windsurf => write!(f, "Windsurf"),
         }
     }
 }
@@ -317,6 +321,7 @@ impl Terminal {
             Terminal::Cursor => "cursor".into(),
             Terminal::CursorNightly => "cursor-nightly".into(),
             Terminal::Rio => "rio".into(),
+            Terminal::Windsurf => "windsurf".into(),
         }
     }
 
@@ -341,6 +346,7 @@ impl Terminal {
             Terminal::Cursor => Some("com.todesktop.230313mzl4w4u92".into()),
             Terminal::CursorNightly => Some("com.todesktop.23052492jqa5xjo".into()),
             Terminal::Rio => Some("com.raphaelamorim.rio".into()),
+            Terminal::Windsurf => Some("com.exafunction.windsurf".into()),
             _ => None,
         }
     }
@@ -363,6 +369,7 @@ impl Terminal {
             "com.todesktop.230313mzl4w4u92" => Terminal::Cursor,
             "com.todesktop.23052492jqa5xjo" => Terminal::CursorNightly,
             "com.raphaelamorim.rio" => Terminal::Rio,
+            "com.exafunction.windsurf" => Terminal::Windsurf,
             // todo(mschrage): the following line does not account for Android Studio
             _ if bundle.starts_with("com.jetbrains.") | bundle.starts_with("com.google.") => {
                 Terminal::IntelliJ(IntelliJVariant::from_bundle_id(bundle))
@@ -409,6 +416,7 @@ impl Terminal {
                 | Terminal::Tabby
                 | Terminal::Cursor
                 | Terminal::CursorNightly
+                | Terminal::Windsurf
         )
     }
 
@@ -432,6 +440,7 @@ impl Terminal {
             Terminal::Cursor => &["Cursor", "cursor"],
             Terminal::CursorNightly => &["Cursor Nightly", "cursor-nightly"],
             Terminal::Rio => &["rio"],
+            Terminal::Windsurf => &["windsurf"],
 
             Terminal::Ssh => &["sshd"],
             Terminal::Tmux => &["tmux", "tmux: server"],
@@ -496,6 +505,7 @@ impl Terminal {
                 | Terminal::VSCodium
                 | Terminal::Cursor
                 | Terminal::CursorNightly
+                | Terminal::Windsurf
         )
     }
 
