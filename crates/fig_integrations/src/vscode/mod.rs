@@ -72,6 +72,13 @@ pub static VARIANTS: &[VSCodeVariant] = &[
         application_name: "Cursor Nightly",
         cli_executable_name: "cursor-nightly",
     },
+    VSCodeVariant {
+        bundle_identifier: "com.exafunction.windsurf",
+        config_folder_name: ".windsurf",
+        application_support_folder_name: "Windsurf",
+        application_name: "Windsurf",
+        cli_executable_name: "windsurf",
+    },
 ];
 
 pub fn variants_installed() -> Vec<VSCodeVariant> {
