@@ -2802,7 +2802,7 @@ dependencies = [
  "serde",
  "serde_json",
  "shellexpand",
- "sysinfo 0.32.0",
+ "sysinfo 0.32.1",
  "system-configuration",
  "tao",
  "tempfile",
@@ -2884,7 +2884,7 @@ dependencies = [
  "fig_util",
  "serde",
  "serde_json",
- "sysinfo 0.32.0",
+ "sysinfo 0.32.1",
  "time",
  "tokio",
  "toml",
@@ -2975,7 +2975,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
- "sysinfo 0.32.0",
+ "sysinfo 0.32.1",
  "tempfile",
  "thiserror 2.0.3",
  "tokio",
@@ -3023,7 +3023,7 @@ dependencies = [
  "dirs",
  "nix 0.29.0",
  "serde",
- "sysinfo 0.32.0",
+ "sysinfo 0.32.1",
  "tempfile",
  "tokio",
 ]
@@ -3207,7 +3207,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "strum 0.26.3",
- "sysinfo 0.32.0",
+ "sysinfo 0.32.1",
  "thiserror 2.0.3",
  "time",
  "tokio",
@@ -3270,7 +3270,7 @@ dependencies = [
  "shell-words",
  "shellexpand",
  "shlex",
- "sysinfo 0.32.0",
+ "sysinfo 0.32.1",
  "tempfile",
  "time",
  "tokio",
@@ -4806,9 +4806,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.164"
+version = "0.2.166"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "433bfe06b8c75da9b2e3fbea6e5329ff87748f0b144ef75306e674c3f6f7c13f"
+checksum = "c2ccc108bbc0b1331bd061864e7cd823c0cab660bbe6970e66e2c0614decde36"
 
 [[package]]
 name = "libfuzzer-sys"
@@ -6620,7 +6620,7 @@ dependencies = [
  "serde",
  "serde_json",
  "spinners",
- "sysinfo 0.32.0",
+ "sysinfo 0.32.1",
  "tempfile",
  "thiserror 2.0.3",
  "time",
@@ -8137,9 +8137,9 @@ dependencies = [
 
 [[package]]
 name = "sysinfo"
-version = "0.32.0"
+version = "0.32.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3b5ae3f4f7d64646c46c4cae4e3f01d1c5d255c7406fdd7c7f999a94e488791"
+checksum = "4c33cd241af0f2e9e3b5c32163b873b29956890b5342e6745b917ce9d490f4af"
 dependencies = [
  "core-foundation-sys",
  "libc",
