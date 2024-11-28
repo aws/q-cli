@@ -49,7 +49,9 @@ tasks.add(
 
     try {
       await fs.rm("./schemas/gschemas.compiled");
-    } catch {}
+    } catch {
+      // ignore
+    }
 
     await promisify(exec)("glib-compile-schemas schemas");
 

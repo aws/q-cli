@@ -261,7 +261,6 @@ function Layout() {
         ) &&
         gnomeExtensionCheck === false));
 
-  // eslint-disable-next-line
   const [notifCount, _] = useLocalStateZodDefault(
     NOTIFICATIONS_SEEN_STATE_KEY,
     z.number(),

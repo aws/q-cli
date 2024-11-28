@@ -7,7 +7,7 @@ import St from "gi://St";
 import { Extension } from "resource:///org/gnome/shell/extensions/extension.js";
 import * as PanelMenu from "resource:///org/gnome/shell/ui/panelMenu.js";
 
-declare var DEBUG: boolean;
+declare let DEBUG: boolean;
 
 const LOG_PREFIX = "Amazon Q GNOME Integration:";
 
@@ -388,7 +388,7 @@ export default class QCliExtension extends Extension {
   #sleep(millis) {
     let cancelled = false;
     return cancellable(
-      new Promise((resolve: any) => {
+      new Promise<void>((resolve) => {
         const source = GLib.timeout_source_new(millis);
         source.set_callback(() => {
           if (!cancelled) resolve();
@@ -553,7 +553,7 @@ export default class QCliExtension extends Extension {
 
     return cancellable(
       // TODO: this shouldn't take any
-      new Promise((resolve: any) => {
+      new Promise<void>((resolve) => {
         const attempt = () => {
           if (finished) return;
 
@@ -735,7 +735,7 @@ export default class QCliExtension extends Extension {
         }),
         null,
       );
-    } catch (error) {
+    } catch {
       log_msg("Failed to send a message to the socket, disconnecting.");
 
       this.#disconnect();
@@ -745,6 +745,7 @@ export default class QCliExtension extends Extension {
 }
 
 /** @public @class PanelIcon */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 class PanelIcon extends PanelMenu.Button {
   /** @public @property @type {boolean} */
   get connected() {
@@ -846,7 +847,7 @@ class Queue {
    * @property
    */
   static Item = class Item {
-    _: any;
+    _: unknown;
 
     /**
      * Creates a new `Queue.Item`.
@@ -950,7 +951,6 @@ class Queue {
  *
  * @returns {Extension}
  */
-// eslint-disable-next-line no-unused-vars
 // function init() {
 //   debug("Initializing Amazon Q for CLI Extension");
 //   var ExtensionClass = GObject.registerClass(

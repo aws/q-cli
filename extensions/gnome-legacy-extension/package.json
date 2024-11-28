@@ -7,9 +7,11 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "@eslint/js": "^9.15.0",
     "@gi.ts/cli": "^1.5.10",
     "@gi.ts/lib": "^1.5.13",
-    "eslint": "^8.57.1"
+    "eslint": "^9.15.0",
+    "globals": "^15.12.0"
   },
   "scripts": {
     "all": "node ./build-scripts/all.js",

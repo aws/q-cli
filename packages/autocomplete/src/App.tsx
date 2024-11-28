@@ -407,6 +407,7 @@ function App() {
 
   const selectedItem = suggestions[selectedIndex];
   // TODO: re-enable preview
+  // eslint-disable-next-line no-constant-binary-expression
   const preview = false && Boolean(selectedItem && !hidePreview) && (
     <Preview selectedItem={selectedItem} position={previewPosition} />
   );

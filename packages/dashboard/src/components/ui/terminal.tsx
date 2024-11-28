@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import React, { forwardRef, useState } from "react";
 
-interface TerminalTabProps extends React.HTMLAttributes<HTMLDivElement> {}
+type TerminalTabProps = React.HTMLAttributes<HTMLDivElement>;
 
 const TerminalTab = forwardRef<HTMLDivElement, TerminalTabProps>(
   ({ children, ...props }, ref) => {

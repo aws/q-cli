@@ -33,7 +33,9 @@ export class Zip {
 
     try {
       await fs.rm(file);
-    } catch {}
+    } catch {
+      // ignore
+    }
 
     await promisify(exec)(`zip '${file}' $(find -type f | sed 's/^.\\///g')`, {
       cwd: directory,
@@ -83,7 +85,9 @@ export class Folder {
   async [Zip.write_to_intermittent_directory_as](file) {
     try {
       await fs.mkdir(file);
-    } catch {}
+    } catch {
+      // ignore
+    }
 
     const tasks = new TaskSet();
 

@@ -167,7 +167,6 @@ function FeedItem({ item }: { item: FeedItemData }) {
 }
 
 export default function WhatsNew() {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_notifCount, setNotifCount] = useLocalStateZodDefault(
     NOTIFICATIONS_SEEN_STATE_KEY,
     z.number(),

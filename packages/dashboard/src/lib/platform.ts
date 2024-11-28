@@ -17,5 +17,5 @@ export function matchesPlatformRestrictions(
         key in platformInfo &&
         value === platformInfo[key as keyof PlatformInfo],
     )
-    .reduce((prev, curr, _) => prev && curr, true);
+    .reduce((prev, curr) => prev && curr, true);
 }

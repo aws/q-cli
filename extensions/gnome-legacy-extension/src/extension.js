@@ -1,3 +1,4 @@
+/* eslint-disable no-undef, no-redeclare */
 /* global global, DEBUG */
 
 // / Yes, this has to be a reference path. for whatever reason, using a jsdoc
@@ -760,7 +761,7 @@ class Extension extends GObject.Object {
         }),
         null,
       );
-    } catch (error) {
+    } catch {
       log_msg("Failed to send a message to the socket, disconnecting.");
 
       this.#disconnect();

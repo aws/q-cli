@@ -56,7 +56,7 @@ export default function LoginModal({ next }: { next: () => void }) {
     // Reset the auth request id so that we don't present the "OAuth cancelled" error
     // to the user.
     setAuthRequestId("");
-  }, [loginMethod]);
+  }, [loginMethod, setAuthRequestId]);
 
   async function handleLogin(startUrl?: string, region?: string) {
     if (loginMethod === "pkce") {

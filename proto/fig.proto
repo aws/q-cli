@@ -439,22 +439,22 @@ message InstallResponse {
 /// Platform
 
 enum Os {
-  MACOS = 0;
-  LINUX = 1;
+  OS_MACOS = 0;
+  OS_LINUX = 1;
 }
 
 enum DesktopEnvironment {
-  GNOME = 0;
+  DESKTOP_ENVIRONMENT_GNOME = 0;
 }
 
 enum DisplayServerProtocol {
-  X11 = 0;
-  WAYLAND = 1;
+  DISPLAY_SERVER_PROTOCOL_X11 = 0;
+  DISPLAY_SERVER_PROTOCOL_WAYLAND = 1;
 }
 
 enum AppBundleType {
-  APPIMAGE = 0;
-  DEB = 1;
+  APP_BUNDLE_TYPE_APPIMAGE = 0;
+  APP_BUNDLE_TYPE_DEB = 1;
 }
 
 message GetPlatformInfoRequest {}

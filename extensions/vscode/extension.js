@@ -52,7 +52,7 @@ function noActiveTerminals() {
 
 console.log(vscode.env.uriScheme);
 
-function activate(_) {
+function activate() {
   try {
     updateActiveTerminal();
 
@@ -75,7 +75,7 @@ function activate(_) {
       updateActiveTerminal(terminal);
     });
 
-    vscode.window.onDidChangeTextEditorSelection((_) => {
+    vscode.window.onDidChangeTextEditorSelection(() => {
       runCommand(`q hook keyboard-focus-changed ${vscode.env.uriScheme} 0`);
     });
   } catch (e) {

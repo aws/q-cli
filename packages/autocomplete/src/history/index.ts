@@ -44,8 +44,7 @@ type HistoryArgValues = {
 
 type HistoryValueIndex = Record<
   string,
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  Internal.Subcommand<HistoryArgValues, {}, {}>
+  Internal.Subcommand<HistoryArgValues, unknown, unknown>
 >;
 
 type HistorySource = {

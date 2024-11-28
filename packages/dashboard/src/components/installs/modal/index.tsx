@@ -29,9 +29,7 @@ export default function OnboardingModal() {
   const refreshLocalState = useRefreshLocalState();
   const platformInfo = usePlatformInfo();
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_dotfiles, setDotfiles] = useState(dotfilesCheck);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_accessibility, setAccessibility] = useState(accessibilityCheck);
 
   const isMigrating =

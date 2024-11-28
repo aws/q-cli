@@ -11,7 +11,9 @@ if (process.env.CI === undefined && !exists("./types/.glib.d.ts")) {
 
   try {
     await fs.mkdir("./types");
-  } catch {}
+  } catch {
+    // ignore
+  }
 
   // Generate a bunch of typescript headers using this handy tool!
 
