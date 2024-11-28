@@ -5,7 +5,7 @@
   "license": "MIT OR Apache-2.0",
   "packageManager": "pnpm@9.11.0",
   "engines": {
-    "node": "^20.0.0"
+    "node": "^22.0.0"
   },
   "scripts": {
     "build": "turbo build",

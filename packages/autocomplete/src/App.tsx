@@ -419,7 +419,7 @@ function App() {
     hasBottomDescription && "rounded-b-none",
   ];
 
-  const devModeWarning = devMode && (
+  const devModeWarning: React.ReactNode = devMode ? (
     <div
       style={{
         width: size.suggestionWidth - 20,
@@ -452,9 +452,9 @@ function App() {
         </div>
       </div>
     </div>
-  );
+  ) : null;
 
-  let contents: React.ReactElement;
+  let contents: React.ReactNode;
 
   if (isLoading) {
     contents = <LoadingIcon />;
