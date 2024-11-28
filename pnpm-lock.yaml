@@ -10,7 +10,7 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: ^2.1.6
-        version: 2.1.6(vitest@2.1.6)
+        version: 2.1.6(vitest@2.1.6(@types/node@22.10.1)(@vitest/ui@2.1.6)(jiti@1.21.6)(jsdom@24.1.0)(terser@5.36.0)(tsx@4.19.2)(yaml@2.6.1))
       '@vitest/ui':
         specifier: ^2.1.6
         version: 2.1.6(vitest@2.1.6)
@@ -562,8 +562,8 @@ importers:
         specifier: ^0.4.14
         version: 0.4.14(eslint@8.57.1)
       eslint-plugin-unicorn:
-        specifier: ^53.0.0
-        version: 53.0.0(eslint@8.57.1)
+        specifier: ^56.0.1
+        version: 56.0.1(eslint@8.57.1)
       prettier:
         specifier: ^3.4.1
         version: 3.4.1
@@ -621,7 +621,7 @@ importers:
         version: link:../tsconfig
       '@vitest/coverage-v8':
         specifier: ^2.1.6
-        version: 2.1.6(vitest@2.1.6)
+        version: 2.1.6(vitest@2.1.6(@types/node@22.10.1)(@vitest/ui@2.1.6)(jiti@1.21.6)(jsdom@24.1.0)(terser@5.36.0)(tsx@4.19.2)(yaml@2.6.1))
       eslint:
         specifier: ^8.57.1
         version: 8.57.1
@@ -3424,8 +3424,8 @@ packages:
     peerDependencies:
       eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7
 
-  eslint-plugin-unicorn@53.0.0:
-    resolution: {integrity: sha512-kuTcNo9IwwUCfyHGwQFOK/HjJAYzbODHN3wP0PgqbW+jbXqpNWxNVpVhj2tO9SixBwuAdmal8rVcWKBxwFnGuw==}
+  eslint-plugin-unicorn@56.0.1:
+    resolution: {integrity: sha512-FwVV0Uwf8XPfVnKSGpMg7NtlZh0G0gBarCaFcMUOoqPxXryxdYxTRRv4kH6B9TFCVIrjRXG+emcxIk2ayZilog==}
     engines: {node: '>=18.18'}
     peerDependencies:
       eslint: '>=8.56.0'
@@ -3711,6 +3711,10 @@ packages:
 
   globals@14.0.0:
     resolution: {integrity: sha512-oahGvuMGQlPw/ivIYBjVSrWAfWLBeku5tpPE2fOPLi+WHffIWbuh2tCjhyQhTBPMf5E9jDEH4FOmTYgYwbKwtQ==}
+    engines: {node: '>=18'}
+
+  globals@15.12.0:
+    resolution: {integrity: sha512-1+gLErljJFhbOVyaetcwJiJ4+eLe45S2E7P5UiZ9xGfeq3ATQf5DOv9G7MH3gGbKQLkzmNh2DxfZwLdw+j6oTQ==}
     engines: {node: '>=18'}
 
   globalthis@1.0.4:
@@ -8383,7 +8387,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/coverage-v8@2.1.6(vitest@2.1.6)':
+  '@vitest/coverage-v8@2.1.6(vitest@2.1.6(@types/node@22.10.1)(@vitest/ui@2.1.6)(jiti@1.21.6)(jsdom@24.1.0)(terser@5.36.0)(tsx@4.19.2)(yaml@2.6.1))':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 0.2.3
@@ -9453,16 +9457,16 @@ snapshots:
       string.prototype.matchall: 4.0.11
       string.prototype.repeat: 1.0.0
 
-  eslint-plugin-unicorn@53.0.0(eslint@8.57.1):
+  eslint-plugin-unicorn@56.0.1(eslint@8.57.1):
     dependencies:
       '@babel/helper-validator-identifier': 7.25.9
       '@eslint-community/eslint-utils': 4.4.1(eslint@8.57.1)
-      '@eslint/eslintrc': 3.2.0
       ci-info: 4.1.0
       clean-regexp: 1.0.0
       core-js-compat: 3.39.0
       eslint: 8.57.1
       esquery: 1.6.0
+      globals: 15.12.0
       indent-string: 4.0.0
       is-builtin-module: 3.2.1
       jsesc: 3.0.2
@@ -9472,8 +9476,6 @@ snapshots:
       regjsparser: 0.10.0
       semver: 7.6.3
       strip-indent: 3.0.0
-    transitivePeerDependencies:
-      - supports-color
 
   eslint-scope@7.2.2:
     dependencies:
@@ -9830,6 +9832,8 @@ snapshots:
       type-fest: 0.20.2
 
   globals@14.0.0: {}
+
+  globals@15.12.0: {}
 
   globalthis@1.0.4:
     dependencies:
