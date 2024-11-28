@@ -11,7 +11,7 @@
   "devDependencies": {
     "@amzn/fig-io-api-bindings": "workspace:^",
     "@amzn/fig-io-types": "link:../../packages/types",
-    "@types/node": "^20.17.8",
+    "@types/node": "^22.10.1",
     "typescript": "^5.7.2",
     "vitest": "^1.6.0"
   }
