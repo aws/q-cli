@@ -51,6 +51,7 @@ pub fn desktop_app_running() -> bool {
             };
 
             let bundle_id = NSString::from(APP_BUNDLE_ID);
+            #[allow(unexpected_cfgs)]
             let running_applications: NSArray<NSRunningApplication> = unsafe {
                 msg_send![
                     class!(NSRunningApplication),

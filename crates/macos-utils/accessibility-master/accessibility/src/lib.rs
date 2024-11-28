@@ -1,4 +1,6 @@
 #![cfg(target_os = "macos")]
+// This is needed for objc
+#![allow(unexpected_cfgs)]
 
 pub mod action;
 pub mod attribute;

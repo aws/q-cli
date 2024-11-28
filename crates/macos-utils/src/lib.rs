@@ -1,4 +1,6 @@
 #![cfg(target_os = "macos")]
+// This is needed for objc
+#![allow(unexpected_cfgs)]
 
 #[macro_use]
 extern crate objc;

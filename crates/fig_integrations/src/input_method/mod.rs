@@ -1,3 +1,6 @@
+// This is needed for objc
+#![allow(unexpected_cfgs)]
+
 use std::borrow::Cow;
 use std::io::ErrorKind;
 use std::path::{
