@@ -160,9 +160,20 @@ struct CwResponse {
 }
 
 async fn generate_response(question: &str, n: i32) -> Result<CwResponse> {
-    let prompt = r#"# A collection of macOS shell one-liners that can be run interactively, they all must only be one line and line up with the comment above them
+    let os = match std::env::consts::OS {
+        "macos" => "macOS",
+        "linux" => fig_util::system_info::linux::get_os_release()
+            .and_then(|a| a.name.as_deref())
+            .unwrap_or("Linux"),
+        "windows" => "Windows",
+        other => other,
+    };
 
-# list all version of node on my path
+    let prompt_comment = format!(
+        "# A collection of {os} shell one-liners that can be run interactively, they all must only be one line and line up with the comment above them"
+    );
+
+    let prompt = r#"# list all version of node on my path
 which -a node | xargs -I{} bash -c 'echo -n "{}: "; {} --version'
     
 # Generate all combination (e.g. A,T,C,G)
@@ -175,7 +186,7 @@ i=`wc -l $FILENAME|cut -d ' ' -f1`; cat $FILENAME| echo "scale=2;(`paste -sd+`)/
 
     let mut input = RecommendationsInput {
         file_context: FileContext {
-            left_file_content: format!("{prompt}{question}\n"),
+            left_file_content: format!("{prompt_comment}\n\n{prompt}{question}\n"),
             right_file_content: "".into(),
             filename: "commands.sh".into(),
             programming_language: ProgrammingLanguage {
