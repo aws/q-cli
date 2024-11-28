@@ -49,6 +49,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
       fail-fast: false
+    env:
+      OS: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
@@ -59,6 +61,7 @@ jobs:
       - name: Install dependencies (macOS)
         if: runner.os == 'Macos'
         run: brew install protobuf fish shellcheck
+      # this needs to be nightly for code coverage
       - uses: dtolnay/rust-toolchain@nightly
         id: toolchain
         with:
@@ -81,6 +84,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
           files: lcov.info
           fail_ci_if_error: true
+          env_vars: OS
 
   cargo-fmt:
     name: Fmt
