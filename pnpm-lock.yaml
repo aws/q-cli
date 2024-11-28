@@ -134,8 +134,8 @@ importers:
         specifier: ^22.0.0
         version: 22.0.0
       ts-proto:
-        specifier: ~1.176.3
-        version: 1.176.3
+        specifier: ~2.4.2
+        version: 2.4.2
       tslib:
         specifier: ^2.8.1
         version: 2.8.1
@@ -656,8 +656,8 @@ importers:
         specifier: workspace:^
         version: link:../packages/tsconfig
       ts-proto:
-        specifier: ~1.176.3
-        version: 1.176.3
+        specifier: ~2.4.2
+        version: 2.4.2
       typescript:
         specifier: ^5.7.2
         version: 5.7.2
@@ -1241,6 +1241,9 @@ packages:
 
   '@bcoe/v8-coverage@0.2.3':
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
+
+  '@bufbuild/protobuf@2.2.2':
+    resolution: {integrity: sha512-UNtPCbrwrenpmrXuRwn9jYpPoweNXj8X5sMvYgsqYyaH8jQ6LfUJSk3dJLnBK+6sfYPrF4iAIo5sd5HQ+tg75A==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -5464,11 +5467,11 @@ packages:
   ts-poet@6.9.0:
     resolution: {integrity: sha512-roe6W6MeZmCjRmppyfOURklO5tQFQ6Sg7swURKkwYJvV7dbGCrK28um5+51iW3twdPRKtwarqFAVMU6G1mvnuQ==}
 
-  ts-proto-descriptors@1.16.0:
-    resolution: {integrity: sha512-3yKuzMLpltdpcyQji1PJZRfoo4OJjNieKTYkQY8pF7xGKsYz/RHe3aEe4KiRxcinoBmnEhmuI+yJTxLb922ULA==}
+  ts-proto-descriptors@2.0.0:
+    resolution: {integrity: sha512-wHcTH3xIv11jxgkX5OyCSFfw27agpInAd6yh89hKG6zqIXnjW9SYqSER2CVQxdPj4czeOhGagNvZBEbJPy7qkw==}
 
-  ts-proto@1.176.3:
-    resolution: {integrity: sha512-NOjjUDBq6uafz7NrXapZgXTIScHU33yioj0T28OsdgK8goCc+mv5S6o/Hi+x/nzfxE0vWVKfMNARDOs/iu8Z0w==}
+  ts-proto@2.4.2:
+    resolution: {integrity: sha512-fwZeyFRLcHSDpKnbSnrAeN67v3ujVt6+DVnu2UHBkJm/grvCI4QLMlO9TkoK3XXRlQqI6i17b0c4v9uDRzsWuQ==}
     hasBin: true
 
   tsconfig-paths@3.15.0:
@@ -6714,6 +6717,8 @@ snapshots:
       '@babel/helper-validator-identifier': 7.25.9
 
   '@bcoe/v8-coverage@0.2.3': {}
+
+  '@bufbuild/protobuf@2.2.2': {}
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -8483,7 +8488,7 @@ snapshots:
       pathe: 1.1.2
       picocolors: 1.1.1
       sirv: 2.0.4
-      vitest: 1.6.0(@types/node@22.10.0)(@vitest/ui@1.6.0)(jsdom@24.1.0)(terser@5.36.0)
+      vitest: 1.6.0(@types/node@20.17.8)(@vitest/ui@1.6.0)(jsdom@24.1.0)(terser@5.36.0)
 
   '@vitest/utils@1.6.0':
     dependencies:
@@ -11976,17 +11981,16 @@ snapshots:
     dependencies:
       dprint-node: 1.0.8
 
-  ts-proto-descriptors@1.16.0:
+  ts-proto-descriptors@2.0.0:
     dependencies:
-      long: 5.2.3
-      protobufjs: 7.4.0
+      '@bufbuild/protobuf': 2.2.2
 
-  ts-proto@1.176.3:
+  ts-proto@2.4.2:
     dependencies:
+      '@bufbuild/protobuf': 2.2.2
       case-anything: 2.1.13
-      protobufjs: 7.4.0
       ts-poet: 6.9.0
-      ts-proto-descriptors: 1.16.0
+      ts-proto-descriptors: 2.0.0
 
   tsconfig-paths@3.15.0:
     dependencies:
