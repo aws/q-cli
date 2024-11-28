@@ -96,3 +96,10 @@ jobs:
         with:
           components: rustfmt
       - run: cargo +nightly fmt --check -- --color always
+
+  cargo-deny:
+    name: Deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2

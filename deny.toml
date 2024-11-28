@@ -8,6 +8,9 @@ ignore = [
   # proc-macro-error is a transitive dependency of a number of dependencies, 
   # this is allowed for now til the ecosystem migrates away
   "RUSTSEC-2024-0370",
+  # instant is dependency of notify and tao, until those remove instant this
+  # will be allowed
+  "RUSTSEC-2024-0384",
 ]
 
 [licenses]
@@ -28,7 +31,7 @@ allow = [
   "MIT",
   "MPL-2.0",
   "OpenSSL",
-  "Unicode-DFS-2016",
+  "Unicode-3.0",
   "Zlib",
 ]
 
