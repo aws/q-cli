@@ -1,6 +1,6 @@
 import { Annotation } from "@amzn/fig-io-autocomplete-parser";
 import {
-  SpyInstance,
+  MockInstance,
   afterEach,
   beforeAll,
   describe,
@@ -23,7 +23,7 @@ const context: GeneratorContext = {
 };
 
 describe("getCustomSuggestions", () => {
-  let runCachedGenerator: SpyInstance;
+  let runCachedGenerator: MockInstance;
 
   beforeAll(() => {
     runCachedGenerator = vi.spyOn(helpers, "runCachedGenerator");

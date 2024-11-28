@@ -191,7 +191,7 @@ describe("filterSuggestions", () => {
     //   key: SETTINGS,
     //   defaultValue?: any,
     // ) => T;
-    let spy: MockInstance<[key: SETTINGS, defaultValue?: unknown], unknown>;
+    let spy: MockInstance;
     beforeAll(() => {
       spy = vi.spyOn(settings, "getSetting");
       spy.mockImplementation((arg) => {

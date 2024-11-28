@@ -2,7 +2,7 @@ import * as apiBindingsWrappers from "@amzn/fig-io-api-bindings-wrappers/execute
 
 import { Annotation } from "@amzn/fig-io-autocomplete-parser";
 import {
-  SpyInstance,
+  MockInstance,
   afterEach,
   beforeAll,
   describe,
@@ -29,7 +29,7 @@ const context: GeneratorContext = {
 };
 
 describe.todo("getScriptSuggestions", () => {
-  let executeCommand: SpyInstance;
+  let executeCommand: MockInstance;
 
   beforeAll(() => {
     vi.spyOn(helpers, "runCachedGenerator");

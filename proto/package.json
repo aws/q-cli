@@ -18,12 +18,11 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "long": "^5.2.3",
-    "protobufjs": "^7.4.0"
+    "@bufbuild/protobuf": "2.2.2"
   },
   "devDependencies": {
     "@amzn/fig-io-tsconfig": "workspace:^",
-    "ts-proto": "~1.176.3",
+    "ts-proto": "~2.4.2",
     "typescript": "^5.7.2"
   }
 }

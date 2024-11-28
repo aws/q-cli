@@ -46,7 +46,7 @@
     "tailwind-merge": "^2.5.5",
     "use-resize-observer": "^9.1.0",
     "util": "^0.12.5",
-    "vite": "^5.4.11",
+    "vite": "^6.0.1",
     "zustand": "^4.5.5"
   },
   "devDependencies": {
@@ -54,12 +54,12 @@
     "@amzn/fig-io-fuzzysort": "workspace:^",
     "@amzn/fig-io-shared": "workspace:^",
     "@amzn/fig-io-types": "workspace:^",
-    "@types/node": "^20.17.8",
+    "@types/node": "^22.10.1",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@types/react-window": "^1.8.8",
     "@types/semver": "^7.5.8",
-    "@vitejs/plugin-legacy": "^5.4.3",
+    "@vitejs/plugin-legacy": "^6.0.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^8.57.1",
     "postcss": "^8.4.49",
@@ -67,7 +67,7 @@
     "tailwindcss": "^3.4.15",
     "terser": "^5.36.0",
     "typescript": "^5.7.2",
-    "vitest": "^1.6.0"
+    "vitest": "^2.1.6"
   },
   "bundledDependencies": [
     "@amzn/fig-io-fuzzysort",
