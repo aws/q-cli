@@ -77,7 +77,7 @@ jobs:
             target/
           key: cargo-test-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-${{ steps.toolchain.outputs.cachekey }}
       - name: Generate code coverage
-        run: cargo +nightly llvm-cov --locked --workspace --lcov --output-path lcov.info
+        run: cargo +nightly llvm-cov --locked --workspace --codecov --output-path lcov.info
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
