@@ -29,7 +29,7 @@ jobs:
       - name: Install dependencies (macOS)
         if: runner.os == 'Macos'
         run: brew install protobuf fish shellcheck
-      - uses: dtolnay/rust-toolchain@1.83.0
+      - uses: dtolnay/rust-toolchain@1.90.0
         id: toolchain
         with:
           components: clippy
