@@ -7,7 +7,7 @@
   "private": true,
   "type": "module",
   "devDependencies": {
-    "@eslint/js": "^9.15.0",
+    "@eslint/js": "^9.16.0",
     "@gi.ts/cli": "^1.5.10",
     "@gi.ts/lib": "^1.5.13",
     "eslint": "^9.15.0",
