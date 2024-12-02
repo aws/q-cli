@@ -130,7 +130,7 @@ tokio = { version = "1.37.0", features = [
   "time",
   "test-util",
 ] }
-tracing-subscriber = { version = "0.3.18", features = [
+tracing-subscriber = { version = "0.3.19", features = [
   "env-filter",
   "fmt",
   "ansi",

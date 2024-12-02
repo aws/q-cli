@@ -123,7 +123,7 @@ time = { version = "0.3.34", features = [
 tokio = { version = "1.37.0", features = ["full"] }
 toml = "0.8.12"
 tracing = { version = "0.1.40", features = ["log"] }
-tracing-subscriber = { version = "0.3.17", features = [
+tracing-subscriber = { version = "0.3.19", features = [
     "env-filter",
     "fmt",
     "parking_lot",
