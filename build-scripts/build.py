@@ -713,6 +713,9 @@ def build_linux_full(
         run_cmd(["dpkg-sig", "-k", signer.gpg_id, "-s", "builder", deb_output.deb_path], env=signer.gpg_env())
         run_cmd(["dpkg-sig", "-l", deb_output.deb_path], env=signer.gpg_env())
         run_cmd(["gpg", "--verify", deb_output.deb_path], env=signer.gpg_env())
+        deb_output.sha_path = generate_sha(
+            deb_output.deb_path
+        )  # Need to regenerate the sha since the signature is embedded inside the deb
 
         signer.clean()
 
