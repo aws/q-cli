@@ -11,6 +11,8 @@ ignore = [
   # instant is dependency of notify and tao, until those remove instant this
   # will be allowed
   "RUSTSEC-2024-0384",
+  # blocked on portable-pty migrating away from serial
+  "RUSTSEC-2017-0008",
 ]
 
 [licenses]
