@@ -345,6 +345,8 @@ impl Client {
                 request_id,
                 latency,
                 suggestion_state,
+                suggested_chars_len,
+                number_of_recommendations,
                 ..
             } => {
                 self.send_cw_telemetry_user_trigger_decision_event(
@@ -352,6 +354,8 @@ impl Client {
                     request_id.clone(),
                     *latency,
                     suggestion_state.is_accepted(),
+                    *suggested_chars_len,
+                    *number_of_recommendations,
                 )
                 .await;
             },
@@ -527,6 +531,8 @@ impl Client {
         request_id: String,
         latency: Duration,
         accepted: bool,
+        accepted_character_count: i32,
+        number_of_recommendations: i32,
     ) {
         let Some(codewhisperer_client) = self.codewhisperer_client.clone() else {
             return;
@@ -554,6 +560,9 @@ impl Client {
             .programming_language(programming_language)
             .completion_type(CompletionType::Line)
             .suggestion_state(suggestion_state.into())
+            .accepted_character_count(accepted_character_count)
+            .number_of_recommendations(number_of_recommendations)
+            .generated_line(1)
             .recommendation_latency_milliseconds(latency.as_secs_f64() * 1000.0)
             .timestamp(DateTime::from(SystemTime::now()))
             .build()

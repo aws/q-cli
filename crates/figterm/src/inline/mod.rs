@@ -87,6 +87,7 @@ impl TelemetryQueue {
                 suggestion_state,
                 edit_buffer_len,
                 suggested_chars_len,
+                number_of_recommendations,
                 latency,
                 ..
             } = item;
@@ -101,6 +102,7 @@ impl TelemetryQueue {
                         suggestion_state,
                         edit_buffer_len,
                         suggested_chars_len,
+                        number_of_recommendations,
                         latency,
                         terminal: current_terminal().map(|s| s.internal_id().into_owned()),
                         terminal_version: current_terminal_version().map(Into::into),
@@ -126,7 +128,8 @@ struct TelemetryQueueItem {
     request_id: String,
     suggestion_state: SuggestionState,
     edit_buffer_len: Option<i64>,
-    suggested_chars_len: Option<i64>,
+    suggested_chars_len: i32,
+    number_of_recommendations: i32,
     latency: Duration,
 }
 
@@ -254,6 +257,7 @@ pub async fn handle_request(
                 let request_id = output.request_id.unwrap_or_default();
                 let session_id = output.session_id.unwrap_or_default();
                 let completions = output.recommendations;
+                let number_of_recommendations = completions.len();
                 let mut completion_cache = COMPLETION_CACHE.lock().await;
 
                 let mut completions = completions
@@ -290,7 +294,8 @@ pub async fn handle_request(
                         let buffer = buffer.to_owned();
                         async move {
                             TELEMETRY_QUEUE.lock().await.items.push(TelemetryQueueItem {
-                                suggested_chars_len: completion.chars().count().try_into().ok(),
+                                suggested_chars_len: completion.chars().count() as i32,
+                                number_of_recommendations: number_of_recommendations as i32,
                                 suggestion: completion,
                                 timestamp: SystemTime::now(),
                                 session_id,
