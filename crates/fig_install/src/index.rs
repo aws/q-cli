@@ -386,7 +386,7 @@ fn get_file_type(ctx: &Context, variant: &Variant) -> Result<FileType, Error> {
             match variant {
                 // Linux desktop currently cannot distinguish between AppImage and packages.
                 Variant::Full => Err(Error::FileTypeNotFound),
-                Variant::Minimal => Ok(FileType::TarGz),
+                Variant::Minimal => Ok(FileType::TarZst),
                 Variant::Other(_) => Err(Error::UnsupportedPlatform),
             }
         },

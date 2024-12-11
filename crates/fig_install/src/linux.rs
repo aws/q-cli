@@ -14,7 +14,10 @@ use fig_util::directories::{
     local_webview_data_dir,
 };
 use tokio::sync::mpsc::Sender;
-use tracing::warn;
+use tracing::{
+    debug,
+    warn,
+};
 use url::Url;
 
 use crate::download::download_file;
@@ -79,6 +82,7 @@ fn extract_archive(archive_path: &Path, tempdir: &Path) -> Result<(), Error> {
     let file = std::fs::File::open(archive_path)?;
     let mut decoder = zstd::Decoder::new(file)?;
     let mut tar = tar::Archive::new(&mut decoder);
+    debug!("unpacking tar to directory: {:?}", tempdir);
     tar.unpack(tempdir)?;
     Ok(())
 }
@@ -141,6 +145,7 @@ pub(crate) async fn update(
 
     let archive_path = tempdir.path().join(archive.file_name);
 
+    debug!("downloading file: {:?} to path: {:?}", download_url, archive_path);
     let real_hash = download_file(download_url.clone(), &archive_path, size, Some(tx.clone())).await?;
     if sha256 != real_hash {
         return Err(Error::UpdateFailed(format!(

@@ -35,6 +35,7 @@ pub use os::uninstall_terminal_integrations;
 use thiserror::Error;
 use tokio::sync::mpsc::Receiver;
 use tracing::{
+    debug,
     error,
     info,
 };
@@ -180,6 +181,7 @@ pub async fn update(
     info!("Checking for updates...");
     if let Some(update) = check_for_updates(ignore_rollout).await? {
         info!("Found update: {}", update.version);
+        debug!("Update info: {:?}", update);
 
         if ctx.platform().os() == Os::Linux && manifest().variant == Variant::Full {
             return Err(Error::UpdateFailed(
