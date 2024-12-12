@@ -3,7 +3,7 @@ import os
 from typing import List, Mapping, Sequence
 from rust import cargo_cmd_name, rust_env
 from util import isLinux, run_cmd, get_variants, Variant
-from const import DESKTOP_PACKAGE_NAME
+from const import DESKTOP_FUZZ_PACKAGE_NAME, DESKTOP_PACKAGE_NAME
 
 
 def run_clippy(
@@ -53,7 +53,7 @@ def run_cargo_tests(
         args.extend(["--target", target])
 
     if Variant.FULL not in variants:
-        args.extend(["--exclude", DESKTOP_PACKAGE_NAME])
+        args.extend(["--exclude", DESKTOP_PACKAGE_NAME, "--exclude", DESKTOP_FUZZ_PACKAGE_NAME])
 
     if features:
         args.extend(
@@ -73,14 +73,15 @@ def run_cargo_tests(
 
     args = [cargo_cmd_name()]
 
-    args.extend(["test", "--locked", "--workspace"])
+    # Run all lib, bin, and integration tests. Required to exclude running doc tests.
+    args.extend(["test", "--locked", "--workspace", "--lib", "--bins", "--test", "*"])
 
     if target:
         args.extend(["--target", target])
 
     # disable desktop tests for now
     if isLinux():
-        args.extend(["--exclude", DESKTOP_PACKAGE_NAME])
+        args.extend(["--exclude", DESKTOP_PACKAGE_NAME, "--exclude", DESKTOP_FUZZ_PACKAGE_NAME])
 
     if features:
         args.extend(

@@ -22,6 +22,7 @@ LINUX_MODERN_GNOME_EXTENSION_UUID = "amazon-q-for-cli-gnome-integration@aws.amaz
 CLI_PACKAGE_NAME = "q_cli"
 PTY_PACKAGE_NAME = "figterm"
 DESKTOP_PACKAGE_NAME = "fig_desktop"
+DESKTOP_FUZZ_PACKAGE_NAME = "fig_desktop-fuzz"
 
 DESKTOP_PACKAGE_PATH = pathlib.Path("crates", "fig_desktop")
 
