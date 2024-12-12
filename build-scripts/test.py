@@ -18,7 +18,7 @@ def run_clippy(
         args.extend(["--target", target])
 
     if Variant.FULL not in variants:
-        args.extend(["--exclude", DESKTOP_PACKAGE_NAME])
+        args.extend(["--exclude", DESKTOP_PACKAGE_NAME, "--exclude", DESKTOP_FUZZ_PACKAGE_NAME])
 
     if features:
         args.extend(
@@ -47,13 +47,13 @@ def run_cargo_tests(
 ):
     args = [cargo_cmd_name()]
 
-    args.extend(["build", "--tests", "--locked", "--workspace"])
+    args.extend(["build", "--tests", "--locked", "--workspace", "--exclude", DESKTOP_FUZZ_PACKAGE_NAME])
 
     if target:
         args.extend(["--target", target])
 
     if Variant.FULL not in variants:
-        args.extend(["--exclude", DESKTOP_PACKAGE_NAME, "--exclude", DESKTOP_FUZZ_PACKAGE_NAME])
+        args.extend(["--exclude", DESKTOP_PACKAGE_NAME])
 
     if features:
         args.extend(
@@ -74,14 +74,16 @@ def run_cargo_tests(
     args = [cargo_cmd_name()]
 
     # Run all lib, bin, and integration tests. Required to exclude running doc tests.
-    args.extend(["test", "--locked", "--workspace", "--lib", "--bins", "--test", "*"])
+    args.extend(
+        ["test", "--locked", "--workspace", "--lib", "--bins", "--test", "*", "--exclude", DESKTOP_FUZZ_PACKAGE_NAME]
+    )
 
     if target:
         args.extend(["--target", target])
 
     # disable desktop tests for now
     if isLinux():
-        args.extend(["--exclude", DESKTOP_PACKAGE_NAME, "--exclude", DESKTOP_FUZZ_PACKAGE_NAME])
+        args.extend(["--exclude", DESKTOP_PACKAGE_NAME])
 
     if features:
         args.extend(
