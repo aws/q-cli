@@ -12,6 +12,26 @@
     },
     {
       "type": "release",
+      "date": "2024-12-13",
+      "version": "1.5.1",
+      "title": "Version 1.5.1",
+      "changes": [
+        {
+          "type": "added",
+          "description": "Support for WindSurf [#125](https://github.com/aws/amazon-q-developer-cli/pull/125)"
+        },
+        {
+            "type": "fixed",
+            "description": "Linux SSH installations unable to update [#235](https://github.com/aws/amazon-q-developer-cli/issues/235)"
+        },
+        {
+          "type": "fixed",
+          "description": "q translate providing macOS specific responses on Linux"
+        }
+      ]
+    },
+    {
+      "type": "release",
       "date": "2024-11-21",
       "version": "1.5.0",
       "title": "Version 1.5.0",
