@@ -32,6 +32,7 @@ pub const LINUX_TERMINALS: &[Terminal] = &[
     Terminal::Kitty,
     Terminal::GnomeConsole,
     Terminal::GnomeTerminal,
+    Terminal::Guake,
     Terminal::Hyper,
     Terminal::Konsole,
     Terminal::XfceTerminal,
@@ -121,6 +122,8 @@ pub enum Terminal {
     CursorNightly,
     /// Rio <https://github.com/raphamorim/rio>
     Rio,
+    /// Guake
+    Guake,
 
     // Other pseudoterminal that we want to launch within
     /// SSH
@@ -170,6 +173,7 @@ impl fmt::Display for Terminal {
             Terminal::CursorNightly => write!(f, "Cursor Nightly"),
             Terminal::Rio => write!(f, "Rio"),
             Terminal::Windsurf => write!(f, "Windsurf"),
+            Terminal::Guake => write!(f, "Guake"),
         }
     }
 }
@@ -201,6 +205,7 @@ impl Terminal {
             Some("Tabby") => return Some(Terminal::Tabby),
             Some("Nova") => return Some(Terminal::Nova),
             Some("WezTerm") => return Some(Terminal::WezTerm),
+            Some("guake") => return Some(Terminal::Guake),
             _ => (),
         };
 
@@ -322,6 +327,7 @@ impl Terminal {
             Terminal::CursorNightly => "cursor-nightly".into(),
             Terminal::Rio => "rio".into(),
             Terminal::Windsurf => "windsurf".into(),
+            Terminal::Guake => "guake".into(),
         }
     }
 
