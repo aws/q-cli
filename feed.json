@@ -26,7 +26,7 @@
         },
         {
           "type": "fixed",
-          "description": "q translate providing macOS specific responses on Linux"
+          "description": "`q translate` providing macOS specific responses on Linux"
         }
       ]
     },
