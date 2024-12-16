@@ -6,6 +6,7 @@ use std::io::{
     Stderr,
     Write,
     stderr,
+    stdin,
 };
 use std::process::ExitCode;
 use std::time::Duration;
@@ -58,7 +59,7 @@ enum ApiResponse {
     End,
 }
 
-pub async fn chat(input: String) -> Result<ExitCode> {
+pub async fn chat(mut input: String) -> Result<ExitCode> {
     if !fig_util::system_info::in_cloudshell() && !fig_auth::is_logged_in().await {
         bail!(
             "You are not logged in, please log in with {}",
@@ -69,6 +70,12 @@ pub async fn chat(input: String) -> Result<ExitCode> {
     region_check("chat")?;
 
     let mut stderr = stderr();
+    let stdin = stdin();
+    let is_piped = !stdin.is_terminal();
+    if is_piped {
+        // append to input string any extra info that was provided.
+        stdin.lock().read_to_string(&mut input).unwrap()
+    }
     let result = try_chat(&mut stderr, input).await;
 
     stderr
