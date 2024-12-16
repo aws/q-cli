@@ -10,7 +10,7 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: ^2.1.8
-        version: 2.1.8(vitest@2.1.8)
+        version: 2.1.8(vitest@2.1.8(@types/node@22.10.1)(@vitest/ui@2.1.8)(jsdom@24.1.0)(terser@5.37.0))
       '@vitest/ui':
         specifier: ^2.1.8
         version: 2.1.8(vitest@2.1.8)
@@ -46,8 +46,8 @@ importers:
         version: 46.0.2
     devDependencies:
       '@eslint/js':
-        specifier: ^9.16.0
-        version: 9.16.0
+        specifier: ^9.17.0
+        version: 9.17.0
       eslint:
         specifier: 9.16.0
         version: 9.16.0(jiti@1.21.6)
@@ -64,8 +64,8 @@ importers:
   extensions/gnome-legacy-extension:
     devDependencies:
       '@eslint/js':
-        specifier: ^9.16.0
-        version: 9.16.0
+        specifier: ^9.17.0
+        version: 9.17.0
       '@gi.ts/cli':
         specifier: ^1.5.10
         version: 1.5.10(@gi.ts/lib@1.5.13)(@types/node@22.10.1)(typescript@5.7.2)
@@ -82,8 +82,8 @@ importers:
   extensions/vscode:
     devDependencies:
       '@eslint/js':
-        specifier: ^9.16.0
-        version: 9.16.0
+        specifier: ^9.17.0
+        version: 9.17.0
       '@types/glob':
         specifier: ^8.1.0
         version: 8.1.0
@@ -510,8 +510,8 @@ importers:
         specifier: workspace:^
         version: link:../tsconfig
       '@eslint/js':
-        specifier: ^9.16.0
-        version: 9.16.0
+        specifier: ^9.17.0
+        version: 9.17.0
       '@types/eslint__js':
         specifier: ^8.42.3
         version: 8.42.3
@@ -599,7 +599,7 @@ importers:
         version: link:../tsconfig
       '@vitest/coverage-v8':
         specifier: ^2.1.8
-        version: 2.1.8(vitest@2.1.8)
+        version: 2.1.8(vitest@2.1.8(@types/node@22.10.1)(@vitest/ui@2.1.8)(jsdom@24.1.0)(terser@5.37.0))
       eslint:
         specifier: ^9.16.0
         version: 9.16.0(jiti@1.21.6)
@@ -1683,6 +1683,10 @@ packages:
 
   '@eslint/js@9.16.0':
     resolution: {integrity: sha512-tw2HxzQkrbeuvyj1tG2Yqq+0H9wGoI2IMk4EOsQeX+vmd75FtJAzf+gTA69WF+baUKRYQ3x2kbLE08js5OsTVg==}
+    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@eslint/js@9.17.0':
+    resolution: {integrity: sha512-Sxc4hqcs1kTu0iID3kcZDW3JHq2a77HO9P8CP6YEA/FpH3Ll8UXE2r/86Rz9YJLKme39S9vU5OWNjC6Xl0Cr3w==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
   '@eslint/object-schema@2.1.5':
@@ -7034,6 +7038,8 @@ snapshots:
 
   '@eslint/js@9.16.0': {}
 
+  '@eslint/js@9.17.0': {}
+
   '@eslint/object-schema@2.1.5': {}
 
   '@eslint/plugin-kit@0.2.4':
@@ -8491,7 +8497,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/coverage-v8@2.1.8(vitest@2.1.8)':
+  '@vitest/coverage-v8@2.1.8(vitest@2.1.8(@types/node@22.10.1)(@vitest/ui@2.1.8)(jsdom@24.1.0)(terser@5.37.0))':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 0.2.3

@@ -25,7 +25,7 @@
   },
   "devDependencies": {
     "@aws/amazon-q-developer-cli-tsconfig": "workspace:^",
-    "@eslint/js": "^9.16.0",
+    "@eslint/js": "^9.17.0",
     "@types/eslint__js": "^8.42.3",
     "@typescript-eslint/utils": "^8.17.0",
     "eslint": "^9.16.0",
