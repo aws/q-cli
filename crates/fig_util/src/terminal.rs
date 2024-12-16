@@ -252,8 +252,10 @@ impl Terminal {
     ///
     /// Only the list provided in `terminals` will be searched for.
     pub fn try_from_cmdline(cmdline: &str, terminals: &Vec<Terminal>) -> Option<Self> {
-        // Special case for terminator
-        if terminals.contains(&Terminal::Terminator) {
+        // Special cases for terminals that launch as a script, e.g.
+        // `/usr/bin/python3 /usr/bin/terminator`
+        let second_arg_terms = &[Terminal::Terminator, Terminal::Guake];
+        if second_arg_terms.iter().any(|t| terminals.contains(t)) {
             let second_arg_name = cmdline
                 .split(' ')
                 .skip(1)
@@ -261,8 +263,11 @@ impl Terminal {
                 .next()
                 .and_then(|cmd| cmd.split('/').last());
             if let Some(second_arg_name) = second_arg_name {
-                if Terminal::Terminator.executable_names().contains(&second_arg_name) {
-                    return Some(Terminal::Terminator);
+                if let Some(term) = second_arg_terms
+                    .iter()
+                    .find(|t| t.executable_names().contains(&second_arg_name))
+                {
+                    return Some(term.clone());
                 }
             }
         }
@@ -447,6 +452,7 @@ impl Terminal {
             Terminal::CursorNightly => &["Cursor Nightly", "cursor-nightly"],
             Terminal::Rio => &["rio"],
             Terminal::Windsurf => &["windsurf"],
+            Terminal::Guake => &["guake"],
 
             Terminal::Ssh => &["sshd"],
             Terminal::Tmux => &["tmux", "tmux: server"],
@@ -763,6 +769,16 @@ mod tests {
             Terminal::from_process_info(&ctx, &LINUX_TERMINALS.to_vec()),
             Some(Terminal::Terminator),
             "should return terminator"
+        );
+
+        let ctx = make_context(Os::Linux, vec![
+            (Some("q"), None),
+            (Some("python3"), Some("/usr/bin/python3 /usr/bin/guake")),
+        ]);
+        assert_eq!(
+            Terminal::from_process_info(&ctx, &LINUX_TERMINALS.to_vec()),
+            Some(Terminal::Guake),
+            "should return guake"
         );
     }
 }
