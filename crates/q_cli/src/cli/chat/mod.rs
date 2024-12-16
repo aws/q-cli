@@ -3,8 +3,10 @@ mod parse;
 mod prompt;
 
 use std::io::{
+    IsTerminal,
     Stderr,
     Write,
+    Read,
     stderr,
     stdin,
 };
@@ -74,7 +76,7 @@ pub async fn chat(mut input: String) -> Result<ExitCode> {
     let is_piped = !stdin.is_terminal();
     if is_piped {
         // append to input string any extra info that was provided.
-        stdin.lock().read_to_string(&mut input).unwrap()
+        stdin.lock().read_to_string(&mut input).unwrap();
     }
     let result = try_chat(&mut stderr, input).await;
 
