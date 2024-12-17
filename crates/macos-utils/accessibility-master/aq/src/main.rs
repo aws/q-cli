@@ -64,8 +64,6 @@ pub struct Opt {
 }
 
 fn main() -> Result<(), i32> {
-
-fn main() -> Result<(), i32> {
     let opt = Opt::from_args();
     let app = AXUIElement::application(opt.pid);
     let printy = PrintyBoi::new_with_indentation(4);
