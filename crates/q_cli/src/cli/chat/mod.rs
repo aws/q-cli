@@ -20,9 +20,9 @@ use crossterm::style::{
 };
 use crossterm::{
     cursor,
-    style,
+    execute,
     queue,
-    execute
+    style,
 };
 use eyre::{
     Result,
@@ -127,7 +127,10 @@ async fn try_chat<W: Write>(output: &mut W, mut input: String, interactive: bool
                 queue!(output, style::SetForegroundColor(Color::Reset))?;
                 execute!(output, style::Print("\n"))?;
             } else if fig_settings::settings::get_bool_or("chat.greeting.enabled", true) {
-                execute!(output, style::Print(format!("
+                execute!(
+                    output,
+                    style::Print(format!(
+                        "
 Hi, I'm Amazon Q. I can answer questions about your shell and CLI tools!
 You can include additional context by adding the following to your prompt:
 
@@ -135,10 +138,11 @@ You can include additional context by adding the following to your prompt:
 {} to pass information about your current git repository
 {} to pass your shell environment
 ",
-                    "@history".bold(),
-                    "@git".bold(),
-                    "@env".bold()
-                )))?;
+                        "@history".bold(),
+                        "@git".bold(),
+                        "@env".bold()
+                    ))
+                )?;
             }
         }
 
@@ -194,19 +198,24 @@ You can include additional context by adding the following to your prompt:
 
                                 match error {
                                     Some(error) => {
-                                        queue!(output,
+                                        queue!(
+                                            output,
                                             style::SetForegroundColor(Color::Red),
                                             style::SetAttribute(Attribute::Bold),
                                             style::Print("error"),
                                             style::SetForegroundColor(Color::Reset),
                                             style::SetAttribute(Attribute::Reset),
-                                            style::Print(format!(": {error}\n")))?;
-                                        }
+                                            style::Print(format!(": {error}\n"))
+                                        )?;
+                                    },
                                     None => {
-                                        queue!(output, style::Print(
-                                            "Amazon Q is having trouble responding right now. Try again later.",
-                                        ))?;
-                                    }
+                                        queue!(
+                                            output,
+                                            style::Print(
+                                                "Amazon Q is having trouble responding right now. Try again later.",
+                                            )
+                                        )?;
+                                    },
                                 };
                             }
 
@@ -224,10 +233,12 @@ You can include additional context by adding the following to your prompt:
 
                 if !buf.is_empty() && interactive {
                     _spinner = None;
-                    queue!(output, 
+                    queue!(
+                        output,
                         crossterm::terminal::Clear(crossterm::terminal::ClearType::CurrentLine),
                         cursor::MoveToColumn(0),
-                        cursor::Show)?;
+                        cursor::Show
+                    )?;
                 }
 
                 loop {
@@ -252,17 +263,22 @@ You can include additional context by adding the following to your prompt:
 
                 if ended {
                     if interactive {
-                        queue!(output,
+                        queue!(
+                            output,
                             style::ResetColor,
                             style::SetAttribute(Attribute::Reset),
-                            Print("\n"))?;
+                            Print("\n")
+                        )?;
 
                         for (i, citation) in &state.citations {
-                            queue!(output, style::SetForegroundColor(Color::Blue),
+                            queue!(
+                                output,
+                                style::SetForegroundColor(Color::Blue),
                                 style::Print(format!("{i} ")),
                                 style::SetForegroundColor(Color::DarkGrey),
                                 style::Print(format!("{citation}\n")),
-                                style::SetForegroundColor(Color::Reset))?;
+                                style::SetForegroundColor(Color::Reset)
+                            )?;
                         }
 
                         if !state.citations.is_empty() {

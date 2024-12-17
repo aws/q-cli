@@ -6,7 +6,7 @@ use std::io::{
 
 pub enum WriteOutput {
     Interactive(Stderr),
-    NonInteractive(Stdout)
+    NonInteractive(Stdout),
 }
 
 // wraps the stderr/stdout handle with a enum type.
@@ -25,6 +25,7 @@ impl Write for WriteOutput {
             WriteOutput::NonInteractive(stdout) => stdout.write(buf),
         }
     }
+
     fn flush(&mut self) -> std::io::Result<()> {
         match self {
             WriteOutput::Interactive(stderr) => stderr.flush(),
@@ -32,4 +33,3 @@ impl Write for WriteOutput {
         }
     }
 }
-
