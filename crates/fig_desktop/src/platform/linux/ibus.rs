@@ -80,10 +80,13 @@ pub async fn launch_ibus_connection(proxy: EventLoopProxy, platform_state: Arc<P
                                     active_input_contexts.remove(path.as_str());
                                 },
                                 "SetCursorLocation" => {
-                                    if !active_input_contexts.contains(path.as_str()) {
+                                    if !active_input_contexts.contains(path.as_str())
+                                        || platform_state.active_terminal.lock().is_none()
+                                    {
                                         debug!("SetCursorLocation rejected on {}", path.as_str());
                                         continue;
                                     }
+
                                     let body = match msg.body().deserialize::<(i32, i32, i32, i32)>() {
                                         Ok(body) => body,
                                         Err(err) => {

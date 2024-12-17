@@ -37,8 +37,14 @@ pub static WM_CLASS_ALLOWLIST: Lazy<HashMap<&'static str, Terminal>> = Lazy::new
 pub static GSE_ALLOWLIST: Lazy<HashMap<&'static str, Terminal>> = Lazy::new(|| {
     let mut allowlist = HashMap::new();
     for terminal in fig_util::terminal::LINUX_TERMINALS {
-        if let Some(gnome_id) = terminal.gnome_id() {
-            allowlist.insert(gnome_id, terminal.clone());
+        // Using wm_class_instance here since on Wayland, (most?) terminals set the app_id equal to
+        // the WM_CLASS Instance part. To handle Xwayland terminals, we still want to include wm_class as
+        // well.
+        if let (Some(instance), Some(class)) = (terminal.wm_class_instance(), terminal.wm_class()) {
+            allowlist.insert(instance, terminal.clone());
+            if class != instance {
+                allowlist.insert(class, terminal.clone());
+            }
         }
     }
     allowlist
@@ -65,10 +71,11 @@ pub fn from_hook(hook: FocusedWindowDataHook, platform_state: &PlatformState, pr
     }
 
     debug!("focus event on {} from {}", hook.id, hook.source);
-    if from_source(&hook.source)
+    if let Some(terminal) = from_source(&hook.source)
         .ok_or_else(|| anyhow!("received invalid focus window data source"))?
-        .contains_key(hook.id.as_str())
+        .get(hook.id.as_str())
     {
+        *platform_state.0.active_terminal.lock() = Some(terminal.clone());
         let inner = hook.inner.unwrap();
         let outer = hook.outer.unwrap();
         let mut handle = platform_state.0.active_window_data.lock();
@@ -84,6 +91,7 @@ pub fn from_hook(hook: FocusedWindowDataHook, platform_state: &PlatformState, pr
             scale: hook.scale,
         });
     } else {
+        *platform_state.0.active_terminal.lock() = None;
         proxy.send_event(Event::WindowEvent {
             window_id: AUTOCOMPLETE_ID,
             window_event: WindowEvent::Hide,

@@ -464,12 +464,14 @@ impl Terminal {
         }
     }
 
+    /// Returns the "Class" part of the WM_CLASS property.
     pub fn wm_class(&self) -> Option<&'static str> {
         match self {
             Terminal::VSCode => Some("Code"),
             Terminal::VSCodeInsiders => Some("Vscode-insiders"),
             Terminal::GnomeConsole => Some("Kgx"),
             Terminal::GnomeTerminal => Some("Gnome-terminal"),
+            Terminal::Guake => Some("Guake"),
             Terminal::Hyper => Some("Hyper"),
             Terminal::Konsole => Some("konsole"),
             Terminal::Tilix => Some("Tilix"),
@@ -485,22 +487,18 @@ impl Terminal {
         }
     }
 
-    // corresponds to GSE source type
-    pub fn gnome_id(&self) -> Option<&'static str> {
+    /// Returns the "Instance" part of the WM_CLASS property.
+    pub fn wm_class_instance(&self) -> Option<&'static str> {
         match self {
-            // Terminal::Vscode => Some("Code"),
-            // Terminal::VSCodeInsiders => Some("Code - Insiders"),
+            Terminal::GnomeConsole => Some("org.gnome.Console"),
             Terminal::GnomeTerminal => Some("gnome-terminal-server"),
-            // Terminal::Konsole => Some("org.kde.konsole"),
-            Terminal::Tilix => Some("tilix"),
-            Terminal::Alacritty => Some("Alacritty"),
-            Terminal::Kitty => Some("kitty"),
-            Terminal::XfceTerminal => Some("xfce4-terminal"),
+            Terminal::Guake => Some("guake"),
+            Terminal::Hyper => Some("hyper"),
             Terminal::Terminator => Some("terminator"),
-            // Terminal::Terminology => Some("terminology"),
-            // Terminal::WezTerm => Some("org.wezfurlong.wezterm"),
-            // Terminal::Tabby => Some("tabby"),
-            _ => None,
+            Terminal::Tilix => Some("tilix"),
+            // Many terminals seem to use the same name for both, falling back to Class name
+            // as a default.
+            _ => self.wm_class(),
         }
     }
 

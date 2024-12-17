@@ -727,6 +727,7 @@ class Extension extends GObject.Object {
    * @param {boolean} overlay_pressed
    */
   #send_window_data(overlay_pressed) {
+    // Mutter populates wm class/instance will the app_id on Wayland.
     const wm_class = this.#window.get_wm_class();
     // https://mutter.gnome.org/meta/method.Window.get_frame_rect.html
     const inner_rect = this.#window.get_frame_rect();
