@@ -4,10 +4,15 @@
 use std::ffi::CString;
 use std::path::Path;
 use std::slice;
-use std::sync::Arc;
 use std::sync::atomic::{
     AtomicBool,
     Ordering,
+};
+use std::sync::{
+    Arc,
+    LazyLock,
+    Mutex,
+    RwLock,
 };
 
 use accessibility_sys::{
@@ -69,11 +74,6 @@ use objc2_foundation::{
     NSOperationQueue,
     ns_string,
 };
-use once_cell::sync::Lazy;
-use parking_lot::{
-    Mutex,
-    RwLock,
-};
 use serde::Serialize;
 use tao::dpi::{
     LogicalPosition,
@@ -128,16 +128,16 @@ pub const DEFAULT_CARET_WIDTH: f64 = 10.0;
 #[allow(non_upper_case_globals)]
 const kCGFloatingWindowLevelKey: i32 = 5;
 
-static UNMANAGED: Lazy<Unmanaged> = Lazy::new(|| Unmanaged {
+static UNMANAGED: Unmanaged = Unmanaged {
     event_sender: RwLock::new(Option::<EventLoopProxy>::None),
     window_server: RwLock::new(Option::<Arc<Mutex<WindowServer>>>::None),
-});
+};
 
-static ACCESSIBILITY_ENABLED: Lazy<AtomicBool> = Lazy::new(|| AtomicBool::new(accessibility_is_enabled()));
+static ACCESSIBILITY_ENABLED: LazyLock<AtomicBool> = LazyLock::new(|| AtomicBool::new(accessibility_is_enabled()));
 
-static MACOS_VERSION: Lazy<semver::Version> = Lazy::new(|| {
-    let version = macos_utils::os::OperatingSystemVersion::get();
-    semver::Version::new(version.major() as u64, version.minor() as u64, version.patch() as u64)
+static MACOS_VERSION: LazyLock<semver::Version> = LazyLock::new(|| {
+    let version = macos_utils::os::NSOperatingSystemVersion::get();
+    semver::Version::new(version.major as u64, version.minor as u64, version.patch as u64)
 });
 
 pub static ACTIVATION_POLICY: Mutex<ActivationPolicy> = Mutex::new(ActivationPolicy::Regular);
@@ -317,12 +317,13 @@ impl PlatformStateImpl {
                     }
                 }
 
-                UNMANAGED.event_sender.write().replace(self.proxy.clone());
+                UNMANAGED.event_sender.write().unwrap().replace(self.proxy.clone());
                 let (tx, rx) = flume::unbounded::<WindowServerEvent>();
 
                 UNMANAGED
                     .window_server
                     .write()
+                    .unwrap()
                     .replace(Arc::new(Mutex::new(WindowServer::new(tx))));
 
                 let accessibility_proxy = self.proxy.clone();
@@ -522,7 +523,7 @@ impl PlatformStateImpl {
                             .unwrap();
                     });
 
-                    let mut focused = self.focused_window.lock();
+                    let mut focused = self.focused_window.lock().unwrap();
                     focused.replace(window);
                 }
 
@@ -567,7 +568,7 @@ impl PlatformStateImpl {
                     }
                 };
 
-                let mut policy_lock = ACTIVATION_POLICY.lock();
+                let mut policy_lock = ACTIVATION_POLICY.lock().unwrap();
                 if *policy_lock != policy {
                     debug!(?policy, "Setting application policy");
                     *policy_lock = policy;
@@ -653,7 +654,7 @@ impl PlatformStateImpl {
                 Ok(())
             },
             PlatformBoundEvent::WindowDestroyed { app } => {
-                let mut focused = self.focused_window.lock();
+                let mut focused = self.focused_window.lock().unwrap();
                 if let Some(focused_window) = focused.as_ref() {
                     if focused_window.bundle_id() == app.bundle_id {
                         focused.take();
@@ -671,7 +672,7 @@ impl PlatformStateImpl {
     }
 
     fn refresh_window_position(&self) -> anyhow::Result<()> {
-        let mut guard = self.focused_window.lock();
+        let mut guard = self.focused_window.lock().unwrap();
         let active_window = guard.as_mut().context("No active window")?;
         let current_terminal = Terminal::from_bundle_id(active_window.bundle_id());
 
@@ -707,6 +708,7 @@ impl PlatformStateImpl {
             UNMANAGED
                 .event_sender
                 .read()
+                .unwrap()
                 .clone()
                 .unwrap()
                 .send_event(Event::WindowEvent {
@@ -756,7 +758,7 @@ impl PlatformStateImpl {
 
     /// Gets the currently active window on the platform
     pub(super) fn get_active_window(&self) -> Option<PlatformWindow> {
-        let active_window = self.focused_window.lock().as_ref()?.clone();
+        let active_window = self.focused_window.lock().unwrap().as_ref()?.clone();
         Some(PlatformWindow {
             rect: active_window.get_bounds()?.into(),
             inner: active_window,

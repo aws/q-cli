@@ -1,5 +1,6 @@
+use std::cell::OnceCell;
+
 use fig_os_shim::Context;
-use once_cell::sync::OnceCell;
 use thiserror::Error;
 use tokio::sync::Mutex;
 use zbus::Connection;

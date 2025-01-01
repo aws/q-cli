@@ -1,9 +1,9 @@
 use std::borrow::Cow;
 use std::process::Command;
+use std::sync::Mutex;
 
 use anyhow::Result;
 use fig_settings::settings;
-use parking_lot::Mutex;
 use tracing::{
     error,
     info,
@@ -15,7 +15,7 @@ use crate::protocol::icons::{
     process_asset,
 };
 
-static SELECTED_THEME: Mutex<Cow<'_, str>> = parking_lot::const_mutex(Cow::Borrowed("hicolor"));
+static SELECTED_THEME: Mutex<Cow<'_, str>> = Mutex::new(Cow::Borrowed("hicolor"));
 
 pub fn init() -> Result<()> {
     let mut use_local = true;
