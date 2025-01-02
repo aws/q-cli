@@ -50,7 +50,7 @@ pub fn init() -> Result<()> {
 
 fn set_theme(theme: String) -> Result<()> {
     if freedesktop_icons::list_themes().contains(&theme.as_str()) || theme == "hicolor" {
-        *SELECTED_THEME.lock() = Cow::Owned(theme);
+        *SELECTED_THEME.lock().unwrap() = Cow::Owned(theme);
         Ok(())
     } else {
         warn!("invalid theme: {theme}");
@@ -59,7 +59,7 @@ fn set_theme(theme: String) -> Result<()> {
 }
 
 fn get_theme() -> String {
-    SELECTED_THEME.lock().to_string()
+    SELECTED_THEME.lock().unwrap().to_string()
 }
 
 pub(super) async fn lookup(name: &str) -> Option<ProcessedAsset> {

@@ -136,8 +136,8 @@ static UNMANAGED: Unmanaged = Unmanaged {
 static ACCESSIBILITY_ENABLED: LazyLock<AtomicBool> = LazyLock::new(|| AtomicBool::new(accessibility_is_enabled()));
 
 static MACOS_VERSION: LazyLock<semver::Version> = LazyLock::new(|| {
-    let version = macos_utils::os::NSOperatingSystemVersion::get();
-    semver::Version::new(version.major as u64, version.minor as u64, version.patch as u64)
+    let version = macos_utils::os::OperatingSystemVersion::get();
+    semver::Version::new(version.major() as u64, version.minor() as u64, version.patch() as u64)
 });
 
 pub static ACTIVATION_POLICY: Mutex<ActivationPolicy> = Mutex::new(ActivationPolicy::Regular);
