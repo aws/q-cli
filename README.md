@@ -94,7 +94,7 @@ brew install rtx pnpm protobuf zsh bash fish shellcheck jq
 
 ```shell
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-rustup toolchain default stable
+rustup default stable
 # for pre-commit hooks the two following commands are required
 rustup toolchain install nightly
 cargo install typos-cli
@@ -107,7 +107,13 @@ rustup target add x86_64-apple-darwin
 rustup target add aarch64-apple-darwin
 ```
 
-### 3. Setup Python and Node using [`rtx`](https://mise.jdx.dev)
+### 3. Setup Python and Node using [`mise`](https://mise.jdx.dev)
+
+Install mise
+
+```shell
+curl https://mise.run | sh
+```
 
 Add mise integrations to your shell shell
 
@@ -125,6 +131,7 @@ echo 'mise activate fish | source' >> ~/.config/fish/config.fish
 Install the Python and Node toolchains using:
 
 ```shell
+mise trust
 mise install
 ```
 
