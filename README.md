@@ -87,7 +87,7 @@ For MacOS:
 
 ```shell
 xcode-select --install
-brew install rtx pnpm protobuf zsh bash fish shellcheck jq
+brew install mise pnpm protobuf zsh bash fish shellcheck jq
 ```
 
 ### 2. Install Rust toolchain using [Rustup](https://rustup.rs):
@@ -108,12 +108,6 @@ rustup target add aarch64-apple-darwin
 ```
 
 ### 3. Setup Python and Node using [`mise`](https://mise.jdx.dev)
-
-Install mise
-
-```shell
-curl https://mise.run | sh
-```
 
 Add mise integrations to your shell shell
 
