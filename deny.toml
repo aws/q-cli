@@ -26,6 +26,12 @@ ignore = [
   "RUSTSEC-2024-0420",
   # glib is required by gtk via tao, depends on upgrading those dependencies
   "RUSTSEC-2024-0429",
+  # idna is required by reqwest_cookie_store and requires upstream upgrade.
+  # vulnerability isn't relevant so long as host name comparisons aren't part of privilege checks
+  "RUSTSEC-2024-0421",
+  # Hashbrown borsh serializiation might produce two objects which are considered unique depending
+  # on insertion order
+  "RUSTSEC-2024-0402",
 ]
 
 [licenses]

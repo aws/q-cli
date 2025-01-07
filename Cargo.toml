@@ -20,7 +20,7 @@ authors = [
 edition = "2021"
 homepage = "https://aws.amazon.com/q/"
 publish = false
-version = "1.5.1"
+version = "1.5.2"
 license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
@@ -29,7 +29,7 @@ amzn-codewhisperer-streaming-client = { path = "crates/amzn-codewhisperer-stream
 amzn-consolas-client = { path = "crates/amzn-consolas-client" }
 amzn-qdeveloper-client = { path = "crates/amzn-qdeveloper-client" }
 amzn-qdeveloper-streaming-client = { path = "crates/amzn-qdeveloper-streaming-client" }
-anstream = "0.6.13"
+anstream = "0.6.18"
 anyhow = "1.0.75"
 appkit-nsworkspace-bindings = { path = "crates/macos-utils/appkit-nsworkspace-bindings" }
 async-trait = "0.1.74"
