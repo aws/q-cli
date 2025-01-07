@@ -10,7 +10,7 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: ^2.1.8
-        version: 2.1.8(vitest@2.1.8)
+        version: 2.1.8(vitest@2.1.8(@types/node@22.10.1)(@vitest/ui@2.1.8)(jsdom@24.1.0)(terser@5.37.0))
       '@vitest/ui':
         specifier: ^2.1.8
         version: 2.1.8(vitest@2.1.8)
@@ -419,8 +419,8 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       react-markdown:
-        specifier: ^9.0.1
-        version: 9.0.1(@types/react@18.3.14)(react@18.3.1)
+        specifier: ^9.0.3
+        version: 9.0.3(@types/react@18.3.14)(react@18.3.1)
       react-router:
         specifier: ^7.0.2
         version: 7.0.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -584,7 +584,7 @@ importers:
         version: link:../tsconfig
       '@vitest/coverage-v8':
         specifier: ^2.1.8
-        version: 2.1.8(vitest@2.1.8)
+        version: 2.1.8(vitest@2.1.8(@types/node@22.10.1)(@vitest/ui@2.1.8)(jsdom@24.1.0)(terser@5.37.0))
       eslint:
         specifier: ^9.16.0
         version: 9.16.0(jiti@1.21.6)
@@ -4945,8 +4945,8 @@ packages:
   react-is@16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
 
-  react-markdown@9.0.1:
-    resolution: {integrity: sha512-186Gw/vF1uRkydbsOIkcGXw7aHq0sZOCRFFjGrr7b9+nVZg4UfA4enXCaxm4fUzecU38sWfrNDitGhshuU7rdg==}
+  react-markdown@9.0.3:
+    resolution: {integrity: sha512-Yk7Z94dbgYTOrdk41Z74GoKA7rThnsbbqBTRYuxoe08qvfQ9tJVhmAKw6BJS/ZORG7kTy/s1QvYzSuaoBA1qfw==}
     peerDependencies:
       '@types/react': '>=18'
       react: '>=18'
@@ -8568,7 +8568,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/coverage-v8@2.1.8(vitest@2.1.8)':
+  '@vitest/coverage-v8@2.1.8(vitest@2.1.8(@types/node@22.10.1)(@vitest/ui@2.1.8)(jsdom@24.1.0)(terser@5.37.0))':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 0.2.3
@@ -11229,7 +11229,7 @@ snapshots:
 
   react-is@16.13.1: {}
 
-  react-markdown@9.0.1(@types/react@18.3.14)(react@18.3.1):
+  react-markdown@9.0.3(@types/react@18.3.14)(react@18.3.1):
     dependencies:
       '@types/hast': 3.0.4
       '@types/react': 18.3.14
