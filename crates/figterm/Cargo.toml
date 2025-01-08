@@ -83,7 +83,7 @@ winapi = { version = "0.3", features = [
     "namedpipeapi",
     "synchapi",
 ] }
-winreg = "0.52.0"
+winreg = "0.53.0"
 
 [dev-dependencies]
 assert_cmd = "2.0.8"
