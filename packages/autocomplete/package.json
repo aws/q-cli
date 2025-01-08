@@ -27,7 +27,7 @@
     "@aws/amazon-q-developer-cli-proto": "workspace:^",
     "@aws/amazon-q-developer-cli-shell-parser": "workspace:^",
     "@bufbuild/protobuf": "2.2.3",
-    "@fig/autocomplete-helpers": "^1.0.7",
+    "@fig/autocomplete-helpers": "^2.0.0",
     "@fig/autocomplete-shared": "^1.1.2",
     "@juggle/resize-observer": "^3.4.0",
     "deep-object-diff": "^1.1.9",

@@ -10,7 +10,7 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: ^2.1.8
-        version: 2.1.8(vitest@2.1.8)
+        version: 2.1.8(vitest@2.1.8(@types/node@22.10.1)(@vitest/ui@2.1.8)(jsdom@24.1.0)(terser@5.37.0))
       '@vitest/ui':
         specifier: ^2.1.8
         version: 2.1.8(vitest@2.1.8)
@@ -216,8 +216,8 @@ importers:
         specifier: 2.2.3
         version: 2.2.3
       '@fig/autocomplete-helpers':
-        specifier: ^1.0.7
-        version: 1.0.7
+        specifier: ^2.0.0
+        version: 2.0.0
       '@fig/autocomplete-shared':
         specifier: ^1.1.2
         version: 1.1.2
@@ -334,8 +334,8 @@ importers:
         specifier: ^2.4.0
         version: 2.4.0
       '@fig/autocomplete-helpers':
-        specifier: ^1.0.7
-        version: 1.0.7
+        specifier: ^2.0.0
+        version: 2.0.0
       '@fig/autocomplete-shared':
         specifier: ^1.1.2
         version: 1.1.2
@@ -584,7 +584,7 @@ importers:
         version: link:../tsconfig
       '@vitest/coverage-v8':
         specifier: ^2.1.8
-        version: 2.1.8(vitest@2.1.8)
+        version: 2.1.8(vitest@2.1.8(@types/node@22.10.1)(@vitest/ui@2.1.8)(jsdom@24.1.0)(terser@5.37.0))
       eslint:
         specifier: ^9.16.0
         version: 9.16.0(jiti@1.21.6)
@@ -1744,8 +1744,8 @@ packages:
   '@fig/autocomplete-generators@2.4.0':
     resolution: {integrity: sha512-fiaaCGmsgnbUJbVbNAcVDmrnCGj/SmfarK6WKt/lfQP9k1hLHkkmZQ836VSMJvPP1vAKFAiXpdJziG6EGyjAYg==}
 
-  '@fig/autocomplete-helpers@1.0.7':
-    resolution: {integrity: sha512-5jq01q2JtaLAjl8t3hOvE9GOp4a4Agj7YmxlBxRjuSwJY3qskfx/mdAgOX2qjgxZ74bHONAxQ1hzudwSICqZFg==}
+  '@fig/autocomplete-helpers@2.0.0':
+    resolution: {integrity: sha512-lzD9LbpvJC3hXwxvLAb91/AwO83lfIhW4dEITAn1wINKHaHOmP39wU82Q25bKp8A6/UMcF6Iobik/R4sUZmgNA==}
 
   '@fig/autocomplete-shared@1.1.2':
     resolution: {integrity: sha512-RUdSGkxv6+RkZJPD8B6Yq4i6qKHBym4VL8noLOscn1n8o6DXkZAmJtg5MEdMMUwBAZO04eTo1+xKQ0YkPs9w2Q==}
@@ -5623,11 +5623,6 @@ packages:
       typescript:
         optional: true
 
-  typescript@4.9.5:
-    resolution: {integrity: sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==}
-    engines: {node: '>=4.2.0'}
-    hasBin: true
-
   typescript@5.4.5:
     resolution: {integrity: sha512-vcI4UpRgg81oIRUFwR0WSIHKt11nJ7SAVlYNIu+QpqeyXP+gpQJy/Z4+F0aGxSE4MqwjyXvW/TzgkLAx2AGHwQ==}
     engines: {node: '>=14.17'}
@@ -7112,10 +7107,9 @@ snapshots:
 
   '@fig/autocomplete-generators@2.4.0': {}
 
-  '@fig/autocomplete-helpers@1.0.7':
+  '@fig/autocomplete-helpers@2.0.0':
     dependencies:
       semver: 7.6.3
-      typescript: 4.9.5
 
   '@fig/autocomplete-shared@1.1.2': {}
 
@@ -8568,7 +8562,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/coverage-v8@2.1.8(vitest@2.1.8)':
+  '@vitest/coverage-v8@2.1.8(vitest@2.1.8(@types/node@22.10.1)(@vitest/ui@2.1.8)(jsdom@24.1.0)(terser@5.37.0))':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 0.2.3
@@ -12039,8 +12033,6 @@ snapshots:
       typescript: 5.7.2
     transitivePeerDependencies:
       - supports-color
-
-  typescript@4.9.5: {}
 
   typescript@5.4.5: {}
 
