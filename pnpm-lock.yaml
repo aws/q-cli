@@ -10,7 +10,7 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: ^2.1.8
-        version: 2.1.8(vitest@2.1.8)
+        version: 2.1.8(vitest@2.1.8(@types/node@22.10.1)(@vitest/ui@2.1.8)(jsdom@24.1.0)(terser@5.37.0))
       '@vitest/ui':
         specifier: ^2.1.8
         version: 2.1.8(vitest@2.1.8)
@@ -584,7 +584,7 @@ importers:
         version: link:../tsconfig
       '@vitest/coverage-v8':
         specifier: ^2.1.8
-        version: 2.1.8(vitest@2.1.8)
+        version: 2.1.8(vitest@2.1.8(@types/node@22.10.1)(@vitest/ui@2.1.8)(jsdom@24.1.0)(terser@5.37.0))
       eslint:
         specifier: ^9.16.0
         version: 9.16.0(jiti@1.21.6)
@@ -616,8 +616,8 @@ importers:
         specifier: workspace:^
         version: link:../packages/tsconfig
       '@bufbuild/buf':
-        specifier: ^1.47.2
-        version: 1.47.2
+        specifier: ^1.49.0
+        version: 1.49.0
       '@bufbuild/protoc-gen-es':
         specifier: ^2.2.3
         version: 2.2.3(@bufbuild/protobuf@2.2.3)
@@ -1214,50 +1214,50 @@ packages:
   '@bcoe/v8-coverage@0.2.3':
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
 
-  '@bufbuild/buf-darwin-arm64@1.47.2':
-    resolution: {integrity: sha512-74WerFn06y+azgVfsnzhfbI5wla/OLPDnIvaNJBWHaqya/3bfascJkDylW2GVNHmwG1K/cscpmcc/RJPaO7ntQ==}
+  '@bufbuild/buf-darwin-arm64@1.49.0':
+    resolution: {integrity: sha512-goZWfNOxFNiGy/B1ZUAvq/si73g8PpJ2GudX+VEb0GN8UjYHGn8zMpd98V/J75W52y8AYx8FsDvnIDNy2S/TUQ==}
     engines: {node: '>=12'}
     cpu: [arm64]
     os: [darwin]
 
-  '@bufbuild/buf-darwin-x64@1.47.2':
-    resolution: {integrity: sha512-adAiOacOQe8Ym/YXPCEiq9mrPeKRmDtF2TgqPWTcDy6mF7TqR7hMJINkEEuMd1EeACmXnzMOnXlm9ICtvdYgPg==}
+  '@bufbuild/buf-darwin-x64@1.49.0':
+    resolution: {integrity: sha512-lKd5hoCYEiTG+wh1pIICE6oIJa5Rv1NCU0Xek+71KU+s+PiM2dC7AuRskWU5QhRZdUn0y4cgnhi7TwzqUEEB4Q==}
     engines: {node: '>=12'}
     cpu: [x64]
     os: [darwin]
 
-  '@bufbuild/buf-linux-aarch64@1.47.2':
-    resolution: {integrity: sha512-52vY+Owffr5diw2PyfQJqH+Fld6zW6NhNZak4zojvc2MjZKubWM0TfNyM9jXz2YrwyB+cyxkabE60nBI80m37w==}
+  '@bufbuild/buf-linux-aarch64@1.49.0':
+    resolution: {integrity: sha512-cgKRXlQG+TJMjaHEJusv53J/bQGQIm8Z4ahhS9zcHbnOXNH5Q5xDt3vMp4fOY0XB2opIfHrAG64CMEmilweLew==}
     engines: {node: '>=12'}
     cpu: [arm64]
     os: [linux]
 
-  '@bufbuild/buf-linux-armv7@1.47.2':
-    resolution: {integrity: sha512-g9KtpObDeHZ/VG/0b5ZCieOao7L/WYZ0fPqFSs4N07D3APgEDhJG6vLyUcDgJMDgyLcgkNjNz0+XdYQb/tXyQw==}
+  '@bufbuild/buf-linux-armv7@1.49.0':
+    resolution: {integrity: sha512-KA7SzGXA1s6IP7A7lLNRvShOzpv4lIjI8rKRs0TotsuhBfyE2YjrybJ165ChZ9ZiSco51jdGnG3rOfNIfbgtEA==}
     engines: {node: '>=12'}
     cpu: [arm]
     os: [linux]
 
-  '@bufbuild/buf-linux-x64@1.47.2':
-    resolution: {integrity: sha512-MODCK2BzD1Mgoyr+5Sp8xA8qMNdytj8hYheyhA5NnCGTkQf8sfqAjpBSAAmKk6Zar8HOlVXML6tzE/ioDFFGwQ==}
+  '@bufbuild/buf-linux-x64@1.49.0':
+    resolution: {integrity: sha512-r0lc6WfBs6Gl+qxmlecbFjYeW3ZESOPPOruuIsx7Yh4emRHTNKZcQE//ds9nDBHcJqCrfWYqqiKToGm/vR1znA==}
     engines: {node: '>=12'}
     cpu: [x64]
     os: [linux]
 
-  '@bufbuild/buf-win32-arm64@1.47.2':
-    resolution: {integrity: sha512-563YKYWJl3LrCY3G3+zuhb8HwOs6DzWslwGPFkKV2hwHyWyvd1DR1JjiLvw9zX64IKNctQ0HempSqc3kcboaqQ==}
+  '@bufbuild/buf-win32-arm64@1.49.0':
+    resolution: {integrity: sha512-x3mP2bqMamy90dsJn1JVkI2SQklsiQf8gCaVnH1CytfQJ36vbJQxKsLSObC/ozm++GnuJBF79fZdV1EcwI11uw==}
     engines: {node: '>=12'}
     cpu: [arm64]
     os: [win32]
 
-  '@bufbuild/buf-win32-x64@1.47.2':
-    resolution: {integrity: sha512-Sqcdv7La2xBDh3bTdEYb2f4UTMMqCcYe/D0RELhvQ5wDn6I35V3/2YT1OF5fRuf0BZLCo0OdO37S9L47uHSz2g==}
+  '@bufbuild/buf-win32-x64@1.49.0':
+    resolution: {integrity: sha512-/L3/9rWOP57iaXG63FCxv6w4o8siJBeM89KTyBbaw2kmzKsasfYFszd31ZEB+z69YCk+dFzBDqeL8djZ5qaTdQ==}
     engines: {node: '>=12'}
     cpu: [x64]
     os: [win32]
 
-  '@bufbuild/buf@1.47.2':
-    resolution: {integrity: sha512-glY5kCAoO4+a7HvDb+BLOdoHSdCk4mdXdkp53H8JFz7maOnkxCiHHXgRX+taFyEu25N8ybn7NjZFrZSdRwq2sA==}
+  '@bufbuild/buf@1.49.0':
+    resolution: {integrity: sha512-1rF/I6xQmqdLe6hC23ZtLnvvYf8JNnJX6E51npbp9J+ODpU5fJFvNkixU7luDucZdU3/GwEWl73VTrAtNyJggw==}
     engines: {node: '>=12'}
     hasBin: true
 
@@ -6803,36 +6803,36 @@ snapshots:
 
   '@bcoe/v8-coverage@0.2.3': {}
 
-  '@bufbuild/buf-darwin-arm64@1.47.2':
+  '@bufbuild/buf-darwin-arm64@1.49.0':
     optional: true
 
-  '@bufbuild/buf-darwin-x64@1.47.2':
+  '@bufbuild/buf-darwin-x64@1.49.0':
     optional: true
 
-  '@bufbuild/buf-linux-aarch64@1.47.2':
+  '@bufbuild/buf-linux-aarch64@1.49.0':
     optional: true
 
-  '@bufbuild/buf-linux-armv7@1.47.2':
+  '@bufbuild/buf-linux-armv7@1.49.0':
     optional: true
 
-  '@bufbuild/buf-linux-x64@1.47.2':
+  '@bufbuild/buf-linux-x64@1.49.0':
     optional: true
 
-  '@bufbuild/buf-win32-arm64@1.47.2':
+  '@bufbuild/buf-win32-arm64@1.49.0':
     optional: true
 
-  '@bufbuild/buf-win32-x64@1.47.2':
+  '@bufbuild/buf-win32-x64@1.49.0':
     optional: true
 
-  '@bufbuild/buf@1.47.2':
+  '@bufbuild/buf@1.49.0':
     optionalDependencies:
-      '@bufbuild/buf-darwin-arm64': 1.47.2
-      '@bufbuild/buf-darwin-x64': 1.47.2
-      '@bufbuild/buf-linux-aarch64': 1.47.2
-      '@bufbuild/buf-linux-armv7': 1.47.2
-      '@bufbuild/buf-linux-x64': 1.47.2
-      '@bufbuild/buf-win32-arm64': 1.47.2
-      '@bufbuild/buf-win32-x64': 1.47.2
+      '@bufbuild/buf-darwin-arm64': 1.49.0
+      '@bufbuild/buf-darwin-x64': 1.49.0
+      '@bufbuild/buf-linux-aarch64': 1.49.0
+      '@bufbuild/buf-linux-armv7': 1.49.0
+      '@bufbuild/buf-linux-x64': 1.49.0
+      '@bufbuild/buf-win32-arm64': 1.49.0
+      '@bufbuild/buf-win32-x64': 1.49.0
 
   '@bufbuild/protobuf@2.2.3': {}
 
@@ -8568,7 +8568,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/coverage-v8@2.1.8(vitest@2.1.8)':
+  '@vitest/coverage-v8@2.1.8(vitest@2.1.8(@types/node@22.10.1)(@vitest/ui@2.1.8)(jsdom@24.1.0)(terser@5.37.0))':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 0.2.3
