@@ -1,3 +1,4 @@
+use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 
 use dbus::gnome_shell::ShellExtensions;
@@ -8,14 +9,19 @@ use fig_integrations::desktop_entry::{
 };
 use fig_integrations::gnome_extension::GnomeExtensionIntegration;
 use fig_os_shim::Context;
-use fig_util::CLI_BINARY_NAME;
 use fig_util::directories::{
     fig_data_dir_ctx,
     local_webview_data_dir,
 };
+use fig_util::manifest::manifest;
+use fig_util::{
+    CLI_BINARY_NAME,
+    PRODUCT_NAME,
+};
 use tokio::sync::mpsc::Sender;
 use tracing::{
     debug,
+    error,
     warn,
 };
 use url::Url;
@@ -108,6 +114,21 @@ async fn replace_bins(bin_dir: &Path) -> Result<(), Error> {
 }
 
 pub(crate) async fn update(
+    update_package: UpdatePackage,
+    tx: Sender<UpdateStatus>,
+    interactive: bool,
+    relaunch_dashboard: bool,
+) -> Result<(), Error> {
+    match &manifest().variant {
+        fig_util::manifest::Variant::Full => update_full(update_package, tx, interactive, relaunch_dashboard).await,
+        fig_util::manifest::Variant::Minimal => {
+            update_minimal(update_package, tx, interactive, relaunch_dashboard).await
+        },
+        fig_util::manifest::Variant::Other(other) => Err(Error::UnsupportedVariant(other.clone())),
+    }
+}
+
+pub(crate) async fn update_minimal(
     UpdatePackage {
         download_url,
         sha256,
@@ -163,6 +184,96 @@ pub(crate) async fn update(
     replace_bins(&bin_dir).await?;
 
     Ok(())
+}
+
+pub(crate) async fn update_full(
+    update_package: UpdatePackage,
+    tx: Sender<UpdateStatus>,
+    interactive: bool,
+    relaunch_dashboard: bool,
+) -> Result<(), Error> {
+    update_full_ctx(&Context::new(), update_package, tx, interactive, relaunch_dashboard).await
+}
+
+async fn update_full_ctx(
+    ctx: &Context,
+    UpdatePackage {
+        download_url,
+        sha256: expected_hash,
+        size,
+        ..
+    }: UpdatePackage,
+    tx: Sender<UpdateStatus>,
+    _interactive: bool,
+    _relaunch_dashboard: bool,
+) -> Result<(), Error> {
+    if !ctx.env().in_appimage() {
+        return Err(Error::UpdateFailed(
+            "Updating is only supported from the AppImage".into(),
+        ));
+    }
+    let current_appimage_path = ctx
+        .env()
+        .get("APPIMAGE")
+        .map_err(|err| Error::UpdateFailed(format!("Unable to determine the path to the appimage: {:?}", err)))?;
+
+    debug!("starting update");
+    tx.send(UpdateStatus::Message("Downloading...".into())).await.ok();
+
+    // Download the updated AppImage to a temporary location.
+
+    let temp_dir = ctx.fs().create_tempdir().await?;
+    let file_name = download_url
+        .path_segments()
+        .and_then(|path| path.last())
+        .unwrap_or(PRODUCT_NAME);
+    let download_path = temp_dir.path().join(file_name);
+
+    // Security: set the permissions to 700 so that only the user can read and write
+    ctx.fs()
+        .set_permissions(temp_dir.path(), std::fs::Permissions::from_mode(0o700))
+        .await?;
+
+    debug!(?file_name, "Downloading update file");
+    let real_hash = download_file(download_url, &download_path, size, Some(tx.clone())).await?;
+
+    if real_hash != expected_hash {
+        return Err(Error::UpdateFailed(format!(
+            "file hash mismatch. Expected: {expected_hash}, Actual: {real_hash}"
+        )));
+    }
+
+    tx.send(UpdateStatus::Message("Installing update...".into())).await.ok();
+
+    ctx.fs()
+        .set_permissions(&download_path, std::fs::Permissions::from_mode(0o755))
+        .await?;
+
+    debug!(?download_path, ?current_appimage_path, "Replacing the current AppImage");
+    ctx.fs().rename(&download_path, &current_appimage_path).await?;
+    debug!("Successfully swapped the AppImage");
+
+    tx.send(UpdateStatus::Message("Relaunching...".into())).await.ok();
+
+    let pid = ctx.process_info().current_pid().as_u32().to_string();
+    std::process::Command::new(current_appimage_path)
+        .args(["--kill-old-pid", &pid])
+        .spawn()?;
+
+    let lock_file_path = fig_util::directories::update_lock_path(ctx)?;
+    debug!(?lock_file_path, "Removing lock file");
+    if ctx.fs().exists(&lock_file_path) {
+        ctx.fs()
+            .remove_file(&lock_file_path)
+            .await
+            .map_err(|err| error!(?err, "Unable to remove the lock file"))
+            .ok();
+    }
+
+    tx.send(UpdateStatus::Exit).await.ok();
+
+    #[allow(clippy::exit)]
+    std::process::exit(0);
 }
 
 pub(crate) async fn uninstall_gnome_extension(

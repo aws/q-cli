@@ -18,9 +18,12 @@ use fig_os_shim::{
     Os,
     PlatformProvider,
 };
+use fig_util::PRODUCT_NAME;
 use fig_util::manifest::{
     Channel,
+    FileType,
     Variant,
+    bundle_metadata,
     manifest,
 };
 #[cfg(target_os = "freebsd")]
@@ -94,8 +97,10 @@ pub enum Error {
     Nul(#[from] std::ffi::NulError),
     #[error("failed to get system id")]
     SystemIdNotFound,
-    #[error("unable to determine the file type")]
-    FileTypeNotFound,
+    #[error("unable to find the bundled metadata")]
+    BundleMetadataNotFound,
+    #[error("unsupported variant: {0}")]
+    UnsupportedVariant(String),
 }
 
 impl From<fig_util::directories::DirectoryError> for Error {
@@ -141,10 +146,19 @@ pub fn get_max_channel() -> Channel {
 
 pub async fn check_for_updates(ignore_rollout: bool) -> Result<Option<UpdatePackage>, Error> {
     let manifest = manifest();
+    let ctx = Context::new();
+    let file_type = match (&manifest.variant, ctx.platform().os()) {
+        (Variant::Full, fig_os_shim::Os::Linux) => match index::get_file_type(&ctx, &manifest.variant).await {
+            Ok(file_type) => Some(file_type),
+            _ => None,
+        },
+        _ => Some(index::get_file_type(&Context::new(), &manifest.variant).await?),
+    };
     index::check_for_updates(
         get_channel()?,
         &manifest.target_triple,
         &manifest.variant,
+        file_type.as_ref(),
         ignore_rollout,
     )
     .await
@@ -183,15 +197,21 @@ pub async fn update(
         info!("Found update: {}", update.version);
         debug!("Update info: {:?}", update);
 
-        if ctx.platform().os() == Os::Linux && manifest().variant == Variant::Full {
-            return Err(Error::UpdateFailed(
-                "Managed updates are currently unsupported for Linux".to_string(),
-            ));
+        if ctx.platform().os() == Os::Linux
+            && manifest().variant == Variant::Full
+            && bundle_metadata(&ctx)
+                .await?
+                .is_some_and(|md| md.packaged_as != FileType::AppImage)
+        {
+            return Err(Error::UpdateFailed(format!(
+                "Please use your package manager to update {}",
+                PRODUCT_NAME
+            )));
         }
 
         let (tx, rx) = tokio::sync::mpsc::channel(16);
 
-        let lock_file = fig_util::directories::update_lock_path()?;
+        let lock_file = fig_util::directories::update_lock_path(&ctx)?;
 
         let now_unix_time = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)

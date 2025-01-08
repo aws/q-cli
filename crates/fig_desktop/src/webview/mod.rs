@@ -68,6 +68,7 @@ use self::notification::WebviewNotificationsState;
 use self::window_id::DashboardId;
 use crate::event::{
     Event,
+    ShowMessageNotification,
     WindowEvent,
 };
 use crate::notification_bus::{
@@ -552,7 +553,13 @@ impl WebviewManager {
                                 debug!(%err, "Failed to handle native event");
                             }
                         },
-                        Event::ShowMessageNotification { title, body, parent } => {
+                        Event::ShowMessageNotification(ShowMessageNotification {
+                            title,
+                            body,
+                            parent,
+                            buttons,
+                            buttons_result,
+                        }) => {
                             let mut dialog = rfd::AsyncMessageDialog::new().set_title(title).set_description(body);
 
                             if let Some(parent) = parent {
@@ -561,7 +568,21 @@ impl WebviewManager {
                                 }
                             }
 
-                            tokio::spawn(dialog.show());
+                            let dialog = match (buttons, buttons_result.as_ref()) {
+                                (Some(buttons), Some(_)) => dialog.set_buttons(buttons),
+                                _ => dialog,
+                            };
+
+                            tokio::spawn(async move {
+                                let res = dialog.show().await;
+                                if let Some(buttons_result) = buttons_result {
+                                    buttons_result
+                                        .send(res)
+                                        .await
+                                        .map_err(|err| error!(?err, "Failed to send dialog result"))
+                                        .ok();
+                                }
+                            });
                         },
                     }
                 },

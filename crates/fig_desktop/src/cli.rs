@@ -12,6 +12,9 @@ pub struct Cli {
     /// Kill old instances of `fig_desktop`
     #[arg(long)]
     pub kill_old: bool,
+    /// Kill an old instance of `fig_desktop` by its process id
+    #[arg(long)]
+    pub kill_old_pid: Option<u32>,
     /// Allow launching multiple instances of `fig_desktop`
     #[arg(long)]
     pub allow_multiple: bool,

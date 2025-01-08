@@ -7,7 +7,9 @@ import pathlib
 import shutil
 from typing import Dict, List, Mapping, Sequence
 from util import (
+    Package,
     Variant,
+    enum_encoder,
     get_variants,
     isDarwin,
     isLinux,
@@ -471,6 +473,7 @@ def linux_tauri_config(
     themes_path: pathlib.Path,
     legacy_extension_dir_path: pathlib.Path,
     modern_extension_dir_path: pathlib.Path,
+    bundle_metadata_path: pathlib.Path,
     target: str,
 ) -> str:
     config = {
@@ -490,6 +493,7 @@ def linux_tauri_config(
                     themes_path.absolute().as_posix(): "themes",
                     legacy_extension_dir_path.absolute().as_posix(): LINUX_LEGACY_GNOME_EXTENSION_UUID,
                     modern_extension_dir_path.absolute().as_posix(): LINUX_MODERN_GNOME_EXTENSION_UUID,
+                    bundle_metadata_path.absolute().as_posix(): "bundle-metadata",
                 },
             },
         }
@@ -510,6 +514,24 @@ def linux_desktop_entry() -> str:
 
 
 @dataclass
+class BundleMetadata:
+    packaged_as: Package
+
+
+def make_linux_bundle_metadata(packaged_as: Package) -> pathlib.Path:
+    """
+    Creates the bundle metadata json file under a new directory, returning the path to the directory.
+    """
+    metadata_dir_path = BUILD_DIR / f"{packaged_as.value}-metadata"
+    shutil.rmtree(metadata_dir_path, ignore_errors=True)
+    metadata_dir_path.mkdir(parents=True)
+    (metadata_dir_path / "metadata.json").write_text(
+        json.dumps(BundleMetadata(packaged_as=packaged_as), default=enum_encoder)
+    )
+    return metadata_dir_path
+
+
+@dataclass
 class LinuxDebResources:
     cli_path: pathlib.Path
     pty_path: pathlib.Path
@@ -517,6 +539,7 @@ class LinuxDebResources:
     themes_path: pathlib.Path
     legacy_extension_dir_path: pathlib.Path
     modern_extension_dir_path: pathlib.Path
+    bundle_metadata_path: pathlib.Path
     npm_packages: NpmBuildOutput
 
 
@@ -651,6 +674,7 @@ def build_linux_full(
             themes_path=themes_path,
             legacy_extension_dir_path=legacy_extension_dir_path,
             modern_extension_dir_path=modern_extension_dir_path,
+            bundle_metadata_path=make_linux_bundle_metadata(Package.APPIMAGE),
             target=target,
         )
     )
@@ -683,6 +707,7 @@ def build_linux_full(
         themes_path=themes_path,
         legacy_extension_dir_path=legacy_extension_dir_path,
         modern_extension_dir_path=modern_extension_dir_path,
+        bundle_metadata_path=make_linux_bundle_metadata(Package.DEB),
         npm_packages=npm_packages,
     )
     deb_output = build_linux_deb(

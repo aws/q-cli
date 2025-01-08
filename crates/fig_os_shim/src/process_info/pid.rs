@@ -17,6 +17,7 @@ use crate::Context;
 
 #[derive(Default, Debug, Clone)]
 pub struct FakePid {
+    pub pid: u32,
     pub parent: Option<Box<Pid>>,
     pub exe: Option<PathBuf>,
     pub cmdline: Option<String>,
@@ -83,6 +84,11 @@ cfg_if! {
 
         pid_decl!(pid_t);
 
+        impl RawPid {
+            pub fn as_u32(&self) -> u32 {
+                self.0 as _
+            }
+        }
         impl From<nix::unistd::Pid> for RawPid {
             fn from(pid: nix::unistd::Pid) -> Self {
                 RawPid(pid.as_raw())
@@ -130,6 +136,14 @@ impl Pid {
         match self {
             Pid::Real(ctx, raw) => cmdline(ctx.clone(), raw),
             Pid::Fake(fake) => fake.cmdline.clone(),
+        }
+    }
+
+    /// Returns the process id.
+    pub fn as_u32(&self) -> u32 {
+        match self {
+            Pid::Real(_, raw) => raw.as_u32(),
+            Pid::Fake(fake) => fake.pid,
         }
     }
 }

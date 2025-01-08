@@ -73,6 +73,7 @@ impl ProcessInfo {
             parent: Some(parents(exes.into_iter().skip(1).collect())),
             exe: test_exe.exe,
             cmdline: test_exe.cmdline,
+            ..Default::default()
         })
     }
 
@@ -147,6 +148,7 @@ fn fake_pid(exe: TestExe, parent: Option<Box<Pid>>) -> Box<Pid> {
         parent,
         exe: exe.exe,
         cmdline: exe.cmdline,
+        ..Default::default()
     }))
 }
 

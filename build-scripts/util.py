@@ -136,3 +136,14 @@ def get_variants() -> List[Variant]:
                 return [Variant.MINIMAL]
         case other:
             raise ValueError(f"Unsupported platform {other}")
+
+
+class Package(Enum):
+    DEB = "deb"
+    APPIMAGE = "appImage"
+
+
+def enum_encoder(obj):
+    if isinstance(obj, Enum):
+        return obj.value
+    return obj.__dict__
