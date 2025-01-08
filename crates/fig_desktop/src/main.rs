@@ -303,7 +303,12 @@ async fn allow_multiple_running_check(
 }
 
 #[cfg(target_os = "macos")]
-async fn allow_multiple_running_check(current_pid: sysinfo::Pid, kill_old: bool, page: Option<String>) {
+async fn allow_multiple_running_check(
+    current_pid: sysinfo::Pid,
+    kill_old: bool,
+    _kill_old_pid: Option<u32>,
+    page: Option<String>,
+) {
     use std::ffi::OsString;
 
     let app_process_name = OsString::from(APP_PROCESS_NAME);

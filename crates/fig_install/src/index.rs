@@ -430,6 +430,7 @@ mod tests {
             Channel::Stable,
             &TargetTriple::UniversalAppleDarwin,
             &Variant::Full,
+            Some(FileType::Dmg).as_ref(),
             false,
         )
         .await
