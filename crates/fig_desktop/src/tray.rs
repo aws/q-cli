@@ -145,7 +145,7 @@ fn tray_update(proxy: &EventLoopProxy) {
 /// update and others (packages like `deb`) cannot.
 async fn should_continue_with_update(ctx: &Context, proxy: &EventLoopProxy) -> bool {
     if !(ctx.platform().os() == Os::Linux && manifest().variant == Variant::Full) {
-        return false;
+        return true;
     }
 
     match fig_install::check_for_updates(true).await {
