@@ -142,7 +142,7 @@ async fn main() {
     if !cli.allow_multiple {
         match get_current_pid() {
             Ok(current_pid) => {
-                allow_multiple_running_check(current_pid, cli.kill_old, cli.kill_old_pid, page.clone()).await;
+                allow_multiple_running_check(current_pid, cli.kill_old, page.clone()).await;
             },
             Err(err) => warn!(%err, "Failed to get pid"),
         }
@@ -231,12 +231,7 @@ async fn main() {
 }
 
 #[cfg(target_os = "linux")]
-async fn allow_multiple_running_check(
-    current_pid: sysinfo::Pid,
-    kill_old: bool,
-    kill_old_pid: Option<u32>,
-    page: Option<String>,
-) {
+async fn allow_multiple_running_check(current_pid: sysinfo::Pid, kill_old: bool, page: Option<String>) {
     use std::ffi::OsString;
 
     use tracing::debug;
@@ -266,15 +261,6 @@ async fn allow_multiple_running_check(
                 if pid != current_pid && parent_pid != current_pid && *uid == current_user_id =>
             {
                 let exe = process.exe().unwrap_or(Path::new("")).display();
-
-                match kill_old_pid {
-                    Some(old_pid) if old_pid == pid.as_u32() => {
-                        debug!(old_pid, "Killing old process");
-                        process.kill();
-                    },
-                    _ => {},
-                }
-
                 eprintln!("{PRODUCT_NAME} is already running: {exe} (pid={pid}, uid={uid})");
 
                 match &page {
@@ -303,12 +289,7 @@ async fn allow_multiple_running_check(
 }
 
 #[cfg(target_os = "macos")]
-async fn allow_multiple_running_check(
-    current_pid: sysinfo::Pid,
-    kill_old: bool,
-    _kill_old_pid: Option<u32>,
-    page: Option<String>,
-) {
+async fn allow_multiple_running_check(current_pid: sysinfo::Pid, kill_old: bool, page: Option<String>) {
     use std::ffi::OsString;
 
     let app_process_name = OsString::from(APP_PROCESS_NAME);

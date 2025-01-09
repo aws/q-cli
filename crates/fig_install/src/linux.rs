@@ -255,10 +255,7 @@ async fn update_full_ctx(
 
     tx.send(UpdateStatus::Message("Relaunching...".into())).await.ok();
 
-    let pid = ctx.process_info().current_pid().as_u32().to_string();
-    std::process::Command::new(current_appimage_path)
-        .args(["--kill-old-pid", &pid])
-        .spawn()?;
+    std::process::Command::new(current_appimage_path).spawn()?;
 
     let lock_file_path = fig_util::directories::update_lock_path(ctx)?;
     debug!(?lock_file_path, "Removing lock file");
