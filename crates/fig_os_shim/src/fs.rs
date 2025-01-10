@@ -189,6 +189,21 @@ impl Fs {
         }
     }
 
+    /// Renames a file or directory to a new name, replacing the original file if
+    /// `to` already exists.
+    ///
+    /// This will not work if the new name is on a different mount point.
+    ///
+    /// This is a proxy to [`tokio::fs::rename`].
+    pub async fn rename(&self, from: impl AsRef<Path>, to: impl AsRef<Path>) -> io::Result<()> {
+        use inner::Inner;
+        match &self.0 {
+            Inner::Real => fs::rename(from, to).await,
+            Inner::Chroot(root) => fs::rename(append(root.path(), from), append(root.path(), to)).await,
+            Inner::Fake(_) => panic!("unimplemented"),
+        }
+    }
+
     /// Copies the contents of one file to another. This function will also copy the permission bits
     /// of the original file to the destination file.
     /// This function will overwrite the contents of to.
@@ -543,6 +558,12 @@ mod tests {
         fs.remove_file("/fake").await.unwrap();
         assert!(fs.symlink_exists("/fake_symlink").await);
         assert!(!fs.exists("/fake_symlink"));
+
+        // Checking rename
+        fs.write("/rename_1", "abc").await.unwrap();
+        fs.write("/rename_2", "123").await.unwrap();
+        fs.rename("/rename_2", "/rename_1").await.unwrap();
+        assert_eq!(fs.read_to_string("/rename_1").await.unwrap(), "123");
     }
 
     #[tokio::test]

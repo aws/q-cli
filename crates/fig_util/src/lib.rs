@@ -53,6 +53,8 @@ pub enum Error {
     StrUtf8Error(#[from] std::str::Utf8Error),
     #[error("Failed to parse shell {0} version")]
     ShellVersion(Shell),
+    #[error(transparent)]
+    Json(#[from] serde_json::Error),
 }
 
 #[derive(Debug, Clone)]

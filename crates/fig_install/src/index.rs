@@ -17,6 +17,7 @@ use fig_util::manifest::{
     Os,
     TargetTriple,
     Variant,
+    bundle_metadata,
 };
 use fig_util::system_info::get_system_id;
 use semver::Version;
@@ -98,7 +99,8 @@ impl Index {
     ///
     /// If `file_type` is [Option::None], then the returned package *may have a different file type
     /// than the currently installed version*. This is useful to check if an update exists for the
-    /// given target and variant without filtering on file type, e.g. in the case of Linux desktop.
+    /// given target and variant without filtering on file type, e.g. in the case of Linux desktop
+    /// bundles.
     pub fn find_next_version(
         &self,
         target_triple: &TargetTriple,
@@ -356,36 +358,25 @@ pub async fn check_for_updates(
     channel: Channel,
     target_triple: &TargetTriple,
     variant: &Variant,
+    file_type: Option<&FileType>,
     ignore_rollout: bool,
 ) -> Result<Option<UpdatePackage>, Error> {
     const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
-    let ctx = Context::new();
-    let file_type = match (variant, ctx.platform().os()) {
-        (Variant::Full, fig_os_shim::Os::Linux) => None,
-        _ => Some(get_file_type(&Context::new(), variant)?),
-    };
-    let index = pull(&channel).await?;
-
-    index.find_next_version(
-        target_triple,
-        variant,
-        file_type.as_ref(),
-        CURRENT_VERSION,
-        ignore_rollout,
-        None,
-    )
+    pull(&channel)
+        .await?
+        .find_next_version(target_triple, variant, file_type, CURRENT_VERSION, ignore_rollout, None)
 }
 
-fn get_file_type(ctx: &Context, variant: &Variant) -> Result<FileType, Error> {
+pub(crate) async fn get_file_type(ctx: &Context, variant: &Variant) -> Result<FileType, Error> {
     match ctx.platform().os() {
         fig_os_shim::Os::Mac => Ok(FileType::Dmg),
-        fig_os_shim::Os::Linux => {
-            match variant {
-                // Linux desktop currently cannot distinguish between AppImage and packages.
-                Variant::Full => Err(Error::FileTypeNotFound),
-                Variant::Minimal => Ok(FileType::TarZst),
-                Variant::Other(_) => Err(Error::UnsupportedPlatform),
-            }
+        fig_os_shim::Os::Linux => match variant {
+            Variant::Full => Ok(bundle_metadata(ctx)
+                .await?
+                .ok_or(Error::BundleMetadataNotFound)?
+                .packaged_as),
+            Variant::Minimal => Ok(FileType::TarZst),
+            Variant::Other(_) => Err(Error::UnsupportedPlatform),
         },
         _ => Err(Error::UnsupportedPlatform),
     }
@@ -436,6 +427,7 @@ mod tests {
             Channel::Stable,
             &TargetTriple::UniversalAppleDarwin,
             &Variant::Full,
+            Some(FileType::Dmg).as_ref(),
             false,
         )
         .await

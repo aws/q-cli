@@ -2938,6 +2938,7 @@ dependencies = [
  "fig_request",
  "fig_settings",
  "fig_telemetry",
+ "fig_test_utils",
  "fig_util",
  "hex",
  "libc",
@@ -2955,6 +2956,7 @@ dependencies = [
  "time",
  "tokio",
  "tracing",
+ "tracing-subscriber",
  "url",
  "zstd",
 ]
@@ -3183,6 +3185,24 @@ version = "1.6.0"
 dependencies = [
  "quote",
  "syn 2.0.95",
+]
+
+[[package]]
+name = "fig_test_utils"
+version = "1.6.0"
+dependencies = [
+ "bytes",
+ "fig_os_shim",
+ "fig_util",
+ "hex",
+ "http 1.2.0",
+ "http-body-util",
+ "hyper 1.5.2",
+ "hyper-util",
+ "reqwest",
+ "ring",
+ "tokio",
+ "tokio-util",
 ]
 
 [[package]]

@@ -2106,7 +2106,7 @@ pub async fn doctor_cli(all: bool, strict: bool) -> Result<ExitCode> {
     }
 
     // Remove update lock on doctor runs to fix bad state if update crashed.
-    if let Ok(update_lock) = fig_util::directories::update_lock_path() {
+    if let Ok(update_lock) = fig_util::directories::update_lock_path(&Context::new()) {
         if update_lock.exists() {
             std::fs::remove_file(update_lock).ok();
         }

@@ -12,7 +12,9 @@ use fig_os_shim::{
 use fig_remote_ipc::figterm::FigtermState;
 use fig_util::consts::PRODUCT_NAME;
 use fig_util::manifest::{
+    FileType,
     Variant,
+    bundle_metadata,
     manifest,
 };
 use fig_util::url::USER_MANUAL;
@@ -27,8 +29,10 @@ use muda::{
 };
 use tao::event_loop::ControlFlow;
 use tracing::{
+    debug,
     error,
     trace,
+    warn,
 };
 use tray_icon::{
     Icon,
@@ -38,6 +42,7 @@ use tray_icon::{
 
 use crate::event::{
     Event,
+    ShowMessageNotification,
     WindowEvent,
 };
 use crate::webview::LOGIN_PATH;
@@ -73,41 +78,8 @@ fn tray_update(proxy: &EventLoopProxy) {
     let proxy_b = proxy.clone();
     tokio::runtime::Handle::current().spawn(async move {
         let ctx = Context::new();
-        if ctx.platform().os() == Os::Linux && manifest().variant == Variant::Full {
-            match fig_install::check_for_updates(true).await {
-                Ok(Some(pkg)) => {
-                    proxy_a
-                        .send_event(Event::ShowMessageNotification {
-                            title: format!("A new version of {} is available", PRODUCT_NAME).into(),
-                            body: format!(
-                                "New Version: {}\nCurrent Version: {}",
-                                pkg.version,
-                                env!("CARGO_PKG_VERSION")
-                            )
-                            .into(),
-                            parent: None,
-                        })
-                        .unwrap();
-                },
-                Ok(None) => {
-                    proxy_a
-                        .send_event(Event::ShowMessageNotification {
-                            title: format!("{PRODUCT_NAME} is already up to date").into(),
-                            body: concat!("Version ", env!("CARGO_PKG_VERSION")).into(),
-                            parent: None,
-                        })
-                        .unwrap();
-                },
-                Err(err) => {
-                    proxy_a
-                        .send_event(Event::ShowMessageNotification {
-                            title: "An error occurred while checking for updates".into(),
-                            body: err.to_string().into(),
-                            parent: None,
-                        })
-                        .unwrap();
-                },
-            }
+
+        if !should_continue_with_update(&ctx, &proxy_a).await {
             return;
         }
 
@@ -115,11 +87,14 @@ fn tray_update(proxy: &EventLoopProxy) {
             ctx,
             Some(Box::new(move |_| {
                 proxy_a
-                    .send_event(Event::ShowMessageNotification {
-                        title: format!("{PRODUCT_NAME} is updating in the background").into(),
-                        body: format!("You can continue to use {PRODUCT_NAME} while it updates").into(),
-                        parent: None,
-                    })
+                    .send_event(
+                        ShowMessageNotification {
+                            title: format!("{PRODUCT_NAME} is updating in the background").into(),
+                            body: format!("You can continue to use {PRODUCT_NAME} while it updates").into(),
+                            ..Default::default()
+                        }
+                        .into(),
+                    )
                     .unwrap();
             })),
             UpdateOptions {
@@ -134,25 +109,134 @@ fn tray_update(proxy: &EventLoopProxy) {
             Ok(false) => {
                 // Didn't update, show a notification
                 proxy_b
-                    .send_event(Event::ShowMessageNotification {
-                        title: format!("{PRODUCT_NAME} is already up to date").into(),
-                        body: concat!("Version ", env!("CARGO_PKG_VERSION")).into(),
-                        parent: None,
-                    })
+                    .send_event(
+                        ShowMessageNotification {
+                            title: format!("{PRODUCT_NAME} is already up to date").into(),
+                            body: concat!("Version ", env!("CARGO_PKG_VERSION")).into(),
+                            ..Default::default()
+                        }
+                        .into(),
+                    )
                     .unwrap();
             },
             Err(err) => {
                 // Error updating, show a notification
                 proxy_b
-                    .send_event(Event::ShowMessageNotification {
-                        title: format!("Error Updating {PRODUCT_NAME}").into(),
-                        body: err.to_string().into(),
-                        parent: None,
-                    })
+                    .send_event(
+                        ShowMessageNotification {
+                            title: format!("Error Updating {PRODUCT_NAME}").into(),
+                            body: err.to_string().into(),
+                            ..Default::default()
+                        }
+                        .into(),
+                    )
                     .unwrap();
             },
         }
     });
+}
+
+/// Checks if the app is able to update. If so, get permission from the user first before
+/// continuing.
+///
+/// Returns `true` if we should continue with updating, `false` otherwise.
+///
+/// Currently only the Linux flow gets affected, since some bundles (eg, `AppImage`) are able to
+/// update and others (packages like `deb`) cannot.
+async fn should_continue_with_update(ctx: &Context, proxy: &EventLoopProxy) -> bool {
+    if !(ctx.platform().os() == Os::Linux && manifest().variant == Variant::Full) {
+        return true;
+    }
+
+    match fig_install::check_for_updates(true).await {
+        Ok(Some(pkg)) => {
+            let file_type = bundle_metadata(&ctx)
+                .await
+                .map_err(|err| error!(?err, "Failed to get bundle metadata"))
+                .ok()
+                .flatten()
+                .map(|md| md.packaged_as);
+            // Only AppImage is able to self-update.
+            if file_type == Some(FileType::AppImage) {
+                let (tx, mut rx) = tokio::sync::mpsc::channel(1);
+                proxy
+                    .send_event(
+                        ShowMessageNotification {
+                            title: format!("A new version of {} is available", PRODUCT_NAME).into(),
+                            body: format!(
+                                "New Version: {}\nCurrent Version: {}\nWould you like to update now?",
+                                pkg.version,
+                                env!("CARGO_PKG_VERSION")
+                            )
+                            .into(),
+                            buttons: Some(rfd::MessageButtons::YesNo),
+                            buttons_result: Some(tx),
+                            ..Default::default()
+                        }
+                        .into(),
+                    )
+                    .unwrap();
+                match rx.recv().await {
+                    Some(rfd::MessageDialogResult::Yes) => true,
+                    Some(rfd::MessageDialogResult::No) => {
+                        debug!("User declined to update, returning");
+                        false
+                    },
+                    Some(res) => {
+                        warn!(?res, "Unexpected result from the dialog");
+                        false
+                    },
+                    None => {
+                        debug!("No result from the dialog received");
+                        false
+                    },
+                }
+            } else {
+                proxy
+                    .send_event(
+                        ShowMessageNotification {
+                            title: format!("A new version of {} is available", PRODUCT_NAME).into(),
+                            body: format!(
+                                "New Version: {}\nCurrent Version: {}",
+                                pkg.version,
+                                env!("CARGO_PKG_VERSION")
+                            )
+                            .into(),
+                            ..Default::default()
+                        }
+                        .into(),
+                    )
+                    .unwrap();
+                false
+            }
+        },
+        Ok(None) => {
+            proxy
+                .send_event(
+                    ShowMessageNotification {
+                        title: format!("{PRODUCT_NAME} is already up to date").into(),
+                        body: concat!("Version ", env!("CARGO_PKG_VERSION")).into(),
+                        ..Default::default()
+                    }
+                    .into(),
+                )
+                .unwrap();
+            false
+        },
+        Err(err) => {
+            proxy
+                .send_event(
+                    ShowMessageNotification {
+                        title: "An error occurred while checking for updates".into(),
+                        body: err.to_string().into(),
+                        ..Default::default()
+                    }
+                    .into(),
+                )
+                .unwrap();
+            false
+        },
+    }
 }
 
 pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {

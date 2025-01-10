@@ -14,7 +14,10 @@ use fig_os_shim::{
 use thiserror::Error;
 use time::OffsetDateTime;
 
-use crate::env_var::Q_PARENT;
+use crate::env_var::{
+    Q_BUNDLE_METADATA_PATH,
+    Q_PARENT,
+};
 use crate::linux::PACKAGE_NAME;
 use crate::system_info::{
     in_cloudshell,
@@ -413,14 +416,26 @@ pub fn manifest_path() -> Result<PathBuf> {
     }
 }
 
+/// The path to the metadata.json file included with a Linux desktop bundle.
+///
+/// This should only be called from the desktop binary since AppImage bundles can only access the
+/// resources directory from the AppImage mount, known only by the AppImage itself (ie, the desktop
+/// binary).
+pub fn bundle_metadata_path<Ctx: EnvProvider + PlatformProvider>(ctx: &Ctx) -> Result<PathBuf> {
+    if let Some(path) = ctx.env().get_os(Q_BUNDLE_METADATA_PATH) {
+        return Ok(path.into());
+    }
+    Ok(resources_path_ctx(ctx)?.join("bundle-metadata").join("metadata.json"))
+}
+
 /// The path to the fig settings file
 pub fn settings_path() -> Result<PathBuf> {
     Ok(fig_data_dir()?.join("settings.json"))
 }
 
 /// The path to the lock file used to indicate that the app is updating
-pub fn update_lock_path() -> Result<PathBuf> {
-    Ok(fig_data_dir()?.join("update.lock"))
+pub fn update_lock_path(ctx: &impl FsProvider) -> Result<PathBuf> {
+    Ok(fig_data_dir_ctx(ctx)?.join("update.lock"))
 }
 
 /// The path to the midway cookie
@@ -510,6 +525,7 @@ mod linux_tests {
 
     #[test]
     fn all_paths() {
+        let ctx = Context::new();
         assert!(home_dir().is_ok());
         assert!(home_local_bin().is_ok());
         assert!(fig_data_dir().is_ok());
@@ -521,7 +537,7 @@ mod linux_tests {
         assert!(backups_dir().is_ok());
         assert!(logs_dir().is_ok());
         assert!(settings_path().is_ok());
-        assert!(update_lock_path().is_ok());
+        assert!(update_lock_path(&ctx).is_ok());
         assert!(midway_cookie_path().is_ok());
     }
 }
@@ -689,9 +705,10 @@ mod tests {
 
     #[test]
     fn snapshot_update_lock_path() {
-        linux!(update_lock_path(), @"$HOME/.local/share/amazon-q/update.lock");
-        macos!(update_lock_path(), @"$HOME/Library/Application Support/amazon-q/update.lock");
-        windows!(update_lock_path(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\update.lock");
+        let ctx = Context::new();
+        linux!(update_lock_path(&ctx), @"$HOME/.local/share/amazon-q/update.lock");
+        macos!(update_lock_path(&ctx), @"$HOME/Library/Application Support/amazon-q/update.lock");
+        windows!(update_lock_path(&ctx), @r"C:\Users\$USER\AppData\Local\Fig\userdata\update.lock");
     }
 
     #[test]

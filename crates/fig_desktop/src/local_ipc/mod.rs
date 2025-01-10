@@ -164,6 +164,7 @@ async fn handle_local_ipc<Ctx>(
                     },
                     Some(command) => {
                         use fig_proto::local::command::Command::{
+                            BundleMetadata,
                             ConnectToIbus,
                             DebugMode,
                             Devtools,
@@ -204,6 +205,7 @@ async fn handle_local_ipc<Ctx>(
                                 &platform_state,
                             ),
                             ConnectToIbus(_) => commands::connect_to_ibus(proxy.clone(), &platform_state).await,
+                            BundleMetadata(_) => commands::bundle_metadata(&ctx.context_arc()).await,
                             Update(_) => fig_install::update(
                                 ctx.context_arc(),
                                 Some(Box::new(move |_| {
@@ -215,7 +217,7 @@ async fn handle_local_ipc<Ctx>(
                             .map(|_| LocalResponse::Success(None))
                             .map_err(|err| LocalResponse::Error {
                                 code: None,
-                                message: Some(format!("Failed to check for updates: {err}")),
+                                message: Some(format!("Failed to update: {err}")),
                             }),
                             Devtools(command) => {
                                 let window_id = match command.window() {

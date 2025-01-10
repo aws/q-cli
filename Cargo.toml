@@ -71,8 +71,10 @@ fig_request = { path = "crates/fig_request" }
 fig_settings = { path = "crates/fig_settings" }
 fig_telemetry = { path = "crates/fig_telemetry" }
 fig_telemetry_core = { path = "crates/fig_telemetry_core" }
+fig_test_utils = { path = "crates/fig_test_utils" }
 fig_util = { path = "crates/fig_util" }
 hex = "0.4.3"
+http = "1.2.0"
 indoc = "2.0.5"
 insta = "1.38.0"
 libc = "0.2.167"
@@ -108,6 +110,7 @@ reqwest = { version = "0.12.5", default-features = false, features = [
     "socks",
     "cookies",
 ] }
+ring = "0.17.8"
 shell-color = { path = "crates/shell-color" }
 semver = { version = "1.0.16", features = ["serde"] }
 serde = { version = "1.0.216", features = ["derive", "rc"] }
@@ -125,6 +128,7 @@ time = { version = "0.3.34", features = [
     "serde",
 ] }
 tokio = { version = "1.42.0", features = ["full"] }
+tokio-util = { version = "0.7.13", features = ["compat"] }
 toml = "0.8.12"
 tracing = { version = "0.1.40", features = ["log"] }
 tracing-subscriber = { version = "0.3.19", features = [

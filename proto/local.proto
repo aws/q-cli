@@ -39,6 +39,7 @@ message Command {
     DevtoolsCommand devtools = 120;
     LoginCommand login = 121;
     ConnectToIBusCommand connect_to_ibus = 122;
+    BundleMetadataCommand bundle_metadata = 123;
   }
 
   reserved 116;
@@ -173,6 +174,8 @@ message DevtoolsCommand {
 }
 
 message ConnectToIBusCommand {}
+
+message BundleMetadataCommand {}
 
 // == Hooks ==
 
@@ -366,6 +369,10 @@ message DumpStateResponse {
   string json = 1;
 }
 
+message BundleMetadataResponse {
+  optional string json = 1;
+}
+
 message CommandResponse {
   optional int64 id = 1;
 
@@ -379,5 +386,6 @@ message CommandResponse {
     // A response to a log level command
     LogLevelResponse log_level = 102;
     DumpStateResponse dump_state = 103;
+    BundleMetadataResponse bundle_metadata = 104;
   }
 }

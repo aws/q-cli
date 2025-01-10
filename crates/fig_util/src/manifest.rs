@@ -3,6 +3,11 @@ use std::str::FromStr;
 use std::sync::OnceLock;
 
 use cfg_if::cfg_if;
+use fig_os_shim::{
+    EnvProvider,
+    FsProvider,
+    PlatformProvider,
+};
 use serde::{
     Deserialize,
     Deserializer,
@@ -12,9 +17,12 @@ use strum::{
     Display,
     EnumString,
 };
+use tracing::debug;
 
+use crate::Error;
 use crate::build::TARGET_TRIPLE;
 use crate::consts::build::VARIANT;
+use crate::directories::bundle_metadata_path;
 
 #[derive(Deserialize)]
 pub struct Manifest {
@@ -177,6 +185,11 @@ impl Display for Channel {
     }
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct BundleMetadata {
+    pub packaged_as: FileType,
+}
+
 fn deser_enum_other<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
     D: Deserializer<'de>,
@@ -206,6 +219,33 @@ pub fn manifest() -> &'static Manifest {
         packaged_at: "unknown".into(),
         packaged_by: "unknown".into(),
     })
+}
+
+/// Returns the [BundleMetadata] distributed with the app. This should only be called from the
+/// desktop binary since in some bundles (notably AppImage), only the desktop app can access it.
+///
+/// Currently, only Linux desktop bundles have a bundle metadata.
+pub async fn bundle_metadata<Ctx: FsProvider + EnvProvider + PlatformProvider>(
+    ctx: &Ctx,
+) -> Result<Option<BundleMetadata>, Error> {
+    match bundle_metadata_json(ctx).await? {
+        Some(json) => Ok(serde_json::from_str(&json)?),
+        None => Ok(None),
+    }
+}
+
+/// Returns the [BundleMetadata] without serializing. See [bundle_metadata].
+pub async fn bundle_metadata_json<Ctx: FsProvider + EnvProvider + PlatformProvider>(
+    ctx: &Ctx,
+) -> Result<Option<String>, Error> {
+    match (ctx.platform().os(), &manifest().variant) {
+        (fig_os_shim::Os::Linux, Variant::Full) => {
+            let metadata_path = bundle_metadata_path(ctx)?;
+            debug!("Reading metadata at path: {:?}", &metadata_path);
+            Ok(Some(ctx.fs().read_to_string(bundle_metadata_path(ctx)?).await?))
+        },
+        _ => Ok(None),
+    }
 }
 
 /// Checks if this is a full build according to the manifest.
