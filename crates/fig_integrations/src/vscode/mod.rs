@@ -79,6 +79,13 @@ pub static VARIANTS: &[VSCodeVariant] = &[
         application_name: "Windsurf",
         cli_executable_name: "windsurf",
     },
+    VSCodeVariant {
+        bundle_identifier: "co.posit.positron",
+        config_folder_name: ".positron",
+        application_support_folder_name: "Positron",
+        application_name: "Positron",
+        cli_executable_name: "positron",
+    },
 ];
 
 pub fn variants_installed() -> Vec<VSCodeVariant> {

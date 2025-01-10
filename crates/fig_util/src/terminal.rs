@@ -25,6 +25,7 @@ pub const MACOS_TERMINALS: &[Terminal] = &[
     Terminal::Rio,
     Terminal::Windsurf,
     Terminal::Ghostty,
+    Terminal::Positron
 ];
 
 /// Terminals that Linux supports
@@ -44,6 +45,7 @@ pub const LINUX_TERMINALS: &[Terminal] = &[
     Terminal::VSCodeInsiders,
     Terminal::VSCodium,
     Terminal::IntelliJ(None),
+    Terminal::Positron
 ];
 
 /// Other terminals that figterm should launch within that are not full terminal emulators
@@ -161,6 +163,8 @@ pub enum Terminal {
     Windsurf,
     /// Ghostty
     Ghostty,
+    /// Positron
+    Positron,
 
     /// Custom terminal to support user/custom entries
     Custom(CustomTerminal),
@@ -201,6 +205,7 @@ impl fmt::Display for Terminal {
             Terminal::Windsurf => write!(f, "Windsurf"),
             Terminal::Guake => write!(f, "Guake"),
             Terminal::Ghostty => write!(f, "Ghostty"),
+            Terminal::Positron => write!(f, "Positron"),
             Terminal::Custom(custom_terminal) => write!(f, "{}", custom_terminal.name),
         }
     }
@@ -365,6 +370,7 @@ impl Terminal {
             Terminal::Windsurf => "windsurf".into(),
             Terminal::Guake => "guake".into(),
             Terminal::Ghostty => "ghostty".into(),
+            Terminal::Positron => "positron".into(),
             Terminal::Custom(custom_terminal) => custom_terminal.id.clone().into(),
         }
     }
@@ -392,6 +398,7 @@ impl Terminal {
             Terminal::Rio => Some("com.raphaelamorim.rio".into()),
             Terminal::Windsurf => Some("com.exafunction.windsurf".into()),
             Terminal::Ghostty => Some("com.mitchellh.ghostty".into()),
+            Terminal::Positron => Some("co.posit.positron".into()),
             Terminal::Custom(custom_terminal) => custom_terminal.macos.bundle_id.clone().map(Cow::Owned),
             _ => None,
         }
@@ -417,6 +424,7 @@ impl Terminal {
             "com.raphaelamorim.rio" => Terminal::Rio,
             "com.exafunction.windsurf" => Terminal::Windsurf,
             "com.mitchellh.ghostty" => Terminal::Ghostty,
+            "co.posit.positron" => Terminal::Positron,
             // TODO: the following line does not account for Android Studio
             _ if bundle.starts_with("com.jetbrains.") | bundle.starts_with("com.google.") => {
                 Terminal::IntelliJ(IntelliJVariant::from_bundle_id(bundle))
@@ -491,6 +499,7 @@ impl Terminal {
             Terminal::Windsurf => &["windsurf"],
             Terminal::Guake => &["guake"],
             Terminal::Ghostty => &["ghostty"],
+            Terminal::Positron => &["positron"],
 
             Terminal::Ssh => &["sshd"],
             Terminal::Tmux => &["tmux", "tmux: server"],
