@@ -25,7 +25,7 @@ pub const MACOS_TERMINALS: &[Terminal] = &[
     Terminal::Rio,
     Terminal::Windsurf,
     Terminal::Ghostty,
-    Terminal::Positron
+    Terminal::Positron,
 ];
 
 /// Terminals that Linux supports
@@ -45,7 +45,7 @@ pub const LINUX_TERMINALS: &[Terminal] = &[
     Terminal::VSCodeInsiders,
     Terminal::VSCodium,
     Terminal::IntelliJ(None),
-    Terminal::Positron
+    Terminal::Positron,
 ];
 
 /// Other terminals that figterm should launch within that are not full terminal emulators
