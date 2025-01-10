@@ -133,7 +133,7 @@ tracing-subscriber = { version = "0.3.19", features = [
     "parking_lot",
     "time",
 ] }
-uuid = { version = "1.8.0", features = ["v4", "serde"] }
+uuid = { version = "1.11.1", features = ["v4", "serde"] }
 which = "6.0.3"
 whoami = "1.5.1"
 
