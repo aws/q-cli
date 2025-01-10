@@ -189,6 +189,12 @@ impl Fs {
         }
     }
 
+    /// Renames a file or directory to a new name, replacing the original file if
+    /// `to` already exists.
+    ///
+    /// This will not work if the new name is on a different mount point.
+    ///
+    /// This is a proxy to [`tokio::fs::rename`].
     pub async fn rename(&self, from: impl AsRef<Path>, to: impl AsRef<Path>) -> io::Result<()> {
         use inner::Inner;
         match &self.0 {

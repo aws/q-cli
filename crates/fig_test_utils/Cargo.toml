@@ -1,0 +1,26 @@
+[package]
+name = "fig_test_utils"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+publish.workspace = true
+version.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+bytes.workspace = true
+fig_os_shim.workspace = true
+fig_util.workspace = true
+hex.workspace = true
+http.workspace = true
+http-body-util = "0.1.1"
+hyper = { version = "1.5.2", features = ["server"] }
+hyper-util = { version = "0.1.5", features = ["tokio"] }
+reqwest.workspace = true
+ring.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+

@@ -916,7 +916,7 @@ dependencies = [
  "hex",
  "hmac",
  "http 0.2.12",
- "http 1.1.0",
+ "http 1.2.0",
  "once_cell",
  "percent-encoding",
  "sha2",
@@ -1056,7 +1056,7 @@ dependencies = [
  "aws-smithy-types",
  "bytes",
  "http 0.2.12",
- "http 1.1.0",
+ "http 1.2.0",
  "pin-project-lite",
  "tokio",
  "tracing",
@@ -1074,7 +1074,7 @@ dependencies = [
  "bytes-utils",
  "futures-core",
  "http 0.2.12",
- "http 1.1.0",
+ "http 1.2.0",
  "http-body 0.4.6",
  "http-body 1.0.1",
  "http-body-util",
@@ -1135,7 +1135,7 @@ dependencies = [
  "axum-core",
  "bytes",
  "futures-util",
- "http 1.1.0",
+ "http 1.2.0",
  "http-body 1.0.1",
  "http-body-util",
  "itoa 1.0.14",
@@ -1161,7 +1161,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "futures-util",
- "http 1.1.0",
+ "http 1.2.0",
  "http-body 1.0.1",
  "http-body-util",
  "mime",
@@ -2702,7 +2702,7 @@ dependencies = [
  "fig_request",
  "fig_settings",
  "fig_util",
- "http 1.1.0",
+ "http 1.2.0",
  "once_cell",
  "regex",
  "serde",
@@ -2802,7 +2802,7 @@ dependencies = [
  "freedesktop-icons",
  "futures",
  "gtk",
- "http 1.1.0",
+ "http 1.2.0",
  "image",
  "infer",
  "keyboard-types",
@@ -2953,6 +2953,7 @@ dependencies = [
  "fig_request",
  "fig_settings",
  "fig_telemetry",
+ "fig_test_utils",
  "fig_util",
  "hex",
  "libc",
@@ -2970,6 +2971,7 @@ dependencies = [
  "time",
  "tokio",
  "tracing",
+ "tracing-subscriber",
  "url",
  "zstd",
 ]
@@ -3203,6 +3205,24 @@ version = "1.6.0"
 dependencies = [
  "quote",
  "syn 2.0.90",
+]
+
+[[package]]
+name = "fig_test_utils"
+version = "1.6.0"
+dependencies = [
+ "bytes",
+ "fig_os_shim",
+ "fig_util",
+ "hex",
+ "http 1.2.0",
+ "http-body-util",
+ "hyper 1.5.2",
+ "hyper-util",
+ "reqwest",
+ "ring",
+ "tokio",
+ "tokio-util",
 ]
 
 [[package]]
@@ -3946,7 +3966,7 @@ dependencies = [
  "fnv",
  "futures-core",
  "futures-sink",
- "http 1.1.0",
+ "http 1.2.0",
  "indexmap 2.6.0",
  "slab",
  "tokio",
@@ -4110,9 +4130,9 @@ dependencies = [
 
 [[package]]
 name = "http"
-version = "1.1.0"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21b9ddb458710bc376481b842f5da65cdf31522de232c1ca8146abce2a358258"
+checksum = "f16ca2af56261c99fba8bac40a10251ce8188205a4c448fbb745a2e4daa76fea"
 dependencies = [
  "bytes",
  "fnv",
@@ -4137,7 +4157,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1efedce1fb8e6913f23e0c92de8e62cd5b772a67e7b3946df930a62566c93184"
 dependencies = [
  "bytes",
- "http 1.1.0",
+ "http 1.2.0",
 ]
 
 [[package]]
@@ -4148,7 +4168,7 @@ checksum = "793429d76616a256bcb62c2a2ec2bed781c8307e797e2598c50010f2bee2544f"
 dependencies = [
  "bytes",
  "futures-util",
- "http 1.1.0",
+ "http 1.2.0",
  "http-body 1.0.1",
  "pin-project-lite",
 ]
@@ -4205,7 +4225,7 @@ dependencies = [
  "futures-channel",
  "futures-util",
  "h2 0.4.7",
- "http 1.1.0",
+ "http 1.2.0",
  "http-body 1.0.1",
  "httparse",
  "httpdate",
@@ -4239,7 +4259,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08afdbb5c31130e3034af566421053ab03787c640246a446327f550d11bcb333"
 dependencies = [
  "futures-util",
- "http 1.1.0",
+ "http 1.2.0",
  "hyper 1.5.2",
  "hyper-util",
  "rustls 0.23.19",
@@ -4273,7 +4293,7 @@ dependencies = [
  "bytes",
  "futures-channel",
  "futures-util",
- "http 1.1.0",
+ "http 1.2.0",
  "http-body 1.0.1",
  "hyper 1.5.2",
  "pin-project-lite",
@@ -5197,7 +5217,7 @@ dependencies = [
  "bytes",
  "colored",
  "futures-util",
- "http 1.1.0",
+ "http 1.2.0",
  "http-body 1.0.1",
  "http-body-util",
  "hyper 1.5.2",
@@ -7208,7 +7228,7 @@ dependencies = [
  "futures-core",
  "futures-util",
  "h2 0.4.7",
- "http 1.1.0",
+ "http 1.2.0",
  "http-body 1.0.1",
  "http-body-util",
  "hyper 1.5.2",
@@ -8699,9 +8719,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-util"
-version = "0.7.12"
+version = "0.7.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61e7c3654c13bcd040d4a03abee2c75b1d14a37b423cf5a813ceae1cc903ec6a"
+checksum = "d7fcaa8d55a2bdd6b83ace262b016eca0d79ee02818c5c1bcdf0305114081078"
 dependencies = [
  "bytes",
  "futures-core",
@@ -8792,7 +8812,7 @@ dependencies = [
  "base64 0.22.1",
  "bytes",
  "h2 0.4.7",
- "http 1.1.0",
+ "http 1.2.0",
  "http-body 1.0.1",
  "http-body-util",
  "hyper 1.5.2",
@@ -10129,7 +10149,7 @@ dependencies = [
  "gdkx11",
  "gtk",
  "html5ever",
- "http 1.1.0",
+ "http 1.2.0",
  "javascriptcore-rs",
  "jni",
  "kuchikiki",

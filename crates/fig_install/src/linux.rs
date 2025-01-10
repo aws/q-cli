@@ -192,7 +192,9 @@ pub(crate) async fn update_full(
     interactive: bool,
     relaunch_dashboard: bool,
 ) -> Result<(), Error> {
-    update_full_ctx(&Context::new(), update_package, tx, interactive, relaunch_dashboard).await
+    update_full_ctx(&Context::new(), update_package, tx, interactive, relaunch_dashboard).await?;
+    #[allow(clippy::exit)]
+    std::process::exit(0);
 }
 
 async fn update_full_ctx(
@@ -268,9 +270,7 @@ async fn update_full_ctx(
     }
 
     tx.send(UpdateStatus::Exit).await.ok();
-
-    #[allow(clippy::exit)]
-    std::process::exit(0);
+    Ok(())
 }
 
 pub(crate) async fn uninstall_gnome_extension(
@@ -312,7 +312,11 @@ pub(crate) async fn uninstall_desktop(ctx: &Context) -> Result<(), Error> {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use fig_os_shim::Os;
+    use fig_test_utils::TestServer;
+    use fig_test_utils::http::Method;
     use fig_util::CLI_BINARY_NAME;
     use fig_util::directories::home_dir;
 
@@ -373,5 +377,65 @@ mod tests {
         uninstall_desktop(&ctx).await.unwrap();
 
         assert!(!fs.exists(&data_dir_path));
+    }
+
+    #[tokio::test]
+    async fn test_appimage_updates_successfully() {
+        tracing_subscriber::fmt::try_init().ok();
+
+        // Given
+        let ctx = Context::builder().with_test_home().await.unwrap().build_fake();
+        let current_appimage_path = ctx.fs().chroot_path("/app.appimage");
+        unsafe { ctx.env().set_var("APPIMAGE", &current_appimage_path) };
+
+        let test_version = "9.9.9"; // update version
+        let test_fname = "new.exe"; // file name to be downloaded
+        let test_download_path = format!("/{}/{}", test_version, test_fname);
+        let test_script_output_path = ctx.fs().chroot_path("/version");
+        let test_file = format!(
+            "#!/usr/bin/env sh\necho -n '{}' > '{}'",
+            test_version,
+            test_script_output_path.to_string_lossy()
+        );
+        // Create a test server that returns a test script that writes the expected version to a file when
+        // executed.
+        let test_server_addr = TestServer::new()
+            .await
+            .with_mock_response(Method::GET, test_download_path.clone(), test_file.clone())
+            .spawn_listener();
+
+        // When
+        update_full_ctx(
+            &ctx,
+            UpdatePackage {
+                version: semver::Version::from_str(test_version).unwrap(),
+                download_url: Url::from_str(&format!("http://{}{}", test_server_addr, test_download_path)).unwrap(),
+                sha256: fig_test_utils::sha256(test_file.as_bytes()),
+                size: 0, // size not checked
+                cli_path: None,
+            },
+            tokio::sync::mpsc::channel(999).0,
+            false,
+            true,
+        )
+        .await
+        .unwrap();
+
+        // Then
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        assert_eq!(
+            ctx.fs().read_to_string(&current_appimage_path).await.unwrap(),
+            test_file,
+            "The path to the current app image should have been replaced with the update file"
+        );
+        assert_eq!(
+            ctx.fs().read_to_string(&test_script_output_path).await.unwrap(),
+            test_version,
+            "Expected the downloaded file to be executed"
+        );
+        assert!(
+            !ctx.fs().exists(fig_util::directories::update_lock_path(&ctx).unwrap()),
+            "Lock file should have been deleted"
+        );
     }
 }

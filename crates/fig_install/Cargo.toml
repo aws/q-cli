@@ -29,7 +29,7 @@ fig_util.workspace = true
 hex.workspace = true
 regex.workspace = true
 reqwest.workspace = true
-ring = "0.17.8"
+ring.workspace = true
 semver = { version = "1.0.16", features = ["serde"] }
 serde.workspace = true
 serde_json.workspace = true
@@ -50,3 +50,8 @@ security-framework = "3.0.1"
 dbus = { path = "../dbus" }
 tar = "0.4.40"
 zstd = "0.13.1"
+
+[dev-dependencies]
+fig_test_utils.workspace = true
+tracing-subscriber.workspace = true
+
