@@ -319,6 +319,7 @@ mod tests {
     use fig_test_utils::http::Method;
     use fig_util::CLI_BINARY_NAME;
     use fig_util::directories::home_dir;
+    use hex::ToHex;
 
     use super::*;
 
@@ -410,7 +411,7 @@ mod tests {
             UpdatePackage {
                 version: semver::Version::from_str(test_version).unwrap(),
                 download_url: Url::from_str(&format!("http://{}{}", test_server_addr, test_download_path)).unwrap(),
-                sha256: fig_test_utils::sha256(test_file.as_bytes()),
+                sha256: ring::digest::digest(&ring::digest::SHA256, test_file.as_bytes()).encode_hex(),
                 size: 0, // size not checked
                 cli_path: None,
             },
