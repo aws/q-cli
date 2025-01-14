@@ -28,6 +28,7 @@ jobs:
   # Build job
   build:
     runs-on: ubuntu-latest
+    if: github.event.repository.fork == false
     env:
       MDBOOK_VERSION: 0.4.36
     steps:
@@ -49,11 +50,12 @@ jobs:
 
   # Deployment job
   deploy:
+    runs-on: ubuntu-latest
+    if: github.event.repository.fork == false
+    needs: build
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
     steps:
       - name: Deploy to GitHub Pages
         id: deployment

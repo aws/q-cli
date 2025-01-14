@@ -38,6 +38,7 @@ jobs:
       - run: pnpm run test:ci
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
+        if: github.event.repository.fork == false
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage/lcov.info

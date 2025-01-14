@@ -80,8 +80,9 @@ jobs:
         run: cargo +nightly llvm-cov --locked --workspace --codecov --output-path lcov.info
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
+        if: github.event.repository.fork == false
         with:
-          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: lcov.info
           fail_ci_if_error: true
           env_vars: OS
