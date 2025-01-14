@@ -15,8 +15,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: Install protobuf compiler
-        run: sudo apt-get update && sudo apt-get install -y -qq protobuf-compiler libglib2.0-bin
+      - name: Install protobuf compiler and libglib2.0
+        run: sudo apt-get update && sudo apt-get install -y -qq protobuf-compiler libglib2.0-dev-bin
       - name: Cache .turbo folder
         uses: actions/cache@v4
         with:
@@ -51,17 +51,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install protobuf compiler
-        run: sudo apt-get update && sudo apt-get install -y -qq protobuf-compiler libglib2.0-bin
-      - name: Install the Buf CLI
-        uses: bufbuild/buf-setup-action@v1
-        with:
-          github_token: ${{ github.token }}
-      - name: Cache .turbo folder
-        uses: actions/cache@v4
-        with:
-          path: .turbo
-          key: turbo-lint-${{ runner.os }}-${{ github.sha }}
-          restore-keys: turbo-lint-${{ runner.os }}-
+        run: sudo apt-get update && sudo apt-get install -y -qq protobuf-compiler
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
