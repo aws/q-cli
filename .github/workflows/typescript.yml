@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install protobuf compiler
-        run: sudo apt-get update && sudo apt-get install -y -qq protobuf-compiler
+        run: sudo apt-get update && sudo apt-get install -y -qq protobuf-compiler libglib2.0-bin
       - name: Cache .turbo folder
         uses: actions/cache@v4
         with:
@@ -51,7 +51,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install protobuf compiler
-        run: sudo apt-get update && sudo apt-get install -y -qq protobuf-compiler
+        run: sudo apt-get update && sudo apt-get install -y -qq protobuf-compiler libglib2.0-bin
       - name: Install the Buf CLI
         uses: bufbuild/buf-setup-action@v1
         with:
