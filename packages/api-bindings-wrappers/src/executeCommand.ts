@@ -5,8 +5,14 @@
  * vitest is not able to mock it (because of esm restrictions).
  */
 import { withTimeout } from "@aws/amazon-q-developer-cli-shared/utils";
-import { Process } from "@aws/amazon-q-developer-cli-api-bindings";
 import logger from "loglevel";
+import { IpcClient } from "../../ipc-client-core/dist/index.js";
+import {
+  DurationSchema,
+  EnvironmentVariableSchema,
+} from "@aws/amazon-q-developer-cli-proto/fig_common";
+import { RunProcessRequestSchema } from "@aws/amazon-q-developer-cli-proto/remote";
+import { create } from "@bufbuild/protobuf";
 
 export const cleanOutput = (output: string) =>
   output
@@ -17,23 +23,34 @@ export const cleanOutput = (output: string) =>
     .replace(/\n+$/, ""); // strips new lines from end of output
 
 export const executeCommandTimeout = async (
+  ipcClient: IpcClient,
   input: Fig.ExecuteCommandInput,
-  timeout = window.fig.constants?.os === "windows" ? 20000 : 5000,
+  timeout = window?.fig?.constants?.os === "windows" ? 20000 : 5000,
 ): Promise<Fig.ExecuteCommandOutput> => {
-  const command = [input.command, ...input.args].join(" ");
+  const command = [input.command, ...(input.args ?? [])].join(" ");
   try {
     logger.info(`About to run shell command '${command}'`);
     const start = performance.now();
     const result = await withTimeout(
       Math.max(timeout, input.timeout ?? 0),
-      Process.run({
-        executable: input.command,
-        args: input.args,
-        environment: input.env,
-        workingDirectory: input.cwd,
-        terminalSessionId: window.globalTerminalSessionId,
-        timeout: input.timeout,
-      }),
+      ipcClient.runProcess(
+        window.globalTerminalSessionId ?? "",
+        create(RunProcessRequestSchema, {
+          executable: input.command,
+          arguments: input.args,
+          env: Object.entries(input.env ?? {}).map(([key, value]) => {
+            return create(EnvironmentVariableSchema, {
+              key,
+              value,
+            });
+          }),
+          workingDirectory: input.cwd,
+          timeout: create(DurationSchema, {
+            secs: BigInt(Math.floor(timeout / 1000)),
+            nanos: (timeout % 1000) * 1000000,
+          }),
+        }),
+      ),
     );
     const end = performance.now();
     logger.info(`Result of shell command '${command}'`, {

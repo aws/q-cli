@@ -13,19 +13,14 @@ use rustls::{
     RootCertStore,
 };
 
-pub fn create_default_root_cert_store(native_certs: bool) -> RootCertStore {
-    let mut root_cert_store = RootCertStore::empty();
+pub fn create_default_root_cert_store() -> RootCertStore {
+    let mut root_cert_store: RootCertStore = webpki_roots::TLS_SERVER_ROOTS.iter().cloned().collect();
 
-    root_cert_store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
-
-    if native_certs {
-        if let Ok(certs) = rustls_native_certs::load_native_certs() {
-            for cert in certs {
-                // This error is ignored because root certificates often include
-                // ancient or syntactically invalid certificates
-                let _ = root_cert_store.add(cert);
-            }
-        }
+    // The errors are ignored because root certificates often include
+    // ancient or syntactically invalid certificates
+    let rustls_native_certs::CertificateResult { certs, errors: _, .. } = rustls_native_certs::load_native_certs();
+    for cert in certs {
+        let _ = root_cert_store.add(cert);
     }
 
     let custom_cert = std::env::var("Q_CUSTOM_CERT")
@@ -54,7 +49,7 @@ pub fn create_default_root_cert_store(native_certs: bool) -> RootCertStore {
     root_cert_store
 }
 
-fn client_config(native_certs: bool) -> ClientConfig {
+fn client_config() -> ClientConfig {
     let provider = rustls::crypto::CryptoProvider::get_default()
         .cloned()
         .unwrap_or_else(|| Arc::new(rustls::crypto::ring::default_provider()));
@@ -62,19 +57,14 @@ fn client_config(native_certs: bool) -> ClientConfig {
     ClientConfig::builder_with_provider(provider)
         .with_protocol_versions(rustls::DEFAULT_VERSIONS)
         .expect("Failed to set supported TLS versions")
-        .with_root_certificates(create_default_root_cert_store(native_certs))
+        .with_root_certificates(create_default_root_cert_store())
         .with_no_client_auth()
 }
 
-static CLIENT_CONFIG_NATIVE_CERTS: LazyLock<Arc<ClientConfig>> = LazyLock::new(|| Arc::new(client_config(true)));
-static CLIENT_CONFIG_NO_NATIVE_CERTS: LazyLock<Arc<ClientConfig>> = LazyLock::new(|| Arc::new(client_config(false)));
+static CLIENT_CONFIG_NATIVE_CERTS: LazyLock<Arc<ClientConfig>> = LazyLock::new(|| Arc::new(client_config()));
 
-pub fn client_config_cached(native_certs: bool) -> Arc<ClientConfig> {
-    if native_certs {
-        CLIENT_CONFIG_NATIVE_CERTS.clone()
-    } else {
-        CLIENT_CONFIG_NO_NATIVE_CERTS.clone()
-    }
+pub fn client_config_cached() -> Arc<ClientConfig> {
+    CLIENT_CONFIG_NATIVE_CERTS.clone()
 }
 
 static USER_AGENT: LazyLock<String> = LazyLock::new(|| {
@@ -90,14 +80,10 @@ static USER_AGENT: LazyLock<String> = LazyLock::new(|| {
     format!("{name}-{os}-{arch}-{version}")
 });
 
-pub fn user_agent() -> &'static str {
-    &USER_AGENT
-}
-
 pub static CLIENT_NATIVE_CERTS: LazyLock<Option<Client>> = LazyLock::new(|| {
     Some(
         Client::builder()
-            .use_preconfigured_tls((*client_config_cached(true)).clone())
+            .use_preconfigured_tls((*client_config_cached()).clone())
             .user_agent(USER_AGENT.chars().filter(|c| c.is_ascii_graphic()).collect::<String>())
             .cookie_store(true)
             .build()
@@ -105,28 +91,13 @@ pub static CLIENT_NATIVE_CERTS: LazyLock<Option<Client>> = LazyLock::new(|| {
     )
 });
 
-pub static CLIENT_NO_NATIVE_CERTS: LazyLock<Option<Client>> = LazyLock::new(|| {
-    Some(
-        Client::builder()
-            .use_preconfigured_tls((*client_config_cached(false)).clone())
-            .user_agent(USER_AGENT.chars().filter(|c| c.is_ascii_graphic()).collect::<String>())
-            .cookie_store(true)
-            .build()
-            .unwrap(),
-    )
-});
-
-pub fn reqwest_client(native_certs: bool) -> Option<&'static reqwest::Client> {
-    if native_certs {
-        CLIENT_NATIVE_CERTS.as_ref()
-    } else {
-        CLIENT_NO_NATIVE_CERTS.as_ref()
-    }
+pub fn reqwest_client() -> Option<&'static reqwest::Client> {
+    CLIENT_NATIVE_CERTS.as_ref()
 }
 
 pub static CLIENT_NATIVE_CERT_NO_REDIRECT: LazyLock<Option<Client>> = LazyLock::new(|| {
     Client::builder()
-        .use_preconfigured_tls((*client_config_cached(true)).clone())
+        .use_preconfigured_tls((*client_config_cached()).clone())
         .user_agent(USER_AGENT.chars().filter(|c| c.is_ascii_graphic()).collect::<String>())
         .cookie_store(true)
         .redirect(reqwest::redirect::Policy::none())
@@ -144,8 +115,7 @@ mod tests {
 
     #[test]
     fn get_client() {
-        reqwest_client(true).unwrap();
-        reqwest_client(false).unwrap();
+        reqwest_client().unwrap();
         reqwest_client_no_redirect().unwrap();
     }
 
@@ -160,14 +130,13 @@ mod tests {
             .create();
         let url = server.url();
 
-        for client in [reqwest_client(false).unwrap(), reqwest_client(true).unwrap()] {
-            let res = client.get(format!("{url}/hello")).send().await.unwrap();
-            assert_eq!(res.status(), 200);
-            assert_eq!(res.headers()["content-type"], "text/plain");
-            assert_eq!(res.text().await.unwrap(), "world");
-        }
+        let client = reqwest_client().unwrap();
+        let res = client.get(format!("{url}/hello")).send().await.unwrap();
+        assert_eq!(res.status(), 200);
+        assert_eq!(res.headers()["content-type"], "text/plain");
+        assert_eq!(res.text().await.unwrap(), "world");
 
-        mock.expect(2).assert();
+        mock.expect(1).assert();
     }
 
     #[tokio::test]

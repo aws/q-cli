@@ -28,15 +28,19 @@ import {
 import { DisabledSpecError, MissingSpecError } from "./errors.js";
 import { specCache } from "./caches.js";
 import { tryResolveSpecToSubcommand } from "./tryResolveSpecToSubcommand.js";
+import { IpcClient } from "../../ipc-client-core/dist/index.js";
 
 /**
  * This searches for the first directory containing a .fig/ folder in the parent directories
  */
-const searchFigFolder = async (currentDirectory: string) => {
+const searchFigFolder = async (
+  ipcClient: IpcClient,
+  currentDirectory: string,
+) => {
   try {
     return ensureTrailingSlash(
       (
-        await executeCommand({
+        await executeCommand(ipcClient)({
           command: "bash",
           args: [
             "-c",
@@ -59,13 +63,14 @@ export const serializeSpecLocation = (location: SpecLocation): string => {
 };
 
 export const getSpecPath = async (
+  ipcClient: IpcClient,
   name: string,
   cwd: string,
   isScript?: boolean,
 ): Promise<SpecLocation> => {
   if (name === "?") {
     // If the user is searching for _shortcuts.js by using "?"
-    const path = await searchFigFolder(cwd);
+    const path = await searchFigFolder(ipcClient, cwd);
     return { name: "_shortcuts", type: SpecLocationSource.LOCAL, path };
   }
 
@@ -197,6 +202,7 @@ export const importSpecFromLocation = async (
 };
 
 export const loadFigSubcommand = async (
+  ipcClient: IpcClient,
   specLocation: SpecLocation,
   _context?: Fig.ShellContext,
   localLogger: Logger = logger,
@@ -206,11 +212,16 @@ export const loadFigSubcommand = async (
     ? { ...specLocation, diffVersionedFile: "index" }
     : specLocation;
   const { specFile } = await importSpecFromLocation(location, localLogger);
-  const subcommand = await tryResolveSpecToSubcommand(specFile, specLocation);
+  const subcommand = await tryResolveSpecToSubcommand(
+    ipcClient,
+    specFile,
+    specLocation,
+  );
   return subcommand;
 };
 
 export const loadSubcommandCached = async (
+  ipcClient: IpcClient,
   specLocation: SpecLocation,
   context?: Fig.ShellContext,
   localLogger: Logger = logger,
@@ -237,7 +248,7 @@ export const loadSubcommandCached = async (
 
   const subcommand = await withTimeout(
     5000,
-    loadFigSubcommand(specLocation, context, localLogger),
+    loadFigSubcommand(ipcClient, specLocation, context, localLogger),
   );
   const converted = convertSubcommand(subcommand, initializeDefault);
   specCache.set(key, converted);

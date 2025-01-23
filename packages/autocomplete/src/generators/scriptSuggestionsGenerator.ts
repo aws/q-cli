@@ -6,8 +6,10 @@ import {
   haveContextForGenerator,
   runCachedGenerator,
 } from "./helpers";
+import { IpcClient } from "@aws/amazon-q-developer-cli-ipc-client-core";
 
 export async function getScriptSuggestions(
+  ipcClient: IpcClient,
   generator: Fig.Generator,
   context: GeneratorContext,
   defaultTimeout: number,
@@ -59,7 +61,7 @@ export async function getScriptSuggestions(
     const { stdout } = await runCachedGenerator(
       generator,
       context,
-      () => executeCommandTimeout(executeCommandInput, timeout),
+      () => executeCommandTimeout(ipcClient, executeCommandInput, timeout),
       generator.cache?.cacheKey ?? JSON.stringify(executeCommandInput),
     );
 

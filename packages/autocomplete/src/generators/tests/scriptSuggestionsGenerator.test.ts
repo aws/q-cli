@@ -1,28 +1,14 @@
-import * as apiBindingsWrappers from "@aws/amazon-q-developer-cli-api-bindings-wrappers/executeCommand";
-
-import { Annotation } from "@aws/amazon-q-developer-cli-autocomplete-parser";
-import {
-  MockInstance,
-  afterEach,
-  beforeAll,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
 import * as helpers from "../helpers";
-import { GeneratorContext } from "../helpers";
+import { Annotation } from "@aws/amazon-q-developer-cli-autocomplete-parser";
+import { describe, expect, it, vi } from "vitest";
 import { getScriptSuggestions } from "../scriptSuggestionsGenerator";
+import { IpcClient } from "@aws/amazon-q-developer-cli-ipc-client-core";
+import { create } from "@bufbuild/protobuf";
+import { afterEach } from "node:test";
+import { RunProcessResponseSchema } from "@aws/amazon-q-developer-cli-proto/fig";
+import { RunProcessRequestSchema } from "@aws/amazon-q-developer-cli-proto/remote";
 
-vi.mock(
-  "@aws/amazon-q-developer-cli-api-bindings-wrappers/src/executeCommand",
-  async () =>
-    vi.importActual(
-      "@aws/amazon-q-developer-cli-api-bindings-wrappers/src/executeCommand",
-    ),
-);
-
-const context: GeneratorContext = {
+const context: helpers.GeneratorContext = {
   annotations: [] as Annotation[],
   tokenArray: [] as string[],
   currentWorkingDirectory: "/",
@@ -32,35 +18,42 @@ const context: GeneratorContext = {
   environmentVariables: {},
 };
 
-describe.todo("getScriptSuggestions", () => {
-  let executeCommand: MockInstance;
-
-  beforeAll(() => {
-    vi.spyOn(helpers, "runCachedGenerator");
-    executeCommand = vi
-      .spyOn(apiBindingsWrappers, "executeCommandTimeout")
-      .mockResolvedValue({ status: 0, stdout: "a/\nx\nc/\nl", stderr: "" });
-  });
+describe("getScriptSuggestions", () => {
+  const ipcClient = {
+    runProcess: vi.fn(async (_sessionId, _request) => {
+      return create(RunProcessResponseSchema, {
+        exitCode: 0,
+        stdout: "a/\nx\nc/\nl",
+        stderr: "",
+      });
+    }),
+  } as Partial<IpcClient> as IpcClient;
 
   afterEach(() => {
     vi.clearAllMocks();
   });
 
   it("should return empty suggestions if no script in generator", async () => {
-    expect(await getScriptSuggestions({ script: [] }, context, 5000)).toEqual(
-      [],
-    );
+    expect(
+      await getScriptSuggestions(ipcClient, { script: [] }, context, 5000),
+    ).toEqual([]);
   });
 
   it("should return empty suggestions if no splitOn or postProcess", async () => {
     expect(
-      await getScriptSuggestions({ script: ["ascript"] }, context, 5000),
+      await getScriptSuggestions(
+        ipcClient,
+        { script: ["ascript"] },
+        context,
+        5000,
+      ),
     ).toEqual([]);
   });
 
   it("should return the result with splitOn", async () => {
     expect(
       await getScriptSuggestions(
+        ipcClient,
         { script: ["ascript"], splitOn: "\n" },
         context,
         5000,
@@ -80,6 +73,7 @@ describe.todo("getScriptSuggestions", () => {
 
     expect(
       await getScriptSuggestions(
+        ipcClient,
         { script: ["ascript"], postProcess },
         context,
         5000,
@@ -99,6 +93,7 @@ describe.todo("getScriptSuggestions", () => {
 
     expect(
       await getScriptSuggestions(
+        ipcClient,
         { script: ["ascript"], postProcess },
         context,
         5000,
@@ -112,74 +107,110 @@ describe.todo("getScriptSuggestions", () => {
 
   it("should call script if provided", async () => {
     const script = vi.fn().mockReturnValue("myscript");
-    await getScriptSuggestions({ script }, context, 5000);
+    await getScriptSuggestions(ipcClient, { script }, context, 5000);
     expect(script).toHaveBeenCalledWith([]);
   });
 
-  // it("should call runCachedGenerator", async () => {
-  //   await getScriptSuggestions({ script: "ascript" }, context, 5000);
-  //   expect(runCachedGenerator).toHaveBeenCalled();
-  // });
+  it("should call runCachedGenerator", async () => {
+    const runCachedGenerator = vi.spyOn(helpers, "runCachedGenerator");
+    await getScriptSuggestions(
+      ipcClient,
+      { script: ["ascript"] },
+      context,
+      5000,
+    );
+    expect(runCachedGenerator).toHaveBeenCalled();
+  });
 
   it("should call executeCommand", async () => {
-    await getScriptSuggestions({ script: ["ascript"] }, context, 5000);
-    expect(executeCommand).toHaveBeenCalledWith(
-      {
-        args: [],
-        command: "ascript",
-        cwd: "/",
-      },
+    await getScriptSuggestions(
+      ipcClient,
+      { script: ["ascript"] },
+      context,
       5000,
+    );
+    expect(ipcClient.runProcess).toHaveBeenCalledWith(
+      "",
+      create(RunProcessRequestSchema, {
+        executable: "ascript",
+        arguments: [],
+        workingDirectory: "/",
+      }),
     );
   });
 
   it("should call executeCommand with 'spec-specified' timeout", async () => {
     await getScriptSuggestions(
+      ipcClient,
       { script: ["ascript"], scriptTimeout: 6000 },
       context,
       5000,
     );
-    expect(executeCommand).toHaveBeenCalledWith(
-      { args: [], command: "ascript", cwd: "/" },
-      6000,
+    expect(ipcClient.runProcess).toHaveBeenCalledWith(
+      "",
+      create(RunProcessRequestSchema, {
+        executable: "ascript",
+        arguments: [],
+        workingDirectory: "/",
+      }),
     );
   });
 
   it("should use the greatest between the settings timeout and the spec defined one", async () => {
     await getScriptSuggestions(
+      ipcClient,
       { script: ["ascript"], scriptTimeout: 3500 },
       context,
       7000,
     );
-    expect(executeCommand).toHaveBeenCalledWith(
-      { args: [], command: "ascript", cwd: "/" },
-      7000,
+    expect(ipcClient.runProcess).toHaveBeenCalledWith(
+      "",
+      create(RunProcessRequestSchema, {
+        executable: "ascript",
+        arguments: [],
+        workingDirectory: "/",
+      }),
     );
   });
 
   it("should call executeCommand without timeout when the user defined ones are negative", async () => {
     await getScriptSuggestions(
+      ipcClient,
       { script: ["ascript"], scriptTimeout: -100 },
       context,
       -1000,
     );
-    expect(executeCommand).toHaveBeenCalledWith(
-      { args: [], command: "ascript", cwd: "/" },
-      undefined,
+    expect(ipcClient.runProcess).toHaveBeenCalledWith(
+      "",
+      create(RunProcessRequestSchema, {
+        executable: "ascript",
+        arguments: [],
+        workingDirectory: "/",
+      }),
     );
   });
 
   it("should call executeCommand with settings timeout when no 'spec-specified' one is defined", async () => {
-    await getScriptSuggestions({ script: ["ascript"] }, context, 6000);
-    expect(executeCommand).toHaveBeenCalledWith(
-      { args: [], command: "ascript", cwd: "/" },
+    await getScriptSuggestions(
+      ipcClient,
+      { script: ["ascript"] },
+      context,
       6000,
+    );
+    expect(ipcClient.runProcess).toHaveBeenCalledWith(
+      "",
+      create(RunProcessRequestSchema, {
+        executable: "ascript",
+        arguments: [],
+        workingDirectory: "/",
+      }),
     );
   });
 
   describe("deprecated sshPrefix", () => {
     it("should call executeCommand ignoring ssh", async () => {
       await getScriptSuggestions(
+        ipcClient,
         { script: ["ascript"] },
         {
           ...context,
@@ -188,9 +219,13 @@ describe.todo("getScriptSuggestions", () => {
         5000,
       );
 
-      expect(executeCommand).toHaveBeenCalledWith(
-        { args: [], command: "ascript", cwd: "/" },
-        5000,
+      expect(ipcClient.runProcess).toHaveBeenCalledWith(
+        "",
+        create(RunProcessRequestSchema, {
+          executable: "ascript",
+          arguments: [],
+          workingDirectory: "/",
+        }),
       );
     });
   });

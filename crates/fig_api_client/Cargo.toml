@@ -39,9 +39,8 @@ strum = { version = "0.26.1", features = ["derive"] }
 thiserror.workspace = true
 time.workspace = true
 tokio.workspace = true
-tower = "0.5.1"
 tracing.workspace = true
-url = { version = "2.5.4", features = ["serde"] }
+url = { workspace = true, features = ["serde"] }
 which.workspace = true
 
 [dev-dependencies]

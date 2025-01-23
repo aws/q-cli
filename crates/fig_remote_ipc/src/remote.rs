@@ -26,11 +26,11 @@ use fig_proto::remote::clientbound::request::Request;
 use fig_proto::remote::clientbound::{
     self,
     HandshakeResponse,
-    RunProcessRequest,
 };
 use fig_proto::remote::{
     Clientbound,
     Hostbound,
+    RunProcessRequest,
     hostbound,
 };
 use fig_util::PTY_BINARY_NAME;
@@ -53,13 +53,13 @@ use tracing::{
     trace,
     warn,
 };
+use uuid::Uuid;
 
 use crate::RemoteHookHandler;
 use crate::figterm::{
     EditBuffer,
     FigtermCommand,
     FigtermSession,
-    FigtermSessionId,
     FigtermState,
     InterceptMode,
 };
@@ -114,7 +114,8 @@ pub async fn handle_remote_ipc(
 
     let ping_task = tokio::spawn(send_pings(clientbound_tx.clone(), on_close_tx.subscribe()));
 
-    let mut session_id: Option<FigtermSessionId> = None;
+    let mut initialized = false;
+    let session_id = Uuid::new_v4();
 
     let mut reader = BufferedReader::new(reader);
     loop {
@@ -125,70 +126,66 @@ pub async fn handle_remote_ipc(
             }
             message = reader.recv_message::<Hostbound>() => match message {
                 Ok(Some(message)) => {
-                    debug!(?message, "Received remote message");
+                    trace!(?message, "Received remote message");
                     if let Some(response) = match message.packet {
                         Some(hostbound::Packet::Handshake(handshake)) => {
-                            let result = if session_id.is_some() {
+                            let result = if initialized {
                                 // maybe they missed our response, but they should've been listening harder
                                 Some(clientbound::Packet::HandshakeResponse(HandshakeResponse {
                                     success: false,
                                 }))
-                            } else {
-                                let id = FigtermSessionId::new(&handshake.id);
-
-                                if let Some(success) = figterm_state.with_update(id.clone(), |session| {
-                                    if session.secret == handshake.secret {
-                                        session_id = Some(id);
-                                        session.writer = Some(clientbound_tx.clone());
-                                        session.dead_since = None;
-                                        session.on_close_tx = on_close_tx.clone();
-                                        debug!(
-                                            "Client auth for {} accepted because of secret match ({} = {})",
-                                            handshake.id, session.secret, handshake.secret
-                                        );
-                                        true
-                                    } else {
-                                        debug!(
-                                            "Client auth for {} rejected because of secret mismatch ({} =/= {})",
-                                            handshake.id, session.secret, handshake.secret
-                                        );
-                                        false
-                                    }
-                                }) {
-                                    Some(clientbound::Packet::HandshakeResponse(HandshakeResponse { success }))
-                                } else {
-                                    let id = FigtermSessionId::new(&handshake.id);
-                                    session_id = Some(id.clone());
-                                    let (command_tx, command_rx) = flume::unbounded();
-                                    tokio::spawn(handle_commands(command_rx, figterm_state.clone(), id.clone()));
-                                    figterm_state.insert(FigtermSession {
-                                        id,
-                                        secret: handshake.secret.clone(),
-                                        sender: command_tx,
-                                        writer: Some(clientbound_tx.clone()),
-                                        dead_since: None,
-                                        last_receive: Instant::now(),
-                                        edit_buffer: EditBuffer {
-                                            text: "".to_string(),
-                                            cursor: 0,
-                                        },
-                                        context: None,
-                                        terminal_cursor_coordinates: None,
-                                        current_session_metrics: None,
-                                        response_map: HashMap::new(),
-                                        nonce_counter: Arc::new(AtomicU64::new(0)),
-                                        on_close_tx: on_close_tx.clone(),
-                                        intercept: InterceptMode::Unlocked,
-                                        intercept_global: InterceptMode::Unlocked
-                                    });
+                            } else if let Some(success) = figterm_state.with_update(session_id, |session| {
+                                if session.secret == handshake.secret {
+                                    initialized = true;
+                                    session.writer = Some(clientbound_tx.clone());
+                                    session.dead_since = None;
+                                    session.on_close_tx = on_close_tx.clone();
                                     debug!(
-                                        "Client auth for {} accepted because of new id with secret {}",
-                                        handshake.id, handshake.secret
+                                        "Client auth for {} accepted because of secret match ({} = {})",
+                                        handshake.id, session.secret, handshake.secret
                                     );
-                                    Some(clientbound::Packet::HandshakeResponse(HandshakeResponse {
-                                        success: true,
-                                    }))
+                                    true
+                                } else {
+                                    debug!(
+                                        "Client auth for {} rejected because of secret mismatch ({} =/= {})",
+                                        handshake.id, session.secret, handshake.secret
+                                    );
+                                    false
                                 }
+                            }) {
+                                Some(clientbound::Packet::HandshakeResponse(HandshakeResponse { success }))
+                            } else {
+                                initialized = true;
+                                let (command_tx, command_rx) = flume::unbounded();
+                                tokio::spawn(handle_commands(command_rx, figterm_state.clone(), session_id));
+                                debug!(
+                                    "Client auth for {} accepted because of new id with secret {}",
+                                    handshake.id, handshake.secret
+                                );
+                                figterm_state.insert(FigtermSession {
+                                    id: session_id,
+                                    external_id: handshake.id,
+                                    secret: handshake.secret.clone(),
+                                    sender: command_tx,
+                                    writer: Some(clientbound_tx.clone()),
+                                    dead_since: None,
+                                    last_receive: Instant::now(),
+                                    edit_buffer: EditBuffer {
+                                        text: "".to_string(),
+                                        cursor: 0,
+                                    },
+                                    context: None,
+                                    terminal_cursor_coordinates: None,
+                                    current_session_metrics: None,
+                                    response_map: HashMap::new(),
+                                    nonce_counter: Arc::new(AtomicU64::new(0)),
+                                    on_close_tx: on_close_tx.clone(),
+                                    intercept: InterceptMode::Unlocked,
+                                    intercept_global: InterceptMode::Unlocked
+                                });
+                                Some(clientbound::Packet::HandshakeResponse(HandshakeResponse {
+                                    success: true,
+                                }))
                             };
 
                             if matches!(result, Some(clientbound::Packet::HandshakeResponse(HandshakeResponse { success: true }))) {
@@ -219,7 +216,7 @@ pub async fn handle_remote_ipc(
                                 | hostbound::request::Request::Prompt(_)
                                 | hostbound::request::Request::PreExec(_)
                                 | hostbound::request::Request::InterceptedKey(_)
-                            ) && session_id.is_none() {
+                            ) && !initialized {
                                 debug!("Client tried to send remote hook without auth");
                                 Some(clientbound::Packet::HandshakeResponse(HandshakeResponse {
                                     success: false,
@@ -231,7 +228,6 @@ pub async fn handle_remote_ipc(
                                 */
                                 let res = match request {
                                     hostbound::request::Request::EditBuffer(mut edit_buffer) => {
-                                        let session_id = session_id.as_ref().expect("unreachable");
                                         sanitize_fn(&mut edit_buffer.context, session_id);
                                         if let Some(shell_context) = &edit_buffer.context {
                                             hook.shell_context(shell_context, session_id).await;
@@ -244,7 +240,6 @@ pub async fn handle_remote_ipc(
                                         .await
                                     },
                                     hostbound::request::Request::Prompt(mut prompt) => {
-                                        let session_id = session_id.as_ref().expect("unreachable");
                                         sanitize_fn(&mut prompt.context, session_id);
                                         if let Some(shell_context) = &prompt.context {
                                             hook.shell_context(shell_context, session_id).await;
@@ -252,7 +247,6 @@ pub async fn handle_remote_ipc(
                                         hook.prompt(&prompt, session_id, &figterm_state).await
                                     },
                                     hostbound::request::Request::PreExec(mut pre_exec) => {
-                                        let session_id = session_id.as_ref().expect("unreachable");
                                         sanitize_fn(&mut pre_exec.context, session_id);
                                         if let Some(shell_context) = &pre_exec.context {
                                             hook.shell_context(shell_context, session_id).await;
@@ -260,7 +254,6 @@ pub async fn handle_remote_ipc(
                                         hook.pre_exec(&pre_exec, session_id, &figterm_state).await
                                     },
                                     hostbound::request::Request::PostExec(mut post_exec) => {
-                                        let session_id = session_id.as_ref().expect("unreachable");
                                         sanitize_fn(&mut post_exec.context, session_id);
                                         if let Some(shell_context) = &post_exec.context {
                                             hook.shell_context(shell_context, session_id).await;
@@ -268,16 +261,12 @@ pub async fn handle_remote_ipc(
                                         hook.post_exec(&post_exec, session_id, &figterm_state).await
                                     },
                                     hostbound::request::Request::InterceptedKey(mut intercepted_key) => {
-                                        let session_id = session_id.as_ref().expect("unreachable");
                                         sanitize_fn(&mut intercepted_key.context, session_id);
                                         if let Some(shell_context) = &intercepted_key.context {
                                             hook.shell_context(shell_context, session_id).await;
                                         }
-                                        hook.intercepted_key(intercepted_key).await
+                                        hook.intercepted_key(intercepted_key, session_id).await
                                     },
-                                    hostbound::request::Request::AccountInfo(_) => hook.account_info().await,
-                                    hostbound::request::Request::StartExchangeCredentials(_) => hook.start_exchange_credentials().await,
-                                    hostbound::request::Request::ConfirmExchangeCredentials(_) => hook.confirm_exchange_credentials().await,
                                 } ;
 
                                 match res {
@@ -293,24 +282,21 @@ pub async fn handle_remote_ipc(
                             nonce,
                             response: Some(response),
                         })) => {
-                            if let Some(nonce) = nonce {
-                                session_id
-                                    .as_ref()
-                                    .and_then(|session_id| {
-                                        figterm_state.with(session_id, |session| session.response_map.remove(&nonce))
-                                    })
-                                    .flatten()
-                                    .map(|channel| channel.send(response));
+                            if initialized {
+                                if let Some(nonce) = nonce {
+                                    figterm_state
+                                        .with(&session_id, |session| session.response_map.remove(&nonce))
+                                        .flatten()
+                                        .map(|channel| channel.send(response));
+                                }
                             }
                             None
                         },
                         Some(hostbound::Packet::Pong(())) => {
                             trace!(?session_id, "Received pong");
-                            if let Some(session_id) = &session_id {
-                                figterm_state.with(session_id, |session| {
-                                    session.last_receive = Instant::now();
-                                });
-                            }
+                            figterm_state.with(&session_id, |session| {
+                                session.last_receive = Instant::now();
+                            });
                             None
                         },
                         Some(hostbound::Packet::Request(hostbound::Request { request: None, .. })
@@ -340,13 +326,11 @@ pub async fn handle_remote_ipc(
     let _ = on_close_tx.send(());
     drop(clientbound_tx);
 
-    if let Some(session_id) = &session_id {
-        // figterm_state.with_update(session_id.clone(), |session| {
-        //     session.writer = None;
-        //     session.dead_since = Some(Instant::now());
-        // });
-        figterm_state.remove_id(session_id);
-    }
+    // figterm_state.with_update(session_id.clone(), |session| {
+    //     session.writer = None;
+    //     session.dead_since = Some(Instant::now());
+    // });
+    figterm_state.remove_id(&session_id);
 
     if let Err(err) = ping_task.await {
         error!(%err, "remote ping task join error");
@@ -373,11 +357,7 @@ async fn handle_outgoing(
             },
             message = outgoing.recv_async() => {
                 if let Ok(message) = message {
-                    if matches!(message, Clientbound { packet: Some(clientbound::Packet::Ping(_)) }) {
-                        trace!(?message, "Sending remote message");
-                    } else {
-                        debug!(?message, "Sending remote message");
-                    }
+                    trace!(?message, "Sending remote message");
                     if let Err(err) = writer.send_message(message).await {
                         error!(%err, "remote outgoing task send error");
                         bad_connection.notify_one();
@@ -395,7 +375,7 @@ async fn handle_outgoing(
 async fn handle_commands(
     incoming: flume::Receiver<FigtermCommand>,
     figterm_state: Arc<FigtermState>,
-    session_id: FigtermSessionId,
+    session_id: Uuid,
 ) -> Option<()> {
     while let Ok(command) = incoming.recv_async().await {
         let (request, nonce_channel) = match command {
@@ -452,12 +432,14 @@ async fn handle_commands(
                 arguments,
                 working_directory,
                 env,
+                timeout,
             } => (
                 Request::RunProcess(RunProcessRequest {
                     executable,
                     arguments,
                     working_directory,
                     env,
+                    timeout: timeout.map(Into::into),
                 }),
                 Some(channel),
             ),
@@ -519,8 +501,8 @@ async fn send_pings(outgoing: flume::Sender<Clientbound>, mut on_close_rx: tokio
 
 // This has to be used to sanitize as a hook can contain an invalid session_id and it must
 // be sanitized before being sent to any consumers
-fn sanitize_fn(context: &mut Option<ShellContext>, session_id: &FigtermSessionId) {
+fn sanitize_fn(context: &mut Option<ShellContext>, session_id: Uuid) {
     if let Some(context) = context {
-        context.session_id = Some(session_id.clone().to_string());
+        context.session_id = Some(session_id.to_string());
     }
 }

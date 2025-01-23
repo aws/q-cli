@@ -1,9 +1,9 @@
 use fig_proto::fig::InsertTextRequest;
 use fig_remote_ipc::figterm::{
     FigtermCommand,
-    FigtermSessionId,
     FigtermState,
 };
+use uuid::Uuid;
 
 use super::{
     RequestResult,
@@ -33,9 +33,10 @@ pub async fn insert_text(request: InsertTextRequest, state: &FigtermState) -> Re
         None => return RequestResult::error("InsertTextRequest expects a request type"),
     };
 
-    match state.with_maybe_id(&request.terminal_session_id.map(FigtermSessionId::new), |session| {
-        session.sender.clone()
-    }) {
+    let uuid_str = request.terminal_session_id.ok_or("terminal_session_id is required")?;
+    let uuid = Uuid::parse_str(&uuid_str).map_err(|err| format!("terminal_session_id is not a valid UUID: {err}"))?;
+
+    match state.with(&uuid, |session| session.sender.clone()) {
         Some(sender) => {
             sender
                 .send(figterm_command)

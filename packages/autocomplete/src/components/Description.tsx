@@ -1,8 +1,8 @@
-import { useEffect, useCallback, useRef, useMemo } from "react";
+import React, { useEffect, useCallback, useRef, useMemo } from "react";
 import { Suggestion, Arg } from "@aws/amazon-q-developer-cli-shared/internal";
 import { getMaxHeight, POPOUT_WIDTH } from "../window";
-import { useAutocompleteStore } from "../state";
 import { AutocompleteAction } from "../actions";
+import { useAutocomplete } from "../state";
 
 export type DescriptionPosition = "unknown" | "left" | "right";
 
@@ -24,7 +24,7 @@ const Description = ({
   height,
 }: DescriptionProps) => {
   const descriptionRef = useRef<HTMLDivElement>(null);
-  const { settings } = useAutocompleteStore();
+  const { settings } = useAutocomplete();
 
   const hint = useMemo(() => {
     const keys = Object.entries(settings).reduce((acc, pair) => {
@@ -102,7 +102,7 @@ const Description = ({
   }
 
   const emptyDescription = (
-    <span className="text-[#8c8c8c]">No description</span>
+    <span className="empty-description text-[#8c8c8c]">No description</span>
   );
 
   if (!hasSuggestions || position === "unknown") {
@@ -111,10 +111,10 @@ const Description = ({
       <div
         id="description"
         ref={descriptionRef}
-        className={hasSuggestions ? "withSuggestions" : "px-2"}
+        className={`description-container ${hasSuggestions ? "withSuggestions" : "px-2"}`}
         style={{ height: stackNameAndDescription ? height * 2 : height }}
       >
-        <span className="scrollbar-none flex-shrink overflow-x-auto overflow-y-hidden">
+        <span className="description-scrollable-area scrollbar-none flex-shrink overflow-x-auto overflow-y-hidden">
           {name && <strong>{name}</strong>}
           {name && description && ": "}
           {stackNameAndDescription && <br />}

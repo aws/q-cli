@@ -3,7 +3,10 @@ use std::path::{
     Path,
     PathBuf,
 };
-use std::time::SystemTime;
+use std::time::{
+    Duration,
+    SystemTime,
+};
 
 use alacritty_terminal::Term;
 use alacritty_terminal::term::ShellState;
@@ -142,6 +145,8 @@ fn create_command(executable: impl AsRef<Path>, working_directory: impl AsRef<Pa
         ("TERM", "xterm-256color"),
         ("NO_COLOR", "1"),
     ]);
+
+    cmd.kill_on_drop(true);
 
     cmd
 }
@@ -469,8 +474,12 @@ pub async fn process_remote_message(
 
                     tokio::spawn(async move {
                         debug!("running command");
-                        let response = match cmd.output().await {
-                            Ok(output) => {
+
+                        let timeout_duration = request.timeout.map_or(Duration::from_secs(60), Into::into);
+                        let command_timeout = tokio::time::timeout(timeout_duration, cmd.output());
+
+                        let response = match command_timeout.await {
+                            Ok(Ok(output)) => {
                                 debug!("command successfully ran");
                                 make_response(Response::RunProcess(RunProcessResponse {
                                     stdout: String::from_utf8_lossy(&output.stdout).to_string(),
@@ -478,11 +487,24 @@ pub async fn process_remote_message(
                                     exit_code: output.status.code().unwrap_or(0),
                                 }))
                             },
-                            Err(err) => {
+                            Ok(Err(err)) => {
                                 warn!(%err, executable = request.executable, "failed running executable");
                                 make_response(Response::Error(format!(
                                     "failed running executable ({}): {err}",
                                     request.executable
+                                )))
+                            },
+                            Err(err) => {
+                                warn!(
+                                    %err,
+                                    executable = request.executable,
+                                    timeout_ms =% timeout_duration.as_millis(),
+                                    "timed out running executable"
+                                );
+                                make_response(Response::Error(format!(
+                                    "timed out after {}ms running executable ({}): {err}",
+                                    timeout_duration.as_millis(),
+                                    request.executable,
                                 )))
                             },
                         };

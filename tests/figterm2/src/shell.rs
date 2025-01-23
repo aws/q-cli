@@ -20,10 +20,7 @@ use fig_proto::local::{
 };
 use fig_proto::remote::clientbound;
 use fig_remote_ipc::RemoteHookHandler;
-use fig_remote_ipc::figterm::{
-    FigtermSessionId,
-    FigtermState,
-};
+use fig_remote_ipc::figterm::FigtermState;
 use fig_util::RUNTIME_DIR_NAME;
 use portable_pty::{
     Child,
@@ -35,6 +32,7 @@ use portable_pty::{
 use tempfile::TempDir;
 use tokio::net::UnixListener;
 use tokio::sync::Mutex;
+use uuid::Uuid;
 
 #[derive(Debug, Clone)]
 struct RemoteHook {
@@ -49,7 +47,7 @@ impl RemoteHookHandler for RemoteHook {
     async fn edit_buffer(
         &mut self,
         edit_buffer_hook: &EditBufferHook,
-        _session_id: &FigtermSessionId,
+        _session_id: Uuid,
         _figterm_state: &Arc<FigtermState>,
     ) -> Result<Option<clientbound::response::Response>, Self::Error> {
         *self.buffer.lock().await = Some(edit_buffer_hook.text.clone());
@@ -59,7 +57,7 @@ impl RemoteHookHandler for RemoteHook {
     async fn prompt(
         &mut self,
         _prompt_hook: &PromptHook,
-        _session_id: &FigtermSessionId,
+        _session_id: Uuid,
         _figterm_state: &Arc<FigtermState>,
     ) -> Result<Option<clientbound::response::Response>, Self::Error> {
         Ok(None)
@@ -68,7 +66,7 @@ impl RemoteHookHandler for RemoteHook {
     async fn pre_exec(
         &mut self,
         _pre_exec_hook: &PreExecHook,
-        _session_id: &FigtermSessionId,
+        _session_id: Uuid,
         _figterm_state: &Arc<FigtermState>,
     ) -> Result<Option<clientbound::response::Response>, Self::Error> {
         Ok(None)
@@ -77,7 +75,7 @@ impl RemoteHookHandler for RemoteHook {
     async fn post_exec(
         &mut self,
         _post_exec_hook: &PostExecHook,
-        _session_id: &FigtermSessionId,
+        _session_id: Uuid,
         _figterm_state: &Arc<FigtermState>,
     ) -> Result<Option<clientbound::response::Response>, Self::Error> {
         Ok(None)
@@ -86,23 +84,12 @@ impl RemoteHookHandler for RemoteHook {
     async fn intercepted_key(
         &mut self,
         _intercepted_key: InterceptedKeyHook,
+        _session_id: Uuid,
     ) -> Result<Option<clientbound::response::Response>, Self::Error> {
         Ok(None)
     }
 
-    async fn account_info(&mut self) -> Result<Option<clientbound::response::Response>, Self::Error> {
-        Err(anyhow::anyhow!("account_info not implemented"))
-    }
-
-    async fn start_exchange_credentials(&mut self) -> Result<Option<clientbound::response::Response>, Self::Error> {
-        Err(anyhow::anyhow!("start_exchange_credentials not implemented"))
-    }
-
-    async fn confirm_exchange_credentials(&mut self) -> Result<Option<clientbound::response::Response>, Self::Error> {
-        Err(anyhow::anyhow!("confirm_exchange_credentials not implemented"))
-    }
-
-    async fn shell_context(&mut self, context: &ShellContext, _session_id: &FigtermSessionId) {
+    async fn shell_context(&mut self, context: &ShellContext, _session_id: Uuid) {
         *self.shell_context.lock().await = Some(context.clone());
     }
 }

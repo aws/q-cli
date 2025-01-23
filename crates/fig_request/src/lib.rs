@@ -1,6 +1,6 @@
 mod error;
 pub mod midway;
-pub mod reqwest_client;
+mod reqwest_client;
 
 pub use error::Error;
 pub use reqwest;
@@ -11,7 +11,7 @@ pub use reqwest::{
 };
 
 pub fn client() -> Option<&'static Client> {
-    reqwest_client::reqwest_client(true)
+    reqwest_client::reqwest_client()
 }
 
 pub fn client_no_redirect() -> Option<&'static Client> {

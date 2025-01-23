@@ -8,7 +8,6 @@ use fig_proto::fig::{
 use fig_proto::remote::hostbound;
 use fig_remote_ipc::figterm::{
     FigtermCommand,
-    FigtermSessionId,
     FigtermState,
 };
 use fig_util::env_var::{
@@ -18,6 +17,7 @@ use fig_util::env_var::{
 use tokio::process::Command;
 use tokio::time::timeout;
 use tracing::debug;
+use uuid::Uuid;
 
 use super::RequestResult;
 
@@ -40,9 +40,14 @@ pub async fn run(request: RunProcessRequest, state: &FigtermState) -> RequestRes
         timeout =? request.timeout,
     }, "Running command");
 
-    let session_sender = state.with_maybe_id(&request.terminal_session_id.map(FigtermSessionId::new), |session| {
-        session.sender.clone()
-    });
+    let uuid = request
+        .terminal_session_id
+        .as_deref()
+        .map(Uuid::parse_str)
+        .transpose()
+        .map_err(|err| format!("terminal_session_id is not a valid UUID: {err}"))?;
+
+    let session_sender = state.with_maybe_id(&uuid, |session| session.sender.clone());
 
     if let Some(session_sender) = session_sender {
         let (message, rx) = FigtermCommand::run_process(
@@ -50,6 +55,7 @@ pub async fn run(request: RunProcessRequest, state: &FigtermState) -> RequestRes
             request.arguments,
             request.working_directory,
             request.env,
+            request.timeout.map(Into::into),
         );
         session_sender
             .send(message)

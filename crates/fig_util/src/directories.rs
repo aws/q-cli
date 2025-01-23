@@ -214,7 +214,7 @@ fn macos_tempdir() -> Result<PathBuf> {
 /// The XDG_RUNTIME_DIR is set by systemd <https://www.freedesktop.org/software/systemd/man/latest/file-hierarchy.html#/run/user/>,
 /// if this is not set such as on macOS it will fallback to TMPDIR which is secure on macOS
 #[cfg(unix)]
-fn runtime_dir() -> Result<PathBuf> {
+pub fn runtime_dir() -> Result<PathBuf> {
     let mut dir = dirs::runtime_dir();
     dir = dir.or_else(|| std::env::var_os("TMPDIR").map(PathBuf::from));
 

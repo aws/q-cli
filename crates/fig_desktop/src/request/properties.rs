@@ -1,7 +1,6 @@
 use fig_proto::fig::UpdateApplicationPropertiesRequest;
 use fig_remote_ipc::figterm::{
     FigtermCommand,
-    FigtermSessionId,
     FigtermState,
     InterceptMode,
 };
@@ -10,6 +9,7 @@ use fig_settings::keybindings::{
     KeyBindings,
 };
 use tracing::error;
+use uuid::Uuid;
 
 use super::{
     RequestResult,
@@ -57,7 +57,9 @@ pub fn update(
         .chain(key_bindings)
         .collect::<Vec<_>>();
 
-    let request_session_id = request.current_terminal_session_id.map(FigtermSessionId::new);
+    let request_session_id = request
+        .current_terminal_session_id
+        .and_then(|i| Uuid::parse_str(&i).ok());
 
     for session in figterm_state.inner.lock().linked_sessions.values_mut() {
         if request_session_id.as_ref() == Some(&session.id) {

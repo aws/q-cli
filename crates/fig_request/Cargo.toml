@@ -20,21 +20,18 @@ cfg-if.workspace = true
 cookie = "0.18.0"
 fig_settings.workspace = true
 fig_util.workspace = true
-reqwest.workspace = true
 reqwest_cookie_store = "0.8.0"
+reqwest.workspace = true
+rustls-native-certs.workspace = true
 rustls-pemfile = "2.1.0"
-serde.workspace = true
+rustls.workspace = true
 serde_json.workspace = true
+serde.workspace = true
 thiserror.workspace = true
 time.workspace = true
 tracing.workspace = true
-url = "2.5.4"
-
-# Keep these synced with reqwest
-# https://github.com/seanmonstar/reqwest/blob/v0.12.5/Cargo.toml
-rustls = "0.23.18"
-rustls-native-certs = "0.7.0"
-webpki-roots = "0.26.0"
+url.workspace = true
+webpki-roots.workspace = true
 
 [dev-dependencies]
 mockito = "1.4.0"

@@ -12,7 +12,6 @@ workspace = true
 
 [features]
 default = []
-gamma = ["fig_util/gamma"]
 
 [dependencies]
 bitflags.workspace = true
@@ -39,7 +38,7 @@ thiserror.workspace = true
 time.workspace = true
 tokio.workspace = true
 tracing.workspace = true
-url = "2.5.4"
+url.workspace = true
 
 [target.'cfg(target_os = "macos")'.dependencies]
 fig_ipc.workspace = true

@@ -4,6 +4,7 @@ import { Command } from "@aws/amazon-q-developer-cli-shell-parser";
 import { SettingsMap } from "@aws/amazon-q-developer-cli-api-bindings-wrappers";
 import { FigState } from "../fig/hooks";
 import { GeneratorState } from "../generators/helpers";
+import { IpcClient } from "@aws/amazon-q-developer-cli-ipc-client-core";
 
 export enum Visibility {
   VISIBLE = "visible",
@@ -23,6 +24,12 @@ export enum Visibility {
   HIDDEN_BY_INSERTION = "insertion",
 }
 
+export enum AutocompleteConnectionType {
+  CS_WEBSOCKET = "CsWebsocket",
+}
+
+export type StyleType = "tailwind" | "class";
+
 type AutocompleteActions = {
   setParserResult: (
     parserResult: ArgumentParserResult,
@@ -33,6 +40,7 @@ type AutocompleteActions = {
   setVisibleState: (visibleState: Visibility) => void;
   scroll: (index: number, visibleState: Visibility) => void;
   setFigState: React.Dispatch<React.SetStateAction<FigState>>;
+  setIpcClient: (ipcClient: IpcClient | undefined) => void;
   updateVisibilityPostInsert: (
     suggestion: Suggestion,
     isFullCompletion: boolean,
@@ -50,8 +58,10 @@ export type AutocompleteState = {
   generatorStates: GeneratorState[];
   command: Command | null;
 
+  ipcClient: IpcClient | undefined;
+
   visibleState: Visibility;
-  lastInsertedSuggestion: Suggestion | null;
+  lastInsertedSuggestion: Suggestion | undefined;
   justInserted: boolean;
 
   suggestions: Suggestion[];
@@ -69,6 +79,8 @@ export type AutocompleteState = {
    */
   fuzzySearchEnabled: boolean;
   settings: SettingsMap;
+
+  styleType: StyleType;
 } & AutocompleteActions;
 
 export declare type NamedSetState<T> = {

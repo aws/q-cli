@@ -13,16 +13,16 @@ workspace = true
 [dependencies]
 fd-lock = "4.0.0"
 fig_util.workspace = true
-parking_lot = "0.12.1"
-r2d2 = "0.8.10"
-r2d2_sqlite = "0.24.0"
-rusqlite = { version = "0.31.0", features = ["bundled", "serde_json"] }
-serde.workspace = true
+parking_lot.workspace = true
+r2d2.workspace = true
+r2d2_sqlite.workspace = true
+rusqlite = { workspace = true, features = ["bundled", "serde_json"] }
 serde_json.workspace = true
+serde.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 tracing.workspace = true
-url = "2.5.4"
+url.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]

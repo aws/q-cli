@@ -793,16 +793,13 @@ def build(
     else:
         signing_data = None
 
-    cargo_features: Mapping[str, Sequence[str]] = {}
+    cargo_features: Mapping[str, Sequence[str]] = {"q_cli/wayland"}
+
     match stage_name:
         case "prod" | None:
             info("Building for prod")
         case "gamma":
             info("Building for gamma")
-            cargo_features = {
-                CLI_PACKAGE_NAME: [f"{CLI_PACKAGE_NAME}/gamma"],
-                DESKTOP_PACKAGE_NAME: [f"{DESKTOP_PACKAGE_NAME}/gamma"],
-            }
         case _:
             raise ValueError(f"Unknown stage name: {stage_name}")
 

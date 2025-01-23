@@ -14,13 +14,16 @@ workspace = true
 arbitrary = { version = "1.4.1", optional = true, features = ["derive"] }
 bytes.workspace = true
 fig_util.workspace = true
+flate2.workspace = true
 hex.workspace = true
 prost = "0.13.3"
 prost-reflect = { version = "0.14.2", features = ["serde", "derive"] }
+rand.workspace = true
 rmp-serde = "1.3.0"
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+uuid.workspace = true
 
 [target.'cfg(unix)'.dependencies]
 nix.workspace = true

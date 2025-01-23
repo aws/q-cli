@@ -1,22 +1,24 @@
 import React, { useEffect } from "react";
 import {
   EditBufferNotifications,
-  Event,
   Keybindings,
-  Settings,
-  Shell,
   Types,
+  Event,
+  Settings,
 } from "@aws/amazon-q-developer-cli-api-bindings";
 import { AliasMap } from "@aws/amazon-q-developer-cli-shell-parser";
+import { IpcClient } from "@aws/amazon-q-developer-cli-ipc-client-core";
+import { create } from "@bufbuild/protobuf";
+import { KeybindingPressedNotificationSchema } from "@aws/amazon-q-developer-cli-proto/fig";
 import {
   SettingsMap,
   updateSettings,
 } from "@aws/amazon-q-developer-cli-api-bindings-wrappers";
-import { clearSpecIndex } from "@aws/amazon-q-developer-cli-autocomplete-parser";
 import { updateSelectSuggestionKeybindings } from "../actions";
 import { generatorCache } from "../generators/helpers";
+import { clearSpecIndex } from "@aws/amazon-q-developer-cli-autocomplete-parser";
 
-// TODO: expose Subscription type from API binding library
+// TODO(sean) expose Subscription type from API binding library
 type Unwrap<T> = T extends Promise<infer U> ? U : T;
 type Subscription = Unwrap<
   NonNullable<ReturnType<(typeof EditBufferNotifications)["subscribe"]>>
@@ -73,8 +75,7 @@ export const useFigSettings = (
       updateSettings(settings as SettingsMap);
       updateSelectSuggestionKeybindings(settings as SettingsMap);
     });
-  }, []);
-
+  }, [setSettings]);
   useFigSubscriptionEffect(
     () =>
       Settings.didChange.subscribe((notification) => {
@@ -90,49 +91,40 @@ export const useFigSettings = (
 
 export const useFigKeypress = (
   keypressCallback: Parameters<typeof Keybindings.pressed>[0],
+  ipcClient?: IpcClient,
 ) => {
-  useFigSubscriptionEffect(
-    () => Keybindings.pressed(keypressCallback),
-    [keypressCallback],
-  );
+  useEffect(() => {
+    return ipcClient?.onInterceptedKey((keyHook) => {
+      keypressCallback(
+        create(KeybindingPressedNotificationSchema, {
+          action: keyHook.action,
+          context: keyHook.context,
+        }),
+      );
+    });
+  }, [ipcClient, keypressCallback]);
 };
 
 export const useFigAutocomplete = (
   setFigState: React.Dispatch<React.SetStateAction<FigState>>,
+  ipcClient?: IpcClient,
 ) => {
-  useFigSubscriptionEffect(
-    () =>
-      EditBufferNotifications.subscribe((notification) => {
-        const buffer = notification.buffer ?? "";
-        const cursorLocation = notification.cursor ?? buffer.length;
+  useEffect(() => {
+    return ipcClient?.onEditBufferChange((notification) => {
+      const buffer = notification.text ?? "";
+      const cursorLocation = Number(notification.cursor);
 
-        const cwd = notification.context?.currentWorkingDirectory ?? null;
-        const shellContext = notification.context;
-        setFigState((figState) => ({
-          ...figState,
-          buffer,
-          cursorLocation,
-          cwd,
-          shellContext,
-        }));
-        return { unsubscribe: false };
-      }),
-    [],
-  );
-
-  useFigSubscriptionEffect(
-    () =>
-      Shell.processDidChange.subscribe((notification) => {
-        const { newProcess } = notification;
-        setFigState((figState) => ({
-          ...figState,
-          processUserIsIn: newProcess?.executable ?? null,
-          cwd: newProcess?.directory ?? null,
-        }));
-        return { unsubscribe: false };
-      }),
-    [],
-  );
+      const cwd = notification.context?.currentWorkingDirectory ?? null;
+      const shellContext = notification.context;
+      setFigState((figState) => ({
+        ...figState,
+        buffer,
+        cursorLocation,
+        cwd,
+        shellContext,
+      }));
+    });
+  }, [ipcClient, setFigState]);
 };
 
 export const useFigClearCache = () => {

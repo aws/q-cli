@@ -80,18 +80,6 @@ pub fn new_intercepted_key_hook(
     }))
 }
 
-pub fn new_account_info_request() -> hostbound::Request {
-    hook_enum_to_hook(hostbound::request::Request::AccountInfo(()))
-}
-
-pub fn new_start_exchange_credentials_request() -> hostbound::Request {
-    hook_enum_to_hook(hostbound::request::Request::StartExchangeCredentials(()))
-}
-
-pub fn new_confirm_exchange_credentials_request() -> hostbound::Request {
-    hook_enum_to_hook(hostbound::request::Request::ConfirmExchangeCredentials(()))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -103,8 +91,5 @@ mod tests {
         new_preexec_hook(None);
         new_postexec_hook(None, None, None);
         new_intercepted_key_hook(None, "", "");
-        new_account_info_request();
-        new_start_exchange_credentials_request();
-        new_confirm_exchange_credentials_request();
     }
 }

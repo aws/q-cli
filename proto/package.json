@@ -6,10 +6,12 @@
   "repository": "https://github.com/aws/amazon-q-developer-cli",
   "type": "module",
   "exports": {
-    "./*": "./dist/*_pb.js"
+    "./*": "./dist/*_pb.js",
+    "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "package.json"
   ],
   "engines": {
     "node": ">=18"

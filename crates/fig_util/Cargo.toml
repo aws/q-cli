@@ -12,7 +12,6 @@ workspace = true
 
 [features]
 default = []
-gamma = []
 
 [dependencies]
 camino.workspace = true

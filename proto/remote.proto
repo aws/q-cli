@@ -9,6 +9,14 @@ import "local.proto";
 // all endpoints defined in this file are available to remote servers
 // be careful and keep security in mind
 
+message RunProcessRequest {
+  string executable = 1;
+  repeated string arguments = 2;
+  optional string working_directory = 3;
+  repeated fig_common.EnvironmentVariable env = 4;
+  optional fig_common.Duration timeout = 5;
+}
+
 message Clientbound {
   oneof packet {
     HandshakeResponse handshake_response = 100;
@@ -42,29 +50,13 @@ message Clientbound {
     }
   }
 
-  message RunProcessRequest {
-    string executable = 1;
-    repeated string arguments = 2;
-    optional string working_directory = 3;
-    repeated fig_common.EnvironmentVariable env = 4;
-  }
-
   message Response {
     optional uint64 nonce = 1;
 
     oneof response {
-      AccountInfoResponse account_info = 101;
-      ExchangeCredentialsResponse exchange_credentials = 102;
+      // Empty message to ensure response is valid, oneof can't be empty
+      fig_common.Empty empty = 103;
     }
-  }
-
-  message AccountInfoResponse {
-    bool logged_in = 1;
-  }
-
-  message ExchangeCredentialsResponse {
-    bool approved = 1;
-    optional string credentials = 2;
   }
 }
 
@@ -92,10 +84,6 @@ message Hostbound {
       local.PreExecHook pre_exec = 103;
       local.PostExecHook post_exec = 108;
       local.InterceptedKeyHook intercepted_key = 104;
-
-      fig_common.Empty account_info = 105;
-      fig_common.Empty start_exchange_credentials = 106;
-      fig_common.Empty confirm_exchange_credentials = 107;
     }
   }
 
@@ -106,9 +94,7 @@ message Hostbound {
       string error = 100;
 
       figterm.DiagnosticsResponse diagnostics = 101;
-
       fig.RunProcessResponse run_process = 102;
-
       ReadFileResponse read_file = 103;
     }
 

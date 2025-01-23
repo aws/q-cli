@@ -1,4 +1,4 @@
-use std::os::unix::net::UnixStream;
+use std::process::ExitCode;
 
 use anstream::println;
 use clap::Args;
@@ -10,6 +10,7 @@ use fig_util::{
     directories,
 };
 use indoc::formatdoc;
+use tokio::net::UnixStream;
 use uuid::Uuid;
 
 const IGNORED_USERNAMES: &[&str] = &["git", "aur"];
@@ -29,7 +30,7 @@ pub struct GenerateSshArgs {
 }
 
 impl GenerateSshArgs {
-    pub fn execute(self) -> Result<()> {
+    pub async fn execute(self) -> Result<ExitCode> {
         let GenerateSshArgs { remote_username, .. } = &self;
 
         let mut should_generate_config = true;
@@ -44,11 +45,9 @@ impl GenerateSshArgs {
 
         // check if remote socket is able to be connected to
         let remote_socket = directories::remote_socket_path_utf8()?;
-        let stream = UnixStream::connect(&remote_socket);
-        if stream.is_err() {
+        if UnixStream::connect(&remote_socket).await.is_err() {
             should_generate_config = false;
         }
-        drop(stream);
 
         let config_path = directories::fig_data_dir()?.join(SSH_INNER_NAME);
 
@@ -66,7 +65,7 @@ impl GenerateSshArgs {
             println!("Cleared config at {}", config_path.display().to_string().bold());
         }
 
-        Ok(())
+        Ok(ExitCode::SUCCESS)
     }
 
     fn ssh_config_header(&self) -> String {

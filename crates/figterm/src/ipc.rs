@@ -344,7 +344,7 @@ pub async fn spawn_remote_ipc(
                             error!("failed receiving message from host: {err}");
                             None
                         }) {
-                            debug!(?message, "Received remote message");
+                            trace!(?message, "Received remote message");
                             if let Err(err) = incoming_tx.send(message) {
                                 error!("no more listeners for incoming messages: {err}");
                                 break;

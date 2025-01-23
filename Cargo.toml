@@ -20,7 +20,7 @@ authors = [
 edition = "2021"
 homepage = "https://aws.amazon.com/q/"
 publish = false
-version = "1.6.0"
+version = "1.6.2"
 license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
@@ -73,8 +73,13 @@ fig_telemetry = { path = "crates/fig_telemetry" }
 fig_telemetry_core = { path = "crates/fig_telemetry_core" }
 fig_test_utils = { path = "crates/fig_test_utils" }
 fig_util = { path = "crates/fig_util" }
+flate2 = "1.0.35"
+flume = "0.11.0"
+futures = "0.3.26"
+globset = "0.4.10"
 hex = "0.4.3"
 http = "1.2.0"
+indicatif = "0.17.3"
 indoc = "2.0.5"
 insta = "1.38.0"
 libc = "0.2.167"
@@ -93,11 +98,14 @@ objc2 = "0.5.2"
 objc2-app-kit = "0.2.2"
 objc2-foundation = "0.2.2"
 objc2-input-method-kit = "0.2.2"
+parking_lot = "0.12.3"
 percent-encoding = "2.2.0"
 portable-pty = "0.8.1"
+r2d2 = "0.8.10"
+r2d2_sqlite = "0.25.0"
 rand = "0.8.5"
 regex = "1.7.0"
-reqwest = { version = "0.12.5", default-features = false, features = [
+reqwest = { version = "0.12.12", default-features = false, features = [
     # defaults except tls
     "http2",
     "charset",
@@ -111,6 +119,7 @@ reqwest = { version = "0.12.5", default-features = false, features = [
     "cookies",
 ] }
 ring = "0.17.8"
+rusqlite = { version = "0.32.1", features = ["bundled", "serde_json"] }
 shell-color = { path = "crates/shell-color" }
 semver = { version = "1.0.16", features = ["serde"] }
 serde = { version = "1.0.216", features = ["derive", "rc"] }
@@ -128,7 +137,8 @@ time = { version = "0.3.34", features = [
     "serde",
 ] }
 tokio = { version = "1.42.0", features = ["full"] }
-tokio-util = { version = "0.7.13", features = ["compat"] }
+tokio-tungstenite = "0.26.1"
+tokio-util = { version = "0.7.13", features = ["codec", "compat"] }
 toml = "0.8.12"
 tracing = { version = "0.1.40", features = ["log"] }
 tracing-subscriber = { version = "0.3.19", features = [
@@ -137,9 +147,20 @@ tracing-subscriber = { version = "0.3.19", features = [
     "parking_lot",
     "time",
 ] }
+unicode-width = "0.2.0"
+url = "2.5.4"
 uuid = { version = "1.8.0", features = ["v4", "serde"] }
+walkdir = "2.5.0"
 which = "6.0.3"
 whoami = "1.5.1"
+winnow = "0.6.2"
+
+# Keep these minor synced with reqwest
+# https://github.com/seanmonstar/reqwest/blob/v0.12.12/Cargo.toml
+rustls = "0.23.21"
+rustls-native-certs = "0.8.1"
+webpki-roots = "0.26.0"
+
 
 [workspace.lints.rust]
 future_incompatible = "warn"

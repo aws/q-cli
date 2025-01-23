@@ -72,8 +72,10 @@ export async function getTemplateSuggestions(
         currentProcess,
       );
       suggestions.push(...historySuggestions);
-    } catch (_err) {
-      logger.error("template suggestion did not work for template: history");
+    } catch (error) {
+      logger.error("template suggestion did not work for template: history", {
+        error,
+      });
     }
   }
 

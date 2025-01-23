@@ -20,7 +20,7 @@ console-subscriber = { version = "0.4.1", optional = true, features = [
     "parking_lot",
 ] }
 fig_util.workspace = true
-parking_lot = "0.12.1"
+parking_lot.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 tracing-appender = "0.2.2"

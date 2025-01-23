@@ -1,4 +1,5 @@
 import { twMerge } from "tailwind-merge";
+import React from "react";
 
 const LoadingIcon = ({ className }: { className?: string }) => (
   <div
