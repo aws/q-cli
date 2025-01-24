@@ -86,6 +86,13 @@ pub static VARIANTS: &[VSCodeVariant] = &[
         application_name: "Positron",
         cli_executable_name: "positron",
     },
+    VSCodeVariant {
+        bundle_identifier: "com.trae.app",
+        config_folder_name: ".trae",
+        application_support_folder_name: "Trae",
+        application_name: "Trae",
+        cli_executable_name: "trae",
+    },
 ];
 
 pub fn variants_installed() -> Vec<VSCodeVariant> {
