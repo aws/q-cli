@@ -4,14 +4,20 @@ import { SpecLocation } from "@aws/amazon-q-developer-cli-shared/internal";
 import { SpecFileImport, getVersionFromFullFile } from "./loadHelpers.js";
 import { WrongDiffVersionedSpecError } from "./errors.js";
 import { importSpecFromLocation } from "./loadSpec.js";
+import { IpcClient } from "@aws/amazon-q-developer-cli-ipc-client-core";
 
 export const tryResolveSpecToSubcommand = async (
+  ipcClient: IpcClient,
   spec: SpecFileImport,
   location: SpecLocation,
 ): Promise<Fig.Subcommand> => {
   if (typeof spec.default === "function") {
     // Handle versioned specs, either simple versioned or diff versioned.
-    const cliVersion = await getVersionFromFullFile(spec, location.name);
+    const cliVersion = await getVersionFromFullFile(
+      ipcClient,
+      spec,
+      location.name,
+    );
     const subcommandOrDiffVersionInfo = await spec.default(cliVersion);
 
     if ("versionedSpecPath" in subcommandOrDiffVersionInfo) {

@@ -32,6 +32,7 @@ import {
   UpdateStateError,
 } from "./errors.js";
 import { createCache, generateSpecCache } from "./caches.js";
+import { IpcClient } from "../../ipc-client-core/dist/index.js";
 
 type ArgArrayState = {
   args: Array<Internal.Arg> | null;
@@ -599,8 +600,11 @@ const historyExecuteShellCommand: Fig.ExecuteCommandFunction = async () => {
   );
 };
 
-const getExecuteShellCommandFunction = (isParsingHistory = false) =>
-  isParsingHistory ? historyExecuteShellCommand : executeCommand;
+const getExecuteShellCommandFunction = (
+  ipcClient: IpcClient,
+  isParsingHistory = false,
+) =>
+  isParsingHistory ? historyExecuteShellCommand : executeCommand(ipcClient);
 
 const getGenerateSpecCacheKey = (
   completionObj: Internal.Subcommand,
@@ -636,6 +640,7 @@ const getGenerateSpecCacheKey = (
 };
 
 const generateSpecForState = async (
+  ipcClient: IpcClient,
   state: ArgumentParserState,
   tokenArray: string[],
   isParsingHistory = false,
@@ -654,7 +659,7 @@ const generateSpecForState = async (
     if (cacheKey && generateSpecCache.has(cacheKey)) {
       newSpec = generateSpecCache.get(cacheKey)!;
     } else {
-      const exec = getExecuteShellCommandFunction(isParsingHistory);
+      const exec = getExecuteShellCommandFunction(ipcClient, isParsingHistory);
       newSpec = convertSubcommand(
         await generateSpec(tokenArray, exec),
         initializeDefault,
@@ -778,22 +783,22 @@ const getCacheKey = (
 
 // Parse all arguments in tokenArray.
 const parseArgumentsCached = async (
+  ipcClient: IpcClient,
   command: Command,
   context: Fig.ShellContext,
-  // authClient: AuthClient,
   specLocations?: Internal.SpecLocation[],
   isParsingHistory?: boolean,
   startIndex = 0,
   localLogger: logger.Logger = logger,
 ): Promise<ArgumentParserState> => {
-  const exec = getExecuteShellCommandFunction(isParsingHistory);
+  const exec = getExecuteShellCommandFunction(ipcClient, isParsingHistory);
 
   let currentCommand = command;
   let tokens = currentCommand.tokens.slice(startIndex);
   const tokenText = tokens.map((token) => token.text);
 
   const locations = specLocations || [
-    await getSpecPath(tokenText[0], context.currentWorkingDirectory),
+    await getSpecPath(ipcClient, tokenText[0], context.currentWorkingDirectory),
   ];
   localLogger.debug({ locations });
 
@@ -824,7 +829,7 @@ const parseArgumentsCached = async (
 
     spec = await withTimeout(
       5000,
-      loadSubcommandCached(specPath, context, localLogger),
+      loadSubcommandCached(ipcClient, specPath, context, localLogger),
     );
 
     if (!spec) {
@@ -869,6 +874,7 @@ const parseArgumentsCached = async (
 
     if (Array.isArray(loadSpecResult)) {
       state = await parseArgumentsCached(
+        ipcClient,
         currentCommand,
         context,
         // authClient,
@@ -907,6 +913,7 @@ const parseArgumentsCached = async (
   for (let i = 1; i < tokens.length; i += 1) {
     if (state.completionObj.generateSpec) {
       state = await generateSpecForState(
+        ipcClient,
         state,
         tokens.map((token) => token.text),
         isParsingHistory,
@@ -985,6 +992,7 @@ const parseArgumentsCached = async (
         loadSpec = argLoadSpec;
       } else if (isCommand || isScript) {
         const specLocation = await getSpecPath(
+          ipcClient,
           token,
           context.currentWorkingDirectory,
           Boolean(isScript),
@@ -1086,6 +1094,7 @@ const firstTokenSpec: Internal.Subcommand = {
 };
 
 export const parseArguments = async (
+  ipcClient: IpcClient,
   command: Command | null,
   context: Fig.ShellContext,
   // authClient: AuthClient,
@@ -1113,12 +1122,18 @@ export const parseArguments = async (
       } else {
         specPath = { name: "dotslash", type: SpecLocationSource.GLOBAL };
       }
-      spec = await loadSubcommandCached(specPath, context, localLogger);
+      spec = await loadSubcommandCached(
+        ipcClient,
+        specPath,
+        context,
+        localLogger,
+      );
     }
     return getResultFromState(getInitialState(spec, tokens[0].text, specPath));
   }
 
   let state = await parseArgumentsCached(
+    ipcClient,
     command,
     context,
     // authClient,

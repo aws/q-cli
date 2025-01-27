@@ -46,7 +46,7 @@ importers:
         version: 46.0.2
     devDependencies:
       '@eslint/js':
-        specifier: ^9.18.0
+        specifier: ^9.16.0
         version: 9.18.0
       eslint:
         specifier: 9.18.0
@@ -64,7 +64,7 @@ importers:
   extensions/gnome-legacy-extension:
     devDependencies:
       '@eslint/js':
-        specifier: ^9.18.0
+        specifier: ^9.16.0
         version: 9.18.0
       '@gi.ts/cli':
         specifier: ^1.5.10
@@ -73,7 +73,7 @@ importers:
         specifier: ^1.5.13
         version: 1.5.13
       eslint:
-        specifier: ^9.18.0
+        specifier: ^9.16.0
         version: 9.18.0(jiti@1.21.7)
       globals:
         specifier: ^15.14.0
@@ -82,7 +82,7 @@ importers:
   extensions/vscode:
     devDependencies:
       '@eslint/js':
-        specifier: ^9.18.0
+        specifier: ^9.16.0
         version: 9.18.0
       '@types/glob':
         specifier: ^8.1.0
@@ -91,7 +91,7 @@ importers:
         specifier: ^10.0.10
         version: 10.0.10
       '@types/node':
-        specifier: ^22.10.6
+        specifier: ^22.10.5
         version: 22.10.6
       '@types/vscode':
         specifier: ~1.80.0
@@ -103,7 +103,7 @@ importers:
         specifier: ^2.32.0
         version: 2.32.0
       eslint:
-        specifier: ^9.18.0
+        specifier: ^9.16.0
         version: 9.18.0(jiti@1.21.7)
       glob:
         specifier: ^11.0.1
@@ -137,13 +137,13 @@ importers:
         specifier: ^1.0.8
         version: 1.0.8
       '@types/node':
-        specifier: ^22.10.6
+        specifier: ^22.10.5
         version: 22.10.6
       '@typescript/analyze-trace':
         specifier: ^0.10.1
         version: 0.10.1
       eslint:
-        specifier: ^9.18.0
+        specifier: ^9.16.0
         version: 9.18.0(jiti@1.21.7)
       lint-staged:
         specifier: ^15.3.0
@@ -164,8 +164,17 @@ importers:
   packages/api-bindings-wrappers:
     dependencies:
       '@aws/amazon-q-developer-cli-api-bindings':
-        specifier: workspace:~
+        specifier: workspace:^
         version: link:../api-bindings
+      '@aws/amazon-q-developer-cli-ipc-client-core':
+        specifier: workspace:^
+        version: link:../ipc-client-core
+      '@aws/amazon-q-developer-cli-proto':
+        specifier: workspace:^
+        version: link:../../proto
+      '@bufbuild/protobuf':
+        specifier: 2.2.3
+        version: 2.2.3
       loglevel:
         specifier: ^1.9.2
         version: 1.9.2
@@ -186,7 +195,7 @@ importers:
         specifier: ^1.31.0
         version: 1.31.0
       eslint:
-        specifier: ^9.18.0
+        specifier: ^9.16.0
         version: 9.18.0(jiti@1.21.7)
       prettier:
         specifier: ^3.4.2
@@ -194,6 +203,145 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.7.3
+
+  packages/autocomplete:
+    dependencies:
+      '@aws/amazon-q-developer-cli-api-bindings':
+        specifier: workspace:^
+        version: link:../api-bindings
+      '@aws/amazon-q-developer-cli-api-bindings-wrappers':
+        specifier: workspace:^
+        version: link:../api-bindings-wrappers
+      '@aws/amazon-q-developer-cli-autocomplete-parser':
+        specifier: workspace:^
+        version: link:../autocomplete-parser
+      '@aws/amazon-q-developer-cli-fuzzysort':
+        specifier: workspace:^
+        version: link:../fuzzysort
+      '@aws/amazon-q-developer-cli-ipc-client-core':
+        specifier: workspace:^
+        version: link:../ipc-client-core
+      '@aws/amazon-q-developer-cli-ipc-client-websocket-mux':
+        specifier: workspace:^
+        version: link:../ipc-client-websocket-mux
+      '@aws/amazon-q-developer-cli-proto':
+        specifier: workspace:^
+        version: link:../../proto
+      '@aws/amazon-q-developer-cli-shell-parser':
+        specifier: workspace:^
+        version: link:../shell-parser
+      '@bufbuild/protobuf':
+        specifier: 2.2.3
+        version: 2.2.3
+      '@fig/autocomplete-helpers':
+        specifier: ^1.0.7
+        version: 1.0.7
+      '@fig/autocomplete-shared':
+        specifier: ^1.1.2
+        version: 1.1.2
+      '@juggle/resize-observer':
+        specifier: ^3.4.0
+        version: 3.4.0
+      deep-object-diff:
+        specifier: ^1.1.9
+        version: 1.1.9
+      emittery:
+        specifier: ^1.0.3
+        version: 1.0.3
+      exponential-backoff:
+        specifier: ^3.1.1
+        version: 3.1.1
+      js-yaml:
+        specifier: ^4.1.0
+        version: 4.1.0
+      loglevel:
+        specifier: ^1.9.2
+        version: 1.9.2
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+      react-window:
+        specifier: ^1.8.11
+        version: 1.8.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      tailwind-merge:
+        specifier: ^2.6.0
+        version: 2.6.0
+      use-resize-observer:
+        specifier: ^9.1.0
+        version: 9.1.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      util:
+        specifier: ^0.12.5
+        version: 0.12.5
+      zustand:
+        specifier: ^4.0.0
+        version: 4.5.6(@types/react@18.3.18)(react@18.3.1)
+    devDependencies:
+      '@amzn/eslint-config':
+        specifier: workspace:^
+        version: link:../eslint-config
+      '@amzn/types':
+        specifier: workspace:^
+        version: link:../types
+      '@aws/amazon-q-developer-cli-shared':
+        specifier: workspace:^
+        version: link:../shared
+      '@types/js-yaml':
+        specifier: ^4.0.9
+        version: 4.0.9
+      '@types/node':
+        specifier: ^22.10.5
+        version: 22.10.6
+      '@types/react':
+        specifier: ^18.3.18
+        version: 18.3.18
+      '@types/react-dom':
+        specifier: ^18.3.5
+        version: 18.3.5(@types/react@18.3.18)
+      '@types/react-window':
+        specifier: ^1.8.8
+        version: 1.8.8
+      '@types/semver':
+        specifier: ^7.5.8
+        version: 7.5.8
+      '@vitejs/plugin-legacy':
+        specifier: ^6.0.0
+        version: 6.0.0(terser@5.37.0)(vite@6.0.7(@types/node@22.10.6)(jiti@1.21.7)(terser@5.37.0)(tsx@4.19.2)(yaml@2.7.0))
+      '@vitejs/plugin-react':
+        specifier: ^4.3.4
+        version: 4.3.4(vite@6.0.7(@types/node@22.10.6)(jiti@1.21.7)(terser@5.37.0)(tsx@4.19.2)(yaml@2.7.0))
+      '@withfig/autocomplete-types':
+        specifier: ^1.31.0
+        version: 1.31.0
+      autoprefixer:
+        specifier: ^10.4.20
+        version: 10.4.20(postcss@8.5.1)
+      eslint:
+        specifier: ^9.16.0
+        version: 9.18.0(jiti@1.21.7)
+      postcss:
+        specifier: ^8.4.49
+        version: 8.5.1
+      prettier:
+        specifier: ^3.4.2
+        version: 3.4.2
+      tailwindcss:
+        specifier: ^3.4.17
+        version: 3.4.17(ts-node@10.9.2(@types/node@22.10.6)(typescript@5.7.3))
+      terser:
+        specifier: ^5.37.0
+        version: 5.37.0
+      typescript:
+        specifier: ^5.7.3
+        version: 5.7.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.0.7(@types/node@22.10.6)(jiti@1.21.7)(terser@5.37.0)(tsx@4.19.2)(yaml@2.7.0)
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.8(@types/node@22.10.6)(@vitest/ui@2.1.8)(jsdom@24.1.0)(terser@5.37.0)
 
   packages/autocomplete-app:
     dependencies:
@@ -327,15 +475,24 @@ importers:
       '@aws/amazon-q-developer-cli-api-bindings-wrappers':
         specifier: workspace:^
         version: link:../api-bindings-wrappers
+      '@aws/amazon-q-developer-cli-ipc-client-core':
+        specifier: workspace:^
+        version: link:../ipc-client-core
+      '@aws/amazon-q-developer-cli-proto':
+        specifier: workspace:^
+        version: link:../../proto
       '@aws/amazon-q-developer-cli-shell-parser':
         specifier: workspace:^
         version: link:../shell-parser
+      '@bufbuild/protobuf':
+        specifier: 2.2.3
+        version: 2.2.3
       '@fig/autocomplete-generators':
         specifier: ^2.4.0
         version: 2.4.0
       '@fig/autocomplete-helpers':
-        specifier: ^2.0.0
-        version: 2.0.0
+        specifier: ^1.0.7
+        version: 1.0.7
       '@fig/autocomplete-shared':
         specifier: ^1.1.2
         version: 1.1.2
@@ -368,7 +525,7 @@ importers:
         specifier: ^1.31.0
         version: 1.31.0
       eslint:
-        specifier: ^9.18.0
+        specifier: ^9.16.0
         version: 9.18.0(jiti@1.21.7)
       typescript:
         specifier: ^5.7.3
@@ -377,7 +534,7 @@ importers:
         specifier: ^2.1.8
         version: 2.1.8(@types/node@22.10.6)(@vitest/ui@2.1.8)(jsdom@24.1.0)(terser@5.37.0)
 
-  packages/dashboard-app:
+  packages/dashboard:
     dependencies:
       '@aws/amazon-q-developer-cli-api-bindings':
         specifier: workspace:^
@@ -437,14 +594,14 @@ importers:
         specifier: ^3.24.1
         version: 3.24.1
       zustand:
-        specifier: ^4.5.6
+        specifier: ^4.0.0
         version: 4.5.6(@types/react@18.3.18)(react@18.3.1)
     devDependencies:
       '@amzn/types':
         specifier: workspace:^
         version: link:../types
       '@eslint/js':
-        specifier: ^9.18.0
+        specifier: ^9.16.0
         version: 9.18.0
       '@types/react':
         specifier: ^18.3.18
@@ -465,7 +622,7 @@ importers:
         specifier: ^10.4.20
         version: 10.4.20(postcss@8.5.1)
       eslint:
-        specifier: ^9.18.0
+        specifier: ^9.16.0
         version: 9.18.0(jiti@1.21.7)
       eslint-plugin-react-hooks:
         specifier: ^5.1.0
@@ -477,7 +634,7 @@ importers:
         specifier: ^15.14.0
         version: 15.14.0
       postcss:
-        specifier: ^8.5.1
+        specifier: ^8.4.49
         version: 8.5.1
       prettier:
         specifier: ^3.4.2
@@ -489,7 +646,7 @@ importers:
         specifier: ^5.7.3
         version: 5.7.3
       typescript-eslint:
-        specifier: ^8.20.0
+        specifier: ^8.19.1
         version: 8.20.0(eslint@9.18.0(jiti@1.21.7))(typescript@5.7.3)
       vite:
         specifier: ^6.0.7
@@ -501,20 +658,20 @@ importers:
         specifier: workspace:^
         version: link:../tsconfig
       '@eslint/js':
-        specifier: ^9.18.0
+        specifier: ^9.16.0
         version: 9.18.0
       '@types/eslint__js':
         specifier: ^8.42.3
         version: 8.42.3
       '@typescript-eslint/utils':
-        specifier: ^8.20.0
+        specifier: ^8.19.0
         version: 8.20.0(eslint@9.18.0(jiti@1.21.7))(typescript@5.7.3)
       eslint:
-        specifier: ^9.18.0
+        specifier: ^9.16.0
         version: 9.18.0(jiti@1.21.7)
       eslint-config-prettier:
-        specifier: ^10.0.1
-        version: 10.0.1(eslint@9.18.0(jiti@1.21.7))
+        specifier: ^9.1.0
+        version: 9.1.0(eslint@9.18.0(jiti@1.21.7))
       eslint-plugin-import:
         specifier: ^2.31.0
         version: 2.31.0(eslint@9.18.0(jiti@1.21.7))
@@ -522,7 +679,7 @@ importers:
         specifier: ^6.10.2
         version: 6.10.2(eslint@9.18.0(jiti@1.21.7))
       eslint-plugin-react:
-        specifier: ^7.37.4
+        specifier: ^7.37.3
         version: 7.37.4(eslint@9.18.0(jiti@1.21.7))
       eslint-plugin-react-hooks:
         specifier: ^5.1.0
@@ -540,10 +697,94 @@ importers:
         specifier: ^5.7.3
         version: 5.7.3
       typescript-eslint:
-        specifier: ^8.20.0
+        specifier: ^8.19.1
         version: 8.20.0(eslint@9.18.0(jiti@1.21.7))(typescript@5.7.3)
 
   packages/fuzzysort: {}
+
+  packages/ipc-client-core:
+    dependencies:
+      '@aws/amazon-q-developer-cli-proto':
+        specifier: workspace:^
+        version: link:../../proto
+      emittery:
+        specifier: ^1.0.3
+        version: 1.0.3
+    devDependencies:
+      '@amzn/eslint-config':
+        specifier: workspace:^
+        version: link:../eslint-config
+      '@amzn/tsconfig':
+        specifier: workspace:^
+        version: link:../tsconfig
+      eslint:
+        specifier: ^9.16.0
+        version: 9.18.0(jiti@1.21.7)
+      type-fest:
+        specifier: ^4.30.2
+        version: 4.32.0
+      typescript:
+        specifier: ^5.4.5
+        version: 5.7.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.8(@types/node@22.10.6)(@vitest/ui@2.1.8)(jsdom@24.1.0)(terser@5.37.0)
+
+  packages/ipc-client-local:
+    dependencies:
+      '@aws/amazon-q-developer-cli-ipc-client-core':
+        specifier: workspace:^
+        version: link:../ipc-client-core
+      '@aws/amazon-q-developer-cli-proto':
+        specifier: workspace:^
+        version: link:../../proto
+    devDependencies:
+      '@amzn/eslint-config':
+        specifier: workspace:^
+        version: link:../eslint-config
+      '@amzn/tsconfig':
+        specifier: workspace:^
+        version: link:../tsconfig
+      eslint:
+        specifier: ^9.16.0
+        version: 9.18.0(jiti@1.21.7)
+      typescript:
+        specifier: ^5.4.5
+        version: 5.7.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.8(@types/node@22.10.6)(@vitest/ui@2.1.8)(jsdom@24.1.0)(terser@5.37.0)
+
+  packages/ipc-client-websocket-mux:
+    dependencies:
+      '@aws/amazon-q-developer-cli-ipc-client-core':
+        specifier: workspace:^
+        version: link:../ipc-client-core
+      '@aws/amazon-q-developer-cli-proto':
+        specifier: workspace:^
+        version: link:../../proto
+      '@bufbuild/protobuf':
+        specifier: 2.2.3
+        version: 2.2.3
+      emittery:
+        specifier: ^1.0.3
+        version: 1.0.3
+    devDependencies:
+      '@amzn/eslint-config':
+        specifier: workspace:^
+        version: link:../eslint-config
+      '@amzn/tsconfig':
+        specifier: workspace:^
+        version: link:../tsconfig
+      eslint:
+        specifier: ^9.16.0
+        version: 9.18.0(jiti@1.21.7)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.7.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.8(@types/node@22.10.6)(@vitest/ui@2.1.8)(jsdom@24.1.0)(terser@5.37.0)
 
   packages/shared:
     dependencies:
@@ -567,7 +808,7 @@ importers:
         specifier: ^1.31.0
         version: 1.31.0
       eslint:
-        specifier: ^9.18.0
+        specifier: ^9.16.0
         version: 9.18.0(jiti@1.21.7)
       typescript:
         specifier: ^5.7.3
@@ -592,7 +833,7 @@ importers:
         specifier: ^2.1.8
         version: 2.1.8(vitest@2.1.8)
       eslint:
-        specifier: ^9.18.0
+        specifier: ^9.16.0
         version: 9.18.0(jiti@1.21.7)
       prettier:
         specifier: ^3.4.2
@@ -643,7 +884,7 @@ importers:
         specifier: workspace:^
         version: link:../../packages/api-bindings
       '@types/node':
-        specifier: ^22.10.6
+        specifier: ^22.10.5
         version: 22.10.6
       typescript:
         specifier: ^5.7.3
@@ -1772,6 +2013,9 @@ packages:
 
   '@fig/autocomplete-generators@2.4.0':
     resolution: {integrity: sha512-fiaaCGmsgnbUJbVbNAcVDmrnCGj/SmfarK6WKt/lfQP9k1hLHkkmZQ836VSMJvPP1vAKFAiXpdJziG6EGyjAYg==}
+
+  '@fig/autocomplete-helpers@1.0.7':
+    resolution: {integrity: sha512-5jq01q2JtaLAjl8t3hOvE9GOp4a4Agj7YmxlBxRjuSwJY3qskfx/mdAgOX2qjgxZ74bHONAxQ1hzudwSICqZFg==}
 
   '@fig/autocomplete-helpers@2.0.0':
     resolution: {integrity: sha512-lzD9LbpvJC3hXwxvLAb91/AwO83lfIhW4dEITAn1wINKHaHOmP39wU82Q25bKp8A6/UMcF6Iobik/R4sUZmgNA==}
@@ -3427,6 +3671,10 @@ packages:
   electron-to-chromium@1.5.82:
     resolution: {integrity: sha512-Zq16uk1hfQhyGx5GpwPAYDwddJuSGhtRhgOA2mCxANYaDT79nAeGnaXogMGng4KqLaJUVnOnuL0+TDop9nLOiA==}
 
+  emittery@1.0.3:
+    resolution: {integrity: sha512-tJdCJitoy2lrC2ldJcqN4vkqJ00lT+tOWNT1hBJjO/3FDMJa5TTIiYGCKGkn/WfCyOzUMObeohbVTj00fhiLiA==}
+    engines: {node: '>=14.16'}
+
   emoji-regex@10.4.0:
     resolution: {integrity: sha512-EC+0oUMY1Rqm4O6LLrgjtYDvcVYTy7chDnM4Q7030tP4Kwj3u/pR6gP9ygnp2CJMK5Gq+9Q2oqmrFJAz01DXjw==}
 
@@ -3517,8 +3765,8 @@ packages:
     resolution: {integrity: sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==}
     engines: {node: '>=10'}
 
-  eslint-config-prettier@10.0.1:
-    resolution: {integrity: sha512-lZBts941cyJyeaooiKxAtzoPHTN+GbQTJFAIdQbRhA4/8whaAraEh47Whw/ZFfrjNSnlAxqfm9i0XVAEkULjCw==}
+  eslint-config-prettier@9.1.0:
+    resolution: {integrity: sha512-NSWl5BFQWEPi1j4TjVNItzYV7dZXZ+wP6I6ZhrBGpChQhZRUaElihE9uRRkcbRnNb76UMKDF3r+WTmNcGPKsqw==}
     hasBin: true
     peerDependencies:
       eslint: '>=7.0.0'
@@ -3661,6 +3909,9 @@ packages:
   expect-type@1.1.0:
     resolution: {integrity: sha512-bFi65yM+xZgk+u/KRIpekdSYkTB5W1pEf0Lt8Q8Msh7b+eQ7LXVtIB1Bkm4fvclDEL1b2CZkMhv2mOeF8tMdkA==}
     engines: {node: '>=12.0.0'}
+
+  exponential-backoff@3.1.1:
+    resolution: {integrity: sha512-dX7e/LHVJ6W3DE1MHWi9S1EYzDESENfLrYohG2G++ovZrYOkm4Knwa0mc1cn84xJOR4KEU0WSchhLbd0UklbHw==}
 
   extend@3.0.2:
     resolution: {integrity: sha512-fjquC59cD7CyW6urNXK0FBufkZcoiGG80wTuPujX590cB5Ttln20E2UB4S/WARVqhXffZl2LNgS+gQdPIIim/g==}
@@ -5653,6 +5904,10 @@ packages:
     resolution: {integrity: sha512-4dbzIzqvjtgiM5rw1k5rEHtBANKmdudhGyBEajN01fEyhaAIhsoKNy6y7+IN93IfpFtwY9iqi7kD+xwKhQsNJA==}
     engines: {node: '>=8'}
 
+  type-fest@4.32.0:
+    resolution: {integrity: sha512-rfgpoi08xagF3JSdtJlCwMq9DGNDE0IMh3Mkpc1wUypg9vPi786AiqeBBKcqvIkq42azsBM85N490fyZjeUftw==}
+    engines: {node: '>=16'}
+
   typed-array-buffer@1.0.3:
     resolution: {integrity: sha512-nAYYwfY3qnzX30IkA6AQZjVbtK6duGontcQm1WSG1MD94YLqK0515GNApXkoxKOWMusVssAHWLh9SeaoefYFGw==}
     engines: {node: '>= 0.4'}
@@ -5678,6 +5933,11 @@ packages:
     peerDependencies:
       eslint: ^8.57.0 || ^9.0.0
       typescript: '>=4.8.4 <5.8.0'
+
+  typescript@4.9.5:
+    resolution: {integrity: sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==}
+    engines: {node: '>=4.2.0'}
+    hasBin: true
 
   typescript@5.4.5:
     resolution: {integrity: sha512-vcI4UpRgg81oIRUFwR0WSIHKt11nJ7SAVlYNIu+QpqeyXP+gpQJy/Z4+F0aGxSE4MqwjyXvW/TzgkLAx2AGHwQ==}
@@ -7175,6 +7435,11 @@ snapshots:
       levn: 0.4.1
 
   '@fig/autocomplete-generators@2.4.0': {}
+
+  '@fig/autocomplete-helpers@1.0.7':
+    dependencies:
+      semver: 7.6.3
+      typescript: 4.9.5
 
   '@fig/autocomplete-helpers@2.0.0':
     dependencies:
@@ -9390,6 +9655,8 @@ snapshots:
 
   electron-to-chromium@1.5.82: {}
 
+  emittery@1.0.3: {}
+
   emoji-regex@10.4.0: {}
 
   emoji-regex@8.0.0: {}
@@ -9603,7 +9870,7 @@ snapshots:
 
   escape-string-regexp@4.0.0: {}
 
-  eslint-config-prettier@10.0.1(eslint@9.18.0(jiti@1.21.7)):
+  eslint-config-prettier@9.1.0(eslint@9.18.0(jiti@1.21.7)):
     dependencies:
       eslint: 9.18.0(jiti@1.21.7)
 
@@ -9818,6 +10085,8 @@ snapshots:
     optional: true
 
   expect-type@1.1.0: {}
+
+  exponential-backoff@3.1.1: {}
 
   extend@3.0.2: {}
 
@@ -12139,6 +12408,8 @@ snapshots:
 
   type-fest@0.8.1: {}
 
+  type-fest@4.32.0: {}
+
   typed-array-buffer@1.0.3:
     dependencies:
       call-bound: 1.0.3
@@ -12187,6 +12458,8 @@ snapshots:
       typescript: 5.7.3
     transitivePeerDependencies:
       - supports-color
+
+  typescript@4.9.5: {}
 
   typescript@5.4.5: {}
 
