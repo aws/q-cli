@@ -11,6 +11,9 @@ import {
 import { getCustomSuggestions } from "../customSuggestionsGenerator";
 import * as helpers from "../helpers";
 import { GeneratorContext } from "../helpers";
+import { create } from "@bufbuild/protobuf";
+import { RunProcessResponseSchema } from "@aws/amazon-q-developer-cli-proto/fig";
+import { IpcClient } from "@aws/amazon-q-developer-cli-ipc-client-core";
 
 const context: GeneratorContext = {
   annotations: [] as Annotation[],
@@ -23,6 +26,16 @@ const context: GeneratorContext = {
 };
 
 describe("getCustomSuggestions", () => {
+  const ipcClient = {
+    runProcess: vi.fn(async (_sessionId, _request) => {
+      return create(RunProcessResponseSchema, {
+        exitCode: 0,
+        stdout: "a/\nx\nc/\nl",
+        stderr: "",
+      });
+    }),
+  } as Partial<IpcClient> as IpcClient;
+
   let runCachedGenerator: MockInstance;
 
   beforeAll(() => {
@@ -36,6 +49,7 @@ describe("getCustomSuggestions", () => {
   it("should return the result", async () => {
     expect(
       await getCustomSuggestions(
+        ipcClient,
         {
           custom: () => Promise.resolve([{ name: "hello" }, { name: "world" }]),
         },
@@ -50,6 +64,7 @@ describe("getCustomSuggestions", () => {
   it("should return the result and infer type", async () => {
     expect(
       await getCustomSuggestions(
+        ipcClient,
         {
           custom: () =>
             Promise.resolve([
@@ -67,6 +82,7 @@ describe("getCustomSuggestions", () => {
 
   it("should call runCachedGenerator", async () => {
     await getCustomSuggestions(
+      ipcClient,
       {
         custom: () => Promise.resolve([{ name: "hello" }, { name: "world" }]),
       },
@@ -81,7 +97,7 @@ describe("getCustomSuggestions", () => {
       .fn()
       .mockResolvedValue([{ name: "hello" }, { name: "world" }]);
 
-    await getCustomSuggestions({ custom }, context);
+    await getCustomSuggestions(ipcClient, { custom }, context);
 
     expect(runCachedGenerator).toHaveBeenCalled();
     expect(custom).toHaveBeenCalled();

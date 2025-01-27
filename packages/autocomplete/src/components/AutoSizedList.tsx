@@ -1,4 +1,4 @@
-import {
+import React, {
   useRef,
   MutableRefObject,
   useImperativeHandle,
@@ -53,13 +53,16 @@ const AutoSizedList: ForwardRefRenderFunction<
       style={{
         flexBasis: itemCount * itemSize,
       }}
-      className="min-h-0 min-w-0 flex-shrink"
+      className="suggestions-wrapper min-h-0 min-w-0 flex-shrink"
     >
       <List
         width={desiredWidth === undefined ? width || 0 : desiredWidth}
         ref={listRef}
-        height={height || 0}
-        className={twMerge("scrollbar-none", className)}
+        height={height ?? 0}
+        className={`suggestions-wrapper__list-container ${twMerge(
+          "scrollbar-none",
+          className,
+        )}`}
         {...props}
       />
     </div>

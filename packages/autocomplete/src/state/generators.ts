@@ -82,6 +82,11 @@ export const createGeneratorState = (
 
   const triggerGenerator = (currentState: GeneratorState) => {
     logger.info("Triggering generator", { currentState });
+    const { ipcClient } = get();
+    if (!ipcClient) {
+      logger.debug("No IPC client, not triggering generator");
+      return currentState;
+    }
     const { generator, context } = currentState;
     let request: Promise<Fig.Suggestion[]>;
 
@@ -89,17 +94,18 @@ export const createGeneratorState = (
       request = getTemplateSuggestions(generator, context);
     } else if (generator.script) {
       request = getScriptSuggestions(
+        ipcClient,
         generator,
         context,
         getSetting<number>(SETTINGS.SCRIPT_TIMEOUT, 5000),
       );
     } else {
-      request = getCustomSuggestions(generator, context);
+      request = getCustomSuggestions(ipcClient, generator, context);
       // filepaths/folders templates are now a sugar for two custom generators, we need to filter
       // the suggestion created by those two custom generators
       if (generator.filterTemplateSuggestions) {
         request = (async () => {
-          // TODO: use symbols to detect if the the generator fn is filepaths/folders
+          // TODO(fedeci): use symbols to detect if the the generator fn is filepaths/folders
           // If the first custom suggestion has template meta properties then all the custom
           // suggestions are too
           const suggestions = await request;
@@ -135,7 +141,7 @@ export const createGeneratorState = (
       } else if (trigger === undefined) {
         // If trigger is undefined we never trigger, unless debounced in
         // which case we always trigger.
-        // TODO: move debounce to generator.
+        // TODO(sean): move debounce to generator.
         shouldTrigger = Boolean(currentArg?.debounce);
       } else {
         let triggerFn: (a: string, b: string) => boolean;
