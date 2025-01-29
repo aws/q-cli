@@ -26,6 +26,7 @@ pub const MACOS_TERMINALS: &[Terminal] = &[
     Terminal::Windsurf,
     Terminal::Ghostty,
     Terminal::Positron,
+    Terminal::Trae,
 ];
 
 /// Terminals that Linux supports
@@ -165,6 +166,8 @@ pub enum Terminal {
     Ghostty,
     /// Positron
     Positron,
+     /// Trae
+     Trae,
 
     /// Custom terminal to support user/custom entries
     Custom(CustomTerminal),
@@ -206,6 +209,7 @@ impl fmt::Display for Terminal {
             Terminal::Guake => write!(f, "Guake"),
             Terminal::Ghostty => write!(f, "Ghostty"),
             Terminal::Positron => write!(f, "Positron"),
+            Terminal::Trae => write!(f, "Trae"),
             Terminal::Custom(custom_terminal) => write!(f, "{}", custom_terminal.name),
         }
     }
@@ -371,6 +375,7 @@ impl Terminal {
             Terminal::Guake => "guake".into(),
             Terminal::Ghostty => "ghostty".into(),
             Terminal::Positron => "positron".into(),
+            Terminal::Trae => "trae".into(),
             Terminal::Custom(custom_terminal) => custom_terminal.id.clone().into(),
         }
     }
@@ -399,6 +404,7 @@ impl Terminal {
             Terminal::Windsurf => Some("com.exafunction.windsurf".into()),
             Terminal::Ghostty => Some("com.mitchellh.ghostty".into()),
             Terminal::Positron => Some("co.posit.positron".into()),
+            Terminal::Trae => Some("com.trae.app".into()),
             Terminal::Custom(custom_terminal) => custom_terminal.macos.bundle_id.clone().map(Cow::Owned),
             _ => None,
         }
@@ -425,6 +431,7 @@ impl Terminal {
             "com.exafunction.windsurf" => Terminal::Windsurf,
             "com.mitchellh.ghostty" => Terminal::Ghostty,
             "co.posit.positron" => Terminal::Positron,
+            "com.trae.app" => Terminal::Trae,
             // TODO: the following line does not account for Android Studio
             _ if bundle.starts_with("com.jetbrains.") | bundle.starts_with("com.google.") => {
                 Terminal::IntelliJ(IntelliJVariant::from_bundle_id(bundle))
@@ -473,6 +480,7 @@ impl Terminal {
                 | Terminal::Cursor
                 | Terminal::CursorNightly
                 | Terminal::Windsurf
+                | Terminal::Trae
         ) || self.as_custom().is_some_and(|c| c.macos.xterm)
     }
 
@@ -500,6 +508,7 @@ impl Terminal {
             Terminal::Guake => &["guake"],
             Terminal::Ghostty => &["ghostty"],
             Terminal::Positron => &["positron"],
+            Terminal::Trae => &["trae"],
 
             Terminal::Ssh => &["sshd"],
             Terminal::Tmux => &["tmux", "tmux: server"],
@@ -566,6 +575,7 @@ impl Terminal {
                 | Terminal::Cursor
                 | Terminal::CursorNightly
                 | Terminal::Windsurf
+                | Terminal::Trae
         )
     }
 
