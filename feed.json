@@ -12,6 +12,26 @@
     },
     {
       "type": "release",
+      "date": "2025-01-31",
+      "version": "1.6.1",
+      "title": "Version 1.6.1",
+      "changes": [
+        {
+          "type": "added",
+          "description": "Support for Positron [#406](https://github.com/aws/amazon-q-developer-cli/pull/406)"
+        },
+        {
+          "type": "added",
+          "description": "Self-updating for Linux AppImage builds [#410](https://github.com/aws/amazon-q-developer-cli/pull/410)"
+        },
+        {
+          "type": "fixed",
+          "description": "Extra lines in inline recommendations [#446](https://github.com/aws/amazon-q-developer-cli/pull/446)"
+        }
+      ]
+    },
+    {
+      "type": "release",
       "date": "2025-01-06",
       "version": "1.6.0",
       "title": "Version 1.6.0",
