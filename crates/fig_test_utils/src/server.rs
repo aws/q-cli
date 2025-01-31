@@ -169,7 +169,7 @@ mod tests {
         let addr = test_server_addr.address();
         std::mem::drop(test_server_addr);
         // wait for the task to complete
-        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
         let response = reqwest::get(format!("http://{}{}", &addr, &test_path)).await;
         assert!(response.is_err());
     }
