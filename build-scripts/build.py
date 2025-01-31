@@ -793,7 +793,7 @@ def build(
     else:
         signing_data = None
 
-    cargo_features: Mapping[str, Sequence[str]] = {"q_cli/wayland"}
+    cargo_features: Mapping[str, Sequence[str]] = {"q_cli": ["wayland"]}
 
     match stage_name:
         case "prod" | None:
