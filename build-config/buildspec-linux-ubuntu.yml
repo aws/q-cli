@@ -30,7 +30,7 @@ phases:
       # Download version of pnpm configured in package.json.
       # Note that we download from the pnpm install script instead of corepack
       # since corepack is broken in codebuild for some reason.
-      - curl -fsSL https://get.pnpm.io/install.sh | env PNPM_VERSION=$(jq -r '.packageManager' package.json | cut -d@ -f2) SHELL=$(which bash) sh -
+      - curl -fsSL https://get.pnpm.io/install.sh | env PNPM_VERSION=$(jq -r '.packageManager' package.json | cut -d@ -f2 | cut -d+ -f1) SHELL=$(which bash) sh -
       - . "$HOME/.bashrc"
       # Install python deps
       - pip3 install -r build-scripts/requirements.txt
