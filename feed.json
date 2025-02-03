@@ -12,7 +12,7 @@
     },
     {
       "type": "release",
-      "date": "2025-01-31",
+      "date": "2025-02-03",
       "version": "1.6.1",
       "title": "Version 1.6.1",
       "changes": [
@@ -27,6 +27,10 @@
         {
           "type": "fixed",
           "description": "Extra lines in inline recommendations [#446](https://github.com/aws/amazon-q-developer-cli/pull/446)"
+        },
+        {
+          "type": "fixed",
+          "description": "Minor issues"
         }
       ]
     },
