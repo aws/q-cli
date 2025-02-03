@@ -123,7 +123,7 @@ pub async fn prompt_accessibility_command() -> Result<()> {
 
 pub async fn update_command(force: bool) -> Result<Option<CommandResponse>> {
     let command = command::Command::Update(UpdateCommand { force });
-    send_recv_command_to_socket(command).await
+    send_recv_command_to_socket_with_timeout(command, std::time::Duration::from_secs(120)).await
 }
 
 pub async fn restart_command() -> Result<()> {
@@ -155,7 +155,11 @@ pub async fn devtools_command(window: devtools_command::Window) -> Result<()> {
 pub trait LocalIpc: SendRecvMessage {
     async fn send_hook(&mut self, hook: local::Hook) -> Result<()>;
     async fn send_command(&mut self, command: local::command::Command, response: bool) -> Result<()>;
-    async fn send_recv_command(&mut self, command: local::command::Command) -> Result<Option<local::CommandResponse>>;
+    async fn send_recv_command(
+        &mut self,
+        command: local::command::Command,
+        timeout: Duration,
+    ) -> Result<Option<local::CommandResponse>>;
 }
 
 #[async_trait]
@@ -183,10 +187,15 @@ where
         Ok(self.send_message(message).await?)
     }
 
-    /// Send a command to and recv a response from the desktop app
-    async fn send_recv_command(&mut self, command: local::command::Command) -> Result<Option<local::CommandResponse>> {
+    /// Send a command to and recv a response from the desktop app, with a configurable timeout on
+    /// the response
+    async fn send_recv_command(
+        &mut self,
+        command: local::command::Command,
+        timeout: Duration,
+    ) -> Result<Option<local::CommandResponse>> {
         self.send_command(command, true).await?;
-        Ok(tokio::time::timeout(Duration::from_secs(2), self.recv_message())
+        Ok(tokio::time::timeout(timeout, self.recv_message())
             .await
             .or(Err(Error::Timeout))??)
     }
@@ -206,7 +215,14 @@ pub async fn send_command_to_socket(command: local::command::Command) -> Result<
 }
 
 pub async fn send_recv_command_to_socket(command: local::command::Command) -> Result<Option<local::CommandResponse>> {
+    send_recv_command_to_socket_with_timeout(command, Duration::from_secs(2)).await
+}
+
+pub async fn send_recv_command_to_socket_with_timeout(
+    command: local::command::Command,
+    timeout: Duration,
+) -> Result<Option<local::CommandResponse>> {
     let path = directories::desktop_socket_path()?;
     let mut conn = BufferedUnixStream::connect_timeout(&path, Duration::from_secs(3)).await?;
-    conn.send_recv_command(command).await
+    conn.send_recv_command(command, timeout).await
 }

@@ -1,3 +1,4 @@
+use std::io::stdout;
 use std::process::ExitCode;
 
 use anstream::println;
@@ -38,6 +39,10 @@ use tracing::{
 };
 
 use crate::util::dialoguer_theme;
+use crate::util::spinner::{
+    Spinner,
+    SpinnerComponent,
+};
 
 #[derive(Debug, PartialEq, Args)]
 pub struct UpdateArgs {
@@ -130,19 +135,32 @@ async fn try_linux_update() -> Result<ExitCode> {
                     .interact_opt()?;
 
                 if should_continue == Some(0) {
-                    println!("Updating {PRODUCT_NAME}...");
-                    match update_command(true).await {
+                    let mut spinner = Spinner::new(vec![
+                        SpinnerComponent::Spinner,
+                        SpinnerComponent::Text(format!(" Updating {PRODUCT_NAME}, please wait...")),
+                    ]);
+                    tokio::spawn(async {
+                        tokio::signal::ctrl_c().await.unwrap();
+                        crossterm::execute!(stdout(), crossterm::cursor::Show).unwrap();
+                        #[allow(clippy::exit)]
+                        std::process::exit(0);
+                    });
+
+                    let update_cmd_result = update_command(true).await;
+                    println!("");
+                    match update_cmd_result {
                         Ok(Some(CommandResponse {
                             response: Some(Response::Success(_)),
                             ..
                         })) => {
-                            println!("Update complete");
+                            spinner.stop_with_message("Update complete".into());
                             Ok(ExitCode::SUCCESS)
                         },
                         Ok(Some(CommandResponse {
                             response: Some(Response::Error(ErrorResponse { message, .. })),
                             ..
                         })) => {
+                            spinner.stop();
                             let message = message.unwrap_or("An unknown error occurred attempting to update".into());
                             eyre::bail!(
                                 "{message}\n\nFailed to update. If this is unexpected, try running {} and then try again.\n",
@@ -152,14 +170,25 @@ async fn try_linux_update() -> Result<ExitCode> {
                         Ok(_) => {
                             // This case shouldn't happen, we expect a response from the desktop
                             // app.
-                            println!("Update complete");
+                            spinner.stop_with_message("Update complete".into());
                             Ok(ExitCode::SUCCESS)
                         },
                         Err(err) => {
-                            eyre::bail!(
-                                "{err}\n\nFailed to update. If this is unexpected, try running {} and then try again.\n",
-                                format!("{CLI_BINARY_NAME} doctor").bold()
-                            )
+                            spinner.stop();
+                            match err {
+                                fig_ipc::Error::Timeout => {
+                                    eyre::bail!(
+                                        "Timed out while waiting for the app to update. Updating may still be in progress - you can view app logs by running {}",
+                                        format!("{CLI_BINARY_NAME} debug logs").bold()
+                                    )
+                                },
+                                err => {
+                                    eyre::bail!(
+                                        "{err}\n\nFailed to update. If this is unexpected, try running {} and then try again.\n",
+                                        format!("{CLI_BINARY_NAME} doctor").bold()
+                                    )
+                                },
+                            }
                         },
                     }
                 } else {
