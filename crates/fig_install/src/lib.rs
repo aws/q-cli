@@ -91,7 +91,7 @@ pub enum Error {
     SystemNotOnChannel,
     #[error("manifest not found")]
     ManifestNotFound,
-    #[error("update in progress")]
+    #[error("Update in progress")]
     UpdateInProgress,
     #[error("could not convert path to cstring")]
     Nul(#[from] std::ffi::NulError),

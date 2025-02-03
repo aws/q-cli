@@ -141,6 +141,10 @@ async fn try_linux_update() -> Result<ExitCode> {
                     ]);
                     tokio::spawn(async {
                         tokio::signal::ctrl_c().await.unwrap();
+                        println!(
+                            "\nThe app is still updating. You can view the progress by running {}",
+                            format!("{CLI_BINARY_NAME} debug logs").bold()
+                        );
                         crossterm::execute!(stdout(), crossterm::cursor::Show).unwrap();
                         #[allow(clippy::exit)]
                         std::process::exit(0);
