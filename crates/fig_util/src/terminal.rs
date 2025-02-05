@@ -166,8 +166,8 @@ pub enum Terminal {
     Ghostty,
     /// Positron
     Positron,
-     /// Trae
-     Trae,
+    /// Trae
+    Trae,
 
     /// Custom terminal to support user/custom entries
     Custom(CustomTerminal),
