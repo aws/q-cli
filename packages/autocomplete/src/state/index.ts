@@ -1,8 +1,6 @@
 import React from "react";
 import logger from "loglevel";
-import { Mutate, StateCreator, StoreApi } from "zustand";
-import { createWithEqualityFn } from "zustand/traditional";
-
+import { createStore, Mutate, StateCreator, StoreApi } from "zustand";
 import { Suggestion } from "@aws/amazon-q-developer-cli-shared/internal";
 import {
   fieldsAreEqual,
@@ -21,31 +19,35 @@ import {
 } from "@aws/amazon-q-developer-cli-api-bindings-wrappers";
 import { type Types } from "@aws/amazon-q-developer-cli-api-bindings";
 import { detailedDiff } from "deep-object-diff";
-import { trackEvent } from "../telemetry.js";
 import { FigState, initialFigState } from "../fig/hooks";
 import { AutocompleteState, NamedSetState, Visibility } from "./types";
-
 import { updatePriorities } from "../suggestions/sorting";
 import {
   deduplicateSuggestions,
   filterSuggestions,
   getAllSuggestions,
 } from "../suggestions";
-
 import { GeneratorState } from "../generators/helpers";
-
+import { useAutocomplete } from "./useAutocomplete";
 import { getFullHistorySuggestions } from "../history";
 import { createGeneratorState } from "./generators";
 import { createInsertionState } from "./insertion";
+import { AutocompleteProps } from "../Autocomplete";
+import {
+  CsWebsocket,
+  WebsocketMuxBackend,
+} from "@aws/amazon-q-developer-cli-ipc-client-websocket-mux";
 
-const initialState: Partial<AutocompleteState> = {
+export { useAutocomplete };
+
+export const initialState: Partial<AutocompleteState> = {
   figState: initialFigState,
   parserResult: initialParserState,
   generatorStates: [] as GeneratorState[],
   command: null,
 
   visibleState: Visibility.HIDDEN_UNTIL_KEYPRESS,
-  lastInsertedSuggestion: null,
+  lastInsertedSuggestion: undefined,
   justInserted: false,
 
   selectedIndex: 0,
@@ -221,7 +223,7 @@ const updateSuggestions =
           updatedState.visibleState === Visibility.HIDDEN_UNTIL_KEYPRESS ||
           (willBeVisible === wasVisible && !suggestionsMayChange)
         ) {
-          set(updatedState, replace);
+          set(updatedState, replace === false ? false : undefined);
           return;
         }
 
@@ -232,7 +234,7 @@ const updateSuggestions =
         logger.info("Recomputed suggestions", { suggestions });
 
         if (willBeVisible && !updatedState.figState.cwd) {
-          trackEvent("autocomplete-no-context", {});
+          /* empty */
         }
 
         // If old state is visible, and user has changed the selected item try to
@@ -258,7 +260,7 @@ const updateSuggestions =
 
         set(
           { ...state, ...update, suggestions, selectedIndex, hasChangedIndex },
-          replace,
+          replace === false ? false : undefined,
         );
       },
       get,
@@ -276,250 +278,273 @@ const log =
   <T>(config: NamedStateCreator<T>): StateCreator<T, [], []> =>
   (set, get, api) => {
     const namedSet: NamedSetState<T> = (name, partial, replace) => {
-      console.groupCollapsed(`applying update: ${name}`);
-      logger.info({ name, partial, replace });
-      set(partial, replace);
-      console.groupEnd();
+      // console.groupCollapsed(`applying update: ${name}`);
+      logger.debug({ name, partial, replace });
+      set(partial, replace === false ? false : undefined);
+      // console.groupEnd();
     };
     return config(namedSet, get, api);
   };
 
-export const useAutocompleteStore = createWithEqualityFn<AutocompleteState>(
-  updateSuggestions(
-    log((setNamed, get) => {
-      const generatorState = createGeneratorState(setNamed, get);
-      const insertionState = createInsertionState(setNamed, get);
+export const createAutocompleteStore = (props: AutocompleteProps) =>
+  createStore<AutocompleteState>(
+    updateSuggestions(
+      log((setNamed, get) => {
+        const generatorState = createGeneratorState(setNamed, get);
+        const insertionState = createInsertionState(setNamed, get);
 
-      return {
-        ...(initialState as AutocompleteState),
-        ...insertionState,
+        return {
+          ...(initialState as AutocompleteState),
+          ...insertionState,
+          ipcClient: new WebsocketMuxBackend(props.ipcClient.websocket),
+          styleType: props.style ?? "tailwind",
 
-        setParserResult: (
-          parserResult: ArgumentParserResult,
-          hasBackspacedToNewToken: boolean,
-          largeBufferChange: boolean,
-        ) =>
-          setNamed("setParserResult", (state) => {
-            let { visibleState, generatorStates } = state;
+          setParserResult: (
+            parserResult: ArgumentParserResult,
+            hasBackspacedToNewToken: boolean,
+            largeBufferChange: boolean,
+          ) =>
+            setNamed("setParserResult", (state) => {
+              let { visibleState, generatorStates } = state;
 
-            // Trigger all generators on currentArg change.
-            const hasNewArg = !fieldsAreEqual(
-              parserResult,
-              state.parserResult,
-              ["currentArg", "completionObj"],
-            );
-
-            console.log(parserResult);
-
-            const newGeneratorStates =
-              generatorState.triggerGenerators(parserResult);
-            if (
-              newGeneratorStates.length !== generatorStates.length ||
-              generatorStates.some((s, idx) => s !== newGeneratorStates[idx])
-            ) {
-              // Update if we've triggered at least one generator.
-              generatorStates = newGeneratorStates;
-            }
-
-            const originalVisibleState = visibleState;
-            switch (originalVisibleState) {
-              case Visibility.HIDDEN_UNTIL_KEYPRESS: {
-                visibleState = Visibility.VISIBLE;
-                break;
-              }
-              case Visibility.HIDDEN_BY_INSERTION: {
-                const insertionTriggeredGenerator = state.generatorStates.some(
-                  (oldState, idx) =>
-                    oldState.generator ===
-                      state.lastInsertedSuggestion?.generator &&
-                    generatorStates[idx] !== oldState,
-                );
-
-                visibleState =
-                  hasNewArg || insertionTriggeredGenerator
-                    ? Visibility.VISIBLE
-                    : Visibility.HIDDEN_UNTIL_KEYPRESS;
-                break;
-              }
-              default:
-                break;
-            }
-
-            if (getSetting<boolean>(SETTINGS.ONLY_SHOW_ON_TAB, false)) {
-              visibleState = originalVisibleState;
-              if (hasNewArg) {
-                visibleState = Visibility.HIDDEN_UNTIL_SHOWN;
-              }
-            }
-
-            if (hasBackspacedToNewToken) {
-              visibleState = Visibility.HIDDEN_UNTIL_KEYPRESS;
-            }
-
-            if (largeBufferChange && !state.justInserted) {
-              visibleState = Visibility.HIDDEN_UNTIL_KEYPRESS;
-            }
-
-            const userFuzzySearchEnabled = hasNewArg
-              ? getSetting<boolean>(SETTINGS.FUZZY_SEARCH, false)
-              : state.userFuzzySearchEnabled;
-
-            const isFuzzySearchEnabled = () => {
-              // here we decide whether to use user's fuzzy search setting or not
-              switch (
-                parserResult.currentArg
-                  ? parserResult.currentArg.filterStrategy
-                  : parserResult.completionObj.filterStrategy
-              ) {
-                case "prefix":
-                  return false;
-                case "fuzzy":
-                  return true;
-                case "default":
-                default:
-                  return userFuzzySearchEnabled;
-              }
-            };
-
-            return {
-              parserResult,
-              visibleState,
-              fuzzySearchEnabled: isFuzzySearchEnabled(),
-              userFuzzySearchEnabled,
-              generatorStates,
-              justInserted: false,
-            };
-          }),
-
-        scroll: (index: number, visibleState: Visibility) =>
-          setNamed("scroll", (state) => {
-            const selectedIndex = Math.max(
-              Math.min(index, state.suggestions.length - 1),
-              0,
-            );
-            return {
-              selectedIndex,
-              visibleState,
-              hasChangedIndex: selectedIndex !== state.selectedIndex,
-            };
-          }),
-
-        setVisibleState: (visibleState: Visibility) =>
-          setNamed("setVisibleState", { visibleState }),
-
-        setHistoryModeEnabled: (
-          historyModeEnabled: React.SetStateAction<boolean>,
-        ) =>
-          setNamed("setHistoryModeEnabled", (state) => ({
-            historyModeEnabled:
-              typeof historyModeEnabled === "function"
-                ? historyModeEnabled(state.historyModeEnabled)
-                : historyModeEnabled,
-          })),
-
-        setUserFuzzySearchEnabled: (
-          userFuzzySearchEnabled: React.SetStateAction<boolean>,
-        ) =>
-          setNamed("setUserFuzzySearchEnabled", (state) => ({
-            userFuzzySearchEnabled:
-              typeof userFuzzySearchEnabled === "function"
-                ? userFuzzySearchEnabled(state.userFuzzySearchEnabled)
-                : userFuzzySearchEnabled,
-          })),
-
-        setFigState: (newFigState: React.SetStateAction<FigState>) =>
-          /*
-           * IMPORTANT: any computation in this function must be memoized,
-           * otherwise it will trigger setParserResult every time it's called
-           */
-          setNamed("setFigState", (state) => {
-            const figState =
-              typeof newFigState === "function"
-                ? newFigState(state.figState)
-                : newFigState;
-
-            const {
-              sshContextString,
-              cwd,
-              buffer,
-              cursorLocation,
-              aliases,
-              shellContext,
-            } = figState;
-
-            // Set globalCWD and SSH string for completion specs that use executeShellCommand
-            if (sshContextString) {
-              window.globalSSHString = sshContextString;
-            }
-
-            if (shellContext) {
-              window.globalTerminalSessionId = shellContext.sessionId;
-
-              if (shellContext.environmentVariables) {
-                figState.environmentVariables = getEnvVarsMemoized(
-                  shellContext.environmentVariables,
-                );
-              }
-
-              if (shellContext.alias) {
-                figState.aliases = getAliasMemoized(
-                  shellContext.alias,
-                  shellContext.shellPath,
-                );
-              }
-            }
-
-            const error = (msg: string): AutocompleteState => {
-              logger.debug(msg);
-              return {
-                ...state,
-                ...initialState,
-                settings: state.settings,
-                figState,
-              };
-            };
-
-            if (cwd) {
-              window.globalCWD = cwd;
-            }
-
-            const cursorChar = buffer.charAt(cursorLocation);
-            if (cursorChar.trim()) {
-              return error("Cursor is in the middle of a word.");
-            }
-
-            const bufferSliced = buffer.slice(0, cursorLocation);
-
-            try {
-              const command = getCommandMemoized(
-                bufferSliced,
-                aliases,
-                cursorLocation,
+              // Trigger all generators on currentArg change.
+              const hasNewArg = !fieldsAreEqual(
+                parserResult,
+                state.parserResult,
+                ["currentArg", "completionObj"],
               );
-              return { figState, command };
-            } catch (err) {
-              return error(`Failed to get token array: ${err}`);
-            }
-          }),
 
-        error: (error: string) =>
-          setNamed("error", (state) => {
-            logger.warn(error);
-            return {
-              ...initialState,
-              figState: state.figState,
-              settings: state.settings,
-            };
-          }),
+              logger.debug(parserResult);
 
-        setSettings: (settings: React.SetStateAction<SettingsMap>) =>
-          setNamed("setSettings", (state) => ({
-            settings:
-              typeof settings === "function"
-                ? settings(state.settings)
-                : settings,
-          })),
-      };
-    }),
-  ),
-);
+              const newGeneratorStates =
+                generatorState.triggerGenerators(parserResult);
+              if (
+                newGeneratorStates.length !== generatorStates.length ||
+                generatorStates.some((s, idx) => s !== newGeneratorStates[idx])
+              ) {
+                // Update if we've triggered at least one generator.
+                generatorStates = newGeneratorStates;
+              }
+
+              const originalVisibleState = visibleState;
+              switch (originalVisibleState) {
+                case Visibility.HIDDEN_UNTIL_KEYPRESS: {
+                  visibleState = Visibility.VISIBLE;
+                  break;
+                }
+                case Visibility.HIDDEN_BY_INSERTION: {
+                  const insertionTriggeredGenerator =
+                    state.generatorStates.some(
+                      (oldState, idx) =>
+                        oldState.generator ===
+                          state.lastInsertedSuggestion?.generator &&
+                        generatorStates[idx] !== oldState,
+                    );
+
+                  visibleState =
+                    hasNewArg || insertionTriggeredGenerator
+                      ? Visibility.VISIBLE
+                      : Visibility.HIDDEN_UNTIL_KEYPRESS;
+                  break;
+                }
+                default:
+                  break;
+              }
+
+              if (getSetting<boolean>(SETTINGS.ONLY_SHOW_ON_TAB, false)) {
+                visibleState = originalVisibleState;
+                if (hasNewArg) {
+                  visibleState = Visibility.HIDDEN_UNTIL_SHOWN;
+                }
+              }
+
+              if (hasBackspacedToNewToken) {
+                visibleState = Visibility.HIDDEN_UNTIL_KEYPRESS;
+              }
+
+              if (largeBufferChange && !state.justInserted) {
+                visibleState = Visibility.HIDDEN_UNTIL_KEYPRESS;
+              }
+
+              const userFuzzySearchEnabled = hasNewArg
+                ? getSetting<boolean>(SETTINGS.FUZZY_SEARCH, false)
+                : state.userFuzzySearchEnabled;
+
+              const isFuzzySearchEnabled = () => {
+                // here we decide whether to use user's fuzzy search setting or not
+                switch (
+                  parserResult.currentArg
+                    ? parserResult.currentArg.filterStrategy
+                    : parserResult.completionObj.filterStrategy
+                ) {
+                  case "prefix":
+                    return false;
+                  case "fuzzy":
+                    return true;
+                  case "default":
+                  default:
+                    return userFuzzySearchEnabled;
+                }
+              };
+
+              return {
+                parserResult,
+                visibleState,
+                fuzzySearchEnabled: isFuzzySearchEnabled(),
+                userFuzzySearchEnabled,
+                generatorStates,
+                justInserted: false,
+              };
+            }),
+
+          scroll: (index: number, visibleState: Visibility) =>
+            setNamed("scroll", (state) => {
+              const selectedIndex = Math.max(
+                Math.min(index, state.suggestions.length - 1),
+                0,
+              );
+              return {
+                selectedIndex,
+                visibleState,
+                hasChangedIndex: selectedIndex !== state.selectedIndex,
+              };
+            }),
+
+          setVisibleState: (visibleState: Visibility) =>
+            setNamed("setVisibleState", { visibleState }),
+
+          setHistoryModeEnabled: (
+            historyModeEnabled: React.SetStateAction<boolean>,
+          ) =>
+            setNamed("setHistoryModeEnabled", (state) => ({
+              historyModeEnabled:
+                typeof historyModeEnabled === "function"
+                  ? historyModeEnabled(state.historyModeEnabled)
+                  : historyModeEnabled,
+            })),
+
+          setUserFuzzySearchEnabled: (
+            userFuzzySearchEnabled: React.SetStateAction<boolean>,
+          ) =>
+            setNamed("setUserFuzzySearchEnabled", (state) => ({
+              userFuzzySearchEnabled:
+                typeof userFuzzySearchEnabled === "function"
+                  ? userFuzzySearchEnabled(state.userFuzzySearchEnabled)
+                  : userFuzzySearchEnabled,
+            })),
+
+          setFigState: (newFigState: React.SetStateAction<FigState>) =>
+            /*
+             * IMPORTANT: any computation in this function must be memoized,
+             * otherwise it will trigger setParserResult every time it's called
+             */
+            setNamed("setFigState", (state) => {
+              const figState =
+                typeof newFigState === "function"
+                  ? newFigState(state.figState)
+                  : newFigState;
+
+              const {
+                sshContextString,
+                cwd,
+                buffer,
+                cursorLocation,
+                aliases,
+                shellContext,
+              } = figState;
+
+              // Set globalCWD and SSH string for completion specs that use executeShellCommand
+              if (sshContextString) {
+                window.globalSSHString = sshContextString;
+              }
+
+              if (shellContext) {
+                window.globalTerminalSessionId = shellContext.sessionId;
+
+                if (shellContext.environmentVariables) {
+                  figState.environmentVariables = getEnvVarsMemoized(
+                    shellContext.environmentVariables,
+                  );
+                }
+
+                if (shellContext.alias) {
+                  figState.aliases = getAliasMemoized(
+                    shellContext.alias,
+                    shellContext.shellPath,
+                  );
+                }
+              }
+
+              const error = (msg: string): AutocompleteState => {
+                logger.debug(msg);
+                return {
+                  ...state,
+                  ...initialState,
+                  settings: state.settings,
+                  figState,
+                };
+              };
+
+              if (cwd) {
+                window.globalCWD = cwd;
+              }
+
+              const cursorChar = buffer.charAt(cursorLocation);
+              if (cursorChar.trim()) {
+                return error("Cursor is in the middle of a word.");
+              }
+
+              const bufferSliced = buffer.slice(0, cursorLocation);
+
+              try {
+                const command = getCommandMemoized(
+                  bufferSliced,
+                  aliases,
+                  cursorLocation,
+                );
+                return { figState, command };
+              } catch (err) {
+                return error(`Failed to get token array: ${err}`);
+              }
+            }),
+
+          setSocket: (socket: CsWebsocket) =>
+            setNamed("setSocket", (state) => {
+              const ipcClient = state.ipcClient;
+              if (!ipcClient) {
+                return {
+                  ...state,
+                  ipcClient: new WebsocketMuxBackend(socket),
+                };
+              } else if (ipcClient instanceof WebsocketMuxBackend) {
+                ipcClient.setWebsocket(socket);
+                return { ...state, ipcClient };
+              } else {
+                logger.warn("Cannot setSocket");
+              }
+              return state;
+            }),
+
+          error: (error: string) =>
+            setNamed("error", (state) => {
+              logger.warn(error);
+              return {
+                ...initialState,
+                figState: state.figState,
+                settings: state.settings,
+              };
+            }),
+
+          setSettings: (settings: React.SetStateAction<SettingsMap>) =>
+            setNamed("setSettings", (state) => ({
+              settings:
+                typeof settings === "function"
+                  ? settings(state.settings)
+                  : settings,
+            })),
+        };
+      }),
+    ),
+  );
+
+export type AutocompleteStore = ReturnType<typeof createAutocompleteStore>;

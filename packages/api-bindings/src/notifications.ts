@@ -8,6 +8,7 @@ import {
 
 import { sendMessage } from "./core.js";
 import { create } from "@bufbuild/protobuf";
+import logger from "loglevel";
 
 export type NotificationResponse = {
   unsubscribe: boolean;
@@ -109,6 +110,6 @@ const unsubscribeFromAll = () => {
 };
 
 if (!window?.fig?.quiet) {
-  console.log("[q] unsubscribing any existing notifications...");
+  logger.info("[q] unsubscribing any existing notifications...");
 }
 unsubscribeFromAll();

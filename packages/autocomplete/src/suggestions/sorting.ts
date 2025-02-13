@@ -49,7 +49,10 @@ export const updateAutocompleteIndexFromUserInsert = (
   );
 };
 
-export const updatePriorities = (suggestions: Suggestion[], cmd: string) => {
+export const updatePriorities = (
+  suggestions: Suggestion[],
+  cmd: string,
+): Suggestion[] => {
   let idxToUse;
 
   // Default setting for autocomplete.sortMethod is "recency".

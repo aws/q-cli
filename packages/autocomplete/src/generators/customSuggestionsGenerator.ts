@@ -7,8 +7,10 @@ import {
   GeneratorContext,
   haveContextForGenerator,
 } from "./helpers";
+import { IpcClient } from "@aws/amazon-q-developer-cli-ipc-client-core";
 
 export async function getCustomSuggestions(
+  ipcClient: IpcClient,
   generator: Fig.Generator,
   context: GeneratorContext,
 ): Promise<Fig.Suggestion[]> {
@@ -36,7 +38,7 @@ export async function getCustomSuggestions(
       context,
       () =>
         runPipingConsoleMethods(() =>
-          generator.custom!(tokenArray, executeCommand, {
+          generator.custom!(tokenArray, executeCommand(ipcClient), {
             currentWorkingDirectory,
             currentProcess,
             sshPrefix: "",

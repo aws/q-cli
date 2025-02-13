@@ -23,7 +23,10 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@aws/amazon-q-developer-cli-api-bindings": "workspace:~",
+    "@aws/amazon-q-developer-cli-api-bindings": "workspace:^",
+    "@aws/amazon-q-developer-cli-ipc-client-core": "workspace:^",
+    "@aws/amazon-q-developer-cli-proto": "workspace:^",
+    "@bufbuild/protobuf": "2.2.3",
     "loglevel": "^1.9.2"
   },
   "devDependencies": {
@@ -32,7 +35,7 @@
     "@amzn/types": "workspace:^",
     "@aws/amazon-q-developer-cli-shared": "workspace:^",
     "@withfig/autocomplete-types": "^1.31.0",
-    "eslint": "^9.18.0",
+    "eslint": "^9.16.0",
     "prettier": "^3.4.2",
     "typescript": "^5.7.3"
   }

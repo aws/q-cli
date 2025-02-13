@@ -2,6 +2,7 @@ import { SettingsMap } from "@aws/amazon-q-developer-cli-api-bindings-wrappers";
 import * as app from "./fig.json";
 import { create } from "@bufbuild/protobuf";
 import {
+  Action,
   ActionAvailability,
   ActionSchema,
 } from "@aws/amazon-q-developer-cli-proto/fig";
@@ -46,7 +47,7 @@ export enum AutocompleteAction {
   SELECT_SUGGESTION_10 = "selectSuggestion10",
 }
 
-export const ACTIONS = app.contributes.actions.map((action) => {
+export const ACTIONS: Action[] = app.contributes.actions.map((action) => {
   let availability: ActionAvailability | undefined;
   switch (action.availability) {
     case "ALWAYS":

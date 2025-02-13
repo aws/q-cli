@@ -1,13 +1,21 @@
 import { useCallback } from "react";
 import logger from "loglevel";
-import { Keybindings, Shell } from "@aws/amazon-q-developer-cli-api-bindings";
+import { Keybindings } from "@aws/amazon-q-developer-cli-api-bindings";
 import {
   SETTINGS,
   getSetting,
 } from "@aws/amazon-q-developer-cli-api-bindings-wrappers";
 import { ACTIONS, AutocompleteAction } from "../actions";
-import { useAutocompleteStore } from "../state";
+import { useAutocomplete } from "../state";
 import { Visibility } from "../state/types";
+import { IpcClient } from "@aws/amazon-q-developer-cli-ipc-client-core";
+import { create } from "@bufbuild/protobuf";
+import {
+  ActionSchema,
+  InsertTextRequestSchema,
+  InterceptRequest_SetFigjsInterceptsSchema,
+  InterceptRequestSchema,
+} from "@aws/amazon-q-developer-cli-proto/figterm";
 
 export const setInterceptKeystrokes = (
   intercept: boolean,
@@ -20,6 +28,42 @@ export const setInterceptKeystrokes = (
     globalIntercept,
     currentTerminalSessionId,
   );
+
+export const setInterceptKeystrokesBackend = (
+  ipcClient: IpcClient | undefined,
+  interceptBoundKeystrokes: boolean,
+  interceptGlobalKeystrokes: boolean = false,
+  currentTerminalSessionId?: string,
+) => {
+  if (!currentTerminalSessionId) {
+    return;
+  }
+  ipcClient?.intercept(
+    currentTerminalSessionId,
+    create(InterceptRequestSchema, {
+      interceptCommand: {
+        case: "setFigjsIntercepts",
+        value: create(InterceptRequest_SetFigjsInterceptsSchema, {
+          actions: ACTIONS.map((action) =>
+            create(ActionSchema, {
+              identifier: action.identifier,
+              bindings: action.defaultBindings,
+            }),
+          ),
+          interceptBoundKeystrokes,
+          interceptGlobalKeystrokes,
+          overrideActions: false,
+        }),
+      },
+    }),
+  );
+};
+// Keybindings.setInterceptKeystrokes(
+//   ACTIONS,
+//   intercept,
+//   globalIntercept,
+//   currentTerminalSessionId,
+// );
 
 enum KeyCode {
   TAB = 48,
@@ -51,7 +95,8 @@ export const useAutocompleteKeypressCallback = (
 
     figState,
     setFigState,
-  } = useAutocompleteStore();
+    ipcClient,
+  } = useAutocomplete();
 
   const selectedItem = suggestions[selectedIndex];
   const scrollWrapAround = settings[SETTINGS.SCROLL_WRAP_AROUND];
@@ -74,8 +119,9 @@ export const useAutocompleteKeypressCallback = (
     [
       selectedIndex,
       visibleState,
-      suggestions.length,
       scrollWrapAround,
+      scrollToIndex,
+      suggestions.length,
       setHistoryModeEnabled,
     ],
   );
@@ -137,7 +183,12 @@ export const useAutocompleteKeypressCallback = (
           insertTextForItem(selectedItem, true);
           break;
         case AutocompleteAction.EXECUTE:
-          Shell.insert("\n", undefined, figState.shellContext?.sessionId);
+          ipcClient?.insertText(
+            figState.shellContext?.sessionId ?? "",
+            create(InsertTextRequestSchema, {
+              insertion: "\n",
+            }),
+          );
           break;
         case AutocompleteAction.HIDE_AUTOCOMPLETE:
           setVisibleState(Visibility.HIDDEN_UNTIL_SHOWN);
@@ -196,6 +247,7 @@ export const useAutocompleteKeypressCallback = (
       return undefined;
     },
     [
+      ipcClient,
       navigate,
       insertCommonPrefix,
       insertTextForItem,

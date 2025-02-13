@@ -1,4 +1,5 @@
 import { twMerge } from "tailwind-merge";
+import React from "react";
 
 const LoadingIcon = ({ className }: { className?: string }) => (
   <div
@@ -7,7 +8,7 @@ const LoadingIcon = ({ className }: { className?: string }) => (
       className,
     )}
   >
-    <div className="relative flex items-center justify-center w-[20px]">
+    <div className="loading-container relative flex items-center justify-center w-[20px]">
       {[
         "left-0 animate-[spinGrow_0.66s_cubic-bezier(0,1,1,0)_infinite]",
         "left-0 animate-[spinSlide_0.66s_cubic-bezier(0,1,1,0)_infinite]",
@@ -16,7 +17,7 @@ const LoadingIcon = ({ className }: { className?: string }) => (
       ].map((style, i) => (
         <div
           key={i}
-          className={`absolute h-1 w-1 rounded-full bg-current ${style}`}
+          className={`loading-dot absolute h-1 w-1 rounded-full bg-current ${style}`}
         />
       ))}
     </div>

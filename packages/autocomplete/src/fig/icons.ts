@@ -1,4 +1,4 @@
-export const icons: string[] = [
+export const ICONS = [
   "alert",
   "android",
   "apple",
@@ -15,8 +15,10 @@ export const icons: string[] = [
   "database",
   "discord",
   "docker",
+  "file",
   "firebase",
   "flag",
+  "folder",
   "gcloud",
   "gear",
   "git",
@@ -38,4 +40,6 @@ export const icons: string[] = [
   "twitter",
   "vercel",
   "yarn",
-];
+] as const;
+
+export type IconName = (typeof ICONS)[number];

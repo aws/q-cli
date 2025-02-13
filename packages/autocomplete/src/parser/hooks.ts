@@ -1,8 +1,10 @@
 import React, { useEffect, useRef } from "react";
 import { shallow } from "zustand/shallow";
 import { parseArguments } from "@aws/amazon-q-developer-cli-autocomplete-parser";
-import { useAutocompleteStore } from "../state";
+import { useAutocomplete } from "../state";
 import { shellContextSelector } from "../state/generators";
+import { IpcClient } from "@aws/amazon-q-developer-cli-ipc-client-core";
+import { useAutocompleteWithEqualityFn } from "../state/useAutocomplete";
 
 function usePrevious<T>(value: T) {
   const ref = useRef<T>(value);
@@ -23,27 +25,27 @@ const isBufferDifferenceFromTyping = (
   if (!oldBuffer.startsWith(newBuffer) && !newBuffer.startsWith(oldBuffer)) {
     return false;
   }
-  // TODO: maybe play with this threshold? For now we will allow only a difference
+  // TODO(sean) maybe play with this threshold? For now we will allow only a difference
   // of one character to be considered typing.
   return Math.abs(oldBuffer.length - newBuffer.length) < 2;
 };
 
 export const useParseArgumentsEffect = (
   setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+  isWeb: boolean,
+  ipcClient?: IpcClient,
 ) => {
-  const setParserResult = useAutocompleteStore(
-    (state) => state.setParserResult,
-  );
-  const command = useAutocompleteStore((state) => state.command);
-  const onError = useAutocompleteStore((state) => state.error);
-  const setVisibleState = useAutocompleteStore(
-    (state) => state.setVisibleState,
-  );
-  const context = useAutocompleteStore(shellContextSelector, shallow);
+  const setParserResult = useAutocomplete((state) => state.setParserResult);
+  const command = useAutocomplete((state) => state.command);
+  const onError = useAutocomplete((state) => state.error);
+  const setVisibleState = useAutocomplete((state) => state.setVisibleState);
+  const context = useAutocompleteWithEqualityFn(shellContextSelector, shallow);
 
   const oldCommand = usePrevious(command);
 
   useEffect(() => {
+    if (!ipcClient) return;
+
     let isMostRecentEffect = true;
 
     const tokens = command?.tokens || [];
@@ -51,7 +53,7 @@ export const useParseArgumentsEffect = (
 
     setLoading(true);
     // Only run if we didn't error in bash parser.
-    parseArguments(command, context)
+    parseArguments(ipcClient, isWeb, command, context)
       .then((result) => {
         if (!isMostRecentEffect) return;
         setLoading(false);
@@ -75,5 +77,5 @@ export const useParseArgumentsEffect = (
     return () => {
       isMostRecentEffect = false;
     };
-  }, [command, setParserResult, onError, context, setVisibleState]);
+  }, [command, setParserResult, onError, context, setVisibleState, ipcClient]);
 };

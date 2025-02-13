@@ -28,15 +28,19 @@ import {
 import { DisabledSpecError, MissingSpecError } from "./errors.js";
 import { specCache } from "./caches.js";
 import { tryResolveSpecToSubcommand } from "./tryResolveSpecToSubcommand.js";
+import { IpcClient } from "../../ipc-client-core/dist/index.js";
 
 /**
  * This searches for the first directory containing a .fig/ folder in the parent directories
  */
-const searchFigFolder = async (currentDirectory: string) => {
+const searchFigFolder = async (
+  ipcClient: IpcClient,
+  currentDirectory: string,
+) => {
   try {
     return ensureTrailingSlash(
       (
-        await executeCommand({
+        await executeCommand(ipcClient)({
           command: "bash",
           args: [
             "-c",
@@ -59,13 +63,14 @@ export const serializeSpecLocation = (location: SpecLocation): string => {
 };
 
 export const getSpecPath = async (
+  ipcClient: IpcClient,
   name: string,
   cwd: string,
   isScript?: boolean,
 ): Promise<SpecLocation> => {
   if (name === "?") {
     // If the user is searching for _shortcuts.js by using "?"
-    const path = await searchFigFolder(cwd);
+    const path = await searchFigFolder(ipcClient, cwd);
     return { name: "_shortcuts", type: SpecLocationSource.LOCAL, path };
   }
 
@@ -111,6 +116,7 @@ type ResolvedSpecLocation =
 
 export const importSpecFromLocation = async (
   specLocation: SpecLocation,
+  isWeb: boolean,
   localLogger: Logger = logger,
 ): Promise<{
   specFile: SpecFileImport;
@@ -142,6 +148,7 @@ export const importSpecFromLocation = async (
       const spec = await importSpecFromFile(
         diffVersionedFile ? `${name}/${diffVersionedFile}` : name,
         devPath,
+        isWeb,
         localLogger,
       );
       specFile = spec;
@@ -158,6 +165,7 @@ export const importSpecFromLocation = async (
     specFile = await importSpecFromFile(
       basename,
       `${dirname}.fig/autocomplete/build/`,
+      isWeb,
       localLogger,
     );
   } else if (!specFile) {
@@ -181,6 +189,7 @@ export const importSpecFromLocation = async (
         specFile = await importSpecFromFile(
           name,
           `~/.fig/autocomplete/build/`,
+          isWeb,
           localLogger,
         );
       } catch (_err) {
@@ -197,7 +206,9 @@ export const importSpecFromLocation = async (
 };
 
 export const loadFigSubcommand = async (
+  ipcClient: IpcClient,
   specLocation: SpecLocation,
+  isWeb: boolean,
   _context?: Fig.ShellContext,
   localLogger: Logger = logger,
 ): Promise<Fig.Subcommand> => {
@@ -205,13 +216,24 @@ export const loadFigSubcommand = async (
   const location = (await isDiffVersionedSpec(name))
     ? { ...specLocation, diffVersionedFile: "index" }
     : specLocation;
-  const { specFile } = await importSpecFromLocation(location, localLogger);
-  const subcommand = await tryResolveSpecToSubcommand(specFile, specLocation);
+  const { specFile } = await importSpecFromLocation(
+    location,
+    isWeb,
+    localLogger,
+  );
+  const subcommand = await tryResolveSpecToSubcommand(
+    ipcClient,
+    isWeb,
+    specFile,
+    specLocation,
+  );
   return subcommand;
 };
 
 export const loadSubcommandCached = async (
+  ipcClient: IpcClient,
   specLocation: SpecLocation,
+  isWeb: boolean,
   context?: Fig.ShellContext,
   localLogger: Logger = logger,
 ): Promise<Subcommand> => {
@@ -237,7 +259,7 @@ export const loadSubcommandCached = async (
 
   const subcommand = await withTimeout(
     5000,
-    loadFigSubcommand(specLocation, context, localLogger),
+    loadFigSubcommand(ipcClient, specLocation, isWeb, context, localLogger),
   );
   const converted = convertSubcommand(subcommand, initializeDefault);
   specCache.set(key, converted);

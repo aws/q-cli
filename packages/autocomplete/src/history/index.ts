@@ -33,6 +33,7 @@ import {
   HistoryContext,
 } from "./helpers";
 import { MissingSpecError } from "./errors";
+import { IpcClient } from "@aws/amazon-q-developer-cli-ipc-client-core";
 
 const historyLogger = getLogger("history");
 historyLogger.setDefaultLevel("warn");
@@ -43,7 +44,8 @@ type HistoryArgValues = {
 
 type HistoryValueIndex = Record<
   string,
-  Internal.Subcommand<HistoryArgValues, unknown, unknown>
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  Internal.Subcommand<HistoryArgValues, {}, {}>
 >;
 
 type HistorySource = {
@@ -136,6 +138,8 @@ const awaitBatched = async <T>(
 };
 
 export const loadHistorySource = async (
+  ipcClient: IpcClient,
+  isWeb: boolean,
   items: HistoryEntry[],
   aliases: AliasMap,
 ): Promise<HistorySource> => {
@@ -147,7 +151,11 @@ export const loadHistorySource = async (
     command: AnnotatedCommand,
     context?: Partial<HistoryContext>,
   ) =>
-    getSpecPath(command.command.tokens[0]?.text ?? "", context?.cwd ?? fakeCWD);
+    getSpecPath(
+      ipcClient,
+      command.command.tokens[0]?.text ?? "",
+      context?.cwd ?? fakeCWD,
+    );
 
   for (let i = 0; i < items.length; i += 1) {
     const { text, context } = items[i];
@@ -175,7 +183,9 @@ export const loadHistorySource = async (
   const locationPromises = locations.map(
     (name) => () =>
       loadSubcommandCached(
+        ipcClient,
         { name, type: SpecLocationSource.GLOBAL },
+        isWeb,
         undefined,
         historyLogger,
       ).catch((e) => e),
@@ -203,6 +213,8 @@ export const loadHistorySource = async (
             environmentVariables: {},
           };
           command.parserResult = await parseArguments(
+            ipcClient,
+            isWeb,
             command.command,
             parseContext,
             true,
@@ -249,7 +261,11 @@ const loadFigHistory = async (): Promise<HistoryEntry[]> =>
     ),
   );
 
-export const loadHistory = async (aliases: AliasMap) => {
+export const loadHistory = async (
+  ipcClient: IpcClient,
+  isWeb: boolean,
+  aliases: AliasMap,
+) => {
   const loadHistoryCommand = async (
     command: string,
     shell?: string,
@@ -261,7 +277,7 @@ export const loadHistory = async (aliases: AliasMap) => {
         history = await executeLoginShell({ command, shell });
       } else {
         history = (
-          await executeCommand({
+          await executeCommand(ipcClient)({
             command: "zsh",
             args: ["-c", command],
           })
@@ -276,7 +292,7 @@ export const loadHistory = async (aliases: AliasMap) => {
 
     const key = shell ?? "customCommand";
     const start = performance.now();
-    const result = await loadHistorySource(items, aliases);
+    const result = await loadHistorySource(ipcClient, isWeb, items, aliases);
     historyLogger.info("Got history entries", {
       ...result,
       key,
@@ -288,7 +304,12 @@ export const loadHistory = async (aliases: AliasMap) => {
 
   const entries = await loadFigHistory();
   const start = performance.now();
-  historySources.fig = await loadHistorySource(entries, aliases);
+  historySources.fig = await loadHistorySource(
+    ipcClient,
+    isWeb,
+    entries,
+    aliases,
+  );
   historyLogger.info("Got fig history", {
     ...historySources.fig,
     time: performance.now() - start,

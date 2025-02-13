@@ -1,4 +1,5 @@
 import { file_fig as file } from "@aws/amazon-q-developer-cli-proto/fig";
+import packageJson from "@aws/amazon-q-developer-cli-proto/package.json";
 import { CodeBlockWriter, IndentationText, Project } from "ts-morph";
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -124,8 +125,6 @@ const [requestsWithMatchingResponses, otherRequests] = requestTypes
 
       const endpoint = normalize(request);
 
-      console.log(endpoint, requestTypes);
-
       if (responseTypes.indexOf(`${endpoint}Response`) !== -1) {
         return [matchingResponse.concat([request]), other];
       }
@@ -136,9 +135,7 @@ const [requestsWithMatchingResponses, otherRequests] = requestTypes
 
 console.log(requestsWithMatchingResponses, otherRequests);
 
-const protoVersion = JSON.parse(
-  readFileSync(join(__dirname, "../../../proto/package.json"), "utf8"),
-).version;
+const protoVersion = packageJson.version;
 
 const sourceFile = project.createSourceFile(
   join(__dirname, "../src/requests.ts"),

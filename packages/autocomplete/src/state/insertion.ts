@@ -1,6 +1,5 @@
 import logger from "loglevel";
 import { StoreApi } from "zustand";
-import { Shell } from "@aws/amazon-q-developer-cli-api-bindings";
 import { SpecLocationSource } from "@fig/autocomplete-shared";
 import {
   SpecLocation,
@@ -12,7 +11,6 @@ import {
   ensureTrailingSlash,
 } from "@aws/amazon-q-developer-cli-shared/utils";
 import { SETTINGS } from "@aws/amazon-q-developer-cli-api-bindings-wrappers";
-import { trackEvent } from "../telemetry";
 import { NamedSetState, AutocompleteState, Visibility } from "./types";
 import {
   isMatchingType,
@@ -21,6 +19,10 @@ import {
 } from "../suggestions/helpers";
 import { updateAutocompleteIndexFromUserInsert } from "../suggestions/sorting";
 import { InsertPrefixError } from "./errors";
+import { IpcClient } from "@aws/amazon-q-developer-cli-ipc-client-core";
+import { trackEvent } from "../telemetry";
+import { create } from "@bufbuild/protobuf";
+import { InsertTextRequestSchema } from "@aws/amazon-q-developer-cli-proto/figterm";
 
 const sendTextToTerminal = (
   state: AutocompleteState,
@@ -28,6 +30,7 @@ const sendTextToTerminal = (
   text: string,
   isFullCompletion: boolean,
   rootCommand: string,
+  ipcClient: IpcClient,
 ) => {
   const {
     parserResult: { searchTerm },
@@ -78,11 +81,20 @@ const sendTextToTerminal = (
 
   logger.info(`inserting: ${finalStringToInsert}`);
 
-  Shell.insert(
-    finalStringToInsert,
-    { insertionBuffer: buffer },
-    state.figState.shellContext?.sessionId,
+  // insert(
+  //   finalStringToInsert,
+  //   { insertionBuffer: buffer },
+  //   state.figState.shellContext?.sessionId,
+  // );
+
+  ipcClient?.insertText(
+    state.figState.shellContext?.sessionId ?? "",
+    create(InsertTextRequestSchema, {
+      insertion: finalStringToInsert,
+      insertionBuffer: buffer,
+    }),
   );
+
   return {
     insertedChars: valToInsert.length,
     insertedCharsFull: finalStringToInsert.length,
@@ -94,6 +106,7 @@ const insertString = (
   item: Suggestion,
   text: string,
   isFullCompletion: boolean,
+  ipcClient: IpcClient,
 ) => {
   const { command, updateVisibilityPostInsert, parserResult } = state;
   const { commandIndex, annotations } = parserResult;
@@ -105,6 +118,7 @@ const insertString = (
     text,
     isFullCompletion,
     rootCommand,
+    ipcClient,
   );
 
   let specLocation: { location: SpecLocation; name: string } | undefined;
@@ -139,7 +153,7 @@ const insertString = (
     insertionLength: `${inserted.insertedChars}`,
     // Includes backspaces and cursor adjustments.
     insertionLengthFull: `${inserted.insertedCharsFull}`,
-    app: fig.constants?.version || "",
+    app: window?.fig?.constants?.version ?? "",
     terminal: state.figState.shellContext?.terminal ?? null,
     shell: state.figState.shellContext?.shellPath?.split("/")?.at(-1) ?? null,
   });
@@ -198,7 +212,10 @@ const makeInsertTextForItem =
       parserResult: { searchTerm },
       fuzzySearchEnabled,
       settings,
+      ipcClient,
     } = state;
+    if (!ipcClient) return;
+
     let text = getFullInsertion(
       item,
       searchTerm,
@@ -220,7 +237,7 @@ const makeInsertTextForItem =
       text += " ";
     }
 
-    return insertString(state, item, text, true);
+    return insertString(state, item, text, true, ipcClient);
   };
 
 const makeInsertCommonPrefix =
@@ -233,7 +250,9 @@ const makeInsertCommonPrefix =
       fuzzySearchEnabled,
       settings,
       insertTextForItem,
+      ipcClient,
     } = state;
+    if (!ipcClient) return;
     const selectedItem = suggestions[selectedIndex];
 
     const queryTerm = getQueryTermForSuggestion(selectedItem, searchTerm);
@@ -300,7 +319,7 @@ const makeInsertCommonPrefix =
       }
       return insertTextForItem(selectedItem);
     }
-    return insertString(state, selectedItem, text, false);
+    return insertString(state, selectedItem, text, false, ipcClient);
   };
 
 export const createInsertionState = (

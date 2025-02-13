@@ -7,6 +7,7 @@ import {
 
 import { b64ToBytes, bytesToBase64 } from "./utils.js";
 import { create, fromBinary, toBinary } from "@bufbuild/protobuf";
+import logger from "loglevel";
 
 interface GlobalAPIError {
   error: string;
@@ -98,9 +99,7 @@ export function sendMessage(
     return;
   }
 
-  console.error(
-    "Cannot send request. Fig.js is not supported in this browser.",
-  );
+  logger.error("Cannot send request. Fig.js is not supported in this browser.");
 }
 
 const setupEventListeners = (): void => {
@@ -119,6 +118,6 @@ const setupEventListeners = (): void => {
 
 // We want this to be run automatically
 if (!window?.fig?.quiet) {
-  console.log("[q] setting up event listeners...");
+  logger.info("[q] setting up event listeners...");
 }
 setupEventListeners();

@@ -1,10 +1,11 @@
-import { useCallback, useMemo, CSSProperties, useRef } from "react";
+import React, { useCallback, useMemo, CSSProperties, useRef } from "react";
 import logger from "loglevel";
 import fuzzysort from "@aws/amazon-q-developer-cli-fuzzysort";
 import { Suggestion as SuggestionT } from "@aws/amazon-q-developer-cli-shared/internal";
 import { makeArray } from "@aws/amazon-q-developer-cli-shared/utils";
 import { getQueryTermForSuggestion } from "../suggestions/helpers";
 import SuggestionIcon from "./SuggestionIcon";
+import { IpcClient } from "@aws/amazon-q-developer-cli-ipc-client-core";
 
 type SuggestionProps = {
   style: CSSProperties;
@@ -16,6 +17,8 @@ type SuggestionProps = {
   searchTerm: string;
   iconSize: number;
   fuzzySearchEnabled: boolean;
+  ipcClient?: IpcClient;
+  isWeb: boolean;
 };
 
 type HighlightType = "match" | "prefix";
@@ -37,6 +40,7 @@ const getTitle = (
   commonPrefix: string,
   searchTerm: string,
   fuzzySearch: boolean,
+  isWeb: boolean,
 ) => {
   let elementId = 0;
 
@@ -244,17 +248,27 @@ const getTitle = (
             if (t.type === "match") {
               return (
                 <mark
-                  className="bg-matching-bg/80 group-data-[active-item]:bg-selected-matching-bg/80 text-inherit brightness-95"
+                  className={
+                    isWeb
+                      ? "matching-text"
+                      : "bg-matching-bg/80 group-data-[active-item]:bg-selected-matching-bg/80 text-inherit brightness-95"
+                  }
                   key={t.id}
                 >
-                  <span className="brightness-125">{t.highlight}</span>
+                  <span className={isWeb ? "" : "brightness-125"}>
+                    {t.highlight}
+                  </span>
                 </mark>
               );
             }
             if (t.type === "prefix") {
               return (
                 <mark
-                  className="bg-transparent text-inherit underline"
+                  className={
+                    isWeb
+                      ? "prefix-highlight"
+                      : "bg-transparent text-inherit underline"
+                  }
                   key={t.id}
                 >
                   {t.highlight}
@@ -265,7 +279,10 @@ const getTitle = (
           })}
         </>
       ))}
-      <span className="opacity-50"> {argString} </span>
+      <span className={isWeb ? "argument-type" : "opacity-50"}>
+        {" "}
+        {argString}{" "}
+      </span>
     </>
   );
 };
@@ -280,6 +297,8 @@ const Suggestion = ({
   isActive,
   onClick,
   iconSize,
+  isWeb,
+  // ipcClient,
 }: SuggestionProps) => {
   const onSuggestionClick = useCallback(() => {
     onClick(suggestion);
@@ -289,15 +308,16 @@ const Suggestion = ({
   const textRef = useRef<HTMLDivElement>(null);
 
   const Title = useMemo(
-    () => getTitle(suggestion, commonPrefix, searchTerm, fuzzySearchEnabled),
-    [suggestion, commonPrefix, searchTerm, fuzzySearchEnabled],
+    () =>
+      getTitle(suggestion, commonPrefix, searchTerm, fuzzySearchEnabled, isWeb),
+    [suggestion, commonPrefix, searchTerm, fuzzySearchEnabled, isWeb],
   );
 
   return (
     <div
       style={style}
-      className={`flex items-center overflow-hidden pl-1.5 ${
-        isActive ? "bg-selected-bg brightness-95" : ""
+      className={`suggestion-item flex items-center overflow-hidden pl-1.5 ${
+        isActive ? "suggestion-item__active bg-selected-bg brightness-95" : ""
       }`}
       onClick={onSuggestionClick}
     >
@@ -311,8 +331,9 @@ const Suggestion = ({
         }}
         suggestion={suggestion}
         iconPath={iconPath}
+        isWeb={true}
       />
-      <div className="overflow-hidden" ref={textContainerRef}>
+      <div className="suggestion-title overflow-hidden" ref={textContainerRef}>
         <div
           className="text data-[active-item]:text-selected-text group w-fit whitespace-nowrap"
           // style={{
