@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use aws_config::Region;
+use aws_config::retry::RetryConfig;
 use aws_config::timeout::TimeoutConfig;
 use aws_credential_types::Credentials;
 use aws_credential_types::provider::ProvideCredentials;
@@ -42,6 +43,7 @@ async fn base_sdk_config(region: Region, credentials_provider: impl ProvideCrede
         .region(region)
         .credentials_provider(credentials_provider)
         .timeout_config(timeout_config())
+        .retry_config(RetryConfig::adaptive())
         .load()
         .await
 }

@@ -80,7 +80,7 @@ static DEBOUNCE_DURATION: LazyLock<Duration> = LazyLock::new(|| {
 
 pub async fn on_prompt() {
     COMPLETION_CACHE.lock().await.clear();
-    TELEMETRY_QUEUE.lock().await.send_all_items().await;
+    TELEMETRY_QUEUE.lock().await.send_all_items(None).await;
 }
 
 struct TelemetryQueue {
@@ -92,13 +92,17 @@ impl TelemetryQueue {
         Self { items: Vec::new() }
     }
 
-    async fn send_all_items(&mut self) {
+    async fn send_all_items(&mut self, retain: Option<usize>) {
         let start_url = fig_auth::builder_id_token()
             .await
             .ok()
             .flatten()
             .and_then(|t| t.start_url);
-        for item in self.items.drain(..) {
+
+        let items_len = self.items.len();
+        let drain_len = retain.map_or(items_len, |n| items_len.saturating_sub(n));
+
+        for item in self.items.drain(..drain_len) {
             let TelemetryQueueItem {
                 timestamp,
                 session_id,
@@ -133,6 +137,9 @@ impl TelemetryQueue {
                 .await,
             )
             .await;
+
+            // prevent more than 2 events per second
+            tokio::time::sleep(Duration::from_millis(500)).await;
         }
     }
 }
@@ -300,7 +307,8 @@ pub async fn handle_request(
                         let completion = completion.clone();
                         let buffer = buffer.to_owned();
                         async move {
-                            TELEMETRY_QUEUE.lock().await.items.push(TelemetryQueueItem {
+                            let mut queue = TELEMETRY_QUEUE.lock().await;
+                            queue.items.push(TelemetryQueueItem {
                                 suggested_chars_len: completion.chars().count() as i32,
                                 number_of_recommendations,
                                 suggestion: completion,
@@ -312,6 +320,9 @@ pub async fn handle_request(
                                 edit_buffer_len: buffer.chars().count().try_into().ok(),
                                 buffer,
                             });
+                            // flush all but 4 messages, this is to retain messages that might have
+                            // an accept waiting
+                            queue.send_all_items(Some(4)).await;
                         }
                     });
 
@@ -356,7 +367,7 @@ pub async fn handle_accept(figterm_request: InlineShellCompletionAcceptRequest, 
             item.suggestion_state = SuggestionState::Accept;
         }
     }
-    queue.send_all_items().await;
+    queue.send_all_items(None).await;
 }
 
 pub async fn handle_set_enabled(figterm_request: InlineShellCompletionSetEnabledRequest, _session_id: String) {
