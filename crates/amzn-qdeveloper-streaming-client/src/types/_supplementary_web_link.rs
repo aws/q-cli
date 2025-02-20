@@ -4,27 +4,27 @@
 #[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq)]
 pub struct SupplementaryWebLink {
-    /// URL of the web reference link
+    /// URL of the web reference link.
     pub url: ::std::string::String,
-    /// Title of the web reference link
+    /// Title of the web reference link.
     pub title: ::std::string::String,
-    /// Relevant text snippet from the link
+    /// Relevant text snippet from the link.
     pub snippet: ::std::option::Option<::std::string::String>,
 }
 impl SupplementaryWebLink {
-    /// URL of the web reference link
+    /// URL of the web reference link.
     pub fn url(&self) -> &str {
         use std::ops::Deref;
         self.url.deref()
     }
 
-    /// Title of the web reference link
+    /// Title of the web reference link.
     pub fn title(&self) -> &str {
         use std::ops::Deref;
         self.title.deref()
     }
 
-    /// Relevant text snippet from the link
+    /// Relevant text snippet from the link.
     pub fn snippet(&self) -> ::std::option::Option<&str> {
         self.snippet.as_deref()
     }
@@ -55,55 +55,55 @@ pub struct SupplementaryWebLinkBuilder {
     pub(crate) snippet: ::std::option::Option<::std::string::String>,
 }
 impl SupplementaryWebLinkBuilder {
-    /// URL of the web reference link
+    /// URL of the web reference link.
     /// This field is required.
     pub fn url(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.url = ::std::option::Option::Some(input.into());
         self
     }
 
-    /// URL of the web reference link
+    /// URL of the web reference link.
     pub fn set_url(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.url = input;
         self
     }
 
-    /// URL of the web reference link
+    /// URL of the web reference link.
     pub fn get_url(&self) -> &::std::option::Option<::std::string::String> {
         &self.url
     }
 
-    /// Title of the web reference link
+    /// Title of the web reference link.
     /// This field is required.
     pub fn title(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.title = ::std::option::Option::Some(input.into());
         self
     }
 
-    /// Title of the web reference link
+    /// Title of the web reference link.
     pub fn set_title(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.title = input;
         self
     }
 
-    /// Title of the web reference link
+    /// Title of the web reference link.
     pub fn get_title(&self) -> &::std::option::Option<::std::string::String> {
         &self.title
     }
 
-    /// Relevant text snippet from the link
+    /// Relevant text snippet from the link.
     pub fn snippet(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.snippet = ::std::option::Option::Some(input.into());
         self
     }
 
-    /// Relevant text snippet from the link
+    /// Relevant text snippet from the link.
     pub fn set_snippet(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.snippet = input;
         self
     }
 
-    /// Relevant text snippet from the link
+    /// Relevant text snippet from the link.
     pub fn get_snippet(&self) -> &::std::option::Option<::std::string::String> {
         &self.snippet
     }

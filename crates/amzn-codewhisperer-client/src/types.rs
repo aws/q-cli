@@ -2,8 +2,10 @@
 pub use crate::types::_access_denied_exception_reason::AccessDeniedExceptionReason;
 pub use crate::types::_additional_content_entry::AdditionalContentEntry;
 pub use crate::types::_app_studio_state::AppStudioState;
+pub use crate::types::_application_properties::ApplicationProperties;
 pub use crate::types::_artifact_type::ArtifactType;
 pub use crate::types::_assistant_response_message::AssistantResponseMessage;
+pub use crate::types::_by_user_analytics::ByUserAnalytics;
 pub use crate::types::_chat_add_message_event::ChatAddMessageEvent;
 pub use crate::types::_chat_interact_with_message_event::ChatInteractWithMessageEvent;
 pub use crate::types::_chat_message::ChatMessage;
@@ -36,6 +38,7 @@ pub use crate::types::_context_truncation_scheme::ContextTruncationScheme;
 pub use crate::types::_conversation_state::ConversationState;
 pub use crate::types::_cursor_state::CursorState;
 pub use crate::types::_customization::Customization;
+pub use crate::types::_dashboard_analytics::DashboardAnalytics;
 pub use crate::types::_diagnostic::Diagnostic;
 pub use crate::types::_diagnostic_severity::DiagnosticSeverity;
 pub use crate::types::_dimension::Dimension;
@@ -58,28 +61,41 @@ pub use crate::types::_feature_evaluation::FeatureEvaluation;
 pub use crate::types::_feature_value::FeatureValue;
 pub use crate::types::_file_context::FileContext;
 pub use crate::types::_followup_prompt::FollowupPrompt;
+pub use crate::types::_functionality_name::FunctionalityName;
 pub use crate::types::_git_state::GitState;
 pub use crate::types::_ide_category::IdeCategory;
+pub use crate::types::_identity_details::IdentityDetails;
 pub use crate::types::_import::Import;
 pub use crate::types::_inline_chat_event::InlineChatEvent;
 pub use crate::types::_inline_chat_user_decision::InlineChatUserDecision;
 pub use crate::types::_intent::Intent;
 pub use crate::types::_intent_context::IntentContext;
 pub use crate::types::_metric_data::MetricData;
+pub use crate::types::_notifications_feature::NotificationsFeature;
 pub use crate::types::_operating_system::OperatingSystem;
+pub use crate::types::_opt_in_feature_toggle::OptInFeatureToggle;
+pub use crate::types::_opt_in_features::OptInFeatures;
 pub use crate::types::_opt_out_preference::OptOutPreference;
+pub use crate::types::_origin::Origin;
 pub use crate::types::_package_info::PackageInfo;
 pub use crate::types::_position::Position;
+pub use crate::types::_profile::Profile;
+pub use crate::types::_profile_status::ProfileStatus;
+pub use crate::types::_profile_type::ProfileType;
 pub use crate::types::_programming_language::ProgrammingLanguage;
+pub use crate::types::_prompt_logging::PromptLogging;
 pub use crate::types::_range::Range;
 pub use crate::types::_recommendations_with_references_preference::RecommendationsWithReferencesPreference;
 pub use crate::types::_reference::Reference;
 pub use crate::types::_reference_tracker_configuration::ReferenceTrackerConfiguration;
 pub use crate::types::_relevant_text_document::RelevantTextDocument;
+pub use crate::types::_resource_policy::ResourcePolicy;
+pub use crate::types::_resource_policy_effect::ResourcePolicyEffect;
 pub use crate::types::_runtime_diagnostic::RuntimeDiagnostic;
 pub use crate::types::_shell_history_entry::ShellHistoryEntry;
 pub use crate::types::_shell_state::ShellState;
 pub use crate::types::_span::Span;
+pub use crate::types::_sso_identity_details::SsoIdentityDetails;
 pub use crate::types::_suggested_fix::SuggestedFix;
 pub use crate::types::_suggestion_state::SuggestionState;
 pub use crate::types::_supplemental_context::SupplementalContext;
@@ -105,6 +121,7 @@ pub use crate::types::_tool_result::ToolResult;
 pub use crate::types::_tool_result_content_block::ToolResultContentBlock;
 pub use crate::types::_tool_result_status::ToolResultStatus;
 pub use crate::types::_tool_specification::ToolSpecification;
+pub use crate::types::_tool_use::ToolUse;
 pub use crate::types::_transform_event::TransformEvent;
 pub use crate::types::_transformation_dot_net_runtime_env::TransformationDotNetRuntimeEnv;
 pub use crate::types::_transformation_download_artifact::TransformationDownloadArtifact;
@@ -140,7 +157,10 @@ pub use crate::types::_user_modification_event::UserModificationEvent;
 pub use crate::types::_user_settings::UserSettings;
 pub use crate::types::_user_trigger_decision_event::UserTriggerDecisionEvent;
 pub use crate::types::_validation_exception_reason::ValidationExceptionReason;
+pub use crate::types::_workspace_context::WorkspaceContext;
+pub use crate::types::_workspace_metadata::WorkspaceMetadata;
 pub use crate::types::_workspace_state::WorkspaceState;
+pub use crate::types::_workspace_status::WorkspaceStatus;
 
 mod _access_denied_exception_reason;
 
@@ -148,9 +168,13 @@ mod _additional_content_entry;
 
 mod _app_studio_state;
 
+mod _application_properties;
+
 mod _artifact_type;
 
 mod _assistant_response_message;
+
+mod _by_user_analytics;
 
 mod _chat_add_message_event;
 
@@ -216,6 +240,8 @@ mod _cursor_state;
 
 mod _customization;
 
+mod _dashboard_analytics;
+
 mod _diagnostic;
 
 mod _diagnostic_severity;
@@ -260,9 +286,13 @@ mod _file_context;
 
 mod _followup_prompt;
 
+mod _functionality_name;
+
 mod _git_state;
 
 mod _ide_category;
+
+mod _identity_details;
 
 mod _import;
 
@@ -276,15 +306,31 @@ mod _intent_context;
 
 mod _metric_data;
 
+mod _notifications_feature;
+
 mod _operating_system;
 
+mod _opt_in_feature_toggle;
+
+mod _opt_in_features;
+
 mod _opt_out_preference;
+
+mod _origin;
 
 mod _package_info;
 
 mod _position;
 
+mod _profile;
+
+mod _profile_status;
+
+mod _profile_type;
+
 mod _programming_language;
+
+mod _prompt_logging;
 
 mod _range;
 
@@ -296,6 +342,10 @@ mod _reference_tracker_configuration;
 
 mod _relevant_text_document;
 
+mod _resource_policy;
+
+mod _resource_policy_effect;
+
 mod _runtime_diagnostic;
 
 mod _shell_history_entry;
@@ -303,6 +353,8 @@ mod _shell_history_entry;
 mod _shell_state;
 
 mod _span;
+
+mod _sso_identity_details;
 
 mod _suggested_fix;
 
@@ -353,6 +405,8 @@ mod _tool_result_content_block;
 mod _tool_result_status;
 
 mod _tool_specification;
+
+mod _tool_use;
 
 mod _transform_event;
 
@@ -424,7 +478,13 @@ mod _user_trigger_decision_event;
 
 mod _validation_exception_reason;
 
+mod _workspace_context;
+
+mod _workspace_metadata;
+
 mod _workspace_state;
+
+mod _workspace_status;
 
 /// Builders
 pub mod builders;

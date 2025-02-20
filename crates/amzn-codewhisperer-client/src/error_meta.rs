@@ -225,6 +225,50 @@ impl From<crate::operation::create_upload_url::CreateUploadUrlError> for Error {
 }
 impl<R>
     From<
+        ::aws_smithy_runtime_api::client::result::SdkError<crate::operation::create_workspace::CreateWorkspaceError, R>,
+    > for Error
+where
+    R: Send + Sync + std::fmt::Debug + 'static,
+{
+    fn from(
+        err: ::aws_smithy_runtime_api::client::result::SdkError<
+            crate::operation::create_workspace::CreateWorkspaceError,
+            R,
+        >,
+    ) -> Self {
+        match err {
+            ::aws_smithy_runtime_api::client::result::SdkError::ServiceError(context) => Self::from(context.into_err()),
+            _ => Error::Unhandled(crate::error::sealed_unhandled::Unhandled {
+                meta: ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(&err).clone(),
+                source: err.into(),
+            }),
+        }
+    }
+}
+impl From<crate::operation::create_workspace::CreateWorkspaceError> for Error {
+    fn from(err: crate::operation::create_workspace::CreateWorkspaceError) -> Self {
+        match err {
+            crate::operation::create_workspace::CreateWorkspaceError::InternalServerError(inner) => {
+                Error::InternalServerError(inner)
+            },
+            crate::operation::create_workspace::CreateWorkspaceError::ThrottlingError(inner) => {
+                Error::ThrottlingError(inner)
+            },
+            crate::operation::create_workspace::CreateWorkspaceError::ValidationError(inner) => {
+                Error::ValidationError(inner)
+            },
+            crate::operation::create_workspace::CreateWorkspaceError::ConflictError(inner) => {
+                Error::ConflictError(inner)
+            },
+            crate::operation::create_workspace::CreateWorkspaceError::AccessDeniedError(inner) => {
+                Error::AccessDeniedError(inner)
+            },
+            crate::operation::create_workspace::CreateWorkspaceError::Unhandled(inner) => Error::Unhandled(inner),
+        }
+    }
+}
+impl<R>
+    From<
         ::aws_smithy_runtime_api::client::result::SdkError<
             crate::operation::delete_task_assist_conversation::DeleteTaskAssistConversationError,
             R,
@@ -267,6 +311,47 @@ impl From<crate::operation::delete_task_assist_conversation::DeleteTaskAssistCon
                 Error::AccessDeniedError(inner)
             }
             crate::operation::delete_task_assist_conversation::DeleteTaskAssistConversationError::Unhandled(inner) => Error::Unhandled(inner),
+        }
+    }
+}
+impl<R>
+    From<
+        ::aws_smithy_runtime_api::client::result::SdkError<crate::operation::delete_workspace::DeleteWorkspaceError, R>,
+    > for Error
+where
+    R: Send + Sync + std::fmt::Debug + 'static,
+{
+    fn from(
+        err: ::aws_smithy_runtime_api::client::result::SdkError<
+            crate::operation::delete_workspace::DeleteWorkspaceError,
+            R,
+        >,
+    ) -> Self {
+        match err {
+            ::aws_smithy_runtime_api::client::result::SdkError::ServiceError(context) => Self::from(context.into_err()),
+            _ => Error::Unhandled(crate::error::sealed_unhandled::Unhandled {
+                meta: ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(&err).clone(),
+                source: err.into(),
+            }),
+        }
+    }
+}
+impl From<crate::operation::delete_workspace::DeleteWorkspaceError> for Error {
+    fn from(err: crate::operation::delete_workspace::DeleteWorkspaceError) -> Self {
+        match err {
+            crate::operation::delete_workspace::DeleteWorkspaceError::InternalServerError(inner) => {
+                Error::InternalServerError(inner)
+            },
+            crate::operation::delete_workspace::DeleteWorkspaceError::ThrottlingError(inner) => {
+                Error::ThrottlingError(inner)
+            },
+            crate::operation::delete_workspace::DeleteWorkspaceError::ValidationError(inner) => {
+                Error::ValidationError(inner)
+            },
+            crate::operation::delete_workspace::DeleteWorkspaceError::AccessDeniedError(inner) => {
+                Error::AccessDeniedError(inner)
+            },
+            crate::operation::delete_workspace::DeleteWorkspaceError::Unhandled(inner) => Error::Unhandled(inner),
         }
     }
 }
@@ -643,6 +728,52 @@ impl From<crate::operation::list_available_customizations::ListAvailableCustomiz
 impl<R>
     From<
         ::aws_smithy_runtime_api::client::result::SdkError<
+            crate::operation::list_available_profiles::ListAvailableProfilesError,
+            R,
+        >,
+    > for Error
+where
+    R: Send + Sync + std::fmt::Debug + 'static,
+{
+    fn from(
+        err: ::aws_smithy_runtime_api::client::result::SdkError<
+            crate::operation::list_available_profiles::ListAvailableProfilesError,
+            R,
+        >,
+    ) -> Self {
+        match err {
+            ::aws_smithy_runtime_api::client::result::SdkError::ServiceError(context) => Self::from(context.into_err()),
+            _ => Error::Unhandled(crate::error::sealed_unhandled::Unhandled {
+                meta: ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(&err).clone(),
+                source: err.into(),
+            }),
+        }
+    }
+}
+impl From<crate::operation::list_available_profiles::ListAvailableProfilesError> for Error {
+    fn from(err: crate::operation::list_available_profiles::ListAvailableProfilesError) -> Self {
+        match err {
+            crate::operation::list_available_profiles::ListAvailableProfilesError::InternalServerError(inner) => {
+                Error::InternalServerError(inner)
+            },
+            crate::operation::list_available_profiles::ListAvailableProfilesError::ThrottlingError(inner) => {
+                Error::ThrottlingError(inner)
+            },
+            crate::operation::list_available_profiles::ListAvailableProfilesError::ValidationError(inner) => {
+                Error::ValidationError(inner)
+            },
+            crate::operation::list_available_profiles::ListAvailableProfilesError::AccessDeniedError(inner) => {
+                Error::AccessDeniedError(inner)
+            },
+            crate::operation::list_available_profiles::ListAvailableProfilesError::Unhandled(inner) => {
+                Error::Unhandled(inner)
+            },
+        }
+    }
+}
+impl<R>
+    From<
+        ::aws_smithy_runtime_api::client::result::SdkError<
             crate::operation::list_code_analysis_findings::ListCodeAnalysisFindingsError,
             R,
         >,
@@ -730,6 +861,52 @@ impl From<crate::operation::list_feature_evaluations::ListFeatureEvaluationsErro
                 Error::AccessDeniedError(inner)
             },
             crate::operation::list_feature_evaluations::ListFeatureEvaluationsError::Unhandled(inner) => {
+                Error::Unhandled(inner)
+            },
+        }
+    }
+}
+impl<R>
+    From<
+        ::aws_smithy_runtime_api::client::result::SdkError<
+            crate::operation::list_workspace_metadata::ListWorkspaceMetadataError,
+            R,
+        >,
+    > for Error
+where
+    R: Send + Sync + std::fmt::Debug + 'static,
+{
+    fn from(
+        err: ::aws_smithy_runtime_api::client::result::SdkError<
+            crate::operation::list_workspace_metadata::ListWorkspaceMetadataError,
+            R,
+        >,
+    ) -> Self {
+        match err {
+            ::aws_smithy_runtime_api::client::result::SdkError::ServiceError(context) => Self::from(context.into_err()),
+            _ => Error::Unhandled(crate::error::sealed_unhandled::Unhandled {
+                meta: ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(&err).clone(),
+                source: err.into(),
+            }),
+        }
+    }
+}
+impl From<crate::operation::list_workspace_metadata::ListWorkspaceMetadataError> for Error {
+    fn from(err: crate::operation::list_workspace_metadata::ListWorkspaceMetadataError) -> Self {
+        match err {
+            crate::operation::list_workspace_metadata::ListWorkspaceMetadataError::InternalServerError(inner) => {
+                Error::InternalServerError(inner)
+            },
+            crate::operation::list_workspace_metadata::ListWorkspaceMetadataError::ThrottlingError(inner) => {
+                Error::ThrottlingError(inner)
+            },
+            crate::operation::list_workspace_metadata::ListWorkspaceMetadataError::ValidationError(inner) => {
+                Error::ValidationError(inner)
+            },
+            crate::operation::list_workspace_metadata::ListWorkspaceMetadataError::AccessDeniedError(inner) => {
+                Error::AccessDeniedError(inner)
+            },
+            crate::operation::list_workspace_metadata::ListWorkspaceMetadataError::Unhandled(inner) => {
                 Error::Unhandled(inner)
             },
         }

@@ -15,5 +15,8 @@ pub fn ser_user_input_message(
     if let Some(var_3) = &input.user_intent {
         object.key("userIntent").string(var_3.as_str());
     }
+    if let Some(var_4) = &input.origin {
+        object.key("origin").string(var_4.as_str());
+    }
     Ok(())
 }

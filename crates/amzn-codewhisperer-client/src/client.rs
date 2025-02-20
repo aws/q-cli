@@ -82,10 +82,14 @@ mod create_task_assist_conversation;
 
 mod create_upload_url;
 
+mod create_workspace;
+
 /// Operation customization and supporting types.
 pub mod customize;
 
 mod delete_task_assist_conversation;
+
+mod delete_workspace;
 
 mod generate_completions;
 
@@ -103,9 +107,13 @@ mod get_transformation_plan;
 
 mod list_available_customizations;
 
+mod list_available_profiles;
+
 mod list_code_analysis_findings;
 
 mod list_feature_evaluations;
+
+mod list_workspace_metadata;
 
 mod resume_transformation;
 

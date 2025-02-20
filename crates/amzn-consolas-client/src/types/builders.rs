@@ -23,3 +23,4 @@ pub use crate::types::_sso_identity_details::SsoIdentityDetailsBuilder;
 pub use crate::types::_sso_identity_source::SsoIdentitySourceBuilder;
 pub use crate::types::_supplemental_context::SupplementalContextBuilder;
 pub use crate::types::_tag::TagBuilder;
+pub use crate::types::_workspace_context::WorkspaceContextBuilder;

@@ -200,4 +200,26 @@ impl StartCodeFixJobFluentBuilder {
     pub fn get_code_fix_name(&self) -> &::std::option::Option<::std::string::String> {
         self.inner.get_code_fix_name()
     }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn reference_tracker_configuration(mut self, input: crate::types::ReferenceTrackerConfiguration) -> Self {
+        self.inner = self.inner.reference_tracker_configuration(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_reference_tracker_configuration(
+        mut self,
+        input: ::std::option::Option<crate::types::ReferenceTrackerConfiguration>,
+    ) -> Self {
+        self.inner = self.inner.set_reference_tracker_configuration(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_reference_tracker_configuration(
+        &self,
+    ) -> &::std::option::Option<crate::types::ReferenceTrackerConfiguration> {
+        self.inner.get_reference_tracker_configuration()
+    }
 }

@@ -58,7 +58,7 @@ pub enum TaskAssistPlanStepAction {
     Delete,
     /// Indicates the step is to modify a file.
     Modify,
-    /// Indicates the step is an unknown operation to the file
+    /// Indicates the step is an unknown operation to the file.
     ///
     /// _Note: `::Unknown` has been renamed to `::UnknownValue`._
     UnknownValue,

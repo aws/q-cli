@@ -14,6 +14,8 @@ pub struct AssistantResponseMessage {
     pub references: ::std::option::Option<::std::vec::Vec<crate::types::Reference>>,
     /// Followup Prompt
     pub followup_prompt: ::std::option::Option<crate::types::FollowupPrompt>,
+    /// ToolUse Request
+    pub tool_uses: ::std::option::Option<::std::vec::Vec<crate::types::ToolUse>>,
 }
 impl AssistantResponseMessage {
     /// Unique identifier for the chat message
@@ -47,6 +49,14 @@ impl AssistantResponseMessage {
     pub fn followup_prompt(&self) -> ::std::option::Option<&crate::types::FollowupPrompt> {
         self.followup_prompt.as_ref()
     }
+
+    /// ToolUse Request
+    ///
+    /// If no value was sent for this field, a default will be set. If you want to determine if no
+    /// value was sent, use `.tool_uses.is_none()`.
+    pub fn tool_uses(&self) -> &[crate::types::ToolUse] {
+        self.tool_uses.as_deref().unwrap_or_default()
+    }
 }
 impl ::std::fmt::Debug for AssistantResponseMessage {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
@@ -56,6 +66,7 @@ impl ::std::fmt::Debug for AssistantResponseMessage {
         formatter.field("supplementary_web_links", &self.supplementary_web_links);
         formatter.field("references", &self.references);
         formatter.field("followup_prompt", &self.followup_prompt);
+        formatter.field("tool_uses", &self.tool_uses);
         formatter.finish()
     }
 }
@@ -76,6 +87,7 @@ pub struct AssistantResponseMessageBuilder {
     pub(crate) supplementary_web_links: ::std::option::Option<::std::vec::Vec<crate::types::SupplementaryWebLink>>,
     pub(crate) references: ::std::option::Option<::std::vec::Vec<crate::types::Reference>>,
     pub(crate) followup_prompt: ::std::option::Option<crate::types::FollowupPrompt>,
+    pub(crate) tool_uses: ::std::option::Option<::std::vec::Vec<crate::types::ToolUse>>,
 }
 impl AssistantResponseMessageBuilder {
     /// Unique identifier for the chat message
@@ -182,6 +194,29 @@ impl AssistantResponseMessageBuilder {
         &self.followup_prompt
     }
 
+    /// Appends an item to `tool_uses`.
+    ///
+    /// To override the contents of this collection use [`set_tool_uses`](Self::set_tool_uses).
+    ///
+    /// ToolUse Request
+    pub fn tool_uses(mut self, input: crate::types::ToolUse) -> Self {
+        let mut v = self.tool_uses.unwrap_or_default();
+        v.push(input);
+        self.tool_uses = ::std::option::Option::Some(v);
+        self
+    }
+
+    /// ToolUse Request
+    pub fn set_tool_uses(mut self, input: ::std::option::Option<::std::vec::Vec<crate::types::ToolUse>>) -> Self {
+        self.tool_uses = input;
+        self
+    }
+
+    /// ToolUse Request
+    pub fn get_tool_uses(&self) -> &::std::option::Option<::std::vec::Vec<crate::types::ToolUse>> {
+        &self.tool_uses
+    }
+
     /// Consumes the builder and constructs a
     /// [`AssistantResponseMessage`](crate::types::AssistantResponseMessage). This method will
     /// fail if any of the following fields are not set:
@@ -201,6 +236,7 @@ impl AssistantResponseMessageBuilder {
             supplementary_web_links: self.supplementary_web_links,
             references: self.references,
             followup_prompt: self.followup_prompt,
+            tool_uses: self.tool_uses,
         })
     }
 }
@@ -212,6 +248,7 @@ impl ::std::fmt::Debug for AssistantResponseMessageBuilder {
         formatter.field("supplementary_web_links", &self.supplementary_web_links);
         formatter.field("references", &self.references);
         formatter.field("followup_prompt", &self.followup_prompt);
+        formatter.field("tool_uses", &self.tool_uses);
         formatter.finish()
     }
 }

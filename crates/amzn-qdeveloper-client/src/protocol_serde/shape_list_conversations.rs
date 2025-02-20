@@ -25,6 +25,22 @@ pub fn de_list_conversations_http_error(
 
     let _error_message = generic.message().map(|msg| msg.to_owned());
     Err(match error_code {
+        "ResourceNotFoundException" => {
+            crate::operation::list_conversations::ListConversationsError::ResourceNotFoundError({
+                #[allow(unused_mut)]
+                let mut tmp = {
+                    #[allow(unused_mut)]
+                    let mut output = crate::types::error::builders::ResourceNotFoundErrorBuilder::default();
+                    output = crate::protocol_serde::shape_resource_not_found_exception::de_resource_not_found_exception_json_err(_response_body, output)
+                    .map_err(crate::operation::list_conversations::ListConversationsError::unhandled)?;
+                    let output = output.meta(generic);
+                    crate::serde_util::resource_not_found_exception_correct_errors(output)
+                        .build()
+                        .map_err(crate::operation::list_conversations::ListConversationsError::unhandled)?
+                };
+                tmp
+            })
+        },
         "InternalServerException" => {
             crate::operation::list_conversations::ListConversationsError::InternalServerError({
                 #[allow(unused_mut)]
@@ -57,6 +73,23 @@ pub fn de_list_conversations_http_error(
                 .map_err(crate::operation::list_conversations::ListConversationsError::unhandled)?;
                 let output = output.meta(generic);
                 crate::serde_util::access_denied_exception_correct_errors(output)
+                    .build()
+                    .map_err(crate::operation::list_conversations::ListConversationsError::unhandled)?
+            };
+            tmp
+        }),
+        "ConflictException" => crate::operation::list_conversations::ListConversationsError::ConflictError({
+            #[allow(unused_mut)]
+            let mut tmp = {
+                #[allow(unused_mut)]
+                let mut output = crate::types::error::builders::ConflictErrorBuilder::default();
+                output = crate::protocol_serde::shape_conflict_exception::de_conflict_exception_json_err(
+                    _response_body,
+                    output,
+                )
+                .map_err(crate::operation::list_conversations::ListConversationsError::unhandled)?;
+                let output = output.meta(generic);
+                crate::serde_util::conflict_exception_correct_errors(output)
                     .build()
                     .map_err(crate::operation::list_conversations::ListConversationsError::unhandled)?
             };

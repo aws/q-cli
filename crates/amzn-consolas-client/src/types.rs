@@ -41,6 +41,7 @@ pub use crate::types::_throttling_exception_reason::ThrottlingExceptionReason;
 pub use crate::types::_update_operation::UpdateOperation;
 pub use crate::types::_validation_exception_reason::ValidationExceptionReason;
 pub use crate::types::_vend_key_grant_use_case::VendKeyGrantUseCase;
+pub use crate::types::_workspace_context::WorkspaceContext;
 
 mod _access_denied_exception_reason;
 
@@ -125,6 +126,8 @@ mod _update_operation;
 mod _validation_exception_reason;
 
 mod _vend_key_grant_use_case;
+
+mod _workspace_context;
 
 /// Builders
 pub mod builders;

@@ -292,6 +292,8 @@ impl ::aws_smithy_runtime_api::client::interceptors::Intercept for StartConversa
 #[non_exhaustive]
 #[derive(::std::fmt::Debug)]
 pub enum StartConversationError {
+    /// This exception is thrown when describing a resource that does not exist.
+    ResourceNotFoundError(crate::types::error::ResourceNotFoundError),
     /// This exception is thrown when an unexpected error occurred during the processing of a
     /// request.
     InternalServerError(crate::types::error::InternalServerError),
@@ -348,6 +350,7 @@ impl StartConversationError {
     /// request ID, and potentially additional information.
     pub fn meta(&self) -> &::aws_smithy_types::error::ErrorMetadata {
         match self {
+            Self::ResourceNotFoundError(e) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(e),
             Self::InternalServerError(e) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(e),
             Self::AccessDeniedError(e) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(e),
             Self::ConflictError(e) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(e),
@@ -357,6 +360,11 @@ impl StartConversationError {
             Self::DryRunOperationError(e) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(e),
             Self::Unhandled(e) => &e.meta,
         }
+    }
+
+    /// Returns `true` if the error kind is `StartConversationError::ResourceNotFoundError`.
+    pub fn is_resource_not_found_error(&self) -> bool {
+        matches!(self, Self::ResourceNotFoundError(_))
     }
 
     /// Returns `true` if the error kind is `StartConversationError::InternalServerError`.
@@ -397,6 +405,7 @@ impl StartConversationError {
 impl ::std::error::Error for StartConversationError {
     fn source(&self) -> ::std::option::Option<&(dyn ::std::error::Error + 'static)> {
         match self {
+            Self::ResourceNotFoundError(_inner) => ::std::option::Option::Some(_inner),
             Self::InternalServerError(_inner) => ::std::option::Option::Some(_inner),
             Self::AccessDeniedError(_inner) => ::std::option::Option::Some(_inner),
             Self::ConflictError(_inner) => ::std::option::Option::Some(_inner),
@@ -411,6 +420,7 @@ impl ::std::error::Error for StartConversationError {
 impl ::std::fmt::Display for StartConversationError {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match self {
+            Self::ResourceNotFoundError(_inner) => _inner.fmt(f),
             Self::InternalServerError(_inner) => _inner.fmt(f),
             Self::AccessDeniedError(_inner) => _inner.fmt(f),
             Self::ConflictError(_inner) => _inner.fmt(f),
@@ -446,6 +456,9 @@ impl ::aws_smithy_types::retry::ProvideErrorKind for StartConversationError {
 impl ::aws_smithy_types::error::metadata::ProvideErrorMetadata for StartConversationError {
     fn meta(&self) -> &::aws_smithy_types::error::ErrorMetadata {
         match self {
+            Self::ResourceNotFoundError(_inner) => {
+                ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner)
+            },
             Self::InternalServerError(_inner) => {
                 ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner)
             },

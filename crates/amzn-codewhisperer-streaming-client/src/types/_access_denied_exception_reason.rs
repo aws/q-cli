@@ -35,7 +35,7 @@
 /// - The inner data `UnknownVariantValue` is opaque, and no further information can be extracted.
 /// - It might inadvertently shadow other intended match arms.
 ///
-/// Reason for AccessDeniedException
+///  Reason for AccessDeniedException
 #[non_exhaustive]
 #[derive(
     ::std::clone::Clone,

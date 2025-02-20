@@ -10,8 +10,14 @@ pub mod create_task_assist_conversation;
 /// Types for the `CreateUploadUrl` operation.
 pub mod create_upload_url;
 
+/// Types for the `CreateWorkspace` operation.
+pub mod create_workspace;
+
 /// Types for the `DeleteTaskAssistConversation` operation.
 pub mod delete_task_assist_conversation;
+
+/// Types for the `DeleteWorkspace` operation.
+pub mod delete_workspace;
 
 /// Types for the `GenerateCompletions` operation.
 pub mod generate_completions;
@@ -37,11 +43,17 @@ pub mod get_transformation_plan;
 /// Types for the `ListAvailableCustomizations` operation.
 pub mod list_available_customizations;
 
+/// Types for the `ListAvailableProfiles` operation.
+pub mod list_available_profiles;
+
 /// Types for the `ListCodeAnalysisFindings` operation.
 pub mod list_code_analysis_findings;
 
 /// Types for the `ListFeatureEvaluations` operation.
 pub mod list_feature_evaluations;
+
+/// Types for the `ListWorkspaceMetadata` operation.
+pub mod list_workspace_metadata;
 
 /// Types for the `ResumeTransformation` operation.
 pub mod resume_transformation;

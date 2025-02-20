@@ -212,14 +212,6 @@ pub(crate) fn profile_correct_errors(
     if builder.profile_name.is_none() {
         builder.profile_name = Some(Default::default())
     }
-    if builder.reference_tracker_configuration.is_none() {
-        builder.reference_tracker_configuration = {
-            let builder = crate::types::builders::ReferenceTrackerConfigurationBuilder::default();
-            crate::serde_util::reference_tracker_configuration_correct_errors(builder)
-                .build()
-                .ok()
-        }
-    }
     builder
 }
 
@@ -329,6 +321,15 @@ pub(crate) fn sso_identity_details_correct_errors(
     }
     if builder.oidc_client_id.is_none() {
         builder.oidc_client_id = Some(Default::default())
+    }
+    builder
+}
+
+pub(crate) fn workspace_context_correct_errors(
+    mut builder: crate::types::builders::WorkspaceContextBuilder,
+) -> crate::types::builders::WorkspaceContextBuilder {
+    if builder.toggle.is_none() {
+        builder.toggle = "no value was set".parse::<crate::types::OptInFeatureToggle>().ok()
     }
     builder
 }

@@ -777,11 +777,17 @@ where
 impl From<crate::operation::list_conversations::ListConversationsError> for Error {
     fn from(err: crate::operation::list_conversations::ListConversationsError) -> Self {
         match err {
+            crate::operation::list_conversations::ListConversationsError::ResourceNotFoundError(inner) => {
+                Error::ResourceNotFoundError(inner)
+            },
             crate::operation::list_conversations::ListConversationsError::InternalServerError(inner) => {
                 Error::InternalServerError(inner)
             },
             crate::operation::list_conversations::ListConversationsError::AccessDeniedError(inner) => {
                 Error::AccessDeniedError(inner)
+            },
+            crate::operation::list_conversations::ListConversationsError::ConflictError(inner) => {
+                Error::ConflictError(inner)
             },
             crate::operation::list_conversations::ListConversationsError::ValidationError(inner) => {
                 Error::ValidationError(inner)
@@ -1270,6 +1276,9 @@ where
 impl From<crate::operation::start_conversation::StartConversationError> for Error {
     fn from(err: crate::operation::start_conversation::StartConversationError) -> Self {
         match err {
+            crate::operation::start_conversation::StartConversationError::ResourceNotFoundError(inner) => {
+                Error::ResourceNotFoundError(inner)
+            },
             crate::operation::start_conversation::StartConversationError::InternalServerError(inner) => {
                 Error::InternalServerError(inner)
             },

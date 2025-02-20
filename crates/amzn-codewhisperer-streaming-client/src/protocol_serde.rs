@@ -131,6 +131,8 @@ pub(crate) mod shape_supplementary_web_link;
 
 pub(crate) mod shape_supplementary_web_links;
 
+pub(crate) mod shape_tool_use;
+
 pub(crate) mod shape_user_input_message_context;
 
 pub(crate) mod shape_additional_content_entry;

@@ -193,6 +193,8 @@ pub(crate) mod shape_s3_reference;
 
 pub(crate) mod shape_sso_identity_source;
 
+pub(crate) mod shape_workspace_context;
+
 pub(crate) mod shape_active_functionality_list;
 
 pub(crate) mod shape_application_properties_list;

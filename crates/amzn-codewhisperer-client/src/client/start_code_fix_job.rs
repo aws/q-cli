@@ -10,6 +10,7 @@ impl super::Client {
     ///   - [`description(impl Into<String>)`](crate::operation::start_code_fix_job::builders::StartCodeFixJobFluentBuilder::description) / [`set_description(Option<String>)`](crate::operation::start_code_fix_job::builders::StartCodeFixJobFluentBuilder::set_description):<br>required: **false**<br>(undocumented)<br>
     ///   - [`rule_id(impl Into<String>)`](crate::operation::start_code_fix_job::builders::StartCodeFixJobFluentBuilder::rule_id) / [`set_rule_id(Option<String>)`](crate::operation::start_code_fix_job::builders::StartCodeFixJobFluentBuilder::set_rule_id):<br>required: **false**<br>(undocumented)<br>
     ///   - [`code_fix_name(impl Into<String>)`](crate::operation::start_code_fix_job::builders::StartCodeFixJobFluentBuilder::code_fix_name) / [`set_code_fix_name(Option<String>)`](crate::operation::start_code_fix_job::builders::StartCodeFixJobFluentBuilder::set_code_fix_name):<br>required: **false**<br>Code fix name<br>
+    ///   - [`reference_tracker_configuration(ReferenceTrackerConfiguration)`](crate::operation::start_code_fix_job::builders::StartCodeFixJobFluentBuilder::reference_tracker_configuration) / [`set_reference_tracker_configuration(Option<ReferenceTrackerConfiguration>)`](crate::operation::start_code_fix_job::builders::StartCodeFixJobFluentBuilder::set_reference_tracker_configuration):<br>required: **false**<br>(undocumented)<br>
     /// - On success, responds with
     ///   [`StartCodeFixJobOutput`](crate::operation::start_code_fix_job::StartCodeFixJobOutput)
     ///   with field(s):

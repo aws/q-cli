@@ -20,9 +20,9 @@ pub struct UserInputMessageContext {
     pub console_state: ::std::option::Option<crate::types::ConsoleState>,
     /// Settings information, e.g., whether the user has enabled cross-region API calls.
     pub user_settings: ::std::option::Option<crate::types::UserSettings>,
-    /// List of additional contextual content entries that can be included with the message
+    /// List of additional contextual content entries that can be included with the message.
     pub additional_context: ::std::option::Option<::std::vec::Vec<crate::types::AdditionalContentEntry>>,
-    /// ToolResults for the requested ToolUses
+    /// ToolResults for the requested ToolUses.
     pub tool_results: ::std::option::Option<::std::vec::Vec<crate::types::ToolResult>>,
     /// Tools that can be used.
     pub tools: ::std::option::Option<::std::vec::Vec<crate::types::Tool>>,
@@ -68,7 +68,7 @@ impl UserInputMessageContext {
         self.user_settings.as_ref()
     }
 
-    /// List of additional contextual content entries that can be included with the message
+    /// List of additional contextual content entries that can be included with the message.
     ///
     /// If no value was sent for this field, a default will be set. If you want to determine if no
     /// value was sent, use `.additional_context.is_none()`.
@@ -76,7 +76,7 @@ impl UserInputMessageContext {
         self.additional_context.as_deref().unwrap_or_default()
     }
 
-    /// ToolResults for the requested ToolUses
+    /// ToolResults for the requested ToolUses.
     ///
     /// If no value was sent for this field, a default will be set. If you want to determine if no
     /// value was sent, use `.tool_results.is_none()`.
@@ -258,7 +258,7 @@ impl UserInputMessageContextBuilder {
     /// To override the contents of this collection use
     /// [`set_additional_context`](Self::set_additional_context).
     ///
-    /// List of additional contextual content entries that can be included with the message
+    /// List of additional contextual content entries that can be included with the message.
     pub fn additional_context(mut self, input: crate::types::AdditionalContentEntry) -> Self {
         let mut v = self.additional_context.unwrap_or_default();
         v.push(input);
@@ -266,7 +266,7 @@ impl UserInputMessageContextBuilder {
         self
     }
 
-    /// List of additional contextual content entries that can be included with the message
+    /// List of additional contextual content entries that can be included with the message.
     pub fn set_additional_context(
         mut self,
         input: ::std::option::Option<::std::vec::Vec<crate::types::AdditionalContentEntry>>,
@@ -275,7 +275,7 @@ impl UserInputMessageContextBuilder {
         self
     }
 
-    /// List of additional contextual content entries that can be included with the message
+    /// List of additional contextual content entries that can be included with the message.
     pub fn get_additional_context(
         &self,
     ) -> &::std::option::Option<::std::vec::Vec<crate::types::AdditionalContentEntry>> {
@@ -287,7 +287,7 @@ impl UserInputMessageContextBuilder {
     /// To override the contents of this collection use
     /// [`set_tool_results`](Self::set_tool_results).
     ///
-    /// ToolResults for the requested ToolUses
+    /// ToolResults for the requested ToolUses.
     pub fn tool_results(mut self, input: crate::types::ToolResult) -> Self {
         let mut v = self.tool_results.unwrap_or_default();
         v.push(input);
@@ -295,13 +295,13 @@ impl UserInputMessageContextBuilder {
         self
     }
 
-    /// ToolResults for the requested ToolUses
+    /// ToolResults for the requested ToolUses.
     pub fn set_tool_results(mut self, input: ::std::option::Option<::std::vec::Vec<crate::types::ToolResult>>) -> Self {
         self.tool_results = input;
         self
     }
 
-    /// ToolResults for the requested ToolUses
+    /// ToolResults for the requested ToolUses.
     pub fn get_tool_results(&self) -> &::std::option::Option<::std::vec::Vec<crate::types::ToolResult>> {
         &self.tool_results
     }

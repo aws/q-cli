@@ -13,6 +13,8 @@ pub struct StartCodeFixJobInput {
     pub rule_id: ::std::option::Option<::std::string::String>,
     /// Code fix name
     pub code_fix_name: ::std::option::Option<::std::string::String>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub reference_tracker_configuration: ::std::option::Option<crate::types::ReferenceTrackerConfiguration>,
 }
 impl StartCodeFixJobInput {
     /// Indicates Range / Span in a Text Document
@@ -39,6 +41,13 @@ impl StartCodeFixJobInput {
     pub fn code_fix_name(&self) -> ::std::option::Option<&str> {
         self.code_fix_name.as_deref()
     }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn reference_tracker_configuration(
+        &self,
+    ) -> ::std::option::Option<&crate::types::ReferenceTrackerConfiguration> {
+        self.reference_tracker_configuration.as_ref()
+    }
 }
 impl ::std::fmt::Debug for StartCodeFixJobInput {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
@@ -48,6 +57,7 @@ impl ::std::fmt::Debug for StartCodeFixJobInput {
         formatter.field("description", &"*** Sensitive Data Redacted ***");
         formatter.field("rule_id", &self.rule_id);
         formatter.field("code_fix_name", &self.code_fix_name);
+        formatter.field("reference_tracker_configuration", &self.reference_tracker_configuration);
         formatter.finish()
     }
 }
@@ -69,6 +79,7 @@ pub struct StartCodeFixJobInputBuilder {
     pub(crate) description: ::std::option::Option<::std::string::String>,
     pub(crate) rule_id: ::std::option::Option<::std::string::String>,
     pub(crate) code_fix_name: ::std::option::Option<::std::string::String>,
+    pub(crate) reference_tracker_configuration: ::std::option::Option<crate::types::ReferenceTrackerConfiguration>,
 }
 impl StartCodeFixJobInputBuilder {
     /// Indicates Range / Span in a Text Document
@@ -158,6 +169,28 @@ impl StartCodeFixJobInputBuilder {
         &self.code_fix_name
     }
 
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn reference_tracker_configuration(mut self, input: crate::types::ReferenceTrackerConfiguration) -> Self {
+        self.reference_tracker_configuration = ::std::option::Option::Some(input);
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_reference_tracker_configuration(
+        mut self,
+        input: ::std::option::Option<crate::types::ReferenceTrackerConfiguration>,
+    ) -> Self {
+        self.reference_tracker_configuration = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_reference_tracker_configuration(
+        &self,
+    ) -> &::std::option::Option<crate::types::ReferenceTrackerConfiguration> {
+        &self.reference_tracker_configuration
+    }
+
     /// Consumes the builder and constructs a
     /// [`StartCodeFixJobInput`](crate::operation::start_code_fix_job::StartCodeFixJobInput).
     pub fn build(
@@ -172,6 +205,7 @@ impl StartCodeFixJobInputBuilder {
             description: self.description,
             rule_id: self.rule_id,
             code_fix_name: self.code_fix_name,
+            reference_tracker_configuration: self.reference_tracker_configuration,
         })
     }
 }
@@ -183,6 +217,7 @@ impl ::std::fmt::Debug for StartCodeFixJobInputBuilder {
         formatter.field("description", &"*** Sensitive Data Redacted ***");
         formatter.field("rule_id", &self.rule_id);
         formatter.field("code_fix_name", &self.code_fix_name);
+        formatter.field("reference_tracker_configuration", &self.reference_tracker_configuration);
         formatter.finish()
     }
 }

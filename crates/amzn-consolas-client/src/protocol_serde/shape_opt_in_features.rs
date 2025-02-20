@@ -33,6 +33,12 @@ pub fn ser_opt_in_features(
         }
         array_8.finish();
     }
+    if let Some(var_11) = &input.workspace_context {
+        #[allow(unused_mut)]
+        let mut object_12 = object.key("workspaceContext").start_object();
+        crate::protocol_serde::shape_workspace_context::ser_workspace_context(&mut object_12, var_11)?;
+        object_12.finish();
+    }
     Ok(())
 }
 
@@ -75,6 +81,11 @@ where
                             "notifications" => {
                                 builder = builder.set_notifications(
                                     crate::protocol_serde::shape_notifications::de_notifications(tokens)?,
+                                );
+                            },
+                            "workspaceContext" => {
+                                builder = builder.set_workspace_context(
+                                    crate::protocol_serde::shape_workspace_context::de_workspace_context(tokens)?,
                                 );
                             },
                             _ => ::aws_smithy_json::deserialize::token::skip_value(tokens)?,

@@ -95,6 +95,20 @@ pub(crate) fn create_upload_url_output_output_correct_errors(
     builder
 }
 
+pub(crate) fn create_workspace_output_output_correct_errors(
+    mut builder: crate::operation::create_workspace::builders::CreateWorkspaceOutputBuilder,
+) -> crate::operation::create_workspace::builders::CreateWorkspaceOutputBuilder {
+    if builder.workspace.is_none() {
+        builder.workspace = {
+            let builder = crate::types::builders::WorkspaceMetadataBuilder::default();
+            crate::serde_util::workspace_metadata_correct_errors(builder)
+                .build()
+                .ok()
+        }
+    }
+    builder
+}
+
 pub(crate) fn delete_task_assist_conversation_output_output_correct_errors(
     mut builder: crate::operation::delete_task_assist_conversation::builders::DeleteTaskAssistConversationOutputBuilder,
 ) -> crate::operation::delete_task_assist_conversation::builders::DeleteTaskAssistConversationOutputBuilder {
@@ -165,6 +179,15 @@ pub(crate) fn list_available_customizations_output_output_correct_errors(
     builder
 }
 
+pub(crate) fn list_available_profiles_output_output_correct_errors(
+    mut builder: crate::operation::list_available_profiles::builders::ListAvailableProfilesOutputBuilder,
+) -> crate::operation::list_available_profiles::builders::ListAvailableProfilesOutputBuilder {
+    if builder.profiles.is_none() {
+        builder.profiles = Some(Default::default())
+    }
+    builder
+}
+
 pub(crate) fn list_code_analysis_findings_output_output_correct_errors(
     mut builder: crate::operation::list_code_analysis_findings::builders::ListCodeAnalysisFindingsOutputBuilder,
 ) -> crate::operation::list_code_analysis_findings::builders::ListCodeAnalysisFindingsOutputBuilder {
@@ -179,6 +202,15 @@ pub(crate) fn list_feature_evaluations_output_output_correct_errors(
 ) -> crate::operation::list_feature_evaluations::builders::ListFeatureEvaluationsOutputBuilder {
     if builder.feature_evaluations.is_none() {
         builder.feature_evaluations = Some(Default::default())
+    }
+    builder
+}
+
+pub(crate) fn list_workspace_metadata_output_output_correct_errors(
+    mut builder: crate::operation::list_workspace_metadata::builders::ListWorkspaceMetadataOutputBuilder,
+) -> crate::operation::list_workspace_metadata::builders::ListWorkspaceMetadataOutputBuilder {
+    if builder.workspaces.is_none() {
+        builder.workspaces = Some(Default::default())
     }
     builder
 }
@@ -230,6 +262,18 @@ pub(crate) fn stop_transformation_output_output_correct_errors(
 ) -> crate::operation::stop_transformation::builders::StopTransformationOutputBuilder {
     if builder.transformation_status.is_none() {
         builder.transformation_status = "no value was set".parse::<crate::types::TransformationStatus>().ok()
+    }
+    builder
+}
+
+pub(crate) fn workspace_metadata_correct_errors(
+    mut builder: crate::types::builders::WorkspaceMetadataBuilder,
+) -> crate::types::builders::WorkspaceMetadataBuilder {
+    if builder.workspace_id.is_none() {
+        builder.workspace_id = Some(Default::default())
+    }
+    if builder.workspace_status.is_none() {
+        builder.workspace_status = "no value was set".parse::<crate::types::WorkspaceStatus>().ok()
     }
     builder
 }
@@ -310,6 +354,38 @@ pub(crate) fn feature_evaluation_correct_errors(
     builder
 }
 
+pub(crate) fn profile_correct_errors(
+    mut builder: crate::types::builders::ProfileBuilder,
+) -> crate::types::builders::ProfileBuilder {
+    if builder.arn.is_none() {
+        builder.arn = Some(Default::default())
+    }
+    if builder.profile_name.is_none() {
+        builder.profile_name = Some(Default::default())
+    }
+    builder
+}
+
+pub(crate) fn reference_tracker_configuration_correct_errors(
+    mut builder: crate::types::builders::ReferenceTrackerConfigurationBuilder,
+) -> crate::types::builders::ReferenceTrackerConfigurationBuilder {
+    if builder.recommendations_with_references.is_none() {
+        builder.recommendations_with_references = "no value was set"
+            .parse::<crate::types::RecommendationsWithReferencesPreference>()
+            .ok()
+    }
+    builder
+}
+
+pub(crate) fn resource_policy_correct_errors(
+    mut builder: crate::types::builders::ResourcePolicyBuilder,
+) -> crate::types::builders::ResourcePolicyBuilder {
+    if builder.effect.is_none() {
+        builder.effect = "no value was set".parse::<crate::types::ResourcePolicyEffect>().ok()
+    }
+    builder
+}
+
 pub(crate) fn transformation_step_correct_errors(
     mut builder: crate::types::builders::TransformationStepBuilder,
 ) -> crate::types::builders::TransformationStepBuilder {
@@ -326,6 +402,87 @@ pub(crate) fn transformation_step_correct_errors(
         builder.status = "no value was set"
             .parse::<crate::types::TransformationStepStatus>()
             .ok()
+    }
+    builder
+}
+
+pub(crate) fn application_properties_correct_errors(
+    mut builder: crate::types::builders::ApplicationPropertiesBuilder,
+) -> crate::types::builders::ApplicationPropertiesBuilder {
+    if builder.tenant_id.is_none() {
+        builder.tenant_id = Some(Default::default())
+    }
+    if builder.application_arn.is_none() {
+        builder.application_arn = Some(Default::default())
+    }
+    if builder.tenant_url.is_none() {
+        builder.tenant_url = Some(Default::default())
+    }
+    if builder.application_type.is_none() {
+        builder.application_type = "no value was set".parse::<crate::types::FunctionalityName>().ok()
+    }
+    builder
+}
+
+pub(crate) fn by_user_analytics_correct_errors(
+    mut builder: crate::types::builders::ByUserAnalyticsBuilder,
+) -> crate::types::builders::ByUserAnalyticsBuilder {
+    if builder.toggle.is_none() {
+        builder.toggle = "no value was set".parse::<crate::types::OptInFeatureToggle>().ok()
+    }
+    builder
+}
+
+pub(crate) fn dashboard_analytics_correct_errors(
+    mut builder: crate::types::builders::DashboardAnalyticsBuilder,
+) -> crate::types::builders::DashboardAnalyticsBuilder {
+    if builder.toggle.is_none() {
+        builder.toggle = "no value was set".parse::<crate::types::OptInFeatureToggle>().ok()
+    }
+    builder
+}
+
+pub(crate) fn prompt_logging_correct_errors(
+    mut builder: crate::types::builders::PromptLoggingBuilder,
+) -> crate::types::builders::PromptLoggingBuilder {
+    if builder.s3_uri.is_none() {
+        builder.s3_uri = Some(Default::default())
+    }
+    if builder.toggle.is_none() {
+        builder.toggle = "no value was set".parse::<crate::types::OptInFeatureToggle>().ok()
+    }
+    builder
+}
+
+pub(crate) fn sso_identity_details_correct_errors(
+    mut builder: crate::types::builders::SsoIdentityDetailsBuilder,
+) -> crate::types::builders::SsoIdentityDetailsBuilder {
+    if builder.instance_arn.is_none() {
+        builder.instance_arn = Some(Default::default())
+    }
+    if builder.oidc_client_id.is_none() {
+        builder.oidc_client_id = Some(Default::default())
+    }
+    builder
+}
+
+pub(crate) fn workspace_context_correct_errors(
+    mut builder: crate::types::builders::WorkspaceContextBuilder,
+) -> crate::types::builders::WorkspaceContextBuilder {
+    if builder.toggle.is_none() {
+        builder.toggle = "no value was set".parse::<crate::types::OptInFeatureToggle>().ok()
+    }
+    builder
+}
+
+pub(crate) fn notifications_feature_correct_errors(
+    mut builder: crate::types::builders::NotificationsFeatureBuilder,
+) -> crate::types::builders::NotificationsFeatureBuilder {
+    if builder.feature.is_none() {
+        builder.feature = Some(Default::default())
+    }
+    if builder.toggle.is_none() {
+        builder.toggle = "no value was set".parse::<crate::types::OptInFeatureToggle>().ok()
     }
     builder
 }

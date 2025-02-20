@@ -89,6 +89,7 @@ pub use crate::types::_tool_result::ToolResult;
 pub use crate::types::_tool_result_content_block::ToolResultContentBlock;
 pub use crate::types::_tool_result_status::ToolResultStatus;
 pub use crate::types::_tool_specification::ToolSpecification;
+pub use crate::types::_tool_use::ToolUse;
 pub use crate::types::_tool_use_event::ToolUseEvent;
 pub use crate::types::_transformation_download_artifact_type::TransformationDownloadArtifactType;
 pub use crate::types::_transformation_export_context::TransformationExportContext;
@@ -280,6 +281,8 @@ mod _tool_result_content_block;
 mod _tool_result_status;
 
 mod _tool_specification;
+
+mod _tool_use;
 
 mod _tool_use_event;
 

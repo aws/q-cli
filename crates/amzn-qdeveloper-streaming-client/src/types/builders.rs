@@ -62,6 +62,7 @@ pub use crate::types::_text_document_diagnostic::TextDocumentDiagnosticBuilder;
 pub use crate::types::_tool_input_schema::ToolInputSchemaBuilder;
 pub use crate::types::_tool_result::ToolResultBuilder;
 pub use crate::types::_tool_specification::ToolSpecificationBuilder;
+pub use crate::types::_tool_use::ToolUseBuilder;
 pub use crate::types::_tool_use_event::ToolUseEventBuilder;
 pub use crate::types::_user_input_message::UserInputMessageBuilder;
 pub use crate::types::_user_input_message_context::UserInputMessageContextBuilder;

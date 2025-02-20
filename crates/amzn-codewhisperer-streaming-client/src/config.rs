@@ -1277,8 +1277,7 @@ impl ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugin for Service
     }
 }
 
-// Cross-operation shared-state singletons
-
+/// Cross-operation shared-state singletons
 /// A plugin that enables configuration for a single operation invocation
 ///
 /// The `config` method will return a `FrozenLayer` by storing values from `config_override`.

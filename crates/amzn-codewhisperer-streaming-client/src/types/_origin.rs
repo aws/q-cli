@@ -13,6 +13,7 @@
 /// # let origin = unimplemented!();
 /// match origin {
 ///     Origin::Chatbot => { /* ... */ },
+///     Origin::Cli => { /* ... */ },
 ///     Origin::Console => { /* ... */ },
 ///     Origin::Documentation => { /* ... */ },
 ///     Origin::Ide => { /* ... */ },
@@ -45,7 +46,7 @@
 /// - The inner data `UnknownVariantValue` is opaque, and no further information can be extracted.
 /// - It might inadvertently shadow other intended match arms.
 ///
-/// Enum to represent the origin application conversing with Sidekick.
+///  Enum to represent the origin application conversing with Sidekick.
 ///
 /// _Note: `Origin::Unknown` has been renamed to `::UnknownValue`._
 #[non_exhaustive]
@@ -61,6 +62,8 @@
 pub enum Origin {
     /// AWS Chatbot
     Chatbot,
+    /// Any CLI caller.
+    Cli,
     /// AWS Management Console (https://<region>.console.aws.amazon.com)
     Console,
     /// AWS Documentation Website (https://docs.aws.amazon.com)
@@ -94,6 +97,7 @@ impl ::std::convert::From<&str> for Origin {
     fn from(s: &str) -> Self {
         match s {
             "CHATBOT" => Origin::Chatbot,
+            "CLI" => Origin::Cli,
             "CONSOLE" => Origin::Console,
             "DOCUMENTATION" => Origin::Documentation,
             "IDE" => Origin::Ide,
@@ -122,6 +126,7 @@ impl Origin {
     pub fn as_str(&self) -> &str {
         match self {
             Origin::Chatbot => "CHATBOT",
+            Origin::Cli => "CLI",
             Origin::Console => "CONSOLE",
             Origin::Documentation => "DOCUMENTATION",
             Origin::Ide => "IDE",
@@ -140,6 +145,7 @@ impl Origin {
     pub const fn values() -> &'static [&'static str] {
         &[
             "CHATBOT",
+            "CLI",
             "CONSOLE",
             "DOCUMENTATION",
             "IDE",
@@ -174,6 +180,7 @@ impl ::std::fmt::Display for Origin {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
         match self {
             Origin::Chatbot => write!(f, "CHATBOT"),
+            Origin::Cli => write!(f, "CLI"),
             Origin::Console => write!(f, "CONSOLE"),
             Origin::Documentation => write!(f, "DOCUMENTATION"),
             Origin::Ide => write!(f, "IDE"),

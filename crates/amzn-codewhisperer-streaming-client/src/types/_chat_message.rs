@@ -5,7 +5,7 @@
 pub enum ChatMessage {
     /// Markdown text message.
     AssistantResponseMessage(crate::types::AssistantResponseMessage),
-    /// Structure to represent a chat input message from User
+    /// Structure to represent a chat input message from User.
     UserInputMessage(crate::types::UserInputMessage),
     /// The `Unknown` variant represents cases where new union variant was received. Consider
     /// upgrading the SDK to the latest available version. An unknown enum variant

@@ -39,5 +39,17 @@ pub fn ser_assistant_response_message(
         crate::protocol_serde::shape_followup_prompt::ser_followup_prompt(&mut object_11, var_10)?;
         object_11.finish();
     }
+    if let Some(var_12) = &input.tool_uses {
+        let mut array_13 = object.key("toolUses").start_array();
+        for item_14 in var_12 {
+            {
+                #[allow(unused_mut)]
+                let mut object_15 = array_13.value().start_object();
+                crate::protocol_serde::shape_tool_use::ser_tool_use(&mut object_15, item_14)?;
+                object_15.finish();
+            }
+        }
+        array_13.finish();
+    }
     Ok(())
 }

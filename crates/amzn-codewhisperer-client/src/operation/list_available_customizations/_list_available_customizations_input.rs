@@ -7,6 +7,8 @@ pub struct ListAvailableCustomizationsInput {
     pub max_results: ::std::option::Option<i32>,
     #[allow(missing_docs)] // documentation missing in model
     pub next_token: ::std::option::Option<::std::string::String>,
+    #[allow(missing_docs)] // documentation missing in model
+    pub profile_arn: ::std::option::Option<::std::string::String>,
 }
 impl ListAvailableCustomizationsInput {
     #[allow(missing_docs)] // documentation missing in model
@@ -17,6 +19,11 @@ impl ListAvailableCustomizationsInput {
     #[allow(missing_docs)] // documentation missing in model
     pub fn next_token(&self) -> ::std::option::Option<&str> {
         self.next_token.as_deref()
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn profile_arn(&self) -> ::std::option::Option<&str> {
+        self.profile_arn.as_deref()
     }
 }
 impl ListAvailableCustomizationsInput {
@@ -35,6 +42,7 @@ impl ListAvailableCustomizationsInput {
 pub struct ListAvailableCustomizationsInputBuilder {
     pub(crate) max_results: ::std::option::Option<i32>,
     pub(crate) next_token: ::std::option::Option<::std::string::String>,
+    pub(crate) profile_arn: ::std::option::Option<::std::string::String>,
 }
 impl ListAvailableCustomizationsInputBuilder {
     #[allow(missing_docs)] // documentation missing in model
@@ -71,6 +79,23 @@ impl ListAvailableCustomizationsInputBuilder {
         &self.next_token
     }
 
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn profile_arn(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
+        self.profile_arn = ::std::option::Option::Some(input.into());
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn set_profile_arn(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
+        self.profile_arn = input;
+        self
+    }
+
+    #[allow(missing_docs)] // documentation missing in model
+    pub fn get_profile_arn(&self) -> &::std::option::Option<::std::string::String> {
+        &self.profile_arn
+    }
+
     /// Consumes the builder and constructs a
     /// [`ListAvailableCustomizationsInput`](crate::operation::list_available_customizations::ListAvailableCustomizationsInput).
     pub fn build(
@@ -83,6 +108,7 @@ impl ListAvailableCustomizationsInputBuilder {
             crate::operation::list_available_customizations::ListAvailableCustomizationsInput {
                 max_results: self.max_results,
                 next_token: self.next_token,
+                profile_arn: self.profile_arn,
             },
         )
     }
