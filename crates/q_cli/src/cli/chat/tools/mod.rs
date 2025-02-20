@@ -45,10 +45,10 @@ impl ToolE {
         };
 
         Ok(match tool_use.name.as_str() {
-            "fs_read" => Self::FsRead(serde_json::from_str::<FsRead>(&tool_use.args).map_err(map_err)?),
-            "fs_write" => Self::FsWrite(serde_json::from_str::<FsWrite>(&tool_use.args).map_err(map_err)?),
-            "execute_bash" => Self::ExecuteBash(serde_json::from_str::<ExecuteBash>(&tool_use.args).map_err(map_err)?),
-            "use_aws" => Self::UseAws(serde_json::from_str::<UseAws>(&tool_use.args).map_err(map_err)?),
+            "fs_read" => Self::FsRead(serde_json::from_value::<FsRead>(tool_use.args).map_err(map_err)?),
+            "fs_write" => Self::FsWrite(serde_json::from_value::<FsWrite>(tool_use.args).map_err(map_err)?),
+            "execute_bash" => Self::ExecuteBash(serde_json::from_value::<ExecuteBash>(tool_use.args).map_err(map_err)?),
+            "use_aws" => Self::UseAws(serde_json::from_value::<UseAws>(tool_use.args).map_err(map_err)?),
             unknown => {
                 return Err(ToolResult {
                     tool_use_id: tool_use.id,

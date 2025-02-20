@@ -4,6 +4,7 @@ use fig_api_client::model::{
     AssistantResponseMessage,
     ChatMessage,
     ChatResponseStream,
+    ToolUse as FigToolUse,
 };
 use tracing::{
     error,
@@ -11,16 +12,27 @@ use tracing::{
     warn,
 };
 
+use super::tools::serde_value_to_document;
 use crate::cli::chat::conversation_state::Message;
 
 /// Represents a tool use requested by the assistant.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ToolUse {
     /// Corresponds to the `"toolUseId"` returned by the model.
     pub id: String,
     pub name: String,
-    /// The tool arguments encoded as JSON.
-    pub args: String,
+    /// The tool arguments.
+    pub args: serde_json::Value,
+}
+
+impl From<ToolUse> for FigToolUse {
+    fn from(value: ToolUse) -> Self {
+        Self {
+            tool_use_id: value.id,
+            name: value.name,
+            input: serde_value_to_document(value.args),
+        }
+    }
 }
 
 /// State associated with parsing a [ConverseStreamResponse] into a [Message].
@@ -39,6 +51,8 @@ pub struct ResponseParser {
     message_id: Option<String>,
     /// Buffer for holding the accumulated assistant response.
     assistant_text: String,
+    /// Tool uses requested by the model.
+    tool_uses: Vec<ToolUse>,
 }
 
 impl ResponseParser {
@@ -48,6 +62,7 @@ impl ResponseParser {
             peek: None,
             message_id: None,
             assistant_text: String::new(),
+            tool_uses: Vec::new(),
         }
     }
 
@@ -81,6 +96,7 @@ impl ResponseParser {
                         stop,
                     } => {
                         let tool_use = self.parse_tool_use(tool_use_id, name, input, stop).await?;
+                        self.tool_uses.push(tool_use.clone());
                         return Ok(ResponseEvent::ToolUse(tool_use));
                     },
                     _ => {},
@@ -89,6 +105,11 @@ impl ResponseParser {
                     let message = Message(ChatMessage::AssistantResponseMessage(AssistantResponseMessage {
                         message_id: self.message_id.take(),
                         content: std::mem::take(&mut self.assistant_text),
+                        tool_uses: if self.tool_uses.is_empty() {
+                            None
+                        } else {
+                            Some(self.tool_uses.clone().into_iter().map(Into::into).collect())
+                        },
                     }));
                     return Ok(ResponseEvent::EndStream { message });
                 },
@@ -122,11 +143,11 @@ impl ResponseParser {
                 }
             }
         }
-        self.assistant_text.push_str(&tool_string);
+        let args = serde_json::from_str(&tool_string)?;
         Ok(ToolUse {
             id: tool_use_id,
             name: tool_name,
-            args: tool_string,
+            args,
         })
     }
 

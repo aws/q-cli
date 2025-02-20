@@ -191,10 +191,48 @@ impl From<ToolInputSchema> for amzn_qdeveloper_streaming_client::types::ToolInpu
     }
 }
 
+/// Contains information about a tool that the model is requesting be run. The model uses the result
+/// from the tool to generate a response.
+#[derive(Debug, Clone)]
+pub struct ToolUse {
+    /// The ID for the tool request.
+    pub tool_use_id: String,
+    /// The name for the tool.
+    pub name: String,
+    /// The input to pass to the tool.
+    pub input: Document,
+}
+
+impl From<ToolUse> for amzn_codewhisperer_streaming_client::types::ToolUse {
+    fn from(value: ToolUse) -> Self {
+        Self::builder()
+            .tool_use_id(value.tool_use_id)
+            .name(value.name)
+            .input(value.input)
+            .build()
+            .expect("building ToolUse should not fail")
+    }
+}
+
+impl From<ToolUse> for amzn_qdeveloper_streaming_client::types::ToolUse {
+    fn from(value: ToolUse) -> Self {
+        Self::builder()
+            .tool_use_id(value.tool_use_id)
+            .name(value.name)
+            .input(value.input)
+            .build()
+            .expect("building ToolUse should not fail")
+    }
+}
+
+/// A tool result that contains the results for a tool request that was previously made.
 #[derive(Debug, Clone)]
 pub struct ToolResult {
+    /// The ID for the tool request.
     pub tool_use_id: String,
+    /// Content of the tool result.
     pub content: Vec<ToolResultContentBlock>,
+    /// Status of the tools result.
     pub status: ToolResultStatus,
 }
 
@@ -222,7 +260,9 @@ impl From<ToolResult> for amzn_qdeveloper_streaming_client::types::ToolResult {
 
 #[derive(Debug, Clone)]
 pub enum ToolResultContentBlock {
+    /// A tool result that is JSON format data.
     Json(Document),
+    /// A tool result that is text.
     Text(String),
 }
 
@@ -268,10 +308,15 @@ impl From<ToolResultStatus> for amzn_qdeveloper_streaming_client::types::ToolRes
     }
 }
 
+/// Markdown text message.
 #[derive(Debug, Clone)]
 pub struct AssistantResponseMessage {
+    /// Unique identifier for the chat message
     pub message_id: Option<String>,
+    /// The content of the text message in markdown format.
     pub content: String,
+    /// ToolUse Request
+    pub tool_uses: Option<Vec<ToolUse>>,
 }
 
 impl TryFrom<AssistantResponseMessage> for amzn_codewhisperer_streaming_client::types::AssistantResponseMessage {
@@ -281,6 +326,7 @@ impl TryFrom<AssistantResponseMessage> for amzn_codewhisperer_streaming_client::
         Self::builder()
             .content(value.content)
             .set_message_id(value.message_id)
+            .set_tool_uses(value.tool_uses.map(|uses| uses.into_iter().map(Into::into).collect()))
             .build()
     }
 }
@@ -292,6 +338,7 @@ impl TryFrom<AssistantResponseMessage> for amzn_qdeveloper_streaming_client::typ
         Self::builder()
             .content(value.content)
             .set_message_id(value.message_id)
+            .set_tool_uses(value.tool_uses.map(|uses| uses.into_iter().map(Into::into).collect()))
             .build()
     }
 }
@@ -728,6 +775,24 @@ mod tests {
             amzn_codewhisperer_streaming_client::types::UserInputMessage::from(minimal_message.clone());
         let qdeveloper_minimal = amzn_qdeveloper_streaming_client::types::UserInputMessage::from(minimal_message);
         assert_eq!(format!("{codewhisper_minimal:?}"), format!("{qdeveloper_minimal:?}"));
+    }
+
+    #[test]
+    fn build_assistant_response_message() {
+        let message = AssistantResponseMessage {
+            message_id: Some("testid".to_string()),
+            content: "test content".to_string(),
+            tool_uses: Some(vec![ToolUse {
+                tool_use_id: "tooluseid_test".to_string(),
+                name: "tool_name_test".to_string(),
+                input: Document::Object([("key1".to_string(), Document::Null)].into_iter().collect()),
+            }]),
+        };
+        let codewhisper_input =
+            amzn_codewhisperer_streaming_client::types::AssistantResponseMessage::try_from(message.clone()).unwrap();
+        let qdeveloper_input =
+            amzn_qdeveloper_streaming_client::types::AssistantResponseMessage::try_from(message).unwrap();
+        assert_eq!(format!("{codewhisper_input:?}"), format!("{qdeveloper_input:?}"));
     }
 
     #[test]

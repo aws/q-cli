@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::env;
 use std::path::Path;
 use std::sync::LazyLock;
@@ -56,13 +57,16 @@ const MAX_SHELL_HISTORY_DIRECTORY_LEN: usize = 256;
 /// Regex for the context modifiers `@git`, `@env`, and `@history`
 static CONTEXT_MODIFIER_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"@(git|env|history) ?").unwrap());
 
+/// Limit to send the number of messages as part of chat.
+const MAX_CONVERSATION_STATE_HISTORY_LEN: usize = 10;
+
 #[derive(Debug, Clone)]
 pub struct ConversationState {
     pub conversation_id: Option<String>,
     /// The next user message to be sent as part of the conversation. Required to be [Some] before
     /// calling [Self::as_sendable_conversation_state].
     pub next_message: Option<Message>,
-    pub history: Vec<Message>,
+    pub history: VecDeque<Message>,
     tools: Vec<Tool>,
 }
 
@@ -71,7 +75,7 @@ impl ConversationState {
         Self {
             conversation_id: None,
             next_message: None,
-            history: Vec::new(),
+            history: VecDeque::new(),
             tools: tool_config
                 .tools
                 .into_values()
@@ -87,10 +91,7 @@ impl ConversationState {
     }
 
     pub async fn append_new_user_message(&mut self, input: String) {
-        if self.next_message.is_some() {
-            error!("Replacing the next_message with a new message with input: {}", input);
-        }
-
+        assert!(self.next_message.is_none(), "next_message should not exist");
         let (ctx, input) = input_to_modifiers(input);
         let history = History::new();
 
@@ -121,7 +122,8 @@ impl ConversationState {
     }
 
     pub fn push_assistant_message(&mut self, message: Message) {
-        self.history.push(message);
+        assert!(self.next_message.is_none(), "next_message should not exist");
+        self.history.push_back(message);
     }
 
     pub fn add_tool_results(&mut self, tool_results: Vec<ToolResult>) {
@@ -149,10 +151,16 @@ impl ConversationState {
     /// in the next message.
     pub fn as_sendable_conversation_state(&mut self) -> FigConversationState {
         assert!(self.next_message.is_some());
+        while self.history.len() > MAX_CONVERSATION_STATE_HISTORY_LEN {
+            self.history.pop_front();
+        }
+
+        // The current state we want to send
         let curr_state = self.clone();
 
+        // Updating `self` so that the current next_message is moved to history.
         let last_message = self.next_message.take().unwrap();
-        self.history.push(last_message);
+        self.history.push_back(last_message);
 
         FigConversationState {
             conversation_id: curr_state.conversation_id,
@@ -470,17 +478,37 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_history_len() {
+    async fn test_conversation_state_history_handling() {
         let mut conversation_state = ConversationState::new(load_tools().unwrap());
 
-        for i in 0..5 {
-            conversation_state.append_new_user_message(i.to_string()).await;
+        conversation_state.append_new_user_message("start".to_string()).await;
+        for i in 0..=20 {
+            let _ = conversation_state.as_sendable_conversation_state();
             conversation_state.push_assistant_message(Message(ChatMessage::AssistantResponseMessage(
                 AssistantResponseMessage {
                     message_id: None,
                     content: i.to_string(),
+                    tool_uses: None,
                 },
             )));
+            conversation_state.append_new_user_message(i.to_string()).await;
+        }
+
+        let s = conversation_state.as_sendable_conversation_state();
+        assert_eq!(
+            s.history.as_ref().unwrap().len(),
+            MAX_CONVERSATION_STATE_HISTORY_LEN,
+            "history should be capped at {}",
+            MAX_CONVERSATION_STATE_HISTORY_LEN
+        );
+        let last_msg = s.history.as_ref().unwrap().iter().last().unwrap();
+        match last_msg {
+            ChatMessage::AssistantResponseMessage(assistant_response_message) => {
+                assert_eq!(assistant_response_message.content, "20");
+            },
+            other @ ChatMessage::UserInputMessage(_) => {
+                panic!("Last message should be from the assistant, instead found {:?}", other)
+            },
         }
     }
 }

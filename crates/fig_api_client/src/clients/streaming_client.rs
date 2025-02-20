@@ -104,22 +104,21 @@ impl StreamingClient {
 
         match &self.0 {
             inner::Inner::Codewhisperer(client) => {
-                let conversation_state =
-                    amzn_codewhisperer_streaming_client::types::ConversationState::builder()
-                        .set_conversation_id(conversation_id)
-                        .current_message(
-                            amzn_codewhisperer_streaming_client::types::ChatMessage::UserInputMessage(
-                                user_input_message.into(),
-                            ),
-                        )
-                        .chat_trigger_type(amzn_codewhisperer_streaming_client::types::ChatTriggerType::Manual)
-                        .set_history(
-                            history
-                                .map(|v| v.into_iter().map(|i| i.try_into()).collect::<Result<Vec<_>, _>>())
-                                .transpose()?,
-                        )
-                        .build()
-                        .expect("fix me");
+                let conversation_state = amzn_codewhisperer_streaming_client::types::ConversationState::builder()
+                    .set_conversation_id(conversation_id)
+                    .current_message(
+                        amzn_codewhisperer_streaming_client::types::ChatMessage::UserInputMessage(
+                            user_input_message.into(),
+                        ),
+                    )
+                    .chat_trigger_type(amzn_codewhisperer_streaming_client::types::ChatTriggerType::Manual)
+                    .set_history(
+                        history
+                            .map(|v| v.into_iter().map(|i| i.try_into()).collect::<Result<Vec<_>, _>>())
+                            .transpose()?,
+                    )
+                    .build()
+                    .expect("fix me");
 
                 Ok(SendMessageOutput::Codewhisperer(
                     client
@@ -258,6 +257,7 @@ mod tests {
                     ChatMessage::AssistantResponseMessage(AssistantResponseMessage {
                         content: "It is written in C by Linus Torvalds.".into(),
                         message_id: None,
+                        tool_uses: None,
                     }),
                 ]),
             })
