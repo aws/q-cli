@@ -3,11 +3,17 @@
         "Sure, I'll create a file for you",
         {
             "tool_use_id": "1",
-            "name": "fs_write",
+            "name": "use_aws",
             "args": {
-                "command": "create",
-                "file_text": "Hello, world!",
-                "path": "/file.txt"
+              "service_name": "dynamodb",
+              "operation_name": "get-item",
+              "parameters": {
+                  "--table-name": "AGI_MEMORY",
+                  "--key": "{\"memory_id\": {\"S\": \"49d649c7-b772-4578-968c-c20240844a4a\"}}"
+              },
+              "region": "us-west-2",
+              "profile_name": "default",
+              "label": ""
             }
         }
     ],
