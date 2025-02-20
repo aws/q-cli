@@ -1,0 +1,17 @@
+[
+    [
+        "Sure, I'll create a file for you",
+        {
+            "tool_use_id": "1",
+            "name": "fs_write",
+            "args": {
+                "command": "create",
+                "file_text": "Hello, world!",
+                "path": "/file.txt"
+            }
+        }
+    ],
+    [
+        "Hope that looks good to you!"
+    ]
+]

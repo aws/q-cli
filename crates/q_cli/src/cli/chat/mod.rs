@@ -33,6 +33,7 @@ use eyre::{
 use fig_api_client::StreamingClient;
 use fig_api_client::clients::SendMessageOutput;
 use fig_api_client::model::{
+    ChatResponseStream,
     ToolResult,
     ToolResultContentBlock,
     ToolResultStatus,
@@ -45,6 +46,7 @@ use parser::{
     ResponseParser,
     ToolUse,
 };
+use serde_json::Map;
 use spinners::{
     Spinner,
     Spinners,
@@ -79,6 +81,7 @@ pub async fn chat(initial_input: Option<String>) -> Result<ExitCode> {
 
     region_check("chat")?;
 
+    let ctx = Context::new();
     let stdin = std::io::stdin();
     let is_interactive = stdin.is_terminal();
     let initial_input = if !is_interactive {
@@ -93,11 +96,16 @@ pub async fn chat(initial_input: Option<String>) -> Result<ExitCode> {
     let tool_config = load_tools()?;
     debug!(?tool_config, "Using tools");
 
-    let client = StreamingClient::new().await?;
+    let client = match ctx.env().get("Q_MOCK_CHAT_RESPONSE") {
+        Ok(json) => create_stream(serde_json::from_str(std::fs::read_to_string(json)?.as_str())?),
+        _ => StreamingClient::new().await?,
+    };
+
+    // let client = StreamingClient::new().await?;
     let mut output = std::io::stdout();
     let result = ChatContext::new(ChatArgs {
         output: &mut output,
-        ctx: Context::new(),
+        ctx,
         initial_input,
         input_source: InputSource::new()?,
         is_interactive,
@@ -114,6 +122,61 @@ pub async fn chat(initial_input: Option<String>) -> Result<ExitCode> {
     output.flush().ok();
 
     result.map(|_| ExitCode::SUCCESS)
+}
+
+fn split_tool_use_event(value: &Map<String, serde_json::Value>) -> Vec<ChatResponseStream> {
+    let tool_use_id = value.get("tool_use_id").unwrap().as_str().unwrap().to_string();
+    let name = value.get("name").unwrap().as_str().unwrap().to_string();
+    let args_str = value.get("args").unwrap().to_string();
+    let split_point = args_str.len() / 2;
+    vec![
+        ChatResponseStream::ToolUseEvent {
+            tool_use_id: tool_use_id.clone(),
+            name: name.clone(),
+            input: None,
+            stop: None,
+        },
+        ChatResponseStream::ToolUseEvent {
+            tool_use_id: tool_use_id.clone(),
+            name: name.clone(),
+            input: Some(args_str.split_at(split_point).0.to_string()),
+            stop: None,
+        },
+        ChatResponseStream::ToolUseEvent {
+            tool_use_id: tool_use_id.clone(),
+            name: name.clone(),
+            input: Some(args_str.split_at(split_point).1.to_string()),
+            stop: None,
+        },
+        ChatResponseStream::ToolUseEvent {
+            tool_use_id: tool_use_id.clone(),
+            name: name.clone(),
+            input: None,
+            stop: Some(true),
+        },
+    ]
+}
+
+fn create_stream(model_responses: serde_json::Value) -> StreamingClient {
+    let mut mock = Vec::new();
+    for response in model_responses.as_array().unwrap() {
+        let mut stream = Vec::new();
+        for event in response.as_array().unwrap() {
+            match event {
+                serde_json::Value::String(assistant_text) => {
+                    stream.push(ChatResponseStream::AssistantResponseEvent {
+                        content: assistant_text.to_string(),
+                    });
+                },
+                serde_json::Value::Object(tool_use) => {
+                    stream.append(&mut split_tool_use_event(tool_use));
+                },
+                other => panic!("Unexpected value: {:?}", other),
+            }
+        }
+        mock.push(stream);
+    }
+    StreamingClient::mock(mock)
 }
 
 /// The tools that can be used by the model.
