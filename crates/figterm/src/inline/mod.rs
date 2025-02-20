@@ -240,7 +240,9 @@ pub async fn handle_request(
             },
         };
 
-        let prompt = prompt(&history, buffer).unwrap();
+        let Some(prompt) = prompt(&history, buffer) else {
+            return;
+        };
 
         let input = RecommendationsInput {
             file_context: FileContext {
