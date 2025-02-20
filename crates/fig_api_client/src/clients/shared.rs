@@ -14,7 +14,7 @@ use crate::{
     Error,
 };
 
-const DEFAULT_TIMEOUT_DURATION: Duration = Duration::from_millis(30100);
+const DEFAULT_TIMEOUT_DURATION: Duration = Duration::from_millis(60100);
 
 pub(crate) fn timeout_config() -> TimeoutConfig {
     let timeout = fig_settings::settings::get_int("api.timeout")
