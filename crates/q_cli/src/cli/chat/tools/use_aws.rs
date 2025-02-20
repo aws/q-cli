@@ -141,6 +141,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
+    #[ignore = "not in ci"]
     async fn test_aws_read_only() {
         let ctx = Context::new_fake();
 
@@ -165,6 +166,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "not in ci"]
     async fn test_aws_output() {
         let ctx = Context::new_fake();
 
@@ -197,6 +199,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "not in ci"]
     async fn test_aws_command_with_params() {
         let ctx = Context::new_fake();
 
