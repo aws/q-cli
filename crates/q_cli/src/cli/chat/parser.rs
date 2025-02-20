@@ -8,6 +8,7 @@ use fig_api_client::model::{
 use tracing::{
     error,
     trace,
+    warn,
 };
 
 use crate::cli::chat::conversation_state::Message;
@@ -54,37 +55,35 @@ impl ResponseParser {
     pub async fn recv(&mut self) -> Result<ResponseEvent> {
         loop {
             match self.next().await {
-                Ok(Some(output)) => {
-                    match output {
-                        ChatResponseStream::AssistantResponseEvent { content } => {
-                            self.assistant_text.push_str(&content);
-                            return Ok(ResponseEvent::AssistantText(content));
-                        },
-                        ChatResponseStream::InvalidStateEvent { reason, message } => {
-                            error!(%reason, %message, "invalid state event");
-                        },
-                        ChatResponseStream::MessageMetadataEvent {
-                            conversation_id,
-                            utterance_id,
-                        } => {
-                            if let Some(id) = utterance_id {
-                                self.message_id = Some(id);
-                            }
-                            if let Some(id) = conversation_id {
-                                return Ok(ResponseEvent::ConversationId(id));
-                            }
-                        },
-                        ChatResponseStream::ToolUseEvent {
-                            tool_use_id,
-                            name,
-                            input,
-                            stop,
-                        } => {
-                            let tool_use = self.parse_tool_use(tool_use_id, name, stop).await?;
-                            return Ok(ResponseEvent::ToolUse(tool_use));
-                        },
-                        _ => {},
-                    }
+                Ok(Some(output)) => match output {
+                    ChatResponseStream::AssistantResponseEvent { content } => {
+                        self.assistant_text.push_str(&content);
+                        return Ok(ResponseEvent::AssistantText(content));
+                    },
+                    ChatResponseStream::InvalidStateEvent { reason, message } => {
+                        error!(%reason, %message, "invalid state event");
+                    },
+                    ChatResponseStream::MessageMetadataEvent {
+                        conversation_id,
+                        utterance_id,
+                    } => {
+                        if let Some(id) = utterance_id {
+                            self.message_id = Some(id);
+                        }
+                        if let Some(id) = conversation_id {
+                            return Ok(ResponseEvent::ConversationId(id));
+                        }
+                    },
+                    ChatResponseStream::ToolUseEvent {
+                        tool_use_id,
+                        name,
+                        input,
+                        stop,
+                    } => {
+                        let tool_use = self.parse_tool_use(tool_use_id, name, input, stop).await?;
+                        return Ok(ResponseEvent::ToolUse(tool_use));
+                    },
+                    _ => {},
                 },
                 Ok(None) => {
                     let message = Message(ChatMessage::AssistantResponseMessage(AssistantResponseMessage {
@@ -101,10 +100,18 @@ impl ResponseParser {
     /// Consumes the response stream until a valid [ToolUse] is parsed.
     ///
     /// The arguments are the fields from the first [ChatResponseStream::ToolUseEvent] consumed.
-    async fn parse_tool_use(&mut self, tool_use_id: String, tool_name: String, stop: Option<bool>) -> Result<ToolUse> {
-        // assert!(input.is_some());
+    async fn parse_tool_use(
+        &mut self,
+        tool_use_id: String,
+        tool_name: String,
+        input: Option<String>,
+        stop: Option<bool>,
+    ) -> Result<ToolUse> {
+        if input.is_some() {
+            warn!(?input, "Unexpected initial content in input");
+        }
         assert!(stop.is_none_or(|v| !v));
-        let mut tool_string = String::new();
+        let mut tool_string = input.unwrap_or_default();
         while let Some(ChatResponseStream::ToolUseEvent { .. }) = self.peek().await? {
             if let Some(ChatResponseStream::ToolUseEvent { input, stop, .. }) = self.next().await? {
                 if let Some(i) = input {
@@ -142,8 +149,9 @@ impl ResponseParser {
         if let Some(ev) = self.peek.take() {
             return Ok(Some(ev));
         }
+        trace!("Attempting to recv next event");
         let r = self.response.recv().await?;
-        trace!("Received: {:?}", r);
+        trace!(?r, "Received new event");
         Ok(r)
     }
 }

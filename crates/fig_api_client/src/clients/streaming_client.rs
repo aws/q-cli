@@ -94,6 +94,7 @@ impl StreamingClient {
     }
 
     pub async fn send_message(&self, conversation_state: ConversationState) -> Result<SendMessageOutput, Error> {
+        // TODO(bskiser): remove debug
         debug!("Sending conversation: {:#?}", conversation_state);
         let ConversationState {
             conversation_id,
