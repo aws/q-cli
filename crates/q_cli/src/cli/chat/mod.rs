@@ -185,6 +185,7 @@ pub struct ToolConfiguration {
     tools: HashMap<String, ToolSpec>,
 }
 
+/// Returns all tools supported by Q chat.
 fn load_tools() -> Result<ToolConfiguration> {
     let tools: Vec<ToolSpec> = serde_json::from_str(include_str!("tools/tool_index.json"))?;
     Ok(ToolConfiguration {

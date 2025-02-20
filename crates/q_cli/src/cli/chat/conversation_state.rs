@@ -168,22 +168,6 @@ impl ConversationState {
     }
 }
 
-impl From<ConversationState> for FigConversationState {
-    fn from(value: ConversationState) -> Self {
-        Self {
-            conversation_id: value.conversation_id,
-            user_input_message: value
-                .next_message
-                .and_then(|m| match m.0 {
-                    ChatMessage::AssistantResponseMessage(_) => None,
-                    ChatMessage::UserInputMessage(user_input_message) => Some(user_input_message),
-                })
-                .expect("no user input message available"),
-            history: Some(value.history.into_iter().map(|m| m.0).collect()),
-        }
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct Message(pub ChatMessage);
 
@@ -360,9 +344,11 @@ fn truncate_safe(s: &str, max_bytes: usize) -> &str {
 
 #[cfg(test)]
 mod tests {
+    use fig_api_client::model::AssistantResponseMessage;
     use fig_settings::history::CommandInfo;
 
     use super::*;
+    use crate::cli::chat::load_tools;
 
     #[test]
     fn test_truncate_safe() {
@@ -481,5 +467,20 @@ mod tests {
 
         let git_state = build_git_state(Some(dir_path)).await.unwrap();
         println!("git_state: {git_state:?}");
+    }
+
+    #[tokio::test]
+    async fn test_history_len() {
+        let mut conversation_state = ConversationState::new(load_tools().unwrap());
+
+        for i in 0..5 {
+            conversation_state.append_new_user_message(i.to_string()).await;
+            conversation_state.push_assistant_message(Message(ChatMessage::AssistantResponseMessage(
+                AssistantResponseMessage {
+                    message_id: None,
+                    content: i.to_string(),
+                },
+            )));
+        }
     }
 }
