@@ -220,13 +220,14 @@ struct ChatContext<'o, W> {
     /// Width of the terminal, required for [ParseState].
     terminal_width_provider: fn() -> Option<usize>,
     spinner: Option<Spinner>,
+    /// Tool uses requested by the model.
     tool_uses: Vec<ToolUse>,
+    /// [ConversationState].
     conversation_state: ConversationState,
+    /// The number of times a tool use has been attempted without user intervention.
     tool_use_recursions: u32,
     current_user_input_id: Option<String>,
-    tool_results: Vec<ToolResult>,
-    queued_tools: Vec<(String, ToolE)>,
-    tool_use_events: Vec<ToolUseEventBuilder>
+    tool_use_events: Vec<ToolUseEventBuilder>,
 }
 
 impl<'o, W> ChatContext<'o, W>
@@ -247,9 +248,7 @@ where
             conversation_state: ConversationState::new(args.tool_config),
             tool_use_recursions: 0,
             current_user_input_id: None,
-            tool_results: vec![],
-            queued_tools: vec![],
-            tool_use_events: vec![]
+            tool_use_events: vec![],
         }
     }
 
@@ -267,10 +266,13 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
         }
 
         loop {
-            let mut response = self.response().await?;
+            let mut response = self.prompt_and_send_request().await?;
             let response = match response.take() {
                 Some(response) => response,
-                None => break,
+                None => {
+                    // TODO: telemetry ChatEnd
+                    break;
+                },
             };
 
             // Handle the response
@@ -291,6 +293,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                         trace!("Consumed: {:?}", msg_event);
                         match msg_event {
                             parser::ResponseEvent::ConversationId(id) => {
+                                // TODO: telemetry ChatStart
                                 self.conversation_state.conversation_id = Some(id);
                             },
                             parser::ResponseEvent::AssistantText(text) => {
@@ -302,81 +305,12 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                             parser::ResponseEvent::EndStream { message } => {
                                 self.conversation_state.push_assistant_message(message);
                                 ended = true;
-                                if !self.queued_tools.is_empty() {
-                                    let mut tmp_buf: Vec<u8> = vec![];
-                                    let mut cursor = std::io::Cursor::new(&mut tmp_buf);
-                                    self.show_readable_intentions(&mut cursor).await?;
-                                    cursor.flush()?;
-                                    buf.push('\n');
-                                    buf.push_str(tmp_buf.to_str()?);
-                                }
                             },
                         };
                     },
                     Err(err) => {
                         bail!("An error occurred reading the model's response: {:?}", err);
                     },
-                }
-
-                if !self.tool_uses.is_empty() {
-                    let conv_id = self
-                        .conversation_state
-                        .conversation_id
-                        .as_ref()
-                        .unwrap_or(&"No conversation id associated".to_string())
-                        .to_owned();
-                    let utterance_id = self
-                        .conversation_state
-                        .next_message
-                        .as_ref()
-                        .and_then(|msg| {
-                            if let fig_api_client::model::ChatMessage::AssistantResponseMessage(resp) = &msg.0 {
-                                resp.message_id.clone()
-                            } else {
-                                None
-                            }
-                        })
-                        .unwrap_or("No utterance id associated".to_string());
-                    if !self.tool_uses.is_empty() {
-                        debug!(?self.tool_uses, "Validating tool uses");
-                        // Parse the requested tools then validate them initializing needed fields
-                        let mut tool_results = Vec::with_capacity(self.tool_uses.len());
-                        for tool_use in self.tool_uses.drain(..) {
-                            let tool_use_id = tool_use.id.clone();
-                            let mut event_builder = ToolUseEventBuilder::from_conversation_id(conv_id.clone())
-                                .set_tool_use_id(&tool_use_id)
-                                .set_tool_name(&tool_use.name)
-                                .set_utterance_id(&utterance_id);
-                            if let Some(ref id) = self.current_user_input_id {
-                                event_builder.user_input_id = Some(id.clone());
-                            }
-
-                            match ToolE::from_tool_use(tool_use) {
-                                Ok(mut tool) => {
-                                    match tool.validate(&self.ctx).await {
-                                        Ok(()) => {
-                                            self.queued_tools.push((tool_use_id, tool));
-                                        },
-                                        Err(err) => {
-                                            tool_results.push(ToolResult {
-                                                tool_use_id,
-                                                content: vec![ToolResultContentBlock::Text(format!(
-                                                    "Failed to validate tool parameters: {err}"
-                                                ))],
-                                                status: ToolResultStatus::Error,
-                                            });
-                                            event_builder.is_valid = Some(false);
-                                        },
-                                    };
-                                },
-                                Err(err) => {
-                                    tool_results.push(err);
-                                    event_builder.is_valid = Some(false);
-                                },
-                            }
-                            self.tool_use_events.push(event_builder);
-                        }
-                    }
                 }
 
                 // Fix for the markdown parser copied over from q chat:
@@ -414,6 +348,8 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                 }
 
                 if ended {
+                    // TODO: telemetry ChatAddMessage
+                    // ...
                     if self.is_interactive {
                         queue!(self.output, style::ResetColor, style::SetAttribute(Attribute::Reset))?;
                         execute!(self.output, style::Print("\n"))?;
@@ -443,18 +379,97 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
         Ok(())
     }
 
-    async fn response(&mut self) -> Result<Option<SendMessageOutput>> {
-        if !self.tool_results.is_empty() {
-            debug!(?self.tool_results, "Error found in the model tools");
-            let mut blank_results = vec![];
-            std::mem::swap(&mut blank_results, &mut self.tool_results);
-            self.conversation_state.add_tool_results(blank_results);
+    async fn prompt_and_send_request(&mut self) -> Result<Option<SendMessageOutput>> {
+        // Tool uses that need to be executed.
+        let mut queued_tools: Vec<(String, ToolE)> = Vec::new();
+        // Errors encountered while validating the tool uses.
+        let mut tool_errors: Vec<ToolResult> = Vec::new();
+
+        // Validate the requested tools, updating queued_tools and tool_errors accordingly.
+        if !self.tool_uses.is_empty() {
+            // let conv_id = self
+            //     .conversation_state
+            //     .conversation_id
+            //     .as_ref()
+            //     .unwrap_or(&"No conversation id associated".to_string())
+            //     .to_owned();
+            // let utterance_id = self
+            //     .conversation_state
+            //     .next_message
+            //     .as_ref()
+            //     .and_then(|msg| {
+            //         if let fig_api_client::model::ChatMessage::AssistantResponseMessage(resp) = &msg.0 {
+            //             resp.message_id.clone()
+            //         } else {
+            //             None
+            //         }
+            //     })
+            //     .unwrap_or("No utterance id associated".to_string());
+            debug!(?self.tool_uses, "Validating tool uses");
+            let mut tool_results = Vec::with_capacity(self.tool_uses.len());
+            for tool_use in self.tool_uses.drain(..) {
+                let tool_use_id = tool_use.id.clone();
+                // let mut event_builder = ToolUseEventBuilder::from_conversation_id(conv_id.clone())
+                //     .set_tool_use_id(&tool_use_id)
+                //     .set_tool_name(&tool_use.name)
+                //     .set_utterance_id(&utterance_id);
+                // if let Some(ref id) = self.current_user_input_id {
+                //     event_builder.user_input_id = Some(id.clone());
+                // }
+                match ToolE::from_tool_use(tool_use) {
+                    Ok(mut tool) => {
+                        match tool.validate(&self.ctx).await {
+                            Ok(()) => {
+                                queued_tools.push((tool_use_id, tool));
+                            },
+                            Err(err) => {
+                                tool_errors.push(ToolResult {
+                                    tool_use_id,
+                                    content: vec![ToolResultContentBlock::Text(format!(
+                                        "Failed to validate tool parameters: {err}"
+                                    ))],
+                                    status: ToolResultStatus::Error,
+                                });
+                                // event_builder.is_valid = Some(false);
+                            },
+                        };
+                    },
+                    Err(err) => {
+                        tool_results.push(err);
+                        // event_builder.is_valid = Some(false);
+                    },
+                }
+                // self.tool_use_events.push(event_builder);
+            }
+        }
+
+        // If we have any validation errors, then return them immediately to the model.
+        if !tool_errors.is_empty() {
+            debug!(?tool_errors, "Error found in the model tools");
+            self.conversation_state.add_tool_results(tool_errors);
             self.send_tool_use_events().await;
             return Ok(Some(
                 self.client
                     .send_message(self.conversation_state.as_sendable_conversation_state())
                     .await?,
             ));
+        }
+
+        // If we have tool uses, display them to the user.
+        if !queued_tools.is_empty() {
+            self.tool_use_recursions += 1;
+            if self.tool_use_recursions > MAX_TOOL_USE_RECURSIONS {
+                bail!("Exceeded max tool use recursion limit: {}", MAX_TOOL_USE_RECURSIONS);
+            }
+            for (_, tool) in &queued_tools {
+                tool.show_readable_intention(self.output)?;
+            }
+            queue!(
+                self.output,
+                style::Print(
+                    "Press `c` to consent to running these tools, or anything else to continue your conversation.\n"
+                ),
+            )?;
         }
 
         let user_input = match self.initial_input.take() {
@@ -472,31 +487,25 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                     // fig_telemetry::send_end_chat(id.clone()).await;
                 }
                 self.send_tool_use_events().await;
-
                 Ok(None)
             },
-            c if c == "c" && !self.queued_tools.is_empty() => {
-                self.tool_use_recursions += 1;
-                if self.tool_use_recursions > MAX_TOOL_USE_RECURSIONS {
-                    bail!("Exceeded max tool use recursion limit: {}", MAX_TOOL_USE_RECURSIONS);
-                }
-                let terminal_width = self.terminal_width();
-
-                // Prompt for consent of the requested tools.
-                for tool_use in &self.queued_tools {
-                    queue!(self.output, style::Print("-".repeat(terminal_width)))?;
-                    queue!(self.output, cursor::MoveToColumn(2))?;
-                    queue!(self.output, style::SetAttribute(Attribute::Bold))?;
-                    queue!(self.output, style::Print(format!(" {} ", tool_use.1.display_name())))?;
-                    queue!(self.output, cursor::MoveDown(1))?;
-                    queue!(self.output, style::SetAttribute(Attribute::NormalIntensity))?;
-                    tool_use.1.show_readable_intention(self.output)?;
-                    self.output.flush()?;
-                }
+            // Tool execution.
+            c if c == "c" && !queued_tools.is_empty() => {
+                // let terminal_width = self.terminal_width();
+                // for tool_use in &self.queued_tools {
+                //     queue!(self.output, style::Print("-".repeat(terminal_width)))?;
+                //     queue!(self.output, cursor::MoveToColumn(2))?;
+                //     queue!(self.output, style::SetAttribute(Attribute::Bold))?;
+                //     queue!(self.output, style::Print(format!(" {} ", tool_use.1.display_name())))?;
+                //     queue!(self.output, cursor::MoveDown(1))?;
+                //     queue!(self.output, style::SetAttribute(Attribute::NormalIntensity))?;
+                //     // tool_use.1.show_readable_intention(self.output)?;
+                //     self.output.flush()?;
+                // }
 
                 // Execute the requested tools.
                 let mut tool_results = vec![];
-                for tool in self.queued_tools.drain(..) {
+                for tool in queued_tools.drain(..) {
                     let corresponding_builder = self.tool_use_events.iter_mut().find(|v| {
                         if let Some(ref v) = v.tool_use_id {
                             v.eq(&tool.0)
@@ -541,6 +550,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                         .await?,
                 ))
             },
+            // New user prompt.
             _ => {
                 self.tool_use_recursions = 0;
 
@@ -568,7 +578,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                 }
 
                 self.conversation_state.append_new_user_message(user_input).await;
-                self.send_tool_use_events().await;
+                // self.send_tool_use_events().await;
                 Ok(Some(
                     self.client
                         .send_message(self.conversation_state.as_sendable_conversation_state())
@@ -580,18 +590,6 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
 
     fn terminal_width(&self) -> usize {
         (self.terminal_width_provider)().unwrap_or(80)
-    }
-
-    async fn show_readable_intentions(&mut self, out: &mut impl Write) -> Result<()> {
-        for (_, tool)  in &self.queued_tools {
-            tool.show_readable_intention(out)?;
-        }
-        crossterm::queue!(
-            out,
-            crossterm::style::Print("Press c to consent to running these tools\n"),
-        )?;
-
-        Ok(())
     }
 
     async fn send_tool_use_events(&mut self) {
@@ -606,7 +604,6 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
             .await;
     }
 }
-
 
 struct ToolUseEventBuilder {
     pub conversation_id: String,

@@ -645,6 +645,7 @@ impl From<UserInputMessage> for amzn_codewhisperer_streaming_client::types::User
             .content(value.content)
             .set_user_input_message_context(value.user_input_message_context.map(Into::into))
             .set_user_intent(value.user_intent.map(Into::into))
+            .origin(amzn_codewhisperer_streaming_client::types::Origin::Cli)
             .build()
             .expect("Failed to build UserInputMessage")
     }
@@ -656,6 +657,7 @@ impl From<UserInputMessage> for amzn_qdeveloper_streaming_client::types::UserInp
             .content(value.content)
             .set_user_input_message_context(value.user_input_message_context.map(Into::into))
             .set_user_intent(value.user_intent.map(Into::into))
+            .origin(amzn_qdeveloper_streaming_client::types::Origin::Cli)
             .build()
             .expect("Failed to build UserInputMessage")
     }

@@ -60,6 +60,7 @@ static CONTEXT_MODIFIER_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"@
 /// Limit to send the number of messages as part of chat.
 const MAX_CONVERSATION_STATE_HISTORY_LEN: usize = 10;
 
+/// Tracks state related to an ongoing conversation.
 #[derive(Debug, Clone)]
 pub struct ConversationState {
     pub conversation_id: Option<String>,
