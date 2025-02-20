@@ -167,8 +167,3 @@ fn relative_path(cwd: impl AsRef<Path>, path: impl AsRef<Path>) -> String {
         _ => path.as_ref().to_string_lossy().to_string(),
     }
 }
-
-#[cfg(test)]
-mod tests {
-    pub struct Asdf;
-}

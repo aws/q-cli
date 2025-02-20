@@ -16,7 +16,10 @@ mod inner {
     pub enum Inner {
         Readline(Editor<ChatHelper, FileHistory>),
         #[allow(dead_code)]
-        Mock { index: usize, lines: Vec<String> },
+        Mock {
+            index: usize,
+            lines: Vec<String>,
+        },
     }
 }
 

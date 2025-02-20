@@ -13,7 +13,6 @@ use std::io::{
 use std::process::ExitCode;
 use std::sync::Arc;
 
-use bstr::ByteSlice;
 use color_eyre::owo_colors::OwoColorize;
 use conversation_state::ConversationState;
 use crossterm::style::{
@@ -463,7 +462,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                 bail!("Exceeded max tool use recursion limit: {}", MAX_TOOL_USE_RECURSIONS);
             }
             for (_, tool) in &queued_tools {
-                queue!(self.output, style::Print(format!("{}\n","─".repeat(terminal_width))))?;
+                queue!(self.output, style::Print(format!("{}\n", "─".repeat(terminal_width))))?;
                 queue!(self.output, cursor::MoveToPreviousLine(1))?;
                 queue!(self.output, cursor::MoveToColumn(2))?;
                 queue!(self.output, style::SetAttribute(Attribute::Bold))?;
@@ -501,7 +500,6 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
             },
             // Tool execution.
             c if c == "c" && !queued_tools.is_empty() => {
-
                 // Execute the requested tools.
                 let mut tool_results = vec![];
                 for tool in queued_tools.drain(..) {

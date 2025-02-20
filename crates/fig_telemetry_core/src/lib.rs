@@ -1,23 +1,42 @@
 use std::any::Any;
 use std::sync::OnceLock;
-use std::time::{Duration, SystemTime};
+use std::time::{
+    Duration,
+    SystemTime,
+};
 
 pub use amzn_toolkit_telemetry::types::MetricDatum;
 use aws_toolkit_telemetry_definitions::IntoMetricDatum;
 use aws_toolkit_telemetry_definitions::metrics::{
-    AmazonqEndChat, AmazonqStartChat, CodewhispererterminalAddChatMessage, CodewhispererterminalCliSubcommandExecuted,
-    CodewhispererterminalCompletionInserted, CodewhispererterminalDashboardPageViewed,
-    CodewhispererterminalDoctorCheckFailed, CodewhispererterminalFigUserMigrated,
-    CodewhispererterminalInlineShellActioned, CodewhispererterminalMenuBarActioned,
-    CodewhispererterminalMigrateOldClientId, CodewhispererterminalRefreshCredentials,
-    CodewhispererterminalToolUseSuggested, CodewhispererterminalTranslationActioned, CodewhispererterminalUserLoggedIn,
+    AmazonqEndChat,
+    AmazonqStartChat,
+    CodewhispererterminalAddChatMessage,
+    CodewhispererterminalCliSubcommandExecuted,
+    CodewhispererterminalCompletionInserted,
+    CodewhispererterminalDashboardPageViewed,
+    CodewhispererterminalDoctorCheckFailed,
+    CodewhispererterminalFigUserMigrated,
+    CodewhispererterminalInlineShellActioned,
+    CodewhispererterminalMenuBarActioned,
+    CodewhispererterminalMigrateOldClientId,
+    CodewhispererterminalRefreshCredentials,
+    CodewhispererterminalToolUseSuggested,
+    CodewhispererterminalTranslationActioned,
+    CodewhispererterminalUserLoggedIn,
 };
 use aws_toolkit_telemetry_definitions::types::{
-    CodewhispererterminalInCloudshell, CodewhispererterminalIsToolValid, CodewhispererterminalToolName,
-    CodewhispererterminalToolUseId, CodewhispererterminalToolUseIsSuccess, CodewhispererterminalUserInputId,
+    CodewhispererterminalInCloudshell,
+    CodewhispererterminalIsToolValid,
+    CodewhispererterminalToolName,
+    CodewhispererterminalToolUseId,
+    CodewhispererterminalToolUseIsSuccess,
+    CodewhispererterminalUserInputId,
     CodewhispererterminalUtteranceId,
 };
-use strum::{Display, EnumString};
+use strum::{
+    Display,
+    EnumString,
+};
 
 type GlobalTelemetryEmitter = dyn TelemetryEmitter + Send + Sync + 'static;
 

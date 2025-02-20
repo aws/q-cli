@@ -29,7 +29,6 @@ use fig_settings::history::{
 };
 use fig_util::Shell;
 use regex::Regex;
-use tracing::error;
 
 use crate::cli::chat::ToolConfiguration;
 use crate::cli::chat::tools::{
@@ -207,6 +206,7 @@ struct ContextModifiers {
 
 impl ContextModifiers {
     /// Returns `true` if any context modifiers are set
+    #[allow(dead_code)]
     fn any(&self) -> bool {
         self.env || self.history || self.git
     }
