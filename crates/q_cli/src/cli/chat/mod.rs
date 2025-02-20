@@ -213,7 +213,6 @@ struct ChatContext<'o, W> {
     initial_input: Option<String>,
     input_source: InputSource,
     is_interactive: bool,
-    tool_config: ToolConfiguration,
     /// The client to use to interact with the model.
     client: StreamingClient,
     /// Width of the terminal, required for [ParseState].
@@ -236,7 +235,6 @@ where
             initial_input: args.initial_input,
             input_source: args.input_source,
             is_interactive: args.is_interactive,
-            tool_config: args.tool_config.clone(),
             client: args.client,
             terminal_width_provider: args.terminal_width_provider,
             spinner: None,
@@ -259,8 +257,6 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                 })
             )?;
         }
-
-        let mut conversation_state = ConversationState::new(self.tool_config.clone());
 
         loop {
             let mut response = self.response().await?;
@@ -287,7 +283,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                         trace!("Consumed: {:?}", msg_event);
                         match msg_event {
                             parser::ResponseEvent::ConversationId(id) => {
-                                conversation_state.conversation_id = Some(id);
+                                self.conversation_state.conversation_id = Some(id);
                             },
                             parser::ResponseEvent::AssistantText(text) => {
                                 buf.push_str(&text);
@@ -297,7 +293,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                                 self.tool_uses.push(tool_use);
                             },
                             parser::ResponseEvent::EndStream { message } => {
-                                conversation_state.push_assistant_message(message);
+                                self.conversation_state.push_assistant_message(message);
                                 ended = true;
                             },
                         };
