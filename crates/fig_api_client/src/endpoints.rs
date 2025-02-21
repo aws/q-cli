@@ -27,7 +27,7 @@ impl Endpoint {
     };
 
     pub fn load_codewhisperer() -> Self {
-        match fig_settings::state::get_value("api.codewhisperer.service") {
+        match fig_settings::settings::get_value("api.codewhisperer.service") {
             Ok(Some(Value::Object(o))) => {
                 let endpoint = o.get("endpoint").and_then(|v| v.as_str());
                 let region = o.get("region").and_then(|v| v.as_str());
@@ -45,7 +45,7 @@ impl Endpoint {
     }
 
     pub fn load_q() -> Self {
-        match fig_settings::state::get_value("api.q.service") {
+        match fig_settings::settings::get_value("api.q.service") {
             Ok(Some(Value::Object(o))) => {
                 let endpoint = o.get("endpoint").and_then(|v| v.as_str());
                 let region = o.get("region").and_then(|v| v.as_str());

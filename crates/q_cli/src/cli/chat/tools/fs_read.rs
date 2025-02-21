@@ -44,7 +44,7 @@ impl FsRead {
     }
 
     pub fn display_name() -> String {
-        "Read from filesystem".to_owned()
+        "File System Read".to_owned()
     }
 
     pub async fn invoke(&self, ctx: &Context, updates: &mut impl Write) -> Result<InvokeOutput> {

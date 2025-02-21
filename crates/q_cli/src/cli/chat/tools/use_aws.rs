@@ -58,7 +58,7 @@ impl UseAws {
     }
 
     pub fn display_name() -> String {
-        "Use AWS".to_owned()
+        "Use AWS Readonly".to_owned()
     }
 
     pub async fn invoke(&self, _ctx: &Context, _updates: impl Write) -> Result<InvokeOutput> {

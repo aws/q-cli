@@ -1,4 +1,3 @@
-use std::fmt::Display;
 use std::io::Write;
 use std::process::Stdio;
 
@@ -27,7 +26,7 @@ pub struct ExecuteBash {
 
 impl ExecuteBash {
     pub fn display_name() -> String {
-        "Execute bash command".to_owned()
+        "Execute Bash".to_owned()
     }
 
     pub async fn invoke(&self, mut updates: impl Write) -> Result<InvokeOutput> {
@@ -64,23 +63,14 @@ impl ExecuteBash {
     pub fn show_readable_intention(&self, updates: &mut impl Write) -> Result<()> {
         Ok(queue!(
             updates,
-            style::Print(format!("Executing bash command: {}\n", self.command))
+            style::Print("Command: "),
+            style::SetForegroundColor(Color::Green),
+            style::Print(&self.command),
+            style::ResetColor,
         )?)
     }
 
     pub async fn validate(&mut self, _ctx: &Context) -> Result<()> {
-        Ok(())
-    }
-}
-
-impl Display for ExecuteBash {
-    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        queue!(
-            std::io::stdout(),
-            style::Print(format!("Executing bash command: {}\n", self.command))
-        )
-        .map_err(|_| std::fmt::Error)?;
-
         Ok(())
     }
 }

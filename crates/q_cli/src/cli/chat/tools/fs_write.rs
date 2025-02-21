@@ -40,7 +40,7 @@ pub enum FsWrite {
 
 impl FsWrite {
     pub fn display_name() -> String {
-        "Write to filesystem".to_owned()
+        "File System Write".to_owned()
     }
 
     pub async fn invoke(&self, ctx: &Context, updates: &mut impl Write) -> Result<InvokeOutput> {

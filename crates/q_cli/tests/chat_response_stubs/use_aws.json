@@ -1,6 +1,6 @@
 [
     [
-        "Sure, I'll create a file for you",
+        "Let me use the `use_aws` tool to get your item.",
         {
             "tool_use_id": "1",
             "name": "use_aws",

@@ -264,6 +264,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
 <em>@history</em> to pass your shell history
 <em>@git</em> to pass information about your current git repository
 <em>@env</em> to pass your shell environment
+
 "
                 })
             )?;
@@ -491,10 +492,11 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                 queue!(self.output, cursor::MoveToNextLine(1))?;
             }
             queue!(self.output, style::Print("─".repeat(terminal_width)))?;
+            execute!(self.output, style::Print("\n"))?;
             execute!(
                 self.output,
                 style::Print(
-                    "Press `c` to consent to running these tools, or anything else to continue your conversation.\n"
+                    "Press `c` to consent to running these tools, or anything else to continue your conversation.\n\n"
                 ),
             )?;
         }
@@ -575,7 +577,6 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                     }
                     queue!(self.output, style::SetForegroundColor(Color::Reset))?;
                     queue!(self.output, cursor::Hide)?;
-                    self.spinner = Some(Spinner::new(Spinners::Dots, "Generating your answer...".to_owned()));
                     tokio::spawn(async {
                         tokio::signal::ctrl_c().await.unwrap();
                         execute!(std::io::stdout(), cursor::Show).unwrap();
@@ -583,6 +584,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                         std::process::exit(0);
                     });
                     execute!(self.output, style::Print("\n"))?;
+                    self.spinner = Some(Spinner::new(Spinners::Dots, "Generating your answer...".to_owned()));
                 }
 
                 self.conversation_state.append_new_user_message(user_input).await;
