@@ -27,14 +27,14 @@ use super::parser::ToolUse;
 
 /// Represents an executable tool use.
 #[derive(Debug)]
-pub enum ToolE {
+pub enum Tool {
     FsRead(FsRead),
     FsWrite(FsWrite),
     ExecuteBash(ExecuteBash),
     UseAws(UseAws),
 }
 
-impl ToolE {
+impl Tool {
     pub fn from_tool_use(tool_use: ToolUse) -> Result<Self, ToolResult> {
         let map_err = |parse_error| ToolResult {
             tool_use_id: tool_use.id.clone(),
@@ -64,40 +64,40 @@ impl ToolE {
     /// The display name of a tool
     pub fn display_name(&self) -> String {
         match self {
-            ToolE::FsRead(_) => FsRead::display_name(),
-            ToolE::FsWrite(_) => FsWrite::display_name(),
-            ToolE::ExecuteBash(_) => ExecuteBash::display_name(),
-            ToolE::UseAws(_) => UseAws::display_name(),
+            Tool::FsRead(_) => FsRead::display_name(),
+            Tool::FsWrite(_) => FsWrite::display_name(),
+            Tool::ExecuteBash(_) => ExecuteBash::display_name(),
+            Tool::UseAws(_) => UseAws::display_name(),
         }
     }
 
     /// Invokes the tool asynchronously
     pub async fn invoke(&self, context: &Context, updates: &mut impl Write) -> Result<InvokeOutput> {
         match self {
-            ToolE::FsRead(fs_read) => fs_read.invoke(context, updates).await,
-            ToolE::FsWrite(fs_write) => fs_write.invoke(context, updates).await,
-            ToolE::ExecuteBash(execute_bash) => execute_bash.invoke(updates).await,
-            ToolE::UseAws(use_aws) => use_aws.invoke(context, updates).await,
+            Tool::FsRead(fs_read) => fs_read.invoke(context, updates).await,
+            Tool::FsWrite(fs_write) => fs_write.invoke(context, updates).await,
+            Tool::ExecuteBash(execute_bash) => execute_bash.invoke(updates).await,
+            Tool::UseAws(use_aws) => use_aws.invoke(context, updates).await,
         }
     }
 
     /// Queues up a tool's intention in a human readable format
     pub fn show_readable_intention(&self, updates: &mut impl Write) -> Result<()> {
         match self {
-            ToolE::FsRead(fs_read) => fs_read.show_readable_intention(updates),
-            ToolE::FsWrite(fs_write) => fs_write.show_readable_intention(updates),
-            ToolE::ExecuteBash(execute_bash) => execute_bash.show_readable_intention(updates),
-            ToolE::UseAws(use_aws) => use_aws.show_readable_intention(updates),
+            Tool::FsRead(fs_read) => fs_read.show_readable_intention(updates),
+            Tool::FsWrite(fs_write) => fs_write.show_readable_intention(updates),
+            Tool::ExecuteBash(execute_bash) => execute_bash.show_readable_intention(updates),
+            Tool::UseAws(use_aws) => use_aws.show_readable_intention(updates),
         }
     }
 
     /// Validates the tool with the arguments supplied
     pub async fn validate(&mut self, ctx: &Context) -> Result<()> {
         match self {
-            ToolE::FsRead(fs_read) => fs_read.validate(ctx).await,
-            ToolE::FsWrite(fs_write) => fs_write.validate(ctx).await,
-            ToolE::ExecuteBash(execute_bash) => execute_bash.validate(ctx).await,
-            ToolE::UseAws(use_aws) => use_aws.validate(ctx).await,
+            Tool::FsRead(fs_read) => fs_read.validate(ctx).await,
+            Tool::FsWrite(fs_write) => fs_write.validate(ctx).await,
+            Tool::ExecuteBash(execute_bash) => execute_bash.validate(ctx).await,
+            Tool::UseAws(use_aws) => use_aws.validate(ctx).await,
         }
     }
 }
@@ -139,8 +139,8 @@ pub fn serde_value_to_document(value: serde_json::Value) -> Document {
         serde_json::Value::Null => Document::Null,
         serde_json::Value::Bool(bool) => Document::Bool(bool),
         serde_json::Value::Number(number) => {
-            if number.is_f64() {
-                Document::Number(SmithyNumber::Float(number.as_f64().unwrap()))
+            if let Some(float) = number.as_f64() {
+                Document::Number(SmithyNumber::Float(float))
             } else if number.as_i64().is_some_and(|n| n < 0) {
                 Document::Number(SmithyNumber::NegInt(number.as_i64().unwrap()))
             } else {

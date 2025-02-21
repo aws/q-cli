@@ -1007,8 +1007,8 @@ mod tests {
 
         let user_input_event = amzn_codewhisperer_streaming_client::types::ChatResponseStream::ToolUseEvent(
             amzn_codewhisperer_streaming_client::types::ToolUseEvent::builder()
-                .tool_use_id("tool use id".to_string())
-                .name("tool name".to_string())
+                .tool_use_id("tool_use_id".to_string())
+                .name("tool_name".to_string())
                 .build()
                 .unwrap(),
         );

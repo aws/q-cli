@@ -199,39 +199,6 @@ pub enum ResponseEvent {
 mod tests {
     use super::*;
 
-    // fn mock_output(text: String, value: serde_json::Value) -> Vec<ChatResponseStream> {
-    //     serde_json::json!([
-    //         "I want a file",
-    //         {
-    //             "tool_use_id": "1",
-    //             "name": "fs_write",
-    //             "args": {
-    //                 "command": "create",
-    //                 "file_text": "Hello, world!",
-    //                 "path": "/file.txt",
-    //             }
-    //         }
-    //     ]);
-    //     let v = serde_json::json!([
-    //         [
-    //             "Sure, I'll create a file for you",
-    //             {
-    //                 "tool_use_id": "1",
-    //                 "name": "fs_write",
-    //                 "args": {
-    //                     "command": "create",
-    //                     "file_text": "Hello, world!",
-    //                     "path": "/file.txt",
-    //                 }
-    //             }
-    //         ],
-    //         [
-    //             "Hope that looks good to you!",
-    //         ],
-    //     ]);
-    //     todo!()
-    // }
-
     #[tokio::test]
     async fn test_parse() {
         let _ = tracing_subscriber::fmt::try_init();

@@ -426,7 +426,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "TODO: update to pass"]
     fn test_env_state() {
         // env: true
         let env_state = build_env_state(Some(&ContextModifiers {
@@ -442,8 +441,8 @@ mod tests {
         // env: false
         let env_state = build_env_state(Some(&ContextModifiers::default()));
         assert!(env_state.environment_variables.is_empty());
-        assert!(env_state.current_working_directory.is_none());
-        assert!(!env_state.operating_system.as_ref().unwrap().is_empty());
+        assert!(env_state.current_working_directory.is_some());
+        assert!(env_state.operating_system.as_ref().is_some_and(|os| !os.is_empty()));
         println!("{env_state:?}");
     }
 

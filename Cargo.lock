@@ -6747,7 +6747,6 @@ dependencies = [
  "arboard",
  "assert_cmd",
  "async-trait",
- "aws-config",
  "aws-smithy-types",
  "aws-types",
  "base64 0.22.1",

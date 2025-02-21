@@ -3,6 +3,7 @@ mod input_source;
 mod parse;
 mod parser;
 mod prompt;
+mod stdio;
 mod tools;
 use std::collections::HashMap;
 use std::io::{
@@ -52,7 +53,7 @@ use spinners::{
     Spinners,
 };
 use tools::{
-    ToolE,
+    Tool,
     ToolSpec,
 };
 use tracing::{
@@ -101,8 +102,7 @@ pub async fn chat(initial_input: Option<String>) -> Result<ExitCode> {
         _ => StreamingClient::new().await?,
     };
 
-    // let client = StreamingClient::new().await?;
-    let mut output = std::io::stdout();
+    let mut output = stdio::StdioOutput::new(is_interactive);
     let result = ChatContext::new(ChatArgs {
         output: &mut output,
         ctx,
@@ -124,6 +124,7 @@ pub async fn chat(initial_input: Option<String>) -> Result<ExitCode> {
     result.map(|_| ExitCode::SUCCESS)
 }
 
+/// Testing helper
 fn split_tool_use_event(value: &Map<String, serde_json::Value>) -> Vec<ChatResponseStream> {
     let tool_use_id = value.get("tool_use_id").unwrap().as_str().unwrap().to_string();
     let name = value.get("name").unwrap().as_str().unwrap().to_string();
@@ -157,6 +158,7 @@ fn split_tool_use_event(value: &Map<String, serde_json::Value>) -> Vec<ChatRespo
     ]
 }
 
+/// Testing helper
 fn create_stream(model_responses: serde_json::Value) -> StreamingClient {
     let mut mock = Vec::new();
     for response in model_responses.as_array().unwrap() {
@@ -259,6 +261,9 @@ where
                 style::Print(color_print::cstr! {"
 Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling, and help execute ops related tasks on your behalf!
 
+<em>@history</em> to pass your shell history
+<em>@git</em> to pass information about your current git repository
+<em>@env</em> to pass your shell environment
 "
                 })
             )?;
@@ -380,7 +385,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
 
     async fn prompt_and_send_request(&mut self) -> Result<Option<SendMessageOutput>> {
         // Tool uses that need to be executed.
-        let mut queued_tools: Vec<(String, ToolE)> = Vec::new();
+        let mut queued_tools: Vec<(String, Tool)> = Vec::new();
         let terminal_width = self.terminal_width();
         // Errors encountered while validating the tool uses.
         let mut tool_errors: Vec<ToolResult> = Vec::new();
@@ -416,7 +421,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                 if let Some(ref id) = self.current_user_input_id {
                     event_builder.user_input_id = Some(id.clone());
                 }
-                match ToolE::from_tool_use(tool_use) {
+                match Tool::from_tool_use(tool_use) {
                     Ok(mut tool) => {
                         match tool.validate(&self.ctx).await {
                             Ok(()) => {
