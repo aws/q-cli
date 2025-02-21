@@ -401,8 +401,6 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
     async fn prompt_and_send_request(&mut self) -> Result<Option<SendMessageOutput>> {
         // Tool uses that need to be executed.
         let mut queued_tools: Vec<(String, Tool)> = Vec::new();
-        // Errors encountered while validating the tool uses.
-        let mut tool_errors: Vec<ToolResult> = Vec::new();
 
         // Validate the requested tools, updating queued_tools and tool_errors accordingly.
         if !self.tool_uses.is_empty() {
@@ -442,7 +440,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                                 queued_tools.push((tool_use_id, tool));
                             },
                             Err(err) => {
-                                tool_errors.push(ToolResult {
+                                tool_results.push(ToolResult {
                                     tool_use_id,
                                     content: vec![ToolResultContentBlock::Text(format!(
                                         "Failed to validate tool parameters: {err}"
@@ -460,18 +458,18 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                 }
                 self.tool_use_events.push(event_builder);
             }
-        }
 
-        // If we have any validation errors, then return them immediately to the model.
-        if !tool_errors.is_empty() {
-            debug!(?tool_errors, "Error found in the model tools");
-            self.conversation_state.add_tool_results(tool_errors);
-            self.send_tool_use_telemetry().await;
-            return Ok(Some(
-                self.client
-                    .send_message(self.conversation_state.as_sendable_conversation_state())
-                    .await?,
-            ));
+            // If we have any validation errors, then return them immediately to the model.
+            if !tool_results.is_empty() {
+                debug!(?tool_results, "Error found in the model tools");
+                self.conversation_state.add_tool_results(tool_results);
+                self.send_tool_use_telemetry().await;
+                return Ok(Some(
+                    self.client
+                        .send_message(self.conversation_state.as_sendable_conversation_state())
+                        .await?,
+                ));
+            }
         }
 
         // If we have tool uses, display them to the user.
