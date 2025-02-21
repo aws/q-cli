@@ -6,47 +6,26 @@ mod prompt;
 mod stdio;
 mod tools;
 use std::collections::HashMap;
-use std::io::{
-    IsTerminal,
-    Read,
-    Write,
-};
+use std::io::{IsTerminal, Read, Write};
 use std::process::ExitCode;
 use std::sync::Arc;
 
+use bstr::ByteSlice;
 use color_eyre::owo_colors::OwoColorize;
 use conversation_state::ConversationState;
-use crossterm::style::{
-    Attribute,
-    Color,
-};
-use crossterm::{
-    cursor,
-    execute,
-    queue,
-    style,
-    terminal,
-};
-use eyre::{
-    Result,
-    bail,
-};
+use crossterm::style::{Attribute, Color};
+use crossterm::{cursor, execute, queue, style, terminal};
+use eyre::{Result, bail};
 use fig_api_client::StreamingClient;
 use fig_api_client::clients::SendMessageOutput;
-use fig_api_client::model::{
-    ChatResponseStream,
-    ToolResult,
-    ToolResultContentBlock,
-    ToolResultStatus,
-};
+use fig_api_client::model::{ChatResponseStream, ToolResult, ToolResultContentBlock, ToolResultStatus};
 use fig_os_shim::Context;
 use fig_util::CLI_BINARY_NAME;
 use futures::StreamExt;
 use input_source::InputSource;
-use parser::{
-    ResponseParser,
-    ToolUse,
-};
+use iocraft::ElementExt;
+use iocraft::prelude::{BorderStyle, Text, View};
+use parser::{ResponseParser, ToolUse};
 use serde_json::Map;
 use spinners::{
     Spinner,
@@ -64,10 +43,7 @@ use tracing::{
 use winnow::Partial;
 use winnow::stream::Offset;
 
-use crate::cli::chat::parse::{
-    ParseState,
-    interpret_markdown,
-};
+use crate::cli::chat::parse::{ParseState, interpret_markdown};
 use crate::util::region_check;
 
 const MAX_TOOL_USE_RECURSIONS: u32 = 50;
@@ -480,17 +456,32 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                 bail!("Exceeded max tool use recursion limit: {}", MAX_TOOL_USE_RECURSIONS);
             }
             for (_, tool) in &queued_tools {
-                queue!(self.output, style::Print(format!("{}\n", "─".repeat(terminal_width))))?;
-                queue!(self.output, cursor::MoveToPreviousLine(1))?;
+                let mut tmp_buf = Vec::new();
+                let mut cursor = std::io::Cursor::new(&mut tmp_buf);
+                tool.show_readable_intention(&mut cursor)?;
+                cursor.flush()?;
+                let to_be_rendered = iocraft::element! {
+                    View(
+                        border_style: BorderStyle::Round,
+                        border_color: Color::Blue,
+                        padding: 1
+                    ) {
+                        Text(content: tmp_buf.to_str()?)
+                    }
+                }
+                .to_string();
+                let title_line: u16 = (to_be_rendered.split('\n').collect::<Vec<_>>().len() - 1)
+                    .try_into()
+                    .map_err(|e| eyre::eyre!("Cannot convert line number from usize to u16: {}", e))?;
+                queue!(self.output, style::Print(to_be_rendered))?;
+                queue!(self.output, cursor::MoveUp(title_line))?;
                 queue!(self.output, cursor::MoveToColumn(2))?;
                 queue!(self.output, style::SetAttribute(Attribute::Bold))?;
                 queue!(self.output, style::Print(format!(" {} ", tool.display_name())))?;
-                queue!(self.output, cursor::MoveToNextLine(1))?;
                 queue!(self.output, style::SetAttribute(Attribute::NormalIntensity))?;
-                tool.show_readable_intention(self.output)?;
-                queue!(self.output, cursor::MoveToNextLine(1))?;
+                queue!(self.output, cursor::MoveDown(title_line))?;
+                queue!(self.output, cursor::MoveToColumn(0))?;
             }
-            queue!(self.output, style::Print("─".repeat(terminal_width)))?;
             execute!(
                 self.output,
                 style::Print(
