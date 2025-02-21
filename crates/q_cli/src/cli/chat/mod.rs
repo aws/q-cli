@@ -274,7 +274,9 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
             let response = match response.take() {
                 Some(response) => response,
                 None => {
-                    // TODO: telemetry ChatEnd
+                    if let Some(id) = &self.conversation_state.conversation_id {
+                        fig_telemetry::send_end_chat(id.clone()).await;
+                    }
                     break;
                 },
             };
@@ -297,8 +299,15 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                         trace!("Consumed: {:?}", msg_event);
                         match msg_event {
                             parser::ResponseEvent::ConversationId(id) => {
-                                // TODO: telemetry ChatStart
-                                self.conversation_state.conversation_id = Some(id);
+                                fig_telemetry::send_start_chat(id.clone()).await;
+                                self.conversation_state.conversation_id = Some(id.clone());
+                                tokio::task::spawn(async move {
+                                    tokio::signal::ctrl_c().await.unwrap();
+                                    fig_telemetry::send_end_chat(id.clone()).await;
+                                    fig_telemetry::finish_telemetry().await;
+                                    #[allow(clippy::exit)]
+                                    std::process::exit(0);
+                                });
                             },
                             parser::ResponseEvent::AssistantText(text) => {
                                 buf.push_str(&text);
@@ -352,8 +361,12 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                 }
 
                 if ended {
-                    // TODO: telemetry ChatAddMessage
-                    // ...
+                    if let (Some(conversation_id), Some(message_id)) = (
+                        self.conversation_state.conversation_id.as_ref(),
+                        self.conversation_state.message_id(),
+                    ) {
+                        fig_telemetry::send_chat_added_message(conversation_id.to_owned(), message_id.to_owned()).await;
+                    }
                     if self.is_interactive {
                         queue!(self.output, style::ResetColor, style::SetAttribute(Attribute::Reset))?;
                         execute!(self.output, style::Print("\n"))?;

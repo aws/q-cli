@@ -29,6 +29,7 @@ use fig_settings::history::{
 };
 use fig_util::Shell;
 use regex::Regex;
+use tracing::warn;
 
 use crate::cli::chat::ToolConfiguration;
 use crate::cli::chat::tools::{
@@ -57,7 +58,7 @@ const MAX_SHELL_HISTORY_DIRECTORY_LEN: usize = 256;
 static CONTEXT_MODIFIER_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"@(git|env|history) ?").unwrap());
 
 /// Limit to send the number of messages as part of chat.
-const MAX_CONVERSATION_STATE_HISTORY_LEN: usize = 10;
+const MAX_CONVERSATION_STATE_HISTORY_LEN: usize = 25;
 
 /// Tracks state related to an ongoing conversation.
 #[derive(Debug, Clone)]
@@ -91,7 +92,10 @@ impl ConversationState {
     }
 
     pub async fn append_new_user_message(&mut self, input: String) {
-        assert!(self.next_message.is_none(), "next_message should not exist");
+        debug_assert!(self.next_message.is_none(), "next_message should not exist");
+        if let Some(next_message) = self.next_message.as_ref() {
+            warn!(?next_message, "next_message should not exist");
+        }
         let (ctx, input) = input_to_modifiers(input);
         let history = History::new();
 
@@ -122,8 +126,19 @@ impl ConversationState {
     }
 
     pub fn push_assistant_message(&mut self, message: Message) {
-        assert!(self.next_message.is_none(), "next_message should not exist");
+        debug_assert!(self.next_message.is_none(), "next_message should not exist");
+        if let Some(next_message) = self.next_message.as_ref() {
+            warn!(?next_message, "next_message should not exist");
+        }
         self.history.push_back(message);
+    }
+
+    /// Returns the message id associated with the last assistant message, if present.
+    pub fn message_id(&self) -> Option<&str> {
+        self.history.iter().last().and_then(|m| match &m.0 {
+            ChatMessage::AssistantResponseMessage(m) => m.message_id.as_deref(),
+            ChatMessage::UserInputMessage(_) => None,
+        })
     }
 
     pub fn add_tool_results(&mut self, tool_results: Vec<ToolResult>) {

@@ -11,7 +11,6 @@ use crossterm::style::{
 };
 use eyre::{
     Result,
-    bail,
     eyre,
 };
 use fig_os_shim::Context;
@@ -169,27 +168,29 @@ impl FsRead {
         if is_file {
             queue!(updates, style::Print(format!("Reading file: {}, ", self.path)))?;
 
-            let read_range = self.read_range.as_ref().expect("Incorrect arguments passed");
-            let start = read_range.first();
-            let end = read_range.get(1);
-
-            match (start, end) {
-                (Some(start), Some(end)) => Ok(queue!(
-                    updates,
-                    style::Print(format!("from line {} to {}\n", start, end))
-                )?),
-                (Some(start), None) => {
-                    let input = if *start > 0 {
-                        format!("from line {} to end of file\n", start)
-                    } else {
-                        format!("{} line from the end of file to end of file", start)
-                    };
-                    Ok(queue!(updates, style::Print(input))?)
-                },
-                _ => {
-                    bail!("Incorrect arguments passed")
-                },
-            }
+            // TODO(bskiser): fix read_range panic when missing
+            // let read_range = self.read_range.as_ref().expect("Incorrect arguments passed");
+            // let start = read_range.first();
+            // let end = read_range.get(1);
+            //
+            // match (start, end) {
+            //     (Some(start), Some(end)) => Ok(queue!(
+            //         updates,
+            //         style::Print(format!("from line {} to {}\n", start, end))
+            //     )?),
+            //     (Some(start), None) => {
+            //         let input = if *start > 0 {
+            //             format!("from line {} to end of file\n", start)
+            //         } else {
+            //             format!("{} line from the end of file to end of file", start)
+            //         };
+            //         Ok(queue!(updates, style::Print(input))?)
+            //     },
+            //     _ => {
+            //         bail!("Incorrect arguments passed")
+            //     },
+            // }
+            Ok(())
         } else {
             queue!(updates, style::Print(format!("Reading directory: {}, ", self.path)))?;
 
