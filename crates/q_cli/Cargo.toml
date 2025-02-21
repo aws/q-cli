@@ -57,7 +57,6 @@ futures.workspace = true
 globset.workspace = true
 indicatif.workspace = true
 indoc.workspace = true
-iocraft.workspace = true
 mimalloc.workspace = true
 owo-colors = "4.0.0"
 parking_lot.workspace = true
