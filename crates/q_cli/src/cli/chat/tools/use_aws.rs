@@ -63,19 +63,11 @@ impl UseAws {
 
     pub async fn invoke(&self, _ctx: &Context, _updates: impl Write) -> Result<InvokeOutput> {
         let mut command = tokio::process::Command::new("aws");
-        let profile_name = if let Some(ref profile_name) = self.profile_name {
-            profile_name
-        } else {
-            "default"
-        };
-        command
-            .envs(std::env::vars())
-            .arg("--region")
-            .arg(&self.region)
-            .arg("--profile")
-            .arg(profile_name)
-            .arg(&self.service_name)
-            .arg(&self.operation_name);
+        command.envs(std::env::vars()).arg("--region").arg(&self.region);
+        if let Some(profile_name) = self.profile_name.as_deref() {
+            command.arg("--profile").arg(profile_name);
+        }
+        command.arg(&self.service_name).arg(&self.operation_name);
         for (param_name, val) in &self.parameters {
             if param_name.starts_with("--") {
                 command.arg(param_name).arg(val);
@@ -91,7 +83,7 @@ impl UseAws {
             .wait_with_output()
             .await
             .wrap_err_with(|| format!("Unable to spawn command '{:?}'", self))?;
-        let status = output.status.code();
+        let status = output.status.code().unwrap_or(0).to_string();
         let stdout = output.stdout.to_str_lossy();
         let stderr = output.stderr.to_str_lossy();
 
