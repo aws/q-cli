@@ -139,12 +139,12 @@ pub fn serde_value_to_document(value: serde_json::Value) -> Document {
         serde_json::Value::Null => Document::Null,
         serde_json::Value::Bool(bool) => Document::Bool(bool),
         serde_json::Value::Number(number) => {
-            if let Some(float) = number.as_f64() {
-                Document::Number(SmithyNumber::Float(float))
+            if let Some(num) = number.as_u64() {
+                Document::Number(SmithyNumber::PosInt(num))
             } else if number.as_i64().is_some_and(|n| n < 0) {
                 Document::Number(SmithyNumber::NegInt(number.as_i64().unwrap()))
             } else {
-                Document::Number(SmithyNumber::PosInt(number.as_u64().unwrap()))
+                Document::Number(SmithyNumber::Float(number.as_f64().unwrap_or_default()))
             }
         },
         serde_json::Value::String(string) => Document::String(string),

@@ -6,26 +6,54 @@ mod prompt;
 mod stdio;
 mod tools;
 use std::collections::HashMap;
-use std::io::{IsTerminal, Read, Write};
+use std::io::{
+    IsTerminal,
+    Read,
+    Write,
+};
 use std::process::ExitCode;
 use std::sync::Arc;
 
 use bstr::ByteSlice;
 use color_eyre::owo_colors::OwoColorize;
 use conversation_state::ConversationState;
-use crossterm::style::{Attribute, Color};
-use crossterm::{cursor, execute, queue, style, terminal};
-use eyre::{Result, bail};
+use crossterm::style::{
+    Attribute,
+    Color,
+};
+use crossterm::{
+    cursor,
+    execute,
+    queue,
+    style,
+    terminal,
+};
+use eyre::{
+    Result,
+    bail,
+};
 use fig_api_client::StreamingClient;
 use fig_api_client::clients::SendMessageOutput;
-use fig_api_client::model::{ChatResponseStream, ToolResult, ToolResultContentBlock, ToolResultStatus};
+use fig_api_client::model::{
+    ChatResponseStream,
+    ToolResult,
+    ToolResultContentBlock,
+    ToolResultStatus,
+};
 use fig_os_shim::Context;
 use fig_util::CLI_BINARY_NAME;
 use futures::StreamExt;
 use input_source::InputSource;
 use iocraft::ElementExt;
-use iocraft::prelude::{BorderStyle, Text, View};
-use parser::{ResponseParser, ToolUse};
+use iocraft::prelude::{
+    BorderStyle,
+    Text,
+    View,
+};
+use parser::{
+    ResponseParser,
+    ToolUse,
+};
 use serde_json::Map;
 use spinners::{
     Spinner,
@@ -43,7 +71,10 @@ use tracing::{
 use winnow::Partial;
 use winnow::stream::Offset;
 
-use crate::cli::chat::parse::{ParseState, interpret_markdown};
+use crate::cli::chat::parse::{
+    ParseState,
+    interpret_markdown,
+};
 use crate::util::region_check;
 
 const MAX_TOOL_USE_RECURSIONS: u32 = 50;
@@ -253,6 +284,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                     if let Some(id) = &self.conversation_state.conversation_id {
                         fig_telemetry::send_end_chat(id.clone()).await;
                     }
+                    self.send_tool_use_telemetry().await;
                     break;
                 },
             };
@@ -338,7 +370,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
 
                 if ended {
                     if let (Some(conversation_id), Some(message_id)) = (
-                        self.conversation_state.conversation_id.as_ref(),
+                        self.conversation_state.conversation_id(),
                         self.conversation_state.message_id(),
                     ) {
                         fig_telemetry::send_chat_added_message(conversation_id.to_owned(), message_id.to_owned()).await;
@@ -375,7 +407,6 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
     async fn prompt_and_send_request(&mut self) -> Result<Option<SendMessageOutput>> {
         // Tool uses that need to be executed.
         let mut queued_tools: Vec<(String, Tool)> = Vec::new();
-        let terminal_width = self.terminal_width();
         // Errors encountered while validating the tool uses.
         let mut tool_errors: Vec<ToolResult> = Vec::new();
 
@@ -441,7 +472,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
         if !tool_errors.is_empty() {
             debug!(?tool_errors, "Error found in the model tools");
             self.conversation_state.add_tool_results(tool_errors);
-            self.send_tool_use_events().await;
+            self.send_tool_use_telemetry().await;
             return Ok(Some(
                 self.client
                     .send_message(self.conversation_state.as_sendable_conversation_state())
@@ -499,14 +530,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
         };
 
         match user_input.trim() {
-            "exit" | "quit" => {
-                if let Some(_id) = self.conversation_state.conversation_id.as_ref() {
-                    // TODO: telemetry
-                    // fig_telemetry::send_end_chat(id.clone()).await;
-                }
-                self.send_tool_use_events().await;
-                Ok(None)
-            },
+            "exit" | "quit" => Ok(None),
             // Tool execution.
             c if c == "c" && !queued_tools.is_empty() => {
                 // Execute the requested tools.
@@ -549,7 +573,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                 }
 
                 self.conversation_state.add_tool_results(tool_results);
-                self.send_tool_use_events().await;
+                self.send_tool_use_telemetry().await;
                 Ok(Some(
                     self.client
                         .send_message(self.conversation_state.as_sendable_conversation_state())
@@ -584,7 +608,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                 }
 
                 self.conversation_state.append_new_user_message(user_input).await;
-                self.send_tool_use_events().await;
+                self.send_tool_use_telemetry().await;
                 Ok(Some(
                     self.client
                         .send_message(self.conversation_state.as_sendable_conversation_state())
@@ -598,7 +622,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
         (self.terminal_width_provider)().unwrap_or(80)
     }
 
-    async fn send_tool_use_events(&mut self) {
+    async fn send_tool_use_telemetry(&mut self) {
         let futures = self.tool_use_events.drain(..).map(|event| async {
             let event: fig_telemetry::EventType = event.into();
             let app_event = fig_telemetry::AppTelemetryEvent::new(event).await;

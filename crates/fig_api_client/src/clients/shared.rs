@@ -14,7 +14,7 @@ use crate::{
     Error,
 };
 
-// TODO(bskiser)
+// TODO(bskiser): Update timeout
 const DEFAULT_TIMEOUT_DURATION: Duration = Duration::from_millis(60100);
 
 pub(crate) fn timeout_config() -> TimeoutConfig {

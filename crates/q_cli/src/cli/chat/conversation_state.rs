@@ -133,6 +133,11 @@ impl ConversationState {
         self.history.push_back(message);
     }
 
+    /// Returns the conversation id, if available.
+    pub fn conversation_id(&self) -> Option<&str> {
+        self.conversation_id.as_deref()
+    }
+
     /// Returns the message id associated with the last assistant message, if present.
     pub fn message_id(&self) -> Option<&str> {
         self.history.iter().last().and_then(|m| match &m.0 {
@@ -174,7 +179,15 @@ impl ConversationState {
         let curr_state = self.clone();
 
         // Updating `self` so that the current next_message is moved to history.
-        let last_message = self.next_message.take().unwrap();
+        let mut last_message = self.next_message.take().unwrap();
+        match &mut last_message.0 {
+            ChatMessage::UserInputMessage(msg) => {
+                if let Some(ctx) = &mut msg.user_input_message_context {
+                    ctx.tools.take();
+                }
+            },
+            ChatMessage::AssistantResponseMessage(_) => (),
+        }
         self.history.push_back(last_message);
 
         FigConversationState {

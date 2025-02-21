@@ -49,7 +49,7 @@ impl ExecuteBash {
             .wait_with_output()
             .await
             .wrap_err_with(|| format!("Unable to wait on subprocess for command '{}'", &self.command))?;
-        let status = output.status.code();
+        let status = output.status.code().unwrap_or(0).to_string();
         let stdout = output.stdout.to_str_lossy();
         let stderr = output.stderr.to_str_lossy();
         Ok(InvokeOutput {
