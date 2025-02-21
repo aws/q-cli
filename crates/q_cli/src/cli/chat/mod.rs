@@ -585,7 +585,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                         std::process::exit(0);
                     });
                     execute!(self.output, style::Print("\n"))?;
-                    self.spinner = Some(Spinner::new(Spinners::Dots, "Generating your answer...".to_owned()));
+                    self.spinner = Some(Spinner::new(Spinners::Dots, "Thinking...".to_owned()));
                 }
 
                 self.conversation_state.append_new_user_message(user_input).await;
