@@ -118,7 +118,7 @@ impl StreamingClient {
                             .transpose()?,
                     )
                     .build()
-                    .expect("fix me");
+                    .expect("building conversation_state should not fail");
 
                 Ok(SendMessageOutput::Codewhisperer(
                     client
