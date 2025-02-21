@@ -104,7 +104,7 @@ mod tests {
             .unwrap();
 
         if let OutputKind::Json(json) = out.output {
-            assert_eq!(json.get("exit_status").unwrap(), 0);
+            assert_eq!(json.get("exit_status").unwrap(), &0.to_string());
             assert_eq!(json.get("stdout").unwrap(), "Hello, world!\n");
             assert_eq!(json.get("stderr").unwrap(), "");
         } else {
@@ -122,7 +122,7 @@ mod tests {
             .unwrap();
 
         if let OutputKind::Json(json) = out.output {
-            assert_eq!(json.get("exit_status").unwrap(), 0);
+            assert_eq!(json.get("exit_status").unwrap(), &0.to_string());
             assert_eq!(json.get("stdout").unwrap(), "");
             assert_eq!(json.get("stderr").unwrap(), "Hello, world!\n");
         } else {
@@ -139,7 +139,7 @@ mod tests {
             .await
             .unwrap();
         if let OutputKind::Json(json) = out.output {
-            assert_eq!(json.get("exit_status").unwrap(), 1);
+            assert_eq!(json.get("exit_status").unwrap(), &1.to_string());
             assert_eq!(json.get("stdout").unwrap(), "");
             assert_eq!(json.get("stderr").unwrap(), "");
         } else {
