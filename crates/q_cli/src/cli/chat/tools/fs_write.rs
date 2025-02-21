@@ -57,6 +57,7 @@ impl FsWrite {
                 )?;
                 let mut file = fs.create_new(path).await?;
                 file.write_all(file_text.as_bytes()).await?;
+                file.sync_data().await?;
                 Ok(Default::default())
             },
             FsWrite::StrReplace { path, old_str, new_str } => {
