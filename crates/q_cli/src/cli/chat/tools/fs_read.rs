@@ -54,7 +54,9 @@ impl FsRead {
         let is_file = ctx.fs().symlink_metadata(&self.path).await?.is_file();
 
         if is_file {
-            let relative_path = relative_path(ctx.env().current_dir()?, &path);
+            // TODO(bskiser): improve pathing display
+            // let relative_path = relative_path(ctx.env().current_dir()?, &path);
+            let relative_path = &path;
             if let Some((start, Some(end))) = self.read_range()? {
                 // TODO: file size limit?
                 // TODO: don't read entire file in memory
@@ -166,7 +168,14 @@ impl FsRead {
         let is_file = self.ty.expect("Tool needs to have been validated");
 
         if is_file {
-            queue!(updates, style::Print(format!("Reading file: {}, ", self.path)))?;
+            queue!(
+                updates,
+                style::Print("Reading file: "),
+                style::SetForegroundColor(Color::Green),
+                style::Print(&self.path),
+                style::ResetColor,
+                style::Print(", "),
+            )?;
 
             let read_range = self.read_range.as_ref();
             let start = read_range.and_then(|r| r.first());
@@ -175,20 +184,45 @@ impl FsRead {
             match (start, end) {
                 (Some(start), Some(end)) => Ok(queue!(
                     updates,
-                    style::Print(format!("from line {} to {}\n", start, end))
+                    style::Print("from line "),
+                    style::SetForegroundColor(Color::Green),
+                    style::Print(start),
+                    style::ResetColor,
+                    style::Print(" to "),
+                    style::SetForegroundColor(Color::Green),
+                    style::Print(end),
+                    style::ResetColor,
                 )?),
                 (Some(start), None) => {
-                    let input = if *start > 0 {
-                        format!("from line {} to end of file\n", start)
+                    if *start > 0 {
+                        Ok(queue!(
+                            updates,
+                            style::Print("from line "),
+                            style::SetForegroundColor(Color::Green),
+                            style::Print(start),
+                            style::ResetColor,
+                            style::Print(" to end of file"),
+                        )?)
                     } else {
-                        format!("{} line from the end of file to end of file", start)
-                    };
-                    Ok(queue!(updates, style::Print(input))?)
+                        Ok(queue!(
+                            updates,
+                            style::SetForegroundColor(Color::Green),
+                            style::Print(start),
+                            style::ResetColor,
+                            style::Print(" line from the end of file to end of file"),
+                        )?)
+                    }
                 },
-                _ => Ok(queue!(updates, style::Print("all lines"))?),
+                _ => Ok(queue!(updates, style::Print("all lines".to_string()))?),
             }
         } else {
-            queue!(updates, style::Print(format!("Reading directory: {}, ", self.path)))?;
+            queue!(
+                updates,
+                style::Print("Reading directory: "),
+                style::SetForegroundColor(Color::Green),
+                style::Print(&self.path),
+                style::ResetColor
+            )?;
 
             let depth = if let Some(ref depth) = self.read_range {
                 *depth.first().unwrap_or(&0)

@@ -21,5 +21,15 @@
                 "read_range": [1, 10]
             }
         }
+    ],
+    [
+        {
+            "tool_use_id": "2",
+            "name": "fs_read",
+            "args": {
+                "path": "Cargo.toml",
+                "read_range": [5]
+            }
+        }
     ]
 ]
