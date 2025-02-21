@@ -168,9 +168,9 @@ impl FsRead {
         if is_file {
             queue!(updates, style::Print(format!("Reading file: {}, ", self.path)))?;
 
-            let read_range = self.read_range.as_ref().expect("Incorrect arguments passed");
-            let start = read_range.first();
-            let end = read_range.get(1);
+            let read_range = self.read_range.as_ref();
+            let start = read_range.and_then(|r| r.first());
+            let end = read_range.and_then(|r| r.get(1));
 
             match (start, end) {
                 (Some(start), Some(end)) => Ok(queue!(
