@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::io::Write;
+use std::path::PathBuf;
 
 use crossterm::queue;
 use crossterm::style::{
@@ -8,6 +9,7 @@ use crossterm::style::{
 };
 use eyre::{
     Result,
+    bail,
     eyre,
 };
 use fig_os_shim::Context;
@@ -144,7 +146,19 @@ impl FsWrite {
     }
 
     pub async fn validate(&mut self, _ctx: &Context) -> Result<()> {
-        // TODO: check to see if paths are valid
+        match self {
+            FsWrite::Create { path, .. } => {
+                if path.is_empty() {
+                    bail!("Path must not be empty")
+                };
+            },
+            FsWrite::StrReplace { path, .. } | FsWrite::Insert { path, .. } => {
+                if !PathBuf::from(&path).exists() {
+                    bail!("The provided path must exist in order to replace or insert contents into it")
+                }
+            },
+        }
+
         Ok(())
     }
 }
