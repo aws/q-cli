@@ -57,10 +57,6 @@ impl UseAws {
         Err(AwsToolError::ForbiddenOperation(operation_name.clone()))
     }
 
-    pub fn display_name() -> String {
-        "Use AWS Readonly".to_owned()
-    }
-
     pub async fn invoke(&self, _ctx: &Context, _updates: impl Write) -> Result<InvokeOutput> {
         let mut command = tokio::process::Command::new("aws");
         command.envs(std::env::vars()).arg("--region").arg(&self.region);

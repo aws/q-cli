@@ -35,39 +35,13 @@ pub enum Tool {
 }
 
 impl Tool {
-    pub fn from_tool_use(tool_use: ToolUse) -> Result<Self, ToolResult> {
-        let map_err = |parse_error| ToolResult {
-            tool_use_id: tool_use.id.clone(),
-            content: vec![ToolResultContentBlock::Text(format!(
-                "failed to deserialize with the following error: {parse_error}"
-            ))],
-            status: ToolResultStatus::Error,
-        };
-
-        Ok(match tool_use.name.as_str() {
-            "fs_read" => Self::FsRead(serde_json::from_value::<FsRead>(tool_use.args).map_err(map_err)?),
-            "fs_write" => Self::FsWrite(serde_json::from_value::<FsWrite>(tool_use.args).map_err(map_err)?),
-            "execute_bash" => Self::ExecuteBash(serde_json::from_value::<ExecuteBash>(tool_use.args).map_err(map_err)?),
-            "use_aws" => Self::UseAws(serde_json::from_value::<UseAws>(tool_use.args).map_err(map_err)?),
-            unknown => {
-                return Err(ToolResult {
-                    tool_use_id: tool_use.id,
-                    content: vec![ToolResultContentBlock::Text(format!(
-                        "The tool, \"{unknown}\" is not supported by the client"
-                    ))],
-                    status: ToolResultStatus::Error,
-                });
-            },
-        })
-    }
-
     /// The display name of a tool
-    pub fn display_name(&self) -> String {
+    pub fn display_name(&self) -> &'static str {
         match self {
-            Tool::FsRead(_) => FsRead::display_name(),
-            Tool::FsWrite(_) => FsWrite::display_name(),
-            Tool::ExecuteBash(_) => ExecuteBash::display_name(),
-            Tool::UseAws(_) => UseAws::display_name(),
+            Tool::FsRead(_) => "Read from filesystem",
+            Tool::FsWrite(_) => "Write to filesystem",
+            Tool::ExecuteBash(_) => "Execute shell command",
+            Tool::UseAws(_) => "Read AWS resources",
         }
     }
 
@@ -82,11 +56,11 @@ impl Tool {
     }
 
     /// Queues up a tool's intention in a human readable format
-    pub fn show_readable_intention(&self, updates: &mut impl Write) -> Result<()> {
+    pub fn queue_description(&self, updates: &mut impl Write) -> Result<()> {
         match self {
-            Tool::FsRead(fs_read) => fs_read.show_readable_intention(updates),
-            Tool::FsWrite(fs_write) => fs_write.show_readable_intention(updates),
-            Tool::ExecuteBash(execute_bash) => execute_bash.show_readable_intention(updates),
+            Tool::FsRead(fs_read) => fs_read.queue_description(updates),
+            Tool::FsWrite(fs_write) => fs_write.queue_description(updates),
+            Tool::ExecuteBash(execute_bash) => execute_bash.queue_description(updates),
             Tool::UseAws(use_aws) => use_aws.show_readable_intention(updates),
         }
     }
@@ -99,6 +73,36 @@ impl Tool {
             Tool::ExecuteBash(execute_bash) => execute_bash.validate(ctx).await,
             Tool::UseAws(use_aws) => use_aws.validate(ctx).await,
         }
+    }
+}
+
+impl TryFrom<ToolUse> for Tool {
+    type Error = ToolResult;
+
+    fn try_from(value: ToolUse) -> std::result::Result<Self, Self::Error> {
+        let map_err = |parse_error| ToolResult {
+            tool_use_id: value.id.clone(),
+            content: vec![ToolResultContentBlock::Text(format!(
+                "failed to deserialize with the following error: {parse_error}"
+            ))],
+            status: ToolResultStatus::Error,
+        };
+
+        Ok(match value.name.as_str() {
+            "fs_read" => Self::FsRead(serde_json::from_value::<FsRead>(value.args).map_err(map_err)?),
+            "fs_write" => Self::FsWrite(serde_json::from_value::<FsWrite>(value.args).map_err(map_err)?),
+            "execute_bash" => Self::ExecuteBash(serde_json::from_value::<ExecuteBash>(value.args).map_err(map_err)?),
+            "use_aws" => Self::UseAws(serde_json::from_value::<UseAws>(value.args).map_err(map_err)?),
+            unknown => {
+                return Err(ToolResult {
+                    tool_use_id: value.id,
+                    content: vec![ToolResultContentBlock::Text(format!(
+                        "The tool, \"{unknown}\" is not supported by the client"
+                    ))],
+                    status: ToolResultStatus::Error,
+                });
+            },
+        })
     }
 }
 

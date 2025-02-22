@@ -433,7 +433,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                 if let Some(ref id) = self.current_user_input_id {
                     event_builder.user_input_id = Some(id.clone());
                 }
-                match Tool::from_tool_use(tool_use) {
+                match Tool::try_from(tool_use) {
                     Ok(mut tool) => {
                         match tool.validate(&self.ctx).await {
                             Ok(()) => {
@@ -486,7 +486,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                 queue!(self.output, style::Print(format!(" {} ", tool.display_name())))?;
                 queue!(self.output, cursor::MoveToNextLine(1))?;
                 queue!(self.output, style::SetAttribute(Attribute::NormalIntensity))?;
-                tool.show_readable_intention(self.output)?;
+                tool.queue_description(self.output)?;
                 queue!(self.output, cursor::MoveToNextLine(1))?;
             }
             queue!(self.output, style::Print("─".repeat(terminal_width)))?;

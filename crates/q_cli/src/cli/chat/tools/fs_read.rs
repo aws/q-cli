@@ -43,10 +43,6 @@ impl FsRead {
         }
     }
 
-    pub fn display_name() -> String {
-        "File System Read".to_owned()
-    }
-
     pub async fn invoke(&self, ctx: &Context, updates: &mut impl Write) -> Result<InvokeOutput> {
         // Required for testing scenarios: since the path is passed directly as a command argument,
         // we need to pass it through the Context first.
@@ -162,7 +158,7 @@ impl FsRead {
         }
     }
 
-    pub fn show_readable_intention(&self, updates: &mut impl Write) -> Result<()> {
+    pub fn queue_description(&self, updates: &mut impl Write) -> Result<()> {
         let is_file = self.ty.expect("Tool needs to have been validated");
 
         if is_file {

@@ -25,10 +25,6 @@ pub struct ExecuteBash {
 }
 
 impl ExecuteBash {
-    pub fn display_name() -> String {
-        "Execute Bash".to_owned()
-    }
-
     pub async fn invoke(&self, mut updates: impl Write) -> Result<InvokeOutput> {
         queue!(
             updates,
@@ -60,10 +56,10 @@ impl ExecuteBash {
         })
     }
 
-    pub fn show_readable_intention(&self, updates: &mut impl Write) -> Result<()> {
+    pub fn queue_description(&self, updates: &mut impl Write) -> Result<()> {
         Ok(queue!(
             updates,
-            style::Print("Command: "),
+            style::Print("I will run the following command using your bash environment:\n"),
             style::SetForegroundColor(Color::Green),
             style::Print(&self.command),
             style::ResetColor,
@@ -71,6 +67,7 @@ impl ExecuteBash {
     }
 
     pub async fn validate(&mut self, _ctx: &Context) -> Result<()> {
+        // TODO: probably some small amount of PATH checking
         Ok(())
     }
 }

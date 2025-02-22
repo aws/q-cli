@@ -39,10 +39,6 @@ pub enum FsWrite {
 }
 
 impl FsWrite {
-    pub fn display_name() -> String {
-        "File System Write".to_owned()
-    }
-
     pub async fn invoke(&self, ctx: &Context, updates: &mut impl Write) -> Result<InvokeOutput> {
         let fs = ctx.fs();
         let cwd = ctx.env().current_dir()?;
@@ -114,7 +110,7 @@ impl FsWrite {
         }
     }
 
-    pub fn show_readable_intention(&self, updates: &mut impl Write) -> Result<()> {
+    pub fn queue_description(&self, updates: &mut impl Write) -> Result<()> {
         match self {
             FsWrite::Create { path, file_text } => Ok(queue!(
                 updates,
