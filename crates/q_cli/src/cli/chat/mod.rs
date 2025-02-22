@@ -487,15 +487,18 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                 queue!(self.output, cursor::MoveToNextLine(1))?;
                 queue!(self.output, style::SetAttribute(Attribute::NormalIntensity))?;
                 tool.queue_description(self.output)?;
+                queue!(self.output, style::Print("\n"))?;
                 queue!(self.output, cursor::MoveToNextLine(1))?;
             }
             queue!(self.output, style::Print("─".repeat(terminal_width)))?;
-            execute!(self.output, style::Print("\n"))?;
+            queue!(self.output, style::Print("\n"))?;
             execute!(
                 self.output,
-                style::Print(
-                    "Press `c` to consent to running these tools, or anything else to continue your conversation.\n\n"
-                ),
+                style::Print("Enter "),
+                style::SetForegroundColor(Color::Green),
+                style::Print("y"),
+                style::ResetColor,
+                style::Print(" to consent to running these tools, or anything else to continue your conversation.\n\n")
             )?;
         }
 
@@ -510,7 +513,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
         match user_input.trim() {
             "exit" | "quit" => Ok(None),
             // Tool execution.
-            c if c == "c" && !queued_tools.is_empty() => {
+            c if c.to_lowercase() == "y" && !queued_tools.is_empty() => {
                 // Execute the requested tools.
                 let mut tool_results = vec![];
                 for tool in queued_tools.drain(..) {
@@ -582,7 +585,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                         std::process::exit(0);
                     });
                     execute!(self.output, style::Print("\n"))?;
-                    self.spinner = Some(Spinner::new(Spinners::Dots, "Generating your answer...".to_owned()));
+                    self.spinner = Some(Spinner::new(Spinners::Dots, "Thinking...".to_owned()));
                 }
 
                 self.conversation_state.append_new_user_message(user_input).await;
@@ -761,7 +764,7 @@ mod tests {
             initial_input: None,
             input_source: InputSource::new_mock(vec![
                 "create a new file".to_string(),
-                "c".to_string(),
+                "y".to_string(),
                 "exit".to_string(),
             ]),
             is_interactive: true,
