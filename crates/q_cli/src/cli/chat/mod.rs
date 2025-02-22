@@ -6,31 +6,68 @@ mod prompt;
 mod stdio;
 mod tools;
 use std::collections::HashMap;
-use std::io::{IsTerminal, Read, Write};
+use std::io::{
+    IsTerminal,
+    Read,
+    Write,
+};
 use std::process::ExitCode;
 use std::sync::Arc;
 
 use color_eyre::owo_colors::OwoColorize;
 use conversation_state::ConversationState;
-use crossterm::style::{Attribute, Color};
-use crossterm::{cursor, execute, queue, style, terminal};
-use eyre::{Result, bail};
+use crossterm::style::{
+    Attribute,
+    Color,
+};
+use crossterm::{
+    cursor,
+    execute,
+    queue,
+    style,
+    terminal,
+};
+use eyre::{
+    Result,
+    bail,
+};
 use fig_api_client::StreamingClient;
 use fig_api_client::clients::SendMessageOutput;
-use fig_api_client::model::{ChatResponseStream, ToolResult, ToolResultContentBlock, ToolResultStatus};
+use fig_api_client::model::{
+    ChatResponseStream,
+    ToolResult,
+    ToolResultContentBlock,
+    ToolResultStatus,
+};
 use fig_os_shim::Context;
 use fig_util::CLI_BINARY_NAME;
 use futures::StreamExt;
 use input_source::InputSource;
-use parser::{ResponseParser, ToolUse};
+use parser::{
+    ResponseParser,
+    ToolUse,
+};
 use serde_json::Map;
-use spinners::{Spinner, Spinners};
-use tools::{Tool, ToolSpec};
-use tracing::{debug, error, trace};
+use spinners::{
+    Spinner,
+    Spinners,
+};
+use tools::{
+    Tool,
+    ToolSpec,
+};
+use tracing::{
+    debug,
+    error,
+    trace,
+};
 use winnow::Partial;
 use winnow::stream::Offset;
 
-use crate::cli::chat::parse::{ParseState, interpret_markdown};
+use crate::cli::chat::parse::{
+    ParseState,
+    interpret_markdown,
+};
 use crate::util::region_check;
 
 const MAX_TOOL_USE_RECURSIONS: u32 = 50;
