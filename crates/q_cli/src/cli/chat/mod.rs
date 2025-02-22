@@ -6,68 +6,31 @@ mod prompt;
 mod stdio;
 mod tools;
 use std::collections::HashMap;
-use std::io::{
-    IsTerminal,
-    Read,
-    Write,
-};
+use std::io::{IsTerminal, Read, Write};
 use std::process::ExitCode;
 use std::sync::Arc;
 
 use color_eyre::owo_colors::OwoColorize;
 use conversation_state::ConversationState;
-use crossterm::style::{
-    Attribute,
-    Color,
-};
-use crossterm::{
-    cursor,
-    execute,
-    queue,
-    style,
-    terminal,
-};
-use eyre::{
-    Result,
-    bail,
-};
+use crossterm::style::{Attribute, Color};
+use crossterm::{cursor, execute, queue, style, terminal};
+use eyre::{Result, bail};
 use fig_api_client::StreamingClient;
 use fig_api_client::clients::SendMessageOutput;
-use fig_api_client::model::{
-    ChatResponseStream,
-    ToolResult,
-    ToolResultContentBlock,
-    ToolResultStatus,
-};
+use fig_api_client::model::{ChatResponseStream, ToolResult, ToolResultContentBlock, ToolResultStatus};
 use fig_os_shim::Context;
 use fig_util::CLI_BINARY_NAME;
 use futures::StreamExt;
 use input_source::InputSource;
-use parser::{
-    ResponseParser,
-    ToolUse,
-};
+use parser::{ResponseParser, ToolUse};
 use serde_json::Map;
-use spinners::{
-    Spinner,
-    Spinners,
-};
-use tools::{
-    Tool,
-    ToolSpec,
-};
-use tracing::{
-    debug,
-    error,
-    trace,
-};
+use spinners::{Spinner, Spinners};
+use tools::{Tool, ToolSpec};
+use tracing::{debug, error, trace};
 use winnow::Partial;
 use winnow::stream::Offset;
 
-use crate::cli::chat::parse::{
-    ParseState,
-    interpret_markdown,
-};
+use crate::cli::chat::parse::{ParseState, interpret_markdown};
 use crate::util::region_check;
 
 const MAX_TOOL_USE_RECURSIONS: u32 = 50;
@@ -527,14 +490,41 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                     match tool.1.invoke(&self.ctx, self.output).await {
                         Ok(result) => {
                             debug!("tool result output: {:#?}", result);
+                            let (tool_result, output) = match &result.output {
+                                tools::OutputKind::Json(v) => {
+                                    let exit_code = v.get("exit_status").and_then(|code| code.as_str());
+                                    match exit_code {
+                                        Some(code) if code != "0" => {
+                                            let stderr = v.get("stderr").and_then(|err| err.as_str());
+                                            (ToolResultStatus::Error, stderr)
+                                        },
+                                        _ => (ToolResultStatus::Success, None),
+                                    }
+                                },
+                                _ => (ToolResultStatus::Success, None),
+                            };
+
+                            if let Some(builder) = corresponding_builder {
+                                builder.is_success = Some(matches!(tool_result, ToolResultStatus::Success));
+                            }
+
+                            if let ToolResultStatus::Error = tool_result {
+                                queue!(
+                                    self.output,
+                                    style::SetAttribute(Attribute::Bold),
+                                    style::Print("Tool execution failed: "),
+                                    style::SetAttribute(Attribute::Reset),
+                                    style::SetForegroundColor(Color::Red),
+                                    style::Print(output.unwrap_or("unretrievable tool output\n")),
+                                    style::SetForegroundColor(Color::Reset)
+                                )?;
+                            }
+
                             tool_results.push(ToolResult {
                                 tool_use_id: tool.0,
                                 content: vec![result.into()],
                                 status: ToolResultStatus::Success,
                             });
-                            if let Some(builder) = corresponding_builder {
-                                builder.is_success = Some(true);
-                            }
                         },
                         Err(err) => {
                             error!(?err, "An error occurred processing the tool");
