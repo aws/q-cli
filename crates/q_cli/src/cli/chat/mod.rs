@@ -265,7 +265,7 @@ where
             execute!(
                 self.output,
                 style::Print(color_print::cstr! {"
-Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling, help execute ops related tasks on your behalf, and assist with coding questions and software development!
+Hi, I'm <g>Amazon Q</g>. Ask me anything.
 
 <em>@history</em> to pass your shell history
 <em>@git</em> to pass information about your current git repository
