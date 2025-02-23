@@ -53,6 +53,10 @@ pub struct ResponseParser {
     assistant_text: String,
     /// Tool uses requested by the model.
     tool_uses: Vec<ToolUse>,
+    /// Buffered line required in case we need to discard a code reference event
+    buffered_line: Option<String>,
+    /// Short circuit and return early since we simply need to clear our buffered line
+    short_circuit: bool,
 }
 
 impl ResponseParser {
@@ -63,17 +67,39 @@ impl ResponseParser {
             message_id: None,
             assistant_text: String::new(),
             tool_uses: Vec::new(),
+            buffered_line: None,
+            short_circuit: false,
         }
     }
 
     /// Consumes the associated [ConverseStreamResponse] until a valid [ResponseEvent] is parsed.
     pub async fn recv(&mut self) -> Result<ResponseEvent> {
+        if self.short_circuit {
+            let message = Message(ChatMessage::AssistantResponseMessage(AssistantResponseMessage {
+                message_id: self.message_id.take(),
+                content: std::mem::take(&mut self.assistant_text),
+                tool_uses: if self.tool_uses.is_empty() {
+                    None
+                } else {
+                    Some(self.tool_uses.clone().into_iter().map(Into::into).collect())
+                },
+            }));
+            return Ok(ResponseEvent::EndStream { message });
+        }
+
         loop {
             match self.next().await {
                 Ok(Some(output)) => match output {
                     ChatResponseStream::AssistantResponseEvent { content } => {
                         self.assistant_text.push_str(&content);
-                        return Ok(ResponseEvent::AssistantText(content));
+                        let text = self.buffered_line.take();
+                        self.buffered_line = Some(content);
+                        if let Some(text) = text {
+                            return Ok(ResponseEvent::AssistantText(text));
+                        }
+                    },
+                    ChatResponseStream::CodeReferenceEvent(_) => {
+                        self.buffered_line = None;
                     },
                     ChatResponseStream::InvalidStateEvent { reason, message } => {
                         error!(%reason, %message, "invalid state event");
@@ -102,6 +128,11 @@ impl ResponseParser {
                     _ => {},
                 },
                 Ok(None) => {
+                    if let Some(text) = self.buffered_line.take() {
+                        self.short_circuit = true;
+                        return Ok(ResponseEvent::AssistantText(text));
+                    }
+
                     let message = Message(ChatMessage::AssistantResponseMessage(AssistantResponseMessage {
                         message_id: self.message_id.take(),
                         content: std::mem::take(&mut self.assistant_text),

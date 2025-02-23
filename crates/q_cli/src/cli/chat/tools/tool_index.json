@@ -1,7 +1,7 @@
 [
   {
     "name": "execute_bash",
-    "description": "Execute the specified bash command",
+    "description": "Execute the specified bash command. Long running and interactive commands will overtake our conversation until exited. Please then respond to long running commands with 'What would you like to do next?'",
     "input_schema": {
       "type": "object",
       "properties": {

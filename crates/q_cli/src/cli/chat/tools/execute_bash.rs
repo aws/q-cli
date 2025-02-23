@@ -37,8 +37,9 @@ impl ExecuteBash {
         let output = tokio::process::Command::new("bash")
             .arg("-c")
             .arg(&self.command)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
+            .stdin(Stdio::inherit())
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
             .spawn()
             .wrap_err_with(|| format!("Unable to spawn command '{}'", &self.command))?
             .wait_with_output()

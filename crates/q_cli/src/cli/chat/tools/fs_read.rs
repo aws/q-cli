@@ -11,6 +11,7 @@ use crossterm::style::{
 };
 use eyre::{
     Result,
+    bail,
     eyre,
 };
 use fig_os_shim::Context;
@@ -233,6 +234,10 @@ impl FsRead {
     }
 
     pub async fn validate(&mut self, ctx: &Context) -> Result<()> {
+        if !PathBuf::from(&self.path).exists() {
+            bail!("'{}' does not exist", self.path);
+        }
+
         let is_file = ctx.fs().symlink_metadata(&self.path).await?.is_file();
         self.ty = Some(is_file);
 
