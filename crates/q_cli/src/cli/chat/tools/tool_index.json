@@ -40,7 +40,7 @@
   },
   {
     "name": "fs_write",
-    "description": "Custom editing tool for creating and editing files\n * The `create` command cannot be used if the specified `path` already exists as a file\n * If a `command` generates a long output, it will be truncated and marked with `<response clipped>` \n Notes for using the `str_replace` command:\n * The `old_str` parameter should match EXACTLY one or more consecutive lines from the original file. Be mindful of whitespaces!\n * If the `old_str` parameter is not unique in the file, the replacement will not be performed. Make sure to include enough context in `old_str` to make it unique\n * The `new_str` parameter should contain the edited lines that should replace the `old_str`",
+    "description": "Custom editing tool for creating and editing files\n * The `create` command will override the file at `path` if it already exists as a file, and otherwise create a new file\n * If a `command` generates a long output, it will be truncated and marked with `<response clipped>` \n Notes for using the `str_replace` command:\n * The `old_str` parameter should match EXACTLY one or more consecutive lines from the original file. Be mindful of whitespaces!\n * If the `old_str` parameter is not unique in the file, the replacement will not be performed. Make sure to include enough context in `old_str` to make it unique\n * The `new_str` parameter should contain the edited lines that should replace the `old_str`",
     "input_schema": {
       "type": "object",
       "properties": {

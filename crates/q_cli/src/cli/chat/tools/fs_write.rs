@@ -26,7 +26,6 @@ use syntect::util::{
     LinesWithEndings,
     as_24_bit_terminal_escaped,
 };
-use tokio::io::AsyncWriteExt;
 use tracing::error;
 
 use super::{
@@ -62,16 +61,20 @@ impl FsWrite {
         let cwd = ctx.env().current_dir()?;
         match self {
             FsWrite::Create { path, file_text } => {
+                let relative_path = format_path(cwd, fs.chroot_path(path));
+                let invoke_description = if fs.exists(path) {
+                    "Replacing the current file contents at"
+                } else {
+                    "Creating a new file at"
+                };
                 queue!(
                     updates,
                     style::SetForegroundColor(Color::Green),
-                    style::Print(format!("Creating a new file at {}", format_path(cwd, path))),
+                    style::Print(format!("{} {}", invoke_description, relative_path)),
                     style::ResetColor,
                     style::Print("\n"),
                 )?;
-                let mut file = fs.create_new(path).await?;
-                file.write_all(file_text.as_bytes()).await?;
-                file.sync_data().await?;
+                fs.write(&path, file_text.as_bytes()).await?;
                 Ok(Default::default())
             },
             FsWrite::StrReplace { path, old_str, new_str } => {
@@ -132,18 +135,39 @@ impl FsWrite {
         let cwd = ctx.env().current_dir()?;
         match self {
             FsWrite::Create { path, file_text } => {
-                let path = format_path(cwd, path);
-                let file = stylize_output_if_able(&path, file_text, None, None);
+                let relative_path = format_path(cwd, path);
                 queue!(
                     updates,
                     style::Print("Path: "),
                     style::SetForegroundColor(Color::Green),
-                    style::Print(path),
+                    style::Print(&relative_path),
                     style::ResetColor,
-                    style::Print("\n\nContents:\n"),
-                    style::Print(file),
-                    style::ResetColor,
+                    style::Print("\n\n"),
                 )?;
+                if ctx.fs().exists(path) {
+                    let prev = ctx.fs().read_to_string_sync(path)?;
+                    let prev = stylize_output_if_able(&relative_path, prev.as_str(), None, Some("-"));
+                    let new = stylize_output_if_able(&relative_path, file_text, None, Some("+"));
+                    queue!(
+                        updates,
+                        style::Print("Replacing:\n"),
+                        style::Print(prev),
+                        style::ResetColor,
+                        style::Print("\n\n"),
+                        style::Print("With:\n"),
+                        style::Print(new),
+                        style::ResetColor,
+                        style::Print("\n\n")
+                    )?;
+                } else {
+                    let file = stylize_output_if_able(&relative_path, file_text, None, None);
+                    queue!(
+                        updates,
+                        style::Print("\n\nContents:\n"),
+                        style::Print(file),
+                        style::ResetColor,
+                    )?;
+                }
                 Ok(())
             },
             FsWrite::Insert {
@@ -182,15 +206,11 @@ impl FsWrite {
                     style::Print(path),
                     style::ResetColor,
                     style::Print("\n\n"),
-                    // style::SetAttribute(style::Attribute::Bold),
                     style::Print("Replacing:\n"),
-                    // style::SetAttribute(style::Attribute::Reset),
                     style::Print(old_str),
                     style::ResetColor,
                     style::Print("\n\n"),
-                    // style::SetAttribute(style::Attribute::Bold),
                     style::Print("With:\n"),
-                    // style::SetAttribute(style::Attribute::Reset),
                     style::Print(new_str),
                     style::ResetColor
                 )?;
@@ -421,6 +441,20 @@ mod tests {
         let mut stdout = std::io::stdout();
 
         let file_text = "Hello, world!";
+        let v = serde_json::json!({
+            "path": "/my-file",
+            "command": "create",
+            "file_text": file_text
+        });
+        serde_json::from_value::<FsWrite>(v)
+            .unwrap()
+            .invoke(&ctx, &mut stdout)
+            .await
+            .unwrap();
+
+        assert_eq!(ctx.fs().read_to_string("/my-file").await.unwrap(), file_text);
+
+        let file_text = "Goodbye, world!\nSee you later";
         let v = serde_json::json!({
             "path": "/my-file",
             "command": "create",
