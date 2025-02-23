@@ -245,7 +245,9 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                             style::SetForegroundColor(Color::Reset),
                             style::SetAttribute(Attribute::Reset),
                         )?;
-                        self.conversation_state.history.pop_back();
+                        if self.conversation_state.next_message.is_none() {
+                            self.conversation_state.history.pop_back();
+                        }
                         continue;
                     },
                 }
@@ -322,7 +324,9 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                             style::SetForegroundColor(Color::Reset),
                             style::SetAttribute(Attribute::Reset),
                         )?;
-                        self.conversation_state.history.pop_back();
+                        if self.conversation_state.next_message.is_none() {
+                            self.conversation_state.history.pop_back();
+                        }
                         break;
                     },
                 }
