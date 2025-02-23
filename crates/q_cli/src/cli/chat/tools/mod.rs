@@ -3,7 +3,6 @@ pub mod fs_read;
 pub mod fs_write;
 pub mod use_aws;
 
-use std::borrow::Cow;
 use std::io::Write;
 use std::path::{
     Path,
@@ -222,19 +221,31 @@ fn terminal_width(line_count: usize) -> usize {
     ((line_count as f32 + 0.1).log10().ceil()) as usize
 }
 
-fn stylize_output_if_able<'a>(
+fn stylize_output_if_able(
     path: impl AsRef<Path>,
-    file_text: &'a str,
+    file_text: &str,
     starting_line: Option<usize>,
     gutter_prefix: Option<&str>,
-) -> Cow<'a, str> {
+) -> String {
     match stylized_file(path, file_text, starting_line, gutter_prefix) {
-        Ok(s) => s.into(),
+        Ok(s) => s,
         Err(err) => {
             error!(?err, "unable to syntax highlight the output");
-            file_text.into()
+            format!("\n{}", nonstylized_file(file_text))
         },
     }
+}
+
+fn nonstylized_file(file_text: impl AsRef<str>) -> String {
+    let file_text = file_text.as_ref();
+    let line_count = file_text.lines().count();
+    let width = terminal_width(line_count);
+    let lines = LinesWithEndings::from(file_text);
+    let mut f = String::new();
+    for (i, line) in lines.enumerate() {
+        f.push_str(&format!(" {:>width$}: {}", i + 1, line, width = width));
+    }
+    f
 }
 
 /// Returns a 24bit terminal escaped syntax-highlighted [String] of the file pointed to by `path`,

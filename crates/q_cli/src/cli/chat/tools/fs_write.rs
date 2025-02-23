@@ -148,7 +148,7 @@ impl FsWrite {
                     let file = stylize_output_if_able(&relative_path, file_text, None, None);
                     queue!(
                         updates,
-                        style::Print("\n\nContents:\n"),
+                        style::Print("Contents:\n"),
                         style::Print(file),
                         style::ResetColor,
                     )?;
