@@ -14,7 +14,7 @@
           "description": "Whether or not the command is interactive. Interactive commands like nano will overtake our conversation until exited. On exit, they will have produced no stderr or stdout."
         }
       },
-      "required": ["command"]
+      "required": ["command", "interactive"]
     }
   },
   {

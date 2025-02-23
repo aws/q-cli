@@ -131,8 +131,8 @@ impl FsWrite {
                 )?;
                 if ctx.fs().exists(path) {
                     let prev = ctx.fs().read_to_string_sync(path)?;
-                    let prev = stylize_output_if_able(&relative_path, prev.as_str(), None, Some("-"));
-                    let new = stylize_output_if_able(&relative_path, file_text, None, Some("+"));
+                    let prev = stylize_output_if_able(ctx, &relative_path, prev.as_str(), None, Some("-"));
+                    let new = stylize_output_if_able(ctx, &relative_path, file_text, None, Some("+"));
                     queue!(
                         updates,
                         style::Print("Replacing:\n"),
@@ -145,7 +145,7 @@ impl FsWrite {
                         style::Print("\n\n")
                     )?;
                 } else {
-                    let file = stylize_output_if_able(&relative_path, file_text, None, None);
+                    let file = stylize_output_if_able(ctx, &relative_path, file_text, None, None);
                     queue!(
                         updates,
                         style::Print("Contents:\n"),
@@ -161,7 +161,7 @@ impl FsWrite {
                 new_str,
             } => {
                 let path = format_path(cwd, path);
-                let file = stylize_output_if_able(&path, new_str, Some(*insert_line), Some("+"));
+                let file = stylize_output_if_able(ctx, &path, new_str, Some(*insert_line), Some("+"));
                 queue!(
                     updates,
                     style::Print("Path: "),
@@ -182,8 +182,8 @@ impl FsWrite {
                     Some((start_line, end_line)) => (Some(start_line), Some(end_line)),
                     _ => (None, None),
                 };
-                let old_str = stylize_output_if_able(&path, old_str, start_line, Some("-"));
-                let new_str = stylize_output_if_able(&path, new_str, start_line, Some("+"));
+                let old_str = stylize_output_if_able(ctx, &path, old_str, start_line, Some("-"));
+                let new_str = stylize_output_if_able(ctx, &path, new_str, start_line, Some("+"));
                 queue!(
                     updates,
                     style::Print("Path: "),

@@ -72,19 +72,19 @@ impl ExecuteBash {
     }
 
     pub fn queue_description(&self, updates: &mut impl Write) -> Result<()> {
-        queue!(
-            updates,
-            style::Print("I will run the following shell command: "),
-            style::SetForegroundColor(Color::Green),
-            style::Print(&self.command),
-        )?;
+        queue!(updates, style::Print("I will run the following shell command: "),)?;
 
         // TODO: Could use graphemes for a better heuristic
         if self.command.len() > 20 {
             queue!(updates, style::Print("\n"),)?;
         }
 
-        Ok(queue!(updates, style::Print(&self.command), style::ResetColor)?)
+        Ok(queue!(
+            updates,
+            style::SetForegroundColor(Color::Green),
+            style::Print(&self.command),
+            style::ResetColor
+        )?)
     }
 
     pub async fn validate(&mut self, _ctx: &Context) -> Result<()> {

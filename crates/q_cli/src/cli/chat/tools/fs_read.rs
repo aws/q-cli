@@ -88,7 +88,7 @@ impl FsRead {
                     style::Print("\n"),
                 )?;
 
-                let formatted = stylize_output_if_able(&path, file_contents.as_str(), Some(start + 1), None);
+                let formatted = stylize_output_if_able(ctx, &path, file_contents.as_str(), Some(start + 1), None);
                 queue!(updates, style::Print(formatted), style::ResetColor, style::Print("\n"))?;
                 return Ok(InvokeOutput {
                     output: OutputKind::Text(file_contents),
@@ -96,7 +96,7 @@ impl FsRead {
             }
 
             let file = ctx.fs().read_to_string(&path).await?;
-            let file_text = stylize_output_if_able(path, file.as_str(), None, None);
+            let file_text = stylize_output_if_able(ctx, path, file.as_str(), None, None);
             queue!(
                 updates,
                 style::SetForegroundColor(Color::Green),

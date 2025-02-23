@@ -36,7 +36,10 @@ use syntect::util::{
     LinesWithEndings,
     as_24_bit_terminal_escaped,
 };
-use tracing::error;
+use tracing::{
+    error,
+    warn,
+};
 use use_aws::UseAws;
 
 use super::parser::ToolUse;
@@ -222,18 +225,24 @@ fn terminal_width(line_count: usize) -> usize {
 }
 
 fn stylize_output_if_able(
+    ctx: &Context,
     path: impl AsRef<Path>,
     file_text: &str,
     starting_line: Option<usize>,
     gutter_prefix: Option<&str>,
 ) -> String {
-    match stylized_file(path, file_text, starting_line, gutter_prefix) {
-        Ok(s) => s,
-        Err(err) => {
-            error!(?err, "unable to syntax highlight the output");
-            format!("\n{}", nonstylized_file(file_text))
+    match ctx.env().get("COLORTERM") {
+        Ok(s) if s == "truecolor" => match stylized_file(path, file_text, starting_line, gutter_prefix) {
+            Ok(s) => return s,
+            Err(err) => {
+                error!(?err, "unable to syntax highlight the output");
+            },
+        },
+        _ => {
+            warn!("24bit color is not supported, falling back to nonstylized syntax highlighting");
         },
     }
+    format!("\n{}", nonstylized_file(file_text))
 }
 
 fn nonstylized_file(file_text: impl AsRef<str>) -> String {

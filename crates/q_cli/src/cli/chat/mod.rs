@@ -514,6 +514,7 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                     style::SetForegroundColor(Color::Reset),
                     style::SetForegroundColor(Color::DarkGrey),
                     style::Print(format!("{}\n", "▔".repeat(terminal_width))),
+                    style::SetForegroundColor(Color::Reset),
                 )?;
                 tool.queue_description(&self.ctx, self.output)?;
                 queue!(self.output, style::Print("\n"))?;
@@ -551,6 +552,7 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
             // Tool execution.
             c if c.to_lowercase() == "y" && !queued_tools.is_empty() => {
                 // Execute the requested tools.
+                let terminal_width = self.terminal_width();
                 let mut tool_results = vec![];
                 for tool in queued_tools.drain(..) {
                     let corresponding_builder = self.tool_use_events.iter_mut().find(|v| {
@@ -560,9 +562,31 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                             false
                         }
                     });
-                    match tool.1.invoke(&self.ctx, self.output).await {
+
+                    let tool_start = std::time::Instant::now();
+                    queue!(
+                        self.output,
+                        style::Print("\n"),
+                        style::Print("▔".repeat(terminal_width)),
+                        style::Print("\nExecuting "),
+                        style::SetForegroundColor(Color::Cyan),
+                        style::Print(format!("{}...\n\n", tool.1.display_name())),
+                        style::SetForegroundColor(Color::Reset),
+                    )?;
+                    let invoke_result = tool.1.invoke(&self.ctx, self.output).await;
+                    let tool_time = std::time::Instant::now().duration_since(tool_start);
+                    let tool_time = format!("{}.{}", tool_time.as_secs(), tool_time.subsec_millis());
+
+                    match invoke_result {
                         Ok(result) => {
                             debug!("tool result output: {:#?}", result);
+                            queue!(
+                                self.output,
+                                style::SetForegroundColor(Color::Green),
+                                style::Print(format!("🟢 Completed in {}s", tool_time)),
+                                style::SetForegroundColor(Color::Reset),
+                                style::Print("\n\n"),
+                            )?;
                             if let Some(builder) = corresponding_builder {
                                 builder.is_success = Some(true);
                             }
@@ -587,11 +611,13 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                             execute!(
                                 self.output,
                                 style::SetAttribute(Attribute::Bold),
-                                style::Print("Tool execution failed: "),
+                                style::SetForegroundColor(Color::Red),
+                                style::Print(format!("🔴 Execution failed after {}s:\n", tool_time)),
                                 style::SetAttribute(Attribute::Reset),
                                 style::SetForegroundColor(Color::Red),
                                 style::Print(err),
-                                style::SetForegroundColor(Color::Reset)
+                                style::SetAttribute(Attribute::Reset),
+                                style::Print("\n\n"),
                             )?;
 
                             if let Some(builder) = corresponding_builder {
