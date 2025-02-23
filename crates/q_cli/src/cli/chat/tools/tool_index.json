@@ -81,7 +81,7 @@
         },
         "operation_name": {
           "type": "string",
-          "description": "The name of the operation to perform."
+          "description": "The name of the operation to perform. All of the operation name will be in kebab case. If incorrect operations are encountered, try different variation (e.g. if list-buckets is not correct, try ls)"
         },
         "parameters": {
           "type": "object",
