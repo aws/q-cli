@@ -291,7 +291,7 @@ fn build_env_state(modifiers: Option<&ContextModifiers>) -> EnvState {
                 Some(truncate_safe(&current_dir.to_string_lossy(), MAX_CURRENT_WORKING_DIRECTORY_LEN).into());
         },
         Err(err) => {
-            error!(?err, "failed to get env state");
+            error!(?err, "Attempted to fetch the CWD but it did not exist.");
         },
     }
 
