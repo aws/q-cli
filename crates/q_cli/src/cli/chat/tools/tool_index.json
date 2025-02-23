@@ -1,13 +1,17 @@
 [
   {
     "name": "execute_bash",
-    "description": "Execute the specified bash command. Long running and interactive commands will overtake our conversation until exited. Please then respond to long running commands with 'What would you like to do next?'",
+    "description": "Execute the specified bash command.",
     "input_schema": {
       "type": "object",
       "properties": {
         "command": {
           "type": "string",
           "description": "Bash command to execute"
+        },
+        "interactive": {
+          "type": "boolean",
+          "description": "Whether or not the command is interactive. Interactive commands like nano will overtake our conversation until exited. On exit, they will have produced no stderr or stdout."
         }
       },
       "required": ["command"]

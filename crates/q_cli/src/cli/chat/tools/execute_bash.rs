@@ -22,6 +22,7 @@ use super::{
 #[derive(Debug, Deserialize)]
 pub struct ExecuteBash {
     pub command: String,
+    pub interactive: bool,
 }
 
 impl ExecuteBash {
@@ -34,12 +35,17 @@ impl ExecuteBash {
             style::Print("\n"),
         )?;
 
+        let (stdin, stdout, stderr) = match self.interactive {
+            true => (Stdio::inherit(), Stdio::inherit(), Stdio::inherit()),
+            false => (Stdio::piped(), Stdio::piped(), Stdio::piped()),
+        };
+
         let output = tokio::process::Command::new("bash")
             .arg("-c")
             .arg(&self.command)
-            .stdin(Stdio::inherit())
-            .stdout(Stdio::inherit())
-            .stderr(Stdio::inherit())
+            .stdin(stdin)
+            .stdout(stdout)
+            .stderr(stderr)
             .spawn()
             .wrap_err_with(|| format!("Unable to spawn command '{}'", &self.command))?
             .wait_with_output()
@@ -83,7 +89,8 @@ mod tests {
 
         // Verifying stdout
         let v = serde_json::json!({
-            "command": "echo Hello, world!"
+            "command": "echo Hello, world!",
+            "interactive": false
         });
         let out = serde_json::from_value::<ExecuteBash>(v)
             .unwrap()
@@ -101,7 +108,8 @@ mod tests {
 
         // Verifying stderr
         let v = serde_json::json!({
-            "command": "echo Hello, world! 1>&2"
+            "command": "echo Hello, world! 1>&2",
+            "interactive": false
         });
         let out = serde_json::from_value::<ExecuteBash>(v)
             .unwrap()
@@ -119,7 +127,8 @@ mod tests {
 
         // Verifying exit code
         let v = serde_json::json!({
-            "command": "exit 1"
+            "command": "exit 1",
+            "interactive": false
         });
         let out = serde_json::from_value::<ExecuteBash>(v)
             .unwrap()
