@@ -527,34 +527,8 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                     match tool.1.invoke(&self.ctx, self.output).await {
                         Ok(result) => {
                             debug!("tool result output: {:#?}", result);
-                            let (tool_result, output) = match &result.output {
-                                tools::OutputKind::Json(v) => {
-                                    let exit_code = v.get("exit_status").and_then(|code| code.as_str());
-                                    match exit_code {
-                                        Some(code) if code != "0" => {
-                                            let stderr = v.get("stderr").and_then(|err| err.as_str());
-                                            (ToolResultStatus::Error, stderr)
-                                        },
-                                        _ => (ToolResultStatus::Success, None),
-                                    }
-                                },
-                                _ => (ToolResultStatus::Success, None),
-                            };
-
                             if let Some(builder) = corresponding_builder {
-                                builder.is_success = Some(matches!(tool_result, ToolResultStatus::Success));
-                            }
-
-                            if let ToolResultStatus::Error = tool_result {
-                                queue!(
-                                    self.output,
-                                    style::SetAttribute(Attribute::Bold),
-                                    style::Print("Tool execution failed: "),
-                                    style::SetAttribute(Attribute::Reset),
-                                    style::SetForegroundColor(Color::Red),
-                                    style::Print(output.unwrap_or("unretrievable tool output\n")),
-                                    style::SetForegroundColor(Color::Reset)
-                                )?;
+                                builder.is_success = Some(true);
                             }
 
                             tool_results.push(ToolResult {
@@ -568,11 +542,22 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                             tool_results.push(ToolResult {
                                 tool_use_id: tool.0,
                                 content: vec![ToolResultContentBlock::Text(format!(
-                                    "An error occurred processing the tool: {}",
+                                    "An error occurred processing the tool: \n{}",
                                     err
                                 ))],
                                 status: ToolResultStatus::Error,
                             });
+
+                            execute!(
+                                self.output,
+                                style::SetAttribute(Attribute::Bold),
+                                style::Print("Tool execution failed: "),
+                                style::SetAttribute(Attribute::Reset),
+                                style::SetForegroundColor(Color::Red),
+                                style::Print(err),
+                                style::SetForegroundColor(Color::Reset)
+                            )?;
+
                             if let Some(builder) = corresponding_builder {
                                 builder.is_success = Some(false);
                             }

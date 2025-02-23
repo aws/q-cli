@@ -87,13 +87,17 @@ impl UseAws {
         let stdout = output.stdout.to_str_lossy();
         let stderr = output.stderr.to_str_lossy();
 
-        Ok(InvokeOutput {
-            output: OutputKind::Json(serde_json::json!({
-                "exit_status": status,
-                "stdout": stdout,
-                "stderr": stderr
-            })),
-        })
+        if status.eq("0") {
+            Ok(InvokeOutput {
+                output: OutputKind::Json(serde_json::json!({
+                    "exit_status": status,
+                    "stdout": stdout,
+                    "stderr": stderr
+                })),
+            })
+        } else {
+            Err(eyre::eyre!(stderr.to_string()))
+        }
     }
 
     pub fn show_readable_intention(&self, updates: &mut impl Write) -> Result<()> {
