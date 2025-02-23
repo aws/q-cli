@@ -83,7 +83,7 @@ walkdir.workspace = true
 which.workspace = true
 whoami.workspace = true
 winnow.workspace = true
-syntect = "5.2.0"
+syntect = { version = "5.2.0", features = [ "default-syntaxes", "default-themes" ]}
 
 [target.'cfg(unix)'.dependencies]
 nix.workspace = true
