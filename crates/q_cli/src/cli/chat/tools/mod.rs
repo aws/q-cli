@@ -166,15 +166,6 @@ pub fn serde_value_to_document(value: serde_json::Value) -> Document {
     }
 }
 
-/// Returns a display-friendly [String] of `path` relative to `cwd`, returning `path` if either
-/// `cwd` or `path` is invalid UTF-8, or `path` is not prefixed by `cwd`.
-fn relative_path(cwd: impl AsRef<Path>, path: impl AsRef<Path>) -> String {
-    match (cwd.as_ref().to_str(), path.as_ref().to_str()) {
-        (Some(cwd), Some(path)) => path.strip_prefix(cwd).unwrap_or_default().to_string(),
-        _ => path.as_ref().to_string_lossy().to_string(),
-    }
-}
-
 /// Converts `path` to a relative path according to the current working directory `cwd`.
 fn absolute_to_relative(cwd: impl AsRef<Path>, path: impl AsRef<Path>) -> Result<PathBuf> {
     let cwd = cwd.as_ref().canonicalize()?;
@@ -200,4 +191,11 @@ fn absolute_to_relative(cwd: impl AsRef<Path>, path: impl AsRef<Path>) -> Result
     }
 
     Ok(relative)
+}
+
+/// Small helper for formatting the path as a relative path, if able.
+fn format_path(cwd: impl AsRef<Path>, path: impl AsRef<Path>) -> String {
+    absolute_to_relative(cwd, path.as_ref())
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or(path.as_ref().to_string_lossy().to_string())
 }

@@ -21,7 +21,7 @@ use tracing::warn;
 use super::{
     InvokeOutput,
     OutputKind,
-    relative_path,
+    format_path,
 };
 
 #[derive(Debug, Deserialize)]
@@ -49,11 +49,10 @@ impl FsRead {
         // we need to pass it through the Context first.
         let path = ctx.fs().chroot_path_str(&self.path);
         let is_file = ctx.fs().symlink_metadata(&self.path).await?.is_file();
+        let cwd = ctx.env().current_dir()?;
 
         if is_file {
-            // TODO(bskiser): improve pathing display
-            // let relative_path = relative_path(ctx.env().current_dir()?, &path);
-            let relative_path = &path;
+            let relative_path = format_path(&cwd, &path);
             if let Some((start, Some(end))) = self.read_range()? {
                 // TODO: file size limit?
                 // TODO: don't read entire file in memory
@@ -115,7 +114,7 @@ impl FsRead {
                 if depth > max_depth {
                     break;
                 }
-                let relative_path = relative_path(&cwd, &path);
+                let relative_path = format_path(&cwd, &path);
                 queue!(
                     updates,
                     style::SetForegroundColor(Color::Green),
@@ -218,7 +217,8 @@ impl FsRead {
                 style::Print("Reading directory: "),
                 style::SetForegroundColor(Color::Green),
                 style::Print(&self.path),
-                style::ResetColor
+                style::ResetColor,
+                style::Print(" "),
             )?;
 
             let depth = if let Some(ref depth) = self.read_range {

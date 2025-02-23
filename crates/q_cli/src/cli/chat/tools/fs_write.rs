@@ -29,8 +29,10 @@ use syntect::util::{
 use tokio::io::AsyncWriteExt;
 use tracing::error;
 
-use super::InvokeOutput;
-use crate::cli::chat::tools::absolute_to_relative;
+use super::{
+    InvokeOutput,
+    format_path,
+};
 
 static SYNTAX_SET: LazyLock<SyntaxSet> = LazyLock::new(SyntaxSet::load_defaults_newlines);
 static THEME_SET: LazyLock<ThemeSet> = LazyLock::new(ThemeSet::load_defaults);
@@ -138,9 +140,10 @@ impl FsWrite {
                     style::SetForegroundColor(Color::Green),
                     style::Print(path),
                     style::ResetColor,
-                    style::Print("\n\n"),
+                    style::Print("\n\nContents:\n"),
+                    style::Print(file),
+                    style::ResetColor,
                 )?;
-                queue!(updates, style::Print(file), style::ResetColor)?;
                 Ok(())
             },
             FsWrite::Insert {
@@ -156,9 +159,10 @@ impl FsWrite {
                     style::SetForegroundColor(Color::Green),
                     style::Print(path),
                     style::ResetColor,
-                    style::Print("\n\n"),
+                    style::Print("\n\nContents:\n"),
+                    style::Print(file),
+                    style::ResetColor,
                 )?;
-                queue!(updates, style::Print(file), style::ResetColor)?;
                 Ok(())
             },
             FsWrite::StrReplace { path, old_str, new_str } => {
@@ -178,22 +182,18 @@ impl FsWrite {
                     style::Print(path),
                     style::ResetColor,
                     style::Print("\n\n"),
-                )?;
-                queue!(
-                    updates,
-                    style::SetAttribute(style::Attribute::Bold),
+                    // style::SetAttribute(style::Attribute::Bold),
                     style::Print("Replacing:\n"),
-                    style::SetAttribute(style::Attribute::Reset),
-                )?;
-                queue!(updates, style::Print(old_str), style::ResetColor)?;
-                queue!(updates, style::Print("\n\n"))?;
-                queue!(
-                    updates,
-                    style::SetAttribute(style::Attribute::Bold),
+                    // style::SetAttribute(style::Attribute::Reset),
+                    style::Print(old_str),
+                    style::ResetColor,
+                    style::Print("\n\n"),
+                    // style::SetAttribute(style::Attribute::Bold),
                     style::Print("With:\n"),
-                    style::SetAttribute(style::Attribute::Reset),
+                    // style::SetAttribute(style::Attribute::Reset),
+                    style::Print(new_str),
+                    style::ResetColor
                 )?;
-                queue!(updates, style::Print(new_str), style::ResetColor)?;
                 Ok(())
             },
         }
@@ -215,13 +215,6 @@ impl FsWrite {
 
         Ok(())
     }
-}
-
-/// Small helper for formatting the path in [FsWrite] output.
-fn format_path(cwd: impl AsRef<Path>, path: impl AsRef<Path>) -> String {
-    absolute_to_relative(cwd, path.as_ref())
-        .map(|p| p.to_string_lossy().to_string())
-        .unwrap_or(path.as_ref().to_string_lossy().to_string())
 }
 
 /// Limits the passed str to `max_len`.
@@ -317,6 +310,8 @@ fn stylized_file(
     };
 
     let mut file = String::new();
+    // We need to append newlines here for some reason, otherwise the highlighting ends at the end
+    // of the content for the first line.
     file.push_str(&as_24_bit_terminal_escaped(&[(gutter_linenum_style, "\n\n")], true));
     for (i, line) in file_text.enumerate() {
         let i = (i + starting_line).to_string();
@@ -328,6 +323,9 @@ fn stylized_file(
         ranges.append(&mut h.highlight_line(line, ps)?);
         let escaped_line = as_24_bit_terminal_escaped(&ranges[..], true);
         file.push_str(&escaped_line);
+    }
+    if !file.ends_with("\n") {
+        file.push('\n');
     }
 
     Ok(file)

@@ -509,18 +509,16 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                 bail!("Exceeded max tool use recursion limit: {}", MAX_TOOL_USE_RECURSIONS);
             }
             for (_, tool) in &queued_tools {
-                queue!(self.output, style::Print(format!("{}\n", "─".repeat(terminal_width))))?;
-                queue!(self.output, cursor::MoveToPreviousLine(1))?;
-                queue!(self.output, cursor::MoveToColumn(2))?;
-                queue!(self.output, style::Print(format!(" {} ", tool.display_name())))?;
-                queue!(self.output, cursor::MoveToNextLine(1))?;
+                queue!(self.output, style::Print(format!("{}\n", "▔".repeat(terminal_width))))?;
+                queue!(self.output, style::SetAttribute(Attribute::Bold))?;
+                queue!(self.output, style::Print(format!("{}\n", tool.display_name())))?;
                 queue!(self.output, style::SetAttribute(Attribute::NormalIntensity))?;
+                queue!(self.output, style::Print(format!("{}\n\n", "▁".repeat(terminal_width))))?;
                 tool.queue_description(&self.ctx, self.output)?;
                 queue!(self.output, style::Print("\n"))?;
-                queue!(self.output, cursor::MoveToNextLine(1))?;
             }
-            queue!(self.output, style::Print("─".repeat(terminal_width)))?;
-            queue!(self.output, style::Print("\n"))?;
+            queue!(self.output, style::Print("▁".repeat(terminal_width)))?;
+            queue!(self.output, style::Print("\n\n"))?;
             execute!(
                 self.output,
                 style::Print("Enter "),

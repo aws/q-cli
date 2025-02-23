@@ -29,7 +29,10 @@ use fig_settings::history::{
 };
 use fig_util::Shell;
 use regex::Regex;
-use tracing::warn;
+use tracing::{
+    error,
+    warn,
+};
 
 use crate::cli::chat::ToolConfiguration;
 use crate::cli::chat::tools::{
@@ -282,9 +285,14 @@ fn build_env_state(modifiers: Option<&ContextModifiers>) -> EnvState {
         ..Default::default()
     };
 
-    if let Ok(current_dir) = env::current_dir() {
-        env_state.current_working_directory =
-            Some(truncate_safe(&current_dir.to_string_lossy(), MAX_CURRENT_WORKING_DIRECTORY_LEN).into());
+    match env::current_dir() {
+        Ok(current_dir) => {
+            env_state.current_working_directory =
+                Some(truncate_safe(&current_dir.to_string_lossy(), MAX_CURRENT_WORKING_DIRECTORY_LEN).into());
+        },
+        Err(err) => {
+            error!(?err, "failed to get env state");
+        },
     }
 
     if modifiers.is_some_and(|c| c.env) {
