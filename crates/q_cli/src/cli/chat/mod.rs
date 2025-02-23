@@ -221,7 +221,35 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
         }
 
         loop {
-            let mut response = self.prompt_and_send_request().await?;
+            let mut response = loop {
+                match self.prompt_and_send_request().await {
+                    Ok(resp) => {
+                        break resp;
+                    },
+                    Err(e) => {
+                        if self.is_interactive && self.spinner.is_some() {
+                            drop(self.spinner.take());
+                            queue!(
+                                self.output,
+                                terminal::Clear(terminal::ClearType::CurrentLine),
+                                cursor::MoveToColumn(0),
+                                cursor::Show
+                            )?;
+                        }
+                        execute!(
+                            self.output,
+                            style::SetAttribute(Attribute::Bold),
+                            style::SetForegroundColor(Color::Red),
+                            style::Print(format!("Amazon Q is having trouble responding right now: {:?}\n", e)),
+                            style::Print("Please try again later.\n"),
+                            style::SetForegroundColor(Color::Reset),
+                            style::SetAttribute(Attribute::Reset),
+                        )?;
+                        self.conversation_state.history.pop_back();
+                        continue;
+                    },
+                }
+            };
             let response = match response.take() {
                 Some(response) => response,
                 None => {
@@ -274,10 +302,25 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                         };
                     },
                     Err(err) => {
-                        bail!(
-                            "We're having trouble responding right now, please try again later: {:?}",
-                            err
-                        );
+                        if self.is_interactive && self.spinner.is_some() {
+                            drop(self.spinner.take());
+                            queue!(
+                                self.output,
+                                terminal::Clear(terminal::ClearType::CurrentLine),
+                                cursor::MoveToColumn(0),
+                                cursor::Show
+                            )?;
+                        }
+                        execute!(
+                            self.output,
+                            style::SetAttribute(Attribute::Bold),
+                            style::SetForegroundColor(Color::Red),
+                            style::Print(format!("We're having trouble responding right now, please try again later: {:?}", err)),
+                            style::SetForegroundColor(Color::Reset),
+                            style::SetAttribute(Attribute::Reset),
+                        )?;
+                        self.conversation_state.history.pop_back();
+                        break;
                     },
                 }
 
