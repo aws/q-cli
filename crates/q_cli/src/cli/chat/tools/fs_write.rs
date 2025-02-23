@@ -1,10 +1,6 @@
 use std::borrow::Cow;
 use std::io::Write;
-use std::path::{
-    Path,
-    PathBuf,
-};
-use std::sync::LazyLock;
+use std::path::PathBuf;
 
 use crossterm::queue;
 use crossterm::style::{
@@ -12,29 +8,18 @@ use crossterm::style::{
     Color,
 };
 use eyre::{
-    ContextCompat,
     Result,
     bail,
     eyre,
 };
 use fig_os_shim::Context;
 use serde::Deserialize;
-use syntect::easy::HighlightLines;
-use syntect::highlighting::ThemeSet;
-use syntect::parsing::SyntaxSet;
-use syntect::util::{
-    LinesWithEndings,
-    as_24_bit_terminal_escaped,
-};
-use tracing::error;
 
 use super::{
     InvokeOutput,
     format_path,
+    stylize_output_if_able,
 };
-
-static SYNTAX_SET: LazyLock<SyntaxSet> = LazyLock::new(SyntaxSet::load_defaults_newlines);
-static THEME_SET: LazyLock<ThemeSet> = LazyLock::new(ThemeSet::load_defaults);
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "command")]
@@ -252,103 +237,6 @@ fn truncate_str(text: &str, max_len: usize) -> Cow<'_, str> {
     } else {
         text.into()
     }
-}
-
-/// Returns the number of characters required for displaying line numbers for `file_text`.
-fn terminal_width(line_count: usize) -> usize {
-    ((line_count as f32 + 0.1).log10().ceil()) as usize
-}
-
-fn stylize_output_if_able<'a>(
-    path: impl AsRef<Path>,
-    file_text: &'a str,
-    starting_line: Option<usize>,
-    gutter_prefix: Option<&str>,
-) -> Cow<'a, str> {
-    match stylized_file(path, file_text, starting_line, gutter_prefix) {
-        Ok(s) => s.into(),
-        Err(err) => {
-            error!(?err, "unable to syntax highlight the output");
-            file_text.into()
-        },
-    }
-}
-
-/// Returns a 24bit terminal escaped syntax-highlighted [String] of the file pointed to by `path`,
-/// if able.
-///
-/// Params:
-/// - `starting_line` - 1-indexed line to start the line number at.
-/// - `gutter_prefix` - character to display in the first cell of the gutter, before the file
-///   number.
-fn stylized_file(
-    path: impl AsRef<Path>,
-    file_text: impl AsRef<str>,
-    starting_line: Option<usize>,
-    gutter_prefix: Option<&str>,
-) -> Result<String> {
-    let starting_line = starting_line.unwrap_or(1);
-    let gutter_prefix = gutter_prefix.unwrap_or(" ");
-
-    let ps = &*SYNTAX_SET;
-    let ts = &*THEME_SET;
-
-    let extension = path
-        .as_ref()
-        .extension()
-        .wrap_err("missing extension")?
-        .to_str()
-        .wrap_err("not utf8")?;
-
-    let syntax = ps
-        .find_syntax_by_extension(extension)
-        .wrap_err_with(|| format!("missing extension: {}", extension))?;
-
-    let theme = &ts.themes["base16-ocean.dark"];
-    let mut h = HighlightLines::new(syntax, theme);
-    let gutter_width = terminal_width(file_text.as_ref().lines().count()) + terminal_width(starting_line);
-    let file_text = LinesWithEndings::from(file_text.as_ref());
-    let (gutter_fg, gutter_bg) = match (
-        theme.settings.gutter_foreground,
-        theme.settings.gutter,
-        theme.settings.foreground,
-        theme.settings.background,
-    ) {
-        (Some(gutter_fg), Some(gutter_bg), _, _) => (gutter_fg, gutter_bg),
-        (_, _, Some(fg), Some(bg)) => (fg, bg),
-        _ => bail!("missing theme"),
-    };
-    let gutter_prefix_style = syntect::highlighting::Style {
-        foreground: gutter_fg,
-        background: gutter_bg,
-        font_style: syntect::highlighting::FontStyle::BOLD,
-    };
-    let gutter_linenum_style = syntect::highlighting::Style {
-        foreground: gutter_fg,
-        background: gutter_bg,
-        font_style: syntect::highlighting::FontStyle::default(),
-    };
-
-    let mut file = String::new();
-    // We need to append newlines here for some reason, otherwise the highlighting ends at the end
-    // of the content for the first line.
-    file.push_str(&as_24_bit_terminal_escaped(&[(gutter_linenum_style, "\n\n")], true));
-    for (i, line) in file_text.enumerate() {
-        let i = (i + starting_line).to_string();
-        let gutter_content = format!("{:>width$} ", i, width = gutter_width);
-        let mut ranges = vec![
-            (gutter_prefix_style, gutter_prefix),
-            (gutter_linenum_style, gutter_content.as_str()),
-        ];
-        ranges.append(&mut h.highlight_line(line, ps)?);
-        let escaped_line = as_24_bit_terminal_escaped(&ranges[..], true);
-        file.push_str(&escaped_line);
-    }
-    if !file.ends_with("\n") {
-        file.push('\n');
-    }
-
-    Ok(file)
 }
 
 /// Returns a 1-indexed line number range of the start and end of `needle` inside `file`.
@@ -642,15 +530,5 @@ mod tests {
         assert_eq!(truncate_str(s, 13), s);
         let s = "Hello, world!";
         assert_eq!(truncate_str(s, 0), "<...Truncated>");
-    }
-
-    #[test]
-    fn test_gutter_width() {
-        assert_eq!(terminal_width(1), 1);
-        assert_eq!(terminal_width(9), 1);
-        assert_eq!(terminal_width(10), 2);
-        assert_eq!(terminal_width(99), 2);
-        assert_eq!(terminal_width(100), 3);
-        assert_eq!(terminal_width(999), 3);
     }
 }

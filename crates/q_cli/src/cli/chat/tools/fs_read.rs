@@ -22,6 +22,7 @@ use super::{
     InvokeOutput,
     OutputKind,
     format_path,
+    stylize_output_if_able,
 };
 
 #[derive(Debug, Deserialize)]
@@ -49,10 +50,8 @@ impl FsRead {
         // we need to pass it through the Context first.
         let path = ctx.fs().chroot_path_str(&self.path);
         let is_file = ctx.fs().symlink_metadata(&self.path).await?.is_file();
-        let cwd = ctx.env().current_dir()?;
 
         if is_file {
-            let relative_path = format_path(&cwd, &path);
             if let Some((start, Some(end))) = self.read_range()? {
                 // TODO: file size limit?
                 // TODO: don't read entire file in memory
@@ -68,42 +67,48 @@ impl FsRead {
                     }
                 };
                 let (start, end) = (convert_index(start), convert_index(end));
+                // The range should be inclusive on both ends.
+                let file_contents = file
+                    .lines()
+                    .skip(start)
+                    .take(end - start + 1)
+                    .collect::<Vec<_>>()
+                    .join("\n");
                 queue!(
                     updates,
                     style::SetForegroundColor(Color::Green),
-                    style::Print(format!("Reading lines {}-{} in {}", start + 1, end + 1, relative_path)),
+                    style::Print("Reading:\n"),
                     style::ResetColor,
                     style::Print("\n"),
                 )?;
+
+                let formatted = stylize_output_if_able(&path, file_contents.as_str(), Some(start + 1), None);
+                queue!(updates, style::Print(formatted), style::ResetColor, style::Print("\n"))?;
 
                 if start > end {
                     return Ok(InvokeOutput {
                         output: OutputKind::Text(String::new()),
                     });
                 }
-
-                // The range should be inclusive on both ends.
-                let f = file
-                    .lines()
-                    .skip(start)
-                    .take(end - start + 1)
-                    .collect::<Vec<_>>()
-                    .join("\n");
                 return Ok(InvokeOutput {
-                    output: OutputKind::Text(f),
+                    output: OutputKind::Text(file_contents),
                 });
             }
 
+            let file = ctx.fs().read_to_string(&path).await?;
+            let file_text = stylize_output_if_able(path, file.as_str(), None, None);
             queue!(
                 updates,
                 style::SetForegroundColor(Color::Green),
-                style::Print(format!("Reading {}", relative_path)),
+                style::Print("Reading:\n"),
+                style::ResetColor,
+                style::Print(file_text),
                 style::ResetColor,
                 style::Print("\n"),
             )?;
-            return Ok(InvokeOutput {
-                output: OutputKind::Text(ctx.fs().read_to_string(&path).await?),
-            });
+            Ok(InvokeOutput {
+                output: OutputKind::Text(file),
+            })
         } else {
             let cwd = ctx.env().current_dir()?;
             let max_depth = self.read_range()?.map_or(0, |(d, _)| d);

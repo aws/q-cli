@@ -5,20 +5,7 @@
             "tool_use_id": "1",
             "name": "fs_read",
             "args": {
-                "path": "Cargo.toml"
-            }
-        }
-    ],
-    [
-        "Interesting, this seems to be a project with a fair number of dependencies.\n\nIn here I can see `clap` used for dependencies. Want me to do something else?"
-    ],
-    [
-        {
-            "tool_use_id": "2",
-            "name": "fs_read",
-            "args": {
-                "path": "Cargo.toml",
-                "read_range": [1, 10]
+                "path": "src/main.rs"
             }
         }
     ],
@@ -27,7 +14,17 @@
             "tool_use_id": "2",
             "name": "fs_read",
             "args": {
-                "path": "Cargo.toml",
+                "path": "src/main.rs",
+                "read_range": [5, 10]
+            }
+        }
+    ],
+    [
+        {
+            "tool_use_id": "2",
+            "name": "fs_read",
+            "args": {
+                "path": "src/main.rs",
                 "read_range": [5]
             }
         }
