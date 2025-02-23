@@ -2,10 +2,13 @@ use std::io::Write;
 use std::process::Stdio;
 
 use bstr::ByteSlice;
-use crossterm::queue;
 use crossterm::style::{
     self,
     Color,
+};
+use crossterm::{
+    execute,
+    queue,
 };
 use eyre::{
     Context as EyreContext,
@@ -54,6 +57,11 @@ impl ExecuteBash {
         let status = output.status.code().unwrap_or(0).to_string();
         let stdout = output.stdout.to_str_lossy();
         let stderr = output.stderr.to_str_lossy();
+
+        if !self.interactive {
+            execute!(updates, style::Print(&stdout))?;
+        }
+
         Ok(InvokeOutput {
             output: OutputKind::Json(serde_json::json!({
                 "exit_status": status,
@@ -64,13 +72,19 @@ impl ExecuteBash {
     }
 
     pub fn queue_description(&self, updates: &mut impl Write) -> Result<()> {
-        Ok(queue!(
+        queue!(
             updates,
-            style::Print("I will run the following command using your bash environment:\n"),
+            style::Print("I will run the following shell command: "),
             style::SetForegroundColor(Color::Green),
             style::Print(&self.command),
-            style::ResetColor,
-        )?)
+        )?;
+
+        // TODO: Could use graphemes for a better heuristic
+        if self.command.len() > 20 {
+            queue!(updates, style::Print("\n"),)?;
+        }
+
+        Ok(queue!(updates, style::Print(&self.command), style::ResetColor)?)
     }
 
     pub async fn validate(&mut self, _ctx: &Context) -> Result<()> {

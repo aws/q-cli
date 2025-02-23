@@ -119,6 +119,7 @@ pub async fn chat(initial_input: Option<String>) -> Result<ExitCode> {
     if is_interactive {
         queue!(
             output,
+            cursor::MoveToColumn(0),
             style::SetAttribute(Attribute::Reset),
             style::ResetColor,
             cursor::Show
@@ -128,63 +129,6 @@ pub async fn chat(initial_input: Option<String>) -> Result<ExitCode> {
     output.flush().ok();
 
     result.map(|_| ExitCode::SUCCESS)
-}
-
-/// Testing helper
-fn split_tool_use_event(value: &Map<String, serde_json::Value>) -> Vec<ChatResponseStream> {
-    let tool_use_id = value.get("tool_use_id").unwrap().as_str().unwrap().to_string();
-    let name = value.get("name").unwrap().as_str().unwrap().to_string();
-    let args_str = value.get("args").unwrap().to_string();
-    let split_point = args_str.len() / 2;
-    vec![
-        ChatResponseStream::ToolUseEvent {
-            tool_use_id: tool_use_id.clone(),
-            name: name.clone(),
-            input: None,
-            stop: None,
-        },
-        ChatResponseStream::ToolUseEvent {
-            tool_use_id: tool_use_id.clone(),
-            name: name.clone(),
-            input: Some(args_str.split_at(split_point).0.to_string()),
-            stop: None,
-        },
-        ChatResponseStream::ToolUseEvent {
-            tool_use_id: tool_use_id.clone(),
-            name: name.clone(),
-            input: Some(args_str.split_at(split_point).1.to_string()),
-            stop: None,
-        },
-        ChatResponseStream::ToolUseEvent {
-            tool_use_id: tool_use_id.clone(),
-            name: name.clone(),
-            input: None,
-            stop: Some(true),
-        },
-    ]
-}
-
-/// Testing helper
-fn create_stream(model_responses: serde_json::Value) -> StreamingClient {
-    let mut mock = Vec::new();
-    for response in model_responses.as_array().unwrap() {
-        let mut stream = Vec::new();
-        for event in response.as_array().unwrap() {
-            match event {
-                serde_json::Value::String(assistant_text) => {
-                    stream.push(ChatResponseStream::AssistantResponseEvent {
-                        content: assistant_text.to_string(),
-                    });
-                },
-                serde_json::Value::Object(tool_use) => {
-                    stream.append(&mut split_tool_use_event(tool_use));
-                },
-                other => panic!("Unexpected value: {:?}", other),
-            }
-        }
-        mock.push(stream);
-    }
-    StreamingClient::mock(mock)
 }
 
 /// The tools that can be used by the model.
@@ -330,7 +274,10 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                         };
                     },
                     Err(err) => {
-                        bail!("An error occurred reading the model's response: {:?}", err);
+                        bail!(
+                            "We're having trouble responding right now, please try again later: {:?}",
+                            err
+                        );
                     },
                 }
 
@@ -508,24 +455,36 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
             if self.tool_use_recursions > MAX_TOOL_USE_RECURSIONS {
                 bail!("Exceeded max tool use recursion limit: {}", MAX_TOOL_USE_RECURSIONS);
             }
-            for (_, tool) in &queued_tools {
-                queue!(self.output, style::Print(format!("{}\n", "▔".repeat(terminal_width))))?;
-                queue!(self.output, style::SetAttribute(Attribute::Bold))?;
-                queue!(self.output, style::Print(format!("{}\n", tool.display_name())))?;
-                queue!(self.output, style::SetAttribute(Attribute::NormalIntensity))?;
-                queue!(self.output, style::Print(format!("{}\n\n", "▁".repeat(terminal_width))))?;
+
+            for (i, (_, tool)) in queued_tools.iter().enumerate() {
+                queue!(
+                    self.output,
+                    style::SetForegroundColor(Color::Cyan),
+                    style::Print(format!("{}. {}\n", i + 1, tool.display_name())),
+                    style::SetForegroundColor(Color::Reset),
+                    style::SetForegroundColor(Color::DarkGrey),
+                    style::Print(format!("{}\n", "▔".repeat(terminal_width))),
+                )?;
                 tool.queue_description(&self.ctx, self.output)?;
                 queue!(self.output, style::Print("\n"))?;
             }
-            queue!(self.output, style::Print("▁".repeat(terminal_width)))?;
-            queue!(self.output, style::Print("\n\n"))?;
+
             execute!(
                 self.output,
-                style::Print("Enter "),
+                style::SetForegroundColor(Color::DarkGrey),
+                style::Print("▁".repeat(terminal_width)),
+                style::ResetColor,
+                style::Print("\n\nEnter "),
                 style::SetForegroundColor(Color::Green),
                 style::Print("y"),
                 style::ResetColor,
-                style::Print(" to consent to running these tools, or anything else to continue your conversation.\n\n")
+                style::Print(format!(
+                    " to run {}, or otherwise continue your conversation.\n\n",
+                    match queued_tools.len() == 1 {
+                        true => "this tool",
+                        false => "these tools",
+                    }
+                )),
             )?;
         }
 
@@ -709,6 +668,63 @@ impl From<ToolUseEventBuilder> for fig_telemetry::EventType {
             is_valid: val.is_valid,
         }
     }
+}
+
+/// Testing helper
+fn split_tool_use_event(value: &Map<String, serde_json::Value>) -> Vec<ChatResponseStream> {
+    let tool_use_id = value.get("tool_use_id").unwrap().as_str().unwrap().to_string();
+    let name = value.get("name").unwrap().as_str().unwrap().to_string();
+    let args_str = value.get("args").unwrap().to_string();
+    let split_point = args_str.len() / 2;
+    vec![
+        ChatResponseStream::ToolUseEvent {
+            tool_use_id: tool_use_id.clone(),
+            name: name.clone(),
+            input: None,
+            stop: None,
+        },
+        ChatResponseStream::ToolUseEvent {
+            tool_use_id: tool_use_id.clone(),
+            name: name.clone(),
+            input: Some(args_str.split_at(split_point).0.to_string()),
+            stop: None,
+        },
+        ChatResponseStream::ToolUseEvent {
+            tool_use_id: tool_use_id.clone(),
+            name: name.clone(),
+            input: Some(args_str.split_at(split_point).1.to_string()),
+            stop: None,
+        },
+        ChatResponseStream::ToolUseEvent {
+            tool_use_id: tool_use_id.clone(),
+            name: name.clone(),
+            input: None,
+            stop: Some(true),
+        },
+    ]
+}
+
+/// Testing helper
+fn create_stream(model_responses: serde_json::Value) -> StreamingClient {
+    let mut mock = Vec::new();
+    for response in model_responses.as_array().unwrap() {
+        let mut stream = Vec::new();
+        for event in response.as_array().unwrap() {
+            match event {
+                serde_json::Value::String(assistant_text) => {
+                    stream.push(ChatResponseStream::AssistantResponseEvent {
+                        content: assistant_text.to_string(),
+                    });
+                },
+                serde_json::Value::Object(tool_use) => {
+                    stream.append(&mut split_tool_use_event(tool_use));
+                },
+                other => panic!("Unexpected value: {:?}", other),
+            }
+        }
+        mock.push(stream);
+    }
+    StreamingClient::mock(mock)
 }
 
 #[cfg(test)]
