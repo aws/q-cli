@@ -13,7 +13,6 @@ members = [
 [workspace.package]
 authors = [
     "Amazon Q CLI Team (q-cli@amazon.com)",
-    "Grant Gurvis (grangurv@amazon.com)",
     "Chay Nabors (nabochay@amazon.com)",
     "Brandon Kiser (bskiser@amazon.com)",
 ]

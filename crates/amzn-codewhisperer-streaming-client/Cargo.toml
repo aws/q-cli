@@ -13,13 +13,9 @@
 edition = "2021"
 name = "amzn-codewhisperer-streaming-client"
 version = "0.1.6236"
-authors = ["Grant Gurvis <grangurv@amazon.com>"]
+authors = ["Chay Nabors <nabochay@amazon.com>"]
 build = false
-exclude = [
-    "/build",
-    "/Config",
-    "/build-tools/",
-]
+exclude = ["/build", "/Config", "/build-tools/"]
 publish = ["brazil"]
 autolib = false
 autobins = false
@@ -61,18 +57,11 @@ version = "0.60.7"
 
 [dependencies.aws-smithy-runtime]
 version = "1.7.1"
-features = [
-    "client",
-    "http-auth",
-]
+features = ["client", "http-auth"]
 
 [dependencies.aws-smithy-runtime-api]
 version = "1.7.2"
-features = [
-    "client",
-    "http-02x",
-    "http-auth",
-]
+features = ["client", "http-02x", "http-auth"]
 
 [dependencies.aws-smithy-types]
 version = "1.2.7"
@@ -95,13 +84,7 @@ features = ["test-util"]
 
 [features]
 behavior-version-latest = []
-default = [
-    "rustls",
-    "rt-tokio",
-]
-rt-tokio = [
-    "aws-smithy-async/rt-tokio",
-    "aws-smithy-types/rt-tokio",
-]
+default = ["rustls", "rt-tokio"]
+rt-tokio = ["aws-smithy-async/rt-tokio", "aws-smithy-types/rt-tokio"]
 rustls = ["aws-smithy-runtime/tls-rustls"]
 test-util = ["aws-smithy-runtime/test-util"]

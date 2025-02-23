@@ -8,7 +8,7 @@ updates:
     schedule:
       interval: "daily"
     assignees:
-      - "grant0417"
+      - "chaynabors"
     open-pull-requests-limit: 100
     commit-message:
       prefix: ci
@@ -17,7 +17,7 @@ updates:
     schedule:
       interval: "daily"
     assignees:
-      - "grant0417"
+      - "chaynabors"
     commit-message:
       prefix: fix
       prefix-development: chore
@@ -37,7 +37,7 @@ updates:
     schedule:
       interval: "daily"
     assignees:
-      - "grant0417"
+      - "chaynabors"
     open-pull-requests-limit: 100
     commit-message:
       prefix: fix

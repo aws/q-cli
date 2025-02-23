@@ -1,4 +1,4 @@
-# Maintainer: Grant Gurvis <grangurv@amazon.com>
+# Maintainer: Chay Nabors <nabochay@amazon.com>
 
 pkgname='amazon-q'
 pkgver='1.6.0'

@@ -13,13 +13,9 @@
 edition = "2021"
 name = "amzn-consolas-client"
 version = "0.1.6236"
-authors = ["Grant Gurvis <grangurv@amazon.com>"]
+authors = ["Chay Nabors <nabochay@amazon.com>"]
 build = false
-exclude = [
-    "/build",
-    "/Config",
-    "/build-tools/",
-]
+exclude = ["/build", "/Config", "/build-tools/"]
 publish = ["brazil"]
 autolib = false
 autobins = false
@@ -61,10 +57,7 @@ features = ["client"]
 
 [dependencies.aws-smithy-runtime-api]
 version = "1.7.2"
-features = [
-    "client",
-    "http-02x",
-]
+features = ["client", "http-02x"]
 
 [dependencies.aws-smithy-types]
 version = "1.2.7"
@@ -90,16 +83,7 @@ features = ["test-util"]
 
 [features]
 behavior-version-latest = []
-default = [
-    "rustls",
-    "rt-tokio",
-]
-rt-tokio = [
-    "aws-smithy-async/rt-tokio",
-    "aws-smithy-types/rt-tokio",
-]
+default = ["rustls", "rt-tokio"]
+rt-tokio = ["aws-smithy-async/rt-tokio", "aws-smithy-types/rt-tokio"]
 rustls = ["aws-smithy-runtime/tls-rustls"]
-test-util = [
-    "aws-credential-types/test-util",
-    "aws-smithy-runtime/test-util",
-]
+test-util = ["aws-credential-types/test-util", "aws-smithy-runtime/test-util"]
