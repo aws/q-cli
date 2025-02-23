@@ -315,7 +315,10 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                             self.output,
                             style::SetAttribute(Attribute::Bold),
                             style::SetForegroundColor(Color::Red),
-                            style::Print(format!("We're having trouble responding right now, please try again later: {:?}", err)),
+                            style::Print(format!(
+                                "We're having trouble responding right now, please try again later: {:?}",
+                                err
+                            )),
                             style::SetForegroundColor(Color::Reset),
                             style::SetAttribute(Attribute::Reset),
                         )?;
