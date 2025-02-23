@@ -67,6 +67,12 @@ impl FsRead {
                     }
                 };
                 let (start, end) = (convert_index(start), convert_index(end));
+                // quick hack check in case of invalid model input
+                if start > end {
+                    return Ok(InvokeOutput {
+                        output: OutputKind::Text(String::new()),
+                    });
+                }
                 // The range should be inclusive on both ends.
                 let file_contents = file
                     .lines()
@@ -84,12 +90,6 @@ impl FsRead {
 
                 let formatted = stylize_output_if_able(&path, file_contents.as_str(), Some(start + 1), None);
                 queue!(updates, style::Print(formatted), style::ResetColor, style::Print("\n"))?;
-
-                if start > end {
-                    return Ok(InvokeOutput {
-                        output: OutputKind::Text(String::new()),
-                    });
-                }
                 return Ok(InvokeOutput {
                     output: OutputKind::Text(file_contents),
                 });
