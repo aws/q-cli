@@ -468,6 +468,29 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
             // If we have any validation errors, then return them immediately to the model.
             if !tool_results.is_empty() {
                 debug!(?tool_results, "Error found in the model tools");
+                queue!(
+                    self.output,
+                    style::SetAttribute(Attribute::Bold),
+                    style::Print("Tool validation failed: "),
+                    style::SetAttribute(Attribute::Reset),
+                )?;
+                for tool_result in &tool_results {
+                    for block in &tool_result.content {
+                        let content = match block {
+                            ToolResultContentBlock::Text(t) => Some(t.as_str()),
+                            ToolResultContentBlock::Json(d) => d.as_string(),
+                        };
+                        if let Some(content) = content {
+                            queue!(
+                                self.output,
+                                style::Print("\n"),
+                                style::SetForegroundColor(Color::Red),
+                                style::Print(format!("{}\n", content)),
+                                style::SetForegroundColor(Color::Reset),
+                            )?;
+                        }
+                    }
+                }
                 self.conversation_state.add_tool_results(tool_results);
                 self.send_tool_use_telemetry().await;
                 return Ok(Some(

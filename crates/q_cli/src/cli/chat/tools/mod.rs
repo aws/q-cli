@@ -83,7 +83,7 @@ impl TryFrom<ToolUse> for Tool {
         let map_err = |parse_error| ToolResult {
             tool_use_id: value.id.clone(),
             content: vec![ToolResultContentBlock::Text(format!(
-                "failed to deserialize with the following error: {parse_error}"
+                "Failed to validate tool parameters: {parse_error}. The model has either suggested tool parameters which are incompatible with the existing tools, or has suggested one or more tool that does not exist in the list of known tools."
             ))],
             status: ToolResultStatus::Error,
         };
