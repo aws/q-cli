@@ -4,7 +4,10 @@ pub mod fs_write;
 pub mod use_aws;
 
 use std::io::Write;
-use std::path::Path;
+use std::path::{
+    Path,
+    PathBuf,
+};
 
 use aws_smithy_types::{
     Document,
@@ -56,10 +59,10 @@ impl Tool {
     }
 
     /// Queues up a tool's intention in a human readable format
-    pub fn queue_description(&self, updates: &mut impl Write) -> Result<()> {
+    pub fn queue_description(&self, ctx: &Context, updates: &mut impl Write) -> Result<()> {
         match self {
             Tool::FsRead(fs_read) => fs_read.queue_description(updates),
-            Tool::FsWrite(fs_write) => fs_write.queue_description(updates),
+            Tool::FsWrite(fs_write) => fs_write.queue_description(ctx, updates),
             Tool::ExecuteBash(execute_bash) => execute_bash.queue_description(updates),
             Tool::UseAws(use_aws) => use_aws.show_readable_intention(updates),
         }
@@ -170,4 +173,31 @@ fn relative_path(cwd: impl AsRef<Path>, path: impl AsRef<Path>) -> String {
         (Some(cwd), Some(path)) => path.strip_prefix(cwd).unwrap_or_default().to_string(),
         _ => path.as_ref().to_string_lossy().to_string(),
     }
+}
+
+/// Converts `path` to a relative path according to the current working directory `cwd`.
+fn absolute_to_relative(cwd: impl AsRef<Path>, path: impl AsRef<Path>) -> Result<PathBuf> {
+    let cwd = cwd.as_ref().canonicalize()?;
+    let path = path.as_ref().canonicalize()?;
+    let mut cwd_parts = cwd.components().peekable();
+    let mut path_parts = path.components().peekable();
+
+    // Skip common prefix
+    while let (Some(a), Some(b)) = (cwd_parts.peek(), path_parts.peek()) {
+        if a == b {
+            cwd_parts.next();
+            path_parts.next();
+        }
+    }
+
+    // ".." for any uncommon parts, then just append the rest of the path.
+    let mut relative = PathBuf::new();
+    for _ in cwd_parts {
+        relative.push("..");
+    }
+    for part in path_parts {
+        relative.push(part);
+    }
+
+    Ok(relative)
 }

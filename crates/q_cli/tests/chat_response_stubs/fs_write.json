@@ -1,2 +1,14 @@
 [
+    [
+        "I will use the `fs_write` tool.",
+        {
+            "tool_use_id": "1",
+            "name": "fs_write",
+            "args": {
+                "command": "create",
+                "path": "some/sub/directory",
+                "file_text": "#!/usr/bin/env sh\necho 'hello'\necho 'world'\n"
+            }
+        }
+    ]
 ]

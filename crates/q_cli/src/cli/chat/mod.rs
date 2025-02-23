@@ -515,7 +515,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                 queue!(self.output, style::Print(format!(" {} ", tool.display_name())))?;
                 queue!(self.output, cursor::MoveToNextLine(1))?;
                 queue!(self.output, style::SetAttribute(Attribute::NormalIntensity))?;
-                tool.queue_description(self.output)?;
+                tool.queue_description(&self.ctx, self.output)?;
                 queue!(self.output, style::Print("\n"))?;
                 queue!(self.output, cursor::MoveToNextLine(1))?;
             }
