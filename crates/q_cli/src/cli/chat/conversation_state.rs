@@ -166,6 +166,36 @@ impl ConversationState {
         self.next_message = Some(msg);
     }
 
+    pub fn abandon_tool_use(&mut self, tools_to_be_abandoned: Vec<(String, super::tools::Tool)>, deny_input: String) {
+        let tool_results = tools_to_be_abandoned
+            .into_iter()
+            .map(|(tool_use_id, _)| ToolResult {
+                tool_use_id,
+                content: vec![ToolResultContentBlock::Text(
+                    "Tool use was cancelled by the user".to_string(),
+                )],
+                status: fig_api_client::model::ToolResultStatus::Error,
+            })
+            .collect::<Vec<_>>();
+        let user_input_message_context = UserInputMessageContext {
+            shell_state: None,
+            env_state: Some(build_env_state(None)),
+            tool_results: Some(tool_results),
+            tools: if self.tools.is_empty() {
+                None
+            } else {
+                Some(self.tools.clone())
+            },
+            ..Default::default()
+        };
+        let msg = Message(ChatMessage::UserInputMessage(UserInputMessage {
+            content: deny_input,
+            user_input_message_context: Some(user_input_message_context),
+            user_intent: None,
+        }));
+        self.next_message = Some(msg);
+    }
+
     /// Returns a [FigConversationState] capable of being sent by
     /// [fig_api_client::StreamingClient] while preparing the current conversation state to be sent
     /// in the next message.

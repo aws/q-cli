@@ -629,7 +629,7 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                     self.spinner = Some(Spinner::new(Spinners::Dots, "Thinking...".to_owned()));
                 }
 
-                let should_delete_history = self
+                let should_abandon_tool_use = self
                     .conversation_state
                     .history
                     .back()
@@ -640,11 +640,12 @@ Hi, I'm <g>Amazon Q</g>. I can answer questions about your workspace and tooling
                     .and_then(|msg| msg.tool_uses.as_ref())
                     .is_some_and(|tool_use| !tool_use.is_empty());
 
-                if should_delete_history {
-                    self.conversation_state.history = std::collections::VecDeque::new();
+                if should_abandon_tool_use {
+                    self.conversation_state.abandon_tool_use(queued_tools, user_input);
+                } else {
+                    self.conversation_state.append_new_user_message(user_input).await;
                 }
 
-                self.conversation_state.append_new_user_message(user_input).await;
                 self.send_tool_use_telemetry().await;
                 Ok(Some(
                     self.client
