@@ -189,41 +189,4 @@ mod tests {
             panic!("Expected JSON output");
         }
     }
-
-    #[tokio::test]
-    #[ignore = "not in ci"]
-    async fn test_aws_command_with_params() {
-        let ctx = Context::new_fake();
-
-        let v = serde_json::json!({
-            "service_name": "dynamodb",
-            "operation_name": "get-item",
-            "parameters": {
-                "--table-name": "AGI_MEMORY",
-                "--key": r#"{"memory_id": {"S": "49d649c7-b772-4578-968c-c20240844a4a"}}"#
-            },
-            "region": "us-west-2",
-            "profile_name": "default",
-            "label": ""
-        });
-        let out = serde_json::from_value::<UseAws>(v)
-            .unwrap()
-            .invoke(&ctx, &mut std::io::stdout())
-            .await
-            .unwrap();
-
-        if let OutputKind::Json(json) = out.output {
-            // depending on where the test is ran we might get different outcome here but it does
-            // not mean the tool is not working
-            let exit_status = json.get("exit_status").unwrap();
-            if exit_status == 0 {
-                assert_eq!(json.get("stderr").unwrap(), "");
-                println!("query result: {}", json.get("stdout").unwrap());
-            } else {
-                assert_ne!(json.get("stderr").unwrap(), "");
-            }
-        } else {
-            panic!("Expected JSON output");
-        }
-    }
 }
