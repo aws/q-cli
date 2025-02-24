@@ -40,7 +40,7 @@ impl std::fmt::Display for AwsToolError {
 pub struct UseAws {
     pub service_name: String,
     pub operation_name: String,
-    pub parameters: HashMap<String, String>,
+    pub parameters: Option<HashMap<String, String>>,
     pub region: String,
     pub profile_name: Option<String>,
     pub label: Option<String>,
@@ -64,11 +64,13 @@ impl UseAws {
             command.arg("--profile").arg(profile_name);
         }
         command.arg(&self.service_name).arg(&self.operation_name);
-        for (param_name, val) in &self.parameters {
-            if param_name.starts_with("--") {
-                command.arg(param_name).arg(val);
-            } else {
-                command.arg(format!("--{}", param_name)).arg(val);
+        if let Some(parameters) = &self.parameters {
+            for (param_name, val) in parameters {
+                if param_name.starts_with("--") {
+                    command.arg(param_name).arg(val);
+                } else {
+                    command.arg(format!("--{}", param_name)).arg(val);
+                }
             }
         }
         let output = command
@@ -104,8 +106,10 @@ impl UseAws {
             style::Print(format!("Operation name: {}\n", self.operation_name)),
             style::Print("Parameters: \n".to_string()),
         )?;
-        for (name, value) in &self.parameters {
-            queue!(updates, style::Print(format!("{}: {}\n", name, value)))?;
+        if let Some(parameters) = &self.parameters {
+            for (name, value) in parameters {
+                queue!(updates, style::Print(format!("{}: {}\n", name, value)))?;
+            }
         }
 
         if let Some(ref profile_name) = self.profile_name {

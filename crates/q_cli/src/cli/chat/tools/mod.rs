@@ -185,6 +185,11 @@ pub fn serde_value_to_document(value: serde_json::Value) -> Document {
     }
 }
 
+#[allow(dead_code)]
+fn path_expand(_ctx: &Context, _path: impl AsRef<Path>) -> PathBuf {
+    PathBuf::new()
+}
+
 /// Converts `path` to a relative path according to the current working directory `cwd`.
 fn absolute_to_relative(cwd: impl AsRef<Path>, path: impl AsRef<Path>) -> Result<PathBuf> {
     let cwd = cwd.as_ref().canonicalize()?;
