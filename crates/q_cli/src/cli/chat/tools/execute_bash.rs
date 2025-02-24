@@ -25,7 +25,7 @@ use super::{
 #[derive(Debug, Deserialize)]
 pub struct ExecuteBash {
     pub command: String,
-    pub interactive: bool,
+    pub interactive: Option<bool>,
 }
 
 impl ExecuteBash {
@@ -39,8 +39,8 @@ impl ExecuteBash {
         )?;
 
         let (stdin, stdout, stderr) = match self.interactive {
-            true => (Stdio::inherit(), Stdio::inherit(), Stdio::inherit()),
-            false => (Stdio::piped(), Stdio::piped(), Stdio::piped()),
+            Some(true) => (Stdio::inherit(), Stdio::inherit(), Stdio::inherit()),
+            _ => (Stdio::piped(), Stdio::piped(), Stdio::piped()),
         };
 
         let output = tokio::process::Command::new("bash")
@@ -58,7 +58,7 @@ impl ExecuteBash {
         let stdout = output.stdout.to_str_lossy();
         let stderr = output.stderr.to_str_lossy();
 
-        if !self.interactive {
+        if let Some(false) = self.interactive {
             execute!(updates, style::Print(&stdout))?;
         }
 
