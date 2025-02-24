@@ -13,6 +13,7 @@ use std::io::{
 };
 use std::process::ExitCode;
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 
 use color_eyre::owo_colors::OwoColorize;
 use conversation_state::ConversationState;
@@ -53,6 +54,7 @@ use spinners::{
     Spinners,
 };
 use tools::{
+    InvokeOutput,
     Tool,
     ToolSpec,
 };
@@ -204,6 +206,18 @@ where
     }
 
     async fn try_chat(&mut self) -> Result<()> {
+        let should_terminate = Arc::new(AtomicBool::new(true));
+        let should_terminate_ref = should_terminate.clone();
+        let (tx, mut rx) = tokio::sync::mpsc::channel(1);
+        ctrlc::set_handler(move || {
+            if should_terminate_ref.load(std::sync::atomic::Ordering::SeqCst) {
+                execute!(std::io::stdout(), cursor::Show).unwrap();
+                #[allow(clippy::exit)]
+                std::process::exit(0);
+            } else {
+                let _ = tx.blocking_send(());
+            }
+        })?;
         // todo: what should we set this to?
         if self.is_interactive {
             execute!(
@@ -222,7 +236,7 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
 
         loop {
             let mut response = loop {
-                match self.prompt_and_send_request().await {
+                match self.prompt_and_send_request(&mut rx, &should_terminate).await {
                     Ok(resp) => {
                         break resp;
                     },
@@ -401,7 +415,11 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
         Ok(())
     }
 
-    async fn prompt_and_send_request(&mut self) -> Result<Option<SendMessageOutput>> {
+    async fn prompt_and_send_request(
+        &mut self,
+        sigint_recver: &mut tokio::sync::mpsc::Receiver<()>,
+        should_terminate: &Arc<AtomicBool>,
+    ) -> Result<Option<SendMessageOutput>> {
         // Tool uses that need to be executed.
         let mut queued_tools: Vec<(String, Tool)> = Vec::new();
 
@@ -573,7 +591,26 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                         style::Print(format!("{}...\n\n", tool.1.display_name())),
                         style::SetForegroundColor(Color::Reset),
                     )?;
-                    let invoke_result = tool.1.invoke(&self.ctx, self.output).await;
+                    self.spinner = Some(Spinner::new(
+                        Spinners::Dots,
+                        "Running tool... press ctrl + c to terminate early".to_owned(),
+                    ));
+                    should_terminate.store(false, std::sync::atomic::Ordering::SeqCst);
+                    let invoke_result = tokio::select! {
+                        output = tool.1.invoke(&self.ctx, self.output) => Some(output),
+                        _ = sigint_recver.recv() => None
+                    }
+                    .map_or(Ok(InvokeOutput::default()), |v| v);
+                    if self.is_interactive && self.spinner.is_some() {
+                        drop(self.spinner.take());
+                        queue!(
+                            self.output,
+                            terminal::Clear(terminal::ClearType::CurrentLine),
+                            cursor::MoveToColumn(0),
+                            cursor::Show
+                        )?;
+                    }
+                    should_terminate.store(true, std::sync::atomic::Ordering::SeqCst);
                     let tool_time = std::time::Instant::now().duration_since(tool_start);
                     let tool_time = format!("{}.{}", tool_time.as_secs(), tool_time.subsec_millis());
 
@@ -652,12 +689,6 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                     }
                     queue!(self.output, style::SetForegroundColor(Color::Reset))?;
                     queue!(self.output, cursor::Hide)?;
-                    tokio::spawn(async {
-                        tokio::signal::ctrl_c().await.unwrap();
-                        execute!(std::io::stdout(), cursor::Show).unwrap();
-                        #[allow(clippy::exit)]
-                        std::process::exit(0);
-                    });
                     execute!(self.output, style::Print("\n"))?;
                     self.spinner = Some(Spinner::new(Spinners::Dots, "Thinking...".to_owned()));
                 }
