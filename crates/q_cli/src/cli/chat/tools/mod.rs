@@ -83,7 +83,7 @@ impl Tool {
             Tool::FsRead(fs_read) => fs_read.queue_description(updates),
             Tool::FsWrite(fs_write) => fs_write.queue_description(ctx, updates),
             Tool::ExecuteBash(execute_bash) => execute_bash.queue_description(updates),
-            Tool::UseAws(use_aws) => use_aws.show_readable_intention(updates),
+            Tool::UseAws(use_aws) => use_aws.queue_description(updates),
         }
     }
 

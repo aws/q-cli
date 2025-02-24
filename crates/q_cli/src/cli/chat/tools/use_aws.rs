@@ -96,7 +96,7 @@ impl UseAws {
         }
     }
 
-    pub fn show_readable_intention(&self, updates: &mut impl Write) -> Result<()> {
+    pub fn queue_description(&self, updates: &mut impl Write) -> Result<()> {
         queue!(
             updates,
             style::Print("Running aws cli command:\n"),
@@ -114,10 +114,10 @@ impl UseAws {
             queue!(updates, style::Print("Profile name: default\n".to_string()))?;
         }
 
-        queue!(updates, style::Print(format!("Region: {}\n", self.region)))?;
+        queue!(updates, style::Print(format!("Region: {}", self.region)))?;
 
         if let Some(ref label) = self.label {
-            queue!(updates, style::Print(format!("Label: {}\n", label)))?;
+            queue!(updates, style::Print(format!("\nLabel: {}", label)))?;
         }
         Ok(())
     }
