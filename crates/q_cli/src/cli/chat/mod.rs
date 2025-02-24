@@ -519,31 +519,40 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                 tool.queue_description(&self.ctx, self.output)?;
                 queue!(self.output, style::Print("\n"))?;
             }
-
-            execute!(
-                self.output,
-                style::SetForegroundColor(Color::DarkGrey),
-                style::Print("▁".repeat(terminal_width)),
-                style::ResetColor,
-                style::Print("\n\nEnter "),
-                style::SetForegroundColor(Color::Green),
-                style::Print("y"),
-                style::ResetColor,
-                style::Print(format!(
-                    " to run {}, or otherwise continue your conversation.\n\n",
-                    match queued_tools.len() == 1 {
-                        true => "this tool",
-                        false => "these tools",
-                    }
-                )),
-            )?;
         }
 
         let user_input = match self.initial_input.take() {
             Some(input) => input,
-            None => match self.input_source.read_line(Some("> "))? {
-                Some(line) => line,
-                None => return Ok(None),
+            None => match (self.ctx.env().get("Q_CHAT_SKIP_TOOL_CONSENT"), !queued_tools.is_empty()) {
+                // Skip prompting the user if they auto consent to the tool use.
+                (Ok(_), true) => "y".to_string(),
+                // Otherwise, read input.
+                _ => {
+                    if !queued_tools.is_empty() {
+                        let terminal_width = self.terminal_width();
+                        execute!(
+                            self.output,
+                            style::SetForegroundColor(Color::DarkGrey),
+                            style::Print("▁".repeat(terminal_width)),
+                            style::ResetColor,
+                            style::Print("\n\nEnter "),
+                            style::SetForegroundColor(Color::Green),
+                            style::Print("y"),
+                            style::ResetColor,
+                            style::Print(format!(
+                                " to run {}, or otherwise continue your conversation.\n\n",
+                                match queued_tools.len() == 1 {
+                                    true => "this tool",
+                                    false => "these tools",
+                                }
+                            )),
+                        )?;
+                    }
+                    match self.input_source.read_line(Some("> "))? {
+                        Some(line) => line,
+                        None => return Ok(None),
+                    }
+                },
             },
         };
 
@@ -574,13 +583,14 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                         style::SetForegroundColor(Color::Reset),
                     )?;
                     let invoke_result = tool.1.invoke(&self.ctx, self.output).await;
+                    execute!(self.output, style::Print("\n"))?;
                     let tool_time = std::time::Instant::now().duration_since(tool_start);
                     let tool_time = format!("{}.{}", tool_time.as_secs(), tool_time.subsec_millis());
 
                     match invoke_result {
                         Ok(result) => {
                             debug!("tool result output: {:#?}", result);
-                            queue!(
+                            execute!(
                                 self.output,
                                 style::SetForegroundColor(Color::Green),
                                 style::Print(format!("🟢 Completed in {}s", tool_time)),
@@ -599,15 +609,6 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                         },
                         Err(err) => {
                             error!(?err, "An error occurred processing the tool");
-                            tool_results.push(ToolResult {
-                                tool_use_id: tool.0,
-                                content: vec![ToolResultContentBlock::Text(format!(
-                                    "An error occurred processing the tool: \n{}",
-                                    err
-                                ))],
-                                status: ToolResultStatus::Error,
-                            });
-
                             execute!(
                                 self.output,
                                 style::SetAttribute(Attribute::Bold),
@@ -615,10 +616,19 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                                 style::Print(format!("🔴 Execution failed after {}s:\n", tool_time)),
                                 style::SetAttribute(Attribute::Reset),
                                 style::SetForegroundColor(Color::Red),
-                                style::Print(err),
+                                style::Print(&err),
                                 style::SetAttribute(Attribute::Reset),
                                 style::Print("\n\n"),
                             )?;
+
+                            tool_results.push(ToolResult {
+                                tool_use_id: tool.0,
+                                content: vec![ToolResultContentBlock::Text(format!(
+                                    "An error occurred processing the tool: \n{}",
+                                    &err
+                                ))],
+                                status: ToolResultStatus::Error,
+                            });
 
                             if let Some(builder) = corresponding_builder {
                                 builder.is_success = Some(false);

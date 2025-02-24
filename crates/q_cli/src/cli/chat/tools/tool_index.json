@@ -81,7 +81,7 @@
       "properties": {
         "service_name": {
           "type": "string",
-          "description": "The name of the AWS service."
+          "description": "The name of the AWS service. If you want to query s3, you should use s3api if possible."
         },
         "operation_name": {
           "type": "string",
