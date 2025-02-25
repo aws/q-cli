@@ -539,11 +539,11 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
             }
         }
 
-        let user_input = match self.initial_input.take() {
-            Some(input) => input,
+        let (user_input, is_initial_input) = match self.initial_input.take() {
+            Some(input) => (input, true),
             None => match (self.ctx.env().get("Q_CHAT_SKIP_TOOL_CONSENT"), !queued_tools.is_empty()) {
                 // Skip prompting the user if they auto consent to the tool use.
-                (Ok(_), true) => "y".to_string(),
+                (Ok(_), true) => ("y".to_string(), false),
                 // Otherwise, read input.
                 _ => {
                     if !queued_tools.is_empty() {
@@ -567,7 +567,7 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                         )?;
                     }
                     match self.input_source.read_line(Some("> "))? {
-                        Some(line) => line,
+                        Some(line) => (line, false),
                         None => return Ok(None),
                     }
                 },
@@ -686,6 +686,17 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
             // New user prompt.
             _ => {
                 self.tool_use_recursions = 0;
+
+                if is_initial_input {
+                    queue!(
+                        self.output,
+                        style::SetForegroundColor(Color::Magenta),
+                        style::Print("> "),
+                        style::SetAttribute(Attribute::Reset),
+                        style::Print(&user_input),
+                        style::Print("\n")
+                    )?;
+                }
 
                 if self.is_interactive {
                     queue!(self.output, style::SetForegroundColor(Color::Magenta))?;
