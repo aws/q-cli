@@ -94,6 +94,12 @@ impl ConversationState {
         }
     }
 
+    /// Clears the conversation history.
+    pub fn clear(&mut self) {
+        self.next_message = None;
+        self.history.clear();
+    }
+
     pub async fn append_new_user_message(&mut self, input: String) {
         debug_assert!(self.next_message.is_none(), "next_message should not exist");
         if let Some(next_message) = self.next_message.as_ref() {

@@ -66,6 +66,8 @@ impl UseAws {
         command.arg(&self.service_name).arg(&self.operation_name);
         if let Some(parameters) = &self.parameters {
             for (param_name, val) in parameters {
+                // Model might sometimes give parameters capitalized.
+                let param_name = param_name.to_lowercase();
                 if param_name.starts_with("--") {
                     command.arg(param_name).arg(val);
                 } else {

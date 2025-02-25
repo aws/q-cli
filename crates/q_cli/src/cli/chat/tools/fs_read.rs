@@ -2,7 +2,6 @@ use std::collections::VecDeque;
 use std::fs::Metadata;
 use std::io::Write;
 use std::os::unix::fs::PermissionsExt;
-use std::path::PathBuf;
 
 use crossterm::queue;
 use crossterm::style::{
@@ -22,6 +21,7 @@ use super::{
     InvokeOutput,
     OutputKind,
     format_path,
+    sanitize_path_tool_arg,
     stylize_output_if_able,
 };
 
@@ -46,10 +46,8 @@ impl FsRead {
     }
 
     pub async fn invoke(&self, ctx: &Context, updates: &mut impl Write) -> Result<InvokeOutput> {
-        // Required for testing scenarios: since the path is passed directly as a command argument,
-        // we need to pass it through the Context first.
-        let path = ctx.fs().chroot_path_str(&self.path);
-        let is_file = ctx.fs().symlink_metadata(&self.path).await?.is_file();
+        let path = sanitize_path_tool_arg(ctx, &self.path);
+        let is_file = ctx.fs().symlink_metadata(&path).await?.is_file();
 
         if is_file {
             if let Some((start, Some(end))) = self.read_range()? {
@@ -114,7 +112,7 @@ impl FsRead {
             let max_depth = self.read_range()?.map_or(0, |(d, _)| d);
             let mut result = Vec::new();
             let mut dir_queue = VecDeque::new();
-            dir_queue.push_back((PathBuf::from(path), 0));
+            dir_queue.push_back((path, 0));
             while let Some((path, depth)) = dir_queue.pop_front() {
                 if depth > max_depth {
                     break;
@@ -239,11 +237,12 @@ impl FsRead {
     }
 
     pub async fn validate(&mut self, ctx: &Context) -> Result<()> {
-        if !PathBuf::from(&self.path).exists() {
+        let path = sanitize_path_tool_arg(ctx, &self.path);
+        if !path.exists() {
             bail!("'{}' does not exist", self.path);
         }
 
-        let is_file = ctx.fs().symlink_metadata(&self.path).await?.is_file();
+        let is_file = ctx.fs().symlink_metadata(&path).await?.is_file();
         self.ty = Some(is_file);
 
         Ok(())
