@@ -9,7 +9,6 @@ use fig_api_client::model::{
 use tracing::{
     error,
     trace,
-    warn,
 };
 
 use super::tools::serde_value_to_document;
@@ -57,6 +56,9 @@ pub struct ResponseParser {
     buffered_line: Option<String>,
     /// Short circuit and return early since we simply need to clear our buffered line
     short_circuit: bool,
+    /// Whether or not we are currently receiving tool use delta events. Tuple of
+    /// `Some((tool_use_id, name))` if true, [None] otherwise.
+    parsing_tool_use: Option<(String, String)>,
 }
 
 impl ResponseParser {
@@ -69,6 +71,7 @@ impl ResponseParser {
             tool_uses: Vec::new(),
             buffered_line: None,
             short_circuit: false,
+            parsing_tool_use: None,
         }
     }
 
@@ -85,6 +88,12 @@ impl ResponseParser {
                 },
             }));
             return Ok(ResponseEvent::EndStream { message });
+        }
+
+        if let Some((id, name)) = self.parsing_tool_use.take() {
+            let tool_use = self.parse_tool_use(id, name).await?;
+            self.tool_uses.push(tool_use.clone());
+            return Ok(ResponseEvent::ToolUse(tool_use));
         }
 
         loop {
@@ -121,9 +130,13 @@ impl ResponseParser {
                         input,
                         stop,
                     } => {
-                        let tool_use = self.parse_tool_use(tool_use_id, name, input, stop).await?;
-                        self.tool_uses.push(tool_use.clone());
-                        return Ok(ResponseEvent::ToolUse(tool_use));
+                        debug_assert!(input.is_none(), "Unexpected initial content in first tool use event");
+                        debug_assert!(
+                            stop.is_none_or(|v| !v),
+                            "Unexpected immediate stop in first tool use event"
+                        );
+                        self.parsing_tool_use = Some((tool_use_id.clone(), name.clone()));
+                        return Ok(ResponseEvent::ToolUseStart { name });
                     },
                     _ => {},
                 },
@@ -152,18 +165,8 @@ impl ResponseParser {
     /// Consumes the response stream until a valid [ToolUse] is parsed.
     ///
     /// The arguments are the fields from the first [ChatResponseStream::ToolUseEvent] consumed.
-    async fn parse_tool_use(
-        &mut self,
-        tool_use_id: String,
-        tool_name: String,
-        input: Option<String>,
-        stop: Option<bool>,
-    ) -> Result<ToolUse> {
-        if input.is_some() {
-            warn!(?input, "Unexpected initial content in input");
-        }
-        assert!(stop.is_none_or(|v| !v));
-        let mut tool_string = input.unwrap_or_default();
+    async fn parse_tool_use(&mut self, id: String, name: String) -> Result<ToolUse> {
+        let mut tool_string = String::new();
         while let Some(ChatResponseStream::ToolUseEvent { .. }) = self.peek().await? {
             if let Some(ChatResponseStream::ToolUseEvent { input, stop, .. }) = self.next().await? {
                 if let Some(i) = input {
@@ -175,11 +178,7 @@ impl ResponseParser {
             }
         }
         let args = serde_json::from_str(&tool_string)?;
-        Ok(ToolUse {
-            id: tool_use_id,
-            name: tool_name,
-            args,
-        })
+        Ok(ToolUse { id, name, args })
     }
 
     /// Returns the next event in the [SendMessageOutput] without consuming it.
@@ -214,6 +213,8 @@ pub enum ResponseEvent {
     ConversationId(String),
     /// Text returned by the assistant. This should be displayed to the user as it is received.
     AssistantText(String),
+    /// Notification that a tool use is being received.
+    ToolUseStart { name: String },
     /// A tool use requested by the assistant. This should be displayed to the user as it is
     /// received.
     ToolUse(ToolUse),

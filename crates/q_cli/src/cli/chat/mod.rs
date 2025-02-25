@@ -15,11 +15,11 @@ use std::process::ExitCode;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
-use color_eyre::owo_colors::OwoColorize;
 use conversation_state::ConversationState;
 use crossterm::style::{
     Attribute,
     Color,
+    Stylize,
 };
 use crossterm::{
     cursor,
@@ -289,6 +289,7 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                 }
             }
 
+            let mut waiting_for_tool = false;
             loop {
                 match parser.recv().await {
                     Ok(msg_event) => {
@@ -305,11 +306,31 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                                     std::process::exit(0);
                                 });
                             },
+                            parser::ResponseEvent::ToolUseStart { name } => {
+                                if self.is_interactive {
+                                    execute!(self.output, style::Print("\n\n"))?;
+                                    self.spinner = Some(Spinner::new(
+                                        Spinners::Dots,
+                                        format!("Creating tool {}...", name.green()),
+                                    ));
+                                }
+                                waiting_for_tool = true;
+                            },
                             parser::ResponseEvent::AssistantText(text) => {
                                 buf.push_str(&text);
                             },
                             parser::ResponseEvent::ToolUse(tool_use) => {
+                                if self.is_interactive && self.spinner.is_some() {
+                                    drop(self.spinner.take());
+                                    queue!(
+                                        self.output,
+                                        terminal::Clear(terminal::ClearType::CurrentLine),
+                                        cursor::MoveToColumn(0),
+                                        cursor::Show
+                                    )?;
+                                }
                                 self.tool_uses.push(tool_use);
+                                waiting_for_tool = false;
                             },
                             parser::ResponseEvent::EndStream { message } => {
                                 self.conversation_state.push_assistant_message(message);
@@ -352,7 +373,7 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                     buf.push('\n');
                 }
 
-                if !buf.is_empty() && self.is_interactive && self.spinner.is_some() {
+                if !waiting_for_tool && !buf.is_empty() && self.is_interactive && self.spinner.is_some() {
                     drop(self.spinner.take());
                     queue!(
                         self.output,
