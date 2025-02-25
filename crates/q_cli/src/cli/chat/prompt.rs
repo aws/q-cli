@@ -23,6 +23,7 @@ use rustyline::{
 use winnow::stream::AsChar;
 
 const MODIFIERS: &[&str] = &["@history", "@git", "@env"];
+const COMMANDS: &[&str] = &["/clear"];
 
 pub struct ChatCompleater {}
 
@@ -46,6 +47,12 @@ impl Completer for ChatCompleater {
             start,
             if word.starts_with('@') {
                 MODIFIERS
+                    .iter()
+                    .filter(|p| p.starts_with(word))
+                    .map(|s| (*s).to_owned())
+                    .collect()
+            } else if word.starts_with('/') {
+                COMMANDS
                     .iter()
                     .filter(|p| p.starts_with(word))
                     .map(|s| (*s).to_owned())

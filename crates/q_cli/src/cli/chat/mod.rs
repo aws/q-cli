@@ -255,7 +255,7 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                             style::SetAttribute(Attribute::Bold),
                             style::SetForegroundColor(Color::Red),
                             style::Print(format!("Amazon Q is having trouble responding right now: {:?}\n", e)),
-                            style::Print("Please try again later.\n"),
+                            style::Print("Please try again later.\n\n"),
                             style::SetForegroundColor(Color::Reset),
                             style::SetAttribute(Attribute::Reset),
                         )?;
@@ -420,314 +420,329 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
         sigint_recver: &mut tokio::sync::mpsc::Receiver<()>,
         should_terminate: &Arc<AtomicBool>,
     ) -> Result<Option<SendMessageOutput>> {
-        // Tool uses that need to be executed.
-        let mut queued_tools: Vec<(String, Tool)> = Vec::new();
+        loop {
+            // Tool uses that need to be executed.
+            let mut queued_tools: Vec<(String, Tool)> = Vec::new();
 
-        // Validate the requested tools, updating queued_tools and tool_errors accordingly.
-        if !self.tool_uses.is_empty() {
-            let conv_id = self
-                .conversation_state
-                .conversation_id
-                .as_ref()
-                .unwrap_or(&"No conversation id associated".to_string())
-                .to_owned();
-            let utterance_id = self
-                .conversation_state
-                .next_message
-                .as_ref()
-                .and_then(|msg| {
-                    if let fig_api_client::model::ChatMessage::AssistantResponseMessage(resp) = &msg.0 {
-                        resp.message_id.clone()
-                    } else {
-                        None
+            // Validate the requested tools, updating queued_tools and tool_errors accordingly.
+            if !self.tool_uses.is_empty() {
+                let conv_id = self
+                    .conversation_state
+                    .conversation_id
+                    .as_ref()
+                    .unwrap_or(&"No conversation id associated".to_string())
+                    .to_owned();
+                let utterance_id = self
+                    .conversation_state
+                    .next_message
+                    .as_ref()
+                    .and_then(|msg| {
+                        if let fig_api_client::model::ChatMessage::AssistantResponseMessage(resp) = &msg.0 {
+                            resp.message_id.clone()
+                        } else {
+                            None
+                        }
+                    })
+                    .unwrap_or("No utterance id associated".to_string());
+                debug!(?self.tool_uses, "Validating tool uses");
+                let mut tool_results = Vec::with_capacity(self.tool_uses.len());
+                for tool_use in self.tool_uses.drain(..) {
+                    let tool_use_id = tool_use.id.clone();
+                    let mut event_builder = ToolUseEventBuilder::from_conversation_id(conv_id.clone())
+                        .set_tool_use_id(&tool_use_id)
+                        .set_tool_name(&tool_use.name)
+                        .set_utterance_id(&utterance_id);
+                    if let Some(ref id) = self.current_user_input_id {
+                        event_builder.user_input_id = Some(id.clone());
                     }
-                })
-                .unwrap_or("No utterance id associated".to_string());
-            debug!(?self.tool_uses, "Validating tool uses");
-            let mut tool_results = Vec::with_capacity(self.tool_uses.len());
-            for tool_use in self.tool_uses.drain(..) {
-                let tool_use_id = tool_use.id.clone();
-                let mut event_builder = ToolUseEventBuilder::from_conversation_id(conv_id.clone())
-                    .set_tool_use_id(&tool_use_id)
-                    .set_tool_name(&tool_use.name)
-                    .set_utterance_id(&utterance_id);
-                if let Some(ref id) = self.current_user_input_id {
-                    event_builder.user_input_id = Some(id.clone());
+                    match Tool::try_from(tool_use) {
+                        Ok(mut tool) => {
+                            match tool.validate(&self.ctx).await {
+                                Ok(()) => {
+                                    queued_tools.push((tool_use_id, tool));
+                                },
+                                Err(err) => {
+                                    tool_results.push(ToolResult {
+                                        tool_use_id,
+                                        content: vec![ToolResultContentBlock::Text(format!(
+                                            "Failed to validate tool parameters: {err}"
+                                        ))],
+                                        status: ToolResultStatus::Error,
+                                    });
+                                    event_builder.is_valid = Some(false);
+                                },
+                            };
+                        },
+                        Err(err) => {
+                            tool_results.push(err);
+                            event_builder.is_valid = Some(false);
+                        },
+                    }
+                    self.tool_use_events.push(event_builder);
                 }
-                match Tool::try_from(tool_use) {
-                    Ok(mut tool) => {
-                        match tool.validate(&self.ctx).await {
-                            Ok(()) => {
-                                queued_tools.push((tool_use_id, tool));
+
+                // If we have any validation errors, then return them immediately to the model.
+                if !tool_results.is_empty() {
+                    debug!(?tool_results, "Error found in the model tools");
+                    queue!(
+                        self.output,
+                        style::SetAttribute(Attribute::Bold),
+                        style::Print("Tool validation failed: "),
+                        style::SetAttribute(Attribute::Reset),
+                    )?;
+                    for tool_result in &tool_results {
+                        for block in &tool_result.content {
+                            let content = match block {
+                                ToolResultContentBlock::Text(t) => Some(t.as_str()),
+                                ToolResultContentBlock::Json(d) => d.as_string(),
+                            };
+                            if let Some(content) = content {
+                                queue!(
+                                    self.output,
+                                    style::Print("\n"),
+                                    style::SetForegroundColor(Color::Red),
+                                    style::Print(format!("{}\n", content)),
+                                    style::SetForegroundColor(Color::Reset),
+                                )?;
+                            }
+                        }
+                    }
+                    self.conversation_state.add_tool_results(tool_results);
+                    self.send_tool_use_telemetry().await;
+                    return Ok(Some(
+                        self.client
+                            .send_message(self.conversation_state.as_sendable_conversation_state())
+                            .await?,
+                    ));
+                }
+            }
+
+            // If we have tool uses, display them to the user.
+            if !queued_tools.is_empty() {
+                self.tool_use_recursions += 1;
+                let terminal_width = self.terminal_width();
+                if self.tool_use_recursions > MAX_TOOL_USE_RECURSIONS {
+                    bail!("Exceeded max tool use recursion limit: {}", MAX_TOOL_USE_RECURSIONS);
+                }
+
+                for (i, (_, tool)) in queued_tools.iter().enumerate() {
+                    queue!(
+                        self.output,
+                        style::SetForegroundColor(Color::Cyan),
+                        style::Print(format!("{}. {}\n", i + 1, tool.display_name())),
+                        style::SetForegroundColor(Color::Reset),
+                        style::SetForegroundColor(Color::DarkGrey),
+                        style::Print(format!("{}\n", "▔".repeat(terminal_width))),
+                        style::SetForegroundColor(Color::Reset),
+                    )?;
+                    tool.queue_description(&self.ctx, self.output)?;
+                    queue!(self.output, style::Print("\n"))?;
+                }
+            }
+
+            let skip_consent = self
+                .ctx
+                .env()
+                .get("Q_CHAT_SKIP_TOOL_CONSENT")
+                .is_ok_and(|s| !s.is_empty() && !queued_tools.is_empty())
+                || queued_tools.iter().all(|tool| !tool.1.requires_consent(&self.ctx));
+
+            let user_input = match self.initial_input.take() {
+                Some(input) => input,
+                None => match (skip_consent, queued_tools.is_empty()) {
+                    // Skip prompting the user if consent is not required.
+                    // TODO(bskiser): we should not set user input here so we can potentially have telemetry distinguish
+                    // between tool uses that the user accepts vs automatically consents to.
+                    (true, false) => "y".to_string(),
+                    // Otherwise, read input.
+                    _ => {
+                        if !queued_tools.is_empty() {
+                            let terminal_width = self.terminal_width();
+                            execute!(
+                                self.output,
+                                style::SetForegroundColor(Color::DarkGrey),
+                                style::Print("▁".repeat(terminal_width)),
+                                style::ResetColor,
+                                style::Print("\n\nEnter "),
+                                style::SetForegroundColor(Color::Green),
+                                style::Print("y"),
+                                style::ResetColor,
+                                style::Print(format!(
+                                    " to run {}, or otherwise continue your conversation.\n\n",
+                                    match queued_tools.len() == 1 {
+                                        true => "this tool",
+                                        false => "these tools",
+                                    }
+                                )),
+                            )?;
+                        }
+                        match self.input_source.read_line(Some("> "))? {
+                            Some(line) => line,
+                            None => return Ok(None),
+                        }
+                    },
+                },
+            };
+
+            match user_input.trim() {
+                "exit" | "quit" => return Ok(None),
+                "/clear" => {
+                    self.conversation_state.clear();
+                    execute!(
+                        self.output,
+                        style::SetForegroundColor(Color::Green),
+                        style::Print("\nConversation history cleared\n\n"),
+                        style::SetForegroundColor(Color::Reset)
+                    )?;
+                },
+                // Tool execution.
+                c if c.to_lowercase() == "y" && !queued_tools.is_empty() => {
+                    // Execute the requested tools.
+                    let terminal_width = self.terminal_width();
+                    let mut tool_results = vec![];
+                    for tool in queued_tools.drain(..) {
+                        let corresponding_builder = self.tool_use_events.iter_mut().find(|v| {
+                            if let Some(ref v) = v.tool_use_id {
+                                v.eq(&tool.0)
+                            } else {
+                                false
+                            }
+                        });
+
+                        let tool_start = std::time::Instant::now();
+                        queue!(
+                            self.output,
+                            style::Print("\n"),
+                            style::Print("▔".repeat(terminal_width)),
+                            style::Print("\nExecuting "),
+                            style::SetForegroundColor(Color::Cyan),
+                            style::Print(format!("{}...\n\n", tool.1.display_name())),
+                            style::SetForegroundColor(Color::Reset),
+                        )?;
+                        should_terminate.store(false, std::sync::atomic::Ordering::SeqCst);
+                        let invoke_result = tokio::select! {
+                            output = tool.1.invoke(&self.ctx, self.output) => Some(output),
+                            _ = sigint_recver.recv() => None
+                        }
+                        .map_or(Ok(InvokeOutput::default()), |v| v);
+                        if self.is_interactive && self.spinner.is_some() {
+                            queue!(
+                                self.output,
+                                terminal::Clear(terminal::ClearType::CurrentLine),
+                                cursor::MoveToColumn(0),
+                                cursor::Show
+                            )?;
+                        }
+                        should_terminate.store(true, std::sync::atomic::Ordering::SeqCst);
+                        execute!(self.output, style::Print("\n"))?;
+
+                        let tool_time = std::time::Instant::now().duration_since(tool_start);
+                        let tool_time = format!("{}.{}", tool_time.as_secs(), tool_time.subsec_millis());
+
+                        match invoke_result {
+                            Ok(result) => {
+                                debug!("tool result output: {:#?}", result);
+                                execute!(
+                                    self.output,
+                                    style::SetForegroundColor(Color::Green),
+                                    style::Print(format!("🟢 Completed in {}s", tool_time)),
+                                    style::SetForegroundColor(Color::Reset),
+                                    style::Print("\n\n"),
+                                )?;
+                                if let Some(builder) = corresponding_builder {
+                                    builder.is_success = Some(true);
+                                }
+
+                                tool_results.push(ToolResult {
+                                    tool_use_id: tool.0,
+                                    content: vec![result.into()],
+                                    status: ToolResultStatus::Success,
+                                });
                             },
                             Err(err) => {
+                                error!(?err, "An error occurred processing the tool");
+                                execute!(
+                                    self.output,
+                                    style::SetAttribute(Attribute::Bold),
+                                    style::SetForegroundColor(Color::Red),
+                                    style::Print(format!("🔴 Execution failed after {}s:\n", tool_time)),
+                                    style::SetAttribute(Attribute::Reset),
+                                    style::SetForegroundColor(Color::Red),
+                                    style::Print(&err),
+                                    style::SetAttribute(Attribute::Reset),
+                                    style::Print("\n\n"),
+                                )?;
+
                                 tool_results.push(ToolResult {
-                                    tool_use_id,
+                                    tool_use_id: tool.0,
                                     content: vec![ToolResultContentBlock::Text(format!(
-                                        "Failed to validate tool parameters: {err}"
+                                        "An error occurred processing the tool: \n{}",
+                                        &err
                                     ))],
                                     status: ToolResultStatus::Error,
                                 });
-                                event_builder.is_valid = Some(false);
-                            },
-                        };
-                    },
-                    Err(err) => {
-                        tool_results.push(err);
-                        event_builder.is_valid = Some(false);
-                    },
-                }
-                self.tool_use_events.push(event_builder);
-            }
 
-            // If we have any validation errors, then return them immediately to the model.
-            if !tool_results.is_empty() {
-                debug!(?tool_results, "Error found in the model tools");
-                queue!(
-                    self.output,
-                    style::SetAttribute(Attribute::Bold),
-                    style::Print("Tool validation failed: "),
-                    style::SetAttribute(Attribute::Reset),
-                )?;
-                for tool_result in &tool_results {
-                    for block in &tool_result.content {
-                        let content = match block {
-                            ToolResultContentBlock::Text(t) => Some(t.as_str()),
-                            ToolResultContentBlock::Json(d) => d.as_string(),
-                        };
-                        if let Some(content) = content {
-                            queue!(
-                                self.output,
-                                style::Print("\n"),
-                                style::SetForegroundColor(Color::Red),
-                                style::Print(format!("{}\n", content)),
-                                style::SetForegroundColor(Color::Reset),
-                            )?;
-                        }
-                    }
-                }
-                self.conversation_state.add_tool_results(tool_results);
-                self.send_tool_use_telemetry().await;
-                return Ok(Some(
-                    self.client
-                        .send_message(self.conversation_state.as_sendable_conversation_state())
-                        .await?,
-                ));
-            }
-        }
-
-        // If we have tool uses, display them to the user.
-        if !queued_tools.is_empty() {
-            self.tool_use_recursions += 1;
-            let terminal_width = self.terminal_width();
-            if self.tool_use_recursions > MAX_TOOL_USE_RECURSIONS {
-                bail!("Exceeded max tool use recursion limit: {}", MAX_TOOL_USE_RECURSIONS);
-            }
-
-            for (i, (_, tool)) in queued_tools.iter().enumerate() {
-                queue!(
-                    self.output,
-                    style::SetForegroundColor(Color::Cyan),
-                    style::Print(format!("{}. {}\n", i + 1, tool.display_name())),
-                    style::SetForegroundColor(Color::Reset),
-                    style::SetForegroundColor(Color::DarkGrey),
-                    style::Print(format!("{}\n", "▔".repeat(terminal_width))),
-                    style::SetForegroundColor(Color::Reset),
-                )?;
-                tool.queue_description(&self.ctx, self.output)?;
-                queue!(self.output, style::Print("\n"))?;
-            }
-        }
-
-        let user_input = match self.initial_input.take() {
-            Some(input) => input,
-            None => match (self.ctx.env().get("Q_CHAT_SKIP_TOOL_CONSENT"), !queued_tools.is_empty()) {
-                // Skip prompting the user if they auto consent to the tool use.
-                (Ok(_), true) => "y".to_string(),
-                // Otherwise, read input.
-                _ => {
-                    if !queued_tools.is_empty() {
-                        let terminal_width = self.terminal_width();
-                        execute!(
-                            self.output,
-                            style::SetForegroundColor(Color::DarkGrey),
-                            style::Print("▁".repeat(terminal_width)),
-                            style::ResetColor,
-                            style::Print("\n\nEnter "),
-                            style::SetForegroundColor(Color::Green),
-                            style::Print("y"),
-                            style::ResetColor,
-                            style::Print(format!(
-                                " to run {}, or otherwise continue your conversation.\n\n",
-                                match queued_tools.len() == 1 {
-                                    true => "this tool",
-                                    false => "these tools",
+                                if let Some(builder) = corresponding_builder {
+                                    builder.is_success = Some(false);
                                 }
-                            )),
-                        )?;
-                    }
-                    match self.input_source.read_line(Some("> "))? {
-                        Some(line) => line,
-                        None => return Ok(None),
-                    }
-                },
-            },
-        };
-
-        match user_input.trim() {
-            "exit" | "quit" => Ok(None),
-            // Tool execution.
-            c if c.to_lowercase() == "y" && !queued_tools.is_empty() => {
-                // Execute the requested tools.
-                let terminal_width = self.terminal_width();
-                let mut tool_results = vec![];
-                for tool in queued_tools.drain(..) {
-                    let corresponding_builder = self.tool_use_events.iter_mut().find(|v| {
-                        if let Some(ref v) = v.tool_use_id {
-                            v.eq(&tool.0)
-                        } else {
-                            false
+                            },
                         }
-                    });
+                    }
 
-                    let tool_start = std::time::Instant::now();
-                    queue!(
-                        self.output,
-                        style::Print("\n"),
-                        style::Print("▔".repeat(terminal_width)),
-                        style::Print("\nExecuting "),
-                        style::SetForegroundColor(Color::Cyan),
-                        style::Print(format!("{}...\n\n", tool.1.display_name())),
-                        style::SetForegroundColor(Color::Reset),
-                    )?;
-                    self.spinner = Some(Spinner::new(
-                        Spinners::Dots,
-                        "Running tool... press ctrl + c to terminate early".to_owned(),
+                    self.conversation_state.add_tool_results(tool_results);
+                    self.send_tool_use_telemetry().await;
+                    return Ok(Some(
+                        self.client
+                            .send_message(self.conversation_state.as_sendable_conversation_state())
+                            .await?,
                     ));
-                    should_terminate.store(false, std::sync::atomic::Ordering::SeqCst);
-                    let invoke_result = tokio::select! {
-                        output = tool.1.invoke(&self.ctx, self.output) => Some(output),
-                        _ = sigint_recver.recv() => None
+                },
+                // New user prompt.
+                _ => {
+                    self.tool_use_recursions = 0;
+
+                    if self.is_interactive {
+                        queue!(self.output, style::SetForegroundColor(Color::Magenta))?;
+                        if user_input.contains("@history") {
+                            queue!(self.output, style::Print("Using shell history\n"))?;
+                        }
+                        if user_input.contains("@git") {
+                            queue!(self.output, style::Print("Using git context\n"))?;
+                        }
+                        if user_input.contains("@env") {
+                            queue!(self.output, style::Print("Using environment\n"))?;
+                        }
+                        queue!(self.output, style::SetForegroundColor(Color::Reset))?;
+                        queue!(self.output, cursor::Hide)?;
+                        execute!(self.output, style::Print("\n"))?;
+                        self.spinner = Some(Spinner::new(Spinners::Dots, "Thinking...".to_owned()));
                     }
-                    .map_or(Ok(InvokeOutput::default()), |v| v);
-                    if self.is_interactive && self.spinner.is_some() {
-                        drop(self.spinner.take());
-                        queue!(
-                            self.output,
-                            terminal::Clear(terminal::ClearType::CurrentLine),
-                            cursor::MoveToColumn(0),
-                            cursor::Show
-                        )?;
+
+                    let should_abandon_tool_use = self
+                        .conversation_state
+                        .history
+                        .back()
+                        .and_then(|last_msg| match &last_msg.0 {
+                            fig_api_client::model::ChatMessage::AssistantResponseMessage(msg) => Some(msg),
+                            fig_api_client::model::ChatMessage::UserInputMessage(_) => None,
+                        })
+                        .and_then(|msg| msg.tool_uses.as_ref())
+                        .is_some_and(|tool_use| !tool_use.is_empty());
+
+                    if should_abandon_tool_use {
+                        self.conversation_state.abandon_tool_use(queued_tools, user_input);
+                    } else {
+                        self.conversation_state.append_new_user_message(user_input).await;
                     }
-                    should_terminate.store(true, std::sync::atomic::Ordering::SeqCst);
-                    execute!(self.output, style::Print("\n"))?;
 
-                    let tool_time = std::time::Instant::now().duration_since(tool_start);
-                    let tool_time = format!("{}.{}", tool_time.as_secs(), tool_time.subsec_millis());
-
-                    match invoke_result {
-                        Ok(result) => {
-                            debug!("tool result output: {:#?}", result);
-                            execute!(
-                                self.output,
-                                style::SetForegroundColor(Color::Green),
-                                style::Print(format!("🟢 Completed in {}s", tool_time)),
-                                style::SetForegroundColor(Color::Reset),
-                                style::Print("\n\n"),
-                            )?;
-                            if let Some(builder) = corresponding_builder {
-                                builder.is_success = Some(true);
-                            }
-
-                            tool_results.push(ToolResult {
-                                tool_use_id: tool.0,
-                                content: vec![result.into()],
-                                status: ToolResultStatus::Success,
-                            });
-                        },
-                        Err(err) => {
-                            error!(?err, "An error occurred processing the tool");
-                            execute!(
-                                self.output,
-                                style::SetAttribute(Attribute::Bold),
-                                style::SetForegroundColor(Color::Red),
-                                style::Print(format!("🔴 Execution failed after {}s:\n", tool_time)),
-                                style::SetAttribute(Attribute::Reset),
-                                style::SetForegroundColor(Color::Red),
-                                style::Print(&err),
-                                style::SetAttribute(Attribute::Reset),
-                                style::Print("\n\n"),
-                            )?;
-
-                            tool_results.push(ToolResult {
-                                tool_use_id: tool.0,
-                                content: vec![ToolResultContentBlock::Text(format!(
-                                    "An error occurred processing the tool: \n{}",
-                                    &err
-                                ))],
-                                status: ToolResultStatus::Error,
-                            });
-
-                            if let Some(builder) = corresponding_builder {
-                                builder.is_success = Some(false);
-                            }
-                        },
-                    }
-                }
-
-                self.conversation_state.add_tool_results(tool_results);
-                self.send_tool_use_telemetry().await;
-                Ok(Some(
-                    self.client
-                        .send_message(self.conversation_state.as_sendable_conversation_state())
-                        .await?,
-                ))
-            },
-            // New user prompt.
-            _ => {
-                self.tool_use_recursions = 0;
-
-                if self.is_interactive {
-                    queue!(self.output, style::SetForegroundColor(Color::Magenta))?;
-                    if user_input.contains("@history") {
-                        queue!(self.output, style::Print("Using shell history\n"))?;
-                    }
-                    if user_input.contains("@git") {
-                        queue!(self.output, style::Print("Using git context\n"))?;
-                    }
-                    if user_input.contains("@env") {
-                        queue!(self.output, style::Print("Using environment\n"))?;
-                    }
-                    queue!(self.output, style::SetForegroundColor(Color::Reset))?;
-                    queue!(self.output, cursor::Hide)?;
-                    execute!(self.output, style::Print("\n"))?;
-                    self.spinner = Some(Spinner::new(Spinners::Dots, "Thinking...".to_owned()));
-                }
-
-                let should_abandon_tool_use = self
-                    .conversation_state
-                    .history
-                    .back()
-                    .and_then(|last_msg| match &last_msg.0 {
-                        fig_api_client::model::ChatMessage::AssistantResponseMessage(msg) => Some(msg),
-                        fig_api_client::model::ChatMessage::UserInputMessage(_) => None,
-                    })
-                    .and_then(|msg| msg.tool_uses.as_ref())
-                    .is_some_and(|tool_use| !tool_use.is_empty());
-
-                if should_abandon_tool_use {
-                    self.conversation_state.abandon_tool_use(queued_tools, user_input);
-                } else {
-                    self.conversation_state.append_new_user_message(user_input).await;
-                }
-
-                self.send_tool_use_telemetry().await;
-                Ok(Some(
-                    self.client
-                        .send_message(self.conversation_state.as_sendable_conversation_state())
-                        .await?,
-                ))
-            },
+                    self.send_tool_use_telemetry().await;
+                    return Ok(Some(
+                        self.client
+                            .send_message(self.conversation_state.as_sendable_conversation_state())
+                            .await?,
+                    ));
+                },
+            }
         }
     }
 

@@ -67,6 +67,16 @@ impl Tool {
         }
     }
 
+    /// Whether or not the tool should prompt the user for consent before [Self::invoke] is called.
+    pub fn requires_consent(&self, _ctx: &Context) -> bool {
+        match self {
+            Tool::FsRead(_) => false,
+            Tool::FsWrite(_) => true,
+            Tool::ExecuteBash(_) => true,
+            Tool::UseAws(_) => false,
+        }
+    }
+
     /// Invokes the tool asynchronously
     pub async fn invoke(&self, context: &Context, updates: &mut impl Write) -> Result<InvokeOutput> {
         match self {
@@ -185,9 +195,26 @@ pub fn serde_value_to_document(value: serde_json::Value) -> Document {
     }
 }
 
+/// Performs tilde expansion and other required sanitization modifications for handling tool use
+/// path arguments.
+///
+/// Required since path arguments are defined by the model.
 #[allow(dead_code)]
-fn path_expand(_ctx: &Context, _path: impl AsRef<Path>) -> PathBuf {
-    PathBuf::new()
+fn sanitize_path_tool_arg(ctx: &Context, path: impl AsRef<Path>) -> PathBuf {
+    let mut res = PathBuf::new();
+    // Expand `~` only if it is the first part.
+    let mut path = path.as_ref().components();
+    match path.next() {
+        Some(p) if p.as_os_str() == "~" => {
+            res.push(ctx.env().home().unwrap_or_default());
+        },
+        Some(p) => res.push(p),
+        None => return res,
+    }
+    res.push(path);
+    // For testing scenarios, we need to make sure paths are appropriately handled in chroot test
+    // file systems since they are passed directly from the model.
+    ctx.fs().chroot_path(res)
 }
 
 /// Converts `path` to a relative path according to the current working directory `cwd`.
@@ -341,6 +368,8 @@ fn stylized_file(
 
 #[cfg(test)]
 mod tests {
+    use fig_os_shim::EnvProvider;
+
     use super::*;
 
     #[test]
@@ -351,5 +380,29 @@ mod tests {
         assert_eq!(terminal_width(99), 2);
         assert_eq!(terminal_width(100), 3);
         assert_eq!(terminal_width(999), 3);
+    }
+
+    #[tokio::test]
+    async fn test_tilde_path_expansion() {
+        let ctx = Context::builder().with_test_home().await.unwrap().build_fake();
+
+        let actual = sanitize_path_tool_arg(&ctx, "~");
+        assert_eq!(
+            actual,
+            ctx.fs().chroot_path(ctx.env().home().unwrap()),
+            "tilde should expand"
+        );
+        let actual = sanitize_path_tool_arg(&ctx, "~/hello");
+        assert_eq!(
+            actual,
+            ctx.fs().chroot_path(ctx.env().home().unwrap().join("hello")),
+            "tilde should expand"
+        );
+        let actual = sanitize_path_tool_arg(&ctx, "/~");
+        assert_eq!(
+            actual,
+            ctx.fs().chroot_path("/~"),
+            "tilde should not expand when not the first component"
+        );
     }
 }

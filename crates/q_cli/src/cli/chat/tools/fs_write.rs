@@ -1,6 +1,5 @@
 use std::borrow::Cow;
 use std::io::Write;
-use std::path::PathBuf;
 
 use crossterm::queue;
 use crossterm::style::{
@@ -18,6 +17,7 @@ use serde::Deserialize;
 use super::{
     InvokeOutput,
     format_path,
+    sanitize_path_tool_arg,
     stylize_output_if_able,
 };
 
@@ -46,8 +46,9 @@ impl FsWrite {
         let cwd = ctx.env().current_dir()?;
         match self {
             FsWrite::Create { path, file_text } => {
-                let relative_path = format_path(cwd, fs.chroot_path(path));
-                let invoke_description = if fs.exists(path) {
+                let path = sanitize_path_tool_arg(ctx, path);
+                let relative_path = format_path(cwd, fs.chroot_path(&path));
+                let invoke_description = if fs.exists(&path) {
                     "Replacing the current file contents at"
                 } else {
                     "Creating a new file at"
@@ -63,12 +64,13 @@ impl FsWrite {
                 Ok(Default::default())
             },
             FsWrite::StrReplace { path, old_str, new_str } => {
+                let path = sanitize_path_tool_arg(ctx, path);
                 let file = fs.read_to_string(&path).await?;
                 let matches = file.match_indices(old_str).collect::<Vec<_>>();
                 queue!(
                     updates,
                     style::SetForegroundColor(Color::Green),
-                    style::Print(format!("Updating {}", format_path(cwd, path))),
+                    style::Print(format!("Updating {}", format_path(cwd, &path))),
                     style::ResetColor,
                     style::Print("\n"),
                 )?;
@@ -160,13 +162,13 @@ impl FsWrite {
                 insert_line,
                 new_str,
             } => {
-                let path = format_path(cwd, path);
-                let file = stylize_output_if_able(ctx, &path, new_str, Some(*insert_line), Some("+"));
+                let relative_path = format_path(cwd, path);
+                let file = stylize_output_if_able(ctx, &relative_path, new_str, Some(*insert_line), Some("+"));
                 queue!(
                     updates,
                     style::Print("Path: "),
                     style::SetForegroundColor(Color::Green),
-                    style::Print(path),
+                    style::Print(relative_path),
                     style::ResetColor,
                     style::Print("\n\nContents:\n"),
                     style::Print(file),
@@ -175,20 +177,20 @@ impl FsWrite {
                 Ok(())
             },
             FsWrite::StrReplace { path, old_str, new_str } => {
-                let path = format_path(cwd, path);
-                let file = ctx.fs().read_to_string_sync(&path)?;
+                let relative_path = format_path(cwd, path);
+                let file = ctx.fs().read_to_string_sync(&relative_path)?;
                 // TODO: we should pass some additional lines as context before and after the file.
                 let (start_line, _) = match line_number_at(&file, old_str) {
                     Some((start_line, end_line)) => (Some(start_line), Some(end_line)),
                     _ => (None, None),
                 };
-                let old_str = stylize_output_if_able(ctx, &path, old_str, start_line, Some("-"));
-                let new_str = stylize_output_if_able(ctx, &path, new_str, start_line, Some("+"));
+                let old_str = stylize_output_if_able(ctx, &relative_path, old_str, start_line, Some("-"));
+                let new_str = stylize_output_if_able(ctx, &relative_path, new_str, start_line, Some("+"));
                 queue!(
                     updates,
                     style::Print("Path: "),
                     style::SetForegroundColor(Color::Green),
-                    style::Print(path),
+                    style::Print(relative_path),
                     style::ResetColor,
                     style::Print("\n\n"),
                     style::Print("Replacing:\n"),
@@ -204,7 +206,7 @@ impl FsWrite {
         }
     }
 
-    pub async fn validate(&mut self, _ctx: &Context) -> Result<()> {
+    pub async fn validate(&mut self, ctx: &Context) -> Result<()> {
         match self {
             FsWrite::Create { path, .. } => {
                 if path.is_empty() {
@@ -212,7 +214,8 @@ impl FsWrite {
                 };
             },
             FsWrite::StrReplace { path, .. } | FsWrite::Insert { path, .. } => {
-                if !PathBuf::from(&path).exists() {
+                let path = sanitize_path_tool_arg(ctx, path);
+                if !path.exists() {
                     bail!("The provided path must exist in order to replace or insert contents into it")
                 }
             },
