@@ -75,7 +75,7 @@ impl FsWrite {
                     style::Print("\n"),
                 )?;
                 match matches.len() {
-                    0 => Err(eyre!("no occurrences of old_str were found")),
+                    0 => Err(eyre!("no occurrences of \"{old_str}\" were found")),
                     1 => {
                         let file = file.replacen(old_str, new_str, 1);
                         fs.write(path, file).await?;
