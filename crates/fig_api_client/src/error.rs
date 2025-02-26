@@ -44,6 +44,10 @@ pub enum Error {
     #[error("{}", SdkErrorDisplay(.0))]
     QDeveloperChatResponseStream(#[from] SdkError<QDeveloperChatResponseStreamError, RawMessage>),
 
+    // quota breach
+    #[error("quota has reached its limit")]
+    QuotaBreach(&'static str),
+
     #[error(transparent)]
     SmithyBuild(#[from] aws_smithy_types::error::operation::BuildError),
 
@@ -66,7 +70,8 @@ impl Error {
             Error::CodewhispererChatResponseStream(_)
             | Error::QDeveloperChatResponseStream(_)
             | Error::SmithyBuild(_)
-            | Error::UnsupportedConsolas(_) => false,
+            | Error::UnsupportedConsolas(_) 
+            | Error::QuotaBreach(_) => false,
         }
     }
 
@@ -82,7 +87,8 @@ impl Error {
             Error::CodewhispererChatResponseStream(_)
             | Error::QDeveloperChatResponseStream(_)
             | Error::SmithyBuild(_)
-            | Error::UnsupportedConsolas(_) => false,
+            | Error::UnsupportedConsolas(_) 
+            | Error::QuotaBreach(_) => false,
         }
     }
 }

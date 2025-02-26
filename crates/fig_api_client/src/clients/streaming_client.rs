@@ -5,6 +5,7 @@ use std::sync::{
 
 use amzn_codewhisperer_streaming_client::Client as CodewhispererStreamingClient;
 use amzn_qdeveloper_streaming_client::Client as QDeveloperStreamingClient;
+use aws_smithy_runtime_api::http::StatusCode;
 use aws_types::request_id::RequestId;
 use fig_auth::builder_id::BearerResolver;
 use fig_aws_common::{
@@ -119,14 +120,23 @@ impl StreamingClient {
                     )
                     .build()
                     .expect("building conversation_state should not fail");
+                let response = client
+                    .generate_assistant_response()
+                    .conversation_state(conversation_state)
+                    .send()
+                    .await;
 
-                Ok(SendMessageOutput::Codewhisperer(
-                    client
-                        .generate_assistant_response()
-                        .conversation_state(conversation_state)
-                        .send()
-                        .await?,
-                ))
+                match response {
+                    Ok(resp) => Ok(SendMessageOutput::Codewhisperer(resp)),
+                    Err(e) => {
+                        let is_quota_breach = e.raw_response().is_some_and(|resp| resp.status().as_u16() == 429);
+                        if is_quota_breach {
+                            Err(Error::QuotaBreach("quota has reached its limit"))
+                        } else {
+                            Err(e.into())
+                        }
+                    },
+                }
             },
             inner::Inner::QDeveloper(client) => {
                 let conversation_state_builder = amzn_qdeveloper_streaming_client::types::ConversationState::builder()
