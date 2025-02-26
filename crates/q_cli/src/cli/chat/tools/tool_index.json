@@ -75,7 +75,7 @@
   },
   {
     "name": "use_aws",
-    "description": "Make an AWS CLI api call with the specified service, operation, and parameters. The arguments MUST conform to the AWS CLI specification. You may not create resources or perform any write or mutating actions. You may only use this tool to call read operations with names that start with: get, describe, list, search, batch_get.",
+    "description": "Make an AWS CLI api call with the specified service, operation, and parameters. The arguments MUST conform to the AWS CLI specification.",
     "input_schema": {
       "type": "object",
       "properties": {

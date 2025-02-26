@@ -63,7 +63,7 @@ impl Tool {
             Tool::FsRead(_) => "Read from filesystem",
             Tool::FsWrite(_) => "Write to filesystem",
             Tool::ExecuteBash(_) => "Execute shell command",
-            Tool::UseAws(_) => "Read AWS resources",
+            Tool::UseAws(_) => "Use AWS CLI",
         }
     }
 
@@ -73,7 +73,7 @@ impl Tool {
             Tool::FsRead(_) => false,
             Tool::FsWrite(_) => true,
             Tool::ExecuteBash(_) => true,
-            Tool::UseAws(_) => false,
+            Tool::UseAws(use_aws) => use_aws.requires_consent(),
         }
     }
 

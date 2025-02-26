@@ -21,19 +21,6 @@ use super::{
 
 const ALLOWED_OPS: [&str; 6] = ["get", "describe", "list", "ls", "search", "batch_get"];
 
-#[derive(Debug, thiserror::Error)]
-enum AwsToolError {
-    ForbiddenOperation(String),
-}
-
-impl std::fmt::Display for AwsToolError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            AwsToolError::ForbiddenOperation(op) => Ok(writeln!(f, "Forbidden operation encountered: {}", op)?),
-        }
-    }
-}
-
 // TODO: we should perhaps composite this struct with an interface that we can use to mock the
 // actual cli with. That will allow us to more thoroughly test it.
 #[derive(Debug, Deserialize)]
@@ -47,14 +34,8 @@ pub struct UseAws {
 }
 
 impl UseAws {
-    fn validate_operation(&self) -> Result<(), AwsToolError> {
-        let operation_name = &self.operation_name;
-        for op in ALLOWED_OPS {
-            if self.operation_name.starts_with(op) {
-                return Ok(());
-            }
-        }
-        Err(AwsToolError::ForbiddenOperation(operation_name.clone()))
+    pub fn requires_consent(&self) -> bool {
+        !ALLOWED_OPS.iter().any(|op| self.operation_name.starts_with(op))
     }
 
     pub async fn invoke(&self, _ctx: &Context, _updates: impl Write) -> Result<InvokeOutput> {
@@ -129,14 +110,47 @@ impl UseAws {
     }
 
     pub async fn validate(&mut self, _ctx: &Context) -> Result<()> {
-        self.validate_operation()
-            .wrap_err_with(|| format!("Unable to spawn command '{:?}'", &self))
+        Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    macro_rules! use_aws {
+        ($value:tt) => {
+            serde_json::from_value::<UseAws>(serde_json::json!($value)).unwrap()
+        };
+    }
+
+    #[test]
+    fn test_requires_consent() {
+        let cmd = use_aws! {{
+            "service_name": "ecs",
+            "operation_name": "list-task-definitions",
+            "region": "us-west-2",
+            "profile_name": "default",
+            "label": ""
+        }};
+        assert!(!cmd.requires_consent());
+        let cmd = use_aws! {{
+            "service_name": "lambda",
+            "operation_name": "list-functions",
+            "region": "us-west-2",
+            "profile_name": "default",
+            "label": ""
+        }};
+        assert!(!cmd.requires_consent());
+        let cmd = use_aws! {{
+            "service_name": "s3",
+            "operation_name": "put-object",
+            "region": "us-west-2",
+            "profile_name": "default",
+            "label": ""
+        }};
+        assert!(cmd.requires_consent());
+    }
 
     #[tokio::test]
     #[ignore = "not in ci"]
