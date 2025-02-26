@@ -75,7 +75,7 @@
   },
   {
     "name": "use_aws",
-    "description": "Make an AWS CLI api call with the specified service, operation, and parameters. The arguments MUST conform to the AWS CLI specification.",
+    "description": "Make an AWS CLI api call with the specified service, operation, and parameters. All arguments MUST conform to the AWS CLI specification.",
     "input_schema": {
       "type": "object",
       "properties": {
@@ -89,7 +89,7 @@
         },
         "parameters": {
           "type": "object",
-          "description": "The parameters for the operation. Each parameter must be encoded as a string."
+          "description": "The parameters for the operation. The parameter keys MUST conform to the AWS CLI specification. You should prefer to use JSON Syntax over shorthand syntax wherever possible."
         },
         "region": {
           "type": "string",

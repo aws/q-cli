@@ -34,6 +34,7 @@ clap_complete = "4.5.39"
 clap_complete_fig = "4.4.0"
 color-eyre = "0.6.2"
 color-print = "0.3.5"
+convert_case.workspace = true
 crossterm = { version = "0.28.1", features = ["event-stream"] }
 ctrlc = "3.2.5"
 dialoguer = { version = "0.11.0", features = ["fuzzy-select"] }

@@ -3,6 +3,10 @@ use std::io::Write;
 use std::process::Stdio;
 
 use bstr::ByteSlice;
+use convert_case::{
+    Case,
+    Casing,
+};
 use crossterm::{
     queue,
     style,
@@ -19,7 +23,7 @@ use super::{
     OutputKind,
 };
 
-const ALLOWED_OPS: [&str; 6] = ["get", "describe", "list", "ls", "search", "batch_get"];
+const READONLY_OPS: [&str; 6] = ["get", "describe", "list", "ls", "search", "batch_get"];
 
 // TODO: we should perhaps composite this struct with an interface that we can use to mock the
 // actual cli with. That will allow us to more thoroughly test it.
@@ -27,7 +31,7 @@ const ALLOWED_OPS: [&str; 6] = ["get", "describe", "list", "ls", "search", "batc
 pub struct UseAws {
     pub service_name: String,
     pub operation_name: String,
-    pub parameters: Option<HashMap<String, String>>,
+    pub parameters: Option<HashMap<String, serde_json::Value>>,
     pub region: String,
     pub profile_name: Option<String>,
     pub label: Option<String>,
@@ -35,7 +39,7 @@ pub struct UseAws {
 
 impl UseAws {
     pub fn requires_consent(&self) -> bool {
-        !ALLOWED_OPS.iter().any(|op| self.operation_name.starts_with(op))
+        !READONLY_OPS.iter().any(|op| self.operation_name.starts_with(op))
     }
 
     pub async fn invoke(&self, _ctx: &Context, _updates: impl Write) -> Result<InvokeOutput> {
@@ -45,15 +49,9 @@ impl UseAws {
             command.arg("--profile").arg(profile_name);
         }
         command.arg(&self.service_name).arg(&self.operation_name);
-        if let Some(parameters) = &self.parameters {
-            for (param_name, val) in parameters {
-                // Model might sometimes give parameters capitalized.
-                let param_name = param_name.to_lowercase();
-                if param_name.starts_with("--") {
-                    command.arg(param_name).arg(val);
-                } else {
-                    command.arg(format!("--{}", param_name)).arg(val);
-                }
+        if let Some(parameters) = self.cli_parameters() {
+            for (name, val) in parameters {
+                command.arg(name).arg(val);
             }
         }
         let output = command
@@ -87,11 +85,11 @@ impl UseAws {
             style::Print("Running aws cli command:\n"),
             style::Print(format!("Service name: {}\n", self.service_name)),
             style::Print(format!("Operation name: {}\n", self.operation_name)),
-            style::Print("Parameters: \n".to_string()),
         )?;
         if let Some(parameters) = &self.parameters {
+            queue!(updates, style::Print("Parameters: \n".to_string()))?;
             for (name, value) in parameters {
-                queue!(updates, style::Print(format!("{}: {}\n", name, value)))?;
+                queue!(updates, style::Print(format!("- {}: {}\n", name, value)))?;
             }
         }
 
@@ -111,6 +109,22 @@ impl UseAws {
 
     pub async fn validate(&mut self, _ctx: &Context) -> Result<()> {
         Ok(())
+    }
+
+    /// Returns the CLI arguments properly formatted as kebab case if parameters is
+    /// [Option::Some], otherwise None
+    fn cli_parameters(&self) -> Option<Vec<(String, String)>> {
+        if let Some(parameters) = &self.parameters {
+            let mut params = vec![];
+            for (param_name, val) in parameters {
+                let param_name = format!("--{}", param_name.trim_start_matches("--").to_case(Case::Kebab));
+                let param_val = val.as_str().map(|s| s.to_string()).unwrap_or(val.to_string());
+                params.push((param_name, param_val));
+            }
+            Some(params)
+        } else {
+            None
+        }
     }
 }
 
@@ -150,6 +164,34 @@ mod tests {
             "label": ""
         }};
         assert!(cmd.requires_consent());
+    }
+
+    #[test]
+    fn test_use_aws_deser() {
+        let cmd = use_aws! {{
+            "service_name": "s3",
+            "operation_name": "put-object",
+            "parameters": {
+                "TableName": "table-name",
+                "KeyConditionExpression": "PartitionKey = :pkValue"
+            },
+            "region": "us-west-2",
+            "profile_name": "default",
+            "label": ""
+        }};
+        let params = cmd.cli_parameters().unwrap();
+        assert!(
+            params.iter().any(|p| p.0 == "--table-name" && p.1 == "table-name"),
+            "not found in {:?}",
+            params
+        );
+        assert!(
+            params
+                .iter()
+                .any(|p| p.0 == "--key-condition-expression" && p.1 == "PartitionKey = :pkValue"),
+            "not found in {:?}",
+            params
+        );
     }
 
     #[tokio::test]

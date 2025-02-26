@@ -2757,7 +2757,7 @@ dependencies = [
  "aws-smithy-runtime-api",
  "aws-smithy-types",
  "aws-types",
- "http 0.2.12",
+ "http 1.2.0",
  "tracing",
 ]
 
@@ -6782,6 +6782,7 @@ dependencies = [
  "clap_complete_fig",
  "color-eyre",
  "color-print",
+ "convert_case 0.6.0",
  "criterion",
  "crossterm",
  "ctrlc",

@@ -126,7 +126,7 @@ impl Intercept for UserAgentOverrideInterceptor {
         )?;
 
         let headers = context.request_mut().headers_mut();
-        headers.insert(USER_AGENT, ua.aws_ua_header());
+        headers.insert(USER_AGENT.as_str(), ua.aws_ua_header());
         Ok(())
     }
 }
