@@ -149,16 +149,30 @@ fn load_tools() -> Result<ToolConfiguration> {
     })
 }
 
-fn print_error<W: Write>(output: &mut W, message: &str) -> Result<(), std::io::Error> {
-    execute!(
+fn print_error<W: Write>(output: &mut W, prepend_msg: &str, report: Option<eyre::Report>) -> Result<(), std::io::Error> {
+    queue!(
         output,
         style::SetAttribute(Attribute::Bold),
         style::SetForegroundColor(Color::Red),
-        style::Print(message),
-        style::Print("\nPlease try again later.\n\n"),
+    )?;
+    if let Some(report) = report {
+        queue!(
+            output,
+            style::Print(format!("{}: {:?}\n", prepend_msg, report)),
+        )?;
+    } else {
+        queue!(
+            output,
+            style::Print(prepend_msg),
+            style::Print("\n")
+        )?;
+    }
+    queue!(
+        output,
         style::SetForegroundColor(Color::Reset),
         style::SetAttribute(Attribute::Reset),
-    )
+    )?;
+    Ok(output.flush()?)
 }
 
 /// Required fields for initializing a new chat session.
@@ -265,15 +279,15 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                             )?;
                         }
                         match e {
-                            PromptAndSendError::FigClientErrror(ref err) => {
+                            PromptAndSendError::FigClientErrror(err) => {
                                 if let fig_api_client::Error::QuotaBreach(msg) = err {
-                                    print_error(self.output, msg)?;
+                                    print_error(self.output, msg, None)?;
                                 } else {
-                                    print_error(self.output, &format!("Amazon Q is having trouble responding right now: {:?}\n", err))?;
+                                    print_error(self.output, "Amazon Q is having trouble responding right now", Some(err.into()))?;
                                 }
                             }
                             _ => {
-                                print_error(self.output, &format!("Amazon Q is having trouble responding right now: {:?}\n", e))?;
+                                print_error(self.output, "Amazon Q is having trouble responding right now", Some(e.into()))?;
                             }
                         }
                         if self.conversation_state.next_message.is_none() {
