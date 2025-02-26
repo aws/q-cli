@@ -289,7 +289,7 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                 }
             }
 
-            let mut waiting_for_tool = false;
+            let mut tool_name_being_recvd: Option<String> = None;
             loop {
                 match parser.recv().await {
                     Ok(msg_event) => {
@@ -307,14 +307,10 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                                 });
                             },
                             parser::ResponseEvent::ToolUseStart { name } => {
-                                if self.is_interactive {
-                                    execute!(self.output, style::Print("\n\n"))?;
-                                    self.spinner = Some(Spinner::new(
-                                        Spinners::Dots,
-                                        format!("Creating tool {}...", name.green()),
-                                    ));
-                                }
-                                waiting_for_tool = true;
+                                // We need to flush the buffer here, otherwise text will not be
+                                // printed while we are receiving tool use events.
+                                buf.push('\n');
+                                tool_name_being_recvd = Some(name);
                             },
                             parser::ResponseEvent::AssistantText(text) => {
                                 buf.push_str(&text);
@@ -330,7 +326,7 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                                     )?;
                                 }
                                 self.tool_uses.push(tool_use);
-                                waiting_for_tool = false;
+                                tool_name_being_recvd = None;
                             },
                             parser::ResponseEvent::EndStream { message } => {
                                 self.conversation_state.push_assistant_message(message);
@@ -373,7 +369,7 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                     buf.push('\n');
                 }
 
-                if !waiting_for_tool && !buf.is_empty() && self.is_interactive && self.spinner.is_some() {
+                if tool_name_being_recvd.is_none() && !buf.is_empty() && self.is_interactive && self.spinner.is_some() {
                     drop(self.spinner.take());
                     queue!(
                         self.output,
@@ -398,6 +394,15 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                             None => break, // Data was incomplete
                         },
                     }
+                }
+
+                // Set spinner after showing all of the assistant text content so far.
+                if let (Some(name), true) = (&tool_name_being_recvd, self.is_interactive) {
+                    execute!(self.output, style::Print("\n"))?;
+                    self.spinner = Some(Spinner::new(
+                        Spinners::Dots,
+                        format!("Creating tool {}...", name.clone().green()),
+                    ));
                 }
 
                 if ended {

@@ -86,11 +86,10 @@ impl ResponseParser {
             self.next().await?;
             match self.peek().await? {
                 Some(ChatResponseStream::CodeReferenceEvent(_)) => (),
-                Some(_) => {
+                _ => {
                     self.assistant_text.push_str(&content);
                     return Ok(ResponseEvent::AssistantText(content));
                 },
-                None => (),
             }
         }
 
