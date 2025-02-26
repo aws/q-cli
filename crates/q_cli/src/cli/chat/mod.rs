@@ -172,7 +172,7 @@ fn print_error<W: Write>(output: &mut W, prepend_msg: &str, report: Option<eyre:
         style::SetForegroundColor(Color::Reset),
         style::SetAttribute(Attribute::Reset),
     )?;
-    Ok(output.flush()?)
+    output.flush()
 }
 
 /// Required fields for initializing a new chat session.
