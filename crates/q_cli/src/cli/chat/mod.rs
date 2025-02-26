@@ -1,11 +1,11 @@
 mod conversation_state;
+mod error;
 mod input_source;
 mod parse;
 mod parser;
 mod prompt;
 mod stdio;
 mod tools;
-mod error;
 use std::collections::HashMap;
 use std::io::{
     IsTerminal,
@@ -149,23 +149,20 @@ fn load_tools() -> Result<ToolConfiguration> {
     })
 }
 
-fn print_error<W: Write>(output: &mut W, prepend_msg: &str, report: Option<eyre::Report>) -> Result<(), std::io::Error> {
+fn print_error<W: Write>(
+    output: &mut W,
+    prepend_msg: &str,
+    report: Option<eyre::Report>,
+) -> Result<(), std::io::Error> {
     queue!(
         output,
         style::SetAttribute(Attribute::Bold),
         style::SetForegroundColor(Color::Red),
     )?;
     if let Some(report) = report {
-        queue!(
-            output,
-            style::Print(format!("{}: {:?}\n", prepend_msg, report)),
-        )?;
+        queue!(output, style::Print(format!("{}: {:?}\n", prepend_msg, report)),)?;
     } else {
-        queue!(
-            output,
-            style::Print(prepend_msg),
-            style::Print("\n")
-        )?;
+        queue!(output, style::Print(prepend_msg), style::Print("\n"))?;
     }
     queue!(
         output,
@@ -279,16 +276,24 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                             )?;
                         }
                         match e {
-                            PromptAndSendError::FigClientErrror(err) => {
+                            PromptAndSendError::FigClientError(err) => {
                                 if let fig_api_client::Error::QuotaBreach(msg) = err {
                                     print_error(self.output, msg, None)?;
                                 } else {
-                                    print_error(self.output, "Amazon Q is having trouble responding right now", Some(err.into()))?;
+                                    print_error(
+                                        self.output,
+                                        "Amazon Q is having trouble responding right now",
+                                        Some(err.into()),
+                                    )?;
                                 }
-                            }
+                            },
                             _ => {
-                                print_error(self.output, "Amazon Q is having trouble responding right now", Some(e.into()))?;
-                            }
+                                print_error(
+                                    self.output,
+                                    "Amazon Q is having trouble responding right now",
+                                    Some(e.into()),
+                                )?;
+                            },
                         }
                         if self.conversation_state.next_message.is_none() {
                             self.conversation_state.history.pop_back();
@@ -579,7 +584,9 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                 self.tool_use_recursions += 1;
                 let terminal_width = self.terminal_width();
                 if self.tool_use_recursions > MAX_TOOL_USE_RECURSIONS {
-                    return Err(eyre::eyre!("Exceeded max tool use recursion limit: {}", MAX_TOOL_USE_RECURSIONS).into());
+                    return Err(
+                        eyre::eyre!("Exceeded max tool use recursion limit: {}", MAX_TOOL_USE_RECURSIONS).into(),
+                    );
                 }
 
                 for (i, (_, tool)) in queued_tools.iter().enumerate() {

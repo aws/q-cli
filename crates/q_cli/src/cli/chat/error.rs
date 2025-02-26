@@ -2,7 +2,7 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum PromptAndSendError {
-    FigClientErrror(fig_api_client::Error),
+    FigClientError(fig_api_client::Error),
     IO(std::io::Error),
     Report(eyre::Report),
 }
@@ -10,7 +10,7 @@ pub enum PromptAndSendError {
 impl std::fmt::Display for PromptAndSendError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            PromptAndSendError::FigClientErrror(err) => err.fmt(f),
+            PromptAndSendError::FigClientError(err) => err.fmt(f),
             PromptAndSendError::IO(err) => err.fmt(f),
             PromptAndSendError::Report(err) => err.fmt(f),
         }
@@ -19,7 +19,7 @@ impl std::fmt::Display for PromptAndSendError {
 
 impl From<fig_api_client::Error> for PromptAndSendError {
     fn from(value: fig_api_client::Error) -> Self {
-        PromptAndSendError::FigClientErrror(value)
+        PromptAndSendError::FigClientError(value)
     }
 }
 

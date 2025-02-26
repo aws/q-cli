@@ -5,7 +5,6 @@ use std::sync::{
 
 use amzn_codewhisperer_streaming_client::Client as CodewhispererStreamingClient;
 use amzn_qdeveloper_streaming_client::Client as QDeveloperStreamingClient;
-use aws_smithy_runtime_api::http::StatusCode;
 use aws_types::request_id::RequestId;
 use fig_auth::builder_id::BearerResolver;
 use fig_aws_common::{

@@ -70,7 +70,7 @@ impl Error {
             Error::CodewhispererChatResponseStream(_)
             | Error::QDeveloperChatResponseStream(_)
             | Error::SmithyBuild(_)
-            | Error::UnsupportedConsolas(_) 
+            | Error::UnsupportedConsolas(_)
             | Error::QuotaBreach(_) => false,
         }
     }
@@ -87,7 +87,7 @@ impl Error {
             Error::CodewhispererChatResponseStream(_)
             | Error::QDeveloperChatResponseStream(_)
             | Error::SmithyBuild(_)
-            | Error::UnsupportedConsolas(_) 
+            | Error::UnsupportedConsolas(_)
             | Error::QuotaBreach(_) => false,
         }
     }
