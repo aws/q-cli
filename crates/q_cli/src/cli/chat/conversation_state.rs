@@ -569,8 +569,8 @@ mod tests {
         let s = conversation_state.as_sendable_conversation_state();
         assert_eq!(
             s.history.as_ref().unwrap().len(),
-            MAX_CONVERSATION_STATE_HISTORY_LEN,
-            "history should be capped at {}",
+            MAX_CONVERSATION_STATE_HISTORY_LEN - 1,
+            "history should be capped at {}, and we would only see 24 after truncating because we would be removing 2 at a time",
             MAX_CONVERSATION_STATE_HISTORY_LEN
         );
         let last_msg = s.history.as_ref().unwrap().iter().last().unwrap();
