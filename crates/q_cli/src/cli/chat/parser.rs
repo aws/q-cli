@@ -4,18 +4,21 @@ use eyre::Result;
 use fig_api_client::clients::SendMessageOutput;
 use fig_api_client::model::{
     AssistantResponseMessage,
-    ChatMessage,
     ChatResponseStream,
     ToolUse as FigToolUse,
+};
+use rand::distributions::{
+    Alphanumeric,
+    DistString,
 };
 use thiserror::Error;
 use tracing::{
     error,
+    info,
     trace,
 };
 
 use super::tools::serde_value_to_document;
-use crate::cli::chat::conversation_state::Message;
 
 /// Represents a tool use requested by the assistant.
 #[derive(Debug, Clone)]
@@ -48,7 +51,7 @@ pub enum RecvError {
     UnexpectedToolUseEos {
         tool_use_id: String,
         name: String,
-        message: Box<Message>,
+        message: Box<AssistantResponseMessage>,
     },
 }
 
@@ -64,8 +67,8 @@ pub struct ResponseParser {
     response: SendMessageOutput,
     /// Buffer to hold the next event in [SendMessageOutput].
     peek: Option<ChatResponseStream>,
-    /// Message identifier for the assistant's response.
-    message_id: Option<String>,
+    /// Message identifier for the assistant's response. Randomly generated on creation.
+    message_id: String,
     /// Buffer for holding the accumulated assistant response.
     assistant_text: String,
     /// Tool uses requested by the model.
@@ -77,10 +80,12 @@ pub struct ResponseParser {
 
 impl ResponseParser {
     pub fn new(response: SendMessageOutput) -> Self {
+        let message_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 9);
+        info!(?message_id, "Generated new message id");
         Self {
             response,
             peek: None,
-            message_id: None,
+            message_id,
             assistant_text: String::new(),
             tool_uses: Vec::new(),
             parsing_tool_use: None,
@@ -121,17 +126,6 @@ impl ResponseParser {
                     ChatResponseStream::InvalidStateEvent { reason, message } => {
                         error!(%reason, %message, "invalid state event");
                     },
-                    ChatResponseStream::MessageMetadataEvent {
-                        conversation_id,
-                        utterance_id,
-                    } => {
-                        if let Some(id) = utterance_id {
-                            self.message_id = Some(id);
-                        }
-                        if let Some(id) = conversation_id {
-                            return Ok(ResponseEvent::ConversationId(id));
-                        }
-                    },
                     ChatResponseStream::ToolUseEvent {
                         tool_use_id,
                         name,
@@ -149,15 +143,15 @@ impl ResponseParser {
                     _ => {},
                 },
                 Ok(None) => {
-                    let message = Message(ChatMessage::AssistantResponseMessage(AssistantResponseMessage {
-                        message_id: self.message_id.take(),
+                    let message = AssistantResponseMessage {
+                        message_id: Some(self.message_id.clone()),
                         content: std::mem::take(&mut self.assistant_text),
                         tool_uses: if self.tool_uses.is_empty() {
                             None
                         } else {
                             Some(self.tool_uses.clone().into_iter().map(Into::into).collect())
                         },
-                    }));
+                    };
                     return Ok(ResponseEvent::EndStream { message });
                 },
                 Err(err) => return Err(err.into()),
@@ -208,13 +202,11 @@ impl ResponseParser {
                             .collect(),
                         ),
                     });
-                    let message = Box::new(Message(ChatMessage::AssistantResponseMessage(
-                        AssistantResponseMessage {
-                            message_id: self.message_id.take(),
-                            content: std::mem::take(&mut self.assistant_text),
-                            tool_uses: Some(self.tool_uses.clone().into_iter().map(Into::into).collect()),
-                        },
-                    )));
+                    let message = Box::new(AssistantResponseMessage {
+                        message_id: Some(self.message_id.clone()),
+                        content: std::mem::take(&mut self.assistant_text),
+                        tool_uses: Some(self.tool_uses.clone().into_iter().map(Into::into).collect()),
+                    });
                     return Err(RecvError::UnexpectedToolUseEos {
                         tool_use_id: id,
                         name,
@@ -256,8 +248,6 @@ impl ResponseParser {
 
 #[derive(Debug)]
 pub enum ResponseEvent {
-    /// Conversation identifier returned by the backend.
-    ConversationId(String),
     /// Text returned by the assistant. This should be displayed to the user as it is received.
     AssistantText(String),
     /// Notification that a tool use is being received.
@@ -270,7 +260,7 @@ pub enum ResponseEvent {
         /// The completed message containing all of the assistant text and tool use events
         /// previously emitted. This should be stored in the conversation history and sent in
         /// subsequent requests.
-        message: Message,
+        message: AssistantResponseMessage,
     },
 }
 

@@ -8,6 +8,7 @@ use eyre::{
     bail,
 };
 use fig_api_client::model::{
+    AssistantResponseMessage,
     ChatMessage,
     ConversationState as FigConversationState,
     EnvState,
@@ -28,9 +29,14 @@ use fig_settings::history::{
     OrderBy,
 };
 use fig_util::Shell;
+use rand::distributions::{
+    Alphanumeric,
+    DistString,
+};
 use regex::Regex;
 use tracing::{
     error,
+    info,
     warn,
 };
 
@@ -66,18 +72,21 @@ const MAX_CONVERSATION_STATE_HISTORY_LEN: usize = 25;
 /// Tracks state related to an ongoing conversation.
 #[derive(Debug, Clone)]
 pub struct ConversationState {
-    pub conversation_id: Option<String>,
+    /// Randomly generated on creation.
+    conversation_id: String,
     /// The next user message to be sent as part of the conversation. Required to be [Some] before
     /// calling [Self::as_sendable_conversation_state].
-    pub next_message: Option<Message>,
-    pub history: VecDeque<Message>,
+    pub next_message: Option<UserInputMessage>,
+    pub history: VecDeque<ChatMessage>,
     tools: Vec<Tool>,
 }
 
 impl ConversationState {
     pub fn new(tool_config: ToolConfiguration) -> Self {
+        let conversation_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 9);
+        info!(?conversation_id, "Generated new conversation id");
         Self {
-            conversation_id: None,
+            conversation_id,
             next_message: None,
             history: VecDeque::new(),
             tools: tool_config
@@ -126,30 +135,32 @@ impl ConversationState {
             }
         }
 
-        let msg = Message(ChatMessage::UserInputMessage(UserInputMessage {
+        let msg = UserInputMessage {
             content: input,
             user_input_message_context: Some(user_input_message_context),
             user_intent: None,
-        }));
+        };
         self.next_message = Some(msg);
     }
 
-    pub fn push_assistant_message(&mut self, message: Message) {
+    pub fn push_assistant_message(&mut self, message: AssistantResponseMessage) {
         debug_assert!(self.next_message.is_none(), "next_message should not exist");
         if let Some(next_message) = self.next_message.as_ref() {
             warn!(?next_message, "next_message should not exist");
         }
-        self.history.push_back(message);
+        self.history.push_back(ChatMessage::AssistantResponseMessage(message));
     }
 
-    /// Returns the conversation id, if available.
-    pub fn conversation_id(&self) -> Option<&str> {
-        self.conversation_id.as_deref()
+    /// Returns the conversation id.
+    pub fn conversation_id(&self) -> &str {
+        self.conversation_id.as_ref()
     }
 
     /// Returns the message id associated with the last assistant message, if present.
+    ///
+    /// This is equivalent to `utterance_id` in the Q API.
     pub fn message_id(&self) -> Option<&str> {
-        self.history.iter().last().and_then(|m| match &m.0 {
+        self.history.iter().last().and_then(|m| match &m {
             ChatMessage::AssistantResponseMessage(m) => m.message_id.as_deref(),
             ChatMessage::UserInputMessage(_) => None,
         })
@@ -167,11 +178,11 @@ impl ConversationState {
             },
             ..Default::default()
         };
-        let msg = Message(ChatMessage::UserInputMessage(UserInputMessage {
+        let msg = UserInputMessage {
             content: String::new(),
             user_input_message_context: Some(user_input_message_context),
             user_intent: None,
-        }));
+        };
         self.next_message = Some(msg);
     }
 
@@ -197,11 +208,11 @@ impl ConversationState {
             },
             ..Default::default()
         };
-        let msg = Message(ChatMessage::UserInputMessage(UserInputMessage {
+        let msg = UserInputMessage {
             content: deny_input,
             user_input_message_context: Some(user_input_message_context),
             user_intent: None,
-        }));
+        };
         self.next_message = Some(msg);
     }
 
@@ -219,32 +230,19 @@ impl ConversationState {
 
         // Updating `self` so that the current next_message is moved to history.
         let mut last_message = self.next_message.take().unwrap();
-        match &mut last_message.0 {
-            ChatMessage::UserInputMessage(msg) => {
-                if let Some(ctx) = &mut msg.user_input_message_context {
-                    ctx.tools.take();
-                }
-            },
-            ChatMessage::AssistantResponseMessage(_) => (),
+        if let Some(ctx) = &mut last_message.user_input_message_context {
+            // Don't include the tool spec in all user messages in the history.
+            ctx.tools.take();
         }
-        self.history.push_back(last_message);
+        self.history.push_back(ChatMessage::UserInputMessage(last_message));
 
         FigConversationState {
-            conversation_id: curr_state.conversation_id,
-            user_input_message: curr_state
-                .next_message
-                .and_then(|m| match m.0 {
-                    ChatMessage::AssistantResponseMessage(_) => None,
-                    ChatMessage::UserInputMessage(user_input_message) => Some(user_input_message),
-                })
-                .expect("no user input message available"),
-            history: Some(curr_state.history.into_iter().map(|m| m.0).collect()),
+            conversation_id: Some(curr_state.conversation_id),
+            user_input_message: curr_state.next_message.expect("no user input message available"),
+            history: Some(curr_state.history.into()),
         }
     }
 }
-
-#[derive(Debug, Clone)]
-pub struct Message(pub ChatMessage);
 
 impl From<InvokeOutput> for ToolResultContentBlock {
     fn from(value: InvokeOutput) -> Self {
@@ -554,16 +552,16 @@ mod tests {
     async fn test_conversation_state_history_handling() {
         let mut conversation_state = ConversationState::new(load_tools().unwrap());
 
+        // First, build a large conversation history. We need to ensure that the order is always
+        // User -> Assistant -> User -> Assistant ...and so on.
         conversation_state.append_new_user_message("start".to_string()).await;
-        for i in 0..=20 {
+        for i in 0..=100 {
             let _ = conversation_state.as_sendable_conversation_state();
-            conversation_state.push_assistant_message(Message(ChatMessage::AssistantResponseMessage(
-                AssistantResponseMessage {
-                    message_id: None,
-                    content: i.to_string(),
-                    tool_uses: None,
-                },
-            )));
+            conversation_state.push_assistant_message(AssistantResponseMessage {
+                message_id: None,
+                content: i.to_string(),
+                tool_uses: None,
+            });
             conversation_state.append_new_user_message(i.to_string()).await;
         }
 
@@ -577,7 +575,7 @@ mod tests {
         let last_msg = s.history.as_ref().unwrap().iter().last().unwrap();
         match last_msg {
             ChatMessage::AssistantResponseMessage(assistant_response_message) => {
-                assert_eq!(assistant_response_message.content, "20");
+                assert_eq!(assistant_response_message.content, "100");
             },
             other @ ChatMessage::UserInputMessage(_) => {
                 panic!("Last message should be from the assistant, instead found {:?}", other)

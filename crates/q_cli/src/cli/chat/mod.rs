@@ -45,7 +45,6 @@ use fig_api_client::model::{
 };
 use fig_os_shim::Context;
 use fig_util::CLI_BINARY_NAME;
-use futures::StreamExt;
 use input_source::InputSource;
 use parser::{
     ResponseParser,
@@ -205,8 +204,10 @@ struct ChatContext<'o, W> {
     conversation_state: ConversationState,
     /// The number of times a tool use has been attempted without user intervention.
     tool_use_recursions: u32,
-    current_user_input_id: Option<String>,
-    tool_use_events: Vec<ToolUseEventBuilder>,
+
+    /// Telemetry events to be sent as part of the conversation.
+    // tool_use_telemetry_events: Vec<ToolUseEventBuilder>,
+    tool_use_telemetry_events: HashMap<String, ToolUseEventBuilder>,
 
     /// Whether or not an unexpected end of chat stream was encountered while consuming the model
     /// response's tool use data. Pair of (tool_use_id, name) for the tool that was being received.
@@ -230,8 +231,7 @@ where
             tool_uses: vec![],
             conversation_state: ConversationState::new(args.tool_config),
             tool_use_recursions: 0,
-            current_user_input_id: None,
-            tool_use_events: vec![],
+            tool_use_telemetry_events: HashMap::new(),
             encountered_tool_use_eos: None,
         }
     }
@@ -311,9 +311,7 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
             let response = match response.take() {
                 Some(response) => response,
                 None => {
-                    if let Some(id) = &self.conversation_state.conversation_id {
-                        fig_telemetry::send_end_chat(id.clone()).await;
-                    }
+                    fig_telemetry::send_end_chat(self.conversation_state.conversation_id().to_string()).await;
                     self.send_tool_use_telemetry().await;
                     break;
                 },
@@ -325,11 +323,6 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
             let mut ended = false;
             let mut parser = ResponseParser::new(response);
             let mut state = ParseState::new(Some(self.terminal_width()));
-            if let Some(ref msg) = self.conversation_state.next_message {
-                if let fig_api_client::model::ChatMessage::AssistantResponseMessage(ref resp) = msg.0 {
-                    self.current_user_input_id = resp.message_id.clone();
-                }
-            }
 
             let mut tool_name_being_recvd: Option<String> = None;
             loop {
@@ -337,17 +330,6 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                     Ok(msg_event) => {
                         trace!("Consumed: {:?}", msg_event);
                         match msg_event {
-                            parser::ResponseEvent::ConversationId(id) => {
-                                fig_telemetry::send_start_chat(id.clone()).await;
-                                self.conversation_state.conversation_id = Some(id.clone());
-                                tokio::task::spawn(async move {
-                                    tokio::signal::ctrl_c().await.unwrap();
-                                    fig_telemetry::send_end_chat(id.clone()).await;
-                                    fig_telemetry::finish_telemetry().await;
-                                    #[allow(clippy::exit)]
-                                    std::process::exit(0);
-                                });
-                            },
                             parser::ResponseEvent::ToolUseStart { name } => {
                                 // We need to flush the buffer here, otherwise text will not be
                                 // printed while we are receiving tool use events.
@@ -479,11 +461,12 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                 }
 
                 if ended {
-                    if let (Some(conversation_id), Some(message_id)) = (
-                        self.conversation_state.conversation_id(),
-                        self.conversation_state.message_id(),
-                    ) {
-                        fig_telemetry::send_chat_added_message(conversation_id.to_owned(), message_id.to_owned()).await;
+                    if let Some(message_id) = self.conversation_state.message_id() {
+                        fig_telemetry::send_chat_added_message(
+                            self.conversation_state.conversation_id().to_owned(),
+                            message_id.to_owned(),
+                        )
+                        .await;
                     }
                     if self.is_interactive {
                         queue!(self.output, style::ResetColor, style::SetAttribute(Attribute::Reset))?;
@@ -542,59 +525,40 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
 
             // Validate the requested tools, updating queued_tools and tool_errors accordingly.
             if !self.tool_uses.is_empty() {
-                let conv_id = self
-                    .conversation_state
-                    .conversation_id
-                    .as_ref()
-                    .unwrap_or(&"No conversation id associated".to_string())
-                    .to_owned();
-                let utterance_id = self
-                    .conversation_state
-                    .next_message
-                    .as_ref()
-                    .and_then(|msg| {
-                        if let fig_api_client::model::ChatMessage::AssistantResponseMessage(resp) = &msg.0 {
-                            resp.message_id.clone()
-                        } else {
-                            None
-                        }
-                    })
-                    .unwrap_or("No utterance id associated".to_string());
+                let conv_id = self.conversation_state.conversation_id().to_owned();
                 debug!(?self.tool_uses, "Validating tool uses");
                 let mut tool_results = Vec::with_capacity(self.tool_uses.len());
                 for tool_use in self.tool_uses.drain(..) {
                     let tool_use_id = tool_use.id.clone();
-                    let mut event_builder = ToolUseEventBuilder::from_conversation_id(conv_id.clone())
-                        .set_tool_use_id(&tool_use_id)
-                        .set_tool_name(&tool_use.name)
-                        .set_utterance_id(&utterance_id);
-                    if let Some(ref id) = self.current_user_input_id {
-                        event_builder.user_input_id = Some(id.clone());
-                    }
+                    let mut tool_telemetry = ToolUseEventBuilder::new(conv_id.clone(), tool_use.id.clone())
+                        .set_tool_use_id(tool_use_id.clone())
+                        .set_tool_name(tool_use.name.clone())
+                        .utterance_id(self.conversation_state.message_id().map(|s| s.to_string()));
                     match Tool::try_from(tool_use) {
                         Ok(mut tool) => {
                             match tool.validate(&self.ctx).await {
                                 Ok(()) => {
-                                    queued_tools.push((tool_use_id, tool));
+                                    tool_telemetry.is_valid = Some(true);
+                                    queued_tools.push((tool_use_id.clone(), tool));
                                 },
                                 Err(err) => {
+                                    tool_telemetry.is_valid = Some(false);
                                     tool_results.push(ToolResult {
-                                        tool_use_id,
+                                        tool_use_id: tool_use_id.clone(),
                                         content: vec![ToolResultContentBlock::Text(format!(
                                             "Failed to validate tool parameters: {err}"
                                         ))],
                                         status: ToolResultStatus::Error,
                                     });
-                                    event_builder.is_valid = Some(false);
                                 },
                             };
                         },
                         Err(err) => {
                             tool_results.push(err);
-                            event_builder.is_valid = Some(false);
+                            tool_telemetry.is_valid = Some(false);
                         },
                     }
-                    self.tool_use_events.push(event_builder);
+                    self.tool_use_telemetry_events.insert(tool_use_id, tool_telemetry);
                 }
 
                 // If we have any validation errors, then return them immediately to the model.
@@ -719,13 +683,8 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                     let terminal_width = self.terminal_width();
                     let mut tool_results = vec![];
                     for tool in queued_tools.drain(..) {
-                        let corresponding_builder = self.tool_use_events.iter_mut().find(|v| {
-                            if let Some(ref v) = v.tool_use_id {
-                                v.eq(&tool.0)
-                            } else {
-                                false
-                            }
-                        });
+                        let mut tool_telemetry = self.tool_use_telemetry_events.entry(tool.0.clone());
+                        tool_telemetry = tool_telemetry.and_modify(|ev| ev.is_accepted = true);
 
                         let tool_start = std::time::Instant::now();
                         queue!(
@@ -767,10 +726,8 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                                     style::SetForegroundColor(Color::Reset),
                                     style::Print("\n"),
                                 )?;
-                                if let Some(builder) = corresponding_builder {
-                                    builder.is_success = Some(true);
-                                }
 
+                                tool_telemetry.and_modify(|ev| ev.is_success = Some(true));
                                 tool_results.push(ToolResult {
                                     tool_use_id: tool.0,
                                     content: vec![result.into()],
@@ -791,6 +748,7 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                                     style::Print("\n\n"),
                                 )?;
 
+                                tool_telemetry.and_modify(|ev| ev.is_success = Some(false));
                                 tool_results.push(ToolResult {
                                     tool_use_id: tool.0,
                                     content: vec![ToolResultContentBlock::Text(format!(
@@ -799,10 +757,6 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                                     ))],
                                     status: ToolResultStatus::Error,
                                 });
-
-                                if let Some(builder) = corresponding_builder {
-                                    builder.is_success = Some(false);
-                                }
                             },
                         }
                     }
@@ -851,7 +805,7 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                         .conversation_state
                         .history
                         .back()
-                        .and_then(|last_msg| match &last_msg.0 {
+                        .and_then(|last_msg| match &last_msg {
                             fig_api_client::model::ChatMessage::AssistantResponseMessage(msg) => Some(msg),
                             fig_api_client::model::ChatMessage::UserInputMessage(_) => None,
                         })
@@ -880,15 +834,11 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
     }
 
     async fn send_tool_use_telemetry(&mut self) {
-        let futures = self.tool_use_events.drain(..).map(|event| async {
+        for (_, event) in self.tool_use_telemetry_events.drain() {
             let event: fig_telemetry::EventType = event.into();
             let app_event = fig_telemetry::AppTelemetryEvent::new(event).await;
-            fig_telemetry::send_event(app_event).await;
-        });
-        let _ = futures::stream::iter(futures)
-            .buffer_unordered(10)
-            .collect::<Vec<_>>()
-            .await;
+            fig_telemetry::dispatch_or_send_event(app_event).await;
+        }
     }
 }
 
@@ -904,12 +854,12 @@ struct ToolUseEventBuilder {
 }
 
 impl ToolUseEventBuilder {
-    pub fn from_conversation_id(conv_id: String) -> Self {
+    pub fn new(conv_id: String, tool_use_id: String) -> Self {
         Self {
             conversation_id: conv_id,
             utterance_id: None,
             user_input_id: None,
-            tool_use_id: None,
+            tool_use_id: Some(tool_use_id),
             tool_name: None,
             is_accepted: false,
             is_success: None,
@@ -917,18 +867,18 @@ impl ToolUseEventBuilder {
         }
     }
 
-    pub fn set_tool_use_id(mut self, id: &String) -> Self {
-        self.tool_use_id.replace(id.to_string());
+    pub fn utterance_id(mut self, id: Option<String>) -> Self {
+        self.utterance_id = id;
         self
     }
 
-    pub fn set_tool_name(mut self, name: &String) -> Self {
-        self.tool_name.replace(name.to_string());
+    pub fn set_tool_use_id(mut self, id: String) -> Self {
+        self.tool_use_id.replace(id);
         self
     }
 
-    pub fn set_utterance_id(mut self, id: &String) -> Self {
-        self.utterance_id.replace(id.to_string());
+    pub fn set_tool_name(mut self, name: String) -> Self {
+        self.tool_name.replace(name);
         self
     }
 }
@@ -1007,68 +957,13 @@ fn create_stream(model_responses: serde_json::Value) -> StreamingClient {
 
 #[cfg(test)]
 mod tests {
-    use fig_api_client::model::ChatResponseStream;
-    use serde_json::Map;
-
     use super::*;
 
-    fn split_tool_use_event(value: &Map<String, serde_json::Value>) -> Vec<ChatResponseStream> {
-        let tool_use_id = value.get("tool_use_id").unwrap().as_str().unwrap().to_string();
-        let name = value.get("name").unwrap().as_str().unwrap().to_string();
-        let args_str = value.get("args").unwrap().to_string();
-        let split_point = args_str.len() / 2;
-        vec![
-            ChatResponseStream::ToolUseEvent {
-                tool_use_id: tool_use_id.clone(),
-                name: name.clone(),
-                input: None,
-                stop: None,
-            },
-            ChatResponseStream::ToolUseEvent {
-                tool_use_id: tool_use_id.clone(),
-                name: name.clone(),
-                input: Some(args_str.split_at(split_point).0.to_string()),
-                stop: None,
-            },
-            ChatResponseStream::ToolUseEvent {
-                tool_use_id: tool_use_id.clone(),
-                name: name.clone(),
-                input: Some(args_str.split_at(split_point).1.to_string()),
-                stop: None,
-            },
-            ChatResponseStream::ToolUseEvent {
-                tool_use_id: tool_use_id.clone(),
-                name: name.clone(),
-                input: None,
-                stop: Some(true),
-            },
-        ]
-    }
-
-    fn create_stream(model_responses: serde_json::Value) -> StreamingClient {
-        let mut mock = Vec::new();
-        for response in model_responses.as_array().unwrap() {
-            let mut stream = Vec::new();
-            for event in response.as_array().unwrap() {
-                match event {
-                    serde_json::Value::String(assistant_text) => {
-                        stream.push(ChatResponseStream::AssistantResponseEvent {
-                            content: assistant_text.to_string(),
-                        });
-                    },
-                    serde_json::Value::Object(tool_use) => {
-                        stream.append(&mut split_tool_use_event(tool_use));
-                    },
-                    other => panic!("Unexpected value: {:?}", other),
-                }
-            }
-            mock.push(stream);
-        }
-        StreamingClient::mock(mock)
-    }
-
-    fn test_stream() -> serde_json::Value {
-        serde_json::json!([
+    #[tokio::test]
+    async fn test_flow() {
+        let ctx = Context::builder().with_test_home().await.unwrap().build_fake();
+        let mut output = std::io::stdout();
+        let test_client = create_stream(serde_json::json!([
             [
                 "Sure, I'll create a file for you",
                 {
@@ -1084,13 +979,8 @@ mod tests {
             [
                 "Hope that looks good to you!",
             ],
-        ])
-    }
+        ]));
 
-    #[tokio::test]
-    async fn test_flow() {
-        let ctx = Context::builder().with_test_home().await.unwrap().build_fake();
-        let mut output = std::io::stdout();
         let c = ChatArgs {
             output: &mut output,
             ctx: Arc::clone(&ctx),
@@ -1102,7 +992,7 @@ mod tests {
             ]),
             is_interactive: true,
             tool_config: load_tools().unwrap(),
-            client: create_stream(test_stream()),
+            client: test_client,
             terminal_width_provider: || Some(80),
         };
 
