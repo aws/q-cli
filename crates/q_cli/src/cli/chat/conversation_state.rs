@@ -223,6 +223,7 @@ impl ConversationState {
         assert!(self.next_message.is_some());
         while self.history.len() > MAX_CONVERSATION_STATE_HISTORY_LEN {
             self.history.pop_front();
+            self.history.pop_front();
         }
 
         // The current state we want to send
