@@ -185,8 +185,14 @@ struct ChatArgs<'o, W> {
     terminal_width_provider: fn() -> Option<usize>,
 }
 
+/// Enum used to denote the origin of a tool use event
 enum ToolUseStatus {
+    /// Variant denotes that the tool use event associated with chat context is a direct result of
+    /// a user request
     Idle,
+    /// Variant denotes that the tool use event associated with the chat context is a result of a
+    /// retry for one or more previously attempted tool use. The tuple is the utterance id
+    /// associated with the original user request that necessitated the tool use
     RetryInProgress(String),
 }
 
