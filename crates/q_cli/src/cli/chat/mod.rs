@@ -861,8 +861,9 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
         for (_, mut event) in self.tool_use_telemetry_events.drain() {
             event.user_input_id = match self.tool_use_status {
                 ToolUseStatus::Idle => self.conversation_state.message_id(),
-                ToolUseStatus::RetryInProgress(ref id) => Some(id.as_str())
-            }.map(|v| v.to_string());
+                ToolUseStatus::RetryInProgress(ref id) => Some(id.as_str()),
+            }
+            .map(|v| v.to_string());
             let event: fig_telemetry::EventType = event.into();
             let app_event = fig_telemetry::AppTelemetryEvent::new(event).await;
             fig_telemetry::dispatch_or_send_event(app_event).await;
