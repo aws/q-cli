@@ -1,4 +1,5 @@
 mod conversation_state;
+mod dialog_box;
 mod error;
 mod input_source;
 mod parse;
@@ -600,7 +601,6 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
             // If we have tool uses, display them to the user.
             if !queued_tools.is_empty() {
                 self.tool_use_recursions += 1;
-                let terminal_width = self.terminal_width();
                 if self.tool_use_recursions > MAX_TOOL_USE_RECURSIONS {
                     return Err(
                         eyre::eyre!("Exceeded max tool use recursion limit: {}", MAX_TOOL_USE_RECURSIONS).into(),
@@ -608,17 +608,12 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                 }
 
                 for (i, (_, tool)) in queued_tools.iter().enumerate() {
-                    queue!(
-                        self.output,
-                        style::SetForegroundColor(Color::Cyan),
-                        style::Print(format!("{}. {}\n", i + 1, tool.display_name())),
-                        style::SetForegroundColor(Color::Reset),
-                        style::SetForegroundColor(Color::DarkGrey),
-                        style::Print(format!("{}\n", "▔".repeat(terminal_width))),
-                        style::SetForegroundColor(Color::Reset),
-                    )?;
-                    tool.queue_description(&self.ctx, self.output)?;
-                    queue!(self.output, style::Print("\n"))?;
+                    let mut cursor = std::io::Cursor::new(Vec::<u8>::new());
+                    tool.queue_description(&self.ctx, &mut cursor)?;
+                    let content = String::from_utf8(cursor.into_inner())
+                        .map_err(|e| eyre::eyre!("failed to convert tool content to string: {:?}", e))?;
+                    dialog_box::DialogBox::new(&format!("{}. {}", i + 1, tool.display_name()), content.as_str(), 2)
+                        .queue_boxed_output(self.output)?;
                 }
             }
 
