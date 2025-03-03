@@ -210,7 +210,7 @@ pub enum ChatError {
     #[error("{0}")]
     Custom(Cow<'static, str>),
     #[error("interrupted")]
-    Interrupted,
+    Interrupted { tool_uses: Option<Vec<QueuedTool>> },
 }
 
 pub struct ChatContext<'o, W> {
@@ -343,20 +343,21 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                 ChatState::PromptUser { tool_uses } => self.prompt_user(tool_uses).await,
                 ChatState::HandleInput { input, tool_uses } => self.handle_input(input, tool_uses).await,
                 ChatState::ExecuteTools(tool_uses) => {
+                    let tool_uses_clone = tool_uses.clone();
                     tokio::select! {
                         res = self.tool_use_execute(tool_uses) => res,
-                        Some(_) = ctrl_c_stream.recv() => Err(ChatError::Interrupted)
+                        Some(_) = ctrl_c_stream.recv() => Err(ChatError::Interrupted { tool_uses: Some(tool_uses_clone) })
                     }
                 },
                 ChatState::ValidateTools(tool_uses) => {
                     tokio::select! {
                         res = self.validate_tools(tool_uses) => res,
-                        Some(_) = ctrl_c_stream.recv() => Err(ChatError::Interrupted)
+                        Some(_) = ctrl_c_stream.recv() => Err(ChatError::Interrupted { tool_uses: None })
                     }
                 },
                 ChatState::HandleResponseStream(response) => tokio::select! {
                     res = self.handle_response(response) => res,
-                    Some(_) = ctrl_c_stream.recv() => Err(ChatError::Interrupted)
+                    Some(_) = ctrl_c_stream.recv() => Err(ChatError::Interrupted { tool_uses: None })
                 },
                 ChatState::Exit => return Ok(()),
             };
@@ -373,9 +374,11 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                             cursor::MoveToColumn(0),
                         )?;
                     }
+                    let mut tool_uses = None;
                     match e {
-                        ChatError::Interrupted => {
+                        ChatError::Interrupted { tool_uses: inter } => {
                             execute!(self.output, style::Print("\n"))?;
+                            tool_uses = inter;
                         },
                         ChatError::Client(err) => {
                             if let fig_api_client::Error::QuotaBreach(msg) = err {
@@ -397,7 +400,7 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
                         },
                     }
                     self.conversation_state.fix_history();
-                    next_state = Some(ChatState::PromptUser { tool_uses: None });
+                    next_state = Some(ChatState::PromptUser { tool_uses });
                 },
             }
         }
@@ -475,7 +478,6 @@ Hi, I'm <g>Amazon Q</g>. Ask me anything.
             "y" if !tool_uses.is_empty() => Ok(ChatState::ExecuteTools(tool_uses)),
             _ => {
                 self.tool_use_status = ToolUseStatus::Idle;
-
                 if self.is_interactive {
                     queue!(self.output, style::SetForegroundColor(Color::Magenta))?;
                     if user_input.contains("@history") {

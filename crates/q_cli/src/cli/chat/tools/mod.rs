@@ -50,7 +50,7 @@ static SYNTAX_SET: LazyLock<SyntaxSet> = LazyLock::new(SyntaxSet::load_defaults_
 static THEME_SET: LazyLock<ThemeSet> = LazyLock::new(ThemeSet::load_defaults);
 
 /// Represents an executable tool use.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Tool {
     FsRead(FsRead),
     FsWrite(FsWrite),

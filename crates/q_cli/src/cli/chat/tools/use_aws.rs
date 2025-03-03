@@ -28,7 +28,7 @@ const READONLY_OPS: [&str; 6] = ["get", "describe", "list", "ls", "search", "bat
 
 // TODO: we should perhaps composite this struct with an interface that we can use to mock the
 // actual cli with. That will allow us to more thoroughly test it.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct UseAws {
     pub service_name: String,
     pub operation_name: String,

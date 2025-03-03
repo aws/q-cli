@@ -23,7 +23,7 @@ use super::{
     OutputKind,
 };
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct ExecuteBash {
     pub command: String,
     pub interactive: Option<bool>,

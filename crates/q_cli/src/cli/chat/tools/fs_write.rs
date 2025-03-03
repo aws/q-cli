@@ -21,7 +21,7 @@ use super::{
     stylize_output_if_able,
 };
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "command")]
 pub enum FsWrite {
     #[serde(rename = "create")]

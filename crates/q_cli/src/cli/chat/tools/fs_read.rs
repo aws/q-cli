@@ -29,7 +29,7 @@ use super::{
     stylize_output_if_able,
 };
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct FsRead {
     pub path: String,
     pub read_range: Option<Vec<i32>>,
