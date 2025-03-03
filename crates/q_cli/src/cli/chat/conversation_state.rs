@@ -35,8 +35,10 @@ use rand::distributions::{
 };
 use regex::Regex;
 use tracing::{
+    debug,
     error,
     info,
+    trace,
     warn,
 };
 
@@ -67,7 +69,7 @@ const MAX_SHELL_HISTORY_DIRECTORY_LEN: usize = 256;
 static CONTEXT_MODIFIER_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"@(git|env|history) ?").unwrap());
 
 /// Limit to send the number of messages as part of chat.
-const MAX_CONVERSATION_STATE_HISTORY_LEN: usize = 25;
+const MAX_CONVERSATION_STATE_HISTORY_LEN: usize = 100;
 
 /// Tracks state related to an ongoing conversation.
 #[derive(Debug, Clone)]
@@ -77,7 +79,7 @@ pub struct ConversationState {
     /// The next user message to be sent as part of the conversation. Required to be [Some] before
     /// calling [Self::as_sendable_conversation_state].
     pub next_message: Option<UserInputMessage>,
-    pub history: VecDeque<ChatMessage>,
+    history: VecDeque<ChatMessage>,
     tools: Vec<Tool>,
 }
 
@@ -114,6 +116,7 @@ impl ConversationState {
         if let Some(next_message) = self.next_message.as_ref() {
             warn!(?next_message, "next_message should not exist");
         }
+
         let (ctx, input) = input_to_modifiers(input);
         let history = History::new();
 
@@ -143,6 +146,8 @@ impl ConversationState {
         self.next_message = Some(msg);
     }
 
+    /// This should be called sometime after [Self::as_sendable_conversation_state], and before the
+    /// next user message is set.
     pub fn push_assistant_message(&mut self, message: AssistantResponseMessage) {
         debug_assert!(self.next_message.is_none(), "next_message should not exist");
         if let Some(next_message) = self.next_message.as_ref() {
@@ -166,7 +171,80 @@ impl ConversationState {
         })
     }
 
+    /// Updates the history so that, when non-empty, the following invariants are in place:
+    /// 1. The history length is <= MAX_CONVERSATION_STATE_HISTORY_LEN if the next user message does
+    ///    not contain tool results. Oldest messages are dropped.
+    /// 2. The first message is from the user, and does not contain tool results. Oldest messages
+    ///    are dropped.
+    /// 3. The last message is from the assistant. The last message is dropped if it is from the
+    ///    user.
+    pub fn fix_history(&mut self) {
+        if self.history.is_empty() {
+            return;
+        }
+
+        // Invariant (3).
+        if let Some(ChatMessage::UserInputMessage(msg)) = self.history.iter().last() {
+            debug!(?msg, "last message in history is from the user, dropping");
+            self.history.pop_back();
+        }
+
+        // Check if the next message contains tool results - if it does, then return early.
+        // Required in the case that the entire history consists of tool results; every message is
+        // therefore required to avoid validation errors in the backend.
+        match self.next_message.as_ref() {
+            Some(UserInputMessage {
+                user_input_message_context: Some(ctx),
+                ..
+            }) if ctx.tool_results.as_ref().is_none_or(|r| r.is_empty()) => {
+                debug!(
+                    curr_history_len = self.history.len(),
+                    max_history_len = MAX_CONVERSATION_STATE_HISTORY_LEN,
+                    "next user message does not contain tool results, removing messages if required"
+                );
+            },
+            _ => {
+                debug!("next user message contains tool results, not modifying the history");
+                return;
+            },
+        }
+
+        // Invariant (1).
+        while self.history.len() > MAX_CONVERSATION_STATE_HISTORY_LEN {
+            self.history.pop_front();
+        }
+
+        // Invariant (2).
+        match self
+            .history
+            .iter()
+            .enumerate()
+            .find(|(_, m)| -> bool {
+                match m {
+                    ChatMessage::UserInputMessage(m) => {
+                        matches!(
+                            m.user_input_message_context.as_ref(),
+                            Some(ctx) if ctx.tool_results.as_ref().is_none_or(|v| v.is_empty())
+                        )
+                    },
+                    ChatMessage::AssistantResponseMessage(_) => false,
+                }
+            })
+            .map(|v| v.0)
+        {
+            Some(i) => {
+                trace!("removing the first {i} elements in the history");
+                self.history.drain(..i);
+            },
+            None => {
+                trace!("no valid starting user message found in the history, clearing");
+                self.history.clear();
+            },
+        }
+    }
+
     pub fn add_tool_results(&mut self, tool_results: Vec<ToolResult>) {
+        debug_assert!(self.next_message.is_none());
         let user_input_message_context = UserInputMessageContext {
             shell_state: None,
             env_state: Some(build_env_state(None)),
@@ -187,6 +265,7 @@ impl ConversationState {
     }
 
     pub fn abandon_tool_use(&mut self, tools_to_be_abandoned: Vec<(String, super::tools::Tool)>, deny_input: String) {
+        debug_assert!(self.next_message.is_none());
         let tool_results = tools_to_be_abandoned
             .into_iter()
             .map(|(tool_use_id, _)| ToolResult {
@@ -220,11 +299,8 @@ impl ConversationState {
     /// [fig_api_client::StreamingClient] while preparing the current conversation state to be sent
     /// in the next message.
     pub fn as_sendable_conversation_state(&mut self) -> FigConversationState {
-        assert!(self.next_message.is_some());
-        while self.history.len() > MAX_CONVERSATION_STATE_HISTORY_LEN {
-            self.history.pop_front();
-            self.history.pop_front();
-        }
+        debug_assert!(self.next_message.is_some());
+        self.fix_history();
 
         // The current state we want to send
         let curr_state = self.clone();
@@ -424,7 +500,10 @@ fn truncate_safe(s: &str, max_bytes: usize) -> &str {
 
 #[cfg(test)]
 mod tests {
-    use fig_api_client::model::AssistantResponseMessage;
+    use fig_api_client::model::{
+        AssistantResponseMessage,
+        ToolResultStatus,
+    };
     use fig_settings::history::CommandInfo;
 
     use super::*;
@@ -557,7 +636,19 @@ mod tests {
         // User -> Assistant -> User -> Assistant ...and so on.
         conversation_state.append_new_user_message("start".to_string()).await;
         for i in 0..=100 {
-            let _ = conversation_state.as_sendable_conversation_state();
+            let s = conversation_state.as_sendable_conversation_state();
+            assert!(
+                s.history
+                    .as_ref()
+                    .is_none_or(|h| h.first().is_none_or(|m| matches!(m, ChatMessage::UserInputMessage(_)))),
+                "First message in the history must be from the user"
+            );
+            assert!(
+                s.history.as_ref().is_none_or(|h| h
+                    .last()
+                    .is_none_or(|m| matches!(m, ChatMessage::AssistantResponseMessage(_)))),
+                "Last message in the history must be from the assistant"
+            );
             conversation_state.push_assistant_message(AssistantResponseMessage {
                 message_id: None,
                 content: i.to_string(),
@@ -569,10 +660,17 @@ mod tests {
         let s = conversation_state.as_sendable_conversation_state();
         assert_eq!(
             s.history.as_ref().unwrap().len(),
-            MAX_CONVERSATION_STATE_HISTORY_LEN - 1,
-            "history should be capped at {}, and we would only see 24 after truncating because we would be removing 2 at a time",
+            MAX_CONVERSATION_STATE_HISTORY_LEN,
+            "history should be capped at {}",
             MAX_CONVERSATION_STATE_HISTORY_LEN
         );
+        let first_msg = s.history.as_ref().unwrap().first().unwrap();
+        match first_msg {
+            ChatMessage::UserInputMessage(_) => {},
+            other @ ChatMessage::AssistantResponseMessage(_) => {
+                panic!("First message should be from the user, instead found {:?}", other)
+            },
+        }
         let last_msg = s.history.as_ref().unwrap().iter().last().unwrap();
         match last_msg {
             ChatMessage::AssistantResponseMessage(assistant_response_message) => {
@@ -582,5 +680,35 @@ mod tests {
                 panic!("Last message should be from the assistant, instead found {:?}", other)
             },
         }
+    }
+
+    #[tokio::test]
+    async fn test_conversation_state_history_handling_with_tool_results() {
+        let mut conversation_state = ConversationState::new(load_tools().unwrap());
+
+        // Build a long conversation history of tool use results.
+        conversation_state.append_new_user_message("start".to_string()).await;
+        for i in 0..=(MAX_CONVERSATION_STATE_HISTORY_LEN + 100) {
+            let _ = conversation_state.as_sendable_conversation_state();
+            conversation_state.push_assistant_message(AssistantResponseMessage {
+                message_id: None,
+                content: i.to_string(),
+                tool_uses: None,
+            });
+            conversation_state.add_tool_results(vec![ToolResult {
+                tool_use_id: "tool_id".to_string(),
+                content: vec![],
+                status: ToolResultStatus::Success,
+            }]);
+        }
+
+        let s = conversation_state.as_sendable_conversation_state();
+        let actual_history_len = s.history.as_ref().unwrap().len();
+        assert!(
+            actual_history_len > MAX_CONVERSATION_STATE_HISTORY_LEN,
+            "history should extend past the max limit of {}, instead found length {}",
+            MAX_CONVERSATION_STATE_HISTORY_LEN,
+            actual_history_len
+        );
     }
 }

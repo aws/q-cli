@@ -55,7 +55,7 @@ pub enum RecvError {
     },
 }
 
-/// State associated with parsing a [ConverseStreamResponse] into a [Message].
+/// State associated with parsing a [ChatResponseStream] into a [Message].
 ///
 /// # Usage
 ///

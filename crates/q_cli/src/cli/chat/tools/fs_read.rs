@@ -15,7 +15,10 @@ use eyre::{
 };
 use fig_os_shim::Context;
 use serde::Deserialize;
-use tracing::warn;
+use tracing::{
+    debug,
+    warn,
+};
 
 use super::{
     InvokeOutput,
@@ -49,6 +52,7 @@ impl FsRead {
     pub async fn invoke(&self, ctx: &Context, updates: &mut impl Write) -> Result<InvokeOutput> {
         let path = sanitize_path_tool_arg(ctx, &self.path);
         let is_file = ctx.fs().symlink_metadata(&path).await?.is_file();
+        debug!(?path, is_file, "Reading");
 
         if is_file {
             if let Some((start, Some(end))) = self.read_range()? {
@@ -120,6 +124,7 @@ impl FsRead {
         } else {
             let cwd = ctx.env().current_dir()?;
             let max_depth = self.read_range()?.map_or(0, |(d, _)| d);
+            debug!("Reading to max depth: {}", max_depth);
             let mut result = Vec::new();
             let mut dir_queue = VecDeque::new();
             dir_queue.push_back((path, 0));

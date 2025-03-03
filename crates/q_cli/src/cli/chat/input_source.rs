@@ -33,7 +33,7 @@ impl InputSource {
         Self(inner::Inner::Mock { index: 0, lines })
     }
 
-    pub fn read_line(&mut self, prompt: Option<&str>) -> Result<Option<String>> {
+    pub fn read_line(&mut self, prompt: Option<&str>) -> Result<Option<String>, ReadlineError> {
         match &mut self.0 {
             inner::Inner::Readline(rl) => loop {
                 let line = rl.readline(prompt.unwrap_or(""));
@@ -49,7 +49,7 @@ impl InputSource {
                         return Ok(None);
                     },
                     Err(err) => {
-                        return Err(err.into());
+                        return Err(err);
                     },
                 }
             },
